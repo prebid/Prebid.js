@@ -420,7 +420,7 @@ function createVideoImp(bid) {
     }
   });
 
-  return video
+  return video;
 }
 
 /**
@@ -572,7 +572,12 @@ function nativeBidResponseHandler(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
+          if (!native.javascriptTrackers) {
+            native.javascriptTrackers = script;
+          } else {
+            native.javascriptTrackers += `\n${script}`;
+          }
           break;
       }
     });
@@ -703,7 +708,7 @@ export const spec = {
               agencyName: deepAccess(bid, 'ext.agency_name', null),
               primaryCatId: getPrimaryCatFromResponse(bid.cat),
               mediaType
-            }
+            };
 
             const newBid = {
               requestId: bid.impid,

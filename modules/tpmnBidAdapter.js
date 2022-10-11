@@ -87,7 +87,7 @@ export const spec = {
       syncArr.push({
         type: 'iframe',
         url: IFRAMESYNC + policyParam
-      })
+      });
     } else {
       syncArr.push({
         type: 'image',

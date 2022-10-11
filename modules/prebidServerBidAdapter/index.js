@@ -2,7 +2,6 @@ import Adapter from '../../src/adapter.js';
 import {createBid} from '../../src/bidfactory.js';
 import {
   bind,
-  cleanObj,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -30,17 +29,17 @@ import {
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
-import { config } from '../../src/config.js';
-import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
-import { isValid } from '../../src/adapters/bidderFactory.js';
+import {config} from '../../src/config.js';
+import {NATIVE, VIDEO} from '../../src/mediaTypes.js';
+import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {find, includes} from '../../src/polyfill.js';
-import { S2S_VENDORS } from './config.js';
-import { ajax } from '../../src/ajax.js';
+import {S2S_VENDORS} from './config.js';
+import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
-import { nativeMapper } from '../../src/native.js';
+import {useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -362,7 +361,7 @@ function _appendSiteAppDevice(request, pageUrl, accountId) {
   // ORTB specifies app OR site
   if (typeof config.getConfig('app') === 'object') {
     request.app = config.getConfig('app');
-    request.app.publisher = {id: accountId}
+    request.app.publisher = {id: accountId};
   } else {
     request.site = {};
     if (isPlainObject(config.getConfig('site'))) {
@@ -446,11 +445,6 @@ if (FEATURES.NATIVE) {
     });
   });
 }
-/*
- * Protocol spec for OpenRTB endpoint
- * e.g., https://<prebid-server-url>/v1/openrtb2/auction
- */
-let nativeAssetCache = {}; // store processed native params to preserve
 
 /**
  * map wurl to auction id and adId for use in the BID_WON event
@@ -528,6 +522,8 @@ Object.assign(ORTB2.prototype, {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
+    let floorMin = null;
+    let floorMinCur = null;
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -538,7 +534,7 @@ Object.assign(ORTB2.prototype, {
         if (bid.mediaTypes != null) {
           logWarn(`Prebid Server adapter does not (yet) support bidder-specific mediaTypes for the same adUnit. Size mapping configuration will be ignored for adUnit: ${adUnit.code}, bidder: ${bid.bidder}`);
         }
-      })
+      });
 
       // in case there is a duplicate imp.id, add '-2' suffix to the second imp.id.
       // e.g. if there are 2 adUnits (case of twin adUnit codes) with code 'test',
@@ -552,78 +548,6 @@ Object.assign(ORTB2.prototype, {
       impIds.add(impressionId);
       this.adUnitsByImp[impressionId] = adUnit;
 
-      const nativeParams = adUnit.nativeParams;
-      let nativeAssets = nativeAssetCache[impressionId] = deepAccess(nativeParams, 'ortb.assets');
-      if (FEATURES.NATIVE && nativeParams && !nativeAssets) {
-        let idCounter = -1;
-        try {
-          nativeAssets = nativeAssetCache[impressionId] = Object.keys(nativeParams).reduce((assets, type) => {
-            let params = nativeParams[type];
-
-            function newAsset(obj) {
-              idCounter++;
-              return Object.assign({
-                required: params.required ? 1 : 0,
-                id: (isNumber(params.id)) ? idCounter = params.id : idCounter
-              }, obj ? cleanObj(obj) : {});
-            }
-
-            switch (type) {
-              case 'image':
-              case 'icon':
-                let imgTypeId = nativeImgIdMap[type];
-                let asset = cleanObj({
-                  type: imgTypeId,
-                  w: deepAccess(params, 'sizes.0'),
-                  h: deepAccess(params, 'sizes.1'),
-                  wmin: deepAccess(params, 'aspect_ratios.0.min_width'),
-                  hmin: deepAccess(params, 'aspect_ratios.0.min_height')
-                });
-                if (!((asset.w && asset.h) || (asset.hmin && asset.wmin))) {
-                  throw 'invalid img sizes (must provide sizes or min_height & min_width if using aspect_ratios)';
-                }
-                if (Array.isArray(params.aspect_ratios)) {
-                  // pass aspect_ratios as ext data I guess?
-                  const aspectRatios = params.aspect_ratios
-                    .filter((ar) => ar.ratio_width && ar.ratio_height)
-                    .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
-                  if (aspectRatios.length > 0) {
-                    asset.ext = {
-                      aspectratios: aspectRatios
-                    }
-                  }
-                }
-                assets.push(newAsset({
-                  img: asset
-                }));
-                break;
-              case 'title':
-                if (!params.len) {
-                  throw 'invalid title.len';
-                }
-                assets.push(newAsset({
-                  title: {
-                    len: params.len
-                  }
-                }));
-                break;
-              default:
-                let dataAssetTypeId = nativeDataIdMap[type];
-                if (dataAssetTypeId) {
-                  assets.push(newAsset({
-                    data: {
-                      type: dataAssetTypeId,
-                      len: params.len
-                    }
-                  }))
-                }
-            }
-            return assets;
-          }, []);
-        } catch (e) {
-          logError('error creating native request: ' + String(e))
-        }
-      }
       const videoParams = deepAccess(adUnit, 'mediaTypes.video');
       const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
 
@@ -678,8 +602,8 @@ Object.assign(ORTB2.prototype, {
             }, {});
         }
       }
-
-      if (FEATURES.NATIVE && nativeAssets) {
+      const nativeReq = deepAccess(adUnit, 'nativeOrtbRequest');
+      if (FEATURES.NATIVE && nativeReq) {
         const defaultRequest = {
           // TODO: determine best way to pass these and if we allow defaults
           context: 1,
@@ -689,18 +613,13 @@ Object.assign(ORTB2.prototype, {
           ],
           // TODO: figure out how to support privacy field
           // privacy: int
-          assets: nativeAssets
         };
-        const ortbRequest = deepAccess(nativeParams, 'ortb');
         try {
-          const request = ortbRequest ? Object.assign(defaultRequest, ortbRequest) : defaultRequest;
+          const request = Object.assign(defaultRequest, nativeReq);
           mediaTypes[NATIVE] = {
             request: JSON.stringify(request),
             ver: '1.2'
           };
-          // saving the converted ortb native request into the native mapper, so the Universal Creative
-          // can render the native ad directly.
-          adUnit.bids.forEach(bid => nativeMapper.set(bid.bid_id, request));
         } catch (e) {
           logError('error creating native request: ' + String(e));
         }
@@ -754,21 +673,21 @@ Object.assign(ORTB2.prototype, {
 
       mergeDeep(imp, mediaTypes);
 
+      const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
+        ? (amount) => amount
+        : (amount, from, to) => {
+          if (from === to) return amount;
+          let result = null;
+          try {
+            result = getGlobal().convertCurrency(amount, from, to);
+          } catch (e) {
+          }
+          return result;
+        }
+
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit
-
-        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
-          ? (amount) => amount
-          : (amount, from, to) => {
-            if (from === to) return amount;
-            let result = null;
-            try {
-              result = getGlobal().convertCurrency(amount, from, to);
-            } catch (e) {
-            }
-            return result;
-          }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
         return adUnit.bids
@@ -779,6 +698,7 @@ Object.assign(ORTB2.prototype, {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
               });
+
               return {
                 currency,
                 floor: parseFloat(floor)
@@ -800,18 +720,40 @@ Object.assign(ORTB2.prototype, {
               min.ref = min.min = floor;
             } else {
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
+
               if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
                 min.min = floor;
               }
             }
+
             return min;
           }, {}).min
       })();
 
       if (floor) {
         imp.bidfloor = floor.floor;
-        imp.bidfloorcur = floor.currency
+        imp.bidfloorcur = floor.currency;
+
+        // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
+        // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
+        // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
+        //    (if currency conversion logic present, convert all imp floor values to this currency)
+        // 3. compare/store ref to lowest floorMin value as each imp is iterated over
+        // 4. set req wide floorMin and floorMinCur values for pbs after iterations are done
+        if (floorMinCur == null) { floorMinCur = floor.currency }
+        const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
+        const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
+
+        const convertedFloorMinValue = convertCurrency(floor.floor, floor.currency, floorMinCur);
+        const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? convertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+
+        const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
+          ? convertedOrtb2ImpFloorMinValue
+          : convertedFloorMinValue;
+
+        deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
+        if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -825,7 +767,7 @@ Object.assign(ORTB2.prototype, {
     }
     const request = {
       id: firstBidRequest.auctionId,
-      source: {tid: s2sBidRequest.tid},
+      source: {tid: firstBidRequest.auctionId},
       tmax: s2sConfig.timeout,
       imp: imps,
       // to do: add setconfig option to pass test = 1
@@ -850,11 +792,11 @@ Object.assign(ORTB2.prototype, {
     }
 
     // This is no longer overwritten unless name and version explicitly overwritten by extPrebid (mergeDeep)
-    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}})
+    request.ext.prebid = Object.assign(request.ext.prebid, {channel: {name: 'pbjs', version: $$PREBID_GLOBAL$$.version}});
 
     // set debug flag if in debug mode
     if (getConfig('debug')) {
-      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true})
+      request.ext.prebid = Object.assign(request.ext.prebid, {debug: true});
     }
 
     // s2sConfig video.ext.prebid is passed through openrtb to PBS
@@ -986,6 +928,12 @@ Object.assign(ORTB2.prototype, {
     addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
+
+    if (request.ext?.prebid?.floors?.enabled) {
+      request.ext.prebid.floors.floorMin = floorMin;
+      request.ext.prebid.floors.floorMinCur = floorMinCur;
+    }
+
     return request;
   },
 
@@ -1091,28 +1039,10 @@ Object.assign(ORTB2.prototype, {
               ortb = bidObject.adm = bid.adm;
             }
 
-            // ortb.imptrackers and ortb.jstracker are going to be deprecated. So, when we find
-            // those properties, we're creating the equivalent eventtrackers and let prebid universal
-            //  creative deal with it
-            for (const imptracker of ortb.imptrackers || []) {
-              ortb.eventtrackers.push({
-                event: nativeEventTrackerEventMap.impression,
-                method: nativeEventTrackerMethodMap.img,
-                url: imptracker
-              })
-            }
-            if (ortb.jstracker) {
-              ortb.eventtrackers.push({
-                event: nativeEventTrackerEventMap.impression,
-                method: nativeEventTrackerMethodMap.js,
-                url: ortb.jstracker
-              })
-            }
-
             if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
               bidObject.native = {
                 ortb,
-              }
+              };
             } else {
               logError('prebid server native response contained no assets');
             }
@@ -1199,6 +1129,12 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+      .newMetrics()
+      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
+    done = adapterMetrics.startTiming('total').stopBefore(done);
+    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
+
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
@@ -1220,7 +1156,9 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          if (isValid(adUnit, bid)) {
+          const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
+          metrics.checkpoint('addBidResponse');
+          if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
             addBidResponse(adUnit, bid);
           }
         }
@@ -1259,19 +1197,21 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
-  const request = ortb2.buildRequest();
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => ortb2.buildRequest());
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
+    const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
       endpointUrl,
       {
         success: function (response) {
+          networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const bids = ortb2.interpretResponse(result);
+            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => ortb2.interpretResponse(result));
             bids.forEach(onBid);
           } catch (error) {
             logError(error);
@@ -1283,7 +1223,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             onResponse(true, requestedBidders);
           }
         },
-        error: onError
+        error: function () {
+          networkDone();
+          onError.apply(this, arguments);
+        }
       },
       requestJson,
       {contentType: 'text/plain', withCredentials: true}

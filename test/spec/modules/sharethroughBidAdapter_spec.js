@@ -72,6 +72,7 @@ describe('sharethrough adapter spec', function () {
         {
           bidder: 'sharethrough',
           bidId: 'bidId1',
+          transactionId: 'transactionId1',
           sizes: [[300, 250], [300, 600]],
           params: {
             pkey: 'aaaa1111',
@@ -85,8 +86,10 @@ describe('sharethrough adapter spec', function () {
           },
           ortb2Imp: {
             ext: {
+              tid: 'transaction-id-1',
+              gpid: 'universal-id',
               data: {
-                pbadslot: 'universal-id',
+                pbadslot: 'pbadslot-id',
               },
             },
           },
@@ -136,6 +139,7 @@ describe('sharethrough adapter spec', function () {
           bidder: 'sharethrough',
           bidId: 'bidId2',
           sizes: [[600, 300]],
+          transactionId: 'transactionId2',
           params: {
             pkey: 'bbbb2222',
           },
@@ -168,6 +172,7 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
+        auctionId: 'auction-id'
       };
     });
 
@@ -229,6 +234,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.auctionId);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
@@ -310,12 +316,28 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('transaction id at the impression level', () => {
+        it('should include transaction id when provided', () => {
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.tid).to.equal('transaction-id-1');
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+      });
+
       describe('universal id', () => {
         it('should include gpid when universal id is provided', () => {
           const requests = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
-          expect(requests[1].data.imp[0].ext).to.be.undefined;
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+
+        it('should include gpid when pbadslot is provided without universal id', () => {
+          delete bidRequests[0].ortb2Imp.ext.gpid;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.gpid).to.equal('pbadslot-id');
         });
       });
 
@@ -480,6 +502,8 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
         };
 
         it('should include first party data in open rtb request, site section', () => {
@@ -493,12 +517,19 @@ describe('sharethrough adapter spec', function () {
         });
 
         it('should include first party data in open rtb request, user section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
 
           expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
           expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
           expect(openRtbReq.user.ext.data).to.deep.equal(firstPartyData.user.ext.data);
           expect(openRtbReq.user.ext.eids).not.to.be.undefined;
+        });
+
+        it('should include first party data in open rtb request, ORTB blocked section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
+
+          expect(openRtbReq.bcat).to.deep.equal(firstPartyData.bcat);
+          expect(openRtbReq.badv).to.deep.equal(firstPartyData.badv);
         });
       });
     });
