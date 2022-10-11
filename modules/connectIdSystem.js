@@ -7,16 +7,25 @@
 
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import {formatQS, logError} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {formatQS, logError} from '../src/utils.js';
 
 const MODULE_NAME = 'connectId';
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
+const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 
 function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
+}
+
+function userHasOptedOut() {
+  try {
+    return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
 /** @type {Submodule} */
@@ -36,6 +45,9 @@ export const connectIdSubmodule = {
    * @returns {{connectId: string} | undefined}
    */
   decode(value) {
+    if (userHasOptedOut()) {
+      return undefined;
+    }
     return (typeof value === 'object' && value.connectid)
       ? {connectId: value.connectid} : undefined;
   },
@@ -47,6 +59,9 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
+    if (userHasOptedOut()) {
+      return;
+    }
     const params = config.params || {};
     if (!params || typeof params.he !== 'string' ||
       (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
