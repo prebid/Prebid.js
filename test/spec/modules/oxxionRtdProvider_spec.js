@@ -5,7 +5,7 @@ const utils = require('src/utils.js');
 
 const moduleConfig = {
   params: {
-    endpoint: 'test.endpoint',
+    domain: 'test.endpoint',
     contexts: ['instream', 'outstream']
   }
 };
@@ -117,7 +117,7 @@ describe('oxxionRtdProvider', () => {
     });
     it('check vastImpUrl', function() {
       expect(auctionEnd.bidsReceived[0]).to.have.property('vastImpUrl');
-      let expectVastImpUrl = 'https://' + moduleConfig.params.endpoint + '.oxxion.io/analytics/vast_imp?';
+      let expectVastImpUrl = 'https://' + moduleConfig.params.domain + '.oxxion.io/analytics/vast_imp?';
       expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(expectVastImpUrl);
       expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(encodeURI('https://some.tracking-url.com'));
     });
