@@ -3,15 +3,27 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {includes} from '../src/polyfill.js';
 
 export const storage = getStorageManager();
 export const topicStorageName = 'prebid:topics';
+export const lastUpdated = 'lastUpdated';
 
 const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600
+}
+
+const DEFAULT_EXPIRATION_DAYS = 21;
+
+const bidderIframeList = {
+  maxTopicCaller: 1,
+  bidders: [{
+    bidder: 'pubmatic',
+    iframeURL: 'https://pubmatic.com:8080/topics/fpd/topic.html' // dummy URL for NOW
+  }]
 }
 
 function partitionBy(field, items) {
@@ -100,13 +112,22 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 function getCachedTopics() {
   let cachedTopicData = [];
-  const topics = config.getConfig('userSync.topics');
-  const bidderList = Object.keys(topics.bidders || []);
-  new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName))).forEach((value, key) => {
-    let bidder = `${key}`.split(':')[0];
+  const topics = config.getConfig('userSync.topics') || bidderIframeList;
+  const bidderList = topics.bidders || [];
+  let storedSegments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+  storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
-    if (bidderList.includes(bidder)) {
-      cachedTopicData.push(value);
+    let isBidderConfigured = bidderList.some(({bidder}) => cachedBidder == bidder)
+    if (isBidderConfigured) {
+      if (!isCachedDataExpired(value[lastUpdated], isBidderConfigured?.expiry || DEFAULT_EXPIRATION_DAYS)) {
+        Object.keys(value).forEach((segData) => {
+          value != lastUpdated && cachedTopicData.push(value[segData]);
+        })
+      } else {
+        // delete the specific bidder map from the store and store the updated maps
+        storedSegments.delete(cachedBidder);
+        storage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
+      }
     }
   });
   return cachedTopicData;
@@ -120,7 +141,7 @@ function receiveMessage(evt) {
   if (evt && evt.data) {
     try {
       let data = safeJSONParse(evt.data);
-      if (getLoadedIframeURL().includes(evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
+      if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
         const iframeTopicsData = getTopicsData(domain, topics)[0];
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
@@ -135,8 +156,28 @@ Function to store Topics data recieved from iframe in storage(name: "prebid:topi
 */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
-  storedSegments.set(`${bidder}:${topics.ext.segclass}`, topics);
+  if (storedSegments.has(bidder)) {
+    storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
+    storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
+    storedSegments.set(bidder, storedSegments.get(bidder));
+  } else {
+    storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
+  }
   storage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
+}
+
+function isCachedDataExpired(storedTime, cacheTime) {
+  const _MS_PER_DAY = 1000 * 60 * 60 * 24;
+  const now = new Date().getTime();
+  const daysDifference = Math.floor((storedTime - now) / _MS_PER_DAY);
+  return daysDifference > cacheTime;
+}
+
+/**
+* Function to get random bidders based on count passed with array of bidders
+**/
+function getRandomBidders(arr, count) {
+  return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
 }
 
 /**
@@ -150,19 +191,20 @@ function listenMessagesFromTopicIframe() {
  * function to load the iframes of the bidder to load the topics data
  */
 function loadTopicsForBidders() {
-  const topics = config.getConfig('userSync.topics');
+  const topics = config.getConfig('userSync.topics') || bidderIframeList;
   if (topics) {
     listenMessagesFromTopicIframe();
-    const bidders = Object.keys(topics.bidders || []);
-    bidders && bidders.forEach((bidder) => {
-      const iframeURL = `${topics['bidders'][bidder]['iframeURL']}`;
-      let ifrm = document.createElement('iframe');
-      ifrm.name = `ifrm_${bidder}`;
-      ifrm.src = `${iframeURL}?bidder=${bidder}`;
-      ifrm.style.display = 'none';
-      setLoadedIframeURL(new URL(iframeURL).origin);
-      window.document.documentElement.appendChild(ifrm);
-    });
+    const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
+    randomBidders && randomBidders.forEach(({ bidder, iframeURL }) => {
+      if (bidder && iframeURL) {
+        let ifrm = document.createElement('iframe');
+        ifrm.name = 'ifrm_'.concat(bidder);
+        ifrm.src = ''.concat(iframeURL, '?bidder=').concat(bidder);
+        ifrm.style.display = 'none';
+        setLoadedIframeURL(new URL(iframeURL).origin);
+        iframeURL && window.document.documentElement.appendChild(ifrm);
+      }
+    })
   } else {
     logWarn(`Topics config not defined under userSync Object`);
   }
