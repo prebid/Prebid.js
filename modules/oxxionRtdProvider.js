@@ -15,7 +15,7 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.endpoint || !config.params.contexts || !Array.isArray(config.params.contexts)) return false
+  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts)) return false
   return true;
 }
 
@@ -59,7 +59,7 @@ function insertVideoTracking(bidResponse, config, maxCpm) {
 
 function getImpUrl(config, data, maxCpm) {
   const adUnitCode = data.adUnitCode;
-  let trackingImpUrl = 'https://' + config.params.endpoint + '.oxxion.io/analytics/vast_imp?';
+  let trackingImpUrl = 'https://' + config.params.domain + '.oxxion.io/analytics/vast_imp?';
   trackingImpUrl += oxxionRtdSearchFor.reduce((acc, param) => {
     switch (typeof data[param]) {
       case 'string':
