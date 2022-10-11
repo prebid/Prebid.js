@@ -425,6 +425,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
+        updatePPID(submodule.idObj);
       } else {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
@@ -613,9 +614,9 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
 
 let initIdSystem;
 
-function getPPID() {
+function getPPID(eids = getUserIdsAsEids() || []) {
   // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-  const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+  const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
   if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
     const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
     if (ppidValue.length >= 32 && ppidValue.length <= 150) {
@@ -642,18 +643,6 @@ export const requestBidsHook = timedAuctionHook('userId', function requestBidsHo
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-    const ppid = getPPID();
-    if (ppid) {
-      if (isGptPubadsDefined()) {
-        window.googletag.pubads().setPublisherProvidedId(ppid);
-      } else {
-        window.googletag = window.googletag || {};
-        window.googletag.cmd = window.googletag.cmd || [];
-        window.googletag.cmd.push(function() {
-          window.googletag.pubads().setPublisherProvidedId(ppid);
-        });
-      }
-    }
     uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
@@ -851,6 +840,24 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     if (isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
+    }
+  }
+  updatePPID(submodule.idObj);
+}
+
+function updatePPID(userIds = getUserIds()) {
+  if (userIds && ppidSource) {
+    const ppid = getPPID(createEidsArray(userIds));
+    if (ppid) {
+      if (isGptPubadsDefined()) {
+        window.googletag.pubads().setPublisherProvidedId(ppid);
+      } else {
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+        window.googletag.cmd.push(function() {
+          window.googletag.pubads().setPublisherProvidedId(ppid);
+        });
+      }
     }
   }
 }
