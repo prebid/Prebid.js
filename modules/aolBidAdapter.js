@@ -33,6 +33,7 @@ const SYNC_TYPES = {
 const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'criteo.com',
+  'epsilon.com',
   'id5-sync.com',
   'intentiq.com',
   'liveintent.com',

@@ -30,6 +30,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'criteo.com',
   'crwdcntrl.net',
   'deepintent.com',
+  'epsilon.com',
   'hcn.health',
   'id5-sync.com',
   'idx.lat',
