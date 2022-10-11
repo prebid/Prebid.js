@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, checkVideoPlacement} from 'modules/pubmaticBidAdapter.js';
+import {spec, checkVideoPlacement, assignDealTier} from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -4474,6 +4474,52 @@ describe('PubMatic adapter', function () {
       expect(response).to.be.an('array').with.length.above(0);
       // expect(response[0].bidderCode).to.equal('groupm');
       // expect(response[0].bidder).to.equal('groupm');
+    });
+  });
+
+  describe('Assign Deal Tier (i.e. prebidDealPriority)', function () {
+    let videoSeatBid = videoBidResponse.body.seatbid[0].bid[0];
+    let request = spec.buildRequests(videoBidRequests, {
+      auctionId: 'new-auction-id'
+    });
+    let newBid = {
+      requestId: '22bddb28db77d'
+    };
+    videoSeatBid.ext = videoSeatBid.ext || {};
+    videoSeatBid.ext.video = videoSeatBid.ext.video || {};
+    // let data = JSON.parse(request.data);
+
+    it('should not assign video object if deal priority is missing', function() {
+      assignDealTier(newBid, videoSeatBid, request);
+      expect(newBid.video).to.equal(undefined);
+      expect(newBid.video).to.not.exist;
+    });
+
+    videoSeatBid.ext.prebiddealpriority = 5;
+    it('should not assign video object if context is not a adpod', function() {
+      assignDealTier(newBid, videoSeatBid, request);
+      expect(newBid.video).to.equal(undefined);
+      expect(newBid.video).to.not.exist;
+    });
+
+    videoBidRequests[0].mediaTypes.video.context = 'adpod';
+    it('should set video deal tier object, when maxduration is present in ext', function() {
+      videoBidRequests[0].mediaTypes.video.maxduration = 50;
+      request = spec.buildRequests(videoBidRequests, {
+        auctionId: 'new-auction-id'
+      });
+      assignDealTier(newBid, videoSeatBid, request);
+      expect(newBid.video.context).to.equal('adpod');
+      expect(newBid.video.durationSeconds).to.equal(50);
+      expect(newBid.video.dealTier).to.equal(5);
+    });
+
+    it('should set video deal tier object, when duration is present in ext', function() {
+      videoSeatBid.ext.video.duration = 20;
+      assignDealTier(newBid, videoSeatBid, request);
+      expect(newBid.video.context).to.equal('adpod');
+      expect(newBid.video.durationSeconds).to.equal(20);
+      expect(newBid.video.dealTier).to.equal(5);
     });
   });
 });
