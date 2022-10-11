@@ -161,7 +161,7 @@ describe('Prebid Video', function () {
       const adUnit = adUnits[0];
       expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
       expect(nextFn.calledOnce).to.be.true;
-      expect(nextFn.getCall(0).args[0].ortb2).to.be.deep.equal({ site: { test: 'contentTestValue' } });
+      expect(nextFn.getCall(0).args[0].ortb2).to.be.deep.equal({ site: { content: { test: 'contentTestValue' } } });
     });
   });
 

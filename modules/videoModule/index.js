@@ -145,7 +145,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     if (!ortbContent) {
       return;
     }
-    auctionRequest.ortb2 = mergeDeep({}, auctionRequest.ortb2, { site: ortbContent });
+    auctionRequest.ortb2 = mergeDeep({}, auctionRequest.ortb2, { site: { content: ortbContent } });
   }
 
   function auctionEnd(auctionResult) {
