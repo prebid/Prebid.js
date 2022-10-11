@@ -73,10 +73,6 @@ const PBS_CONVERTER = ortbConverter({
 
     let bidRequest = context.actualBidRequests.get(context.seatbid.seat);
     if (bidRequest == null) {
-      if (!context.s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
-        logWarn(`PBS adapter received bid from unknown bidder (${context.seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-        return;
-      }
       // for stored impressions, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
       // can work as expected (otherwise, the original request will always result in NO_BID).
       bidRequest = context.actualBidRequests.get(null);
@@ -90,6 +86,7 @@ const PBS_CONVERTER = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
+    bidResponse.requestBidder = bidRequest?.bidder;
 
     if (bidResponse.native?.ortb) {
       // TODO: do we need to set bidResponse.adm here?

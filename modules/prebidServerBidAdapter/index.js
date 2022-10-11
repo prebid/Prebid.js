@@ -456,10 +456,17 @@ export function PrebidServer() {
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
-          if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
-            addBidResponse(adUnit, bid);
-            if (bid.pbsWurl) {
-              addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
+          if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
+            logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+          } else {
+            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
+              addBidResponse(adUnit, bid);
+              if (bid.pbsWurl) {
+                addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
+              }
+            } else {
+              addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
         }

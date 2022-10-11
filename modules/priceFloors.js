@@ -21,7 +21,6 @@ import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {getHook} from '../src/hook.js';
-import {createBid} from '../src/bidfactory.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
@@ -697,11 +696,11 @@ function shouldFloorBid(floorData, floorInfo, bid) {
  * @summary The main driving force of floors. On bidResponse we hook in and intercept bidResponses.
  * And if the rule we find determines a bid should be floored we will do so.
  */
-export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('priceFloors', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   let floorData = _floorDataForAuction[bid.auctionId];
   // if no floor data then bail
   if (!floorData || !bid || floorData.skipped) {
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   const matchingBidRequest = auctionManager.index.getBidRequest(bid);
@@ -711,7 +710,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 
   if (!floorInfo.matchingFloor) {
     logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   // determine the base cpm to use based on if the currency matches the floor currency
@@ -727,7 +726,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
       adjustedCpm = getGlobal().convertCurrency(bid.cpm, bidResponseCurrency.toUpperCase(), floorCurrency);
     } catch (err) {
       logError(`${MODULE_NAME}: Unable do get currency conversion for bidResponse to Floor Currency. Do you have Currency module enabled? ${bid}`);
-      return fn.call(this, adUnitCode, bid);
+      return fn.call(this, adUnitCode, bid, reject);
     }
   }
 
@@ -740,25 +739,12 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   // now do the compare!
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
-    // create basic bid no-bid with necessary data fro analytics adapters
-    let flooredBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
-    Object.assign(flooredBid, pick(bid, [
-      'floorData',
-      'width',
-      'height',
-      'mediaType',
-      'currency',
-      'originalCpm',
-      'originalCurrency',
-      'getCpmInNewCurrency',
-    ]));
-    flooredBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
-    // if floor not met update bid with 0 cpm so it is not included downstream and marked as no-bid
-    flooredBid.cpm = 0;
+    // continue with a "NO_BID" bid, TODO: remove this in v8
+    const flooredBid = reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
     logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
-    return fn.call(this, adUnitCode, flooredBid);
+    return fn.call(this, adUnitCode, flooredBid, reject);
   }
-  return fn.call(this, adUnitCode, bid);
+  return fn.call(this, adUnitCode, bid, reject);
 });
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
