@@ -202,6 +202,8 @@ export function newBidder(spec) {
         adUnitCodesHandled[adUnitCode] = true;
         if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
+        } else {
+          addBidResponse.reject(adUnitCode, bid, CONSTANTS.REJECTION_REASON.INVALID)
         }
       }
 
@@ -262,6 +264,7 @@ export function newBidder(spec) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -272,6 +275,7 @@ export function newBidder(spec) {
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bid, CONSTANTS.REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -541,24 +545,22 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
-  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
-    bid.width = parseInt(bid.width, 10);
-    bid.height = parseInt(bid.height, 10);
-    return true;
-  }
-
   const bidRequest = index.getBidRequest(bid);
   const mediaTypes = index.getMediaTypes(bid);
 
   const sizes = (bidRequest && bidRequest.sizes) || (mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes);
-  const parsedSizes = parseSizesInput(sizes);
+  const parsedSizes = parseSizesInput(sizes).map(sz => sz.split('x').map(n => parseInt(n, 10)));
+
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
+    return parsedSizes.length === 0 || parsedSizes.some(([w, h]) => bid.width === w && bid.height === h);
+  }
 
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    const [ width, height ] = parsedSizes[0].split('x');
-    bid.width = parseInt(width, 10);
-    bid.height = parseInt(height, 10);
+    ([bid.width, bid.height] = parsedSizes[0]);
     return true;
   }
 
@@ -600,7 +602,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     return false;
   }
   if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
-    logError(errorMessage(`Banner bids require a width and height`));
+    logError(errorMessage(`Banner bids require a width and height that match one of the requested sizes`));
     return false;
   }
 

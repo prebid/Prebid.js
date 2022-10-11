@@ -950,10 +950,6 @@ Object.assign(ORTB2.prototype, {
         (seatbid.bid || []).forEach(bid => {
           let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
           if (bidRequest == null) {
-            if (!s2sConfig.allowUnknownBidderCodes) {
-              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-              return;
-            }
             // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
             // can work as expected (otherwise, the original request will always result in NO_BID).
             bidRequest = this.getBidRequest(bid.impid, null);
@@ -968,6 +964,7 @@ Object.assign(ORTB2.prototype, {
             transactionId: this.adUnitsByImp[bid.impid].transactionId,
             auctionId: this.auctionId,
           });
+          bidObject.requestBidder = bidRequest?.bidder;
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
           if (bid?.ext?.prebid?.meta?.adaptercode) {
@@ -1158,8 +1155,15 @@ export function PrebidServer() {
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
-          if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
-            addBidResponse(adUnit, bid);
+          if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
+            logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+          } else {
+            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
+              addBidResponse(adUnit, bid);
+            } else {
+              addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
+            }
           }
         }
       })
