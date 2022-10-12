@@ -122,9 +122,9 @@ function getUser(bidderRequest) {
   }
 
   // gather user.data
-  const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
+  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
   if (ortb2UserData && ortb2UserData.length) {
-    user = mergeDeep(user, {
+    user = utils.mergeDeep(user, {
       data: [...ortb2UserData]
     });
   };
