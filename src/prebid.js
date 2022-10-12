@@ -36,7 +36,7 @@ import {listenMessagesFromCreative} from './secureCreatives.js';
 import {userSync} from './userSync.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {filters, targeting} from './targeting.js';
+import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
@@ -296,8 +296,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
   if (adunitCode) {
     const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
-      .filter(filters.isUnusedBid)
-      .filter(filters.isBidNotExpired)
+      .filter(isBidUsable)
 
     return bid.length ? bid.reduce(getHighestCpm) : {}
   } else {
@@ -662,10 +661,10 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
-    adUnit.transactionId = generateUUID();
-
+    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
+    adUnit.transactionId = tid;
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
-    deepSetValue(adUnit, 'ortb2Imp.ext.tid', adUnit.transactionId)
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
