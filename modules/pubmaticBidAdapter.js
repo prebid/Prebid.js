@@ -5,7 +5,6 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { INSTREAM } from '../src/video.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
