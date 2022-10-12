@@ -99,7 +99,7 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
    * @param {String} ad unit code for bid
    * @param {Object} bid object
 */
-export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
@@ -107,7 +107,7 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
   // Else checks if multiconfig exists and bid bidderCode exists within config
   // Else continue with no modifications
   if (hasMultibid && multiConfig[bid.bidderCode] && deepAccess(bid, 'video.context') === 'adpod') {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   } else if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
@@ -127,7 +127,7 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
         if (multiConfig[bid.bidderCode].prefix) bid.targetingBidder = multiConfig[bid.bidderCode].prefix + length;
         if (length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-        fn.call(this, adUnitCode, bid);
+        fn.call(this, adUnitCode, bid, reject);
       } else {
         logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
@@ -137,10 +137,10 @@ export const addBidResponseHook = timedBidResponseHook('multibid', function addB
       deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-      fn.call(this, adUnitCode, bid);
+      fn.call(this, adUnitCode, bid, reject);
     }
   } else {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   }
 });
 

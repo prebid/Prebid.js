@@ -161,10 +161,9 @@ let startBillableEvents = function() {
       vendor: 'clean.io',
       billingId: generateUUID(),
       type: 'impression',
-      // TODO: if absolutely crucial, winnerBidResponse may be used
-      // to track down auctionId and transactionId
-      // However, those seem to be of importance for Demand Managers,
-      // while these billable events are for publishers
+      auctionId: winnerBidResponse.auctionId,
+      transactionId: winnerBidResponse.transactionId,
+      bidId: winnerBidResponse.requestId,
     });
   });
 }

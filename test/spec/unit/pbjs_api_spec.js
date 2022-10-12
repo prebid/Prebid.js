@@ -200,6 +200,7 @@ describe('Unit: Prebid Module', function () {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
     resetDebugging();
+    sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
   });
 
   beforeEach(function () {
@@ -216,6 +217,7 @@ describe('Unit: Prebid Module', function () {
 
   after(function() {
     auctionManager.clearAllAuctions();
+    filters.isActualBid.restore();
   });
 
   describe('and global adUnits', () => {
@@ -504,8 +506,8 @@ describe('Unit: Prebid Module', function () {
           'client_initiated_ad_counting': true,
           'rtb': {
             'banner': {
-              'width': 728,
-              'height': 90,
+              'width': 300,
+              'height': 250,
               'content': '<!-- Creative -->'
             },
             'trackers': [{
@@ -1839,6 +1841,50 @@ describe('Unit: Prebid Module', function () {
           .and.not.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
           .and.to.match(/[a-f0-9\-]{36}/i);
+      });
+
+      describe('transactionId', () => {
+        let adUnit;
+        beforeEach(() => {
+          adUnit = {
+            code: 'adUnit',
+            mediaTypes: {
+              banner: {
+                sizes: [300, 250]
+              }
+            },
+            bids: [
+              {
+                bidder: 'mock-bidder',
+              }
+            ]
+          };
+        });
+        it('should be set to ortb2Imp.ext.tid, if specified', () => {
+          $$PREBID_GLOBAL$$.requestBids({
+            adUnits: [
+              {...adUnit, ortb2Imp: {ext: {tid: 'custom-tid'}}}
+            ]
+          });
+          sinon.assert.match(auctionArgs.adUnits[0], {
+            transactionId: 'custom-tid',
+            ortb2Imp: {
+              ext: {
+                tid: 'custom-tid'
+              }
+            }
+          })
+        });
+        it('should be copied to ortb2Imp.ext.tid, if not specified', () => {
+          $$PREBID_GLOBAL$$.requestBids({
+            adUnits: [
+              adUnit
+            ]
+          });
+          const tid = auctionArgs.adUnits[0].transactionId;
+          expect(tid).to.exist;
+          expect(auctionArgs.adUnits[0].ortb2Imp.ext.tid).to.eql(tid);
+        });
       });
 
       it('should always set ortb2.ext.tid same as transactionId in adUnits', function () {

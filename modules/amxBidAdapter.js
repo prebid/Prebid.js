@@ -147,7 +147,7 @@ function convertRequest(bid) {
   const tid = deepAccess(bid, 'params.tagId');
 
   const au =
-    bid.params != null && typeof bid.params.adUnitId === 'string'
+    bid.params != null && typeof bid.params.adUnitId === 'string' && bid.params.adUnitId !== ''
       ? bid.params.adUnitId
       : bid.adUnitCode;
 
