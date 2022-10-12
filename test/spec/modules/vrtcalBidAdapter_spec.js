@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import { spec } from 'modules/vrtcalBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
 import { config } from 'src/config.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('vrtcalBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -27,6 +28,7 @@ describe('vrtcalBidAdapter', function () {
         'bidId': 'bidID0001',
         'bidderRequestId': 'br0001',
         'auctionId': 'auction0001',
+        'userIdAsEids': {}
       }
     ];
 
@@ -58,7 +60,7 @@ describe('vrtcalBidAdapter', function () {
       config.setConfig({ coppa: false });
 
       request = spec.buildRequests(bidRequests);
-      expect(request[0].data).to.match(/"user":{"ext":{"consent":"gdpr-consent-string"}}/);
+      expect(request[0].data).to.match(/"user":{"ext":{"consent":"gdpr-consent-string"/);
       expect(request[0].data).to.match(/"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"ccpa-consent-string"}}/);
     });
 
@@ -66,6 +68,15 @@ describe('vrtcalBidAdapter', function () {
       config.setConfig({ bidderTimeout: 435 });
       request = spec.buildRequests(bidRequests);
       expect(request[0].data).to.match(/"tmax":435/);
+    });
+
+    it('pass 3rd party IDs with the request when present', function () {
+      bidRequests[0].userIdAsEids = createEidsArray({
+        tdid: 'TTD_ID_FROM_USER_ID_MODULE'
+      });
+
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.include(JSON.stringify({ext: {consent: 'gdpr-consent-string', eids: [{source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]}]}}));
     });
   });
 
