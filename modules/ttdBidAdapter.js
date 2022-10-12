@@ -121,12 +121,20 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
+  // gather user.data
+  const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
+  if (ortb2UserData && ortb2UserData.length) {
+    user = mergeDeep(user, {
+      data: [...ortb2UserData]
+    });
+
   return user;
 }
 
 function getSite(bidderRequest, firstPartyData) {
   var site = {
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
+    ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
