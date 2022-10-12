@@ -47,7 +47,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'parrable.com',
   'pubcid.org',
   'quantcast.com',
-  'quantcast.com',
   'tapad.com',
   'uidapi.com',
   'verizonmedia.com',
