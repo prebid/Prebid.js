@@ -128,7 +128,7 @@ describe('oxxionRtdProvider', () => {
       expect(impressions.length).to.equal(2);
       vast = new DOMParser().parseFromString(auctionEnd.bidsReceived[1].vastXml, 'text/xml');
       impressions = vast.querySelectorAll('VAST Ad InLine Impression');
-      expect(impressions.length).to.equal(1);
+      expect(impressions).to.have.lengthOf.above(0);
     })
   });
 });
