@@ -1,42 +1,15 @@
-import { cleanObj, deepAccess, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import { deepAccess, isNumber, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import CONSTANTS from '../src/constants.json';
 
+const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
 const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.7'
 const CURRENCY = 'USD';
-
-const NATIVE_DATA = {
-  ASSET_TYPES: {
-    TITLE: 'title',
-    IMG: 'img',
-    DATA: 'data',
-  },
-  ASSETS: {
-    title: {id: 0, assetType: 'title'},
-
-    image: {id: 4, assetType: 'img', type: 3, name: 'image'},
-    icon: {id: 2, assetType: 'img', type: 2, name: 'icon'},
-
-    sponsoredBy: {id: 1, assetType: 'data', type: 1, name: 'sponsoredBy'},
-    body: {id: 3, assetType: 'data', type: 2, name: 'body'},
-    rating: {id: 5, assetType: 'data', type: 3, name: 'rating'},
-    likes: {id: 6, assetType: 'data', type: 4, name: 'likes'},
-    downloads: {id: 7, assetType: 'data', type: 5, name: 'downloads'},
-    price: {id: 8, assetType: 'data', type: 6, name: 'price'},
-    salePrice: {id: 9, assetType: 'data', type: 7, name: 'salePrice'},
-    phone: {id: 10, assetType: 'data', type: 8, name: 'phone'},
-    address: {id: 11, assetType: 'data', type: 9, name: 'address'},
-    body2: {id: 12, assetType: 'data', type: 10, name: 'body2'},
-    displayUrl: {id: 13, assetType: 'data', type: 11, name: 'displayUrl'},
-    cta: {id: 14, assetType: 'data', type: 12, name: 'cta'},
-  },
-  getAssetById(id) {
-    return Object.values(this.ASSETS).find(asset => id === asset.id);
-  }
-};
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
@@ -121,9 +94,9 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   }
 
-  const nativeMediaType = deepAccess(bidRequest, 'mediaTypes.native');
-  if (nativeMediaType) {
-    const nativeRequest = Object.assign({}, requestTemplate, createNativeImp(bidRequest, nativeMediaType));
+  const nativeOrtbRequest = bidRequest.nativeOrtbRequest;
+  if (nativeOrtbRequest) {
+    const nativeRequest = Object.assign({}, requestTemplate, createNativeImp(bidRequest, nativeOrtbRequest));
     requests.push(nativeRequest);
   }
 
@@ -341,44 +314,9 @@ const createRichmediaAd = (adm) => {
 
 const createNativeAd = (adm) => {
   const nativeResponse = JSON.parse(adm).native;
-  const nativeAd = {
-    clickUrl: deepAccess(nativeResponse, 'link.url'),
-    clickTrackers: deepAccess(nativeResponse, 'link.clicktrackers'),
-    privacyLink: nativeResponse.privacy,
-    impressionTrackers: [],
+  return {
+    ortb: nativeResponse
   }
-
-  nativeResponse.eventtrackers.forEach(tracker => {
-    if (tracker.event !== 1) return;
-    switch (tracker.method) {
-      case 1: // img
-        nativeAd.impressionTrackers.push(tracker.url);
-        break;
-      case 2: // js
-        nativeAd.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
-        break;
-    }
-  });
-
-  nativeResponse.assets.map(asset => {
-    const assetParams = NATIVE_DATA.getAssetById(asset.id);
-    switch (assetParams.assetType) {
-      case NATIVE_DATA.ASSET_TYPES.TITLE:
-        nativeAd.title = asset.title.text;
-        break;
-      case NATIVE_DATA.ASSET_TYPES.DATA:
-        nativeAd[assetParams.name] = asset.data.value;
-        break;
-      case NATIVE_DATA.ASSET_TYPES.IMG:
-        nativeAd[assetParams.name] = {
-          url: asset.img.url,
-          width: asset.img.w,
-          height: asset.img.h,
-        };
-        break;
-    }
-  });
-  return nativeAd;
 };
 
 function createBannerImp(bidRequest) {
@@ -426,53 +364,31 @@ function createVideoImp(bidRequest, videoMediaType) {
   };
 }
 
-function createNativeImp(bidRequest, nativeMediaType) {
-  const mainImageSize = nativeMediaType.image.sizes
-  const assets = []
-
-  for (const nativeAssetName of Object.keys(nativeMediaType)) {
-    const assetFromParams = NATIVE_DATA.ASSETS[nativeAssetName];
-    if (assetFromParams) {
-      const assetParams = nativeMediaType[nativeAssetName];
-      const asset = {
-        id: assetFromParams.id,
-        required: Number(assetParams.required),
-      };
-      switch (assetFromParams.assetType) {
-        case NATIVE_DATA.ASSET_TYPES.TITLE:
-          asset.title = {len: assetParams.len}
-          break;
-        case NATIVE_DATA.ASSET_TYPES.DATA:
-          asset.data = cleanObj({type: assetFromParams.type, len: assetParams.len})
-          break;
-        case NATIVE_DATA.ASSET_TYPES.IMG:
-          asset.img = cleanObj({
-            type: assetFromParams.type,
-            w: deepAccess(assetParams, 'sizes.0'),
-            h: deepAccess(assetParams, 'sizes.1'),
-            wmin: deepAccess(assetParams, 'aspect_ratios.0.min_width'),
-            hmin: deepAccess(assetParams, 'aspect_ratios.0.min_height')
-          });
-          break;
-        default:
-          return;
-      }
-      assets.push(asset);
-    }
-  }
-
+function createNativeImp(bidRequest, nativeRequest) {
   return {
     imp: [{
       id: bidRequest.bidId,
       tagid: deepAccess(bidRequest, 'params.adspaceId'),
-      bidfloor: getBidFloor(bidRequest, NATIVE, mainImageSize),
+      bidfloor: getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(nativeRequest)),
       native: {
-        ver: '1.2',
-        privacy: nativeMediaType.privacyLink ? 1 : 0,
-        assets: assets
+        request: JSON.stringify(nativeRequest),
+        ver: '1.2'
       }
     }]
   };
+}
+
+function getNativeMainImageSize(nativeRequest) {
+  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  if (mainImage) {
+    if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
+      return [[mainImage.img.w, mainImage.img.h]]
+    }
+    if (isNumber(mainImage.img.wmin) && isNumber(mainImage.img.hmin)) {
+      return [[mainImage.img.wmin, mainImage.img.hmin]]
+    }
+  }
+  return []
 }
 
 function createAdPodImp(bidRequest, videoMediaType) {

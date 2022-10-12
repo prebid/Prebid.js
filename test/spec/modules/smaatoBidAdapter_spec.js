@@ -794,176 +794,116 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('buildRequests for native imps', () => {
-      const NATIVE_PREBID_MEDIATYPE = {
-        image: {
-          required: true,
-          sizes: [150, 50],
-          aspect_ratios: [{
-            min_width: 100,
-            min_height: 25
-          }]
-        },
-        icon: {
-          required: true,
-          sizes: [50, 50]
-        },
-        title: {
-          required: true,
-          len: 80
-        },
-        sponsoredBy: {
-          required: true
-        },
-        body: {
-          required: true
-        },
-        rating: {
-          required: true
-        },
-        likes: {
-          required: true
-        },
-        downloads: {
-          required: true
-        },
-        price: {
-          required: true
-        },
-        salePrice: {
-          required: true
-        },
-        phone: {
-          required: false
-        },
-        address: {
-          required: true
-        },
-        body2: {
-          required: false
-        },
-        displayUrl: {
-          required: false
-        },
-        cta: {
-          required: true
-        },
-        privacyLink: {
-          required: false
-        }
-      };
-      const NATIVE_OPENRTB_IMP = {
+      const NATIVE_OPENRTB_REQUEST = {
         ver: '1.2',
-        privacy: 1,
         assets: [
           {
-            'id': 4,
-            'required': 1,
-            'img': {
-              'type': 3,
-              'w': 150,
-              'h': 50,
-              'wmin': 100,
-              'hmin': 25
+            id: 4,
+            required: 1,
+            img: {
+              type: 3,
+              w: 150,
+              h: 50,
             }
           },
           {
-            'id': 2,
-            'required': 1,
-            'img': {
-              'type': 2,
-              'w': 50,
-              'h': 50
+            id: 2,
+            required: 1,
+            img: {
+              type: 2,
+              w: 50,
+              h: 50
             }
           },
           {
-            'id': 0,
-            'required': 1,
-            'title': {
-              'len': 80
+            id: 0,
+            required: 1,
+            title: {
+              len: 80
             }
           },
           {
-            'id': 1,
-            'required': 1,
-            'data': {
-              'type': 1
+            id: 1,
+            required: 1,
+            data: {
+              type: 1
             }
           },
           {
-            'id': 3,
-            'required': 1,
-            'data': {
-              'type': 2
+            id: 3,
+            required: 1,
+            data: {
+              type: 2
             }
           },
           {
-            'id': 5,
-            'required': 1,
-            'data': {
-              'type': 3
+            id: 5,
+            required: 1,
+            data: {
+              type: 3
             }
           },
           {
-            'id': 6,
-            'required': 1,
-            'data': {
-              'type': 4
+            id: 6,
+            required: 1,
+            data: {
+              type: 4
             }
           },
           {
-            'id': 7,
-            'required': 1,
-            'data': {
-              'type': 5
+            id: 7,
+            required: 1,
+            data: {
+              type: 5
             }
           },
           {
-            'id': 8,
-            'required': 1,
-            'data': {
-              'type': 6
+            id: 8,
+            required: 1,
+            data: {
+              type: 6
             }
           },
           {
-            'id': 9,
-            'required': 1,
-            'data': {
-              'type': 7
+            id: 9,
+            required: 1,
+            data: {
+              type: 7
             }
           },
           {
-            'id': 10,
-            'required': 0,
-            'data': {
-              'type': 8
+            id: 10,
+            required: 0,
+            data: {
+              type: 8
             }
           },
           {
-            'id': 11,
-            'required': 1,
-            'data': {
-              'type': 9
+            id: 11,
+            required: 1,
+            data: {
+              type: 9
             }
           },
           {
-            'id': 12,
-            'required': 0,
-            'data': {
-              'type': 10
+            id: 12,
+            require: 0,
+            data: {
+              type: 10
             }
           },
           {
-            'id': 13,
-            'required': 0,
-            'data': {
-              'type': 11
+            id: 13,
+            required: 0,
+            data: {
+              type: 11
             }
           },
           {
-            'id': 14,
-            'required': 1,
-            'data': {
-              'type': 12
+            id: 14,
+            required: 1,
+            data: {
+              type: 12
             }
           }
         ]
@@ -975,9 +915,7 @@ describe('smaatoBidAdapterTest', () => {
           publisherId: 'publisherId',
           adspaceId: 'adspaceId'
         },
-        mediaTypes: {
-          native: NATIVE_PREBID_MEDIATYPE
-        },
+        nativeOrtbRequest: NATIVE_OPENRTB_REQUEST,
         adUnitCode: '/19968336/header-bid-tag-0',
         transactionId: 'transactionId',
         bidId: 'bidId',
@@ -995,7 +933,25 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.imp[0].id).to.be.equal('bidId');
         expect(req.imp[0].tagid).to.be.equal('adspaceId');
         expect(req.imp[0].bidfloor).to.be.undefined;
-        expect(req.imp[0].native).to.deep.equal(NATIVE_OPENRTB_IMP);
+        expect(req.imp[0].native.request).to.deep.equal(JSON.stringify(NATIVE_OPENRTB_REQUEST));
+      });
+
+      it('sends bidfloor when configured', () => {
+        const singleNativeBidRequestWithFloor = Object.assign({}, singleNativeBidRequest);
+        singleNativeBidRequestWithFloor.getFloor = function(arg) {
+          if (arg.currency === 'USD' &&
+              arg.mediaType === 'native' &&
+              JSON.stringify(arg.size) === JSON.stringify([150, 50])) {
+            return {
+              currency: 'USD',
+              floor: 0.123
+            }
+          }
+        }
+        const reqs = spec.buildRequests([singleNativeBidRequestWithFloor], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].bidfloor).to.be.equal(0.123);
       });
     });
 
@@ -1138,6 +1094,82 @@ describe('smaatoBidAdapterTest', () => {
       }
     }
 
+    const NATIVE_RESPONSE = {
+      ver: '1.2',
+      link: {
+        url: 'https://link.url',
+        clicktrackers: [
+          'http://click.url/v1/click?e=prebid'
+        ]
+      },
+      assets: [
+        {
+          id: 0,
+          required: 1,
+          title: {
+            text: 'Title'
+          }
+        },
+        {
+          id: 2,
+          required: 1,
+          img: {
+            type: 1,
+            url: 'https://logo.png',
+            w: 40,
+            h: 40
+          }
+        },
+        {
+          id: 4,
+          required: 1,
+          img: {
+            type: 3,
+            url: 'https://main.png',
+            w: 480,
+            h: 320
+          }
+        },
+        {
+          id: 3,
+          required: 1,
+          data: {
+            type: 2,
+            value: 'Desc'
+          }
+        },
+        {
+          id: 14,
+          required: 1,
+          data: {
+            type: 12,
+            value: 'CTAText'
+          }
+        },
+        {
+          id: 5,
+          required: 0,
+          data: {
+            type: 3,
+            value: '2 stars'
+          }
+        }
+      ],
+      eventtrackers: [
+        {
+          event: 2,
+          method: 1,
+          url: 'https://js.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: 'http://view.url/v1/view?e=prebid'
+        }
+      ],
+      privacy: 'https://privacy.com/'
+    }
+
     const buildOpenRtbBidResponse = (adType) => {
       let adm = '';
 
@@ -1185,85 +1217,7 @@ describe('smaatoBidAdapterTest', () => {
           adm = '<VAST version="2.0"></VAST>';
           break;
         case ADTYPE_NATIVE:
-          adm = JSON.stringify(
-            {
-              'native': {
-                'ver': '1.2',
-                'link': {
-                  'url': 'https://link.url',
-                  'clicktrackers': [
-                    'http://click.url/v1/click?e=prebid'
-                  ]
-                },
-                'assets': [
-                  {
-                    'id': 0,
-                    'required': 1,
-                    'title': {
-                      'text': 'Title'
-                    }
-                  },
-                  {
-                    'id': 2,
-                    'required': 1,
-                    'img': {
-                      'type': 1,
-                      'url': 'https://logo.png',
-                      'w': 40,
-                      'h': 40
-                    }
-                  },
-                  {
-                    'id': 4,
-                    'required': 1,
-                    'img': {
-                      'type': 3,
-                      'url': 'https://main.png',
-                      'w': 480,
-                      'h': 320
-                    }
-                  },
-                  {
-                    'id': 3,
-                    'required': 1,
-                    'data': {
-                      'type': 2,
-                      'value': 'Desc'
-                    }
-                  },
-                  {
-                    'id': 14,
-                    'required': 1,
-                    'data': {
-                      'type': 12,
-                      'value': 'CTAText'
-                    }
-                  },
-                  {
-                    'id': 5,
-                    'required': 0,
-                    'data': {
-                      'type': 3,
-                      'value': '2 stars'
-                    }
-                  }
-                ],
-                'eventtrackers': [
-                  {
-                    'event': 2,
-                    'method': 1,
-                    'url': 'https://js.url'
-                  },
-                  {
-                    'event': 1,
-                    'method': 1,
-                    'url': 'http://view.url/v1/view?e=prebid'
-                  }
-                ],
-                'privacy': 'https://privacy.com/'
-              }
-            }
-          )
+          adm = JSON.stringify({ native: NATIVE_RESPONSE })
           break;
         default:
           throw Error('Invalid AdType');
@@ -1400,37 +1354,15 @@ describe('smaatoBidAdapterTest', () => {
       it('single native response', () => {
         const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_NATIVE), buildBidRequest());
 
-        const nativeResponse = {
-          'body': 'Desc',
-          'clickTrackers': [
-            'http://click.url/v1/click?e=prebid'
-          ],
-          'clickUrl': 'https://link.url',
-          'cta': 'CTAText',
-          'icon': {
-            'height': 40,
-            'url': 'https://logo.png',
-            'width': 40
-          },
-          'image': {
-            'height': 320,
-            'url': 'https://main.png',
-            'width': 480
-          },
-          'impressionTrackers': [
-            'http://view.url/v1/view?e=prebid'
-          ],
-          'privacyLink': 'https://privacy.com/',
-          'rating': '2 stars',
-          'title': 'Title'
-        }
         expect(bids).to.deep.equal([
           {
             requestId: '226416e6e6bf41',
             cpm: 0.01,
             width: 350,
             height: 50,
-            native: nativeResponse,
+            native: {
+              ortb: NATIVE_RESPONSE
+            },
             ttl: 300,
             creativeId: 'CR69381',
             dealId: '12345',
