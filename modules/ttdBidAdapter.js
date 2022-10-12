@@ -127,7 +127,7 @@ function getUser(bidderRequest) {
     user = mergeDeep(user, {
       data: [...ortb2UserData]
     });
-
+  };
   return user;
 }
 
