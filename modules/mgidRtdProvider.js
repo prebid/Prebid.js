@@ -36,7 +36,7 @@ function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig, userConsent) 
   const params = [
     {
       name: 'gdprApplies',
-      data: userConsent?.gdpr?.gdprApplies,
+      data: typeof userConsent?.gdpr?.gdprApplies !== 'undefined' ? userConsent?.gdpr?.gdprApplies + '' : undefined,
     },
     {
       name: 'consentData',

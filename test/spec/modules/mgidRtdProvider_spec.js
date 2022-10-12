@@ -79,7 +79,7 @@ describe('Mgid RTD submodule', () => {
     );
 
     const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.host).to.be.eq('servicer-dfw.mgid.com');
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
     expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('true');
     expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent');
     expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY');
@@ -148,10 +148,50 @@ describe('Mgid RTD submodule', () => {
     );
 
     const requestUrl = new URL(server.requests[0].url);
-    expect(requestUrl.host).to.be.eq('servicer-dfw.mgid.com');
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
     expect(requestUrl.searchParams.get('gdprApplies')).to.be.null;
     expect(requestUrl.searchParams.get('consentData')).to.be.null;
     expect(requestUrl.searchParams.get('uspString')).to.be.null;
+    expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321');
+    expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123');
+    expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc');
+    expect(requestUrl.searchParams.get('cxlang')).to.be.null;
+    expect(onDone.calledOnce).to.be.true;
+  });
+
+  it('getBidRequestData send gdprApplies event if it is false', () => {
+    let reqBidsConfigObj = {
+      ortb2Fragments: {
+        global: {},
+      }
+    };
+
+    let onDone = sinon.stub();
+
+    mgidSubmodule.getBidRequestData(
+      reqBidsConfigObj,
+      onDone,
+      {params: {clientSiteId: 123}},
+      {
+        gdpr: {
+          gdprApplies: false,
+          consentString: 'testConsent',
+        },
+        usp: '1YYY',
+      }
+    );
+
+    server.requests[0].respond(
+      200,
+      {'Content-Type': 'application/json'},
+      JSON.stringify({})
+    );
+
+    const requestUrl = new URL(server.requests[0].url);
+    expect(requestUrl.host).to.be.eq('servicer.mgid.com');
+    expect(requestUrl.searchParams.get('gdprApplies')).to.be.eq('false');
+    expect(requestUrl.searchParams.get('consentData')).to.be.eq('testConsent');
+    expect(requestUrl.searchParams.get('uspString')).to.be.eq('1YYY');
     expect(requestUrl.searchParams.get('muid')).to.be.eq('qwerty654321');
     expect(requestUrl.searchParams.get('clientSiteId')).to.be.eq('123');
     expect(requestUrl.searchParams.get('cxurl')).to.be.eq('https://www.test.com/abc');
