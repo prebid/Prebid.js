@@ -1,4 +1,4 @@
-import { _each, deepAccess, parseSizesInput, parseUrl, uniques } from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -55,12 +55,24 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { params, bidId, userId, adUnitCode, schain } = bid;
-  const { bidFloor, ext } = params;
+  let { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const cId = extractCID(params);
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
+
+  if (isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (floorInfo.currency === 'USD') {
+      bidFloor = floorInfo.floor;
+    }
+  }
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
