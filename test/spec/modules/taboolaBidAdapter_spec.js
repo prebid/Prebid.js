@@ -442,7 +442,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should interpret multi impression request', function () {
-      const multiRequest =  {
+      const multiRequest = {
         bids: [
           {
             ...createBidRequest(),
