@@ -87,7 +87,7 @@ let bids = [{
   'netRevenue': true,
   'ttl': 2000,
   'vastUrl': 'https://some.vast-url.com',
-  'vastXml': '<VAST version="3.0"><Ad><InLine><AdSystem>Adnxs</AdSystem><AdTitle>Title</AdTitle><Creatives/></Inline></Ad></VAST>',
+  'vastXml': '<VAST version="3.0"><Ad><InLine><AdSystem>Adnxs</AdSystem><AdTitle>Title</AdTitle><Creatives/></InLine></Ad></VAST>',
   'adapterCode': 'mediasquare',
   'originalCpm': 1.9723,
   'originalCurrency': 'USD',
