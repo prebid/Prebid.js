@@ -162,16 +162,22 @@ function getDataForMerge(responseData) {
     }
   }
 
-  return {
-    site: {
+  let result = {};
+  if (siteData.segment || siteData.ext) {
+    result.site = {
       content: {
         data: [siteData],
       }
-    },
-    user: {
+    }
+  }
+
+  if (userData.segment || userData.ext) {
+    result.user = {
       data: [userData],
     }
-  };
+  }
+
+  return result;
 }
 
 /** @type {RtdSubmodule} */
