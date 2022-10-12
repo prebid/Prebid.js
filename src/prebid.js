@@ -609,7 +609,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, metrics } = {}) {
+  const delegate = hook('sync', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, metrics } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -633,7 +633,7 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics } = {}) {
+export const startAuction = hook('sync', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
@@ -645,77 +645,82 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
-  /*
-   * for a given adunit which supports a set of mediaTypes
-   * and a given bidder which supports a set of mediaTypes
-   * a bidder is eligible to participate on the adunit
-   * if it supports at least one of the mediaTypes on the adunit
-   */
-  adUnits.forEach(adUnit => {
-    // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
-    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
-
-    // get the bidder's mediaTypes
-    const allBidders = adUnit.bids.map(bid => bid.bidder);
-    const bidderRegistry = adapterManager.bidderRegistry;
-
-    const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
-
-    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
-    adUnit.transactionId = tid;
-    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
-    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
-
-    bidders.forEach(bidder => {
-      const adapter = bidderRegistry[bidder];
-      const spec = adapter && adapter.getSpec && adapter.getSpec();
-      // banner is default if not specified in spec
-      const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
-
-      // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
-      const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
-      if (!bidderEligible) {
-        // drop the bidder from the ad unit if it's not compatible
-        logWarn(unsupportedBidderMessage(adUnit, bidder));
-        adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
-      } else {
-        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
+  return new Promise((resolve) => {
+    function auctionDone(bids, timedOut, auctionId) {
+      if (typeof bidsBackHandler === 'function') {
+        try {
+          bidsBackHandler(bids, timedOut, auctionId);
+        } catch (e) {
+          logError('Error executing bidsBackHandler', null, e);
+        }
       }
-    });
-    adunitCounter.incrementRequestsCounter(adUnit.code);
-  });
-
-  if (!adUnits || adUnits.length === 0) {
-    logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === 'function') {
-      // executeCallback, this will only be called in case of first request
-      try {
-        bidsBackHandler();
-      } catch (e) {
-        logError('Error executing bidsBackHandler', null, e);
-      }
+      resolve({bids, timedOut, auctionId});
     }
-    return;
-  }
 
-  const auction = auctionManager.createAuction({
-    adUnits,
-    adUnitCodes,
-    callback: bidsBackHandler,
-    cbTimeout,
-    labels,
-    auctionId,
-    ortb2Fragments,
-    metrics,
+    /*
+     * for a given adunit which supports a set of mediaTypes
+     * and a given bidder which supports a set of mediaTypes
+     * a bidder is eligible to participate on the adunit
+     * if it supports at least one of the mediaTypes on the adunit
+     */
+    adUnits.forEach(adUnit => {
+      // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
+      const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
+
+      // get the bidder's mediaTypes
+      const allBidders = adUnit.bids.map(bid => bid.bidder);
+      const bidderRegistry = adapterManager.bidderRegistry;
+
+      const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
+
+      const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
+      adUnit.transactionId = tid;
+      // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+      deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
+
+      bidders.forEach(bidder => {
+        const adapter = bidderRegistry[bidder];
+        const spec = adapter && adapter.getSpec && adapter.getSpec();
+        // banner is default if not specified in spec
+        const bidderMediaTypes = (spec && spec.supportedMediaTypes) || ['banner'];
+
+        // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
+        const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
+        if (!bidderEligible) {
+          // drop the bidder from the ad unit if it's not compatible
+          logWarn(unsupportedBidderMessage(adUnit, bidder));
+          adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
+        } else {
+          adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
+        }
+      });
+      adunitCounter.incrementRequestsCounter(adUnit.code);
+    });
+
+    if (!adUnits || adUnits.length === 0) {
+      logMessage('No adUnits configured. No bids requested.');
+      auctionDone();
+    } else {
+      const auction = auctionManager.createAuction({
+        adUnits,
+        adUnitCodes,
+        callback: auctionDone,
+        cbTimeout,
+        labels,
+        auctionId,
+        ortb2Fragments,
+        metrics,
+      });
+
+      let adUnitsLen = adUnits.length;
+      if (adUnitsLen > 15) {
+        logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
+      }
+
+      adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+      auction.callBids();
+    }
   });
-
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
-  }
-
-  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
-  auction.callBids();
 }, 'startAuction');
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
