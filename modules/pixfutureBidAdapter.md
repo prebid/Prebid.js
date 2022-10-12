@@ -1,9 +1,3 @@
----
-gdpr_supported: true
-usp_supported: true
-coppa_supported: true
-schain_supported: true
----
 # Overview
 ```
 Module Name: PixFuture Bid Adapter
