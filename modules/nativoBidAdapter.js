@@ -145,7 +145,7 @@ export const spec = {
         'params.url',
       )
       if (pageUrl == undefined || pageUrl === '') {
-        pageUrl = bidderRequest.refererInfo.page
+        pageUrl = bidderRequest.refererInfo.location
       }
 
       placementId = deepAccess(bidRequest, 'params.placementId')
