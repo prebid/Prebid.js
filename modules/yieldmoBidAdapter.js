@@ -25,6 +25,7 @@ const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
 const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
 const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -66,7 +67,8 @@ export const spec = {
       let serverRequest = {
         pbav: '$prebid.version$',
         p: [],
-        page_url: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
@@ -176,8 +178,25 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function () {
-    return [];
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+    const syncs = [];
+    const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
+    const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: pbCookieAssistSyncUrl + '&type=iframe'
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: pbCookieAssistSyncUrl + '&type=image'
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
@@ -222,6 +241,17 @@ function addPlacement(request) {
   }
   if (gpid) {
     placementInfo.gpid = gpid;
+  }
+
+  // get the transaction id for the banner bid.
+  const transactionId = deepAccess(request, 'ortb2Imp.ext.tid');
+
+  if (transactionId) {
+    placementInfo.tid = transactionId;
+  }
+
+  if (request.auctionId) {
+    placementInfo.auctionId = request.auctionId;
   }
   return JSON.stringify(placementInfo);
 }
@@ -352,7 +382,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
     site: openRtbSite(bidRequests[0], bidderRequest),
     device: openRtbDevice(bidRequests[0]),
     badv: bidRequests[0].params.badv || [],
-    bcat: bidRequests[0].params.bcat || [],
+    bcat: deepAccess(bidderRequest, 'bcat') || bidRequests[0].params.bcat || [],
     ext: {
       prebid: '$prebid.version$',
     },
@@ -363,6 +393,9 @@ function openRtbRequest(bidRequests, bidderRequest) {
     openRtbRequest.schain = schain;
   }
 
+  if (bidRequests[0].auctionId) {
+    openRtbRequest.auctionId = bidRequests[0].auctionId;
+  }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
   return openRtbRequest;
@@ -380,7 +413,8 @@ function openRtbImpression(bidRequest) {
     tagid: bidRequest.adUnitCode,
     bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
-      placement_id: bidRequest.params.placementId
+      placement_id: bidRequest.params.placementId,
+      tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid')
     },
     video: {
       w: size[0],
@@ -445,13 +479,13 @@ function extractPlayerSize(bidRequest) {
 function openRtbSite(bidRequest, bidderRequest) {
   let result = {};
 
-  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
   if (!isEmpty(loc)) {
     result.page = `${loc.protocol}://${loc.hostname}${loc.pathname}`;
   }
 
-  if (self === top && document.referrer) {
-    result.ref = document.referrer;
+  if (bidderRequest.refererInfo?.ref) {
+    result.ref = bidderRequest.refererInfo.ref;
   }
 
   const keywords = document.getElementsByTagName('meta')['keywords'];
@@ -512,13 +546,13 @@ function validateVideoParams(bid) {
       error += ' when ' + conditionStr;
     }
     throw new Error(error);
-  }
+  };
 
   const paramInvalid = (paramStr, value, expectedStr) => {
     expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
     value = JSON.stringify(value);
     throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  }
+  };
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
@@ -544,7 +578,7 @@ function validateVideoParams(bid) {
       }
       return value;
     }
-  }
+  };
 
   try {
     validate('video.context', val => !isEmpty(val), paramRequired);

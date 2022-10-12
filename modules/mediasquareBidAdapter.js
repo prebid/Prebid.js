@@ -2,6 +2,7 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
@@ -30,6 +31,9 @@ export const spec = {
          * @return ServerRequest Info describing the request to the server.
          */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let codes = [];
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let floor = {};
@@ -55,7 +59,8 @@ export const spec = {
     });
     const payload = {
       codes: codes,
-      referer: encodeURIComponent(bidderRequest.refererInfo.referer),
+      // TODO: is 'page' the right value here?
+      referer: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       pbjs: '$prebid.version$'
     };
     if (bidderRequest) { // modules informations (gdpr, ccpa, schain, userId)
@@ -159,7 +164,7 @@ export const spec = {
     // fires a pixel to confirm a winning bid
     let params = {'pbjs': '$prebid.version$'};
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId']
+    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     if (bid.hasOwnProperty('mediasquare')) {
       if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
       if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }

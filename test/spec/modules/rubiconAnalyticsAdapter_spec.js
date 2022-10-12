@@ -13,7 +13,7 @@ import {
   setConfig,
   addBidResponseHook,
 } from 'modules/currency.js';
-import truncate from 'lodash.truncate';
+
 let Ajv = require('ajv');
 let schema = require('./rubiconAnalyticsSchema.json');
 let ajv = new Ajv({
@@ -235,7 +235,7 @@ const MOCK = {
       ],
       'timeout': 3000,
       'refererInfo': {
-        'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+        'page': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
       }
     }
     ],
@@ -319,7 +319,7 @@ const MOCK = {
     'timeout': 5000,
     'start': 1519149562216,
     'refererInfo': {
-      'referer': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+      'page': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
     }
   },
   BID_RESPONSE: [
@@ -578,21 +578,21 @@ const ANALYTICS_MESSAGE = {
   }
 };
 
-function performStandardAuction(gptEvents) {
-  events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-  events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-  events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
-  events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-  events.emit(AUCTION_END, MOCK.AUCTION_END);
+function performStandardAuction(gptEvents, auctionId = MOCK.AUCTION_INIT.auctionId) {
+  events.emit(AUCTION_INIT, { ...MOCK.AUCTION_INIT, auctionId });
+  events.emit(BID_REQUESTED, { ...MOCK.BID_REQUESTED, auctionId });
+  events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE[0], auctionId });
+  events.emit(BID_RESPONSE, { ...MOCK.BID_RESPONSE[1], auctionId });
+  events.emit(BIDDER_DONE, { ...MOCK.BIDDER_DONE, auctionId });
+  events.emit(AUCTION_END, { ...MOCK.AUCTION_END, auctionId });
 
   if (gptEvents && gptEvents.length) {
     gptEvents.forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
   }
 
-  events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-  events.emit(BID_WON, MOCK.BID_WON[0]);
-  events.emit(BID_WON, MOCK.BID_WON[1]);
+  events.emit(SET_TARGETING, { ...MOCK.SET_TARGETING, auctionId });
+  events.emit(BID_WON, { ...MOCK.BID_WON[0], auctionId });
+  events.emit(BID_WON, { ...MOCK.BID_WON[1], auctionId });
 }
 
 describe('rubicon analytics adapter', function () {
@@ -1779,6 +1779,50 @@ describe('rubicon analytics adapter', function () {
         expect(message).to.deep.equal(expectedMessage);
       });
 
+      it('should only mark the first gam data not all matches', function () {
+        config.setConfig({
+          rubicon: {
+            waitForGamSlots: true
+          }
+        });
+        performStandardAuction();
+        performStandardAuction([gptSlotRenderEnded0, gptSlotRenderEnded1], '32d332de-123a-32dg-2345-cefef3423324');
+
+        // tick the clock and both should fire
+        clock.tick(3000);
+
+        expect(server.requests.length).to.equal(2);
+
+        // first one should have GAM data
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+
+        // trigger should be gam since all adunits had associated gam render
+        expect(message.trigger).to.be.equal('gam');
+        expect(message.auctions[0].adUnits[0].gam).to.deep.equal({
+          advertiserId: 1111,
+          creativeId: 2222,
+          lineItemId: 3333,
+          adSlot: '/19968336/header-bid-tag-0'
+        });
+        expect(message.auctions[0].adUnits[1].gam).to.deep.equal({
+          advertiserId: 4444,
+          creativeId: 5555,
+          lineItemId: 6666,
+          adSlot: '/19968336/header-bid-tag1'
+        });
+
+        // second one should NOT have gam data
+        request = server.requests[1];
+        message = JSON.parse(request.requestBody);
+        validate(message);
+
+        // trigger should be auctionEnd
+        expect(message.trigger).to.be.equal('auctionEnd');
+        expect(message.auctions[0].adUnits[0].gam).to.be.undefined;
+        expect(message.auctions[0].adUnits[1].gam).to.be.undefined;
+      });
+
       it('should send request when waitForGamSlots is present but no bidWons are sent', function () {
         config.setConfig({
           rubicon: {
@@ -2322,7 +2366,7 @@ describe('rubicon analytics adapter', function () {
       });
       basicBillingAuction([{
         vendor: 'vendorName',
-        type: 'auction',
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
       expect(server.requests.length).to.equal(1);
@@ -2332,7 +2376,7 @@ describe('rubicon analytics adapter', function () {
       expect(message.billableEvents).to.deep.equal([{
         accountId: 1001,
         vendor: 'vendorName',
-        type: 'general', // mapping all events to endpoint as 'general' for now
+        type: 'pageView',
         billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
       }]);
     });
@@ -2354,7 +2398,7 @@ describe('rubicon analytics adapter', function () {
         },
         {
           vendor: 'vendorName',
-          type: 'auction',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
         },
         {
@@ -2371,13 +2415,13 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         },
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'impression',
           billingId: '743db6e3-21f2-44d4-917f-cb3488c6076f'
         }
       ]);
@@ -2406,7 +2450,7 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);
@@ -2436,7 +2480,7 @@ describe('rubicon analytics adapter', function () {
         {
           accountId: 1001,
           vendor: 'vendorName',
-          type: 'general',
+          type: 'auction',
           billingId: 'f8558d41-62de-4349-bc7b-2dbee1e69965'
         }
       ]);

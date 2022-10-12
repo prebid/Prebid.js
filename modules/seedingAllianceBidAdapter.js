@@ -5,10 +5,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE } from '../src/mediaTypes.js';
 import { _map, deepSetValue, isEmpty, deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'seedingAlliance';
+const GVL_ID = 371;
 const DEFAULT_CUR = 'EUR';
-const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=nativendo';
+const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
 
 const NATIVE_ASSET_IDS = {0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon'};
 
@@ -52,6 +54,8 @@ const NATIVE_PARAMS = {
 export const spec = {
   code: BIDDER_CODE,
 
+  gvlid: GVL_ID,
+
   supportedMediaTypes: [NATIVE],
 
   isBidRequestValid: function(bid) {
@@ -59,10 +63,13 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
-    let url = bidderRequest.refererInfo.referer;
+    let url = bidderRequest.refererInfo.page;
 
     const imp = validBidRequests.map((bid, id) => {
       const assets = _map(bid.nativeParams, (bidParams, key) => {
@@ -124,7 +131,8 @@ export const spec = {
       user: {},
       regs: {
         ext: {
-          gdpr: 0
+          gdpr: 0,
+          pb_ver: '$prebid.version$'
         }
       }
     };
@@ -187,20 +195,23 @@ registerBidder(spec);
 function parseNative(bid) {
   const {assets, link, imptrackers} = bid.adm.native;
 
+  let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
+
   if (link.clicktrackers) {
     link.clicktrackers.forEach(function (clicktracker, index) {
-      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+      link.clicktrackers[index] = clicktracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
+
   if (imptrackers) {
     imptrackers.forEach(function (imptracker, index) {
-      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/, bid.price);
+      imptrackers[index] = imptracker.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
     });
   }
 
   const result = {
-    url: link.url,
-    clickUrl: link.url,
+    url: clickUrl,
+    clickUrl: clickUrl,
     clickTrackers: link.clicktrackers || undefined,
     impressionTrackers: imptrackers || undefined
   };
