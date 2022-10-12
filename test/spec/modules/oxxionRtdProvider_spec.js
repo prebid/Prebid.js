@@ -127,7 +127,7 @@ describe('oxxionRtdProvider', () => {
       let impressions = vastWrapper.querySelectorAll('VAST Ad Wrapper Impression');
       expect(impressions.length).to.equal(2);
       let vastInline = new DOMParser().parseFromString(auctionEnd.bidsReceived[1].vastXml, 'text/xml');
-      let inline =  vastInline.querySelectorAll('VAST Ad InLine');
+      let inline = vastInline.querySelectorAll('VAST Ad InLine');
       expect(inline).to.have.lengthOf(1);
       let inlineImpressions = vastInline.querySelectorAll('VAST Ad InLine Impression');
       expect(inlineImpressions).to.have.lengthOf.above(0);
