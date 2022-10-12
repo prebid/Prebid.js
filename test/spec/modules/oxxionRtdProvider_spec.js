@@ -123,12 +123,14 @@ describe('oxxionRtdProvider', () => {
     });
     it('check vastXml', function() {
       expect(auctionEnd.bidsReceived[0]).to.have.property('vastXml');
-      let vast = new DOMParser().parseFromString(auctionEnd.bidsReceived[0].vastXml, 'text/xml');
-      let impressions = vast.querySelectorAll('VAST Ad Wrapper Impression');
+      let vastWrapper = new DOMParser().parseFromString(auctionEnd.bidsReceived[0].vastXml, 'text/xml');
+      let impressions = vastWrapper.querySelectorAll('VAST Ad Wrapper Impression');
       expect(impressions.length).to.equal(2);
-      vast = new DOMParser().parseFromString(auctionEnd.bidsReceived[1].vastXml, 'text/xml');
-      impressions = vast.querySelectorAll('VAST Ad InLine Impression');
-      expect(impressions).to.have.lengthOf.above(0);
+      let vastInline = new DOMParser().parseFromString(auctionEnd.bidsReceived[1].vastXml, 'text/xml');
+      let inline =  vastInline.querySelectorAll('VAST Ad InLine');
+      expect(inline).to.have.lengthOf(1);
+      let inlineImpressions = vastInline.querySelectorAll('VAST Ad InLine Impression');
+      expect(inlineImpressions).to.have.lengthOf.above(0);
     })
   });
 });
