@@ -3,6 +3,7 @@ import {config} from 'src/config.js';
 import * as sinon from 'sinon';
 import {default as CONSTANTS} from '../../../src/constants.json';
 import {default as events} from '../../../src/events.js';
+import 'src/prebid.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -195,7 +196,7 @@ describe('Real time module', function () {
             'name': 'tp1',
           },
           {
-            'name': 'tp2'
+            'name': 'tp2',
           }
         ]
       }
@@ -206,7 +207,7 @@ describe('Real time module', function () {
     function eventHandlingProvider(name) {
       const provider = {
         name: name,
-        init: () => true
+        init: () => true,
       }
       Object.values(EVENTS).forEach((ev) => provider[ev] = sinon.spy());
       return provider;
@@ -222,7 +223,19 @@ describe('Real time module', function () {
     afterEach(() => {
       _detachers.forEach((d) => d())
       config.resetConfig();
-    })
+    });
+
+    it('should set targeting for auctionEnd', () => {
+      providers.forEach(p => p.getTargetingData = sinon.spy());
+      const auction = {
+        adUnitCodes: ['a1'],
+        adUnits: [{code: 'a1'}]
+      };
+      mockEmitEvent(CONSTANTS.EVENTS.AUCTION_END, auction);
+      providers.forEach(p => {
+        expect(p.getTargetingData.calledWith(auction.adUnitCodes)).to.be.true;
+      });
+    });
 
     Object.entries(EVENTS).forEach(([event, hook]) => {
       it(`'${event}' should be propagated to providers through '${hook}'`, () => {
