@@ -15,6 +15,7 @@ const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
+const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
 
 function isEUConsentRequired(consentData) {
   return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
@@ -63,23 +64,25 @@ export const connectIdSubmodule = {
       return;
     }
     const params = config.params || {};
-    if (!params || typeof params.he !== 'string' ||
-      (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      logError('The connectId submodule requires the \'he\' and \'pixelId\' parameters to be defined.');
+    if (!params || (typeof params.he !== 'string' && typeof params.puid !== 'string') ||
+        (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
+      logError('The connectId submodule requires the \'pixelId\' and at least one of the \'he\' ' +
+               'or \'puid\' parameters to be defined.');
       return;
     }
 
     const data = {
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
-      he: params.he,
       gdpr: isEUConsentRequired(consentData) ? '1' : '0',
       gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
-    if (params.pixelId) {
-      data.pixelId = params.pixelId
-    }
+    INPUT_PARAM_KEYS.forEach(key => {
+      if (typeof params[key] != 'undefined') {
+        data[key] = params[key];
+      }
+    });
 
     const resp = function (callback) {
       const callbacks = {
