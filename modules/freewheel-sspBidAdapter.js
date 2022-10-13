@@ -189,7 +189,7 @@ function formatAdHTML(bid, size) {
   var libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
-    script = getOutstreamScript(bid, size);
+    script = getOutstreamScript(bid);
   } else {
     libUrl = MUSTANG_URL;
     script = getInBannerScript(bid, size);
@@ -326,8 +326,8 @@ export const spec = {
           }
         }
       }
-
-      var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
+      // TODO: is 'page' the right value here?
+      var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }

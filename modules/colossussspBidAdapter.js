@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
@@ -61,12 +62,37 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const winTop = getWindowTop();
-    const location = winTop.location;
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
+    let deviceWidth = 0;
+    let deviceHeight = 0;
+    let winLocation;
+
+    try {
+      const winTop = getWindowTop();
+      deviceWidth = winTop.screen.width;
+      deviceHeight = winTop.screen.height;
+      winLocation = winTop.location;
+    } catch (e) {
+      logMessage(e);
+      winLocation = window.location;
+    }
+
+    const refferUrl = bidderRequest.refererInfo?.page;
+    let refferLocation;
+    try {
+      refferLocation = refferUrl && new URL(refferUrl);
+    } catch (e) {
+      logMessage(e);
+    }
+
+    // TODO: does the fallback to window.location make sense?
+    const location = refferLocation || winLocation;
     let placements = [];
     let request = {
-      deviceWidth: winTop.screen.width,
-      deviceHeight: winTop.screen.height,
+      deviceWidth,
+      deviceHeight,
       language: (navigator && navigator.language) ? navigator.language : '',
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
@@ -79,36 +105,22 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL'
-        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+        request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
+        request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+      const { mediaTypes } = bid;
       let placement = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
-        traffic: traff,
         eids: [],
         floor: {}
       };
-      if (typeof bid.getFloor === 'function') {
-        let tmpFloor = {};
-        for (let size of placement.sizes) {
-          tmpFloor = bid.getFloor({
-            currency: 'USD',
-            mediaType: traff,
-            size: size
-          });
-          if (tmpFloor) {
-            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
-          }
-        }
-      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
@@ -125,23 +137,47 @@ export const spec = {
           rtiPartner: 'TDID'
         });
       }
-      if (traff === VIDEO) {
-        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
-        placement.minduration = bid.mediaTypes[VIDEO].minduration;
-        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
-        placement.mimes = bid.mediaTypes[VIDEO].mimes;
-        placement.protocols = bid.mediaTypes[VIDEO].protocols;
-        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
-        placement.placement = bid.mediaTypes[VIDEO].placement;
-        placement.skip = bid.mediaTypes[VIDEO].skip;
-        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
-        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
-        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
-        placement.delivery = bid.mediaTypes[VIDEO].delivery;
-        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
-        placement.api = bid.mediaTypes[VIDEO].api;
-        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+
+      if (mediaTypes && mediaTypes[BANNER]) {
+        placement.traffic = BANNER;
+        placement.sizes = mediaTypes[BANNER].sizes;
+      } else if (mediaTypes && mediaTypes[VIDEO]) {
+        placement.traffic = VIDEO;
+        placement.sizes = mediaTypes[VIDEO].playerSize;
+        placement.playerSize = mediaTypes[VIDEO].playerSize;
+        placement.minduration = mediaTypes[VIDEO].minduration;
+        placement.maxduration = mediaTypes[VIDEO].maxduration;
+        placement.mimes = mediaTypes[VIDEO].mimes;
+        placement.protocols = mediaTypes[VIDEO].protocols;
+        placement.startdelay = mediaTypes[VIDEO].startdelay;
+        placement.placement = mediaTypes[VIDEO].placement;
+        placement.skip = mediaTypes[VIDEO].skip;
+        placement.skipafter = mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
+        placement.api = mediaTypes[VIDEO].api;
+        placement.linearity = mediaTypes[VIDEO].linearity;
+      } else if (mediaTypes && mediaTypes[NATIVE]) {
+        placement.traffic = NATIVE;
+        placement.native = mediaTypes[NATIVE];
       }
+
+      if (typeof bid.getFloor === 'function') {
+        let tmpFloor = {};
+        for (let size of placement.sizes) {
+          tmpFloor = bid.getFloor({
+            currency: 'USD',
+            mediaType: placement.traffic,
+            size: size
+          });
+          if (tmpFloor) {
+            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
+          }
+        }
+      }
+
       placements.push(placement);
     }
     return {

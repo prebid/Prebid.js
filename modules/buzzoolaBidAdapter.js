@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
@@ -32,6 +33,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidderRequest.bids = convertOrtbRequestToProprietaryNative(bidderRequest.bids);
+
     return {
       url: ENDPOINT,
       method: 'POST',

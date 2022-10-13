@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { getRefererInfo } from 'src/refererDetection.js';
-import { initSubmodule, coreStorage } from 'modules/enrichmentFpdModule.js';
+import {getRefererInfo, resetRefererInfo} from 'src/refererDetection.js';
+import { processFpd, coreStorage } from 'modules/enrichmentFpdModule.js';
 
 describe('the first party data enrichment module', function() {
   let width;
@@ -20,6 +20,7 @@ describe('the first party data enrichment module', function() {
   });
 
   beforeEach(function() {
+    resetRefererInfo();
     querySelectorStub = sinon.stub(window.top.document, 'querySelector');
     querySelectorStub.withArgs("link[rel='canonical']").returns(canonical);
     querySelectorStub.withArgs("meta[name='keywords']").returns(keywords);
@@ -52,11 +53,12 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
-    expect(validated.site.page).to.be.undefined;
-    expect(validated.site.domain).to.be.undefined;
+    const {ref, page, domain} = getRefererInfo();
+    expect(validated.site.ref).to.equal(ref || undefined);
+    expect(validated.site.page).to.equal(page || undefined)
+    expect(validated.site.domain).to.equal(domain || undefined)
     expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.be.undefined;
   });
@@ -66,9 +68,9 @@ describe('the first party data enrichment module', function() {
     height = 500;
     canonical.href = 'https://www.subdomain.domain.co.uk/path?query=12345';
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
+    expect(validated.site.ref).to.equal(getRefererInfo().ref || undefined);
     expect(validated.site.page).to.equal('https://www.subdomain.domain.co.uk/path?query=12345');
     expect(validated.site.domain).to.equal('subdomain.domain.co.uk');
     expect(validated.site.publisher.domain).to.equal('domain.co.uk');
@@ -81,12 +83,8 @@ describe('the first party data enrichment module', function() {
     height = 500;
     keywords.content = 'value1,value2,value3';
 
-    let validated = initSubmodule({}, {});
+    let validated = processFpd({}, {}).global;
 
-    expect(validated.site.ref).to.equal(getRefererInfo().referer);
-    expect(validated.site.page).to.be.undefined;
-    expect(validated.site.domain).to.be.undefined;
-    expect(validated.device).to.deep.equal({ w: 800, h: 500 });
     expect(validated.site.keywords).to.equal('value1,value2,value3');
   });
 
@@ -94,12 +92,25 @@ describe('the first party data enrichment module', function() {
     width = 800;
     height = 500;
 
-    let validated = initSubmodule({}, {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}});
+    let validated = processFpd({}, {global: {device: {w: 1200, h: 700}, site: {ref: 'https://someUrl.com', page: 'test.com'}}}).global;
 
     expect(validated.site.ref).to.equal('https://someUrl.com');
     expect(validated.site.page).to.equal('test.com');
-    expect(validated.site.domain).to.be.undefined;
     expect(validated.device).to.deep.equal({ w: 1200, h: 700 });
     expect(validated.site.keywords).to.be.undefined;
+  });
+
+  it('should store a reference to gpc witin ortb2.regs.ext if it has been enabled', function() {
+    let validated;
+    width = 800;
+    height = 500;
+
+    validated = processFpd({}, {}).global;
+    expect(validated.regs).to.equal(undefined);
+
+    const globalPrivacyControlStub = sinon.stub(window, 'navigator').value({globalPrivacyControl: true});
+    validated = processFpd({}, {}).global;
+    expect(validated.regs.ext.gpc).to.equal(1);
+    globalPrivacyControlStub.restore();
   });
 });

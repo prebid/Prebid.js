@@ -2,10 +2,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
-const URL_SYNC = 'https://pub.admanmedia.com';
+const URL_SYNC = 'https://sync.admanmedia.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -63,10 +64,14 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -110,6 +115,7 @@ export const spec = {
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
+        getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
       if (traff === VIDEO) {
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;

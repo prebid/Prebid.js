@@ -1,6 +1,6 @@
 import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizesInput, parseUrl} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import {getStorageManager} from '../src/storageManager.js';
@@ -18,7 +18,8 @@ const events = {
 const localStoragePrefix = 'yuktamediaAnalytics_';
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 const location = getWindowLocation();
-const referer = getRefererInfo().referer;
+// TODO: is 'page' the right value here?
+const referer = getRefererInfo().page;
 const _pageInfo = {
   userAgent: window.navigator.userAgent,
   timezoneOffset: new Date().getTimezoneOffset(),

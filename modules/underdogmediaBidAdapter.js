@@ -98,7 +98,7 @@ export const spec = {
         }
 
         var sizeNotFound = true;
-        const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes
+        const bidParamSizes = bidParam.mediaTypes && bidParam.mediaTypes.banner && bidParam.mediaTypes.banner.sizes ? bidParam.mediaTypes.banner.sizes : bidParam.sizes;
         parseSizesInput(bidParamSizes).forEach(size => {
           if (size === mid.width + 'x' + mid.height) {
             sizeNotFound = false;

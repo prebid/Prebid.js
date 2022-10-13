@@ -5,11 +5,11 @@
  * @module modules/amxIdSystem
  * @requires module:modules/userId
  */
-import { uspDataHandler } from '../src/adapterManager.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { deepAccess, getWindowTop, logError } from '../src/utils.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {submodule} from '../src/hook.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {deepAccess, logError} from '../src/utils.js';
 
 const NAME = 'amxId';
 const GVL_ID = 737;
@@ -109,8 +109,9 @@ export const amxIdSubmodule = {
 
     const params = {
       tagId: deepAccess(config, 'params.tagId', ''),
-      ref: ref.referer,
-      u: ref.stack[0] || getWindowTop().location.href,
+      // TODO: are these referer values correct?
+      ref: ref.ref,
+      u: ref.location,
       v: '$prebid.version$',
       vg: '$$PREBID_GLOBAL$$',
       us_privacy: usp,

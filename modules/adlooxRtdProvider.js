@@ -12,7 +12,6 @@
 /* eslint prebid/validate-imports: "off" */
 
 import {command as analyticsCommand, COMMAND} from './adlooxAnalyticsAdapter.js';
-import {config as _config} from '../src/config.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -216,13 +215,11 @@ function init(config, userConsent) {
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   // gptPreAuction runs *after* RTD so pbadslot may not be populated... (╯°□°)╯ ┻━┻
   const adUnits = (reqBidsConfigObj.adUnits || getGlobal().adUnits).map(adUnit => {
-    let path = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
-    if (!path) path = getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot;
     return {
-      path: path,
+      gpid: deepAccess(adUnit, 'ortb2Imp.ext.gpid') || deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot') || getGptSlotInfoForAdUnitCode(adUnit.code).gptSlot || adUnit.code,
       unit: adUnit
     };
-  }).filter(adUnit => !!adUnit.path);
+  }).filter(adUnit => !!adUnit.gpid);
 
   let response = {};
   function setSegments() {
@@ -231,9 +228,9 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
       return config.params.thresholds.filter(t => t <= v);
     }
 
-    const ortb2 = _config.getConfig('ortb2') || {};
-    const dataSite = _config.getConfig('ortb2.site.ext.data') || {};
-    const dataUser = _config.getConfig('ortb2.user.ext.data') || {};
+    const ortb2 = reqBidsConfigObj.ortb2Fragments?.global || {};
+    const dataSite = deepAccess(ortb2, 'site.ext.data') || {};
+    const dataUser = deepAccess(ortb2, 'user.ext.data') || {};
 
     _each(response, (v0, k0) => {
       if (k0 == '_') return;
@@ -245,7 +242,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
 
     deepSetValue(ortb2, 'site.ext.data', dataSite);
     deepSetValue(ortb2, 'user.ext.data', dataUser);
-    _config.setConfig({ ortb2 });
+    deepSetValue(reqBidsConfigObj, 'ortb2Fragments.global', ortb2);
 
     adUnits.forEach((adUnit, i) => {
       _each(response['_'][i], (v0, k0) => {
@@ -307,7 +304,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
     [ 'imp', config.params.imps ],
     [ 'fc_ip', config.params.freqcap_ip ],
     [ 'fc_ipua', config.params.freqcap_ipua ],
-    [ 'pn', (refererInfo.canonicalUrl || refererInfo.referer || '').substr(0, 300).split(/[?#]/)[0] ]
+    [ 'pn', (refererInfo.page || '').substr(0, 300).split(/[?#]/)[0] ]
   ];
 
   if (!adUnits.length) {
@@ -315,7 +312,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   }
   const atfQueue = [];
   adUnits.map((adUnit, i) => {
-    const ref = [ adUnit.path ];
+    const ref = [ adUnit.gpid ];
     if (!config.params.slotinpath) ref.push(adUnit.unit.code);
     args.push(['s', ref.join('\t')]);
 
@@ -365,7 +362,7 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   });
 }
 
-function getTargetingData(adUnitArray, config, userConsent) {
+function getTargetingData(adUnitArray, config, userConsent, auction) {
   function targetingNormalise(v) {
     if (isArray(v) && v.length == 0) return undefined;
     if (isBoolean(v)) v = ~~v;
@@ -373,10 +370,11 @@ function getTargetingData(adUnitArray, config, userConsent) {
     return v;
   }
 
-  const dataSite = _config.getConfig(`ortb2.site.ext.data.${MODULE_NAME}_rtd`) || {};
+  const ortb2 = auction.getFPD().global || {};
+  const dataSite = deepAccess(ortb2, `site.ext.data.${MODULE_NAME}_rtd`) || {};
   if (!dataSite.ok) return {};
 
-  const dataUser = _config.getConfig(`ortb2.user.ext.data.${MODULE_NAME}_rtd`) || {};
+  const dataUser = deepAccess(ortb2, `user.ext.data.${MODULE_NAME}_rtd`) || {};
   return getGlobal().adUnits.filter(adUnit => includes(adUnitArray, adUnit.code)).reduce((a, adUnit) => {
     a[adUnit.code] = {};
 

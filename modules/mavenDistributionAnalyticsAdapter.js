@@ -3,7 +3,7 @@
 
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code

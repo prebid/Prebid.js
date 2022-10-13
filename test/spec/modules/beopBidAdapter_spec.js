@@ -115,7 +115,7 @@ describe('BeOp Bid Adapter tests', () => {
         },
         'refererInfo':
         {
-          'canonicalUrl': 'http://test.te'
+          'canonicalUrl': 'test.te'
         }
       };
 
@@ -124,7 +124,20 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.tc_string).to.exist;
       expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
       expect(payload.url).to.exist;
-      expect(payload.url).to.equal('http://localhost:9876/context.html');
+      // check that the protocol is added correctly
+      expect(payload.url).to.equal('http://test.te');
+    });
+
+    it('should not prepend the protocol in page url if already present', function () {
+      const bidderRequest = {
+        'refererInfo': {
+          'canonicalUrl': 'https://test.te'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.url).to.exist;
+      expect(payload.url).to.equal('https://test.te');
     });
   });
 
@@ -185,6 +198,17 @@ describe('BeOp Bid Adapter tests', () => {
       spec.onBidWon();
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onBidWon({params: {accountId: '5a8af500c9e77c00017e4cad'}, cpm: 1.2});
+      expect(triggerPixelStub.getCall(0)).to.not.be.null;
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
+      expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ac=won');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
+    });
+    it('should call triggerPixel utils function on bid won and work even if params is an array', function () {
+      spec.onBidWon({});
+      spec.onBidWon();
+      expect(triggerPixelStub.getCall(0)).to.be.null;
+      spec.onBidWon({params: [{accountId: '5a8af500c9e77c00017e4cad'}], cpm: 1.2});
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://t.beop.io');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('se_ca=bid');
