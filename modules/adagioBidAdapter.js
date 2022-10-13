@@ -308,7 +308,7 @@ function getElementFromTopWindow(element, currentWindow) {
 function autoDetectAdUnitElementIdFromGpt(adUnitCode) {
   const autoDetectedAdUnit = getGptSlotInfoForAdUnitCode(adUnitCode);
 
-  if (autoDetectedAdUnit && autoDetectedAdUnit.divId) {
+  if (autoDetectedAdUnit.divId) {
     return autoDetectedAdUnit.divId;
   }
 };

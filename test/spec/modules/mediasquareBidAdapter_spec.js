@@ -167,7 +167,7 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies user sync without cookie in bid response', function () {
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with cookies in bid response', function () {
     BID_RESPONSE.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
@@ -178,13 +178,13 @@ describe('MediaSquare bid adapter tests', function () {
   });
   it('Verifies user sync with no bid response', function() {
     var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies user sync with no bid body response', function() {
     var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
     var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
-    expect(syncs).to.have.property('type').and.to.equal('iframe');
+    expect(syncs).to.have.lengthOf(0);
   });
   it('Verifies native in bid response', function () {
     const request = spec.buildRequests(NATIVE_PARAMS, DEFAULT_OPTIONS);

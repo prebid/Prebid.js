@@ -1,6 +1,8 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
-import { config } from 'src/config.js';
+import {config} from 'src/config.js';
 import * as sinon from 'sinon';
+import {default as CONSTANTS} from '../../../src/constants.json';
+import {default as events} from '../../../src/events.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -58,33 +60,87 @@ const conf = {
 };
 
 describe('Real time module', function () {
-  before(function () {
-    rtdModule.attachRealTimeDataProvider(validSM);
-    rtdModule.attachRealTimeDataProvider(invalidSM);
-    rtdModule.attachRealTimeDataProvider(failureSM);
-    rtdModule.attachRealTimeDataProvider(nonConfSM);
-    rtdModule.attachRealTimeDataProvider(validSMWait);
+  let eventHandlers;
+  let sandbox;
+
+  function mockEmitEvent(event, ...args) {
+    (eventHandlers[event] || []).forEach((h) => h(...args));
+  }
+
+  before(() => {
+    eventHandlers = {};
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(events, 'on').callsFake((event, handler) => {
+      if (!eventHandlers.hasOwnProperty(event)) {
+        eventHandlers[event] = [];
+      }
+      eventHandlers[event].push(handler);
+    });
   });
 
-  after(function () {
-    config.resetConfig();
+  after(() => {
+    sandbox.restore();
   });
 
-  beforeEach(function () {
-    config.setConfig(conf);
-  });
+  describe('', () => {
+    const PROVIDERS = [validSM, invalidSM, failureSM, nonConfSM, validSMWait];
+    let _detachers;
 
-  it('should use only valid modules', function () {
-    rtdModule.init(config);
-    expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
-  });
+    beforeEach(function () {
+      _detachers = PROVIDERS.map(rtdModule.attachRealTimeDataProvider);
+      rtdModule.init(config);
+      config.setConfig(conf);
+    });
 
-  it('should be able to modify bid request', function (done) {
-    rtdModule.setBidRequestsData(() => {
-      assert(getBidRequestDataSpy.calledTwice);
-      assert(getBidRequestDataSpy.calledWith({bidRequest: {}}));
+    afterEach(function () {
+      _detachers.forEach((f) => f());
+      config.resetConfig();
+    });
+
+    it('should use only valid modules', function () {
+      expect(rtdModule.subModules).to.eql([validSMWait, validSM]);
+    });
+
+    it('should be able to modify bid request', function (done) {
+      rtdModule.setBidRequestsData(() => {
+        assert(getBidRequestDataSpy.calledTwice);
+        assert(getBidRequestDataSpy.calledWith({bidRequest: {}}));
+        done();
+      }, {bidRequest: {}})
+    });
+
+    it('sould place targeting on adUnits', function (done) {
+      const auction = {
+        adUnitCodes: ['ad1', 'ad2'],
+        adUnits: [
+          {
+            code: 'ad1'
+          },
+          {
+            code: 'ad2',
+            adserverTargeting: {preKey: 'preValue'}
+          }
+        ]
+      };
+
+      const expectedAdUnits = [
+        {
+          code: 'ad1',
+          adserverTargeting: {key: 'validSMWait'}
+        },
+        {
+          code: 'ad2',
+          adserverTargeting: {
+            preKey: 'preValue',
+            key: 'validSM'
+          }
+        }
+      ];
+
+      const adUnits = rtdModule.getAdUnitTargeting(auction);
+      assert.deepEqual(expectedAdUnits, adUnits)
       done();
-    }, {bidRequest: {}})
+    })
   });
 
   it('deep merge object', function () {
@@ -125,36 +181,66 @@ describe('Real time module', function () {
     assert.deepEqual(expected, merged);
   });
 
-  it('sould place targeting on adUnits', function (done) {
-    const auction = {
-      adUnitCodes: ['ad1', 'ad2'],
-      adUnits: [
-        {
-          code: 'ad1'
-        },
-        {
-          code: 'ad2',
-          adserverTargeting: {preKey: 'preValue'}
-        }
-      ]
-    };
-
-    const expectedAdUnits = [
-      {
-        code: 'ad1',
-        adserverTargeting: {key: 'validSMWait'}
-      },
-      {
-        code: 'ad2',
-        adserverTargeting: {
-          preKey: 'preValue',
-          key: 'validSM'
-        }
+  describe('event', () => {
+    const EVENTS = {
+      [CONSTANTS.EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
+      [CONSTANTS.EVENTS.AUCTION_END]: 'onAuctionEndEvent',
+      [CONSTANTS.EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
+      [CONSTANTS.EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
+    }
+    const conf = {
+      'realTimeData': {
+        dataProviders: [
+          {
+            'name': 'tp1',
+          },
+          {
+            'name': 'tp2'
+          }
+        ]
       }
-    ];
+    };
+    let providers;
+    let _detachers;
 
-    const adUnits = rtdModule.getAdUnitTargeting(auction);
-    assert.deepEqual(expectedAdUnits, adUnits)
-    done();
+    function eventHandlingProvider(name) {
+      const provider = {
+        name: name,
+        init: () => true
+      }
+      Object.values(EVENTS).forEach((ev) => provider[ev] = sinon.spy());
+      return provider;
+    }
+
+    beforeEach(() => {
+      providers = [eventHandlingProvider('tp1'), eventHandlingProvider('tp2')];
+      _detachers = providers.map(rtdModule.attachRealTimeDataProvider);
+      rtdModule.init(config);
+      config.setConfig(conf);
+    });
+
+    afterEach(() => {
+      _detachers.forEach((d) => d())
+      config.resetConfig();
+    })
+
+    Object.entries(EVENTS).forEach(([event, hook]) => {
+      it(`'${event}' should be propagated to providers through '${hook}'`, () => {
+        const eventArg = {};
+        mockEmitEvent(event, eventArg);
+        providers.forEach((provider) => {
+          const providerConf = conf.realTimeData.dataProviders.find((cfg) => cfg.name === provider.name);
+          expect(provider[hook].called).to.be.true;
+          expect(provider[hook].args).to.have.length(1);
+          expect(provider[hook].args[0]).to.include.members([eventArg, providerConf])
+        })
+      });
+
+      it(`${event} should not fail to propagate elsewhere if a provider throws in its event handler`, () => {
+        providers[0][hook] = function () { throw new Error() };
+        mockEmitEvent(event);
+        expect(providers[1][hook].called).to.be.true;
+      });
+    });
   })
 });

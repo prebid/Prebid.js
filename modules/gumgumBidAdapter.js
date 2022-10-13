@@ -296,8 +296,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     let gpid = '';
 
     const date = new Date();
-    const lt = date && date.getTime();
-    const to = date && date.getTimezoneOffset();
+    const lt = date.getTime();
+    const to = date.getTimezoneOffset();
     if (to) {
       lt && (data.lt = lt);
       data.to = to;

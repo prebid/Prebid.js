@@ -1,4 +1,4 @@
-import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage } from '../src/utils.js';
+import { mergeDeep, _each, logError, deepAccess, deepSetValue, isStr, isNumber, logWarn, convertTypes, isArray, parseSizesInput, logMessage, formatQS } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -765,20 +765,22 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
-      let params = '';
+      let params = {};
 
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-        // add 'gdpr' only if 'gdprApplies' is defined
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
-          params += `?gdpr_consent=${gdprConsent.consentString}`;
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
         }
       }
 
       if (uspConsent) {
-        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
+        params['us_privacy'] = encodeURIComponent(uspConsent);
       }
+
+      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
 
       hasSynced = true;
       return {

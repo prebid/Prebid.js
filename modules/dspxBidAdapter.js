@@ -12,7 +12,7 @@ const GVLID = 602;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['dspx'],
+  aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     return !!(bid.params.placement);

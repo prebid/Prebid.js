@@ -17,22 +17,31 @@
             debug: true,
             realTimeData: {
                 auctionDelay: 1000,
-                dataProviders: [
-                    {
+                dataProviders: [{
                         name: "weborama",
                         waitForIt: true,
                         params: {
-                            weboCtxConf: {
-                                setTargeting: true,
-                                token: "to-be-defined",
-                                targetURL: "https://prebid.org/",
-                                defaultProfile: {
-                                  webo_ctx: ['moon']
-                                }
-                            }
-                        }
-                    }
-                ]
+				  weboCtxConf: {
+				      token: "to-be-defined", // mandatory
+				      targetURL: "https://prebid.org", // default is document.URL
+				      setPrebidTargeting: true, // default
+				      sendToBidders: true,      // default
+				      defaultProfile: {         // optional
+					webo_ctx: ['moon'],
+					webo_ds: ['bar']
+				      }
+				    },
+				    weboUserDataConf: {
+				      setPrebidTargeting: true, // default
+				      sendToBidders: true,      // default
+				      defaultProfile: {         // optional
+					webo_cs: ['Red'],
+					webo_audiences: ['bam']
+				      },
+				      localStorageProfileKey: 'webo_wam2gam_entry' // default
+				    }
+			 }
+                }]
             }
         });
     });
@@ -54,7 +63,7 @@
                 }
             },
             bids: [{
-              bidder: 'appnexus',
+              bidder: 'smartadserver',
               params: {
                 placementId: 1
               }

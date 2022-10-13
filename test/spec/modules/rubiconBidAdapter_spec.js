@@ -3343,6 +3343,23 @@ describe('the rubicon adapter', function () {
         type: 'iframe', url: `${emilyUrl}?gdpr_consent=foo&us_privacy=1NYN`
       });
     });
+
+    it('should pass gdprApplies', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=1&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass all correctly', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {
+        gdprApplies: true,
+        consentString: 'foo'
+      }, '1NYN')).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
   });
 
   describe('get price granularity', function () {
