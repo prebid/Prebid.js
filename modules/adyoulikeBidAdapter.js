@@ -233,8 +233,11 @@ function createEndpointQS(bidderRequest) {
       if (ref.numIframes > 0) {
         qs.SafeFrame = true;
       }
+      qs.PageUrl = encodeURIComponent(ref.page);
+      qs.PageReferrer = encodeURIComponent(ref.location);
     }
 
+    // new way to retreive page and referrer from prebid7
     const siteInfo = bidderRequest.ortb2?.site;
     if (siteInfo) {
       qs.PageUrl = encodeURIComponent(siteInfo.page);
