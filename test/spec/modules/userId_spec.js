@@ -49,6 +49,7 @@ import {flocIdSubmodule} from 'modules/flocIdSystem.js'
 import {amxIdSubmodule} from '../../../modules/amxIdSystem.js';
 import {akamaiDAPIdSubmodule} from 'modules/akamaiDAPIdSystem.js'
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js'
+import * as mockGpt from '../integration/faker/googletag.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -114,15 +115,21 @@ describe('User ID', function () {
 
   describe('Decorate Ad Units', function () {
     beforeEach(function () {
+      // reset mockGpt so nothing else interferes
+      mockGpt.disable();
+      mockGpt.enable();
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
       coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
       sinon.spy(coreStorage, 'setCookie');
+      sinon.stub(utils, 'logWarn');
     });
 
     afterEach(function () {
+      mockGpt.enable();
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       config.resetConfig();
       coreStorage.setCookie.restore();
+      utils.logWarn.restore();
     });
 
     after(function () {
@@ -319,6 +326,50 @@ describe('User ID', function () {
       });
       expect(typeof (getGlobal()).getUserIdsAsEids).to.equal('function');
       expect((getGlobal()).getUserIdsAsEids()).to.deep.equal(createEidsArray((getGlobal()).getUserIds()));
+    });
+
+    it('should set googletag ppid correctly', function () {
+      let adUnits = [getAdUnitMock()];
+      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule]);
+      init(config);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
+            { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
+            { name: 'identityLink', value: {'idl_env': 'identityLink-id-value-identityLink-id-value'} },
+          ]
+        }
+      });
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+      requestBidsHook(() => {}, {adUnits});
+      // ppid should have been set without dashes and stuff
+      expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+    });
+
+    it('should log a warning if PPID too big or small', function () {
+      let adUnits = [getAdUnitMock()];
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
+      init(config);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'pubCommonId', value: {'pubcid': 'pubcommonIdValue'} },
+          ]
+        }
+      });
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+      requestBidsHook(() => {}, {adUnits});
+      // ppid should NOT have been set
+      expect(window.googletag._ppid).to.equal(undefined);
+      // a warning should have been emmited
+      expect(utils.logWarn.args[0][0]).to.exist.and.to.contain('User ID - Googletag Publisher Provided ID for pubcid.org is not between 32 and 150 characters - pubcommonIdValue');
     });
 
     it('pbjs.refreshUserIds refreshes', function() {

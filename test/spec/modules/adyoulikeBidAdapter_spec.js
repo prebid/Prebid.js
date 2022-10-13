@@ -590,6 +590,32 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
+    it('should add userid eids information to the request', function () {
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'userId': {
+          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
+          unsuported: '666'
+        }
+      };
+
+      bidderRequest.bids = bidRequestWithSinglePlacement;
+
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.userId).to.exist;
+      expect(payload.userId).to.deep.equal([{
+        'source': 'pubcid.org',
+        'uids': [{
+          'atype': 1,
+          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+        }]
+      }]);
+    });
+
     it('sends bid request to endpoint with single placement', function () {
       const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
       const payload = JSON.parse(request.data);

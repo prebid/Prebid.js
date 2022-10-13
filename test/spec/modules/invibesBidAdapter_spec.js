@@ -15,7 +15,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -30,7 +30,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -48,7 +48,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -67,7 +67,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -221,6 +221,12 @@ describe('invibesBidAdapter:', function () {
       const request = spec.buildRequests(bidRequests);
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[0].params.placementId);
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
+    });
+
+    it('sends all adUnitCodes', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[0].adUnitCode);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
     });
 
     it('sends all Placement Ids and userId', function () {
@@ -823,6 +829,20 @@ describe('invibesBidAdapter:', function () {
       }
     };
 
+    let responseWithAdUnit = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345_test-div1',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->'
+      },
+	  UseAdUnitCode: true
+    };
+
     var buildResponse = function(placementId, cid, blcids, creativeId) {
       return {
         MultipositionEnabled: true,
@@ -910,6 +930,11 @@ describe('invibesBidAdapter:', function () {
         let result = spec.interpretResponse({body: response}, {bidRequests});
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
         expect(secondResult).to.be.empty;
+      });
+
+      it('bids using the adUnitCode', function () {
+        let result = spec.interpretResponse({body: responseWithAdUnit}, {bidRequests});
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
     });
 

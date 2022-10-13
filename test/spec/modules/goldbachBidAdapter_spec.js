@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/appnexusBidAdapter.js';
+import { spec } from 'modules/goldbachBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
@@ -7,8 +7,9 @@ import { deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
+const PRICING_ENDPOINT = 'https://templates.da-services.ch/01_universal/burda_prebid/1.0/json/sizeCPMMapping.json';
 
-describe('AppNexusAdapter', function () {
+describe('GoldbachXandrAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -19,7 +20,7 @@ describe('AppNexusAdapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'appnexus',
+      'bidder': 'goldbach',
       'params': {
         'placementId': '10433394'
       },
@@ -59,7 +60,7 @@ describe('AppNexusAdapter', function () {
     let getAdUnitsStub;
     let bidRequests = [
       {
-        'bidder': 'appnexus',
+        'bidder': 'goldbach',
         'params': {
           'placementId': '10433394'
         },
@@ -93,7 +94,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].private_sizes).to.exist;
@@ -109,7 +110,7 @@ describe('AppNexusAdapter', function () {
             publisherId: '1231234'
           }
         });
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].publisher_id).to.exist;
@@ -119,7 +120,7 @@ describe('AppNexusAdapter', function () {
     })
 
     it('should add source and verison to the tag', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests)[1];
       const payload = JSON.parse(request.data);
       expect(payload.sdk).to.exist;
       expect(payload.sdk).to.deep.equal({
@@ -137,7 +138,7 @@ describe('AppNexusAdapter', function () {
           }
         },
         bids: [{
-          bidder: 'appnexus',
+          bidder: 'goldbach',
           params: {
             placementId: '10433394'
           }
@@ -154,7 +155,7 @@ describe('AppNexusAdapter', function () {
         bidRequest.mediaTypes = {};
         bidRequest.mediaTypes[type] = {};
 
-        const request = spec.buildRequests([bidRequest]);
+        const request = spec.buildRequests([bidRequest])[1];
         const payload = JSON.parse(request.data);
 
         expect(payload.tags[0].ad_types).to.deep.equal([type]);
@@ -167,7 +168,7 @@ describe('AppNexusAdapter', function () {
 
     it('should not populate the ad_types array when adUnit.mediaTypes is undefined', function() {
       const bidRequest = Object.assign({}, bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.not.exist;
@@ -178,7 +179,7 @@ describe('AppNexusAdapter', function () {
       bidRequest.mediaTypes = {};
       bidRequest.mediaTypes.video = {context: 'outstream'};
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].ad_types).to.deep.equal(['video']);
@@ -186,9 +187,15 @@ describe('AppNexusAdapter', function () {
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests)[1];
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
+    });
+
+    it('sends bid request to ENDPOINT via GET', function () {
+      const request = spec.buildRequests(bidRequests)[0];
+      expect(request.url).to.equal(PRICING_ENDPOINT);
+      expect(request.method).to.equal('GET');
     });
 
     it('should attach valid video params to the tag', function () {
@@ -206,7 +213,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         id: 123,
@@ -237,7 +244,7 @@ describe('AppNexusAdapter', function () {
         }
       };
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].video).to.deep.equal({
@@ -278,7 +285,7 @@ describe('AppNexusAdapter', function () {
       bidRequest2.adUnitCode = 'adUnit_code_2';
       bidRequest2 = Object.assign({}, bidRequest2, videoData);
 
-      const request = spec.buildRequests([bidRequest1, bidRequest2]);
+      const request = spec.buildRequests([bidRequest1, bidRequest2])[1];
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].video).to.deep.equal({
         skippable: true,
@@ -306,7 +313,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.user).to.exist;
@@ -322,7 +329,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = deepClone(bidRequests[0]);
 
       // 1 -> reserve not defined, getFloor not defined > empty
-      request = spec.buildRequests([bidRequest]);
+      request = spec.buildRequests([bidRequest])[1];
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].reserve).to.not.exist;
@@ -332,7 +339,7 @@ describe('AppNexusAdapter', function () {
         'placementId': '10433394',
         'reserve': 0.5
       };
-      request = spec.buildRequests([bidRequest]);
+      request = spec.buildRequests([bidRequest])[1];
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].reserve).to.exist.and.to.equal(0.5);
@@ -340,7 +347,7 @@ describe('AppNexusAdapter', function () {
       // 3 -> reserve is defined, getFloor is defined > getFloor is used
       bidRequest.getFloor = () => getFloorResponse;
 
-      request = spec.buildRequests([bidRequest]);
+      request = spec.buildRequests([bidRequest])[1];
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].reserve).to.exist.and.to.equal(3);
@@ -364,7 +371,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload1 = JSON.parse(request[0].data);
       const payload2 = JSON.parse(request[1].data);
 
@@ -397,7 +404,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.tags.length).to.equal(2);
     });
@@ -422,7 +429,7 @@ describe('AppNexusAdapter', function () {
       );
 
       // 20 total placements with 15 max impressions = 2 requests
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       expect(request.length).to.equal(2);
 
       // 20 spread over 2 requests = 15 in first request, 5 in second
@@ -463,7 +470,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.tags.length).to.equal(7);
 
@@ -493,7 +500,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload1 = JSON.parse(request[0].data);
       const payload2 = JSON.parse(request[1].data);
       const payload3 = JSON.parse(request[2].data);
@@ -503,27 +510,27 @@ describe('AppNexusAdapter', function () {
       expect(payload3.tags.length).to.equal(15);
     });
 
-    it('should contain hb_source value for adpod', function() {
-      let bidRequest = Object.assign({},
-        bidRequests[0],
-        {
-          params: { placementId: '14542875' }
-        },
-        {
-          mediaTypes: {
-            video: {
-              context: 'adpod',
-              playerSize: [640, 480],
-              adPodDurationSec: 300,
-              durationRangeSec: [15, 30],
-            }
-          }
-        }
-      );
-      const request = spec.buildRequests([bidRequest])[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.tags[0].hb_source).to.deep.equal(7);
-    });
+    // it('should contain hb_source value for adpod', function() {
+    //   let bidRequest = Object.assign({},
+    //     bidRequests[0],
+    //     {
+    //       params: { placementId: '14542875' }
+    //     },
+    //     {
+    //       mediaTypes: {
+    //         video: {
+    //           context: 'adpod',
+    //           playerSize: [640, 480],
+    //           adPodDurationSec: 300,
+    //           durationRangeSec: [15, 30],
+    //         }
+    //       }
+    //     }
+    //   );
+    //   const request = spec.buildRequests([bidRequest])[1];
+    //   const payload = JSON.parse(request.data);
+    //   expect(payload.tags[0].hb_source).to.deep.equal(7);
+    // });
 
     it('should contain hb_source value for other media', function() {
       let bidRequest = Object.assign({},
@@ -536,7 +543,7 @@ describe('AppNexusAdapter', function () {
           }
         }
       );
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.tags[0].hb_source).to.deep.equal(1);
     });
@@ -548,7 +555,7 @@ describe('AppNexusAdapter', function () {
         .withArgs('adpod.brandCategoryExclusion')
         .returns(true);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.brand_category_uniqueness).to.equal(true);
@@ -582,7 +589,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].native.layouts[0]).to.deep.equal({
@@ -619,13 +626,13 @@ describe('AppNexusAdapter', function () {
       );
       bidRequest.sizes = [[150, 100], [300, 250]];
 
-      let request = spec.buildRequests([bidRequest]);
+      let request = spec.buildRequests([bidRequest])[1];
       let payload = JSON.parse(request.data);
       expect(payload.tags[0].sizes).to.deep.equal([{width: 150, height: 100}, {width: 300, height: 250}]);
 
       delete bidRequest.sizes;
 
-      request = spec.buildRequests([bidRequest]);
+      request = spec.buildRequests([bidRequest])[1];
       payload = JSON.parse(request.data);
 
       expect(payload.tags[0].sizes).to.deep.equal([{width: 1, height: 1}]);
@@ -651,7 +658,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].keywords).to.deep.equal([{
@@ -687,7 +694,7 @@ describe('AppNexusAdapter', function () {
         }
       );
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
@@ -698,7 +705,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = deepClone(bidRequests[0]);
       bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
@@ -707,7 +714,7 @@ describe('AppNexusAdapter', function () {
     it('should add gdpr consent information to the request', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'appnexus',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -719,7 +726,7 @@ describe('AppNexusAdapter', function () {
       };
       bidderRequest.bids = bidRequests;
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       expect(request.options).to.deep.equal({withCredentials: true});
       const payload = JSON.parse(request.data);
 
@@ -732,7 +739,7 @@ describe('AppNexusAdapter', function () {
     it('should add us privacy string to payload', function() {
       let consentString = '1YA-';
       let bidderRequest = {
-        'bidderCode': 'appnexus',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -740,7 +747,7 @@ describe('AppNexusAdapter', function () {
       };
       bidderRequest.bids = bidRequests;
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.us_privacy).to.exist;
@@ -770,7 +777,7 @@ describe('AppNexusAdapter', function () {
           }
         }
       );
-      const request = spec.buildRequests([appRequest]);
+      const request = spec.buildRequests([appRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.app).to.exist;
       expect(payload.app).to.deep.equal({
@@ -805,7 +812,7 @@ describe('AppNexusAdapter', function () {
           ]
         }
       }
-      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const request = spec.buildRequests([bidRequest], bidderRequest)[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.referrer_detection).to.exist;
@@ -832,7 +839,7 @@ describe('AppNexusAdapter', function () {
         }
       });
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.deep.equal({
         ver: '1.0',
@@ -853,7 +860,7 @@ describe('AppNexusAdapter', function () {
         .withArgs('coppa')
         .returns(true);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
 
       expect(payload.user.coppa).to.equal(true);
@@ -867,7 +874,7 @@ describe('AppNexusAdapter', function () {
         .withArgs('apn_test')
         .returns(true);
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       expect(request.options.customHeaders).to.deep.equal({'X-Is-Test': 1});
 
       config.getConfig.restore();
@@ -875,14 +882,14 @@ describe('AppNexusAdapter', function () {
 
     it('should always set withCredentials: true on the request.options', function () {
       let bidRequest = Object.assign({}, bidRequests[0]);
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       expect(request.options.withCredentials).to.equal(true);
     });
 
     it('should set simple domain variant if purpose 1 consent is not given', function () {
       let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       let bidderRequest = {
-        'bidderCode': 'appnexus',
+        'bidderCode': 'goldbach',
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
@@ -901,7 +908,7 @@ describe('AppNexusAdapter', function () {
       };
       bidderRequest.bids = bidRequests;
 
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest)[1];
       expect(request.url).to.equal('https://ib.adnxs-simple.com/ut/v3/prebid');
     });
 
@@ -920,7 +927,7 @@ describe('AppNexusAdapter', function () {
         }
       });
 
-      const request = spec.buildRequests([bidRequest]);
+      const request = spec.buildRequests([bidRequest])[1];
       const payload = JSON.parse(request.data);
       expect(payload.eids).to.deep.include({
         source: 'adserver.org',
@@ -965,7 +972,7 @@ describe('AppNexusAdapter', function () {
           }
         }
       });
-      let request = spec.buildRequests([bidRequest_A]);
+      let request = spec.buildRequests([bidRequest_A])[1];
       let payload = JSON.parse(request.data);
       expect(payload.iab_support).to.be.an('object');
       expect(payload.iab_support).to.deep.equal({
@@ -980,7 +987,7 @@ describe('AppNexusAdapter', function () {
 
       // without bid.params.frameworks
       const bidRequest_B = Object.assign({}, bidRequests[0]);
-      request = spec.buildRequests([bidRequest_B]);
+      request = spec.buildRequests([bidRequest_B])[1];
       payload = JSON.parse(request.data);
       expect(payload.iab_support).to.not.exist;
       expect(payload.tags[0].banner_frameworks).to.not.exist;
@@ -994,7 +1001,7 @@ describe('AppNexusAdapter', function () {
           }
         }
       });
-      request = spec.buildRequests([bidRequest_C]);
+      request = spec.buildRequests([bidRequest_C])[1];
       payload = JSON.parse(request.data);
       expect(payload.iab_support).to.not.exist;
       expect(payload.tags[0].banner_frameworks).to.not.exist;
@@ -1004,16 +1011,12 @@ describe('AppNexusAdapter', function () {
 
   describe('interpretResponse', function () {
     let bfStub;
-    let bidderSettingsStorage;
-
     before(function() {
       bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-      bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
       bfStub.restore();
-      $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
     let response = {
@@ -1051,8 +1054,7 @@ describe('AppNexusAdapter', function () {
                 'trackers': [
                   {
                     'impression_urls': [
-                      'https://lax1-ib.adnxs.com/impression',
-                      'https://www.test.com/tracker'
+                      'https://lax1-ib.adnxs.com/impression'
                     ],
                     'video_events': {}
                   }
@@ -1081,15 +1083,6 @@ describe('AppNexusAdapter', function () {
           'adUnitCode': 'code',
           'appnexus': {
             'buyerMemberId': 958
-          },
-          'meta': {
-            'dchain': {
-              'ver': '1.0',
-              'complete': 0,
-              'nodes': [{
-                'bsid': '958'
-              }]
-            }
           }
         }
       ];
@@ -1098,44 +1091,9 @@ describe('AppNexusAdapter', function () {
           bidId: '3db3773286ee59',
           adUnitCode: 'code'
         }]
-      };
+      }
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-    });
-
-    it('should reject 0 cpm bids', function () {
-      let zeroCpmResponse = deepClone(response);
-      zeroCpmResponse.tags[0].ads[0].cpm = 0;
-
-      let bidderRequest = {
-        bidderCode: 'appnexus'
-      };
-
-      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
-      expect(result.length).to.equal(0);
-    });
-
-    it('should allow 0 cpm bids if allowZeroCpmBids setConfig is true', function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        appnexus: {
-          allowZeroCpmBids: true
-        }
-      };
-
-      let zeroCpmResponse = deepClone(response);
-      zeroCpmResponse.tags[0].ads[0].cpm = 0;
-
-      let bidderRequest = {
-        bidderCode: 'appnexus',
-        bids: [{
-          bidId: '3db3773286ee59',
-          adUnitCode: 'code'
-        }]
-      };
-
-      let result = spec.interpretResponse({ body: zeroCpmResponse }, { bidderRequest });
-      expect(result.length).to.equal(1);
-      expect(result[0].cpm).to.equal(0);
     });
 
     it('handles nobid responses', function () {
@@ -1381,20 +1339,6 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, {bidderRequest});
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserId']);
-    });
-
-    it('should add brand id', function() {
-      let responseBrandId = deepClone(response);
-      responseBrandId.tags[0].ads[0].brand_id = 123;
-
-      let bidderRequest = {
-        bids: [{
-          bidId: '3db3773286ee59',
-          adUnitCode: 'code'
-        }]
-      }
-      let result = spec.interpretResponse({ body: responseBrandId }, {bidderRequest});
-      expect(Object.keys(result[0].meta)).to.include.members(['brandId']);
     });
 
     it('should add advertiserDomains', function() {

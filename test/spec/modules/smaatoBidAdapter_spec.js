@@ -294,6 +294,16 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.source.ext.schain).to.not.exist;
       });
 
+      it('sends instl if instl exists', () => {
+        const instl = { instl: 1 };
+        const bidRequestWithInstl = Object.assign({}, singleBannerBidRequest, {ortb2Imp: instl});
+
+        const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].instl).to.equal(1);
+      });
+
       it('sends tmax', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -442,6 +452,16 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.imp[0].bidfloor).to.be.equal(0.456);
       });
 
+      it('sends instl if instl exists', () => {
+        const instl = { instl: 1 };
+        const bidRequestWithInstl = Object.assign({}, singleVideoBidRequest, {ortb2Imp: instl});
+
+        const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].instl).to.equal(1);
+      });
+
       it('splits multi format bid requests', () => {
         const combinedBannerAndVideoBidRequest = {
           bidder: 'smaato',
@@ -521,6 +541,17 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[1].video.h).to.be.equal(H);
             expect(req.imp[1].video.maxduration).to.be.equal(DURATION_RANGE[1]);
             expect(req.imp[1].video.sequence).to.be.equal(2);
+          });
+
+          it('sends instl if instl exists', () => {
+            const instl = { instl: 1 };
+            const bidRequestWithInstl = Object.assign({}, longFormVideoBidRequest, {ortb2Imp: instl});
+
+            const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+            const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+            expect(req.imp[0].instl).to.equal(1);
+            expect(req.imp[1].instl).to.equal(1);
           });
 
           it('sends bidfloor when configured', () => {

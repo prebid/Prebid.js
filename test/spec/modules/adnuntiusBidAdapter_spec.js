@@ -251,6 +251,24 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
+
+    it('should user user ID if present in ortb2.user.id field', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius', 'other'],
+        config: {
+          ortb2: {
+            user: {
+              id: usi
+            }
+          }
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidRequests));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
   });
 
   describe('user privacy', function () {

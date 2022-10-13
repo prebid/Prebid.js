@@ -1,6 +1,7 @@
 import { deepAccess, buildUrl, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
+import { createEidsArray } from './userId/eids.js';
 import find from 'core-js-pure/features/array/find.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 
@@ -97,15 +98,19 @@ export const spec = {
       PageRefreshed: getPageRefreshed()
     };
 
-    if (bidderRequest && bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
         consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (deepAccess(bidderRequest, 'userId')) {
+      payload.userId = createEidsArray(bidderRequest.userId);
     }
 
     const data = JSON.stringify(payload);

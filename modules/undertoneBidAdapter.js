@@ -98,9 +98,16 @@ export const spec = {
       'commons': commons
     };
     const referer = bidderRequest.refererInfo.referer;
+    const canonicalUrl = getCanonicalUrl();
+    if (referer) {
+      commons.referrer = referer;
+    }
+    if (canonicalUrl) {
+      commons.canonicalUrl = canonicalUrl;
+    }
     const hostname = parseUrl(referer).hostname;
     let domain = extractDomainFromHost(hostname);
-    const pageUrl = getCanonicalUrl() || referer;
+    const pageUrl = canonicalUrl || referer;
 
     const pubid = validBidRequests[0].params.publisherId;
     let reqUrl = `${URL}?pid=${pubid}&domain=${domain}`;
