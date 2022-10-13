@@ -291,10 +291,11 @@ export const spec = {
     if (!hasSynced && syncOptions.pixelEnabled) {
       let params = '';
 
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-        } else {
+          params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
+        }
+        if (typeof gdprConsent.consentString === 'string') {
           params += `&gdpr_consent=${gdprConsent.consentString}`;
         }
       }

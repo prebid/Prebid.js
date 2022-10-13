@@ -18,11 +18,18 @@ describe('nextMillenniumBidAdapterTests', function() {
     }
   ];
 
-  it('Request params check with GDPR Consent', function () {
+  it('Request params check with GDPR and USP Consent', function () {
     const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
     expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
     expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
     expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
+  });
+
+  it('Request params check without GDPR Consent', function () {
+    delete bidRequestData[0].gdprConsent
+    const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
+    expect(JSON.parse(request[0].data).regs.ext.gdpr).to.be.undefined;
+    expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
   });
 
   it('validate_generated_params', function() {
@@ -33,7 +40,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).refresh_count).to.equal(2);
+    expect(JSON.parse(request[0].data).refresh_count).to.equal(3);
   });
 
   it('Test getUserSyncs function', function () {

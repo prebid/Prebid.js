@@ -2,7 +2,7 @@ import { logError, isEmpty, deepAccess, triggerPixel, logWarn, isArray } from '.
 import {createBid as createBidFactory} from '../src/bidfactory.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
-import {STATUS} from '../src/constants.json';
+import CONSTANTS from '../src/constants.json';
 
 const BIDDER_CODE = 'telaria';
 const DOMAIN = 'tremorhub.com';
@@ -86,7 +86,7 @@ export const spec = {
       logError(errorMessage);
     } else if (!isEmpty(bidResult.seatbid)) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
+        bids.push(createBid(CONSTANTS.STATUS.GOOD, bidderRequest, tag, width, height, BIDDER_CODE));
       });
     }
 

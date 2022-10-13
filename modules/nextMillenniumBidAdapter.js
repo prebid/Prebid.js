@@ -44,12 +44,14 @@ export const spec = {
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
         }
-        if (typeof gdprConsent.gdprApplies !== 'undefined') {
-          postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-        }
-        if (typeof gdprConsent.consentString !== 'undefined') {
-          postBody.user = {
-            ext: { consent: gdprConsent.consentString }
+        if (gdprConsent) {
+          if (typeof gdprConsent.gdprApplies !== 'undefined') {
+            postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+          }
+          if (typeof gdprConsent.consentString !== 'undefined') {
+            postBody.user = {
+              ext: { consent: gdprConsent.consentString }
+            }
           }
         }
       }
