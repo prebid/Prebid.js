@@ -404,22 +404,9 @@ function emitAdRenderSucceeded({ doc, bid, id }) {
 }
 
 /**
- * This function will check for presence of given node in given parent. If not present - will inject it.
- * @param {Node} node node, whose existance is in question
- * @param {Document} doc document element do look in
- * @param {string} tagName tag name to look in
- */
-function reinjectNodeIfRemoved(node, doc, tagName) {
-  const injectionNode = doc.querySelector(tagName);
-  if (!node.parentNode || node.parentNode !== injectionNode) {
-    insertElement(node, doc, tagName);
-  }
-}
-
-/**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
- * @param  {Document} doc document
+ * @param  {HTMLDocument} doc document
  * @param  {string} id bid id to locate the ad
  * @alias module:pbjs.renderAd
  */
@@ -463,13 +450,10 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
           const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          // It is important that the comment with metadata is injected before the ad is actually rendered,
-          // so the creativeId can be used by e.g. ad quality scanners to check against blocking rules
-          insertElement(creativeComment, doc, 'html');
 
           if (isRendererRequired(renderer)) {
             executeRenderer(renderer, bid);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
+            insertElement(creativeComment, doc, 'html');
             emitAdRenderSucceeded({ doc, bid, id });
           } else if ((doc === document && !inIframe()) || mediaType === 'video') {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
@@ -488,7 +472,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             doc.write(ad);
             doc.close();
             setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
+            insertElement(creativeComment, doc, 'html');
             callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else if (adUrl) {
@@ -501,7 +485,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
 
             insertElement(iframe, doc, 'body');
             setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
+            insertElement(creativeComment, doc, 'html');
             callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else {
