@@ -18,8 +18,8 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {location: referrerUrl, canonicalUrl, domain, page: pageUrl},
-    ortb2: {site: {test1: 'ok', ref: referrerUrl}}
+    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
+    ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
   const bidRequestWithEmptyPlacement = [
     {
@@ -708,7 +708,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
-      expect(payload.ortb2).to.deep.equal({site: {test1: 'ok', ref: referrerUrl}});
+      expect(payload.ortb2).to.deep.equal({site: {page: pageUrl, ref: referrerUrl}});
     });
 
     it('sends bid request to endpoint with single placement without canonical', function () {
