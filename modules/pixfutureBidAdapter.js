@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {find, includes} from '../src/polyfill.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { find, includes } from '../src/polyfill.js';
 import {
   convertCamelToUnderscore,
   deepAccess,
@@ -13,7 +13,7 @@ import {
   isPlainObject,
   transformBidderParamKeywords
 } from '../src/utils.js';
-import {auctionManager} from '../src/auctionManager.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
