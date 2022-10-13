@@ -82,7 +82,7 @@ const main = () => {
   console.log('==Pulling latest code...');
   execSync('git pull');
   console.log('==Installing npm packages...');
-  execSync('npm install');
+  execSync('npm ci');
 
   /** Build Prebid.js and copy it to somewhere */
 

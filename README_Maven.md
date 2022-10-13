@@ -57,9 +57,10 @@ You'll find the built prebid.js file in build/dist/prebid.js.
 You'll find the built prebid.js file in build/dist/prebid.js.
 
 ## Building the Tempest Prebid Bundle
-
-    $ gulp build --modules=../phoenix/htdocs/js/prebid/modules-next.json #for prebid-next
-    $ gulp build --modules=../phoenix/htdocs/js/prebid/modules.json
+    $ nvm use
+    $ npm ci
+    $ npx gulp build --modules=../tempest-phoenix/htdocs/js/prebid/modules.json --bundleName prebid.min.js
+    $ npx gulp build --modules=../tempest-phoenix/htdocs/js/prebid/modules-next.json --bundleName prebid-next.min.js
 
 You'll find the built prebid.js file in build/dist/prebid.js.
 
