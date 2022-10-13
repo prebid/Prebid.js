@@ -1149,7 +1149,7 @@ describe('VisxAdapter', function () {
     it('onTimeout', function () {
       const data = { timeout: 3000, bidId: '23423', params: { uid: 1 } };
       spec.onTimeout(data);
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout?data=' + JSON.stringify(data))).to.equal(true);
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(data))).to.equal(true);
     });
   });
 

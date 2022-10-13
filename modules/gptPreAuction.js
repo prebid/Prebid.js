@@ -55,15 +55,16 @@ export const appendPbAdSlot = adUnit => {
   const context = adUnit.ortb2Imp.ext.data;
   const { customPbAdSlot } = _currentConfig;
 
+  // use context.pbAdSlot if set (if someone set it already, it will take precedence over others)
+  if (context.pbadslot) {
+    return;
+  }
+
   if (customPbAdSlot) {
     context.pbadslot = customPbAdSlot(adUnit.code, deepAccess(context, 'adserver.adslot'));
     return;
   }
 
-  // use context.pbAdSlot if set
-  if (context.pbadslot) {
-    return;
-  }
   // use data attribute 'data-adslotid' if set
   try {
     const adUnitCodeDiv = document.getElementById(adUnit.code);
@@ -78,12 +79,17 @@ export const appendPbAdSlot = adUnit => {
     return;
   }
   context.pbadslot = adUnit.code;
+  return true;
 };
 
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   appendGptSlots(adUnits);
   adUnits.forEach(adUnit => {
-    appendPbAdSlot(adUnit);
+    const usedAdUnitCode = appendPbAdSlot(adUnit);
+    // gpid should be set to itself if already set, or to what pbadslot was (as long as it was not adUnit code)
+    if (!adUnit.ortb2Imp.ext.gpid && !usedAdUnitCode) {
+      adUnit.ortb2Imp.ext.gpid = adUnit.ortb2Imp.ext.data.pbadslot;
+    }
   });
   return fn.call(this, adUnits, ...args);
 };

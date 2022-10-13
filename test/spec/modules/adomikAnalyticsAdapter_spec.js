@@ -1,5 +1,6 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
 import {expect} from 'chai';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -8,6 +9,7 @@ describe('Adomik Prebid Analytic', function () {
   let sendEventStub;
   let sendWonEventStub;
   let clock;
+
   before(function () {
     clock = sinon.useFakeTimers();
   });
@@ -91,7 +93,7 @@ describe('Adomik Prebid Analytic', function () {
         type: 'request',
         event: {
           bidder: 'BIDDERTEST',
-          placementCode: 'placementtest',
+          placementCode: '0000',
         }
       });
 

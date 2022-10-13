@@ -1,3 +1,4 @@
+import { BANNER } from '../../../src/mediaTypes'
 import { expect } from 'chai'
 import { newBidder } from 'src/adapters/bidderFactory.js'
 import { spec } from 'modules/glimpseBidAdapter.js'
@@ -78,6 +79,20 @@ function getDeepCopy(object) {
 
 describe('GlimpseProtocolAdapter', () => {
   const glimpseAdapter = newBidder(spec)
+
+  describe('spec', () => {
+    it('Has defined the glimpse gvlid', () => {
+      expect(spec.gvlid).to.equal(1012)
+    })
+
+    it('Has defined glimpse as the bidder', () => {
+      expect(spec.code).to.equal('glimpse')
+    })
+
+    it('Has defined valid mediaTypes', () => {
+      expect(spec.supportedMediaTypes).to.deep.equal([BANNER])
+    })
+  })
 
   describe('Inherited functions', () => {
     it('Functions exist and are valid types', () => {
@@ -162,6 +177,24 @@ describe('GlimpseProtocolAdapter', () => {
   describe('buildRequests', () => {
     const bidRequests = [getBidRequest()]
     const bidderRequest = getBidderRequest()
+
+    it('Adds a demo flag', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.data.demo).to.be.false
+    })
+
+    it('Adds an account id', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.data.account).to.equal(-1)
+    })
+
+    it('Adds a demand provider', () => {
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      const payload = JSON.parse(request.data)
+      expect(payload.data.demand).to.equal('glimpse')
+    })
 
     it('Adds GDPR consent', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest)
