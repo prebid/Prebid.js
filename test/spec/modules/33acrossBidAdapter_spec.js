@@ -47,11 +47,11 @@ describe('33acrossBidAdapter:', function () {
         sua: {
           browsers: [{
             brand: 'Google Chrome',
-            version: '104.0.5112.79'
+            version: ['104', '0', '5112', '79']
           }],
           platform: {
             brand: 'macOS',
-            version: '11.6.8'
+            version: ['11', '6', '8']
           },
           model: ''
         }
@@ -322,11 +322,11 @@ describe('33acrossBidAdapter:', function () {
             sua: {
               browsers: [{
                 brand: 'Google Chrome',
-                version: '104.0.5112.79'
+                version: ['104', '0', '5112', '79']
               }],
               platform: {
                 brand: 'macOS',
-                version: '11.6.8'
+                version: ['11', '6', '8']
               },
               model: '',
               mobile: false
@@ -354,11 +354,11 @@ describe('33acrossBidAdapter:', function () {
             sua: {
               browsers: [{
                 brand: 'Google Chrome',
-                version: '104.0.5112.79'
+                version: ['104', '0', '5112', '79']
               }],
               platform: {
                 brand: 'macOS',
-                version: '11.6.8'
+                version: ['11', '6', '8']
               },
               model: '',
               mobile: false
