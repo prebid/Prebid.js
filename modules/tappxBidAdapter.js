@@ -295,9 +295,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7
+      banner.pos = 7;
     } else {
-      banner.pos = 4
+      banner.pos = 4;
     }
 
     banner.api = api;
@@ -484,8 +484,17 @@ export function _getHostInfo(validBidRequests) {
 
   domainInfo.domain = hostParam.split('/', 1)[0];
 
+  let regexHostParamHttps = new RegExp(`^https:\/\/`);
+  let regexHostParamHttp = new RegExp(`^http:\/\/`);
+
   let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+
+  if (regexHostParamHttps.test(hostParam)) {
+    hostParam = hostParam.replace('https://', '');
+  } else if (regexHostParamHttp.test(hostParam)) {
+    hostParam = hostParam.replace('http://', '');
+  }
 
   if (regexNewEndpoints.test(domainInfo.domain)) {
     domainInfo.newEndpoint = true;

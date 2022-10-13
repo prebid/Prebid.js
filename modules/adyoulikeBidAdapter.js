@@ -243,6 +243,12 @@ function createEndpointQS(bidderRequest) {
       qs.PageUrl = encodeURIComponent(siteInfo.page);
       qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
     }
+
+    const siteInfo = bidderRequest.ortb2?.site;
+    if (siteInfo) {
+      qs.PageUrl = encodeURIComponent(siteInfo.page);
+      qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
+    }
   }
 
   const can = bidderRequest?.refererInfo?.canonicalUrl;
@@ -447,7 +453,7 @@ function getNativeAssets(response, nativeConfig) {
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
-    return
+    return;
   }
 
   const request = bidRequests && bidRequests[response.BidID];

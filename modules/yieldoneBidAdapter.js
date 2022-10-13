@@ -90,7 +90,7 @@ export const spec = {
         method: 'GET',
         url: ENDPOINT_URL,
         data: payload,
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -212,7 +212,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
   }
 
   if (hasBannerType && hasVideoType) {
-    const playerParams = deepAccess(bidRequest, 'params.playerParams')
+    const playerParams = deepAccess(bidRequest, 'params.playerParams');
     if (playerParams) {
       return VIDEO;
     } else {

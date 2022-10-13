@@ -164,11 +164,10 @@ describe('Adxcg adapter', function () {
       let validBidRequests = [{
         bidId: 'bidId',
         params: {siteId: 'siteId'},
-        transactionId: 'transactionId'
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, auctionId: 'tid'}).data);
 
-      assert.equal(request.source.tid, validBidRequests[0].transactionId);
+      assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);
     });
 

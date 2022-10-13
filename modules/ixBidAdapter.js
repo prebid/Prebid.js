@@ -13,8 +13,8 @@ import {
   logError,
   logWarn,
   mergeDeep,
-  parseGPTSingleSizeArray,
-  parseQueryStringParameters
+  parseQueryStringParameters,
+  safeJSONParse
 } from '../src/utils.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -25,7 +25,6 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {Renderer} from '../src/Renderer.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -100,96 +99,47 @@ const VIDEO_PARAMS_ALLOW_LIST = [
   'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
   'playerSize', 'w', 'h'
 ];
-const NATIVE_ASSET_TYPES = {
-  TITLE: 100,
-  IMG: 200,
-  VIDEO: 300,
-  DATA: 400
-};
-const NATIVE_IMAGE_TYPES = {
-  ICON: 1,
-  MAIN: 3
-};
-const NATIVE_DATA_TYPES = {
-  SPONSORED: 1,
-  DESC: 2,
-  RATING: 3,
-  LIKES: 4,
-  DOWNLOADS: 5,
-  PRICE: 6,
-  SALEPRICE: 7,
-  PHONE: 8,
-  ADDRESS: 9,
-  DESC2: 10,
-  DISPLAYURL: 11,
-  CTATEXT: 12
-};
-const NATIVE_DATA_MAP = {
-  [NATIVE_DATA_TYPES.SPONSORED]: 'sponsoredBy',
-  [NATIVE_DATA_TYPES.DESC]: 'body',
-  [NATIVE_DATA_TYPES.RATING]: 'rating',
-  [NATIVE_DATA_TYPES.LIKES]: 'likes',
-  [NATIVE_DATA_TYPES.DOWNLOADS]: 'downloads',
-  [NATIVE_DATA_TYPES.PRICE]: 'price',
-  [NATIVE_DATA_TYPES.SALEPRICE]: 'salePrice',
-  [NATIVE_DATA_TYPES.PHONE]: 'phone',
-  [NATIVE_DATA_TYPES.ADDRESS]: 'address',
-  [NATIVE_DATA_TYPES.DESC2]: 'body2',
-  [NATIVE_DATA_TYPES.DISPLAYURL]: 'displayUrl',
-  [NATIVE_DATA_TYPES.CTATEXT]: 'cta'
-};
-const NATIVE_ASSETS_MAP = {
-  'title': { assetType: NATIVE_ASSET_TYPES.TITLE },
-  'icon': { assetType: NATIVE_ASSET_TYPES.IMG, subtype: NATIVE_IMAGE_TYPES.ICON },
-  'image': { assetType: NATIVE_ASSET_TYPES.IMG, subtype: NATIVE_IMAGE_TYPES.MAIN },
-  'sponsoredBy': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.SPONSORED },
-  'body': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.DESC },
-  'rating': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.RATING },
-  'likes': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.LIKES },
-  'downloads': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.DOWNLOADS },
-  'price': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.PRICE },
-  'salePrice': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.SALEPRICE },
-  'phone': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.PHONE },
-  'address': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.ADDRESS },
-  'body2': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.DESC2 },
-  'displayUrl': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.DISPLAYURL },
-  'cta': { assetType: NATIVE_ASSET_TYPES.DATA, subtype: NATIVE_DATA_TYPES.CTATEXT },
-  'video': { assetType: NATIVE_ASSET_TYPES.VIDEO }
-};
-const NATIVE_ALLOWED_PROPERTIES = [
-  'rendererUrl',
-  'sendTargetingKeys',
-  'adTemplate',
-  'type',
-  'ext',
-  'privacyLink',
-  'clickUrl',
-  'privacyIcon'
-];
-const NATIVE_ASSET_DEFAULT = {
-  TITLE: {
-    LEN: 25
-  },
-  VIDEO: {
-    MIMES: [
-      'video/mp4',
-      'video/webm'
-    ],
-    MINDURATION: 0,
-    MAXDURATION: 120,
-    PROTOCOLS: [2, 3, 5, 6],
-  }
-};
-const NATIVE_EVENT_TYPES = {
-  IMRESSION: 1
-};
-const NATIVE_EVENT_TRACKING_METHOD = {
-  IMG: 1,
-  JS: 2
-};
 const LOCAL_STORAGE_KEY = 'ixdiag';
+export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 let hasRegisteredHandler = false;
 export const storage = getStorageManager({gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE});
+export const FEATURE_TOGGLES = {
+  featureToggles: {},
+  isFeatureEnabled: function(ft) {
+    return deepAccess(this.featureToggles, `features.${ft}.activated`)
+  },
+  getFeatureToggles: function() {
+    if (storage.localStorageIsEnabled()) {
+      const parsedToggles = safeJSONParse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
+      if (deepAccess(parsedToggles, 'expiry') && parsedToggles.expiry >= new Date().getTime()) {
+        this.featureToggles = parsedToggles
+      } else {
+        this.clearFeatureToggles();
+      }
+    }
+  },
+  setFeatureToggles: function(serverResponse) {
+    const responseBody = serverResponse.body;
+    const expiryTime = new Date();
+    const toggles = deepAccess(responseBody, 'ext.features');
+
+    if (toggles) {
+      this.featureToggles = {
+        expiry: expiryTime.setHours(expiryTime.getHours() + 1),
+        features: toggles
+      }
+      if (storage.localStorageIsEnabled()) {
+        storage.setDataInLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY, JSON.stringify(this.featureToggles));
+      }
+    }
+  },
+  clearFeatureToggles: function() {
+    this.featureToggles = {};
+    if (storage.localStorageIsEnabled()) {
+      storage.removeDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
+    }
+  }
+};
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';
@@ -215,10 +165,6 @@ function bidToBannerImp(bid) {
   if (impSize) {
     imp.banner.w = impSize[0];
     imp.banner.h = impSize[1];
-    // populate sid with size if not id
-    if (!deepAccess(imp, 'ext.sid')) {
-      imp.ext.sid = parseGPTSingleSizeArray(impSize);
-    }
   }
 
   imp.banner.topframe = inIframe() ? 0 : 1;
@@ -285,9 +231,6 @@ function bidToVideoImp(bid) {
     if (impSize) {
       imp.video.w = impSize[0];
       imp.video.h = impSize[1];
-      if (!(deepAccess(imp, 'ext.sid'))) {
-        imp.ext.sid = parseGPTSingleSizeArray(impSize);
-      }
     } else {
       logWarn('IX Bid Adapter: Video size is missing in [mediaTypes.video]');
       return {};
@@ -307,50 +250,13 @@ function bidToVideoImp(bid) {
  */
 function bidToNativeImp(bid) {
   const imp = bidToImp(bid);
-  const nativeAdUnitRef = deepAccess(bid, 'mediaTypes.native');
 
-  const assets = [];
-
-  // Convert all native assets to imp object
-  for (const [adUnitProperty, adUnitValues] of Object.entries(nativeAdUnitRef)) {
-    if (!NATIVE_ASSETS_MAP[adUnitProperty]) {
-      continue;
-    }
-
-    const { assetType, subtype } = NATIVE_ASSETS_MAP[adUnitProperty];
-    let asset;
-    switch (assetType) {
-      case NATIVE_ASSET_TYPES.TITLE:
-        asset = createNativeTitleRequest(adUnitValues);
-        break;
-      case NATIVE_ASSET_TYPES.IMG:
-        asset = createNativeImgRequest(adUnitValues, subtype);
-        break;
-      case NATIVE_ASSET_TYPES.VIDEO:
-        asset = createNativeVideoRequest(adUnitValues);
-        break;
-      case NATIVE_ASSET_TYPES.DATA:
-        asset = createNativeDataRequest(adUnitValues, subtype);
-        break;
-    }
-    asset.id = assetType + (subtype || 0);
-    assets.push(asset);
-  }
-
-  if (assets.length === 0) {
-    logWarn('IX Bid Adapter: Native bid does not contain recognised assets in [mediaTypes.native]');
-    return {};
-  }
-
-  const request = {
-    assets: assets,
-    ver: '1.2',
-    eventtrackers: [{
-      event: 1,
-      methods: [1, 2]
-    }],
-    privacy: 1
-  };
+  const request = bid.nativeOrtbRequest
+  request.eventtrackers = [{
+    event: 1,
+    methods: [1, 2]
+  }];
+  request.privacy = 1;
 
   imp.native = {
     request: JSON.stringify(request),
@@ -366,80 +272,6 @@ function bidToNativeImp(bid) {
 }
 
 /**
- * Converts native bid asset to a native impression asset
- * @param   {object} bidAsset PBJS bid asset object
- * @returns {object}          IX impression asset object
- */
-function createNativeTitleRequest(bidAsset) {
-  return {
-    required: bidAsset.required ? 1 : 0,
-    title: {
-      len: bidAsset.len ? bidAsset.len : NATIVE_ASSET_DEFAULT.TITLE.LEN,
-      ext: bidAsset.ext
-    }
-  }
-}
-
-/**
- * Converts native bid asset to a native impression asset
- * @param   {object} bidAsset PBJS bid asset object
- * @param   {int}    type     The image type
- * @returns {object}          IX impression asset object
- */
-function createNativeImgRequest(bidAsset, type) {
-  let asset = {
-    required: bidAsset.required ? 1 : 0,
-    img: {
-      type: type,
-      mimes: bidAsset.mimes,
-      ext: bidAsset.ext
-    }
-  }
-
-  if (bidAsset.hasOwnProperty('sizes') && bidAsset.sizes.length === 2) {
-    asset.img.wmin = bidAsset.sizes[0];
-    asset.img.hmin = bidAsset.sizes[1];
-  }
-
-  return asset
-}
-
-/**
- * Converts native bid asset to a native impression asset
- * @param   {object} bidAsset PBJS bid asset object
- * @returns {object}          IX impression asset object
- */
-function createNativeVideoRequest(bidAsset) {
-  return {
-    required: bidAsset.required ? 1 : 0,
-    video: {
-      mimes: bidAsset.mimes ? bidAsset.mimes : NATIVE_ASSET_DEFAULT.VIDEO.MIMES,
-      minduration: bidAsset.minduration ? bidAsset.minduration : NATIVE_ASSET_DEFAULT.VIDEO.MINDURATION,
-      maxduration: bidAsset.maxduration ? bidAsset.maxduration : NATIVE_ASSET_DEFAULT.VIDEO.MAXDURATION,
-      protocols: bidAsset.protocols ? bidAsset.protocols : NATIVE_ASSET_DEFAULT.VIDEO.PROTOCOLS,
-      ext: bidAsset.ext
-    }
-  }
-}
-
-/**
- * Converts native bid asset to a native impression asset
- * @param   {object} bidAsset PBJS bid asset object
- * @param   {int}    type     The image type
- * @returns {object}          IX impression asset object
- */
-function createNativeDataRequest(bidAsset, type) {
-  return {
-    required: bidAsset.required ? 1 : 0,
-    data: {
-      type: type,
-      len: bidAsset.len,
-      ext: bidAsset.ext
-    }
-  }
-}
-
-/**
  * Converts an incoming PBJS bid to an IX Impression
  * @param {object} bid   PBJS bid object
  * @returns {object}     IX impression object
@@ -452,8 +284,8 @@ function bidToImp(bid) {
   imp.ext = {};
   imp.ext.siteID = bid.params.siteId.toString();
 
-  if (bid.params.hasOwnProperty('id') &&
-    (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
+  // populate imp level sid
+  if (bid.params.hasOwnProperty('id') && (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
     imp.ext.sid = String(bid.params.id);
   }
 
@@ -559,7 +391,7 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.mediaTypes = bidRequest.mediaTypes;
     bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else if (parsedAdm && parsedAdm.native) {
-    bid.native = interpretNativeAdm(parsedAdm.native);
+    bid.native = {ortb: parsedAdm.native};
     bid.width = rawBid.w ? rawBid.w : 1;
     bid.height = rawBid.h ? rawBid.h : 1;
     bid.mediaType = NATIVE;
@@ -581,84 +413,6 @@ function parseBid(rawBid, currency, bidRequest) {
   }
 
   return bid;
-}
-
-/**
- * Parse native adm and set native asset key names recognized by Prebid.js
- * @param {string} adm Native adm complience
- */
-function interpretNativeAdm(nativeResponse) {
-  const native = {
-    clickUrl: nativeResponse.link.url,
-    privacyLink: nativeResponse.privacy
-  };
-
-  for (const asset of nativeResponse.assets) {
-    const subtype = asset.id % 100;
-    const assetType = asset.id - subtype;
-
-    switch (assetType) {
-      case NATIVE_ASSET_TYPES.TITLE:
-        native.title = asset.title && asset.title.text;
-        break;
-      case NATIVE_ASSET_TYPES.IMG:
-        const image = {
-          url: asset.img && asset.img.url,
-          height: asset.img && asset.img.h,
-          width: asset.img && asset.img.w
-        };
-        native[subtype === NATIVE_IMAGE_TYPES.ICON ? 'icon' : 'image'] = image;
-        break;
-      case NATIVE_ASSET_TYPES.VIDEO:
-        native.video = asset.video && asset.video.vasttag;
-        break;
-      case NATIVE_ASSET_TYPES.DATA:
-        setDataAsset(native, asset, subtype);
-        break;
-      default:
-        logWarn(`IX Bid Adapter: native asset ID ${asset.id} could not be recognized`);
-    }
-  }
-
-  setTrackers(native, nativeResponse);
-  return native;
-}
-
-function setDataAsset(native, asset, type) {
-  if (!(type in NATIVE_DATA_MAP)) {
-    logWarn(`IX Bid Adapter: native data asset type ${type} is not supported`);
-    return;
-  }
-  native[NATIVE_DATA_MAP[type]] = asset.data && asset.data.value;
-}
-
-function setTrackers(native, nativeResponse) {
-  native.impressionTrackers = []
-
-  if (Array.isArray(nativeResponse.imptrackers)) {
-    native.impressionTrackers.push(...nativeResponse.imptrackers)
-  }
-
-  if (Array.isArray(nativeResponse.link.clicktrackers)) {
-    native.impressionTrackers.push(...nativeResponse.link.clicktrackers)
-  }
-
-  if (Array.isArray(nativeResponse.eventtrackers)) {
-    nativeResponse.eventtrackers.forEach(tracker => {
-      if (tracker.event !== NATIVE_EVENT_TYPES.IMRESSION) {
-        return
-      }
-
-      switch (tracker.method) {
-        case NATIVE_EVENT_TRACKING_METHOD.IMG:
-          native.impressionTrackers.push(tracker.url);
-          break;
-        case NATIVE_EVENT_TRACKING_METHOD.JS:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
-          break;
-      }
-    })
-  }
 }
 
 /**
@@ -758,25 +512,13 @@ function isValidBidFloorParams(bidFloor, bidFloorCur) {
     bidFloorCur.match(curRegex));
 }
 
-function nativeMediaTypeValid(nativeObj) {
-  if (nativeObj === undefined) {
-    return true;
+function nativeMediaTypeValid(bid) {
+  const nativeMediaTypes = deepAccess(bid, 'mediaTypes.native');
+  if (nativeMediaTypes === undefined) {
+    return true
   }
 
-  let hasValidAsset = false;
-
-  for (const property in nativeObj) {
-    if (!(property in NATIVE_ASSETS_MAP) && !NATIVE_ALLOWED_PROPERTIES.includes(property)) {
-      logError('IX Bid Adapter: native', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
-      return false;
-    }
-
-    if (property in NATIVE_ASSETS_MAP) {
-      hasValidAsset = true;
-    }
-  }
-
-  return hasValidAsset;
+  return bid.nativeOrtbRequest && Array.isArray(bid.nativeOrtbRequest.assets) && bid.nativeOrtbRequest.assets.length > 0
 }
 
 /**
@@ -837,8 +579,6 @@ function getEidInfo(allEids) {
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
-  // convert Native ORTB definition to old-style prebid native definition
-  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
@@ -877,8 +617,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r.ext = {};
   r.ext.source = 'prebid';
   r.ext.ixdiag = {};
-  r.ext.ixdiag.msd = 0;
-  r.ext.ixdiag.msi = 0;
+  r.ext.ixdiag.ls = storage.localStorageIsEnabled();
   r.imp = [];
   r.at = 1;
 
@@ -903,13 +642,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r.ext.ixdiag.err = cachedErrors;
   }
 
+  // set source.tid to auctionId for outgoing request to Exchange.
+  r.source = {
+    tid: validBidRequests[0].auctionId,
+  }
+
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
-    r.source = {
-      ext: {
-        schain: validBidRequests[0].schain
-      }
-    };
+    r.source.ext = {};
+    r.source.ext.schain = validBidRequests[0].schain;
   }
 
   if (userEids.length > 0) {
@@ -966,15 +707,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // Use the siteId in the first bid request as the main siteId.
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
-  payload.v = version;
-  if (version) {
-    payload.v = version;
-  }
-  payload.ac = 'j';
-  payload.sd = 1;
 
-  if (version === VIDEO_ENDPOINT_VERSION) {
-    payload.nf = 1;
+  if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
+    if (version) {
+      payload.v = version;
+    }
+    payload.ac = 'j';
+    payload.sd = 1;
+
+    if (version === VIDEO_ENDPOINT_VERSION) {
+      payload.nf = 1;
+    }
   }
 
   // Parse additional runtime configs.
@@ -1020,15 +763,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
     }
 
-    // Create t in payload if timeout is configured.
-    if (typeof otherIxConfig.timeout === 'number') {
-      payload.t = otherIxConfig.timeout;
-    }
-
-    if (typeof otherIxConfig.detectMissingSizes === 'boolean') {
-      r.ext.ixdiag.dms = otherIxConfig.detectMissingSizes;
-    } else {
-      r.ext.ixdiag.dms = true;
+    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
+      // Create t in payload if timeout is configured.
+      if (typeof otherIxConfig.timeout === 'number') {
+        payload.t = otherIxConfig.timeout;
+      }
     }
   }
 
@@ -1038,7 +777,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     const adUnitImpressions = impressions[transactionIds[adUnitIndex]];
-    const { missingCount = 0, missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
+    const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
     let wasAdUnitImpressionsTrimmed = false;
     let remainingRequestSize = MAX_REQUEST_SIZE - currentRequestSize;
     const sourceImpressions = { ixImps, missingBannerImpressions };
@@ -1055,14 +794,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
     }
 
-    let gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
     const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
     const tid = impressions[transactionIds[adUnitIndex]].tid;
-    const divId = impressions[transactionIds[adUnitIndex]].divId;
+    const sid = impressions[transactionIds[adUnitIndex]].sid
 
-    if (!gpid && dfpAdUnitCode && divId) {
-      gpid = `${dfpAdUnitCode}#${divId}`;
-    }
     if (impressionObjects.length && BANNER in impressionObjects[0]) {
       const { id, banner: { topframe } } = impressionObjects[0];
       const _bannerImpression = {
@@ -1073,11 +809,24 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       };
 
-      if (dfpAdUnitCode || gpid || tid) {
+      // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
+      for (let bannerFormat of _bannerImpression.banner.format) {
+        if (bannerFormat.ext != null && bannerFormat.ext.sid != null) {
+          delete bannerFormat.ext.sid;
+        }
+      }
+
+      const position = impressions[transactionIds[adUnitIndex]].pos;
+      if (isInteger(position)) {
+        _bannerImpression.banner.pos = position;
+      }
+
+      if (dfpAdUnitCode || gpid || tid || sid) {
         _bannerImpression.ext = {};
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
         _bannerImpression.ext.tid = tid;
+        _bannerImpression.ext.sid = sid;
       }
 
       if ('bidfloor' in impressionObjects[0]) {
@@ -1089,8 +838,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       }
 
       r.imp.push(_bannerImpression);
-      r.ext.ixdiag.msd += missingCount;
-      r.ext.ixdiag.msi += missingBannerImpressions.length;
     } else {
       // set imp.ext.gpid to resolved gpid for each imp
       impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
@@ -1142,6 +889,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot;
     const tagId = impressions[transactionIds[adUnitIndex]].tagId;
     const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
+    const divId = impressions[transactionIds[adUnitIndex]].divId;
     if (pbaAdSlot || tagId || adUnitCode || divId) {
       const clonedRObject = deepClone(r);
       const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
@@ -1165,17 +913,30 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       requestSequenceNumber++;
       clonedPayload.r = JSON.stringify(r);
 
-      requests.push({
-        method: 'GET',
-        url: baseUrl,
-        data: clonedPayload,
-        validBidRequests
-      });
+      let requestData;
+
+      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
+        requestData = {
+          method: 'POST',
+          url: baseUrl + '?s=' + payload.s,
+          data: deepClone(r),
+          option: {
+            contentType: 'text/plain',
+          },
+          validBidRequests
+        }
+      } else {
+        requestData = {
+          method: 'GET',
+          url: baseUrl,
+          data: clonedPayload,
+          validBidRequests
+        }
+      }
+      requests.push(requestData);
 
       currentRequestSize = baseRequestSize;
       r.imp = [];
-      r.ext.ixdiag.msd = 0;
-      r.ext.ixdiag.msi = 0;
       isFpdAdded = false;
     }
   }
@@ -1327,12 +1088,6 @@ function createVideoImps(validBidRequest, videoImps) {
  * @param {object}  bannerImps reference to created banner impressions
  */
 function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
-  const DEFAULT_IX_CONFIG = {
-    detectMissingSizes: true,
-  };
-
-  const ixConfig = { ...DEFAULT_IX_CONFIG, ...config.getConfig('ix') };
-
   let imp = bidToBannerImp(validBidRequest);
 
   const bannerSizeDefined = includesSize(deepAccess(validBidRequest, 'mediaTypes.banner.sizes'), deepAccess(validBidRequest, 'params.size'));
@@ -1346,6 +1101,12 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].tid = deepAccess(validBidRequest, 'ortb2Imp.ext.tid');
   bannerImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
+  bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
+
+  const sid = deepAccess(validBidRequest, 'params.id');
+  if (sid && (typeof sid === 'string' || typeof sid === 'number')) {
+    bannerImps[validBidRequest.transactionId].sid = String(sid);
+  }
 
   const adUnitCode = validBidRequest.adUnitCode;
   const divId = document.getElementById(adUnitCode) ? adUnitCode : getGptSlotInfoForAdUnitCode(adUnitCode).divId;
@@ -1360,9 +1121,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
     bannerImps[validBidRequest.transactionId].ixImps.push(imp);
   }
 
-  if (ixConfig.hasOwnProperty('detectMissingSizes') && ixConfig.detectMissingSizes) {
-    updateMissingSizes(validBidRequest, missingBannerSizes, imp);
-  }
+  updateMissingSizes(validBidRequest, missingBannerSizes, imp);
 }
 
 /**
@@ -1403,7 +1162,6 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
  */
 function createMissingBannerImp(bid, imp, newSize) {
   const newImp = deepClone(imp);
-  newImp.ext.sid = parseGPTSingleSizeArray(newSize);
   newImp.banner.w = newSize[0];
   newImp.banner.h = newSize[1];
 
@@ -1603,7 +1361,6 @@ export const spec = {
     const paramsSize = deepAccess(bid, 'params.size');
     const mediaTypeBannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
     const mediaTypeVideoRef = deepAccess(bid, 'mediaTypes.video');
-    const mediaTypeNativeRef = deepAccess(bid, 'mediaTypes.native');
     const mediaTypeVideoPlayerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
     const hasBidFloor = bid.params.hasOwnProperty('bidFloor');
     const hasBidFloorCur = bid.params.hasOwnProperty('bidFloorCur');
@@ -1670,7 +1427,7 @@ export const spec = {
       }
     }
 
-    return nativeMediaTypeValid(mediaTypeNativeRef);
+    return nativeMediaTypeValid(bid);
   },
 
   /**
@@ -1686,6 +1443,7 @@ export const spec = {
     const videoImps = {}; // Stores created video impressions
     const nativeImps = {}; // Stores created native impressions
     const missingBannerSizes = {}; // To capture the missing sizes i.e not configured for ix
+    FEATURE_TOGGLES.getFeatureToggles();
 
     // Step 1: Create impresssions from IX params
     validBidRequests.forEach((validBidRequest) => {
@@ -1756,6 +1514,7 @@ export const spec = {
     let bid = null;
 
     if (!serverResponse.hasOwnProperty('body') || !serverResponse.body.hasOwnProperty('seatbid')) {
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
       return bids;
     }
 
@@ -1768,7 +1527,13 @@ export const spec = {
 
       // Transform rawBid in bid response to the format that will be accepted by prebid.
       const innerBids = seatbid[i].bid;
-      let requestBid = JSON.parse(bidderRequest.data.r);
+      let requestBid;
+
+      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
+        requestBid = bidderRequest.data;
+      } else {
+        requestBid = safeJSONParse(bidderRequest.data.r);
+      }
 
       for (let j = 0; j < innerBids.length; j++) {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
@@ -1796,6 +1561,7 @@ export const spec = {
       }
     }
 
+    FEATURE_TOGGLES.setFeatureToggles(serverResponse);
     return bids;
   },
 

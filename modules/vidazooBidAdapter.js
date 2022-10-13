@@ -1,4 +1,4 @@
-import { _each, deepAccess, parseSizesInput, parseUrl } from '../src/utils.js';
+import {_each, deepAccess, parseSizesInput, parseUrl, uniques} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -10,7 +10,7 @@ const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
-const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
+const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
@@ -97,7 +97,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     }
   }
   if (bidderRequest.uspConsent) {
-    data.usPrivacy = bidderRequest.uspConsent
+    data.usPrivacy = bidderRequest.uspConsent;
   }
 
   const dto = {
@@ -191,17 +191,19 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
   let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
   const { gdprApplies, consentString = '' } = gdprConsent;
-  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+
+  const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
+  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
-      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
+      url: `https://sync.cootlogix.com/api/sync/iframe/${params}`
     });
   }
   if (pixelEnabled) {
     syncs.push({
       type: 'image',
-      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+      url: `https://sync.cootlogix.com/api/sync/image/${params}`
     });
   }
   return syncs;
