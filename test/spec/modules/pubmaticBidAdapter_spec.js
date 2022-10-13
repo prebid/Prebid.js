@@ -4137,7 +4137,7 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should add bidder code as groupm for marketplace groupm response', function () {
+    it('Should add bidder code as groupm for marketplace groupm response ', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
       });
