@@ -97,7 +97,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.placementId);
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);

@@ -6,7 +6,7 @@ const VERSION = '1.0';
 
 export const spec = {
   code: 'adhash',
-  url: 'https://bidder.adhash.org/rtb?version=' + VERSION + '&prebid=true',
+  url: 'https://bidder.adhash.com/rtb?version=' + VERSION + '&prebid=true',
   supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: (bid) => {
@@ -37,7 +37,7 @@ export const spec = {
       var size = validBidRequests[i].sizes[index].join('x');
       bidRequests.push({
         method: 'POST',
-        url: url,
+        url: url + '&publisher=' + validBidRequests[i].params.publisherId,
         bidRequest: validBidRequests[i],
         data: {
           timezone: new Date().getTimezoneOffset() / 60,
@@ -87,7 +87,7 @@ export const spec = {
       cpm: responseBody.creatives[0].costEUR,
       ad:
         `<div id="${oneTimeId}"></div>
-        <script src="https://bidder.adhash.org/static/scripts/creative.min.js"></script>
+        <script src="https://bidder.adhash.com/static/scripts/creative.min.js"></script>
         <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`,
       width: request.bidRequest.sizes[0][0],
       height: request.bidRequest.sizes[0][1],
