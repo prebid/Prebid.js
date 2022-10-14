@@ -61,7 +61,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'POST',
-        url: getEnpoint(bidRequest),
+        url: getEndpoint(bidRequest),
         data: payload,
         options: {
           withCredentials: true,
@@ -274,7 +274,7 @@ function createVideoImp(bidRequest, videoParams) {
   return imp;
 }
 
-function getEnpoint(bidRequest) {
+function getEndpoint(bidRequest) {
   const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL;
   return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION;
 }
