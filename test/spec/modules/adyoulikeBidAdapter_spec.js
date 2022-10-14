@@ -18,7 +18,7 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {location: referrerUrl, canonicalUrl, domain},
+    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
     ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
   const bidRequestWithEmptyPlacement = [
