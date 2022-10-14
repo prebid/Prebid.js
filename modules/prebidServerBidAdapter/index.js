@@ -855,9 +855,8 @@ Object.assign(ORTB2.prototype, {
           logError('PBS: getFloor threw an error: ', e);
         }
         if (floorInfo && floorInfo.currency && !isNaN(parseFloat(floorInfo.floor))) {
-          // Restriciting floor specific parameters being sent to auction request
-          // imp.bidfloor = parseFloat(floorInfo.floor);
-          // imp.bidfloorcur = floorInfo.currency
+           imp.bidfloor = parseFloat(floorInfo.floor);
+           imp.bidfloorcur = floorInfo.currency
         }
       }
 

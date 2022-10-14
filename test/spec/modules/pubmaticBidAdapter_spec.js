@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec, checkVideoPlacement} from 'modules/pubmaticBidAdapter.js';
+import { expect } from 'chai';
+import { spec, checkVideoPlacement, prepareMetaObject } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 const constants = require('src/constants.json');
 
@@ -4474,6 +4474,86 @@ describe('PubMatic adapter', function () {
       expect(response).to.be.an('array').with.length.above(0);
       // expect(response[0].bidderCode).to.equal('groupm');
       // expect(response[0].bidder).to.equal('groupm');
+    });
+  });
+
+  describe('Preapare metadata', function () {
+    it('Should copy all fields from ext to meta', function () {
+      const bid = {
+        'adomain': [
+          'mystartab.com'
+        ],
+        cat:["IAB_CATEGORY"],
+        ext: {
+          advid: '12',
+          'dspid': 6,
+          'deal_channel': 1,
+          'bidtype': 0,
+          advertiserId: 'adid',
+          // networkName: 'nwnm',
+          // primaryCatId: 'pcid',
+          // advertiserName: 'adnm',
+          // agencyId: 'agid',
+          // agencyName: 'agnm',
+          // brandId: 'brid',
+          // brandName: 'brnm',
+          // dchain: 'dc',
+          // demandSource: 'ds',
+          // secondaryCatIds: ['secondaryCatIds']
+        }
+      };
+
+      const br = {};
+      prepareMetaObject(br, bid, null);
+      expect(br.meta.networkId).to.equal(6); // dspid
+      expect(br.meta.buyerId).to.equal('12'); // adid
+      expect(br.meta.advertiserId).to.equal('12');
+      //expect(br.meta.networkName).to.equal('nwnm');
+      expect(br.meta.primaryCatId).to.equal('IAB_CATEGORY');
+      //expect(br.meta.advertiserName).to.equal('adnm');
+      expect(br.meta.agencyId).to.equal('12');
+      //expect(br.meta.agencyName).to.equal('agnm');
+      expect(br.meta.brandId).to.equal('mystartab.com');
+      //expect(br.meta.brandName).to.equal('brnm');
+      //expect(br.meta.dchain).to.equal('dc');
+      expect(br.meta.demandSource).to.equal(6);
+      expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
+      expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');
+      expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
+      expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
+    });
+
+    it('Should be empty, when ext and adomain is absent in bid object', function () {
+      const bid = {};
+      const br = {};
+      prepareMetaObject(br, bid, null);
+      expect(Object.keys(br.meta).length).to.equal(0);
+    });
+
+    it('Should be empty, when ext and adomain will not have properties', function () {
+      const bid = {
+        'adomain': [],
+        ext: {}
+      };
+      const br = {};
+      prepareMetaObject(br, bid, null);
+      expect(Object.keys(br.meta).length).to.equal(0);
+      expect(br.meta.advertiserDomains).to.equal(undefined); // adomain
+      expect(br.meta.clickUrl).to.equal(undefined); // adomain
+    });
+
+    it('Should have buyerId,advertiserId, agencyId value of site ', function () {
+      const bid = {
+        'adomain': [],
+        ext: {
+          advid: '12',
+        }
+      };
+      const br = {};
+      prepareMetaObject(br, bid, '5100');
+      expect(br.meta.buyerId).to.equal('5100'); // adid
+      expect(br.meta.advertiserId).to.equal('5100');
+      expect(br.meta.agencyId).to.equal('5100');
     });
   });
 });
