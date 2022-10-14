@@ -1,3 +1,5 @@
+'use strict';
+
 import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -9,25 +11,79 @@ const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = 'https://sonic.impactify.media';
+const ORIGIN = 'http://prebid.local:8000';
 const LOGGER_URI = 'https://logger.impactify.media';
 const AUCTIONURI = '/bidder';
 const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
 const GETCONFIG = config.getConfig;
 
-const getDeviceType = () => {
-  // OpenRTB Device type
-  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
-    return 5;
-  }
-  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
-    return 4;
-  }
-  return 2;
-};
+/**
+ * Helpers object
+ * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
+ */
+const helpers = {
+  getExtParamsFromBid(bid) {
+    let ext = {
+      impactify: {
+        appId: bid.params.appId
+      },
+    };
 
-const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
+    if (typeof bid.params.format == 'string') {
+      ext.impactify.format = bid.params.format;
+    }
+
+    if (typeof bid.params.style == 'string') {
+      ext.impactify.style = bid.params.style;
+    }
+
+    if (typeof bid.params.container == 'string') {
+      ext.impactify.container = bid.params.container;
+    }
+
+    if (typeof bid.params.size == 'string') {
+      ext.impactify.size = bid.params.size;
+    }
+
+    return ext;
+  },
+  getDeviceType() {
+    // OpenRTB Device type
+    if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
+      return 5;
+    }
+    if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
+      return 4;
+    }
+    return 2;
+  },
+  createOrtbImpBannerObj(bid, size) {
+    let format = [];
+    format.push(size.split('x'));
+
+    return {
+      id: 'banner-' + bid.bidId,
+      format
+    }
+  },
+  createOrtbImpVideoObj(bid) {
+    return {
+      id: 'video-' + bid.bidId,
+      playerSize: [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT],
+      context: 'outstream',
+      mimes: ['video/mp4'],
+    }
+  }
+}
+
+/**
+ * Create an OpenRTB formated object from prebid payload
+ * @param validBidRequests
+ * @param bidderRequest
+ * @returns {{cur: string[], validBidRequests, id, source: {tid}, imp: *[]}}
+ */
+function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create request and set imp bids inside
   let request = {
     id: bidderRequest.auctionId,
@@ -41,16 +97,17 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   const checkPrebid = urlParams.get('_checkPrebid');
-  // Force impactify debugging parameter
+
+  // Force impactify debugging parameter if present
   if (checkPrebid != null) {
     request.test = Number(checkPrebid);
   }
 
-  // Set Schain in request
+  // Set SChain in request
   let schain = deepAccess(validBidRequests, '0.schain');
   if (schain) request.source.ext = { schain: schain };
 
-  // Set eids
+  // Set Eids
   let bidUserId = deepAccess(validBidRequests, '0.userId');
   let eids = createEidsArray(bidUserId);
   if (eids.length) {
@@ -63,7 +120,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   request.device = {
     w: window.innerWidth,
     h: window.innerHeight,
-    devicetype: getDeviceType(),
+    devicetype: helpers.getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
@@ -95,31 +152,39 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
+    let bannerObj = deepAccess(bid.mediaTypes, `banner`);
+    let videoObj = deepAccess(bid.mediaTypes, `video`);
+
     let imp = {
       id: bid.bidId,
       bidfloor: bid.params.bidfloor ? bid.params.bidfloor : 0,
-      ext: {
-        impactify: {
-          appId: bid.params.appId,
-          format: bid.params.format,
-          style: bid.params.style
-        },
-      },
-      video: {
-        playerSize: [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT],
-        context: 'outstream',
-        mimes: ['video/mp4'],
-      },
+      ext: helpers.getExtParamsFromBid(bid)
     };
-    if (bid.params.container) {
-      imp.ext.impactify.container = bid.params.container;
+
+    if (videoObj) {
+      imp.video = {
+        ...helpers.createOrtbImpVideoObj(bid)
+      }
     }
+    if (bannerObj && typeof imp.ext.size == 'string') {
+      imp.banner = {
+        ...helpers.createOrtbImpBannerObj(bid, imp.ext.size)
+      }
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(imp);
+
     request.imp.push(imp);
   });
 
   return request;
-};
+}
 
+/**
+ * Export BidderSpec type object and register it to Prebid
+ * @type {{supportedMediaTypes: string[], interpretResponse: ((function(ServerResponse, *): Bid[])|*), code: string, aliases: string[], getUserSyncs: ((function(SyncOptions, ServerResponse[], *, *): UserSync[])|*), buildRequests: (function(*, *): {method: string, data: string, url}), onTimeout: (function(*): boolean), gvlid: number, isBidRequestValid: ((function(BidRequest): (boolean))|*), onBidWon: (function(*): boolean)}}
+ */
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -133,13 +198,21 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (!bid.params.appId || typeof bid.params.appId != 'string' || !bid.params.format || typeof bid.params.format != 'string' || !bid.params.style || typeof bid.params.style != 'string') {
+    let isBanner = deepAccess(bid.mediaTypes, `banner`);
+
+    if (typeof bid.params.appId != 'string' || !bid.params.appId) {
       return false;
     }
-    if (bid.params.format != 'screen' && bid.params.format != 'display') {
+    if (typeof bid.params.format != 'string' || typeof bid.params.style != 'string' || !bid.params.format || !bid.params.style) {
       return false;
     }
-    if (bid.params.style != 'inline' && bid.params.style != 'impact' && bid.params.style != 'static') {
+    if (typeof bid.params.format != 'string' || bid.params.format !== 'screen' || bid.params.format !== 'display') {
+      return false;
+    }
+    if (typeof bid.params.style != 'string' || bid.params.style !== 'inline' || bid.params.style !== 'impact' || bid.params.style !== 'static') {
+      return false;
+    }
+    if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
       return false;
     }
 
