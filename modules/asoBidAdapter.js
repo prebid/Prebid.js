@@ -23,12 +23,6 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const VERSION = '$prebid.version$_1.1';
 const TTL = 300;
 
-/*
- * In case you're Adserver.Online platform's client who needs a branded adapter,
- * WE KINDLY ASK YOU DO NOT COPY THIS ADAPTER UNDER NEW NAME!
- * Please get in touch with support@adsrv.org, and we'll add your adapter as an alias.
- */
-
 export const spec = {
 
   code: BIDDER_CODE,
