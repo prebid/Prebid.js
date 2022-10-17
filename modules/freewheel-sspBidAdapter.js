@@ -89,7 +89,7 @@ function getPricing(xmlNode) {
 * @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
 */
 function getAdvertiserDomain(xmlNode) {
-  var domain = '';
+  var domain = [];
   var brandExtNode;
   var extensions = xmlNode.querySelectorAll('Extension');
   // Nodelist.forEach is not supported in IE and Edge
@@ -100,9 +100,10 @@ function getAdvertiserDomain(xmlNode) {
     }
   });
 
+  // Currently we only return one Domain
   if (brandExtNode) {
     var domainNode = brandExtNode.querySelector('Domain');
-    domain = domainNode.textContent || domainNode.innerText
+    domain.push(domainNode.textContent || domainNode.innerText);
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
   }
@@ -359,7 +360,7 @@ export const spec = {
         }
       }
 
-      var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
+      var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }
