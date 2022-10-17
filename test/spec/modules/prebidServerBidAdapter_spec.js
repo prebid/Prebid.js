@@ -19,7 +19,6 @@ import { auctionManager } from '../../../src/auctionManager.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import { hasConsoleLogger } from '../../../src/utils.js';
 
 let CONFIG = {
   accountId: '1',
