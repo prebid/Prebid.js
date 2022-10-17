@@ -119,6 +119,27 @@ describe('ConcertAdapter', function () {
 
       expect(payload.meta.uid).to.equal('foo');
     });
+
+    it('should add uid2 to eids list if available', function() {
+      bidRequests[0].userId = { uid2: { id: 'uid123' } }
+
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+      const meta = payload.meta
+
+      expect(meta.eids.length).to.equal(1);
+      expect(meta.eids[0].uids[0].id).to.equal('uid123')
+      expect(meta.eids[0].uids[0].atype).to.equal(3)
+    })
+
+    it('should return empty eids list if none are available', function() {
+      bidRequests[0].userId = { testId: { id: 'uid123' } }
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+      const meta = payload.meta
+
+      expect(meta.eids.length).to.equal(0);
+    })
   });
 
   describe('spec.interpretResponse', function() {
