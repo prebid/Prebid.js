@@ -53,6 +53,8 @@ export const spec = {
 
     payload.slots = validBidRequests.map(bidRequest => {
       collectEid(eids, bidRequest);
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode)
+      const coordinates = getOffset(adUnitElement)
 
       let slot = {
         name: bidRequest.adUnitCode,
@@ -64,8 +66,9 @@ export const spec = {
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
         site: bidRequest.params.site || bidderRequest.refererInfo.page,
-        ref: bidderRequest.refererInfo.ref
-      };
+        ref: bidderRequest.refererInfo.ref,
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top }
+      }
 
       return slot;
     });
@@ -242,6 +245,16 @@ function getUserId(id, source, uidExt, atype) {
     return {
       source,
       uids: [ uid ]
+    };
+  }
+}
+
+function getOffset(el) {
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY
     };
   }
 }
