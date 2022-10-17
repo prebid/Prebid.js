@@ -19,6 +19,7 @@ import { auctionManager } from '../../../src/auctionManager.js';
 import { stubAuctionIndex } from '../../helpers/indexStub.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import { hasConsoleLogger } from '../../../src/utils.js';
 
 let CONFIG = {
   accountId: '1',
@@ -1464,6 +1465,30 @@ describe('S2S Adapter', function () {
           includewinners: true
         }
       });
+    });
+
+    it('unregistered bidder should alias', function () {
+      const adjustedConfig = utils.deepClone(CONFIG);
+      adjustedConfig.bidders = 'bidderD'
+      config.setConfig({ s2sConfig: adjustedConfig });
+
+      const aliasBidder = {
+        bidder: 'bidderD',
+        params: {
+          unit: '10433394',
+        }
+      };
+
+      $$PREBID_GLOBAL$$.aliasBidder('mockBidder', aliasBidder.bidder);
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+      request.s2sConfig = adjustedConfig;
+
+      adapter.callBids(request, BID_REQUESTS, addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.ext.prebid.aliases).to.deep.equal({ bidderD: 'mockBidder' });
     });
 
     it('adds dynamic aliases to request', function () {
