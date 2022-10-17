@@ -9,17 +9,33 @@ export const _internal = {
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
-  const _queue = [];
-  let _eventCount = 0;
-  let _enableCheck = true;
-  let _handlers;
-  let _enabled = false;
-  let _sampled = true;
+let debounceDelay = 100;
 
-  if (analyticsType === ENDPOINT || BUNDLE) {
-    _emptyQueue();
-  }
+export function setDebounceDelay(delay) {
+  debounceDelay = delay;
+}
+
+export default function AnalyticsAdapter({ url, analyticsType, global, handler }) {
+  const queue = [];
+  let handlers;
+  let enabled = false;
+  let sampled = true;
+  let provider, timer;
+
+  const emptyQueue = (() => {
+    const clearQueue = () => {
+      queue.forEach((fn) => fn());
+      logMessage(`${provider} analytics: processed ${queue.length} events`);
+      queue.length = 0;
+    }
+    return function () {
+      if (timer != null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      debounceDelay === 0 ? clearQueue() : timer = setTimeout(clearQueue, debounceDelay);
+    }
+  })();
 
   return Object.defineProperties({
     track: _track,
@@ -32,7 +48,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     getUrl: () => url
   }, {
     enabled: {
-      get: () => _enabled
+      get: () => enabled
     }
   });
 
@@ -50,29 +66,24 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     _internal.ajax(url, callback, JSON.stringify({ eventType, args }));
   }
 
-  function _enqueue({ eventType, args }) {
-    const _this = this;
-
-    if (global && window[global] && eventType && args) {
-      this.track({ eventType, args });
-    } else {
-      _queue.push(function () {
-        _eventCount++;
-        _this.track({ eventType, args });
-      });
-    }
+  function _enqueue({eventType, args}) {
+    queue.push(() => {
+      this.track({eventType, args});
+    });
+    emptyQueue();
   }
 
   function _enable(config) {
+    provider = config?.provider;
     var _this = this;
 
     if (typeof config === 'object' && typeof config.options === 'object') {
-      _sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
+      sampled = typeof config.options.sampling === 'undefined' || Math.random() < parseFloat(config.options.sampling);
     } else {
-      _sampled = true;
+      sampled = true;
     }
 
-    if (_sampled) {
+    if (sampled) {
       const trackedEvents = (() => {
         let events = Object.values(CONSTANTS.EVENTS);
         if (config?.includeEvents != null) {
@@ -95,7 +106,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       });
 
       // Next register event listeners to send data immediately
-      _handlers = Object.fromEntries(
+      handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
             const handler = ev === CONSTANTS.EVENTS.AUCTION_INIT
@@ -118,31 +129,14 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
     this.enableAnalytics = function _enable() {
       return logMessage(`Analytics adapter for "${global}" already enabled, unnecessary call to \`enableAnalytics\`.`);
     };
-    _enabled = true;
+    enabled = true;
   }
 
   function _disable() {
-    Object.entries(_handlers || {}).forEach(([event, handler]) => {
+    Object.entries(handlers || {}).forEach(([event, handler]) => {
       events.off(event, handler);
     })
     this.enableAnalytics = this._oldEnable ? this._oldEnable : _enable;
-    _enabled = false;
-  }
-
-  function _emptyQueue() {
-    if (_enableCheck) {
-      for (var i = 0; i < _queue.length; i++) {
-        _queue[i]();
-      }
-
-      // override push to execute the command immediately from now on
-      _queue.push = function (fn) {
-        fn();
-      };
-
-      _enableCheck = false;
-    }
-
-    logMessage(`event count sent to ${global}: ${_eventCount}`);
+    enabled = false;
   }
 }

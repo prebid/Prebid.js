@@ -4,6 +4,7 @@ import CONSTANTS from 'src/constants.json';
 import {server} from 'test/mocks/xhr.js';
 import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 import {clearEvents} from 'src/events.js';
+import {setDebounceDelay} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const NO_BID = CONSTANTS.EVENTS.NO_BID;
@@ -173,3 +174,39 @@ FEATURE: Analytics Adapters API
     });
   });
 });
+
+describe('Analytics asynchronous event tracking', () => {
+  before(() => {
+    setDebounceDelay(100);
+  });
+  after(() => {
+    setDebounceDelay(0);
+  });
+
+  let adapter, clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers();
+    adapter = new AnalyticsAdapter(config);
+    adapter.track = sinon.stub();
+    adapter.enableAnalytics({});
+  });
+
+  afterEach(() => {
+    clock.restore();
+  })
+
+  it('does not call track as long as events are coming', () => {
+    events.emit(BID_WON, {i: 0});
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(10);
+    events.emit(BID_WON, {i: 1});
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(10);
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(100);
+    sinon.assert.calledTwice(adapter.track);
+    sinon.assert.calledWith(adapter.track.firstCall, {eventType: BID_WON, args: {i: 0}});
+    sinon.assert.calledWith(adapter.track.secondCall, {eventType: BID_WON, args: {i: 1}});
+  });
+})
