@@ -333,7 +333,7 @@ export const spec = {
       }
     });
 
-    if (rubiConf.singleRequest !== true) {
+    if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -1279,8 +1279,7 @@ export function hasValidSupplyChainParams(schain) {
 }
 
 /**
- * Creates a URL key value param, encoding the
- * param unless the key is schain
+ * Creates a URL key value param, encoding the param unless the key is schain
  * @param {String} key
  * @param {String} param
  * @returns {String}

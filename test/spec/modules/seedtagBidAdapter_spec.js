@@ -361,28 +361,25 @@ describe('Seedtag Adapter', function () {
       it('should add schain to payload when exposed on validBidRequest', function () {
         // https://github.com/prebid/Prebid.js/blob/master/modules/schain.md#sample-code-for-passing-the-schain-object
         const schain = {
-          validation: 'strict',
-          config: {
-            ver: '1.0',
-            complete: 1,
-            nodes: [
-              {
-                asi: 'indirectseller.com',
-                sid: '00001',
-                hp: 1,
-              },
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1,
+            },
 
-              {
-                asi: 'indirectseller-2.com',
-                sid: '00002',
-                hp: 1,
-              },
-            ],
-          },
+            {
+              asi: 'indirectseller-2.com',
+              sid: '00002',
+              hp: 1,
+            },
+          ],
         };
 
         // duplicate
-        const bidRequests = JSON.parse(JSON.stringify(validBidRequests))
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
         bidRequests[0].schain = schain;
 
         const request = spec.buildRequests(bidRequests, bidderRequest);

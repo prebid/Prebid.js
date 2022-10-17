@@ -112,7 +112,7 @@ export const spec = {
       setOnAny(validBidRequests, 'params.pt') ||
       setOnAny(validBidRequests, 'params.priceType') ||
       'net';
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [currency];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
