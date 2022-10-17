@@ -327,6 +327,25 @@ describe('FTRACK ID System', () => {
         }]
       }
     };
+    // The full config mock alternate version
+    const USER_SYNC_CONFIG_ALTERNATE_MOCK = {
+      userSync: {
+        auctionDelay: 10,
+        userIds: [{
+          name: 'ftrack',
+          value: {
+            ftrackId: {
+              uid: 'device_test_id',
+              ext: {
+                HHID: 'household_test_id',
+                DeviceID: 'device_test_id',
+                SingleDeviceID: 'single_device_test_id'
+              }
+            }
+          }
+        }]
+      }
+    };
     // The full eids response
     let expectedEids = [{
       id: 'device_test_id',
@@ -353,7 +372,7 @@ describe('FTRACK ID System', () => {
     });
 
     describe('pbjs.getUserIdsAsync()', () => {
-      it('should return the IDs in the correct schema', () => {
+      it('should return the IDs in the correct schema - flat schema', () => {
         config.setConfig(userSyncConfigMock);
 
         getGlobal().getUserIdsAsync().then(ids => {
@@ -375,8 +394,16 @@ describe('FTRACK ID System', () => {
     });
 
     describe('pbjs.getUserIdsAsEids()', () => {
-      it('should return the correct EIDs schema', () => {
+      it('should return the correct EIDs schema - original schema', () => {
         let userSyncConfig = Object.assign({}, userSyncConfigMock);
+
+        config.setConfig(userSyncConfig);
+
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(expectedEids);
+      });
+
+      it('should return the correct EIDs schema - alternate schema', () => {
+        let userSyncConfig = Object.assign({}, USER_SYNC_CONFIG_ALTERNATE_MOCK);
 
         config.setConfig(userSyncConfig);
 
