@@ -98,9 +98,8 @@ export function ortbConverter({
             impContext.bidRequest = bidRequest;
             ctx.imp[result.id] = impContext;
             return result;
-          } else {
-            logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, result);
           }
+          logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, result);
         }
       }).filter(Boolean);
 
@@ -122,11 +121,10 @@ export function ortbConverter({
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
       const bidResponses = (response.seatbid || []).flatMap(seatbid =>
         (seatbid.bid || []).map((bid) => {
-          if (!impsById.hasOwnProperty(bid.impid) || !ctx.imp.hasOwnProperty(bid.impid)) {
-            logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
-          } else {
+          if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
             return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
           }
+          logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
         })
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));

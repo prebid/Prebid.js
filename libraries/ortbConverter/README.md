@@ -40,6 +40,10 @@ registerBidder({
 Without any customization, the library will generate complete ORTB requests, but ignores your [bid params](#params). 
 If your endpoint sets `response.seatbid[].bid[].mtype` (part of the ORTB 2.6 spec), it will also parse the response into complete bidResponse objects. See [setting response mediaTypes](#response-mediaTypes) if that is not the case.
 
+### Module-specific conversions
+
+Prebid.js features that require a module also require it for their corresponding ORTB conversion logic. For example, `imp.bidfloor` is only populated if the `priceFloors` module is active; `request.cur` needs the `currency` module, and so on. Notably, this means that to get those fields populated from your unit tests, you must import those modules first; see [this suite](https://github.com/prebid/Prebid.js/blob/master/test/spec/modules/openxOrtbBidAdapter_spec.js) for an example.
+
 ## Customization
 
 ### Modifying return values directly
