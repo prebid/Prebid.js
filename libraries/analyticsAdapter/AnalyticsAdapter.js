@@ -20,14 +20,26 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
   let handlers;
   let enabled = false;
   let sampled = true;
-  let provider, timer;
+  let provider;
 
   const emptyQueue = (() => {
+    let running = false;
+    let timer;
     const clearQueue = () => {
-      queue.forEach((fn) => fn());
-      logMessage(`${provider} analytics: processed ${queue.length} events`);
-      queue.length = 0;
-    }
+      if (!running) {
+        running = true; // needed to avoid recursive re-processing when analytics event handlers trigger other events
+        try {
+          let i = 0;
+          while (queue.length > 0) {
+            i++;
+            queue.shift()();
+          }
+          logMessage(`${provider} analytics: processed ${i} events`);
+        } finally {
+          running = false;
+        }
+      }
+    };
     return function () {
       if (timer != null) {
         clearTimeout(timer);
