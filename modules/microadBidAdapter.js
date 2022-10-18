@@ -1,4 +1,5 @@
-import { deepAccess, isEmpty, isStr } from '../src/utils.js';
+import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
+import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -25,8 +26,8 @@ const VIDEO_CODE = 4;
 
 const AUDIENCE_IDS = [
   {type: 6, bidKey: 'userId.imuid'},
-  {type: 8, bidKey: 'userId.id5id.uid'},
-  {type: 9, bidKey: 'userId.tdid'},
+  {type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com'},
+  {type: 9, bidKey: 'userId.tdid', source: 'adserver.org'},
   {type: 10, bidKey: 'userId.novatiq.snowflake'},
   {type: 11, bidKey: 'userId.parrableId.eid'},
   {type: 12, bidKey: 'userId.dacId.id'},
@@ -100,10 +101,19 @@ export const spec = {
       }
 
       const aidsParams = []
+      const userIdAsEids = bid.userIdAsEids;
       AUDIENCE_IDS.forEach((audienceId) => {
         const bidAudienceId = deepAccess(bid, audienceId.bidKey);
         if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
-          aidsParams.push({ type: audienceId.type, id: bidAudienceId });
+          const aidParam = { type: audienceId.type, id: bidAudienceId };
+          // Set ext
+          if (audienceId.source && isArray(userIdAsEids)) {
+            const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
+            if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
+              aidParam.ext = targetEid.uids[0].ext;
+            }
+          }
+          aidsParams.push(aidParam);
           // Set Ramp ID
           if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
         }
