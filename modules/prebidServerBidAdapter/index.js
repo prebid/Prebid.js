@@ -558,7 +558,7 @@ Object.assign(ORTB2.prototype, {
           const bidder = adapterManager.bidderRegistry[bid.bidder];
           // adding alias only if alias source bidder exists and alias isn't configured to be standalone
           // pbs adapter
-          if (bidder && !bidder.getSpec().skipPbsAliasing) {
+          if (!bidder || !bidder.getSpec().skipPbsAliasing) {
             aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
           }
         }
