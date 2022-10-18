@@ -6,7 +6,7 @@ export function setRequestExtPrebidAliases(ortbRequest, bidderRequest, context, 
     const bidder = am.bidderRegistry[bidderRequest.bidderCode];
     // adding alias only if alias source bidder exists and alias isn't configured to be standalone
     // pbs adapter
-    if (bidder && !bidder.getSpec().skipPbsAliasing) {
+    if (!bidder || !bidder.getSpec().skipPbsAliasing) {
       deepSetValue(
         ortbRequest,
         `ext.prebid.aliases.${bidderRequest.bidderCode}`,

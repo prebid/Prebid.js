@@ -1523,6 +1523,31 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('unregistered bidder should alias', function () {
+      const adjustedConfig = utils.deepClone(CONFIG);
+      adjustedConfig.bidders = 'bidderD'
+      config.setConfig({ s2sConfig: adjustedConfig });
+
+      const aliasBidder = {
+        ...REQUEST.ad_units[0].bids[0],
+        bidder: 'bidderD',
+        params: {
+          unit: '10433394',
+        }
+      };
+
+      $$PREBID_GLOBAL$$.aliasBidder('mockBidder', aliasBidder.bidder);
+
+      const request = utils.deepClone(REQUEST);
+      request.ad_units[0].bids = [aliasBidder];
+      request.s2sConfig = adjustedConfig;
+
+      adapter.callBids(request, [{...BID_REQUESTS[0], bidderCode: aliasBidder.bidder}], addBidResponse, done, ajax);
+
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.ext.prebid.aliases).to.deep.equal({ bidderD: 'mockBidder' });
+    });
+
     it('adds dynamic aliases to request', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
