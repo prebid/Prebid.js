@@ -24,8 +24,9 @@ import {loadExternalScript} from '../src/adloader.js';
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
 
-const AD_SERVER_URL = 'https://ad.360yield.com/pb';
-const BASIC_ADS_URL = 'https://ad.360yield-basic.com/pb';
+const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
+const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
+const PB_ENDPOINT = 'pb';
 const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
 
@@ -131,20 +132,6 @@ export const spec = {
           deepSetValue(request, 'regs.ext.gdpr', Number(gdprConsent.gdprApplies));
         }
         deepSetValue(request, 'user.ext.consent', gdprConsent.consentString);
-
-        // Additional Consent String
-        const additionalConsent = deepAccess(gdprConsent, 'addtlConsent');
-        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-          // Google Ad Tech Provider IDs
-          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          if (atpIds) {
-            deepSetValue(
-              request,
-              'user.ext.consented_providers_settings.consented_providers',
-              atpIds.split('.').map(id => parseInt(id, 10))
-            );
-          }
-        }
       }
 
       // Timeout
@@ -238,6 +225,14 @@ export const spec = {
       return [];
     }
 
+    const bidders = new Set();
+    if (this.syncStore.extendMode && serverResponses) {
+      serverResponses.forEach(response => {
+        if (!response?.body?.ext?.responsetimemillis) return;
+        Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
+      })
+    }
+
     const syncs = [];
     if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
       const { gdprApplies, consentString } = gdprConsent || {};
@@ -248,7 +243,8 @@ export const spec = {
           (this.syncStore.extendMode ? '&pbs=1' : '') +
           (typeof gdprApplies === 'boolean' ? `&gdpr=${Number(gdprApplies)}` : '') +
           (consentString ? `&gdpr_consent=${consentString}` : '') +
-          (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '')
+          (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '') +
+          (bidders.size ? `&bidders=${[...bidders].join(',')}` : '')
       });
     } else if (syncOptions.pixelEnabled) {
       serverResponses.forEach(response => {
@@ -276,41 +272,91 @@ const ID_REQUEST = {
     const extendImps = [];
     const adServerImps = [];
 
-    function formatRequest(imps, transactionId, extendMode) {
+    function setAdditionalConsent(request, extendMode) {
+      const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
+      if (!additionalConsent) {
+        return;
+      }
+      if (extendMode) {
+        deepSetValue(request, 'user.ext.ConsentedProvidersSettings.consented_providers', additionalConsent)
+      } else {
+        // Additional Consent String
+        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
+          // Google Ad Tech Provider IDs
+          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
+          if (atpIds) {
+            deepSetValue(
+              request,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
+          }
+        }
+      }
+    }
+
+    function adServerUrl(extendMode, publisherId) {
+      if (extendMode) {
+        return EXTEND_URL;
+      }
+
+      const urlSegments = [];
+      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
+      if (publisherId) {
+        urlSegments.push(publisherId)
+      }
+      urlSegments.push(PB_ENDPOINT)
+
+      return urlSegments.join('/');
+    }
+
+    function formatRequest(imps, {transactionId, publisherId}, extendMode) {
       const request = deepClone(basicRequest);
       request.imp = imps;
       request.id = getUniqueIdentifierStr();
+      setAdditionalConsent(request, extendMode);
       if (transactionId) {
         deepSetValue(request, 'source.tid', transactionId);
       }
-      const adServerUrl = hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_URL : BASIC_ADS_URL;
+
       return {
         method: 'POST',
-        url: extendMode ? EXTEND_URL : adServerUrl,
+        url: adServerUrl(extendMode, publisherId),
         data: JSON.stringify(request),
         bidderRequest
       }
     };
 
+    let publisherId = null;
     bidRequests.map((bidRequest) => {
-      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
+      const bidParams = bidRequest.params;
+      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidParams);
       const imp = this.buildImp(bidRequest, extendModeEnabled);
       if (singleRequestMode) {
+        if (!publisherId) {
+          publisherId = bidParams?.publisherId;
+        } else if (publisherId && bidParams?.publisherId && publisherId !== bidParams?.publisherId) {
+          throw new Error(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`);
+        }
         extendModeEnabled ? extendImps.push(imp) : adServerImps.push(imp);
       } else {
-        requests.push(formatRequest([imp], bidRequest.transactionId, extendModeEnabled));
+        requests.push(formatRequest([imp], {transactionId: bidRequest.transactionId, publisherId: bidParams?.publisherId}, extendModeEnabled));
       }
     });
 
     if (!singleRequestMode) {
       return requests;
     }
+    const requestOptions = {
+      transactionId: bidderRequest.auctionId,
+      publisherId,
+    }
     // In the single request mode, split imps between those going to the ad server and those going to extend server
     if (extendImps.length) {
-      requests.push(formatRequest(extendImps, bidderRequest.auctionId, true));
+      requests.push(formatRequest(extendImps, requestOptions, true));
     }
     if (adServerImps.length) {
-      requests.push(formatRequest(adServerImps, bidderRequest.auctionId, false));
+      requests.push(formatRequest(adServerImps, requestOptions, false));
     }
 
     return requests;
