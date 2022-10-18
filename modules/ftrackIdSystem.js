@@ -48,7 +48,10 @@ export const ftrackIdSubmodule = {
    *   similar to the module name and ending in id or Id
    */
   decode (value, config) {
-    value = value || {};
+    if (!value) {
+      return;
+    };
+
     const DECODE_RESPONSE = {
       ftrackId: {
         uid: '',
