@@ -419,27 +419,12 @@ export function createEidsArray(bidRequestUserId) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
       } else if (subModuleKey === 'ftrackId') {
-        // ftrack has multiple IDs so we add each one that exists
-        const E_ID = {
-          'atype': 1,
-          'ext': {}
-        };
-        const IDS = bidRequestUserId.ftrackId.hasOwnProperty('ext') ? bidRequestUserId.ftrackId.ext : bidRequestUserId.ftrackId;
-
-        for (let id in IDS) {
-          if (typeof IDS[id] === 'string') {
-            E_ID.ext[id] = IDS[id];
-          } else if (Array.isArray(IDS[id])) {
-            E_ID.ext[id] = IDS[id].join('|');
-          } else {
-            // Unexpected value type
-            E_ID.ext[id] = '';
-          }
-        }
-
-        E_ID.id = E_ID.ext.DeviceID || '';
-
-        eids.push(E_ID);
+        // Schema based on the return value of ftrack decode() method
+        eids.push({
+          atype: 1,
+          ext: bidRequestUserId.ftrackId.ext,
+          id: bidRequestUserId.ftrackId.uid
+        });
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);
@@ -456,6 +441,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 
