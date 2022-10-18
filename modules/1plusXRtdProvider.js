@@ -13,6 +13,7 @@ const MODULE_NAME = '1plusX';
 const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
+const OPE_FPID = 'ope_fpid'
 const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
@@ -57,6 +58,12 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   return { customerId, timeout, bidders };
 }
 
+/**
+ * Extracts consent from the prebid consent object and translates it
+ * into a 1plusX profile api query parameter parameter dict
+ * @param {object} prebid gdpr object
+ * @returns dictionary of papi gdpr query parameters
+ */
 export const extractConsent = ({ gdpr }) => {
   if (!gdpr) {
     return null
@@ -65,8 +72,8 @@ export const extractConsent = ({ gdpr }) => {
   if (!(gdprApplies == '0' || gdprApplies == '1')) {
     throw 'TCF Consent: gdprApplies has wrong format'
   }
-  if (!(typeof consentString === 'string')) {
-    throw 'TCF Consent: consentString is not string'
+  if (consentString && typeof consentString != 'string') {
+    throw 'TCF Consent: consentString must be string if defined'
   }
   const result = {
     'gdpr_applies': gdprApplies,
@@ -74,13 +81,30 @@ export const extractConsent = ({ gdpr }) => {
   }
   return result
 }
+
+/**
+ * Extracts the OPE first party id field from local storage
+ * @returns fpid string if found, else null
+ */
+export const extractFpid = () => {
+  try {
+    const fpid = window.localStorage.getItem(OPE_FPID);
+    if (fpid) {
+      return fpid;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
 /**
  * Gets the URL of Profile Api from which targeting data will be fetched
- * @param {Object} config
  * @param {string} config.customerId
+ * @param {object} consent query params as dict
+ * @param {string} oneplusx first party id (nullable)
  * @returns {string} URL to access 1plusX Profile API
  */
-export const getPapiUrl = (customerId, consent) => {
+export const getPapiUrl = (customerId, consent, fpid) => {
   // https://[yourClientId].profiles.tagger.opecloud.com/[VERSION]/targeting?url=
   const currentUrl = encodeURIComponent(window.location.href);
   var papiUrl = `https://${customerId}.profiles.tagger.opecloud.com/${PAPI_VERSION}/targeting?url=${currentUrl}`;
@@ -88,6 +112,9 @@ export const getPapiUrl = (customerId, consent) => {
     Object.entries(consent).forEach(([key, value]) => {
       papiUrl += `&${key}=${value}`
     })
+  }
+  if (fpid) {
+    papiUrl += `&fpid=${fpid}`
   }
 
   return papiUrl;
@@ -246,7 +273,7 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
     // Get PAPI URL
-    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {})
+    const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid())
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
