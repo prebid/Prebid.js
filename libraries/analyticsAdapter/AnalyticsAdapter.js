@@ -9,6 +9,8 @@ export const _internal = {
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
+export const DEFAULT_EXCLUDE_EVENTS = [CONSTANTS.EVENTS.AUCTION_DEBUG];
+
 let debounceDelay = 100;
 
 export function setDebounceDelay(delay) {
@@ -101,9 +103,8 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         if (config?.includeEvents != null) {
           events = events.filter((ev) => config.includeEvents.includes(ev));
         }
-        if (config?.excludeEvents != null) {
-          events = events.filter(ev => !config.excludeEvents.includes(ev))
-        }
+        const excludeEvents = config?.excludeEvents || DEFAULT_EXCLUDE_EVENTS;
+        events = events.filter(ev => !excludeEvents.includes(ev))
         return new Set(events);
       })();
 
