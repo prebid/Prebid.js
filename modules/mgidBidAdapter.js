@@ -178,6 +178,8 @@ export const spec = {
       return;
     }
 
+    const ortb2Data = bidderRequest?.ortb2 || {};
+
     let request = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: {domain, page},
@@ -191,7 +193,11 @@ export const spec = {
         w: screen.width,
         language: getLanguage()
       },
-      ext: {mgid_ver: spec.VERSION, prebid_ver: '$prebid.version$'},
+      ext: {
+        mgid_ver: spec.VERSION,
+        prebid_ver: '$prebid.version$',
+        ...ortb2Data
+      },
       imp
     };
     if (bidderRequest && bidderRequest.gdprConsent) {
