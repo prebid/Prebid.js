@@ -2,13 +2,13 @@
 
 **Module Name**: Admatic Bidder Adapter  
 **Module Type**: Bidder Adapter  
-**Maintainer**: prebid.js@admatic.com.tr
+**Maintainer**: prebid@admatic.com.tr
 
 # Description
 
 Use `admatic` as bidder.
 
-`networkId` & `typeId` are required and must be integers.
+`networkId` is required and must be integer.
 
 ## AdUnits configuration example
 ```
@@ -19,7 +19,7 @@ Use `admatic` as bidder.
           bidder: 'admatic',
           params: { 
               placementId: 12345,
-              pageId: 14
+              floor: 0.5
           }
       }]
     },{
@@ -29,7 +29,7 @@ Use `admatic` as bidder.
           bidder: 'admatic',
           params: { 
               placementId: 12345,
-              pageId: 9
+              floor: 0.5
           }
       }]
     }];
