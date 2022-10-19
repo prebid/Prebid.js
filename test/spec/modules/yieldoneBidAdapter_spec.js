@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -428,12 +427,12 @@ describe('yieldoneBidAdapter', function() {
         const bidRequests = [
           {
             params: {placementId: '0'},
-            userId: {dacId: {id: 'dacId_sample'}},
+            userId: {dacId: {fuuid: 'fuuid_sample', id: 'dacId_sample'}},
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.fuuid).to.equal('fuuid_sample');
         expect(request[0].data.dac_id).to.equal('dacId_sample');
-        expect(request[0].data.fuuid).to.equal('dacId_sample');
       });
     });
 

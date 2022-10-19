@@ -5,6 +5,25 @@ export const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // GrowthCode
+  'growthCodeId': {
+    getValue: function(data) {
+      return data.gc_id
+    },
+    source: 'growthcode.io',
+    atype: 1,
+    getUidExt: function(data) {
+      const extendedData = pick(data, [
+        'h1',
+        'h2',
+        'h3',
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
+  },
+
   // trustpid
   'trustpid': {
     source: 'trustpid.com',
@@ -400,17 +419,12 @@ export function createEidsArray(bidRequestUserId) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
       } else if (subModuleKey === 'ftrackId') {
-        // ftrack has multiple IDs so we add each one that exists
-        let eid = {
-          'atype': 1,
-          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
-          'ext': {}
-        }
-        for (let id in bidRequestUserId.ftrackId) {
-          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
-        }
-
-        eids.push(eid);
+        // Schema based on the return value of ftrack decode() method
+        eids.push({
+          atype: 1,
+          ext: bidRequestUserId.ftrackId.ext,
+          id: bidRequestUserId.ftrackId.uid
+        });
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);
@@ -427,6 +441,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 

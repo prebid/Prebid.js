@@ -30,6 +30,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'criteo.com',
   'crwdcntrl.net',
   'deepintent.com',
+  'epsilon.com',
   'hcn.health',
   'id5-sync.com',
   'idx.lat',
@@ -45,7 +46,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'novatiq.com',
   'parrable.com',
   'pubcid.org',
-  'quantcast.com',
   'quantcast.com',
   'tapad.com',
   'uidapi.com',
@@ -237,7 +237,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
       device: {
         dnt: 0,
         ua: navigator.userAgent,
-        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
+        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
+        w: window.screen.width,
+        h: window.screen.height
       },
       regs: {
         ext: {

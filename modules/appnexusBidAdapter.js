@@ -11,6 +11,7 @@ import {
   getMinValueFromArray,
   getParameterByName,
   getUniqueIdentifierStr,
+  getWindowFromDocument,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -23,8 +24,7 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  transformBidderParamKeywords,
-  getWindowFromDocument
+  transformBidderParamKeywords
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -47,6 +47,11 @@ const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEBUG_QUERY_PARAM_MAP = {
+  'apn_debug_dongle': 'dongle',
+  'apn_debug_member_id': 'member_id',
+  'apn_debug_timeout': 'debug_timeout'
+};
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -184,6 +189,18 @@ export const spec = {
         logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
+      Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
+        let qval = getParameterByName(qparam);
+        if (isStr(qval) && qval !== '') {
+          debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
+          debugObj.enabled = true;
+        }
+      });
+      debugObj = convertTypes({
+        'member_id': 'number',
+        'debug_timeout': 'number'
+      }, debugObj);
+
       const debugBidRequest = find(bidRequests, hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
@@ -250,10 +267,10 @@ export const spec = {
     // need to convert the string values into array of strings, to properly merge values with other existing keys later
     Object.keys(anAuctionKeywords).forEach(k => { if (isStr(anAuctionKeywords[k]) || isNumber(anAuctionKeywords[k])) anAuctionKeywords[k] = [anAuctionKeywords[k]] });
     // combine all sources of keywords (converted from string comma list to object format) into one object (that combines the values for shared keys)
-    let mergedAuctionKeywrds = mergeDeep({}, anAuctionKeywords, ...ortb2KeywordsObjList);
+    let mergedAuctionKeywords = mergeDeep({}, anAuctionKeywords, ...ortb2KeywordsObjList);
 
     // convert to final format used by adserver
-    let auctionKeywords = transformBidderParamKeywords(mergedAuctionKeywrds);
+    let auctionKeywords = transformBidderParamKeywords(mergedAuctionKeywords);
     if (auctionKeywords.length > 0) {
       auctionKeywords.forEach(deleteValues);
       payload.keywords = auctionKeywords;
@@ -1202,28 +1219,30 @@ function convertKeywordsToString(keywords) {
 function convertStringToKeywordsObj(keyStr) {
   let result = {};
 
-  // will split based on commas and will eat white space before/after the comma
-  let keywordList = keyStr.split(/\s*(?:,)\s*/);
-  keywordList.forEach(kw => {
-    // if = exists, then split
-    if (kw.indexOf('=') !== -1) {
-      let kwPair = kw.split('=');
-      let key = kwPair[0];
-      let val = kwPair[1];
+  if (isStr(keyStr) && keyStr !== '') {
+    // will split based on commas and will eat white space before/after the comma
+    let keywordList = keyStr.split(/\s*(?:,)\s*/);
+    keywordList.forEach(kw => {
+      // if = exists, then split
+      if (kw.indexOf('=') !== -1) {
+        let kwPair = kw.split('=');
+        let key = kwPair[0];
+        let val = kwPair[1];
 
-      // then check for existing key in result > if so add value to the array > if not, add new key and create value array
-      if (result.hasOwnProperty(key)) {
-        result[key].push(val);
+        // then check for existing key in result > if so add value to the array > if not, add new key and create value array
+        if (result.hasOwnProperty(key)) {
+          result[key].push(val);
+        } else {
+          result[key] = [val];
+        }
       } else {
-        result[key] = [val];
+        // make a key with '' value; if key already exists > don't add
+        if (!result.hasOwnProperty(kw)) {
+          result[kw] = [''];
+        }
       }
-    } else {
-      // make a key with '' value; if key already exists > don't add
-      if (!result.hasOwnProperty(kw)) {
-        result[kw] = [''];
-      }
-    }
-  });
+    });
+  }
 
   return result;
 }

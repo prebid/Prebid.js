@@ -39,6 +39,7 @@ import {ajax} from '../../src/ajax.js';
 import {hook} from '../../src/hook.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {useMetrics} from '../../src/utils/perfMetrics.js';
 
 const getConfig = config.getConfig;
 
@@ -521,6 +522,8 @@ Object.assign(ORTB2.prototype, {
     let imps = [];
     let aliases = {};
     const firstBidRequest = bidRequests[0];
+    let floorMin = null;
+    let floorMinCur = null;
 
     // transform ad unit into array of OpenRTB impression objects
     let impIds = new Set();
@@ -555,7 +558,7 @@ Object.assign(ORTB2.prototype, {
           const bidder = adapterManager.bidderRegistry[bid.bidder];
           // adding alias only if alias source bidder exists and alias isn't configured to be standalone
           // pbs adapter
-          if (bidder && !bidder.getSpec().skipPbsAliasing) {
+          if (!bidder || !bidder.getSpec().skipPbsAliasing) {
             aliases[bid.bidder] = adapterManager.aliasRegistry[bid.bidder];
           }
         }
@@ -670,21 +673,21 @@ Object.assign(ORTB2.prototype, {
 
       mergeDeep(imp, mediaTypes);
 
+      const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
+        ? (amount) => amount
+        : (amount, from, to) => {
+          if (from === to) return amount;
+          let result = null;
+          try {
+            result = getGlobal().convertCurrency(amount, from, to);
+          } catch (e) {
+          }
+          return result;
+        }
+
       const floor = (() => {
         // we have to pick a floor for the imp - here we attempt to find the minimum floor
         // across all bids for this adUnit
-
-        const convertCurrency = typeof getGlobal().convertCurrency !== 'function'
-          ? (amount) => amount
-          : (amount, from, to) => {
-            if (from === to) return amount;
-            let result = null;
-            try {
-              result = getGlobal().convertCurrency(amount, from, to);
-            } catch (e) {
-            }
-            return result;
-          }
         const s2sCurrency = config.getConfig('currency.adServerCurrency') || DEFAULT_S2S_CURRENCY;
 
         return adUnit.bids
@@ -695,6 +698,7 @@ Object.assign(ORTB2.prototype, {
               const {currency, floor} = bid.getFloor({
                 currency: s2sCurrency
               });
+
               return {
                 currency,
                 floor: parseFloat(floor)
@@ -716,11 +720,13 @@ Object.assign(ORTB2.prototype, {
               min.ref = min.min = floor;
             } else {
               const value = convertCurrency(floor.floor, floor.currency, min.ref.currency);
+
               if (value != null && value < min.ref.floor) {
                 min.ref.floor = value;
                 min.min = floor;
               }
             }
+
             return min;
           }, {}).min
       })();
@@ -728,6 +734,26 @@ Object.assign(ORTB2.prototype, {
       if (floor) {
         imp.bidfloor = floor.floor;
         imp.bidfloorcur = floor.currency;
+
+        // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
+        // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
+        // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
+        //    (if currency conversion logic present, convert all imp floor values to this currency)
+        // 3. compare/store ref to lowest floorMin value as each imp is iterated over
+        // 4. set req wide floorMin and floorMinCur values for pbs after iterations are done
+        if (floorMinCur == null) { floorMinCur = floor.currency }
+        const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
+        const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
+
+        const convertedFloorMinValue = convertCurrency(floor.floor, floor.currency, floorMinCur);
+        const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? convertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+
+        const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
+          ? convertedOrtb2ImpFloorMinValue
+          : convertedFloorMinValue;
+
+        deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
+        if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
       }
 
       if (imp.banner || imp.video || imp.native) {
@@ -741,7 +767,7 @@ Object.assign(ORTB2.prototype, {
     }
     const request = {
       id: firstBidRequest.auctionId,
-      source: {tid: s2sBidRequest.tid},
+      source: {tid: firstBidRequest.auctionId},
       tmax: s2sConfig.timeout,
       imp: imps,
       // to do: add setconfig option to pass test = 1
@@ -902,6 +928,12 @@ Object.assign(ORTB2.prototype, {
     addBidderFirstPartyDataToRequest(request, s2sBidRequest.ortb2Fragments?.bidder || {});
 
     request.imp.forEach((imp) => this.impRequested[imp.id] = imp);
+
+    if (request.ext?.prebid?.floors?.enabled) {
+      request.ext.prebid.floors.floorMin = floorMin;
+      request.ext.prebid.floors.floorMinCur = floorMinCur;
+    }
+
     return request;
   },
 
@@ -918,10 +950,6 @@ Object.assign(ORTB2.prototype, {
         (seatbid.bid || []).forEach(bid => {
           let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
           if (bidRequest == null) {
-            if (!s2sConfig.allowUnknownBidderCodes) {
-              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-              return;
-            }
             // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
             // can work as expected (otherwise, the original request will always result in NO_BID).
             bidRequest = this.getBidRequest(bid.impid, null);
@@ -936,6 +964,7 @@ Object.assign(ORTB2.prototype, {
             transactionId: this.adUnitsByImp[bid.impid].transactionId,
             auctionId: this.auctionId,
           });
+          bidObject.requestBidder = bidRequest?.bidder;
           bidObject.requestTimestamp = this.requestTimestamp;
           bidObject.cpm = cpm;
           if (bid?.ext?.prebid?.meta?.adaptercode) {
@@ -1097,6 +1126,12 @@ export function PrebidServer() {
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
+    const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
+      .newMetrics()
+      .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
+    done = adapterMetrics.startTiming('total').stopBefore(done);
+    bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
+
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
@@ -1118,8 +1153,17 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          if (isValid(adUnit, bid)) {
-            addBidResponse(adUnit, bid);
+          const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
+          metrics.checkpoint('addBidResponse');
+          if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
+            logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+          } else {
+            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
+              addBidResponse(adUnit, bid);
+            } else {
+              addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
+            }
           }
         }
       })
@@ -1157,19 +1201,21 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const ortb2 = new ORTB2(s2sBidRequest, bidRequests, adUnits, requestedBidders);
-  const request = ortb2.buildRequest();
+  const request = s2sBidRequest.metrics.measureTime('buildRequests', () => ortb2.buildRequest());
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
+    const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
       endpointUrl,
       {
         success: function (response) {
+          networkDone();
           let result;
           try {
             result = JSON.parse(response);
-            const bids = ortb2.interpretResponse(result);
+            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => ortb2.interpretResponse(result));
             bids.forEach(onBid);
           } catch (error) {
             logError(error);
@@ -1181,7 +1227,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             onResponse(true, requestedBidders);
           }
         },
-        error: onError
+        error: function () {
+          networkDone();
+          onError.apply(this, arguments);
+        }
       },
       requestJson,
       {contentType: 'text/plain', withCredentials: true}
