@@ -55,7 +55,7 @@ const data = converter.toORTB({bidRequests, bidderRequest});
 deepSetValue(data.imp[0], 'ext.myCustomParam', bidRequests[0].params.myCustomParam);
 ```
 
-However, there are two restrictions:
+However, there are two restrictions (to avoid them, use the [other customization options](#fine-customization)):
 
  - you may not change the `imp[].id` returned by `toORTB`; they ared used internally to match responses to their requests.
      ```javascript
@@ -80,6 +80,7 @@ However, there are two restrictions:
     )   
     ```
 
+<a id="fine-customization" />
 ### Fine grained customization - imp, request, bidResponse, response
 
 When invoked, `toORTB({bidRequests, bidderRequest})` first loops through each request in `bidRequests`, converting them into ORTB `imp` objects.
