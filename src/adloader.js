@@ -5,6 +5,7 @@ const _requestCache = new WeakMap();
 // The below list contains modules or vendors whom Prebid allows to load external JS.
 const _approvedLoadExternalJSList = [
   'debugging',
+  'admatic',
   'adloox',
   'criteo',
   'outstream',
