@@ -15,8 +15,9 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts) || config.params.contexts.length == 0 ) 
+  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts) || config.params.contexts.length == 0) {
     return false
+  }
   return true;
 }
 
@@ -73,8 +74,9 @@ function getImpUrl(config, data, maxCpm) {
   const context = adUnits !== undefined
     ? adUnits.mediaTypes.video.context
     : 'unknown';
-  if (!config.params.contexts.includes(context))
+  if (!config.params.contexts.includes(context)) {
     return false;
+  }
   let trackingImpUrl = 'https://' + config.params.domain + '.oxxion.io/analytics/vast_imp?';
   trackingImpUrl += oxxionRtdSearchFor.reduce((acc, param) => {
     switch (typeof data[param]) {
@@ -93,7 +95,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
   const transactionsToCheck = {}
   auctionDetails.adUnits.forEach(adunit => {
     if (config.params.contexts.includes(deepAccess(adunit, 'mediaTypes.video.context'))) {
-      transactionsToCheck[adunit.transactionId] = {'bids': {}, 'maxCpm': 0.0, 'secondMaxCpm': 0.0}; 
+      transactionsToCheck[adunit.transactionId] = {'bids': {}, 'maxCpm': 0.0, 'secondMaxCpm': 0.0};
     }
   });
   for (const key in auctionDetails.bidsReceived) {
