@@ -60,7 +60,11 @@ const helpers = {
   },
   createOrtbImpBannerObj(bid, size) {
     let format = [];
-    format.push(size.split('x'));
+    let sizes = size.split('x');
+    sizes[0] = parseInt(sizes[0]);
+    sizes[1] = parseInt(sizes[1]);
+
+    format.push(sizes);
 
     return {
       id: 'banner-' + bid.bidId,
@@ -171,9 +175,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
       }
     }
-
-    // eslint-disable-next-line no-console
-    console.log(imp);
 
     request.imp.push(imp);
   });
