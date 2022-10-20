@@ -4,6 +4,7 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -56,6 +57,12 @@ export const spec = {
       test: validBidRequests[0].params.test || 0,
       source: mapSource(validBidRequests[0]),
     };
+
+    // const bidderTimeout = config.getConfig('bidderTimeout');
+    // if(bidderTimeout) {
+    //   request.tmax = bidderTimeout;
+    // }
+
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
@@ -91,14 +98,24 @@ export const spec = {
     if (ortb2Params.device) {
       mergeDeep(request, { device: ortb2Params.device });
     }
+    // logInfo('bidderRequest:', bidderRequest);
+    // logInfo('bid request:', request);
+
+    const fledgeConfig = config.getConfig('fledgeConfig');
+    if(fledgeConfig) {
+      mergeDeep(request, { ext: { fledge_config: fledgeConfig }});
+    }
+
 
     return {
       method: 'POST',
-      url: 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
+      url: config.getConfig('customBidderEndpoint') || 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
       data: JSON.stringify(request)
     };
   },
   interpretOrtbResponse: function (serverResponse, originalRequest) {
+    logInfo('Interpreting response', serverResponse);
+
     const responseBody = serverResponse.body;
     if (!isArray(responseBody)) {
       return [];
@@ -111,23 +128,47 @@ export const spec = {
       }
       // try...catch would be risky cause JSON.parse throws SyntaxError
       if (serverBid.adm.indexOf('{') === 0) {
-        bids.push(interpretNativeBid(serverBid));
+        interpretedBid = interpretNativeBid(serverBid);
       } else {
-        bids.push(interpretBannerBid(serverBid));
+        interpretedBid = interpretBannerBid(serverBid);
       }
+      if(serverBid.ext) interpretedBid.ext = serverBid.ext;
+      bids.push(interpretedBid);
     });
     return bids;
   },
   interpretResponse: function (serverResponse, originalRequest) {
     const bids = this.interpretOrtbResponse(serverResponse, originalRequest);
-    let fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.fledge_auction_configs');
+    // console.log('rtbhouse serverResponse =',serverResponse)
+    let fledgeAuctionConfigs = null;
+    // look for first ext.fledge_auction_configs
+    // const mockupAuctionConfig = config.getConfig('auctionConfig');
+
+    bids.forEach(bid => {
+      if(fledgeAuctionConfigs) {
+        deepDelete(bid, 'ext.fledge_auction_configs');
+        return;
+      }
+      fledgeAuctionConfigs = deepAccess(bid, 'ext.fledge_auction_configs');
+      
+      if(fledgeAuctionConfigs) {
+
+        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+          return Object.assign({
+            bidId,
+            auctionSignals: {}
+          }, cfg);
+          // }, mockupAuctionConfig || cfg );
+        });
+      }
+
+      
+      deepDelete(bid, 'ext.fledge_auction_configs');
+      
+      //console.log('rtbhouse bid', {bid, fledgeAuctionConfigs})
+    });
     if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
-          bidId,
-          auctionSignals: {}
-        }, cfg);
-      });
+      logInfo('Returning from interpretResponse:', {bids, fledgeAuctionConfigs})
       return {
         bids,
         fledgeAuctionConfigs,
@@ -137,6 +178,28 @@ export const spec = {
   }
 };
 registerBidder(spec);
+
+/**
+ * Deletes the deepest key in the object along the path. 
+ * When the containing object has no other keys it's been also deleted 
+ * (and up to the top key in the path if possible)
+ * @param {object} obj Object to delete a key/subkey
+ * @param {string} path dot-separated path of the key/subkey to delete
+ */
+function deepDelete(obj, path) {
+  if(!path || !obj || typeof obj !== 'object') return;
+  const pathArray = path.split('.');
+  const topPathElem = pathArray[0];
+  if(pathArray.length > 1) {
+    const del = deepDelete(obj[topPathElem], pathArray.slice(1).join('.'));
+    if(del) delete obj[topPathElem];
+  } else {
+    delete obj[topPathElem];
+    if(Object.keys(obj).length == 0) {
+      return true
+    }
+  }
+}
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
@@ -451,4 +514,9 @@ function interpretNativeAd(adm) {
     }
   });
   return result;
+}
+
+
+function interpretFledgeBid(fledgeBid) {
+  // fledgeBid is an ext.igbid[] element
 }
