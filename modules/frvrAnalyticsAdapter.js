@@ -1,9 +1,8 @@
-import adapter from 'src/AnalyticsAdapter';
-import CONSTANTS from 'src/constants.json';
-import adapterManager from 'src/adapterManager';
-import {logInfo} from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
+import CONSTANTS from '../src/constants.json';
+import {logInfo, deepClone} from '../src/utils.js';
 
-const utils = require('src/utils');
 const analyticsType = 'endpoint';
 const MODULE = 'frvr';
 
@@ -23,7 +22,7 @@ function handleAuctionInit(args) {
     o.adUnits = mapAdUnits(args.adUnits);
   }
 
-  handleEvent("hb_auction_init", o);
+  handleEvent('hb_auction_init', o);
 }
 
 /**
@@ -32,13 +31,13 @@ function handleAuctionInit(args) {
  */
 function handleBidRequested(args) {
   const o = {}
-  if(args.auctionId) {
+  if (args.auctionId) {
     o.auctionId = args.auctionId;
   }
-  if(args.bidderCode) {
+  if (args.bidderCode) {
     o.bidderCode = args.bidderCode;
   }
-  if(args.start) {
+  if (args.start) {
     o.start = args.start;
   }
   if (args.timeout) {
@@ -62,7 +61,7 @@ function handleBidRequested(args) {
       });
   }
 
-  handleEvent("hb_bid_request", o);
+  handleEvent('hb_bid_request', o);
 }
 
 /**
@@ -70,11 +69,11 @@ function handleBidRequested(args) {
  * @param args
  */
 function handleBidResponse(args) {
-  var o = utils.deepClone(args);
+  var o = deepClone(args);
   if (o && o.ad) {
-    delete o["ad"];
+    delete o['ad'];
   }
-  handleEvent("hb_bid_response", o);
+  handleEvent('hb_bid_response', o);
 }
 
 /**
@@ -117,7 +116,7 @@ function handleBidAdjustment(args) {
     o.responseTimestamp = args.responseTimestamp;
   }
 
-  handleEvent("hb_bid_adjustment", o);
+  handleEvent('hb_bid_adjustment', o);
 }
 
 /**
@@ -126,13 +125,13 @@ function handleBidAdjustment(args) {
  */
 function handleBidderDone(args) {
   const o = {}
-  if(args.auctionId) {
+  if (args.auctionId) {
     o.auctionId = args.auctionId;
   }
-  if(args.bidderCode) {
+  if (args.bidderCode) {
     o.bidderCode = args.bidderCode;
   }
-  if(args.start) {
+  if (args.start) {
     o.start = args.start;
   }
   if (args.timeout) {
@@ -159,7 +158,7 @@ function handleBidderDone(args) {
       });
   }
 
-  handleEvent("hb_bidder_done", o);
+  handleEvent('hb_bidder_done', o);
 }
 
 /**
@@ -174,7 +173,7 @@ function handleAuctionEnd(args) {
   if (args.timestamp) {
     o.timestamp = args.timestamp;
   }
-  if(args.auctionEnd) {
+  if (args.auctionEnd) {
     o.auctionEnd = args.auctionEnd;
   }
   if (args.adUnits) {
@@ -192,7 +191,7 @@ function handleAuctionEnd(args) {
   if (args.winningBids) {
     o.winningBids = mapBids(args.winningBids);
   }
-  handleEvent("hb_auction_end", o);
+  handleEvent('hb_auction_end', o);
 }
 
 /**
@@ -200,12 +199,12 @@ function handleAuctionEnd(args) {
  * @param args
  */
 function handleBidWon(args) {
-  var o = utils.deepClone(args);
+  var o = deepClone(args);
 
-  if (o && o["ad"]) {
-    delete o["ad"];
+  if (o && o['ad']) {
+    delete o['ad'];
   }
-  handleEvent("hb_bid_won", o);
+  handleEvent('hb_bid_won', o);
 }
 
 /**
@@ -219,11 +218,11 @@ function handleOtherEvents(eventType, args) {
 
 function handleEvent(name, data) {
   if (window.XS && window.XS.track && window.XS.track.event) {
-    XS.track.event(name, undefined, data);
+    window.XS.track.event(name, undefined, data);
     return;
   }
 
-  if (window.FRVR && FRVR.tracker && FRVR.tracker.logEvent) {
+  if (window.FRVR && window.FRVR.tracker && window.FRVR.tracker.logEvent) {
     window.FRVR.tracker.logEvent(name, data);
   }
 }
@@ -266,7 +265,7 @@ function mapBidderRequests(bidsReqs) {
       bidderCode: e.bidderCode,
       auctionId: e.auctionId,
       bidderRequestId: e.bidderRequestId,
-      bids: e.bids.map( b => {
+      bids: e.bids.map(b => {
         return {
           bidder: b.bidder,
           params: b.params,
