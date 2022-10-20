@@ -35,6 +35,7 @@
     "pubCommonId",
     "pubmaticBidAdapter",
     "pubProvidedIdSystem",
+    "priceFloors",
     "rtdModule",
     "rubiconBidAdapter",
     "schain",
