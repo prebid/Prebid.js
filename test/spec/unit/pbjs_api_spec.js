@@ -1458,7 +1458,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub;
+    let makeRequestsStub, createAuctionStub;
     let adUnits;
     let clock;
     before(function () {
@@ -1527,7 +1527,7 @@ describe('Unit: Prebid Module', function () {
         callback: bidsBackHandlerStub,
         cbTimeout: 2000
       });
-      let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+      createAuctionStub = sinon.stub(auctionModule, 'newAuction');
       createAuctionStub.returns(auction);
     });
 
@@ -1536,6 +1536,7 @@ describe('Unit: Prebid Module', function () {
       adapterManager.makeBidRequests.restore();
       auctionModule.newAuction.restore();
       utils.logMessage.restore();
+      createAuctionStub.restore();
     });
 
     it('should execute callback after timeout', function () {
@@ -1616,6 +1617,16 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       sinon.assert.called(spec.onSetTargeting);
+    });
+
+    it('should transfer ttlBuffer to adUnit.ttlBuffer', () => {
+      $$PREBID_GLOBAL$$.requestBids({
+        ttlBuffer: 123,
+        adUnits: [adUnits[0], {...adUnits[0], ttlBuffer: 0}]
+      });
+      sinon.assert.calledWithMatch(createAuctionStub, {
+        adUnits: sinon.match((units) => units[0].ttlBuffer === 123 && units[1].ttlBuffer === 0)
+      })
     });
   })
 
