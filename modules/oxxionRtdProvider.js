@@ -26,7 +26,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
   if (Array.isArray(reqAdUnits)) {
     reqAdUnits.forEach(adunit => {
       if (config.params.contexts.includes(deepAccess(adunit, 'mediaTypes.video.context'))) {
-        allAdUnits.push(adunit); 
+        allAdUnits.push(adunit);
       }
     });
   }
