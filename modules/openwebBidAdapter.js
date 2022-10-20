@@ -1,8 +1,8 @@
-import { isNumber, deepAccess, isArray, flatten, convertTypes, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ADPOD, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import {convertTypes, deepAccess, flatten, isArray, isNumber, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
 
 const ENDPOINT = 'https://ghb.spotim.market/v2/auction';
 const BIDDER_CODE = 'openweb';
@@ -126,7 +126,8 @@ function parseRTBResponse(serverResponse, adapterRequest) {
 function bidToTag(bidRequests, adapterRequest) {
   // start publisher env
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
@@ -148,7 +149,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   }
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

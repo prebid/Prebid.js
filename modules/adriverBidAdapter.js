@@ -1,13 +1,14 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
 import { logInfo, getWindowLocation, getBidIdParameter, _each } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';
 const TIME_TO_LIVE = 3000;
 
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
-
   code: BIDDER_CODE,
 
   /**
@@ -21,8 +22,6 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    logInfo('validBidRequests', validBidRequests);
-
     let win = getWindowLocation();
     let customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
     let siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
@@ -31,7 +30,7 @@ export const spec = {
 
     let timeout = null;
     if (bidderRequest) {
-      timeout = bidderRequest.timeout
+      timeout = bidderRequest.timeout;
     }
 
     const payload = {
@@ -98,12 +97,16 @@ export const spec = {
       });
     });
 
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
+    if (adrcidCookie) {
+      payload.user.buyerid = adrcidCookie;
+    }
     const payloadString = JSON.stringify(payload);
 
     return {
       method: 'POST',
       url: ADRIVER_BID_URL,
-      data: payloadString,
+      data: payloadString
     };
   },
 

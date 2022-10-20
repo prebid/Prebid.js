@@ -1,8 +1,8 @@
-import { deepAccess, isArray, chunk, _map, flatten, logError, parseSizesInput } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_map, chunk, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find} from '../src/polyfill.js';
 
 const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
 const BIDDER_CODE = 'adtarget';
@@ -117,7 +117,8 @@ function parseResponse(serverResponse, adapterRequest) {
 
 function bidToTag(bidRequests, adapterRequest) {
   const tag = {
-    Domain: deepAccess(adapterRequest, 'refererInfo.referer')
+    // TODO: is 'page' the right value here?
+    Domain: deepAccess(adapterRequest, 'refererInfo.page')
   };
   if (config.getConfig('coppa') === true) {
     tag.Coppa = 1;
@@ -136,7 +137,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserIds = deepAccess(bidRequests[0], 'userId');
   }
 
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

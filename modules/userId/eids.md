@@ -3,6 +3,13 @@
 ```
 userIdAsEids = [
     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
         source: 'trustpid.com',
         uids: [{
             id: 'some-random-id-value',
@@ -38,6 +45,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'neustar.biz',
         uids: [{
             id: 'some-random-id-value',
@@ -55,6 +70,13 @@ userIdAsEids = [
                 abTestingControlGroup: false
             }
         }]
+    },
+
+    {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'the-ids-object-stringified',
+            atype: 1
     },
 
     {
@@ -133,14 +155,6 @@ userIdAsEids = [
     },
 
     {
-        source: 'nextroll.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
         source: 'audigent.com',
         uids: [{
             id: 'some-random-id-value',
@@ -192,13 +206,6 @@ userIdAsEids = [
         }]
     },
     {
-    source: 'akamai.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-    {
         source: 'admixer.net',
         uids: [{
             id: 'some-random-id-value',
@@ -225,6 +232,13 @@ userIdAsEids = [
               id: 'some-random-id-value',
               atype: 3
          }]
+    },
+    {
+        source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
     }
 ]
 ```

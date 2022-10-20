@@ -12,7 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager(GVL_ID, BIDDER_CODE);
+export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -54,13 +54,14 @@ export const spec = {
       data: bids,
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
-      ...getFLoCParameters(deepAccess(validBidRequests, '0.userId.flocId')),
-      ...getUnifiedId2Parameter(deepAccess(validBidRequests, '0.userId.uid2')),
-      ...getFirstPartyTeadsIdParameter()
+      ...getSharedViewerIdParameters(validBidRequests),
+      ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const firstBidRequest = validBidRequests[0];
+
+    if (firstBidRequest.schain) {
+      payload.schain = firstBidRequest.schain;
     }
 
     let gdpr = bidderRequest.gdprConsent;
@@ -68,7 +69,7 @@ export const spec = {
       let isCmp = typeof gdpr.gdprApplies === 'boolean';
       let isConsentString = typeof gdpr.consentString === 'string';
       let status = isCmp
-        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData, gdpr.apiVersion)
+        ? findGdprStatus(gdpr.gdprApplies, gdpr.vendorData)
         : gdprStatus.CMP_NOT_FOUND_OR_ERROR;
       payload.gdpr_iab = {
         consent: isConsentString ? gdpr.consentString : '',
@@ -79,6 +80,11 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    if (userAgentClientHints) {
+      payload.userAgentClientHints = userAgentClientHints;
     }
 
     const payloadString = JSON.stringify(payload);
@@ -125,10 +131,41 @@ export const spec = {
   }
 };
 
+/**
+ *
+ * @param validBidRequests an array of bids
+ * @returns {{sharedViewerIdKey : 'sharedViewerIdValue'}} object with all sharedviewerids
+ */
+function getSharedViewerIdParameters(validBidRequests) {
+  const sharedViewerIdMapping = {
+    unifiedId2: 'uid2.id', // uid2IdSystem
+    liveRampId: 'idl_env', // identityLinkIdSystem
+    lotamePanoramaId: 'lotamePanoramaId', // lotamePanoramaIdSystem
+    id5Id: 'id5id.uid', // id5IdSystem
+    criteoId: 'criteoId', // criteoIdSystem
+    yahooConnectId: 'connectId', // connectIdSystem
+    quantcastId: 'quantcastId', // quantcastIdSystem
+    epsilonPublisherLinkId: 'publinkId', // publinkIdSystem
+    publisherFirstPartyViewerId: 'pubcid', // sharedIdSystem
+    merkleId: 'merkleId.id', // merkleIdSystem
+    kinessoId: 'kpuid' // kinessoIdSystem
+  }
+
+  let sharedViewerIdObject = {};
+  for (const sharedViewerId in sharedViewerIdMapping) {
+    const key = sharedViewerIdMapping[sharedViewerId];
+    const value = deepAccess(validBidRequests, `0.userId.${key}`);
+    if (value) {
+      sharedViewerIdObject[sharedViewerId] = value;
+    }
+  }
+  return sharedViewerIdObject;
+}
+
 function getReferrerInfo(bidderRequest) {
   let ref = '';
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    ref = bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    ref = bidderRequest.refererInfo.page;
   }
   return ref;
 }
@@ -166,24 +203,16 @@ function getTimeToFirstByte(win) {
   return ttfbWithTimingV1 ? ttfbWithTimingV1.toString() : '';
 }
 
-function findGdprStatus(gdprApplies, gdprData, apiVersion) {
+function findGdprStatus(gdprApplies, gdprData) {
   let status = gdprStatus.GDPR_APPLIES_PUBLISHER;
   if (gdprApplies) {
-    if (isGlobalConsent(gdprData, apiVersion)) {
+    if (gdprData && !gdprData.isServiceSpecific) {
       status = gdprStatus.GDPR_APPLIES_GLOBAL;
     }
   } else {
     status = gdprStatus.GDPR_DOESNT_APPLY;
   }
   return status;
-}
-
-function isGlobalConsent(gdprData, apiVersion) {
-  return gdprData && apiVersion === 1
-    ? (gdprData.hasGlobalScope || gdprData.hasGlobalConsent)
-    : gdprData && apiVersion === 2
-      ? !gdprData.isServiceSpecific
-      : false;
 }
 
 function buildRequestObject(bid) {
@@ -238,38 +267,26 @@ function _validateId(id) {
 }
 
 /**
- * Get FLoC parameters to be sent in the bid request.
- * @param `{id: string, version: string} | undefined` optionalFlocId FLoC user ID object available if "flocIdSystem" module is enabled.
- * @returns `{} | {cohortId: string} | {cohortVersion: string} | {cohortId: string, cohortVersion: string}`
- */
-function getFLoCParameters(optionalFlocId) {
-  if (!optionalFlocId) {
-    return {};
-  }
-  const cohortId = optionalFlocId.id ? { cohortId: optionalFlocId.id } : {};
-  const cohortVersion = optionalFlocId.version ? { cohortVersion: optionalFlocId.version } : {};
-  return { ...cohortId, ...cohortVersion };
-}
-
-/**
- * Get unified ID v2 parameter to be sent in bid request.
- * @param `{id: string} | undefined` optionalUid2 uid2 user ID object available if "uid2IdSystem" module is enabled.
- * @returns `{} | {unifiedId2: string}`
- */
-function getUnifiedId2Parameter(optionalUid2) {
-  return optionalUid2 ? { unifiedId2: optionalUid2.id } : {};
-}
-
-/**
  * Get the first-party cookie Teads ID parameter to be sent in bid request.
+ * @param validBidRequests an array of bids
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
-function getFirstPartyTeadsIdParameter() {
-  if (!storage.cookiesAreEnabled()) {
-    return {};
+function getFirstPartyTeadsIdParameter(validBidRequests) {
+  const firstPartyTeadsIdFromUserIdModule = deepAccess(validBidRequests, '0.userId.teadsId');
+
+  if (firstPartyTeadsIdFromUserIdModule) {
+    return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};
   }
-  const firstPartyTeadsId = storage.getCookie(FP_TEADS_ID_COOKIE_NAME);
-  return firstPartyTeadsId ? { firstPartyCookieTeadsId: firstPartyTeadsId } : {};
+
+  if (storage.cookiesAreEnabled(null)) {
+    const firstPartyTeadsIdFromCookie = storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null);
+
+    if (firstPartyTeadsIdFromCookie) {
+      return {firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie};
+    }
+  }
+
+  return {};
 }
 
 registerBidder(spec);

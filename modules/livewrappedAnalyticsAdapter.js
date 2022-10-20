@@ -1,6 +1,6 @@
 import { timestamp, logInfo, getWindowTop } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -67,10 +67,10 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
             auc: bidRequest.auc,
             buc: bidRequest.buc,
             lw: bidRequest.lw
-          }
+          };
 
           logInfo(bidRequest);
-        })
+        });
         logInfo(livewrappedAnalyticsAdapter.requestEvents);
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
@@ -86,6 +86,8 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         bidResponse.readyToSend = 1;
         bidResponse.mediaType = args.mediaType == 'native' ? 2 : (args.mediaType == 'video' ? 4 : 1);
         bidResponse.floorData = args.floorData;
+        bidResponse.meta = args.meta;
+
         if (!bidResponse.ttr) {
           bidResponse.ttr = time - bidResponse.start;
         }
@@ -115,6 +117,8 @@ let livewrappedAnalyticsAdapter = Object.assign(adapter({EMPTYURL, ANALYTICSTYPE
         wonBid.won = true;
         wonBid.floorData = args.floorData;
         wonBid.rUp = args.rUp;
+        wonBid.meta = args.meta;
+        wonBid.dealId = args.dealId;
         if (wonBid.sendStatus != 0) {
           livewrappedAnalyticsAdapter.sendEvents();
         }
@@ -179,7 +183,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
   }
 
   ajax(initOptions.endpoint || URL, undefined, JSON.stringify(events), {method: 'POST'});
-}
+};
 
 function getAdblockerRecovered() {
   try {
@@ -251,7 +255,8 @@ function getResponses(gdpr, auctionIds) {
           auctionId: auctionIdPos,
           auc: bid.auc,
           buc: bid.buc,
-          lw: bid.lw
+          lw: bid.lw,
+          meta: bid.meta
         });
       }
     });
@@ -290,7 +295,9 @@ function getWins(gdpr, auctionIds) {
           auc: bid.auc,
           buc: bid.buc,
           lw: bid.lw,
-          rUp: bid.rUp
+          rUp: bid.rUp,
+          meta: bid.meta,
+          dealId: bid.dealId
         });
       }
     });

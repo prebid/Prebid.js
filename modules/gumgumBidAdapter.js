@@ -1,14 +1,13 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {_each, deepAccess, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
-import includes from 'core-js-pure/features/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-
-const storage = getStorageManager();
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -295,7 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
-  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
       bidId,
@@ -322,7 +321,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.to = to;
 
     // ADTS-169 add adUnitCode to requests
-    if (adUnitCode) data.aun = adUnitCode
+    if (adUnitCode) data.aun = adUnitCode;
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
@@ -371,9 +370,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      } else if (params.product && params.product.toLowerCase() === 'skins') {
+        data.pi = 8;
       }
     } else { // legacy params
-      data = { ...data, ...handleLegacyParams(params, sizes) }
+      data = { ...data, ...handleLegacyParams(params, sizes) };
     }
 
     if (gdprConsent) {
@@ -399,7 +400,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
-    })
+    });
   });
   return bids;
 }

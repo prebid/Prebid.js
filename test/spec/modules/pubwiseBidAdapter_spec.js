@@ -99,13 +99,15 @@ const sampleValidBannerBidRequest = {
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
+  ortb2Imp: {
+    ext: {
+      data: {
+        adserver: {
+          name: 'gam',
+          adslot: '/19968336/header-bid-tag-0'
+        },
+        pbadslot: '/19968336/header-bid-tag-0',
+      }
     }
   },
   'mediaTypes': {
@@ -175,13 +177,15 @@ const sampleValidBidRequests = [
         'required': false
       }
     },
-    'fpd': {
-      'context': {
-        'adServer': {
-          'name': 'gam',
-          'adSlot': '/19968336/header-bid-tag-0'
-        },
-        'pbAdSlot': '/19968336/header-bid-tag-0'
+    ortb2Imp: {
+      ext: {
+        data: {
+          adserver: {
+            name: 'gam',
+            adslot: '/19968336/header-bid-tag-0'
+          },
+          pbadslot: '/19968336/header-bid-tag-0',
+        }
       }
     },
     'mediaTypes': {
@@ -234,7 +238,7 @@ const sampleBidderBannerRequest = {
     'bidFloor': '1.00',
     'currency': 'USD',
     'adSlot': '',
-    'adUnit': '',
+    'adUnit': 'div-gpt-ad-1460505748561-0',
     'bcat': [
       'IAB25-3',
       'IAB26-1',
@@ -246,13 +250,15 @@ const sampleBidderBannerRequest = {
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
+  ortb2Imp: {
+    ext: {
+      data: {
+        adserver: {
+          name: 'gam',
+          adslot: '/19968336/header-bid-tag-0'
+        },
+        pbadslot: '/19968336/header-bid-tag-0',
+      }
     }
   },
   'mediaTypes': {
@@ -327,13 +333,15 @@ const sampleBidderRequest = {
           'required': false
         }
       },
-      'fpd': {
-        'context': {
-          'adServer': {
-            'name': 'gam',
-            'adSlot': '/19968336/header-bid-tag-0'
-          },
-          'pbAdSlot': '/19968336/header-bid-tag-0'
+      ortb2Imp: {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: '/19968336/header-bid-tag-0'
+            },
+            pbadslot: '/19968336/header-bid-tag-0',
+          }
         }
       },
       'mediaTypes': {
@@ -527,13 +535,15 @@ describe('PubWiseAdapter', function () {
 
   describe('Handling Request Construction', function () {
     it('bid requests are not mutable', function() {
-      let sourceBidRequest = utils.deepClone(sampleValidBidRequests)
-      spec.buildRequests(sampleValidBidRequests, {auctinId: 'placeholder'});
+      let sourceBidRequest = utils.deepClone(sampleValidBidRequests);
+      spec.buildRequests(sampleValidBidRequests, {auctionId: 'placeholder'});
       expect(sampleValidBidRequests).to.deep.equal(sourceBidRequest, 'Should be unedited as they are used elsewhere');
     });
     it('should handle complex bidRequest', function() {
       let request = spec.buildRequests(sampleValidBidRequests, sampleBidderRequest);
-      expect(request.bidderRequest).to.equal(sampleBidderRequest);
+      expect(request.bidderRequest).to.equal(sampleBidderRequest, "Bid Request Doesn't Match Sample");
+      expect(request.data.source.tid).to.equal(sampleBidderRequest.auctionId, 'AuctionId -> source.tid Mismatch');
+      expect(request.data.imp[0].ext.tid).to.equal(sampleBidderRequest.bids[0].transactionId, 'TransactionId -> ext.tid Mismatch');
     });
     it('must conform to API for buildRequests', function() {
       let request = spec.buildRequests(sampleValidBidRequests);

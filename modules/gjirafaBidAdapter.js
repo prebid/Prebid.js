@@ -9,7 +9,7 @@ const SIZE_SEPARATOR = ';';
 const BISKO_ID = 'biskoId';
 const STORAGE_ID = 'bisko-sid';
 const SEGMENTS = 'biskoSegments';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -45,7 +45,7 @@ export const spec = {
       if (!propertyId) { propertyId = bidRequest.params.propertyId; }
       if (!pageViewGuid && bidRequest.params) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!bidderRequestId) { bidderRequestId = bidRequest.bidderRequestId; }
-      if (!url && bidderRequest) { url = bidderRequest.refererInfo.referer; }
+      if (!url && bidderRequest) { url = bidderRequest.refererInfo.page; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (Object.keys(data).length === 0 && bidRequest.params.data && Object.keys(bidRequest.params.data).length !== 0) { data = bidRequest.params.data; }
 
@@ -74,7 +74,7 @@ export const spec = {
       placements: placements,
       contents: contents,
       data: data
-    }
+    };
 
     return [{
       method: 'POST',
@@ -113,7 +113,7 @@ export const spec = {
     }
     return bidResponses;
   }
-}
+};
 
 /**
 * Generate size param for bid request using sizes array

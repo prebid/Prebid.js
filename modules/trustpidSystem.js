@@ -4,16 +4,15 @@
  * @module modules/trustpidSystem
  * @requires module:modules/userId
  */
-import { logInfo, logError } from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'trustpid';
 const LOG_PREFIX = 'Trustpid module'
-let mnoAcronym = '';
 let mnoDomain = '';
 
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 
 /**
  * Handle an event for an iframe.
@@ -22,62 +21,28 @@ export const storage = getStorageManager(null, MODULE_NAME);
  * @param event
  */
 function messageHandler(event) {
-  let msg;
   try {
-    if (event && event.data && typeof event.data === 'string' && event.data) {
-      msg = JSON.parse(event.data);
+    if (event && event.data && typeof event.data === 'string') {
+      const msg = JSON.parse(event.data);
       if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
         let URL = msg.body.url.split('//');
         let domainURL = URL[1].split('/');
         mnoDomain = domainURL[0];
         logInfo(`${LOG_PREFIX}: Message handler set domain to ${mnoDomain}`);
-        getDomainAcronym(mnoDomain);
       }
     }
   } catch (e) {
-    logError(e);
+    logInfo(`${LOG_PREFIX}: Unsupported message caught. Origin: ${event.origin}, data: ${event.data}.`);
   }
-}
-
-/**
- * Properly sets the trustpid acronym depending on the domain value.
- * @param domain
- */
-function getDomainAcronym(domain) {
-  let acronym = '';
-  const prefix = '-';
-  switch (domain) {
-    case 'tmi.mno.link':
-      acronym = 'ndye';
-      break;
-    case 'tmi.vodafone.de':
-      acronym = 'pqnx';
-      break;
-    case 'tmi.telekom.de':
-      acronym = 'avgw';
-      break;
-    case 'tmi.tmid.es':
-      acronym = 'kjws';
-      break;
-    case 'uat.mno.link':
-      acronym = 'xxxx';
-      break;
-    case 'es.tmiservice.orange.com':
-      acronym = 'aplw';
-      break;
-    default:
-      return 'none';
-  }
-  return mnoAcronym = prefix + acronym;
 }
 
 // Set a listener to handle the iframe response message.
 window.addEventListener('message', messageHandler, false);
 
 /**
- * Get the "umid" from html5 local storage to make it available to the UserId module.
+ * Get the "atid" from html5 local storage to make it available to the UserId module.
  * @param config
- * @returns {{trustpid: (*|string), acr: (string)}}
+ * @returns {{trustpid: (*|string)}}
  */
 function getTrustpidFromStorage() {
   // Get the domain either from localStorage or global
@@ -88,26 +53,7 @@ function getTrustpidFromStorage() {
     logInfo(`${LOG_PREFIX}: Local storage domain not found, returning null`);
     return {
       trustpid: null,
-      acr: null,
     };
-  }
-
-  // Get the acronym from global
-  let acronym = mnoAcronym;
-  // if acronym is empty, but "domain" is available, get the acronym from domain
-  if (!acronym) {
-    getDomainAcronym(domain);
-    acronym = mnoAcronym;
-  }
-
-  logInfo(`${LOG_PREFIX}: Domain acronym found: ${acronym}`);
-
-  // Domain is correct in both local storage and idGraph, but no acronym is existing for the domain
-  if (domain && !acronym) {
-    return {
-      trustpid: null,
-      acr: null
-    }
   }
 
   let fcIdConnectObject;
@@ -125,10 +71,9 @@ function getTrustpidFromStorage() {
   logInfo(`${LOG_PREFIX}: Local storage fcIdConnectObject for domain: ${JSON.stringify(fcIdConnectObject)}`);
 
   return {
-    trustpid: (fcIdConnectObject && fcIdConnectObject.umid)
-      ? fcIdConnectObject.umid
+    trustpid: (fcIdConnectObject && fcIdConnectObject.atid)
+      ? fcIdConnectObject.atid
       : null,
-    acr: acronym,
   };
 }
 
@@ -157,7 +102,7 @@ export const trustpidSubmodule = {
     const data = getTrustpidFromStorage();
     if (data.trustpid) {
       logInfo(`${LOG_PREFIX}: Local storage ID value ${JSON.stringify(data)}`);
-      return {id: {trustpid: data.trustpid + data.acr}};
+      return {id: {trustpid: data.trustpid}};
     } else {
       if (!config) {
         config = {};
@@ -184,7 +129,7 @@ export const trustpidSubmodule = {
             }, delayStep);
           }
         } else {
-          const dataToReturn = { trustpid: data.trustpid + data.acr };
+          const dataToReturn = { trustpid: data.trustpid };
           logInfo(`${LOG_PREFIX}: Returning ID value data of ${JSON.stringify(dataToReturn)}`);
           callback(dataToReturn);
         }

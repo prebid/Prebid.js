@@ -624,6 +624,11 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'floorProvider': 'PubXFloorProvider',
+        'floorFetchStatus': 'success',
+        'floorLocation': 'fetch',
+        'floorModelVersion': 'test model 1.0',
+        'floorSkipRate': 0,
+        'isFloorSkipped': false,
         'isWinningBid': true,
         'mediaType': 'banner',
         'netRevenue': true,
@@ -635,6 +640,11 @@ describe('pubxai analytics adapter', function() {
         'status': 'rendered',
         'statusMessage': 'Bid available',
         'timeToRespond': 267
+      },
+      'pageDetail': {
+        'host': location.host,
+        'path': location.pathname,
+        'search': location.search
       },
       'deviceDetail': {
         'platform': navigator.platform,

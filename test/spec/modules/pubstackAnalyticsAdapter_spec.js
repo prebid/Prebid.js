@@ -1,7 +1,7 @@
 import * as utils from 'src/utils.js';
 import pubstackAnalytics from '../../../modules/pubstackAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
+import * as events from 'src/events';
 import constants from 'src/constants.json'
 
 describe('Pubstack Analytics Adapter', () => {
@@ -33,6 +33,7 @@ describe('Pubstack Analytics Adapter', () => {
     events.emit(constants.EVENTS.NO_BID, args)
 
     // Then
-    expect(queue.length).to.eql(6);
+    // 6 Pubstack events + 1 Clean.io event
+    expect(queue.length).to.eql(7);
   });
 });

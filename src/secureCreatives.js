@@ -3,24 +3,29 @@
    access to a publisher page from creative payloads.
  */
 
-import events from './events.js';
+import * as events from './events.js';
 import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
 import constants from './constants.json';
 import {deepAccess, isApnGetTagDefined, isGptPubadsDefined, logError, logWarn, replaceAuctionPrice} from './utils.js';
 import {auctionManager} from './auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find, includes} from './polyfill.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
-import includes from 'core-js-pure/features/array/includes.js';
 import {config} from './config.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
+const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
   'Prebid Request': handleRenderRequest,
-  'Prebid Native': handleNativeRequest,
   'Prebid Event': handleEventRequest,
+}
+
+if (FEATURES.NATIVE) {
+  Object.assign(HANDLER_MAP, {
+    'Prebid Native': handleNativeRequest,
+  })
 }
 
 export function listenMessagesFromCreative() {
@@ -109,6 +114,13 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
+
+  if (!WON_AD_IDS.has(adObject)) {
+    WON_AD_IDS.add(adObject);
+    auctionManager.addWinningBid(adObject);
+    events.emit(BID_WON, adObject);
+  }
+
   switch (data.action) {
     case 'assetRequest':
       reply(getAssetMessage(data, adObject));
@@ -122,12 +134,7 @@ function handleNativeRequest(reply, data, adObject) {
       resizeRemoteCreative(adObject);
       break;
     default:
-      const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') {
-        return;
-      }
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
+      fireNativeTrackers(data, adObject);
   }
 }
 
@@ -162,7 +169,7 @@ function handleEventRequest(reply, data, adObject) {
 }
 
 export function _sendAdToCreative(adObject, reply) {
-  const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
+  const { adId, ad, adUrl, width, height, renderer, cpm, originalCpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
@@ -170,8 +177,8 @@ export function _sendAdToCreative(adObject, reply) {
     resizeRemoteCreative(adObject);
     reply({
       message: 'Prebid Response',
-      ad: replaceAuctionPrice(ad, cpm),
-      adUrl: replaceAuctionPrice(adUrl, cpm),
+      ad: replaceAuctionPrice(ad, originalCpm || cpm),
+      adUrl: replaceAuctionPrice(adUrl, originalCpm || cpm),
       adId,
       width,
       height
@@ -186,7 +193,7 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width + 'px';
+      elementStyle.width = width ? width + 'px' : '100%';
       elementStyle.height = height + 'px';
     } else {
       logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
