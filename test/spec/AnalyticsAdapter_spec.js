@@ -4,7 +4,11 @@ import CONSTANTS from 'src/constants.json';
 import {server} from 'test/mocks/xhr.js';
 import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 import {clearEvents} from 'src/events.js';
-import {DEFAULT_EXCLUDE_EVENTS, setDebounceDelay} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {
+  DEFAULT_EXCLUDE_EVENTS,
+  DEFAULT_INCLUDE_EVENTS,
+  setDebounceDelay
+} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const NO_BID = CONSTANTS.EVENTS.NO_BID;
@@ -108,9 +112,7 @@ FEATURE: Analytics Adapters API
       events.getEvents.restore();
     });
 
-    Object.values(CONSTANTS.EVENTS).forEach(eventType => {
-      if (DEFAULT_EXCLUDE_EVENTS.includes(eventType)) return;
-
+    Object.values(DEFAULT_INCLUDE_EVENTS).forEach(eventType => {
       it(`SHOULD call global when a ${eventType} event occurs`, () => {
         const args = {more: 'info'};
 

@@ -9,7 +9,8 @@ export const _internal = {
 const ENDPOINT = 'endpoint';
 const BUNDLE = 'bundle';
 
-export const DEFAULT_EXCLUDE_EVENTS = [CONSTANTS.EVENTS.AUCTION_DEBUG];
+export const DEFAULT_INCLUDE_EVENTS = Object.values(CONSTANTS.EVENTS)
+  .filter(ev => ev !== CONSTANTS.EVENTS.AUCTION_DEBUG);
 
 let debounceDelay = 100;
 
@@ -99,13 +100,12 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
 
     if (sampled) {
       const trackedEvents = (() => {
-        let events = Object.values(CONSTANTS.EVENTS);
-        if (config?.includeEvents != null) {
-          events = events.filter((ev) => config.includeEvents.includes(ev));
-        }
-        const excludeEvents = config?.excludeEvents || DEFAULT_EXCLUDE_EVENTS;
-        events = events.filter(ev => !excludeEvents.includes(ev))
-        return new Set(events);
+        const {includeEvents = DEFAULT_INCLUDE_EVENTS, excludeEvents = []} = (config || {});
+        return new Set(
+          Object.values(CONSTANTS.EVENTS)
+            .filter(ev => includeEvents.includes(ev))
+            .filter(ev => !excludeEvents.includes(ev))
+        );
       })();
 
       // first send all events fired before enableAnalytics called
