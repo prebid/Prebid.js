@@ -60,6 +60,7 @@ let bids = [{
       'unknown'
     ]
   },
+  'vastUrl': 'https://some.vast-url.com',
   'vastXml': '<VAST version="3.0"><Ad><Wrapper><VASTAdTagURI><![CDATA[https://pbs-front.mediasquare.fr/cache?uuid=4de68767e8f2f9974fd4addd5a9d135a]]></VASTAdTagURI><Impression><![CDATA[https://pbs-front.mediasquare.fr/winning?adUnitCode=&auctionId=ZltsQnBqbcyC6aalwAdD4irnXmrl3E&bidder=freewheel&code=test/publishername_atf_desktop_rg_video&cpm=0.9723&creativeId=AdswizzAd71819&currency=USD&hasConsent=true&mediaType=video&pbjs=&requestId=2d891705d2125b&size=video&timeToRespond=unknown]]></Impression></Wrapper></Ad></VAST>',
   'adapterCode': 'mediasquare',
   'originalCpm': 0.9723,
@@ -133,6 +134,9 @@ describe('oxxionRtdProvider', () => {
       expect(inline).to.have.lengthOf(1);
       let inlineImpressions = vastInline.querySelectorAll('VAST Ad InLine Impression');
       expect(inlineImpressions).to.have.lengthOf.above(0);
-    })
+    });
+    it('check cpmIncrement', function() {
+      expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(encodeURI('cpmIncrement=1'));
+    });
   });
 });

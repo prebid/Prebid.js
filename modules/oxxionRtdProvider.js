@@ -1,10 +1,10 @@
 import { submodule } from '../src/hook.js'
-import { logInfo } from '../src/utils.js'
+import { deepAccess, logInfo } from '../src/utils.js'
 
 const oxxionRtdSearchFor = [ 'adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'userId', 'labelAny', 'adId' ];
 const LOG_PREFIX = 'oxxionRtdProvider submodule: ';
 
-let allAdUnits = [];
+const allAdUnits = [];
 
 /** @type {RtdSubmodule} */
 export const oxxionSubmodule = {
@@ -15,7 +15,8 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts)) return false
+  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts) || config.params.contexts.length == 0 ) 
+    return false
   return true;
 }
 
@@ -23,21 +24,25 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
   const reqAdUnits = reqBidsConfigObj.adUnits;
   if (Array.isArray(reqAdUnits)) {
     reqAdUnits.forEach(adunit => {
-      if (adunit.mediaTypes.video !== undefined && adunit.mediaTypes.video.context != undefined && config.params.contexts.includes(adunit.mediaTypes.video.context)) { allAdUnits.push(adunit); }
+      if (config.params.contexts.includes(deepAccess(adunit, 'mediaTypes.video.context'))) {
+        allAdUnits.push(adunit); 
+      }
     });
   }
 }
 
 function insertVideoTracking(bidResponse, config, maxCpm) {
-  if (bidResponse.mediaType == 'video') {
-    let trackingUrl = getImpUrl(config, bidResponse, maxCpm);
-    if (!trackingUrl) { return; }
+  if (bidResponse.mediaType === 'video') {
+    const trackingUrl = getImpUrl(config, bidResponse, maxCpm);
+    if (!trackingUrl) {
+      return;
+    }
     // Vast Impression URL
-    bidResponse.vastImpUrl = bidResponse.vastUrl !== undefined
-      ? bidResponse.vastImpUrl !== undefined
+    if (bidResponse.vastUrl) {
+      bidResponse.vastImpUrl = bidResponse.vastImpUrl
         ? trackingUrl + '&url=' + encodeURI(bidResponse.vastImpUrl)
         : trackingUrl
-      : bidResponse.vastUrl;
+    }
     // Vast XML document
     if (bidResponse.vastXml !== undefined) {
       const doc = new DOMParser().parseFromString(bidResponse.vastXml, 'text/xml');
@@ -52,13 +57,24 @@ function insertVideoTracking(bidResponse, config, maxCpm) {
         bidResponse.vastXml = new XMLSerializer().serializeToString(doc);
         hasAltered = true;
       }
-      if (hasAltered) { logInfo(LOG_PREFIX + 'insert into vastXml for adId ' + bidResponse.adId); }
+      if (hasAltered) {
+        logInfo(LOG_PREFIX + 'insert into vastXml for adId ' + bidResponse.adId);
+      }
     }
   }
 }
 
 function getImpUrl(config, data, maxCpm) {
   const adUnitCode = data.adUnitCode;
+  const adUnits = allAdUnits.find(adunit => adunit.code === adUnitCode &&
+  'mediaTypes' in adunit &&
+  'video' in adunit.mediaTypes &&
+  typeof adunit.mediaTypes.video.context === 'string');
+  const context = adUnits !== undefined
+    ? adUnits.mediaTypes.video.context
+    : 'unknown';
+  if (!config.params.contexts.includes(context))
+    return false;
   let trackingImpUrl = 'https://' + config.params.domain + '.oxxion.io/analytics/vast_imp?';
   trackingImpUrl += oxxionRtdSearchFor.reduce((acc, param) => {
     switch (typeof data[param]) {
@@ -69,25 +85,18 @@ function getImpUrl(config, data, maxCpm) {
     }
     return acc;
   }, '');
-  let cpmIncrement = Math.round(100000 * (data.cpm - maxCpm)) / 100000;
-  trackingImpUrl += 'cpmIncrement=' + (cpmIncrement > 0 ? cpmIncrement : 0.0) + '&'
-  const adUnits = allAdUnits.find(adunit => adunit.code === adUnitCode &&
-  'mediaTypes' in adunit &&
-  'video' in adunit.mediaTypes &&
-  typeof adunit.mediaTypes.video.context === 'string');
-  let context = adUnits !== undefined
-    ? adUnits.mediaTypes.video.context
-    : 'unknown';
-  if (config.params.contexts.includes(context)) { return trackingImpUrl + 'context=' + context } else { return false; }
+  const cpmIncrement = Math.round(100000 * (data.cpm - maxCpm)) / 100000;
+  return trackingImpUrl + 'cpmIncrement=' + cpmIncrement + '&context=' + context;
 }
 
 function onAuctionEnd(auctionDetails, config, userConsent) {
-  auctionDetails['coucou'] = true;
-  let transactionsToCheck = {}
+  const transactionsToCheck = {}
   auctionDetails.adUnits.forEach(adunit => {
-    if (adunit.mediaTypes.video !== undefined && adunit.mediaTypes.video.context != undefined && config.params.contexts.includes(adunit.mediaTypes.video.context)) { transactionsToCheck[adunit.transactionId] = {'bids': {}, 'maxCpm': 0.0, 'secondMaxCpm': 0.0}; }
+    if (config.params.contexts.includes(deepAccess(adunit, 'mediaTypes.video.context'))) {
+      transactionsToCheck[adunit.transactionId] = {'bids': {}, 'maxCpm': 0.0, 'secondMaxCpm': 0.0}; 
+    }
   });
-  for (let key in auctionDetails.bidsReceived) {
+  for (const key in auctionDetails.bidsReceived) {
     if (auctionDetails.bidsReceived[key].transactionId in transactionsToCheck) {
       transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['bids'][auctionDetails.bidsReceived[key].adId] = {'key': key, 'cpm': auctionDetails.bidsReceived[key].cpm};
       if (auctionDetails.bidsReceived[key].cpm > transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['maxCpm']) {
