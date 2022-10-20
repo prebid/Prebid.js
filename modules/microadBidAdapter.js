@@ -33,7 +33,8 @@ const AUDIENCE_IDS = [
   {type: 12, bidKey: 'userId.dacId.id'},
   {type: 13, bidKey: 'userId.idl_env'},
   {type: 14, bidKey: 'userId.criteoId'},
-  {type: 15, bidKey: 'userId.pubcid'}
+  {type: 15, bidKey: 'userId.pubcid'},
+  {type: 17, bidKey: 'userId.uid2.id'}
 ];
 
 function createCBT() {
