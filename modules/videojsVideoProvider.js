@@ -810,7 +810,7 @@ export function adStateFactory() {
           break
 
         default:
-          updates.offset = adPodInfo.timeOffset;
+          updates.offset = '' + adPodInfo.timeOffset;
       }
     }
 

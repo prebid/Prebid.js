@@ -44,8 +44,9 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
 
 /**
  * @function VideoProvider#onEvent
- * @param {string} events - name of event for which the listener should be added
- * @param {function} callback - function that will get called when one of the events is triggered
+ * @param {string} event - name of event for which the listener should be added
+ * @param {function} callback - function that will get called when the event is triggered
+ * @param {Object} basePayload - Base payload for every event; includes common parameters such as divId and type. Event payload should be built on top of this.
  */
 
 /**

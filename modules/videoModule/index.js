@@ -198,10 +198,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   // options: adXml, winner, adUnitCode,
-  function loadAdTag(adUrl, divId, options) {
-    const payload = Object.assign({ adUrl }, options);
+  function loadAdTag(adTagUrl, divId, options) {
+    const payload = Object.assign({ adTagUrl }, options);
     pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ATTEMPT), payload);
-    videoCore.setAdTagUrl(adUrl, divId, options);
+    videoCore.setAdTagUrl(adTagUrl, divId, options);
   }
 
   function triggerVideoBidEvent(eventName, adEventPayload) {

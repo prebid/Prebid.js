@@ -608,10 +608,11 @@ describe('utils', function () {
       expect(jwConfig).to.not.have.property('key');
     });
 
-    it('should exclude fallback ad block when adOptimization is explicitly disabled', function () {
+    it('should exclude fallback ad block when setupAds is explicitly disabled', function () {
       let jwConfig = getJwConfig({
+        setupAds: false,
         params: {
-          adOptimization: false,
+
           vendorConfig: {}
         }
       });
@@ -619,7 +620,7 @@ describe('utils', function () {
       expect(jwConfig).to.not.have.property('advertising');
     });
 
-    it('should set advertising block when adOptimization is allowed', function () {
+    it('should set advertising block when setupAds is allowed', function () {
       let jwConfig = getJwConfig({
         params: {
           vendorConfig: {

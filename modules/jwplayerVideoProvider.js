@@ -243,6 +243,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
         break;
 
       case AD_IMPRESSION:
+      case AD_CLICK:
         getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
         break;
 
@@ -255,10 +256,6 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
             duration: e.duration,
           };
         };
-        break;
-
-      case AD_CLICK:
-        getEventPayload = () => Object.assign({}, adState.getState(), timeState.getState());
         break;
 
       case AD_SKIPPED:
@@ -564,7 +561,7 @@ export const utils = {
       jwConfig.key = config.licenseKey;
     }
 
-    if (params.adOptimization === false) {
+    if (config.setupAds === false) {
       return jwConfig;
     }
 
