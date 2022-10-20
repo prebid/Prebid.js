@@ -1,6 +1,6 @@
 import CONSTANTS from '../../src/constants.json';
 import {ajax} from '../../src/ajax.js';
-import {logMessage} from '../../src/utils.js';
+import {logError, logMessage} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 
 export const _internal = {
@@ -33,9 +33,21 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
         running = true; // needed to avoid recursive re-processing when analytics event handlers trigger other events
         try {
           let i = 0;
+          let notDecreasing = 0;
           while (queue.length > 0) {
             i++;
+            const len = queue.length;
             queue.shift()();
+            if (queue.length >= len) {
+              notDecreasing++;
+            } else {
+              notDecreasing = 0
+            }
+            if (notDecreasing >= 10) {
+              logError('Detected probable infinite loop, discarding events', queue)
+              queue.length = 0;
+              return;
+            }
           }
           logMessage(`${provider} analytics: processed ${i} events`);
         } finally {

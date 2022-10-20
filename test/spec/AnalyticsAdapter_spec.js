@@ -103,6 +103,20 @@ FEATURE: Analytics Adapters API
     })
   })
 
+  it('should prevent infinite loops when track triggers other events', () => {
+    let i = 0;
+    adapter.track = ((orig) => {
+      return function (event) {
+        i++;
+        orig.call(this, event);
+        events.emit(BID_WON, {})
+      }
+    })(adapter.track);
+    adapter.enableAnalytics(config);
+    events.emit(BID_WON, {});
+    expect(i >= 100).to.eql(false);
+  })
+
   describe(`WHEN an event occurs after enable analytics\n`, function () {
     beforeEach(function () {
       sinon.stub(events, 'getEvents').returns([]); // these tests shouldn't be affected by previous tests
