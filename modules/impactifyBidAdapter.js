@@ -166,9 +166,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
         ...helpers.createOrtbImpVideoObj(bid)
       }
     }
-    if (bannerObj && typeof imp.ext.size == 'string') {
+    if (bannerObj && typeof imp.ext.impactify.size == 'string') {
       imp.banner = {
-        ...helpers.createOrtbImpBannerObj(bid, imp.ext.size)
+        ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
       }
     }
 
@@ -206,10 +206,10 @@ export const spec = {
     if (typeof bid.params.format != 'string' || typeof bid.params.style != 'string' || !bid.params.format || !bid.params.style) {
       return false;
     }
-    if (typeof bid.params.format != 'string' || bid.params.format !== 'screen' || bid.params.format !== 'display') {
+    if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
       return false;
     }
-    if (typeof bid.params.style != 'string' || bid.params.style !== 'inline' || bid.params.style !== 'impact' || bid.params.style !== 'static') {
+    if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static') {
       return false;
     }
     if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
