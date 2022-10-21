@@ -4,7 +4,7 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import { triggerPixel, logError } from '../src/utils.js';
+import { generateUUID, triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/esm/initializer.js';
@@ -14,6 +14,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
+const globalVarName = `prebid_liQ_${generateUUID().slice(0, 8)}`
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
@@ -109,6 +110,7 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
+  liveConnectConfig.globalVarName = globalVarName
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
