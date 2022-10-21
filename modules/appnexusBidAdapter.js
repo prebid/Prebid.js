@@ -43,7 +43,7 @@ const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
-const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api', 'startdelay'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -920,6 +920,17 @@ function bidToTag(bid) {
               tag['video_frameworks'] = apiTmp;
             }
             break;
+
+          case 'startdelay':
+          case 'placement':
+            const contextKey = 'context';
+            if (typeof tag.video[contextKey] !== 'number') {
+              const placement = videoMediaType['placement'];
+              const startdelay = videoMediaType['startdelay'];
+              const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
+              tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
+            }
+            break;
         }
       });
   }
@@ -965,6 +976,32 @@ function transformSizes(requestSizes) {
   }
 
   return sizes;
+}
+
+function getContextFromPlacement(ortbPlacement) {
+  if (!ortbPlacement) {
+    return;
+  }
+
+  if (ortbPlacement === 2) {
+    return 'in-banner';
+  } else if (ortbPlacement > 2) {
+    return 'outstream';
+  }
+}
+
+function getContextFromStartDelay(ortbStartDelay) {
+  if (!ortbStartDelay) {
+    return;
+  }
+
+  if (ortbStartDelay === 0) {
+    return 'pre_roll';
+  } else if (ortbStartDelay === -1) {
+    return 'mid_roll';
+  } else if (ortbStartDelay === -2) {
+    return 'post_roll';
+  }
 }
 
 function hasUserInfo(bid) {
