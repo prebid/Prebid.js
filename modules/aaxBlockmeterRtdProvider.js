@@ -24,11 +24,10 @@ function loadBlockmeter(_rtdConfig) {
   let url = _rtdConfig.params.url;
   if (!url || isEmptyStr(url)) {
     logWarn(`${_config.MODULE}: params.url is missing, using default url.`);
-    url = `${_config.BLOCKMETER_URL}`;
-    params.push(`ver=${_config.VERSION}`);
+    url = `${_config.BLOCKMETER_URL}?ver=${_config.VERSION}`;
   }
 
-  const scriptUrl = `https://${url}?${params.join('&')}`;
+  const scriptUrl = `https://${url}&${params.join('&')}`;
   loadExternalScript(scriptUrl, _config.MODULE);
   return true;
 }
