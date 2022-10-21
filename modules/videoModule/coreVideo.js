@@ -86,6 +86,11 @@ import { ParentModule, SubmoduleBuilder } from '../../libraries/video/shared/par
  */
 
 /**
+ * @typedef videoEvent
+ *
+ */
+
+/**
  * Routes commands to the appropriate video submodule.
  * @typedef {Object} VideoCore
  * @class
