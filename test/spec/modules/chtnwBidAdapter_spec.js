@@ -67,6 +67,11 @@ describe('ChtnwAdapter', function () {
       'creativeId': 'AD',
       'ad': '<h1>AD<h1>',
       'mediaType': 'banner',
+      'meta': {
+        'advertiserDomains': [
+          'www.example.com'
+        ]
+      }
     }];
 
     it('handles empty bid response', function () {
@@ -75,6 +80,7 @@ describe('ChtnwAdapter', function () {
       };
       let result = spec.interpretResponse(response);
       expect(result.length).to.not.equal(0);
+      expect(result[0].meta.advertiserDomains).to.be.an('array');
     });
 
     it('handles empty bid response', function () {
