@@ -59,16 +59,14 @@ const helpers = {
     return 2;
   },
   createOrtbImpBannerObj(bid, size) {
-    let format = [];
     let sizes = size.split('x');
-    sizes[0] = parseInt(sizes[0]);
-    sizes[1] = parseInt(sizes[1]);
-
-    format.push(sizes);
 
     return {
       id: 'banner-' + bid.bidId,
-      format
+      format: [{
+        w: parseInt(sizes[0]),
+        h: parseInt(sizes[1])
+      }]
     }
   },
   createOrtbImpVideoObj(bid) {
