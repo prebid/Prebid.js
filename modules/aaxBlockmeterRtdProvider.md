@@ -27,6 +27,7 @@ This module is configured as part of the `realTimeData.dataProviders` object.
 |    `name`    | required | Real time data module name   | `'aaxBlockmeter'` | `string` |
 |   `params`   | required |                              |                 | `Object` |
 | `params.pub` | required | AAX to share pub ID, [Reach out to us](https://www.aax.media/try-blockmeter/) to know more! |   `'AAX00000'`    | `string` |
+| `params.url`     | optional | AAX Blockmeter Script Url. Defaults to `'c.aaxads.com/aax.js?ver=1.2'` | `'c.aaxads.com/aax.js'`   | `string` |
 
 ### Example
 
@@ -37,7 +38,8 @@ pbjs.setConfig({
                 {
                     "name": "aaxBlockmeter",
                     "params": {
-                        "pub": "AAX00000"
+                        "pub": "AAX00000",
+                        "url": "c.aaxads.com/aax.js",
                     }
                 }
              ]

@@ -1,20 +1,35 @@
-import {isEmptyStr, isStr, logError, isFn} from '../src/utils.js';
+import {isEmptyStr, isStr, logError, isFn, logWarn} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 
-const MODULE = 'aaxBlockmeter';
-const ADSERVER_TARGETING_KEY = 'atk';
-const BLOCKMETER_URL = 'https://c.aaxads.com/aax.js';
+export const _config = {
+  MODULE: 'aaxBlockmeter',
+  ADSERVER_TARGETING_KEY: 'atk',
+  BLOCKMETER_URL: 'c.aaxads.com/aax.js',
+  VERSION: '1.2'
+};
 
 window.aax = window.aax || {};
 
-function loadBlockmeter(config) {
-  if (!(config.params && config.params.pub) || !isStr(config.params && config.params.pub) || isEmptyStr(config.params && config.params.pub)) {
-    logError(`${MODULE}: params.pub should be a string`);
+function loadBlockmeter(_rtdConfig) {
+  if (!(_rtdConfig.params && _rtdConfig.params.pub) || !isStr(_rtdConfig.params && _rtdConfig.params.pub) || isEmptyStr(_rtdConfig.params && _rtdConfig.params.pub)) {
+    logError(`${_config.MODULE}: params.pub should be a string`);
     return false;
   }
-  const url = `${BLOCKMETER_URL}?pub=${config.params.pub}&dn=${window.location.hostname}`;
-  loadExternalScript(url, MODULE);
+
+  const params = [];
+  params.push(`pub=${_rtdConfig.params.pub}`);
+  params.push(`dn=${window.location.hostname}`);
+
+  let url = _rtdConfig.params.url;
+  if (!url || isEmptyStr(url)) {
+    logWarn(`${_config.MODULE}: params.url is missing, using default url.`);
+    url = `${_config.BLOCKMETER_URL}`;
+    params.push(`ver=${_config.VERSION}`);
+  }
+
+  const scriptUrl = `https://${url}?${params.join('&')}`;
+  loadExternalScript(scriptUrl, _config.MODULE);
   return true;
 }
 
@@ -25,7 +40,7 @@ function markAdBlockInventory(codes, _rtdConfig, _userConsent) {
       ? window.aax.getTargetingData(code, _rtdConfig, _userConsent)
       : {};
     targets[code] = {
-      [ADSERVER_TARGETING_KEY]: code,
+      [_config.ADSERVER_TARGETING_KEY]: code,
       ...getAaxTargets()
     };
     return targets;
@@ -33,7 +48,7 @@ function markAdBlockInventory(codes, _rtdConfig, _userConsent) {
 }
 
 export const aaxBlockmeterRtdModule = {
-  name: MODULE,
+  name: _config.MODULE,
   init: loadBlockmeter,
   getTargetingData: markAdBlockInventory,
 };
