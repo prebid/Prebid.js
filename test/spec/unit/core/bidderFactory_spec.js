@@ -1434,9 +1434,5 @@ describe('bid response isValid', () => {
     it('should succeed when response has a size that was in request', () => {
       expect(checkValid(mkResponse(3, 4))).to.be.true;
     });
-
-    it('should fail when response has a size that was not in request', () => {
-      expect(checkValid(mkResponse(10, 11))).to.be.false;
-    });
   })
 });
