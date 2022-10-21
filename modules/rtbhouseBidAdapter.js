@@ -58,11 +58,6 @@ export const spec = {
       source: mapSource(validBidRequests[0]),
     };
 
-    // const bidderTimeout = config.getConfig('bidderTimeout');
-    // if(bidderTimeout) {
-    //   request.tmax = bidderTimeout;
-    // }
-
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
@@ -98,8 +93,6 @@ export const spec = {
     if (ortb2Params.device) {
       mergeDeep(request, { device: ortb2Params.device });
     }
-    // logInfo('bidderRequest:', bidderRequest);
-    // logInfo('bid request:', request);
 
     const fledgeConfig = config.getConfig('fledgeConfig');
     if(fledgeConfig) {
@@ -123,7 +116,7 @@ export const spec = {
 
     const bids = [];
     responseBody.forEach(serverBid => {
-      if (serverBid.price === 0) {
+      if (!serverBid.price) { // price may exist and is === 0 or there's no price prop at all (fledge req case)
         return;
       }
       // try...catch would be risky cause JSON.parse throws SyntaxError
@@ -138,37 +131,48 @@ export const spec = {
     return bids;
   },
   interpretResponse: function (serverResponse, originalRequest) {
-    const bids = this.interpretOrtbResponse(serverResponse, originalRequest);
-    // console.log('rtbhouse serverResponse =',serverResponse)
+    let bids;
+
+    const responseBody = serverResponse.body;
     let fledgeAuctionConfigs = null;
-    // look for first ext.fledge_auction_configs
-    // const mockupAuctionConfig = config.getConfig('auctionConfig');
 
-    bids.forEach(bid => {
-      if(fledgeAuctionConfigs) {
-        deepDelete(bid, 'ext.fledge_auction_configs');
-        return;
-      }
-      fledgeAuctionConfigs = deepAccess(bid, 'ext.fledge_auction_configs');
-      
-      if(fledgeAuctionConfigs) {
+    if (responseBody.bidid && isArray(responseBody?.ext?.igbid)) {
+      // we have fledge response
+      // mimic the original response ([{},...])
+      bids = this.interpretOrtbResponse({ body: responseBody.seatbid[0]?.bid }, originalRequest);
 
-        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-          return Object.assign({
-            bidId,
-            auctionSignals: {}
-          }, cfg);
-          // }, mockupAuctionConfig || cfg );
+      const seller = responseBody.ext.seller;
+      const decisionLogicUrl = responseBody.ext.decisionLogicUrl;
+      const sellerTimeout = "sellerTimeout" in responseBody.ext ? { sellerTimeout: responseBody.ext.sellerTimeout } : {};
+      responseBody.ext.igbid.forEach((igbid) => {
+        const perBuyerSignals = {};
+        igbid.igbuyer.forEach(buyerItem => {
+          perBuyerSignals[buyerItem.igdomain] = buyerItem.buyersignal
         });
-      }
+        fledgeAuctionConfigs = fledgeAuctionConfigs || {};
+        fledgeAuctionConfigs[igbid.impid] = mergeDeep(
+          {
+            seller,
+            decisionLogicUrl,
+            interestGroupBuyers: Object.keys(perBuyerSignals),
+            perBuyerSignals,
+          },
+          sellerTimeout
+        );
+      });
+      logInfo('fledgeAuctionConfigs from response:', fledgeAuctionConfigs);
+    } else {
+      bids = this.interpretOrtbResponse(serverResponse, originalRequest);
+    }
 
-      
-      deepDelete(bid, 'ext.fledge_auction_configs');
-      
-      //console.log('rtbhouse bid', {bid, fledgeAuctionConfigs})
-    });
     if (fledgeAuctionConfigs) {
-      logInfo('Returning from interpretResponse:', {bids, fledgeAuctionConfigs})
+      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+        return Object.assign({
+          bidId,
+          auctionSignals: {}
+        }, cfg);
+      });
+      logInfo('Returning from interpretResponse:', { bids, fledgeAuctionConfigs })
       return {
         bids,
         fledgeAuctionConfigs,
