@@ -1665,7 +1665,7 @@ describe('the price floors module', function () {
   });
   describe('bidResponseHook tests', function () {
     const AUCTION_ID = '123456';
-    let returnedBidResponse, indexStub;
+    let returnedBidResponse, indexStub, reject;
     let adUnit = {
       transactionId: 'au',
       code: 'test_div_1'
@@ -1681,6 +1681,7 @@ describe('the price floors module', function () {
     };
     beforeEach(function () {
       returnedBidResponse = {};
+      reject = sinon.stub().returns({status: 'rejected'});
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => stubAuctionIndex({adUnits: [adUnit]}));
     });
@@ -1693,7 +1694,7 @@ describe('the price floors module', function () {
       let next = (adUnitCode, bid) => {
         returnedBidResponse = bid;
       };
-      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(CONSTANTS.STATUS.GOOD, {auctionId: AUCTION_ID}), bidResp));
+      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(CONSTANTS.STATUS.GOOD, {auctionId: AUCTION_ID}), bidResp), reject);
     };
     it('continues with the auction if not floors data is present without any flooring', function () {
       runBidResponse();
@@ -1710,9 +1711,8 @@ describe('the price floors module', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
       runBidResponse();
-      expect(returnedBidResponse).to.haveOwnProperty('floorData');
-      expect(returnedBidResponse.status).to.equal(CONSTANTS.BID_STATUS.BID_REJECTED);
-      expect(returnedBidResponse.cpm).to.equal(0);
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse.status).to.equal('rejected');
     });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);

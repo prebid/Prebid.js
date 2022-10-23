@@ -93,7 +93,7 @@ export const spec = {
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];

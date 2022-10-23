@@ -76,6 +76,26 @@ describe('Yahoo ConnectID Submodule', () => {
       expect(result.callback).to.be.a('function');
     });
 
+    it('returns an undefined if the Yahoo specific opt-out key is present in local storage', () => {
+      localStorage.setItem('connectIdOptOut', '1');
+      expect(invokeGetIdAPI({
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID
+      }, consentData)).to.be.undefined;
+      localStorage.removeItem('connectIdOptOut');
+    });
+
+    it('returns an object with the callback function if the correct params are passed and Yahoo opt-out value is not "1"', () => {
+      localStorage.setItem('connectIdOptOut', 'true');
+      let result = invokeGetIdAPI({
+        he: HASHED_EMAIL,
+        pixelId: PIXEL_ID
+      }, consentData);
+      expect(result).to.be.an('object').that.has.all.keys('callback');
+      expect(result.callback).to.be.a('function');
+      localStorage.removeItem('connectIdOptOut');
+    });
+
     it('Makes an ajax GET request to the production API endpoint with query params', () => {
       invokeGetIdAPI({
         he: HASHED_EMAIL,

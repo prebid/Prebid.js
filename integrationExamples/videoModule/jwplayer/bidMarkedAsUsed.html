@@ -1,0 +1,98 @@
+<html>
+
+<head>
+    <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <title>JW Player with Bid Marked As Used</title>
+
+    <!--This demo listens to the Video events that are fired when an ad impression or ad error came from a bid. -->
+
+    <script>
+      // Setup ad units
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        mediaTypes: {
+          video: {}
+        },
+        video: {
+          divId: 'player', // required to indicate which player is being used to render this ad unit.
+        },
+
+        bids: [{
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+          }
+        }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 1, // jwplayer vendorCode
+              playerConfig: {
+                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                params: {
+                  vendorConfig: {
+                    file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    advertising: { client: 'vast' }
+                  }
+                }
+              },
+            },]
+          },
+          debugging: {
+            enabled: true,
+            intercept: [
+              {
+                when: {
+                  adUnitCode: 'div-gpt-ad-51545-0',
+                },
+                then: {
+                  cpm: 25,
+                  mediaType: "video",
+                  vastUrl: "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=",
+                  // vastXml: "<VAST version=\"3.0\"> <Ad id=\"123\"> <InLine> <AdSystem>PubMatic</AdSystem> <AdTitle>VAST 2.0 Instream Test</AdTitle> <Description>VAST 2.0 Instream Test</Description> <Error> <![CDATA[https://aktrack.pubmatic.com/er=[ERRORCODE]]]> </Error> <Impression> <![CDATA[https://aktrack.pubmatic.com?e=impression]]> </Impression> <Creatives> <Creative AdID=\"123\"> <Linear> <Duration>00:00:30</Duration> <TrackingEvents> <Tracking event=\"creativeView\"> <![CDATA[https://aktrack.pubmatic.com?e=creativeView]]> </Tracking> <Tracking event=\"start\"> <![CDATA[https://aktrack.pubmatic.com?e=start]]> </Tracking> <Tracking event=\"midpoint\"> <![CDATA[https://aktrack.pubmatic.com?e=midpoint]]> </Tracking> <Tracking event=\"firstQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=firstQuartile]]> </Tracking> <Tracking event=\"thirdQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=thirdQuartile]]> </Tracking> <Tracking event=\"complete\"> <![CDATA[https://aktrack.pubmatic.com?e=complete]]> </Tracking> </TrackingEvents> <VideoClicks> <ClickThrough> <![CDATA[https://www.pubmatic.com]]> </ClickThrough> </VideoClicks> <MediaFiles> <MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.mp4]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/ogg\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.ogg]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/x-flv\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_test_video.flv]]> </MediaFile> </MediaFiles> </Linear> </Creative> <Creative AdID=\"123\"> <NonLinearAds> <TrackingEvents></TrackingEvents> <NonLinear height=\"50\" width=\"300\" minSuggestedDuration=\"00:00:05\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_300x50.jpeg]]> </StaticResource> <NonLinearClickThrough> <![CDATA[https://www.pubmatic.com]]> </NonLinearClickThrough> </NonLinear> </NonLinearAds> </Creative> <Creative AdID=\"123\"> <CompanionAds> <Companion width=\"300\" height=\"250\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_320x250.jpg]]> </StaticResource> <CompanionClickThrough> <![CDATA[https://www.pubmatic.com]]> </CompanionClickThrough> </Companion> </CompanionAds> </Creative> </Creatives> </InLine> </Ad> </VAST>",
+                  ad: "<VAST version=\"3.0\"> <Ad id=\"123\"> <InLine> <AdSystem>PubMatic</AdSystem> <AdTitle>VAST 2.0 Instream Test</AdTitle> <Description>VAST 2.0 Instream Test</Description> <Error> <![CDATA[https://aktrack.pubmatic.com/er=[ERRORCODE]]]> </Error> <Impression> <![CDATA[https://aktrack.pubmatic.com?e=impression]]> </Impression> <Creatives> <Creative AdID=\"123\"> <Linear> <Duration>00:00:30</Duration> <TrackingEvents> <Tracking event=\"creativeView\"> <![CDATA[https://aktrack.pubmatic.com?e=creativeView]]> </Tracking> <Tracking event=\"start\"> <![CDATA[https://aktrack.pubmatic.com?e=start]]> </Tracking> <Tracking event=\"midpoint\"> <![CDATA[https://aktrack.pubmatic.com?e=midpoint]]> </Tracking> <Tracking event=\"firstQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=firstQuartile]]> </Tracking> <Tracking event=\"thirdQuartile\"> <![CDATA[https://aktrack.pubmatic.com?e=thirdQuartile]]> </Tracking> <Tracking event=\"complete\"> <![CDATA[https://aktrack.pubmatic.com?e=complete]]> </Tracking> </TrackingEvents> <VideoClicks> <ClickThrough> <![CDATA[https://www.pubmatic.com]]> </ClickThrough> </VideoClicks> <MediaFiles> <MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.mp4]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/ogg\" bitrate=\"500\" width=\"480\" height=\"460\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/spinning-logo-480x360_video.ogg]]> </MediaFile> <MediaFile delivery=\"progressive\" type=\"video/x-flv\" bitrate=\"500\" width=\"400\" height=\"300\" scalable=\"true\" maintainAspectRatio=\"true\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_test_video.flv]]> </MediaFile> </MediaFiles> </Linear> </Creative> <Creative AdID=\"123\"> <NonLinearAds> <TrackingEvents></TrackingEvents> <NonLinear height=\"50\" width=\"300\" minSuggestedDuration=\"00:00:05\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_300x50.jpeg]]> </StaticResource> <NonLinearClickThrough> <![CDATA[https://www.pubmatic.com]]> </NonLinearClickThrough> </NonLinear> </NonLinearAds> </Creative> <Creative AdID=\"123\"> <CompanionAds> <Companion width=\"300\" height=\"250\"> <StaticResource creativeType=\"image/jpeg\"> <![CDATA[https://staging.pubmatic.com:8443/test/PubMatic_LetsBeClear_320x250.jpg]]> </StaticResource> <CompanionClickThrough> <![CDATA[https://www.pubmatic.com]]> </CompanionClickThrough> </Companion> </CompanionAds> </Creative> </Creatives> </InLine> </Ad> </VAST>"
+                }
+              },
+            ]
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('videoSetupComplete', (e) => {
+          console.log('player setup complete: ', e);
+        });
+
+        pbjs.onEvent('videoSetupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
+        pbjs.onEvent('videoPlaybackRequest', (e) => {
+          pbjs.requestBids(adUnits);
+        });
+
+        pbjs.onEvent('videoBidError', e => {
+          console.log('An Ad Error came from a Bid: ', e);
+        });
+
+        pbjs.onEvent('videoBidImpression', e => {
+          console.log('An Ad Impression came from a Bid: ', e);
+        });
+      });
+    </script>
+</head>
+
+<body>
+    <div id ="player"></div>
+</body>
+
+</html>
