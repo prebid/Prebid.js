@@ -17,6 +17,7 @@ import {
 import * as utils from 'src/utils.js';
 import { version } from 'package.json';
 import { useFakeTimers } from 'sinon';
+import { BANNER } from '../../../src/mediaTypes';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -38,7 +39,8 @@ const BID = {
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
-  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'mediaTypes': [BANNER]
 };
 
 const BIDDER_REQUEST = {
@@ -166,6 +168,7 @@ describe('VidazooBidAdapter', function () {
           prebidVersion: version,
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
+          mediaTypes: [BANNER],
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
         }
