@@ -95,7 +95,7 @@ export const spec = {
     }
 
     const fledgeConfig = config.getConfig('fledgeConfig');
-    if(fledgeConfig) {
+    if(bidderRequest.fledgeEnabled && fledgeConfig) {
       mergeDeep(request, { ext: { fledge_config: fledgeConfig }});
     }
 
