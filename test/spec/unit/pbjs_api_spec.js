@@ -1241,7 +1241,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should require doc and id params', function () {
       $$PREBID_GLOBAL$$.renderAd();
-      var error = 'Error trying to write ad Id :undefined to the page. Missing document or adId';
+      var error = 'Error trying to write ad Id :undefined to the page. Missing adId';
       assert.ok(spyLogError.calledWith(error), 'expected param error was logged');
     });
 
