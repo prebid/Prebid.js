@@ -6,8 +6,14 @@ import CONSTANTS from 'src/constants.json';
 import { auctionManager } from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
+import {createBid} from '../../../../src/bidfactory.js';
+import {hook} from '../../../../src/hook.js';
 
-const bid1 = {
+function mkBid(bid, status = CONSTANTS.STATUS.GOOD) {
+  return Object.assign(createBid(status), bid);
+}
+
+const sampleBid = {
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
@@ -39,7 +45,9 @@ const bid1 = {
   'ttl': 300
 };
 
-const bid2 = {
+const bid1 = mkBid(sampleBid);
+
+const bid2 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
@@ -67,9 +75,9 @@ const bid2 = {
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
-};
+});
 
-const bid3 = {
+const bid3 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '600',
@@ -97,9 +105,9 @@ const bid3 = {
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
-};
+});
 
-const nativeBid1 = {
+const nativeBid1 = mkBid({
   'bidderCode': 'appnexus',
   'width': 0,
   'height': 0,
@@ -165,8 +173,9 @@ const nativeBid1 = {
     [CONSTANTS.NATIVE_KEYS.image]: 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
     [CONSTANTS.NATIVE_KEYS.icon]: 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png'
   }
-};
-const nativeBid2 = {
+});
+
+const nativeBid2 = mkBid({
   'bidderCode': 'dgads',
   'width': 0,
   'height': 0,
@@ -222,7 +231,7 @@ const nativeBid2 = {
     [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'test.com',
     [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/'
   }
-};
+});
 
 describe('targeting tests', function () {
   let sandbox;
@@ -230,6 +239,10 @@ describe('targeting tests', function () {
   let useBidCache;
   let bidCacheFilterFunction;
   let undef;
+
+  before(() => {
+    hook.ready();
+  });
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
@@ -285,6 +298,12 @@ describe('targeting tests', function () {
       amBidsReceivedStub.restore();
       amGetAdUnitsStub.restore();
       bidExpiryStub.restore();
+    });
+
+    it('should filter out NO_BID bids', () => {
+      bidsReceived = [mkBid(sampleBid, CONSTANTS.STATUS.NO_BID)];
+      const tg = targetingInstance.getAllTargeting();
+      expect(tg[bidsReceived[0].adUnitCode]).to.eql({});
     });
 
     describe('when handling different adunit targeting value types', function () {
