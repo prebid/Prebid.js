@@ -151,10 +151,11 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
+      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER } = result;
       if (!ad || !price) {
         return;
       }
+
       output.push({
         requestId: bidId,
         cpm: price,
@@ -164,11 +165,21 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad,
         meta: {
           advertiserDomains: advertiserDomains || []
         }
-      })
+      });
+
+      if (mediaType === BANNER) {
+        Object.assign(output, {
+          ad: ad,
+        });
+      } else {
+        Object.assign(output, {
+          vastXml: ad,
+          mediaType: VIDEO
+        });
+      }
     });
     return output;
   } catch (e) {
