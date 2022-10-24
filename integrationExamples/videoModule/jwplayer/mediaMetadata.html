@@ -1,0 +1,80 @@
+<html>
+
+<head>
+    <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <title>JW Player with Media Metadata</title>
+
+    <!-- This Demo loads media with metadata which is used to enrich the auction by populating the ortb site.content -->
+
+    <script>
+      // Setup ad units
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        mediaTypes: {
+          video: {}
+        },
+        video: {
+          divId: 'player', // required to indicate which player is being used to render this ad unit.
+        },
+
+        bids: [{
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+          }
+        }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 1, // JW Player vendorCode
+              playerConfig: {
+                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                params: {
+                  vendorConfig: {
+                    mediaid: 'XYXYXYXY',
+                    file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    title: 'Subaru Outback On Street And Dirt',
+                    description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
+                    advertising: { client: 'googima' }
+                  }
+                }
+              }
+            },]
+          }
+        });
+
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('videoSetupComplete', e => {
+          console.log('player setup complete: ', e);
+          pbjs.requestBids(adUnits);
+        });
+
+        pbjs.onEvent('videoSetupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
+        pbjs.onEvent('videoContentLoaded', (e) => {
+          console.log('videos pb contentLoaded: ', e);
+        });
+      });
+    </script>
+
+</head>
+
+<body>
+<h2>JW Player with Media Metadata</h2>
+
+<div id='player'></div>
+</body>
+
+</html>
