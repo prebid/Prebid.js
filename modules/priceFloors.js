@@ -10,6 +10,7 @@ import {
   logError,
   logInfo,
   logWarn,
+  mergeDeep,
   parseGPTSingleSizeArray,
   parseUrl,
   pick
@@ -24,7 +25,9 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import {beConvertCurrency} from '../src/utils/currency.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -79,7 +82,7 @@ const getHostname = (() => {
   let domain;
   return function() {
     if (domain == null) {
-      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeUrl: true}).hostname;
+      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeURL: true}).hostname;
     }
     return domain;
   }
@@ -745,3 +748,72 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
 });
 
 config.getConfig('floors', config => handleSetFloorsConfig(config.floors));
+
+/**
+ * Sets bidfloor and bidfloorcur for ORTB imp objects
+ */
+export function setOrtbImpBidFloor(imp, bidRequest, context) {
+  if (typeof bidRequest.getFloor === 'function') {
+    let currency, floor;
+    try {
+      ({currency, floor} = bidRequest.getFloor({
+        currency: context.currency || config.getConfig('currency.adServerCurrency') || 'USD',
+        mediaType: context.mediaType || '*',
+        size: '*'
+      }));
+    } catch (e) {
+      logWarn('Cannot compute floor for bid', bidRequest);
+      return;
+    }
+    floor = parseFloat(floor);
+    if (currency != null && floor != null && !isNaN(floor)) {
+      Object.assign(imp, {
+        bidfloor: floor,
+        bidfloorcur: currency
+      });
+    }
+  }
+}
+
+export function setImpExtPrebidFloors(imp, bidRequest, context) {
+  // logic below relates to https://github.com/prebid/Prebid.js/issues/8749 and does the following:
+  // 1. check client-side floors (ref bidfloor/bidfloorcur & ortb2Imp floorMin/floorMinCur (if present))
+  // 2. set pbs req wide floorMinCur to the first floor currency found when iterating over imp's
+  //    (if currency conversion logic present, convert all imp floor values to this currency)
+  // 3. compare/store ref to lowest floorMin value as each imp is iterated over
+  // 4. set req wide floorMin and floorMinCur values for pbs after iterations are done
+
+  if (imp.bidfloor != null) {
+    let {floorMinCur, floorMin} = context.reqContext.floorMin || {};
+
+    if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
+    const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
+    const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
+    const convertedFloorMinValue = beConvertCurrency(imp.bidfloor, imp.bidfloorcur, floorMinCur);
+    const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? beConvertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+
+    const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
+      ? convertedOrtb2ImpFloorMinValue
+      : convertedFloorMinValue;
+
+    deepSetValue(imp, 'ext.prebid.floors.floorMin', lowestImpFloorMin);
+    if (floorMin == null || floorMin > lowestImpFloorMin) { floorMin = lowestImpFloorMin }
+    context.reqContext.floorMin = {floorMin, floorMinCur};
+  }
+}
+
+/**
+ * PBS specific extension: set ext.prebid.floors.enabled = false if floors are processed client-side
+ */
+export function setOrtbExtPrebidFloors(ortbRequest, bidderRequest, context) {
+  if (addedFloorsHook) {
+    deepSetValue(ortbRequest, 'ext.prebid.floors.enabled', ortbRequest.ext?.prebid?.floors?.enabled || false);
+  }
+  if (context?.floorMin) {
+    mergeDeep(ortbRequest, {ext: {prebid: {floors: context.floorMin}}})
+  }
+}
+
+registerOrtbProcessor({type: IMP, name: 'bidfloor', fn: setOrtbImpBidFloor});
+registerOrtbProcessor({type: IMP, name: 'extPrebidFloors', fn: setImpExtPrebidFloors, dialects: [PBS], priority: -1});
+registerOrtbProcessor({type: REQUEST, name: 'extPrebidFloors', fn: setOrtbExtPrebidFloors, dialects: [PBS]});
