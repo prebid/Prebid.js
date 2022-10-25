@@ -17,7 +17,6 @@ const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
 
-
 /** @type {Submodule} */
 export const connectIdSubmodule = {
   /**
