@@ -278,6 +278,17 @@ describe('Yahoo ConnectID Submodule', () => {
   });
 
   describe('decode()', () => {
+
+    let userHasOptedOutStub;
+    beforeEach(() => {
+      userHasOptedOutStub = sinon.stub(connectIdSubmodule, 'userHasOptedOut');
+      userHasOptedOutStub.returns(false);
+    });
+
+    afterEach(() => {
+      userHasOptedOutStub.restore()
+    });
+
     const VALID_API_RESPONSES = [{
       key: 'connectid',
       expected: '4567',
@@ -297,6 +308,73 @@ describe('Yahoo ConnectID Submodule', () => {
       it(`should return undefined for an invalid response "${JSON.stringify(response)}"`, () => {
         expect(connectIdSubmodule.decode(response)).to.be.undefined;
       });
+    });
+
+    it('should return undefined if user has utilised the easy opt-out mechanism', () => {
+      userHasOptedOutStub.returns(true);
+      expect(connectIdSubmodule.decode(VALID_API_RESPONSES[0].payload)).to.be.undefined;
+    })
+  });
+
+  describe('getAjaxFn()', () => {
+    it('should return a function', () => {
+      expect(connectIdSubmodule.getAjaxFn()).to.be.a('function');
+    });
+  });
+
+  describe('isEUConsentRequired()', () => {
+    it('should return a function', () => {
+      expect(connectIdSubmodule.isEUConsentRequired).to.be.a('function');
+    });
+
+    it('should be false if consent data is empty', () => {
+      expect(connectIdSubmodule.isEUConsentRequired({})).to.be.false;
+    });
+
+    it('should be false if consent data.gdpr object is empty', () => {
+      expect(connectIdSubmodule.isEUConsentRequired({
+        gdpr: {}
+      })).to.be.false;
+    });
+
+    it('should return false if consent data.gdpr.applies is false', () => {
+      expect(connectIdSubmodule.isEUConsentRequired({
+        gdpr: {
+          gdprApplies: false
+        }
+      })).to.be.false;
+    });
+
+    it('should return true if consent data.gdpr.applies is true', () => {
+      expect(connectIdSubmodule.isEUConsentRequired({
+        gdpr: {
+          gdprApplies: true
+        }
+      })).to.be.true;
+    });
+  });
+
+  describe('userHasOptedOut()', () => {
+    afterEach(() => {
+      localStorage.removeItem('connectIdOptOut');
+    });
+
+    it('should return a function', () => {
+      expect(connectIdSubmodule.userHasOptedOut).to.be.a('function');
+    });
+
+    it('should return false when local storage key has not been set function', () => {
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
+    });
+
+    it('should return true when local storage key has been set to "1"', () => {
+      localStorage.setItem('connectIdOptOut', '1');
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.true;
+    });
+
+    it('should return false when local storage key has not been set to "1"', () => {
+      localStorage.setItem('connectIdOptOut', 'hello');
+      expect(connectIdSubmodule.userHasOptedOut()).to.be.false;
     });
   });
 });

@@ -17,17 +17,6 @@ const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
 
-function isEUConsentRequired(consentData) {
-  return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
-}
-
-function userHasOptedOut() {
-  try {
-    return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
 
 /** @type {Submodule} */
 export const connectIdSubmodule = {
@@ -46,7 +35,7 @@ export const connectIdSubmodule = {
    * @returns {{connectId: string} | undefined}
    */
   decode(value) {
-    if (userHasOptedOut()) {
+    if (connectIdSubmodule.userHasOptedOut()) {
       return undefined;
     }
     return (typeof value === 'object' && value.connectid)
@@ -60,7 +49,7 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    if (userHasOptedOut()) {
+    if (connectIdSubmodule.userHasOptedOut()) {
       return;
     }
     const params = config.params || {};
@@ -73,8 +62,8 @@ export const connectIdSubmodule = {
 
     const data = {
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
-      gdpr: isEUConsentRequired(consentData) ? '1' : '0',
-      gdpr_consent: isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
+      gdpr: connectIdSubmodule.isEUConsentRequired(consentData) ? '1' : '0',
+      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
@@ -107,6 +96,28 @@ export const connectIdSubmodule = {
       connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
+  },
+
+  /**
+   * Utility function that returns a boolean flag indicating if the opporunity
+   * is subject to GDPR
+   * @returns {Boolean}
+   */
+  isEUConsentRequired(consentData) {
+    return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
+  },
+
+  /**
+   * Utility function that returns a boolean flag indicating if the user
+   * has opeted out via the Yahoo easy-opt-out mechanism.
+   * @returns {Boolean}
+   */
+  userHasOptedOut() {
+    try {
+      return localStorage.getItem(OVERRIDE_OPT_OUT_KEY) === '1';
+    } catch {
+      return false;
+    }
   },
 
   /**
