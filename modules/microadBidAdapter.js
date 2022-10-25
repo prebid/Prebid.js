@@ -25,16 +25,16 @@ const NATIVE_CODE = 2;
 const VIDEO_CODE = 4;
 
 const AUDIENCE_IDS = [
-  {type: 6, bidKey: 'userId.imuid'},
+  {type: 6, bidKey: 'userId.imuid', source: 'intimatemerger.com'},
   {type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com'},
   {type: 9, bidKey: 'userId.tdid', source: 'adserver.org'},
-  {type: 10, bidKey: 'userId.novatiq.snowflake'},
-  {type: 11, bidKey: 'userId.parrableId.eid'},
-  {type: 12, bidKey: 'userId.dacId.id'},
-  {type: 13, bidKey: 'userId.idl_env'},
-  {type: 14, bidKey: 'userId.criteoId'},
-  {type: 15, bidKey: 'userId.pubcid'},
-  {type: 17, bidKey: 'userId.uid2.id'}
+  {type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com'},
+  {type: 11, bidKey: 'userId.parrableId.eid', source: 'parrable.com'},
+  {type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp'},
+  {type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com'},
+  {type: 14, bidKey: 'userId.criteoId', source: 'criteo.com'},
+  {type: 15, bidKey: 'userId.pubcid', source: 'pubcid.org'},
+  {type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com'}
 ];
 
 function createCBT() {
@@ -108,7 +108,7 @@ export const spec = {
         if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
           const aidParam = { type: audienceId.type, id: bidAudienceId };
           // Set ext
-          if (audienceId.source && isArray(userIdAsEids)) {
+          if (isArray(userIdAsEids)) {
             const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
             if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
               aidParam.ext = targetEid.uids[0].ext;
