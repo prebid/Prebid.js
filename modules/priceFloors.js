@@ -82,7 +82,7 @@ const getHostname = (() => {
   let domain;
   return function() {
     if (domain == null) {
-      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeUrl: true}).hostname;
+      domain = parseUrl(getRefererInfo().topmostLocation, {noDecodeWholeURL: true}).hostname;
     }
     return domain;
   }
