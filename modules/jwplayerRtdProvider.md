@@ -101,9 +101,9 @@ Example:
                         cids: ['abc123']
                     },
                     segment: [{ 
-                        id: '123'
+                        value: '123'
                     }, { 
-                        id: '456'
+                        value: '456'
                     }]
                 }]
             }
@@ -122,7 +122,7 @@ where:
         - `ext.segtax` whose `502` value is the unique identifier for JW Player's proprietary taxonomy
         - `ext.cids` is an array containing the list of extended content ids as defined in [oRTB's community extensions](https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/extensions/community_extensions/extended-content-ids.md#example---content-id-and-seller-defined-context). 
         - `segment` is an array containing the segment taxonomy values as an object where:
-          - `id` is the string representation of the data segment value. 
+          - `value` is the string representation of the data segment. 
   
 **Example:**
 
