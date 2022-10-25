@@ -234,20 +234,21 @@ export const CONVERTER = ortbConverter({
         if (!additionalConsent) {
           return;
         }
+
         if (spec.syncStore.extendMode) {
-          deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', additionalConsent)
-        } else {
-          // Additional Consent String
-          if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-            // Google Ad Tech Provider IDs
-            const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-            if (atpIds) {
-              deepSetValue(
-                ortbRequest,
-                'user.ext.consented_providers_settings.consented_providers',
-                atpIds.split('.').map(id => parseInt(id, 10))
-              );
-            }
+          return setAddtlConsent(ortbRequest, bidderRequest);
+        }
+
+        // Additional Consent String
+        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
+          // Google Ad Tech Provider IDs
+          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
+          if (atpIds) {
+            deepSetValue(
+              ortbRequest,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
           }
         }
       }
