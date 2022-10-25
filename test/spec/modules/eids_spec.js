@@ -444,11 +444,15 @@ describe('eids array generation for known sub-modules', function() {
 
   describe('ftrackId', () => {
     it('should return the correct EID schema', () => {
+      // This is the schema returned from the ftrack decode() method
       expect(createEidsArray({
         ftrackId: {
-          DeviceID: ['aaa', 'bbb'],
-          SingleDeviceID: ['ccc', 'ddd'],
-          HHID: ['eee', 'fff']
+          uid: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
         },
         foo: {
           bar: 'baz'
@@ -458,11 +462,11 @@ describe('eids array generation for known sub-modules', function() {
         }
       })).to.deep.equal([{
         atype: 1,
-        id: 'aaa|bbb',
+        id: 'test-device-id',
         ext: {
-          DeviceID: 'aaa|bbb',
-          SingleDeviceID: 'ccc|ddd',
-          HHID: 'eee|fff'
+          DeviceID: 'test-device-id',
+          SingleDeviceID: 'test-single-device-id',
+          HHID: 'test-household-id'
         }
       }]);
     });

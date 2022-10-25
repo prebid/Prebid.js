@@ -149,11 +149,12 @@ import {
   logInfo,
   logWarn,
   timestamp,
-  isEmpty
+  isEmpty, deepSetValue
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'User ID';
@@ -1082,3 +1083,11 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 init(config);
 
 module('userId', attachIdSystem);
+
+export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
+  const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');
+  if (eids) {
+    deepSetValue(ortbRequest, 'user.ext.eids', eids);
+  }
+}
+registerOrtbProcessor({type: REQUEST, name: 'userExtEids', fn: setOrtbUserExtEids});
