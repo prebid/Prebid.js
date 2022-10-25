@@ -77,17 +77,16 @@ export const spec = {
       return [];
     }
 
-    const bidders = new Set();
-    if (this.syncStore.extendMode && serverResponses) {
-      serverResponses.forEach(response => {
-        if (!response?.body?.ext?.responsetimemillis) return;
-        Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
-      })
-    }
-
     const syncs = [];
     if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
       const { gdprApplies, consentString } = gdprConsent || {};
+      const bidders = new Set();
+      if (this.syncStore.extendMode && serverResponses) {
+        serverResponses.forEach(response => {
+          if (!response?.body?.ext?.responsetimemillis) return;
+          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
+        })
+      }
       syncs.push({
         type: 'iframe',
         url: IFRAME_SYNC_URL +
@@ -234,12 +233,10 @@ export const CONVERTER = ortbConverter({
         if (!additionalConsent) {
           return;
         }
-
         if (spec.syncStore.extendMode) {
-          return setAddtlConsent(ortbRequest, bidderRequest);
+          setAddtlConsent(ortbRequest, bidderRequest);
+          return;
         }
-
-        // Additional Consent String
         if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
           // Google Ad Tech Provider IDs
           const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
@@ -269,18 +266,16 @@ const ID_REQUEST = {
       if (extendMode) {
         return EXTEND_URL;
       }
-
       const urlSegments = [];
       urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
       if (publisherId) {
         urlSegments.push(publisherId)
       }
       urlSegments.push(PB_ENDPOINT)
-
       return urlSegments.join('/');
     }
 
-    function formatRequest(bidRequests, {transactionId, publisherId}, extendMode) {
+    function formatRequest(bidRequests, publisherId, extendMode) {
       const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
       return {
         method: 'POST',
@@ -293,33 +288,29 @@ const ID_REQUEST = {
 
     let publisherId = null;
     bidRequests.map((bidRequest) => {
-      const bidParams = bidRequest.params;
-      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidParams);
+      const bidParamsPublisherId = bidRequest.params.publisherId;
+      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
       if (singleRequestMode) {
         if (!publisherId) {
-          publisherId = bidParams?.publisherId;
-        } else if (publisherId && bidParams?.publisherId && publisherId !== bidParams?.publisherId) {
+          publisherId = bidParamsPublisherId;
+        } else if (bidParamsPublisherId && publisherId !== bidParamsPublisherId) {
           throw new Error(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`);
         }
         extendModeEnabled ? extendBids.push(bidRequest) : adServerBids.push(bidRequest);
       } else {
-        requests.push(formatRequest([bidRequest], {transactionId: bidRequest.transactionId, publisherId: bidParams?.publisherId}, extendModeEnabled));
+        requests.push(formatRequest([bidRequest], bidParamsPublisherId, extendModeEnabled));
       }
     });
 
     if (!singleRequestMode) {
       return requests;
     }
-    const requestOptions = {
-      transactionId: bidderRequest.auctionId,
-      publisherId,
-    }
     // In the single request mode, split imps between those going to the ad server and those going to extend server
     if (extendBids.length) {
-      requests.push(formatRequest(extendBids, requestOptions, true));
+      requests.push(formatRequest(extendBids, publisherId, true));
     }
     if (adServerBids.length) {
-      requests.push(formatRequest(adServerBids, requestOptions, false));
+      requests.push(formatRequest(adServerBids, publisherId, false));
     }
 
     return requests;
