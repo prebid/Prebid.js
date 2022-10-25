@@ -470,8 +470,8 @@ describe('jwplayerRtdProvider', function() {
       expect(datum.segment).to.have.length(2);
       const segment1 = datum.segment[0];
       const segment2 = datum.segment[1];
-      expect(segment1).to.have.property('id', 'test_seg_1');
-      expect(segment2).to.have.property('id', 'test_seg_2');
+      expect(segment1).to.have.property('value', 'test_seg_1');
+      expect(segment2).to.have.property('value', 'test_seg_2');
     });
 
     it('should remove obsolete jwplayer data', function () {
@@ -501,13 +501,13 @@ describe('jwplayerRtdProvider', function() {
               id: 'randomContentId',
               data: [{
                 name: 'random',
-                segment: [{id: 'random'}]
+                segment: [{value: 'random'}]
               }, {
                 name: 'jwplayer.com',
-                segment: [{id: 'randomJwPlayer'}]
+                segment: [{value: 'randomJwPlayer'}]
               }, {
                 name: 'random2',
-                segment: [{id: 'random2'}]
+                segment: [{value: 'random2'}]
               }]
             }
           }
@@ -541,11 +541,11 @@ describe('jwplayerRtdProvider', function() {
 
       const randomDatum = data[0];
       expect(randomDatum).to.have.property('name', 'random');
-      expect(randomDatum.segment).to.deep.equal([{id: 'random'}]);
+      expect(randomDatum.segment).to.deep.equal([{value: 'random'}]);
 
       const randomDatum2 = data[1];
       expect(randomDatum2).to.have.property('name', 'random2');
-      expect(randomDatum2.segment).to.deep.equal([{id: 'random2'}]);
+      expect(randomDatum2.segment).to.deep.equal([{value: 'random2'}]);
 
       const jwplayerDatum = data[2];
       expect(jwplayerDatum).to.have.property('name', 'jwplayer.com');
@@ -554,8 +554,8 @@ describe('jwplayerRtdProvider', function() {
       expect(jwplayerDatum.segment).to.have.length(2);
       const segment1 = jwplayerDatum.segment[0];
       const segment2 = jwplayerDatum.segment[1];
-      expect(segment1).to.have.property('id', 'test_seg_1');
-      expect(segment2).to.have.property('id', 'test_seg_2');
+      expect(segment1).to.have.property('value', 'test_seg_1');
+      expect(segment2).to.have.property('value', 'test_seg_2');
     });
   });
 
@@ -659,16 +659,16 @@ describe('jwplayerRtdProvider', function() {
       const segment2 = 'segment2';
       const segment3 = 'segment3';
       const contentSegments = getContentSegments([segment1, segment2, segment3]);
-      expect(contentSegments[0]).to.deep.equal({ id: segment1, value: segment1 });
-      expect(contentSegments[1]).to.deep.equal({ id: segment2, value: segment2 });
-      expect(contentSegments[2]).to.deep.equal({ id: segment3, value: segment3 });
+      expect(contentSegments[0]).to.deep.equal({ value: segment1 });
+      expect(contentSegments[1]).to.deep.equal({ value: segment2 });
+      expect(contentSegments[2]).to.deep.equal({ value: segment3 });
     });
   });
 
   describe('Get Content Data', function () {
     it('should return proper format', function () {
       const testMediaId = 'test_media_id';
-      const testSegments = [{ id: 1 }, { id: 2 }];
+      const testSegments = [{ value: 1 }, { value: 2 }];
       const contentData = getContentData(testMediaId, testSegments);
       expect(contentData).to.have.property('name', 'jwplayer.com');
       expect(contentData.ext).to.have.property('segtax', 502);
@@ -690,7 +690,7 @@ describe('jwplayerRtdProvider', function() {
     });
 
     it('should only set cids when a media id is provided', function () {
-      const testSegments = [{ id: 1 }, { id: 2 }];
+      const testSegments = [{ value: 1 }, { value: 2 }];
       const contentData = getContentData(null, testSegments);
       expect(contentData).to.have.property('name', 'jwplayer.com');
       expect(contentData.ext).to.have.property('segtax', 502);
