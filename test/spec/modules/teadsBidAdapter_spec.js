@@ -418,6 +418,74 @@ describe('teadsBidAdapter', () => {
       });
     });
 
+    it('should add userAgentClientHints info to payload if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        ortb2: {
+          device: {
+            sua: {
+              source: 2,
+              platform: {
+                brand: 'macOS',
+                version: [ '12', '4', '0' ]
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Not;A=Brand',
+                  version: [ '99', '0', '0', '0' ]
+                }
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'x86'
+            }
+          }
+        }
+      });
+
+      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const payload = JSON.parse(requestWithUserAgentClientHints.data);
+
+      expect(payload.userAgentClientHints).to.exist;
+      expect(payload.userAgentClientHints).to.deep.equal({
+        source: 2,
+        platform: {
+          brand: 'macOS',
+          version: [ '12', '4', '0' ]
+        },
+        browsers: [
+          {
+            brand: 'Chromium',
+            version: [ '106', '0', '5249', '119' ]
+          },
+          {
+            brand: 'Google Chrome',
+            version: [ '106', '0', '5249', '119' ]
+          },
+          {
+            brand: 'Not;A=Brand',
+            version: [ '99', '0', '0', '0' ]
+          }
+        ],
+        mobile: 0,
+        model: '',
+        bitness: '64',
+        architecture: 'x86'
+      }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderResquestDefault);
+      expect(JSON.parse(defaultRequest.data).userAgentClientHints).to.not.exist;
+    });
+
     it('should use good mediaTypes video sizes', function() {
       const mediaTypesVideoSizes = {
         'mediaTypes': {
@@ -555,33 +623,78 @@ describe('teadsBidAdapter', () => {
       })
 
       describe('First-party cookie Teads ID', function () {
-        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled', function () {
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled' +
+            ' and teads user id not available', function () {
           cookiesAreEnabledStub.returns(false);
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
         });
 
-        it('should not add firstPartyCookieTeadsId param to payload if first-party cookie is not available', function () {
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are enabled ' +
+            'but first-party cookie and teads user id are not available', function () {
           cookiesAreEnabledStub.returns(true);
           getCookieStub.withArgs('_tfpvi').returns(undefined);
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
         });
 
-        it('should add firstPartyCookieTeadsId param to payload if first-party cookie is available', function () {
+        it('should add firstPartyCookieTeadsId from cookie if it\'s available ' +
+            'and teads user id is not', function () {
           cookiesAreEnabledStub.returns(true);
           getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+
           const payload = JSON.parse(request.data);
 
           expect(payload.firstPartyCookieTeadsId).to.equal('my-teads-id');
+        });
+
+        it('should add firstPartyCookieTeadsId from user id module if it\'s available ' +
+            'even if cookie is available too', function () {
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id',
+              teadsId: 'teadsId-fake-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.firstPartyCookieTeadsId).to.equal('teadsId-fake-id');
         });
       });
     });

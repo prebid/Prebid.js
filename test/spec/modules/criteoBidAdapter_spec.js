@@ -1279,6 +1279,34 @@ describe('The Criteo bidding adapter', function () {
       });
     });
 
+    it('should properly build a request with static floors', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          },
+        },
+      ];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.floors).to.deep.equal({
+        'banner': {
+          '300x250': { 'currency': 'EUR', 'floor': 1 },
+          '728x90': { 'currency': 'EUR', 'floor': 1 }
+        }
+      });
+    });
+
     it('should properly build a video request with several player sizes with floors', function () {
       const bidRequests = [
         {

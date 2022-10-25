@@ -43,6 +43,17 @@ describe('33acrossBidAdapter:', function () {
             ah: 500,
             mtp: 0
           }
+        },
+        sua: {
+          browsers: [{
+            brand: 'Google Chrome',
+            version: ['104', '0', '5112', '79']
+          }],
+          platform: {
+            brand: 'macOS',
+            version: ['11', '6', '8']
+          },
+          model: ''
         }
       },
       id: 'r1',
@@ -305,7 +316,23 @@ describe('33acrossBidAdapter:', function () {
         adUnitCode: 'div-id',
         auctionId: 'r1',
         mediaTypes: {},
-        transactionId: 't1'
+        transactionId: 't1',
+        ortb2: {
+          device: {
+            sua: {
+              browsers: [{
+                brand: 'Google Chrome',
+                version: ['104', '0', '5112', '79']
+              }],
+              platform: {
+                brand: 'macOS',
+                version: ['11', '6', '8']
+              },
+              model: '',
+              mobile: false
+            }
+          }
+        }
       }
     ];
 
@@ -322,6 +349,22 @@ describe('33acrossBidAdapter:', function () {
         auctionId: 'r1',
         mediaTypes: {},
         transactionId: 't2',
+        ortb2: {
+          device: {
+            sua: {
+              browsers: [{
+                brand: 'Google Chrome',
+                version: ['104', '0', '5112', '79']
+              }],
+              platform: {
+                brand: 'macOS',
+                version: ['11', '6', '8']
+              },
+              model: '',
+              mobile: false
+            }
+          }
+        },
         ...bidParams
       });
 
