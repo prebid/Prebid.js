@@ -109,7 +109,7 @@ function copyRequiredBidDetails(bid) {
 }
 
 function setBidStatus(bid, args) {
-	if(bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR)
+  if(bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR)
     return;
   switch (args.getStatusCode()) {
     case CONSTANTS.STATUS.GOOD:
@@ -254,38 +254,6 @@ function getAdDomain(bidResponse) {
   }
 }
 
-function isObject(object) {
-  return typeof object === "object" && object !== null;
-};
-
-function isEmptyObject(object) {
-  return isObject(object) && Object.keys(object).length === 0;
-};
-
-/**
- * Prepare meta object to pass in logger call
- * @param {*} meta 
- */
-function getMetadata(meta) {
-  if (!meta || isEmptyObject(meta)) return;
-  const metaObj = {};
-  if (meta.networkId) metaObj.nwid = meta.networkId;
-  if (meta.advertiserId) metaObj.adid = meta.advertiserId;
-  if (meta.networkName) metaObj.nwnm = meta.networkName;
-  if (meta.primaryCatId) metaObj.pcid = meta.primaryCatId;
-  if (meta.advertiserName) metaObj.adnm = meta.advertiserName;
-  if (meta.agencyId) metaObj.agid = meta.agencyId;
-  if (meta.agencyName) metaObj.agnm = meta.agencyName;
-  if (meta.brandId) metaObj.brid = meta.brandId;
-  if (meta.brandName) metaObj.brnm = meta.brandName;
-  if (meta.dchain) metaObj.dc = meta.dchain;
-  if (meta.demandSource) metaObj.ds = meta.demandSource;
-  if (meta.secondaryCatIds) metaObj.scids = meta.secondaryCatIds;
-
-  if(isEmptyObject(metaObj)) return;
-  return metaObj;
-}
-
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function (partnerBids, bidId) {
@@ -316,8 +284,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
-        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
-        });
+      });
     });
     return partnerBids;
   }, [])
@@ -647,5 +614,4 @@ adapterManager.registerAnalyticsAdapter({
   code: ADAPTER_CODE
 });
 
-// export default pubmaticAdapter;
-export { pubmaticAdapter as default, getMetadata };
+export default pubmaticAdapter;
