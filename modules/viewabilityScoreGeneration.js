@@ -94,69 +94,135 @@ export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentag
     vsgObj[adSlotElementId].lastViewed = currentTime;
     setToLocalStorageCb('viewability-data', vsgObj);
   }
+};
+
+export const calculateBucket = (bucketCategories, score) => {
+  let bucketCategoriesObject = {};
+  let result;
+
+  bucketCategories.forEach((category, index) => {
+    bucketCategoriesObject[category] = Math.round(((index + 1) / bucketCategories.length) * 10) / 10;
+  });
+
+  for (let i = 0; i < bucketCategories.length; i++) {
+    if (score <= bucketCategoriesObject[bucketCategories[i]]) {
+      result = bucketCategories[i];
+      break;
+    }
+  }
+
+  return result;
+};
+
+export const addViewabilityTargeting = (globalConfig, targetingSet, vsgLocalStorageObj, cb) => {
+  Object.keys(targetingSet).forEach(targetKey => {
+    if (
+      vsgLocalStorageObj[targetKey] &&
+      Object.keys(targetingSet[targetKey]).length !== 0 &&
+      vsgLocalStorageObj[targetKey].hasOwnProperty('viewed') &&
+      vsgLocalStorageObj[targetKey].hasOwnProperty('rendered')
+    ) {
+      const viewabilityScore = Math.round((vsgLocalStorageObj[targetKey].viewed / vsgLocalStorageObj[targetKey].rendered) * 10) / 10;
+      const viewabilityBucket = calculateBucket(globalConfig[MODULE_NAME][TARGETING].bucketCategories, viewabilityScore);
+
+      if (globalConfig[MODULE_NAME][TARGETING].score) {
+        const targetingScoreKey = globalConfig[MODULE_NAME][TARGETING].scoreKey ? globalConfig[MODULE_NAME][TARGETING].scoreKey : 'bidViewabilityScore';
+        targetingSet[targetKey][targetingScoreKey] = viewabilityScore;
+      }
+
+      if (globalConfig[MODULE_NAME][TARGETING].bucket) {
+        const targetingBucketKey = globalConfig[MODULE_NAME][TARGETING].bucketKey ? globalConfig[MODULE_NAME][TARGETING].bucketKey : 'bidViewabilityBucket';
+        targetingSet[targetKey][targetingBucketKey] = viewabilityBucket;
+      }
+    }
+  });
+
+  cb(targetingSet);
+};
+
+export const setViewabilityTargetingKeys = globalConfig => {
+  events.on(CONSTANTS.EVENTS.AUCTION_END, () => {
+    if (vsgObj) {
+      const targetingSet = targeting.getAllTargeting();
+      addViewabilityTargeting(globalConfig, targetingSet, vsgObj, updateGptWithViewabilityTargeting);
+    }
+  });
+};
+
+export const updateGptWithViewabilityTargeting = targetingSet => {
+  window.googletag.pubads().getSlots().forEach(slot => {
+    Object.keys(targetingSet).filter(isAdUnitCodeMatchingSlot(slot)).forEach(targetId => {
+      slot.updateTargetingFromMap(targetingSet[targetId])
+    })
+  });
 }
 
-export let init = () => {
-  config.getConfig(MODULE_NAME, (vsgConfig) => {
-    if (vsgConfig[MODULE_NAME][ENABLED] !== true) {
+export const setGptEventHandlers = () => {
+  events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
+    // add the GPT event listeners
+    window.googletag = window.googletag || {};
+    window.googletag.cmd = window.googletag.cmd || [];
+    window.googletag.cmd.push(() => {
+      window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
+        const currentAdSlotElement = event.slot.getSlotElementId();
+        gptSlotRenderEndedHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
+      });
+
+      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+        const currentAdSlotElement = event.slot.getSlotElementId();
+        gptImpressionViewableHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
+      });
+
+      window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
+        const currentAdSlotElement = event.slot.getSlotElementId();
+        gptSlotVisibilityChangedHandler(currentAdSlotElement, event.inViewPercentage, setAndStringifyToLocalStorage);
+      });
+    });
+  });
+};
+
+const initConfigDefaults = config => {
+  if (!config[MODULE_NAME][TARGETING]) { config[MODULE_NAME][TARGETING] = {} };
+
+  config[MODULE_NAME][TARGETING].enabled =
+    typeof config.viewabilityScoreGeneration?.targeting?.enabled === 'boolean'
+      ? config.viewabilityScoreGeneration?.targeting?.enabled
+      : false;
+
+  config[MODULE_NAME][TARGETING].bucketCategories =
+    config.viewabilityScoreGeneration?.targeting?.bucketCategories && config.viewabilityScoreGeneration?.targeting?.bucketCategories.every(i => typeof i === 'string')
+      ? config.viewabilityScoreGeneration?.targeting?.bucketCategories
+      : ['LOW', 'MEDIUM', 'HIGH'];
+
+  config[MODULE_NAME][TARGETING].score =
+    typeof config.viewabilityScoreGeneration?.targeting?.score === 'boolean'
+      ? config.viewabilityScoreGeneration?.targeting?.score
+      : true;
+
+  config[MODULE_NAME][TARGETING].bucket =
+    typeof config.viewabilityScoreGeneration?.targeting?.bucket === 'boolean'
+      ? config.viewabilityScoreGeneration?.targeting?.bucket
+      : true;
+};
+
+export let init = (setGptCb, setTargetingCb) => {
+  config.getConfig(MODULE_NAME, (globalConfig) => {
+    if (globalConfig[MODULE_NAME][ENABLED] !== true) {
       return;
     }
 
-    events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
-      // add the GPT event listeners
-      window.googletag = window.googletag || {};
-      window.googletag.cmd = window.googletag.cmd || [];
-      window.googletag.cmd.push(() => {
-        window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
-          const currentAdSlotElement = event.slot.getSlotElementId();
-          gptSlotRenderEndedHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
-        });
+    initConfigDefaults(globalConfig);
+    setGptCb();
 
-        window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
-          const currentAdSlotElement = event.slot.getSlotElementId();
-          gptImpressionViewableHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
-        });
-
-        window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
-          const currentAdSlotElement = event.slot.getSlotElementId();
-          gptSlotVisibilityChangedHandler(currentAdSlotElement, event.inViewPercentage, setAndStringifyToLocalStorage);
-        });
-      });
-    });
-
-    if (vsgConfig.viewabilityScoreGeneration?.targeting?.enabled) {
-      events.on(CONSTANTS.EVENTS.SET_TARGETING, () => {
-        let targetingSet = targeting.getAllTargeting();
-
-        if (localStorage.getItem('viewability-data')) {
-          Object.keys(targetingSet).forEach(targetKey => {
-            if (
-              vsgObj[targetKey] &&
-              Object.keys(targetingSet[targetKey]).length !== 0 &&
-              vsgObj[targetKey].hasOwnProperty('viewed') &&
-              vsgObj[targetKey].hasOwnProperty('rendered')
-            ) {
-              const bvs = Math.round((vsgObj[targetKey].viewed / vsgObj[targetKey].rendered) * 10) / 10;
-              const bvb = bvs > 0.7 ? 'HIGH' : bvs < 0.5 ? 'LOW' : 'MEDIUM';
-              const targetingScoreKey = vsgConfig[MODULE_NAME][TARGETING].scoreKey ? vsgConfig[MODULE_NAME][TARGETING].scoreKey : 'bidViewabilityScore';
-              const targetingBucketKey = vsgConfig[MODULE_NAME][TARGETING].bucketKey ? vsgConfig[MODULE_NAME][TARGETING].bucketKey : 'bidViewabilityBucket';
-
-              targetingSet[targetKey][targetingScoreKey] = bvs;
-              targetingSet[targetKey][targetingBucketKey] = bvb;
-            }
-          });
-        }
-
-        window.googletag.pubads().getSlots().forEach(slot => {
-          Object.keys(targetingSet).filter(isAdUnitCodeMatchingSlot(slot)).forEach(targetId => {
-            slot.updateTargetingFromMap(targetingSet[targetId])
-          })
-        });
-      });
+    if (
+      globalConfig.viewabilityScoreGeneration?.targeting?.enabled &&
+      (globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)
+    ) {
+      setTargetingCb(globalConfig);
     }
 
     adapterManager.makeBidRequests.after(makeBidRequestsHook);
   });
 }
 
-init();
+init(setGptEventHandlers, setViewabilityTargetingKeys);
