@@ -791,11 +791,12 @@ describe('gdpr enforcement', function () {
   });
 
   describe('validateRules', function () {
-    const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = []) => ({
+    const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = [], softVendorExceptions = []) => ({
       purpose: purposeName,
-      enforcePurpose: enforcePurpose,
-      enforceVendor: enforceVendor,
-      vendorExceptions: vendorExceptions
+      enforcePurpose,
+      enforceVendor,
+      vendorExceptions,
+      softVendorExceptions,
     });
 
     const consentData = {
@@ -908,6 +909,19 @@ describe('gdpr enforcement', function () {
       const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
       expect(isAllowed).to.equal(true);
     });
+
+    describe('when the vendor has a softVendorException', () => {
+      const gdprRule = createGdprRule('storage', true, true, [], [vendorBlockedModule]);
+
+      it('should return false if general consent was not given', () => {
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
+        expect(isAllowed).to.be.false;
+      })
+      it('should return true if general consent was given', () => {
+        const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
+        expect(isAllowed).to.be.true;
+      })
+    })
 
     describe('when module does not need vendor consent', () => {
       Object.entries({
@@ -1214,7 +1228,6 @@ describe('gdpr enforcement', function () {
         adapter.gvlid = () => { throw new Error(); };
         expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.not.be.ok;
       });
-
     });
   })
 });

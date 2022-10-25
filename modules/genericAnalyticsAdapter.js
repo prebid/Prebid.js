@@ -3,7 +3,6 @@ import {prefixLog, isPlainObject} from '../src/utils.js';
 import * as CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 const DEFAULTS = {
   batchSize: 1,

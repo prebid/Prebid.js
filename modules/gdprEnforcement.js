@@ -154,13 +154,14 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   const purposeId = TCF2[Object.keys(TCF2).filter(purposeName => TCF2[purposeName].name === rule.purpose)[0]].id;
 
   // return 'true' if vendor present in 'vendorExceptions'
-  if (includes(rule.vendorExceptions || [], currentModule)) {
+  if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
+  const vendorConsentRequred = !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)))
 
   // get data from the consent string
   const purposeConsent = deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
-  const vendorConsent = gvlId === VENDORLESS_GVLID ? true : deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
+  const vendorConsent = vendorConsentRequred ? deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`) : true;
   const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
 
   /*
