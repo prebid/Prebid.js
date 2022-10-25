@@ -278,7 +278,6 @@ describe('Yahoo ConnectID Submodule', () => {
   });
 
   describe('decode()', () => {
-
     let userHasOptedOutStub;
     beforeEach(() => {
       userHasOptedOutStub = sinon.stub(connectIdSubmodule, 'userHasOptedOut');
