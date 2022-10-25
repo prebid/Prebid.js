@@ -910,7 +910,7 @@ export function reTriggerScriptBasedAPICalls(modulesToRefresh) {
           var atsObject = window.ats.outputCurrentConfiguration();
           atsObject.emailHashes = userIdentity.emailHash ? [userIdentity.emailHash['MD5'], userIdentity.emailHash['SHA1'], userIdentity.emailHash['SHA256']] : undefined;
           window.ats.start && isFn(window.ats.start) && window.ats.start(atsObject);
-          window.ats.setAdditionalData && isFn(window.ats.setAdditionalData) && window.ats.setAdditionalData({'type': 'emailHashes', 'id': atsObject.emailHashes});
+          window.ats.setAdditionalData && isFn(window.ats.setAdditionalData) && window.ats.setAdditionalData({'type': 'emailHashes','id': atsObject.emailHashes});
         }
         break;
       case 'publinkId':
