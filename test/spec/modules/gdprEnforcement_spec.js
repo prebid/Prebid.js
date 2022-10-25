@@ -1116,56 +1116,105 @@ describe('gdpr enforcement', function () {
     })
   });
 
-  describe('getGvlid', function() {
+  describe('gvlid resolution', () => {
     let sandbox;
-    let getGvlidForBidAdapterStub;
-    let getGvlidForUserIdModuleStub;
-    let getGvlidForAnalyticsAdapterStub;
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
-      getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
-      getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
     });
+
     afterEach(function() {
       sandbox.restore();
       config.resetConfig();
     });
 
-    it('should return "null" if called without passing any argument', function() {
-      const gvlid = getGvlid();
-      expect(gvlid).to.equal(null);
-    });
-
-    it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
-
-      const gvlid = getGvlid('moduleA');
-      expect(gvlid).to.equal(null);
-    });
-
-    it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
-      config.setConfig({
-        gvlMapping: {
-          moduleA: 1
-        }
+    describe('getGvlid', function() {
+      let getGvlidForBidAdapterStub;
+      let getGvlidForUserIdModuleStub;
+      let getGvlidForAnalyticsAdapterStub;
+      beforeEach(function() {
+        getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
+        getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
+        getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
       });
 
-      // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+      it('should return "null" if called without passing any argument', function() {
+        const gvlid = getGvlid();
+        expect(gvlid).to.equal(null);
+      });
 
-      const gvlid = getGvlid('moduleA');
-      expect(gvlid).to.equal(1);
+      it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
+
+        const gvlid = getGvlid('moduleA');
+        expect(gvlid).to.equal(null);
+      });
+
+      it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
+        config.setConfig({
+          gvlMapping: {
+            moduleA: 1
+          }
+        });
+
+        // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+
+        const gvlid = getGvlid('moduleA');
+        expect(gvlid).to.equal(1);
+      });
+
+      it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+
+        expect(getGvlid('moduleA')).to.equal(7);
+      });
+
+      it('should pass extra arguments to analytics\' getGvlid', () => {
+        getGvlidForAnalyticsAdapterStub.withArgs('analytics').returns(321);
+        const cfg = {some: 'args'};
+        getGvlid('analytics', cfg);
+        sinon.assert.calledWith(getGvlidForAnalyticsAdapterStub, 'analytics', cfg);
+      });
     });
 
-    it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+    describe('getGvlidForAnalyticsAdapter', () => {
+      let getAnalyticsAdapter, adapter, adapterEntry;
 
-      expect(getGvlid('moduleA')).to.equal(7);
+      beforeEach(() => {
+        adapter = {};
+        adapterEntry = {
+          adapter
+        };
+        getAnalyticsAdapter = sandbox.stub(adapterManager, 'getAnalyticsAdapter');
+        getAnalyticsAdapter.withArgs('analytics').returns(adapterEntry);
+      });
+
+      it('should return gvlid from adapterManager if defined', () => {
+        adapterEntry.gvlid = 123;
+        adapter.gvlid = 321
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(123);
+      });
+
+      it('should return gvlid from adapter if defined', () => {
+        adapter.gvlid = 321;
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(321);
+      });
+
+      it('should invoke adapter.gvlid if it\'s a function', () => {
+        adapter.gvlid = (cfg) => cfg.k
+        const cfg = {k: 231};
+        expect(internal.getGvlidForAnalyticsAdapter('analytics', cfg)).to.eql(231);
+      });
+
+      it('should not choke if adapter gvlid fn throws', () => {
+        adapter.gvlid = () => { throw new Error(); };
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.not.be.ok;
+      });
+
     });
-  });
+  })
 });

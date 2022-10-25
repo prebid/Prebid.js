@@ -2,7 +2,7 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, hasDeviceAccess, isArray, logWarn} from '../src/utils.js';
+import {deepAccess, hasDeviceAccess, isArray, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find, includes} from '../src/polyfill.js';
@@ -65,7 +65,7 @@ export const internal = {
  * @param {{string|Object}} - module
  * @return {number} - GVL ID
  */
-export function getGvlid(module) {
+export function getGvlid(module, ...args) {
   let gvlid = null;
   if (module) {
     // Check user defined GVL Mapping in pbjs.setConfig()
@@ -80,7 +80,7 @@ export function getGvlid(module) {
       return gvlid;
     }
 
-    gvlid = internal.getGvlidForBidAdapter(moduleCode) || internal.getGvlidForUserIdModule(module) || internal.getGvlidForAnalyticsAdapter(moduleCode);
+    gvlid = internal.getGvlidForBidAdapter(moduleCode) || internal.getGvlidForUserIdModule(module) || internal.getGvlidForAnalyticsAdapter(moduleCode, ...args);
   }
   return gvlid;
 }
@@ -114,10 +114,19 @@ function getGvlidForUserIdModule(userIdModule) {
 /**
  * Returns GVL ID for an analytics adapter. If an analytics adapter does not have an associated GVL ID, it returns 'null'.
  * @param {string} code - 'provider' property on the analytics adapter config
+ * @param {{}} config - analytics configuration object
  * @return {number} GVL ID
  */
-function getGvlidForAnalyticsAdapter(code) {
-  return adapterManager.getAnalyticsAdapter(code) && (adapterManager.getAnalyticsAdapter(code).gvlid || null);
+function getGvlidForAnalyticsAdapter(code, config) {
+  const adapter = adapterManager.getAnalyticsAdapter(code);
+  return adapter?.gvlid || ((gvlid) => {
+    if (typeof gvlid !== 'function') return gvlid;
+    try {
+      return gvlid.call(adapter.adapter, config);
+    } catch (e) {
+      logError(`Error invoking ${code} adapter gvlid()`, e)
+    }
+  })(adapter?.adapter?.gvlid)
 }
 
 export function shouldEnforce(consentData, purpose, name) {
@@ -306,7 +315,7 @@ export function enableAnalyticsHook(fn, config) {
     }
     config = config.filter(conf => {
       const analyticsAdapterCode = conf.provider;
-      const gvlid = getGvlid(analyticsAdapterCode);
+      const gvlid = getGvlid(analyticsAdapterCode, config);
       const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
       if (!isAllowed) {
         analyticsBlocked.push(analyticsAdapterCode);
