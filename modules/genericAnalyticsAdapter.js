@@ -15,6 +15,7 @@ const TYPES = {
   handler: 'function',
   batchSize: 'number',
   batchDelay: 'number',
+  gvlid: 'number',
 }
 
 const MAX_CALL_DEPTH = 20;
@@ -103,6 +104,9 @@ export function GenericAnalytics() {
   return Object.assign(
     Object.create(parent),
     {
+      gvlid(config) {
+        return config?.options?.gvlid
+      },
       enableAnalytics(config) {
         if (optionsAreValid(config?.options || {})) {
           options = Object.assign({}, DEFAULTS, config.options);
@@ -151,5 +155,4 @@ export function defaultHandler({url, method, batchSize, ajax = ajaxBuilder()}) {
 adapterManager.registerAnalyticsAdapter({
   adapter: GenericAnalytics(),
   code: 'generic',
-  gvlid: VENDORLESS_GVLID,
 });

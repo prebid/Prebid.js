@@ -124,7 +124,7 @@ function getGvlidForAnalyticsAdapter(code, config) {
     try {
       return gvlid.call(adapter.adapter, config);
     } catch (e) {
-      logError(`Error invoking ${code} adapter gvlid()`, e)
+      logError(`Error invoking ${code} adapter.gvlid()`, e)
     }
   })(adapter?.adapter?.gvlid)
 }
@@ -315,7 +315,7 @@ export function enableAnalyticsHook(fn, config) {
     }
     config = config.filter(conf => {
       const analyticsAdapterCode = conf.provider;
-      const gvlid = getGvlid(analyticsAdapterCode, config);
+      const gvlid = getGvlid(analyticsAdapterCode, conf);
       const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
       if (!isAllowed) {
         analyticsBlocked.push(analyticsAdapterCode);
