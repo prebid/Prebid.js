@@ -14,6 +14,7 @@ import { getStorageManager } from '../src/storageManager.js';
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
+const globalVarName = 'liQ'
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
