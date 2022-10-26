@@ -38,7 +38,6 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NATIVE_TIME_TO_LIVE = 3600; // Since native can have video, use ttl same as video
 const NET_REVENUE = true;
-const MAX_REQUEST_SIZE = 8000;
 const MAX_REQUEST_LIMIT = 4;
 const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
@@ -586,6 +585,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let userEids = eidInfo.toSend;
   const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
 
+  let MAX_REQUEST_SIZE = 8000;
+  // Modify request size limit if its FT is enabeld.
+  if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_32kb_size_limit')) {
+    MAX_REQUEST_SIZE = 32000
+  }
+
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
   if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
@@ -641,6 +646,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   if (!isEmpty(cachedErrors)) {
     r.ext.ixdiag.err = cachedErrors;
   }
+
+  // Add number of available imps to ixDiag.
+  r.ext.ixdiag.imps = Object.keys(impressions).length;
 
   // set source.tid to auctionId for outgoing request to Exchange.
   r.source = {
