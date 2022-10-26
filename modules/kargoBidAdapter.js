@@ -225,7 +225,7 @@ export const spec = {
   _getAllMetadata(bidderRequest, tdid) {
     return {
       userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
-      pageURL: bidderRequest.refererInfo && bidderRequest.refererInfo.page,
+      pageURL: bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
