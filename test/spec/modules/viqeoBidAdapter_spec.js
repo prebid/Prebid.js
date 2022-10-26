@@ -38,7 +38,7 @@ describe('viqeoBidAdapter', function () {
         },
       },
       mediaTypes: {
-        banner: { sizes: [[240, 400]] }
+        video: { playerSize: [[240, 400]] }
       },
     }];
     const request = spec.buildRequests(bidRequestData);
@@ -61,7 +61,7 @@ describe('viqeoBidAdapter', function () {
         sspId: 42,
       },
       mediaTypes: {
-        banner: { sizes: [[240, 400]] }
+        video: { playerSize: [[240, 400]] }
       },
     }];
     const request = spec.buildRequests(bidRequestData);
@@ -73,7 +73,7 @@ describe('viqeoBidAdapter', function () {
         bidId: 'id1',
         params: {},
         mediaTypes: {
-          banner: { sizes: [[240, 400]] }
+          video: { playerSize: [[240, 400]] }
         },
       }],
     };
@@ -108,7 +108,7 @@ describe('viqeoBidAdapter', function () {
         },
       },
       mediaTypes: {
-        banner: { sizes: [[240, 400]] }
+        video: { playerSize: [[240, 400]] }
       },
       getFloor: () => {
         return {
