@@ -38,6 +38,11 @@ export const teadsIdSubmodule = {
      */
   name: MODULE_NAME,
   /**
+   * Vendor id of Teads
+   * @type {number}
+   */
+  gvlid: GVL_ID,
+  /**
      * decode the stored id value for passing to bid requests
      * @function
      * @param {string} value
