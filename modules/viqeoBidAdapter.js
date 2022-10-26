@@ -1,9 +1,10 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {logError, logInfo, _each, mergeDeep, isFn, isNumber, isPlainObject} from '../src/utils.js'
-import {BANNER} from '../src/mediaTypes.js';
+import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'viqeo';
+const DEFAULT_MIMES = ['application/javascript'];
 const VIQEO_ENDPOINT = 'https://ads.betweendigital.com/openrtb_bid';
 const RENDERER_URL = 'https://cdn.viqeo.tv/js/vq_starter.js';
 const DEFAULT_CURRENCY = 'USD';
@@ -15,11 +16,25 @@ function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return {floor: isNumber(floor) ? floor : 0, currency: curr};
   }
-  const floorInfo = bid.getFloor({currency: curr, mediaType: BANNER, size: '*'});
+  const floorInfo = bid.getFloor({currency: curr, mediaType: VIDEO, size: '*'});
   if (isPlainObject(floorInfo) && isNumber(floorInfo.floor) && floorInfo.currency === curr) {
     return floorInfo;
   }
   return {floor: floor || 0, currency: currency || DEFAULT_CURRENCY};
+}
+
+function getVideoTargetingParams({mediaTypes: {video}}) {
+  const result = {};
+  Object.keys(Object(video))
+    .forEach(key => {
+      if (key === 'playerSize') {
+        result.w = video.playerSize[0][0];
+        result.h = video.playerSize[0][1];
+      } else if (key !== 'context') {
+        result[key] = video[key];
+      }
+    })
+  return result;
 }
 
 /**
@@ -27,7 +42,7 @@ function getBidFloor(bid) {
  */
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [VIDEO],
   /**
    * @param {BidRequest} bidRequest The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -65,8 +80,8 @@ export const spec = {
     const bidRequests = [];
     _each(validBidRequests, (bid, i) => {
       const {
-        params: {test, sspId},
-        mediaTypes: {banner},
+        params: {test, sspId, endpointUrl},
+        mediaTypes: {video},
       } = bid;
       const ortb2 = bid.ortb2 || {};
       const user = bid.params.user || {};
@@ -81,13 +96,8 @@ export const spec = {
           id: `${i}`,
           tagid: bid.adUnitCode,
           video: {
-            api: [2],
-            protocols: [2, 3, 5, 6],
-            mimes: [
-              'application/javascript',
-            ],
-            w: banner?.sizes[0][0],
-            h: banner?.sizes[0][1],
+            ...getVideoTargetingParams(bid),
+            mimes: video.mimes || DEFAULT_MIMES,
           },
           bidfloor: floorInfo.floor,
           bidfloorcur: floorInfo.currency,
@@ -109,7 +119,7 @@ export const spec = {
         app: bid.params.app,
       };
       bidRequests.push({
-        url: `${VIQEO_ENDPOINT}/?sspId=${sspId || DEFAULT_SSPID}`,
+        url: endpointUrl || `${VIQEO_ENDPOINT}/?sspId=${sspId || DEFAULT_SSPID}`,
         method: 'POST',
         data,
         bids: validBidRequests,
@@ -152,9 +162,11 @@ export const spec = {
             ttl: b.exp,
             netRevenue: true,
             creativeId: b.cid,
-            width: b.w || bidRequest?.mediaTypes[BANNER].sizes[0][0],
-            height: b.h || bidRequest?.mediaTypes[BANNER].sizes[0][1],
+            width: b.w || bidRequest?.mediaTypes[VIDEO].playerSize[0][0],
+            height: b.h || bidRequest?.mediaTypes[VIDEO].playerSize[0][1],
             vastXml: b.adm,
+            vastUrl: b.nurl,
+            mediaType: VIDEO,
             renderer,
           })
         })

@@ -27,14 +27,16 @@ Viqeo Bidder Adapter for Prebid.js. About: https://viqeo.tv/
 | `test`                      | optional | Flag which will induce a sample bid response when true; only set to true for testing purposes (1 = true, 0 = false)        | `1`                      | `integer` |
 | `sspId`                     | optional | For debug, request id                                                                                                      | `1`                      | `number`  |
 | `renderUrl`                 | optional | For debug, script player url                                                                                               | `"https://viqeo.tv"`     | `string`  |
+| `endpointUrl`               | optional | For debug, api endpoint                                                                                                    | `"https://viqeo.tv"`     | `string`  |
 
 # Test Parameters
 ```
     var adUnits = [{
       code: 'your-slot', // use exactly the same code as your slot div id.
       mediaTypes: {
-          banner: {
-              sizes: [[640, 480]]
+          video: {
+            context: 'outstream',
+            playerSize: [640, 480]  
           }
       },
       bids: [{
