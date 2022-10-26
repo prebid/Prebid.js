@@ -7,11 +7,33 @@ describe('ConcertAdapter', function () {
   let bidRequests;
   let bidRequest;
   let bidResponse;
+  let element;
+  let sandbox;
 
   afterEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {};
+    sandbox.restore();
   });
+
   beforeEach(function () {
+    element = {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      getBoundingClientRect: () => {
+        return {
+          width: element.width,
+          height: element.height,
+
+          left: element.x,
+          top: element.y,
+          right: element.x + element.width,
+          bottom: element.y + element.height
+        };
+      }
+    };
+
     $$PREBID_GLOBAL$$.bidderSettings = {
       concert: {
         storageAllowed: true
@@ -56,6 +78,9 @@ describe('ConcertAdapter', function () {
         ]
       }
     }
+
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(document, 'getElementById').withArgs('desktop_leaderboard_variable').returns(element)
   });
 
   describe('spec.isBidRequestValid', function() {
@@ -119,6 +144,37 @@ describe('ConcertAdapter', function () {
 
       expect(payload.meta.uid).to.equal('foo');
     });
+
+    it('should add uid2 to eids list if available', function() {
+      bidRequests[0].userId = { uid2: { id: 'uid123' } }
+
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+      const meta = payload.meta
+
+      expect(meta.eids.length).to.equal(1);
+      expect(meta.eids[0].uids[0].id).to.equal('uid123')
+      expect(meta.eids[0].uids[0].atype).to.equal(3)
+    })
+
+    it('should return empty eids list if none are available', function() {
+      bidRequests[0].userId = { testId: { id: 'uid123' } }
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+      const meta = payload.meta
+
+      expect(meta.eids.length).to.equal(0);
+    });
+
+    it('should return x/y offset coordiantes when element is present', function() {
+      Object.assign(element, { x: 100, y: 0, width: 400, height: 400 })
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+      const slot = payload.slots[0];
+
+      expect(slot.offsetCoordinates.x).to.equal(100)
+      expect(slot.offsetCoordinates.y).to.equal(0)
+    })
   });
 
   describe('spec.interpretResponse', function() {

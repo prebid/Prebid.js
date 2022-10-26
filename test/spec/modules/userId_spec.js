@@ -405,6 +405,9 @@ describe('User ID', function () {
       init(config);
       setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule, imuIdSubmodule]);
 
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+
       config.setConfig({
         userSync: {
           ppid: 'pubcid.org',
@@ -416,11 +419,41 @@ describe('User ID', function () {
           ]
         }
       });
-      // before ppid should not be set
-      expect(window.googletag._ppid).to.equal(undefined);
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    it('should set PPID when the source needs to call out to the network', () => {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      const callback = sinon.stub();
+      setSubmoduleRegistry([{
+        name: 'sharedId',
+        getId: function () {
+          return {callback}
+        },
+        decode(d) {
+          return d
+        }
+      }]);
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          auctionDelay: 10,
+          userIds: [
+            {
+              name: 'sharedId',
+            }
+          ]
+        }
+      });
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        expect(window.googletag._ppid).to.be.undefined;
+        const uid = 'thismustbelongerthan32characters'
+        callback.yield({pubcid: uid});
+        expect(window.googletag._ppid).to.equal(uid);
       });
     });
 
@@ -428,6 +461,9 @@ describe('User ID', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([imuIdSubmodule]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
 
       config.setConfig({
         userSync: {
@@ -437,8 +473,7 @@ describe('User ID', function () {
           ]
         }
       });
-      // before ppid should not be set
-      expect(window.googletag._ppid).to.equal(undefined);
+
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('imppidvalueimppidvalueimppidvalue');

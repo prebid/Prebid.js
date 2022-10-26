@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -368,6 +369,29 @@ describe('AppNexusAdapter', function () {
         external_uid: '123',
         segments: [{ id: 123 }, { id: 987, value: 876 }]
       });
+    });
+
+    it('should add debug params from query', function () {
+      let getParamStub = sinon.stub(utils, 'getParameterByName').callsFake(function(par) {
+        if (par === 'apn_debug_dongle') return 'abcdef';
+        if (par === 'apn_debug_member_id') return '1234';
+        if (par === 'apn_debug_timeout') return '1000';
+
+        return '';
+      });
+
+      let bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.debug).to.exist.and.to.deep.equal({
+        'dongle': 'abcdef',
+        'enabled': true,
+        'member_id': 1234,
+        'debug_timeout': 1000
+      });
+
+      getParamStub.restore();
     });
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {

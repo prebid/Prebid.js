@@ -809,10 +809,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       };
 
-      // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
-      for (let bannerFormat of _bannerImpression.banner.format) {
-        if (bannerFormat.ext != null && bannerFormat.ext.sid != null) {
-          delete bannerFormat.ext.sid;
+      for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
+        // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
+        if (_bannerImpression.banner.format[i].ext != null && _bannerImpression.banner.format[i].ext.sid != null) {
+          delete _bannerImpression.banner.format[i].ext.sid;
+        }
+
+        // add floor per size
+        if ('bidfloor' in impressionObjects[i]) {
+          _bannerImpression.banner.format[i].ext.bidfloor = impressionObjects[i].bidfloor
         }
       }
 
