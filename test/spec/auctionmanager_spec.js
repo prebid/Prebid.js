@@ -955,6 +955,12 @@ describe('auctionmanager.js', function () {
         const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
+
+      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
+        adUnits[0].ttlBuffer = 0;
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
+      });
     });
 
     describe('when auction timeout is 20', function () {
