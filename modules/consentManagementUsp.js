@@ -6,8 +6,8 @@
  */
 import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
 
