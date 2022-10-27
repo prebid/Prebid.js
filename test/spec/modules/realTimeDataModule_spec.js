@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import {default as CONSTANTS} from '../../../src/constants.json';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
+import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -304,5 +305,69 @@ describe('Real time module', function () {
         expect(providers[1][hook].called).to.be.true;
       });
     });
+  });
+
+  describe('data deletion requests', () => {
+    let detach = () => null;
+
+    function mkRtdModule(name) {
+      const mod = {
+        name,
+        init: () => true,
+        onDataDeletionRequest: sinon.stub()
+      };
+      detach = ((orig) => {
+        const smDetach = attachRealTimeDataProvider(mod);
+        return function () {
+          orig();
+          smDetach();
+        }
+      })(detach);
+      return mod;
+    }
+    let sm1, sm2, cfg1, cfg2;
+    beforeEach(() => {
+      sm1 = mkRtdModule('mockMod1');
+      sm2 = mkRtdModule('mockMod2');
+      cfg1 = {
+        name: 'mockMod1',
+        i: 0
+      };
+      cfg2 = {
+        name: 'mockMod2',
+        i: 1
+      };
+      rtdModule.init(config);
+      config.setConfig({
+        realTimeData: {
+          dataProviders: [cfg1, cfg2],
+        }
+      });
+    });
+    afterEach(() => {
+      detach();
+      config.resetConfig();
+    });
+
+    it('calls onDataDeletionRequest on submodules', () => {
+      const next = sinon.stub();
+      onDataDeletionRequest(next, {a: 0});
+      sinon.assert.calledWith(next, {a: 0});
+      sinon.assert.calledWith(sm1.onDataDeletionRequest, cfg1);
+      sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
+    });
+
+    describe('does not choke if onDataDeletionRequest', () => {
+      Object.entries({
+        'is missing': () => { delete sm1.onDataDeletionRequest },
+        'throws': () => { sm1.onDataDeletionRequest.throws(new Error()) }
+      }).forEach(([t, setup]) => {
+        it(t, () => {
+          setup();
+          onDataDeletionRequest(sinon.stub());
+          sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
+        })
+      })
+    })
   });
 });
