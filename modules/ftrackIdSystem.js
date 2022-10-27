@@ -48,20 +48,39 @@ export const ftrackIdSubmodule = {
    *   similar to the module name and ending in id or Id
    */
   decode (value, config) {
-    if (!value) { return }
-    const ext = {}
+    if (!value) {
+      return;
+    };
 
-    for (var key in value) {
-      /** unpack the strings from the arrays */
-      ext[key] = value[key][0]
-    }
-
-    return {
+    const DECODE_RESPONSE = {
       ftrackId: {
-        uid: value.DeviceID && value.DeviceID[0],
-        ext
+        uid: '',
+        ext: {}
       }
     }
+
+    // Loop over the value's properties:
+    // -- if string, assign value as is.
+    // -- if array, convert to string then assign value.
+    // -- If neither type, assign value as empty string
+    for (var key in value) {
+      let keyValue = value[key];
+      if (Array.isArray(keyValue)) {
+        keyValue = keyValue.join('|');
+      } else if (typeof value[key] !== 'string') {
+        // Unexpected value type, should be string or array
+        keyValue = '';
+      }
+
+      DECODE_RESPONSE.ftrackId.ext[key] = keyValue;
+    }
+
+    // If we have DeviceId value, assign it to the uid property
+    if (DECODE_RESPONSE.ftrackId.ext.hasOwnProperty('DeviceID')) {
+      DECODE_RESPONSE.ftrackId.uid = DECODE_RESPONSE.ftrackId.ext.DeviceID;
+    }
+
+    return DECODE_RESPONSE;
   },
 
   /**

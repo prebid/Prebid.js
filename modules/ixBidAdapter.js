@@ -16,15 +16,15 @@ import {
   parseQueryStringParameters,
   safeJSONParse
 } from '../src/utils.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import * as events from '../src/events.js';
-import {find} from '../src/polyfill.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {Renderer} from '../src/Renderer.js';
+import { find } from '../src/polyfill.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -102,13 +102,13 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 let hasRegisteredHandler = false;
-export const storage = getStorageManager({gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   featureToggles: {},
-  isFeatureEnabled: function(ft) {
+  isFeatureEnabled: function (ft) {
     return deepAccess(this.featureToggles, `features.${ft}.activated`)
   },
-  getFeatureToggles: function() {
+  getFeatureToggles: function () {
     if (storage.localStorageIsEnabled()) {
       const parsedToggles = safeJSONParse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
       if (deepAccess(parsedToggles, 'expiry') && parsedToggles.expiry >= new Date().getTime()) {
@@ -118,7 +118,7 @@ export const FEATURE_TOGGLES = {
       }
     }
   },
-  setFeatureToggles: function(serverResponse) {
+  setFeatureToggles: function (serverResponse) {
     const responseBody = serverResponse.body;
     const expiryTime = new Date();
     const toggles = deepAccess(responseBody, 'ext.features');
@@ -133,7 +133,7 @@ export const FEATURE_TOGGLES = {
       }
     }
   },
-  clearFeatureToggles: function() {
+  clearFeatureToggles: function () {
     this.featureToggles = {};
     if (storage.localStorageIsEnabled()) {
       storage.removeDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
@@ -391,7 +391,7 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.mediaTypes = bidRequest.mediaTypes;
     bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else if (parsedAdm && parsedAdm.native) {
-    bid.native = {ortb: parsedAdm.native};
+    bid.native = { ortb: parsedAdm.native };
     bid.width = rawBid.w ? rawBid.w : 1;
     bid.height = rawBid.h ? rawBid.h : 1;
     bid.mediaType = NATIVE;
@@ -708,18 +708,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
 
-  if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-    if (version) {
-      payload.v = version;
-    }
-    payload.ac = 'j';
-    payload.sd = 1;
-
-    if (version === VIDEO_ENDPOINT_VERSION) {
-      payload.nf = 1;
-    }
-  }
-
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
   const otherIxConfig = config.getConfig(bidderCode);
@@ -762,13 +750,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         logError('IX Bid Adapter: IX config FPD request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE });
       }
     }
-
-    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-      // Create t in payload if timeout is configured.
-      if (typeof otherIxConfig.timeout === 'number') {
-        payload.t = otherIxConfig.timeout;
-      }
-    }
   }
 
   for (let adUnitIndex = 0; adUnitIndex < transactionIds.length; adUnitIndex++) {
@@ -809,10 +790,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         },
       };
 
-      // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
-      for (let bannerFormat of _bannerImpression.banner.format) {
-        if (bannerFormat.ext != null && bannerFormat.ext.sid != null) {
-          delete bannerFormat.ext.sid;
+      for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
+        // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
+        if (_bannerImpression.banner.format[i].ext != null && _bannerImpression.banner.format[i].ext.sid != null) {
+          delete _bannerImpression.banner.format[i].ext.sid;
+        }
+
+        // add floor per size
+        if ('bidfloor' in impressionObjects[i]) {
+          _bannerImpression.banner.format[i].ext.bidfloor = impressionObjects[i].bidfloor
         }
       }
 
@@ -904,36 +890,21 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
     if (wasAdUnitImpressionsTrimmed || isLastAdUnit) {
-      const clonedPayload = deepClone(payload);
       if (!isLastAdUnit || requestSequenceNumber) {
         r.ext.ixdiag.sn = requestSequenceNumber;
-        clonedPayload.sn = requestSequenceNumber;
       }
 
       requestSequenceNumber++;
-      clonedPayload.r = JSON.stringify(r);
 
-      let requestData;
-
-      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-        requestData = {
-          method: 'POST',
-          url: baseUrl + '?s=' + payload.s,
-          data: deepClone(r),
-          option: {
-            contentType: 'text/plain',
-          },
-          validBidRequests
-        }
-      } else {
-        requestData = {
-          method: 'GET',
-          url: baseUrl,
-          data: clonedPayload,
-          validBidRequests
-        }
-      }
-      requests.push(requestData);
+      requests.push({
+        method: 'POST',
+        url: baseUrl + '?s=' + siteID,
+        data: deepClone(r),
+        option: {
+          contentType: 'text/plain',
+        },
+        validBidRequests
+      });
 
       currentRequestSize = baseRequestSize;
       r.imp = [];
@@ -1527,13 +1498,7 @@ export const spec = {
 
       // Transform rawBid in bid response to the format that will be accepted by prebid.
       const innerBids = seatbid[i].bid;
-      let requestBid;
-
-      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-        requestBid = bidderRequest.data;
-      } else {
-        requestBid = safeJSONParse(bidderRequest.data.r);
-      }
+      const requestBid = bidderRequest.data;
 
       for (let j = 0; j < innerBids.length; j++) {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
