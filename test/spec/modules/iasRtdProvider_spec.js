@@ -54,6 +54,59 @@ describe('iasRtdProvider is a RTD provider that', function () {
       const value = iasSubModule.init(config);
       expect(value).to.equal(true);
     });
+    it('returns true with the pubId, keyMappings and adUnitPath params', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {'one-div-id': '/012345/ad/unit/path'}
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
+    it('returns true with the pubId and adUnitPath params with multiple keys', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {
+            'one-div-id': '/012345/ad/unit/path',
+            'another-div-id': '/012345/ad/unit/path',
+            'third-div-id': '/012345/another/ad/unit/path'
+          }
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
+    it('returns true with the pubId and adUnitPath params with empty values', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {
+            'one-div-id': '/012345/ad/unit/path',
+            'another-div-id': '',
+            'third-div-id': ''
+          }
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
   });
   describe('has a method `getBidRequestData` that', function () {
     it('exists', function () {
@@ -138,7 +191,10 @@ const config = {
     keyMappings: {
       'id': 'ias_id'
     },
-    pageUrl: 'https://integralads.com/test'
+    pageUrl: 'https://integralads.com/test',
+    adUnitPath: {
+      'one-div-id': '/012345/ad/unit/path'
+    }
   }
 };
 

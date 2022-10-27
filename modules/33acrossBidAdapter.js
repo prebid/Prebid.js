@@ -11,6 +11,7 @@ import {
   logWarn,
   getWindowSelf,
   mergeDeep,
+  pick
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -242,7 +243,8 @@ function _getMRAKey(bidRequest) {
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
   const ttxRequest = {};
-  const { siteId, test } = bidRequests[0].params;
+  const firstBidRequest = bidRequests[0];
+  const { siteId, test } = firstBidRequest.params;
 
   /*
    * Infer data for the request payload
@@ -254,13 +256,13 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   });
 
   ttxRequest.site = { id: siteId };
-  ttxRequest.device = _buildDeviceORTB();
+  ttxRequest.device = _buildDeviceORTB(firstBidRequest.ortb2?.device);
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
   }
 
-  ttxRequest.id = bidRequests[0].auctionId;
+  ttxRequest.id = firstBidRequest.auctionId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -268,9 +270,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     });
   }
 
-  if (Array.isArray(bidRequests[0].userIdAsEids) && bidRequests[0].userIdAsEids.length > 0) {
+  if (Array.isArray(firstBidRequest.userIdAsEids) && firstBidRequest.userIdAsEids.length > 0) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
-      'eids': bidRequests[0].userIdAsEids
+      'eids': firstBidRequest.userIdAsEids
     });
   }
 
@@ -294,9 +296,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     }
   };
 
-  if (bidRequests[0].schain) {
+  if (firstBidRequest.schain) {
     ttxRequest.source = setExtensions(ttxRequest.source, {
-      'schain': bidRequests[0].schain
+      'schain': firstBidRequest.schain
     });
   }
 
@@ -739,10 +741,9 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
 }
 
 // BUILD REQUESTS: DEVICE
-function _buildDeviceORTB() {
+function _buildDeviceORTB(device = {}) {
   const win = getWindowSelf();
-
-  return {
+  const deviceProps = {
     ext: {
       ttx: {
         ...getScreenDimensions(),
@@ -752,7 +753,13 @@ function _buildDeviceORTB() {
         mtp: win.navigator.maxTouchPoints
       }
     }
-  };
+  }
+
+  if (device.sua) {
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+  }
+
+  return deviceProps;
 }
 
 function getTopMostAccessibleWindow() {

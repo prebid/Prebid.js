@@ -736,6 +736,7 @@ describe('auctionmanager.js', function () {
     let auction;
     let ajaxStub;
     let bids;
+    let bidderRequests;
     let makeRequestsStub;
 
     before(function () {
@@ -759,7 +760,8 @@ describe('auctionmanager.js', function () {
         adUnitCodes = [ADUNIT_CODE];
         auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
         bids = TEST_BIDS.slice();
-        makeRequestsStub.returns(bids.map(b => mockBidRequest(b, {auctionId: auction.getAuctionId()})));
+        bidderRequests = bids.map(b => mockBidRequest(b, {auctionId: auction.getAuctionId()}));
+        makeRequestsStub.returns(bidderRequests);
         indexAuctions = [auction];
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
@@ -813,25 +815,32 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
 
-      it('installs publisher-defined renderers on bids', function () {
-        let renderer = {
-          url: 'renderer.js',
-          render: (bid) => bid
-        };
-        Object.assign(adUnits[0], {renderer});
+      describe('install publisher-defined renderers', () => {
+        Object.entries({
+          'on adUnit': () => adUnits[0],
+          'on bid': () => bidderRequests[0].bids[0],
+        }).forEach(([t, getObj]) => {
+          it(t, () => {
+            let renderer = {
+              url: 'renderer.js',
+              render: (bid) => bid
+            };
 
-        let bids1 = Object.assign({},
-          bids[0],
-          {
-            bidderCode: BIDDER_CODE,
-            mediaType: 'video-outstream',
-          }
-        );
-        spec.interpretResponse.returns(bids1);
-        auction.callBids();
-        const addedBid = auction.getBidsReceived().pop();
-        assert.equal(addedBid.renderer.url, 'renderer.js');
-      });
+            let bids1 = Object.assign({},
+              bids[0],
+              {
+                bidderCode: BIDDER_CODE,
+                mediaType: 'video-outstream',
+              }
+            );
+            Object.assign(getObj(), {renderer});
+            spec.interpretResponse.returns(bids1);
+            auction.callBids();
+            const addedBid = auction.getBidsReceived().pop();
+            assert.equal(addedBid.renderer.url, 'renderer.js');
+          })
+        })
+      })
 
       it('installs publisher-defined backup renderers on bids', function () {
         let renderer = {
