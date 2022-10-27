@@ -275,10 +275,55 @@ describe('FTRACK ID System', () => {
 
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
-      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({
+      const MOCK_VALUE_STRINGS = {
+          HHID: 'household_test_id',
+          DeviceID: 'device_test_id',
+          SingleDeviceID: 'single_device_test_id'
+        },
+        MOCK_VALUE_ARRAYS = {
+          HHID: ['household_test_id', 'a', 'b'],
+          DeviceID: ['device_test_id', 'c', 'd'],
+          SingleDeviceID: ['single_device_test_id', 'e', 'f']
+        },
+        MOCK_VALUE_BOTH = {
+          foo: ['foo', 'a', 'b'],
+          bar: 'bar',
+          baz: ['baz', 'baz', 'baz']
+        };
+
+      // strings are just passed through
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_STRINGS, configMock)).to.deep.equal({
         ftrackId: {
-          ext: { 0: 'v', 1: 'a', 2: 'l', 3: 'u', 4: 'e' },
-          uid: undefined,
+          ext: {
+            HHID: 'household_test_id',
+            DeviceID: 'device_test_id',
+            SingleDeviceID: 'single_device_test_id'
+          },
+          uid: 'device_test_id',
+        },
+      });
+
+      // arrays are converted to strings
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_ARRAYS, configMock)).to.deep.equal({
+        ftrackId: {
+          ext: {
+            HHID: 'household_test_id|a|b',
+            DeviceID: 'device_test_id|c|d',
+            SingleDeviceID: 'single_device_test_id|e|f'
+          },
+          uid: 'device_test_id|c|d',
+        },
+      });
+
+      // mix of both but uid should be empty string because DeviceId is not defined
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_BOTH, configMock)).to.deep.equal({
+        ftrackId: {
+          ext: {
+            foo: 'foo|a|b',
+            bar: 'bar',
+            baz: 'baz|baz|baz'
+          },
+          uid: '',
         },
       });
     });
@@ -308,107 +353,198 @@ describe('FTRACK ID System', () => {
     });
   });
 
-  describe('Uses ftrack getUserIdsAsEids() method', () => {
-    it('getUserIdsAsEids using the ftrack submodule and gets three ids (HHID, DeviceId, SingleDeviceId)', () => {
+  describe('pbjs "get id" methods', () => {
+    beforeEach(() => {
       init(config);
       setSubmoduleRegistry([ftrackIdSubmodule]);
+    });
 
-      const ids = {
-        ftrackId: {
-          HHID: ['household_test_id'],
-          DeviceID: ['device_test_id'],
-          SingleDeviceID: ['single_device_test_id']
-        }
-      };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [{
-            name: 'ftrack', value: ids,
-          }]
-        }
+    describe('pbjs.getUserIdsAsync()', () => {
+      it('should return the IDs in the correct schema - flat schema', () => {
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
+
+        getGlobal().getUserIdsAsync().then(ids => {
+          expect(ids).to.deep.equal({
+            uid: 'device_test_id',
+            ftrackId: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
+          });
+        });
       });
+    });
 
-      getGlobal().getUserIdsAsync().then((ids) => {
+    describe('pbjs.getUserIds()', () => {
+      it('should return the IDs in the correct schema', () => {
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
+
+        expect(getGlobal().getUserIds()).to.deep.equal({
+          ftrackId: {
+            uid: 'device_test_id',
+            ext: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
+          }
+        });
+      });
+    });
+
+    describe('pbjs.getUserIdsAsEids()', () => {
+      it('should return the correct EIDs schema ', () => {
+        // Pass all three IDs
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
+
         expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
           id: 'device_test_id',
           atype: 1,
           ext: {
             HHID: 'household_test_id',
             DeviceID: 'device_test_id',
-            SingleDeviceID: 'single_device_test_id',
+            SingleDeviceID: 'single_device_test_id'
           }
         }]);
       });
+
+      describe('by ID type:', () => {
+        it('- DeviceID', () => {
+          // Pass DeviceID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: 'device_test_id',
+                    ext: {
+                      DeviceID: 'device_test_id',
+                    }
+                  }
+                }
+              }]
+            }
+          });
+
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            id: 'device_test_id',
+            atype: 1,
+            ext: {
+              DeviceID: 'device_test_id'
+            }
+          }]);
+        });
+
+        it('- HHID', () => {
+          // Pass HHID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: '',
+                    ext: {
+                      HHID: 'household_test_id'
+                    }
+                  }
+                }
+              }]
+            }
+          });
+
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            id: '',
+            atype: 1,
+            ext: {
+              HHID: 'household_test_id'
+            }
+          }]);
+        });
+
+        it('- SingleDeviceID', () => {
+          // Pass SingleDeviceID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: '',
+                    ext: {
+                      SingleDeviceID: 'single_device_test_id'
+                    }
+                  }
+                }
+              }]
+            }
+          });
+
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            id: '',
+            atype: 1,
+            ext: {
+              SingleDeviceID: 'single_device_test_id'
+            }
+          }]);
+        });
+      });
     });
-
-    it('gets only the deviceId', () => {
-      init(config);
-      setSubmoduleRegistry([ftrackIdSubmodule]);
-
-      const ids = { ftrackId: { DeviceID: ['device_test_id'] } };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [{
-            name: 'ftrack', value: ids,
-          }]
-        }
-      });
-
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: 'device_test_id',
-          atype: 1,
-          ext: { DeviceID: 'device_test_id' }
-        }]);
-      });
-    });
-
-    it('gets only the user household id', () => {
-      init(config);
-      setSubmoduleRegistry([ftrackIdSubmodule]);
-
-      const ids = { ftrackId: { HHID: ['household_test_id'], } };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [{
-            name: 'ftrack', value: ids,
-          }]
-        }
-      });
-
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: '',
-          atype: 1,
-          ext: { HHID: 'household_test_id' }
-        }]);
-      });
-    });
-
-    it('gets only the deviceId', () => {
-      init(config);
-      setSubmoduleRegistry([ftrackIdSubmodule]);
-
-      const ids = { ftrackId: { SingleDeviceID: ['single_device_test_id'] } };
-      config.setConfig({
-        userSync: {
-          auctionDelay: 10,
-          userIds: [{
-            name: 'ftrack', value: ids,
-          }]
-        }
-      });
-
-      getGlobal().getUserIdsAsync().then((ids) => {
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: '',
-          atype: 1,
-          ext: { SingleDeviceID: 'single_device_test_id' }
-        }]);
-      });
-    });
-  });
+  })
 });

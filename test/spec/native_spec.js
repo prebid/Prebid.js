@@ -8,7 +8,7 @@ import {
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
-  toOrtbNativeRequest,
+  toOrtbNativeRequest, toOrtbNativeResponse, legacyPropertiesToOrtbNative, fireImpressionTrackers, fireClickTrackers,
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
@@ -43,6 +43,106 @@ const bid = {
     },
   },
 };
+
+const ortbBid = {
+  adId: '123',
+  transactionId: 'au',
+  native: {
+    ortb: {
+      assets: [
+        {
+          id: 0,
+          title: {
+            text: 'Native Creative'
+          }
+        },
+        {
+          id: 1,
+          data: {
+            value: 'Cool description great stuff'
+          }
+        },
+        {
+          id: 2,
+          data: {
+            value: 'Do it'
+          }
+        },
+        {
+          id: 3,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/image.png',
+            h: 83,
+            w: 127
+          }
+        },
+        {
+          id: 4,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/icon.jpg',
+            h: 742,
+            w: 989
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'AppNexus',
+            type: 1
+          }
+        }
+      ],
+      link: {
+        url: 'https://www.link.example'
+      },
+      privacy: 'https://privacy-link.example',
+      ver: '1.2'
+    }
+  },
+};
+
+const ortbRequest = {
+  assets: [
+    {
+      id: 0,
+      required: 0,
+      title: {
+        len: 140
+      }
+    }, {
+      id: 1,
+      required: 0,
+      data: {
+        type: 2
+      }
+    }, {
+      id: 2,
+      required: 0,
+      data: {
+        type: 12
+      }
+    }, {
+      id: 3,
+      required: 0,
+      img: {
+        type: 3
+      }
+    }, {
+      id: 4,
+      required: 0,
+      img: {
+        type: 1
+      }
+    }, {
+      id: 5,
+      required: 0,
+      data: {
+        type: 1
+      }
+    }
+  ],
+  ver: '1.2'
+}
 
 const bidWithUndefinedFields = {
   transactionId: 'au',
@@ -89,6 +189,11 @@ describe('native.js', function () {
     );
     expect(targeting.hb_native_foo).to.equal(bid.native.foo);
   });
+
+  it('can get targeting from null native keys', () => {
+    const targeting = getNativeTargeting({...bid, native: {...bid.native, displayUrl: null}});
+    expect(targeting.hb_native_displayurl).to.not.be.ok;
+  })
 
   it('sends placeholders for configured assets', function () {
     const adUnit = {
@@ -332,7 +437,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bid);
+    const message = getAllAssetsMessage(messageRequest, bid, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(9);
     expect(message.assets).to.deep.include({
@@ -380,7 +485,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
+    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields, {getNativeReq: () => null});
 
     expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({
@@ -400,6 +505,110 @@ describe('native.js', function () {
       value: bid.native.ext.foo,
     });
   });
+
+  it('creates native all asset message with OpenRTB format', function () {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'allAssetRequest',
+      adId: '123',
+    };
+
+    const message = getAllAssetsMessage(messageRequest, ortbBid, {getNativeReq: () => ortbRequest});
+
+    expect(message.assets.length).to.equal(8);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'image',
+      value: bid.native.image.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'title',
+      value: bid.native.title,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'icon',
+      value: bid.native.icon.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'cta',
+      value: bid.native.cta,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'sponsoredBy',
+      value: bid.native.sponsoredBy,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'privacyLink',
+      value: ortbBid.native.ortb.privacy,
+    });
+  });
+
+  const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
+    title: 'vtitle',
+    body: 'vbody'
+  });
+  const SAMPLE_ORTB_RESPONSE = {
+    native: {
+      ortb: {
+        link: {
+          url: 'url'
+        },
+        assets: [
+          {
+            id: 0,
+            title: {
+              text: 'vtitle'
+            }
+          },
+          {
+            id: 1,
+            data: {
+              value: 'vbody'
+            }
+          }
+        ]
+      }
+    }
+  }
+  describe('getAllAssetsMessage', () => {
+    it('returns assets in legacy format for ortb responses', () => {
+      const actual = getAllAssetsMessage({}, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST});
+      expect(actual.assets).to.eql([
+        {
+          key: 'clickUrl',
+          value: 'url'
+        },
+        {
+          key: 'title',
+          value: 'vtitle'
+        },
+        {
+          key: 'body',
+          value: 'vbody'
+        },
+      ])
+    });
+  });
+  describe('getAssetsMessage', () => {
+    Object.entries({
+      'hb_native_title': {key: 'title', value: 'vtitle'},
+      'hb_native_body': {key: 'body', value: 'vbody'}
+    }).forEach(([tkey, assetVal]) => {
+      it(`returns ${tkey} asset in legacy format for ortb responses`, () => {
+        const actual = getAssetMessage({
+          assets: [tkey]
+        }, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST})
+        expect(actual.assets).to.eql([assetVal])
+      })
+    })
+  })
 });
 
 describe('validate native openRTB', function () {
@@ -673,6 +882,17 @@ describe('validate native', function () {
     });
   });
 
+  ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
+    it(`should not generate an empty asset for key ${nativeKey}`, () => {
+      const ortbReq = toOrtbNativeRequest({
+        [nativeKey]: {
+          required: true
+        }
+      });
+      expect(ortbReq.assets.length).to.equal(0);
+    });
+  })
+
   it('should convert from ortb to old-style native request', () => {
     const openRTBRequest = {
       'ver': '1.2',
@@ -883,3 +1103,193 @@ describe('validate native', function () {
     });
   }
 });
+
+describe('legacyPropertiesToOrtbNative', () => {
+  describe('click trakckers', () => {
+    it('should convert clickUrl to link.url', () => {
+      const native = legacyPropertiesToOrtbNative({clickUrl: 'some-url'});
+      expect(native.link.url).to.eql('some-url');
+    });
+    it('should convert single clickTrackers to link.clicktrackers', () => {
+      const native = legacyPropertiesToOrtbNative({clickTrackers: 'some-url'});
+      expect(native.link.clicktrackers).to.eql([
+        'some-url'
+      ])
+    });
+    it('should convert multiple clickTrackers into link.clicktrackers', () => {
+      const native = legacyPropertiesToOrtbNative({clickTrackers: ['url1', 'url2']});
+      expect(native.link.clicktrackers).to.eql([
+        'url1',
+        'url2'
+      ])
+    })
+  });
+  describe('impressionTrackers', () => {
+    it('should convert a single tracker into an eventtracker entry', () => {
+      const native = legacyPropertiesToOrtbNative({impressionTrackers: 'some-url'});
+      expect(native.eventtrackers).to.eql([
+        {
+          event: 1,
+          method: 1,
+          url: 'some-url'
+        }
+      ]);
+    });
+
+    it('should convert an array into corresponding eventtracker entries', () => {
+      const native = legacyPropertiesToOrtbNative({impressionTrackers: ['url1', 'url2']});
+      expect(native.eventtrackers).to.eql([
+        {
+          event: 1,
+          method: 1,
+          url: 'url1'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: 'url2'
+        }
+      ])
+    })
+  });
+  describe('javascriptTrackers', () => {
+    it('should convert a single value into jstracker', () => {
+      const native = legacyPropertiesToOrtbNative({javascriptTrackers: 'some-markup'});
+      expect(native.jstracker).to.eql('some-markup');
+    })
+    it('should merge multiple values into a single jstracker', () => {
+      const native = legacyPropertiesToOrtbNative({javascriptTrackers: ['some-markup', 'some-other-markup']});
+      expect(native.jstracker).to.eql('some-markupsome-other-markup');
+    })
+  });
+});
+
+describe('fireImpressionTrackers', () => {
+  let runMarkup, fetchURL;
+  beforeEach(() => {
+    runMarkup = sinon.stub();
+    fetchURL = sinon.stub();
+  })
+
+  function runTrackers(resp) {
+    fireImpressionTrackers(resp, {runMarkup, fetchURL})
+  }
+
+  it('should run markup in jstracker', () => {
+    runTrackers({
+      jstracker: 'some-markup'
+    });
+    sinon.assert.calledWith(runMarkup, 'some-markup');
+  });
+
+  it('should fetch each url in imptrackers', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      imptrackers: urls
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  });
+
+  it('should fetch each url in eventtrackers that use the image method', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      eventtrackers: urls.map(url => ({event: 1, method: 1, url}))
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url))
+  });
+
+  it('should load as a script each url in eventtrackers that use the js method', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      eventtrackers: urls.map(url => ({event: 1, method: 2, url}))
+    });
+    urls.forEach(url => sinon.assert.calledWith(runMarkup, sinon.match(`script async src="${url}"`)))
+  });
+
+  it('should not fire trackers that are not impression trakcers', () => {
+    runTrackers({
+      link: {
+        clicktrackers: ['click-url']
+      },
+      eventtrackers: [{
+        event: 2, // not imp
+        method: 1,
+        url: 'some-url'
+      }]
+    });
+    sinon.assert.notCalled(fetchURL);
+    sinon.assert.notCalled(runMarkup);
+  })
+})
+
+describe('fireClickTrackers', () => {
+  let fetchURL;
+  beforeEach(() => {
+    fetchURL = sinon.stub();
+  });
+
+  function runTrackers(resp, assetId = null) {
+    fireClickTrackers(resp, assetId, {fetchURL});
+  }
+
+  it('should load each URL in link.clicktrackers', () => {
+    const urls = ['url1', 'url2'];
+    runTrackers({
+      link: {
+        clicktrackers: urls
+      }
+    });
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+
+  it('should load each URL in asset.link.clicktrackers, when response is ORTB', () => {
+    const urls = ['asset_url1', 'asset_url2'];
+    runTrackers({
+      assets: [
+        {
+          id: 1,
+          link: {
+            clicktrackers: urls
+          }
+        }
+      ],
+    }, 1);
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+})
+
+describe('toOrtbNativeResponse', () => {
+  it('should work when there are unrequested assets in the response', () => {
+    const legacyResponse = {
+      'title': 'vtitle',
+      'body': 'vbody'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: 'true'
+      },
+
+    });
+    const ortbResponse = toOrtbNativeResponse(legacyResponse, request);
+    expect(ortbResponse.assets.length).to.eql(1);
+  });
+
+  it('should not modify the request', () => {
+    const legacyResponse = {
+      title: 'vtitle'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: true
+      }
+    });
+    const requestCopy = JSON.parse(JSON.stringify(request));
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    expect(request).to.eql(requestCopy);
+    sinon.assert.match(response.assets[0], {
+      title: {
+        text: 'vtitle'
+      }
+    })
+  })
+})

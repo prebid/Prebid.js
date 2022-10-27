@@ -157,7 +157,8 @@ function buildPlacement(bidRequest) {
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
       publisherId: bidRequest.params.publisherId,
-      userIdAsEids: bidRequest.userIdAsEids
+      userIdAsEids: bidRequest.userIdAsEids,
+      supplyChain: bidRequest.schain
     }
   }
 }

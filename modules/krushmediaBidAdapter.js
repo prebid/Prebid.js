@@ -57,7 +57,7 @@ export const spec = {
     let location;
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.page)
+      location = new URL(bidderRequest.refererInfo.page);
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -80,7 +80,7 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
     }
 

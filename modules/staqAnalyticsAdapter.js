@@ -1,5 +1,5 @@
 import { logInfo, logError, parseUrl, _each } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -21,7 +21,7 @@ const STAQ_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-}
+};
 
 function buildRequestTemplate(connId) {
   // TODO: what should these pick from refererInfo?

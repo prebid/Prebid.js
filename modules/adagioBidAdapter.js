@@ -271,9 +271,8 @@ function getDevice() {
 function getSite(bidderRequest) {
   const { refererInfo } = bidderRequest;
   return {
-    // TODO: do these fallbacks make sense?
-    domain: refererInfo.domain || parseDomain(refererInfo.topmostLocation) || '',
-    page: refererInfo.page || refererInfo.topmostLocation || '',
+    domain: parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.topmostLocation || '',
     referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
     top: refererInfo.reachedTop
   };
@@ -533,7 +532,12 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
+          if (!native.javascriptTrackers) {
+            native.javascriptTrackers = script;
+          } else {
+            native.javascriptTrackers += `\n${script}`;
+          }
           break;
       }
     });
@@ -624,7 +628,16 @@ export function setExtraParam(bid, paramName) {
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
-    bid.params[paramName] = detected;
+    // First Party Data can be an array.
+    // As we consider that params detected from FPD are fallbacks, we just keep the 1st value.
+    if (Array.isArray(detected)) {
+      if (detected.length) {
+        bid.params[paramName] = detected[0].toString();
+      }
+      return;
+    }
+
+    bid.params[paramName] = detected.toString();
   }
 }
 
@@ -781,9 +794,10 @@ function getSlotPosition(adUnitElementId) {
 
     if (mustDisplayElement) {
       domElement.style = domElement.style || {};
+      const originalDisplay = domElement.style.display;
       domElement.style.display = 'block';
       box = domElement.getBoundingClientRect();
-      domElement.style.display = elComputedDisplay;
+      domElement.style.display = originalDisplay || null;
     }
     position.x = Math.round(box.left + scrollLeft - clientLeft);
     position.y = Math.round(box.top + scrollTop - clientTop);
@@ -1124,7 +1138,7 @@ export const spec = {
         ...globalFeatures,
         print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
         adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      }
+      };
 
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';

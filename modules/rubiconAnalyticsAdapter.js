@@ -1,5 +1,5 @@
 import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue, deepClone, logInfo } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
@@ -62,15 +62,20 @@ const cache = {
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
-export let rubiConf = {
-  pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0,
-  dmBilling: {
-    enabled: false,
-    vendors: [],
-    waitForAuction: true
+export let rubiConf;
+export const resetRubiConf = () => {
+  rubiConf = {
+    pvid: generateUUID().slice(0, 8),
+    analyticsEventDelay: 0,
+    dmBilling: {
+      enabled: false,
+      vendors: [],
+      waitForAuction: true
+    }
   }
-};
+}
+resetRubiConf();
+
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -124,9 +129,9 @@ function formatSource(src) {
 }
 
 function getBillingPayload(event) {
-  // for now we are mapping all events to type "general", later we will expand support for specific types
   let billingEvent = deepClone(event);
-  billingEvent.type = 'general';
+  // Pass along type if is string and not empty else general
+  billingEvent.type = (typeof event.type === 'string' && event.type) || 'general';
   billingEvent.accountId = accountId;
   // mark as sent
   deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
@@ -418,7 +423,7 @@ function getBidPrice(bid) {
   }
 }
 
-export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
+export function parseBidResponse(bid, previousBidResponse) {
   // The current bidResponse for this matching requestId/bidRequestId
   let responsePrice = getBidPrice(bid)
   // we need to compare it with the previous one (if there was one)

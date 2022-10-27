@@ -45,7 +45,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'placement': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER
-}
+};
 
 const NATIVE_ASSETS = {
   'TITLE': {ID: 1, KEY: 'title', TYPE: 0},

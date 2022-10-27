@@ -96,7 +96,7 @@ export function getKeywords() {
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
 export const buildBid = (bidResponse) => {
-  const mediaType = deepAccess(bidResponse, 'creative.media_type')
+  const mediaType = deepAccess(bidResponse, 'creative.media_type');
   if (!mediaType) return null;
 
   let bid;

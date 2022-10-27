@@ -19,6 +19,8 @@ const aliasEP = {
   streamkey: 'https://ghb.hb.streamkey.net/v2/auction/',
   janet: 'https://ghb.bidder.jmgads.com/v2/auction/',
   pgam: 'https://ghb.pgamssp.com/v2/auction/',
+  ocm: 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
+  vidcrunchllc: 'https://ghb.platform.vidcrunch.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };

@@ -678,8 +678,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.have.length(0); ;
-      expect(syncResultNone).to.have.length(0); ;
+      expect(syncResultImage).to.have.length(0);
+      expect(syncResultNone).to.have.length(0);
     });
   });
 

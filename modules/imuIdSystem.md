@@ -16,6 +16,7 @@ The following configuration parameters are available:
 ```javascript
 pbjs.setConfig({
   userSync: {
+    ppid: 'ppid.intimatemerger.com', // GAM Publisher Provided id support
     userIds: [{
       name: 'imuid',
       params: {

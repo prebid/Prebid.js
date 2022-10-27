@@ -137,7 +137,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserIds = deepAccess(bidRequests[0], 'userId');
   }
 
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

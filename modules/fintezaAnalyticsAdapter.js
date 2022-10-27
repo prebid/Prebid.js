@@ -1,6 +1,6 @@
 import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -181,7 +181,7 @@ function initSession() {
       !checkSessionByExpires() ||
       !checkSessionByReferer() ||
       !checkSessionByDay()) {
-    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART);
+    sessionId = '' + timestamp + getRandAsStr(SESSION_RAND_PART); // lgtm [js/insecure-randomness]
     begin = timestamp;
 
     isNew = true;
