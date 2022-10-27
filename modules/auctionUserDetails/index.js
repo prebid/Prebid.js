@@ -105,10 +105,9 @@ export function impressionViewableHandler(slot) {
 
 export function auctionInitHandler () {
   if (frequencyDepth) {
-    let slotCount = window.owpbjs.adUnits.length;
-
     storedObject = localStorage.getItem(PREFIX + HOSTNAME);
-    if (storedObject !== null) {
+    let slotCount = window.owpbjs.adUnits.length + (storedObject == null ? frequencyDepth.slotCnt : 0);
+	if (storedObject !== null) {
       storedDate = JSON.parse(storedObject).timestamp.date;
       const isStorageCleared = clearStorage(storedDate);
       if (isStorageCleared) {
