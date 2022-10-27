@@ -53,5 +53,6 @@
     "yahoosspBidAdapter",
     "yieldmoBidAdapter",
     "ttdBidAdapter",
-    "adyoulikeBidAdapter"
+    "adyoulikeBidAdapter",
+    "sizeMappingV2"
 ]
