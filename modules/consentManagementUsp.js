@@ -4,8 +4,9 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import {isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
@@ -321,3 +322,11 @@ function enableConsentManagement(configFromUser = false) {
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 getHook('requestBids').before(requestBidsHook, 50);
+
+export function setOrtbUsp(ortbRequest, bidderRequest) {
+  if (bidderRequest.uspConsent) {
+    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});
