@@ -494,7 +494,7 @@ export function _getHostInfo(validBidRequests) {
   let regexHostParamHttps = new RegExp(`^https:\/\/`);
   let regexHostParamHttp = new RegExp(`^http:\/\/`);
 
-  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
+  let regexNewEndpoints = new RegExp(`^(vz.*|zz.*)\\.[a-z]{2}\\.tappx\\.com$`, 'i');
   let regexClassicEndpoints = new RegExp(`^([a-z]{3}|testing)\\.[a-z]{3}\\.tappx\\.com$`, 'i');
 
   if (regexHostParamHttps.test(hostParam)) {
