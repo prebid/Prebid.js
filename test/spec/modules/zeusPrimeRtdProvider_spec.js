@@ -31,6 +31,7 @@ describe('Zeus Prime RTD submodule', () => {
   let logMessageSpy;
   let setTargetingStub;
   let originalGtag;
+  let originalSubtle;
 
   beforeEach(() => {
     logErrorSpy = sinon.spy(utils, 'logError');
@@ -44,12 +45,15 @@ describe('Zeus Prime RTD submodule', () => {
         setTargeting: setTargetingStub,
       }),
     };
+    originalSubtle = window.crypto.subtle;
+    window.crypto.subtle = { digest: () => 'mockHash' };
   });
 
   afterEach(() => {
     logErrorSpy.restore();
     logMessageSpy.restore();
     window.googletag = originalGtag;
+    window.originalSubtle = originalSubtle;
     delete window.zeusPrime;
   });
 
