@@ -11,7 +11,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.1005';
+const TAPPX_BIDDER_VERSION = '0.1.2';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -273,7 +273,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
     let site = {};
     site.name = bundle;
+    site.page = deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
+    site.ext = {};
+    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || "-";
+    site.ext.page_rip = bidderRequest?.refererInfo?.page || "-";
+    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || "-";
+    site.ext.page_wlh = window.location.href|| "-";
     publisher.name = bundle;
     publisher.domain = bundle;
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
@@ -566,7 +572,7 @@ export function _checkParamDataType(key, value, datatype) {
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense?
-  let url = bidderRequest?.refererInfo?.page || bidderRequest.refererInfo?.topmostLocation;
+  let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   return parseDomain(url, {noLeadingWww: true});
 }
 
