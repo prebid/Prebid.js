@@ -1,7 +1,7 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
+import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -953,6 +953,29 @@ function _assignRenderer(newBid, request) {
   }
 }
 
+/**
+ * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
+ * so that adpod module can set the hb_pb_cat_dur targetting key.
+ * @param {*} newBid
+ * @param {*} bid
+ * @param {*} request
+ * @returns
+ */
+export function assignDealTier(newBid, bid, request) {
+  if (!bid?.ext?.prebiddealpriority) return;
+  const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
+  const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoObj?.context != ADPOD) return;
+
+  const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
+  // if (!duration) return;
+  newBid.video = {
+    context: ADPOD,
+    durationSeconds: duration,
+    dealTier: bid.ext.prebiddealpriority
+  };
+}
+
 function isNonEmptyArray(test) {
   if (isArray(test) === true) {
     if (test.length > 0) {
@@ -1174,6 +1197,7 @@ export const spec = {
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
     }
+
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
       _allowedIabCategoriesValidation(payload, acatParams);
@@ -1181,6 +1205,19 @@ export const spec = {
       _allowedIabCategoriesValidation(payload, allowedIabCategories);
     }
     _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Check if bidderRequest has timeout property if present send timeout as tmax value to translator request
+    // bidderRequest has timeout property if publisher sets during calling requestBids function from page
+    // if not bidderRequest contains global value set by Prebid
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+    } else {
+      payload.tmax = window?.PWT?.versionDetails?.timeout;
+    }
+
+    // Sending epoch timestamp in request.ext object
+    payload.ext.epoch = new Date().getTime();
+
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
     if (typeof config.getConfig('app') === 'object') {
@@ -1251,6 +1288,7 @@ export const spec = {
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;
                         _assignRenderer(newBid, request);
+                        assignDealTier(newBid, bid, request);
                         break;
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);

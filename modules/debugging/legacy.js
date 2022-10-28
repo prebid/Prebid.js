@@ -54,7 +54,7 @@ export function applyBidOverrides(overrideObj, bidObj, bidType, logger) {
   }, bidObj);
 }
 
-export function addBidResponseHook(next, adUnitCode, bid) {
+export function addBidResponseHook(next, adUnitCode, bid, reject) {
   const {overrides, logger} = this;
 
   if (bidderExcluded(overrides.bidders, bid.bidderCode)) {
@@ -70,7 +70,7 @@ export function addBidResponseHook(next, adUnitCode, bid) {
     });
   }
 
-  next(adUnitCode, bid);
+  next(adUnitCode, bid, reject);
 }
 
 export function addBidderRequestsHook(next, bidderRequests) {

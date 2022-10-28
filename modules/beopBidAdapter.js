@@ -99,12 +99,12 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  const accountId = data.params.accountId;
+  let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
-    nid: data.params.networkId,
-    nptnid: data.params.networkPartnerId,
+    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    nid: params.networkId,
+    nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
     aid: data.auctionId,
