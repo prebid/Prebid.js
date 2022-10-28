@@ -1,0 +1,82 @@
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {buildUrl} from '../src/utils.js'
+import {ajax} from '../src/ajax.js';
+
+const BIDDER_CODE = 'smartytech';
+export const ENDPOINT_PROTOCOL = 'https';
+export const ENDPOINT_DOMAIN = 'server.greencuttlefish.com';
+export const ENDPOINT_PATH = '/hb/bidder';
+
+export const spec = {
+  code: BIDDER_CODE,
+
+  isBidRequestValid: function (bidRequest) {
+    return !!parseInt(bidRequest.params.endpointId);
+  },
+
+  buildRequests: function (validBidRequests, bidderRequest) {
+    const referer = bidderRequest?.refererInfo?.page || window.location.href;
+
+    const bidRequests = validBidRequests.map((validBidRequest) => {
+      return {
+        endpointId: validBidRequest.params.endpointId,
+        adUnitCode: validBidRequest.adUnitCode,
+        sizes: validBidRequest.sizes,
+        bidId: validBidRequest.bidId,
+        referer: referer
+      };
+    });
+
+    let adPartnerRequestUrl = buildUrl({
+      protocol: ENDPOINT_PROTOCOL,
+      hostname: ENDPOINT_DOMAIN,
+      pathname: ENDPOINT_PATH,
+    });
+
+    return {
+      method: 'POST',
+      url: adPartnerRequestUrl,
+      data: bidRequests
+    };
+  },
+
+  interpretResponse: function (serverResponse, bidRequest) {
+    const validBids = bidRequest.data;
+    const keys = Object.keys(serverResponse.body)
+    const responseBody = serverResponse.body;
+
+    if (typeof responseBody === 'undefined') {
+      return [];
+    }
+
+    return keys.filter(key => {
+      return responseBody[key].ad
+    }).map(key => {
+      return {
+        bid: validBids.find(b => b.adUnitCode === key),
+        response: responseBody[key]
+      }
+    }).map(item => spec.adResponse(item.bid.bidId, item.response));
+  },
+
+  adResponse: function (requestId, response) {
+    const bidObject = {
+      requestId,
+      ad: response.ad,
+      cpm: response.cpm,
+      width: response.width,
+      height: response.height,
+      ttl: 60,
+      creativeId: response.creativeId,
+      netRevenue: true,
+      currency: response.currency,
+    }
+    return bidObject;
+  },
+
+  postRequest(endpoint, data) {
+    ajax(endpoint, null, data, {method: 'POST'});
+  }
+}
+
+registerBidder(spec);
