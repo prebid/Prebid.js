@@ -926,6 +926,14 @@ function parseSizes(bid, mediaType) {
       ];
     } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
       size = bid.mediaTypes.video.playerSize[0];
+    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) &&
+      bid.mediaTypes.video.playerSize.length === 2 &&
+      isNumber(bid.mediaTypes.video.playerSize[0]) &&
+      isNumber(bid.mediaTypes.video.playerSize[1])) {
+      size = [
+        bid.mediaTypes.video.playerSize[0],
+        bid.mediaTypes.video.playerSize[1]
+      ];
     } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
       size = bid.sizes[0];
     }
