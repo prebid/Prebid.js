@@ -31,7 +31,7 @@ describe('Zeus Prime RTD submodule', () => {
   let logMessageSpy;
   let setTargetingStub;
   let originalGtag;
-  let originalSubtle;
+  let isSubtleUndefined = false;
 
   beforeEach(() => {
     logErrorSpy = sinon.spy(utils, 'logError');
@@ -45,16 +45,22 @@ describe('Zeus Prime RTD submodule', () => {
         setTargeting: setTargetingStub,
       }),
     };
-    originalSubtle = window.crypto.subtle;
-    window.crypto.subtle = { digest: () => 'mockHash' };
+
+    // Mock subtle since this doesnt exists in some test environments due to security in newer browsers.
+    if (typeof window.crypto.subtle === 'undefined') {
+      isSubtleUndefined = true
+      Object.defineProperty(crypto, 'subtle', { value: { digest: () => 'mockHash' } })
+    }
   });
 
   afterEach(() => {
     logErrorSpy.restore();
     logMessageSpy.restore();
     window.googletag = originalGtag;
-    window.originalSubtle = originalSubtle;
-    delete window.zeusPrime;
+
+    if (isSubtleUndefined) {
+      Object.defineProperty(crypto, 'subtle', undefined)
+    }
   });
 
   it('should init and set key-value for zeus_<gamId>', async () => {
