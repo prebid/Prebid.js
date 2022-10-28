@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {includes} from '../src/polyfill.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { includes } from '../src/polyfill.js';
+import { BANNER } from '../src/mediaTypes.js';
 
 const VERSION = '3.0';
 const BAD_WORD_STEP = 0.1;
@@ -56,36 +56,73 @@ function brandSafety(badWords, maxScore) {
     return positive ? result : -result;
   };
 
+  /**
+   * Checks what rule will match in the given array with words
+   * @param {string} rule rule type (full, partial, starts, ends, regexp)
+   * @param {string} decodedWord decoded word
+   * @param {array} wordsToMatch array to find a match
+   * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
+   */
+  const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
+    if (rule === "full" && wordsToMatch && wordsToMatch.includes(decodedWord)) {
+      return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
+    } else if (rule === "partial" && wordsToMatch && wordsToMatch.some(element => element.indexOf(decodedWord) > -1)) {
+      return { rule, occurances: wordsToMatch.filter(element => element.indexOf(decodedWord) > -1).length };
+    } else if (rule === "starts" && wordsToMatch && wordsToMatch.some(word => word.startsWith(decodedWord))) {
+      return { rule, occurances: wordsToMatch.filter(element => element.startsWith(decodedWord)).length };
+    } else if (rule === "ends" && wordsToMatch && wordsToMatch.some(word => word.endsWith(decodedWord))) {
+      return { rule, occurances: wordsToMatch.filter(element => element.endsWith(decodedWord)).length };
+    } else if (rule === "regexp" && wordsToMatch && wordsToMatch.includes(decodedWord)) {
+      return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
+    }
+    return false;
+  };
+
   // Default parameters if the bidder is unable to send some of them
   badWords = badWords || [];
   maxScore = parseInt(maxScore) || 10;
 
   try {
     let score = 0;
+    const decodedUrl = decodeURI(window.top.location.href.substring(window.top.location.origin.length));
+    const wordsAndNumbersInUrl = decodedUrl
+      .replaceAll(/[-,\._/\?=&#%]/g, ' ')
+      .replaceAll(/\s\s+/g, ' ')
+      .toLowerCase()
+      .trim();
     const content = window.top.document.body.innerText.toLowerCase();
     const contentWords = content.trim().split(/\s+/).length;
     // \p{L} matches a single unicode code point in the category 'letter'. Matches any kind of letter from any language.
-    const words = content.match(/[\p{L}-]+/ug);
+    const regexp = new RegExp('[\\p{L}]+', 'gu');
+    const words = content.match(regexp);
+    const wordsInUrl = wordsAndNumbersInUrl.match(regexp);
+
     for (const [word, rule, points] of badWords) {
       const decodedWord = rot13(word.toLowerCase());
-      if (rule === 'full' && words && words.includes(decodedWord)) {
-        const occurances = words.filter(word => word === decodedWord).length;
-        score += scoreCalculator(points, occurances);
-      } else if (rule === 'partial' && words && words.some(word => word.indexOf(decodedWord) > -1)) {
-        const occurances = words.filter(word => word.indexOf(decodedWord) > -1).length;
-        score += scoreCalculator(points, occurances);
-      } else if (rule === 'starts' && words && words.some(word => word.startsWith(decodedWord))) {
-        const occurances = words.find(word => word.startsWith(decodedWord)).length;
-        score += scoreCalculator(points, occurances);
-      } else if (rule === 'ends' && words && words.some(word => word.endsWith(decodedWord))) {
-        const occurances = words.find(word => word.endsWith(decodedWord)).length;
-        score += scoreCalculator(points, occurances);
-      } else if (rule === 'regexp' && words && words.includes(decodedWord)) {
-        const occurances = words.filter(word => word === decodedWord).length;
-        score += scoreCalculator(points, occurances);
+
+      // Checks the words in the url of the page only for negative words. Don't serve any ad when at least one match is found
+      if (points > 0) {
+        const matchedRuleInUrl = wordsMatchedWithRule(rule, decodedWord, wordsInUrl);
+        if (matchedRuleInUrl.rule) {
+          return false;
+        }
+      }
+
+      // Check if site content's words match any of our brand safety rules
+      const matchedRule = wordsMatchedWithRule(rule, decodedWord, words);
+      if (matchedRule.rule === 'full') {
+        score += scoreCalculator(points, matchedRule.occurances);
+      } else if (matchedRule.rule === 'partial') {
+        score += scoreCalculator(points, matchedRule.occurances);
+      } else if (matchedRule.rule === 'starts') {
+        score += scoreCalculator(points, matchedRule.occurances);
+      } else if (matchedRule.rule === 'ends') {
+        score += scoreCalculator(points, matchedRule.occurances);
+      } else if (matchedRule.rule === 'regexp') {
+        score += scoreCalculator(points, matchedRule.occurances);
       }
     }
-    return score < maxScore * contentWords / 1000;
+    return score < (maxScore * contentWords) / 1000;
   } catch (e) {
     return true;
   }
@@ -120,7 +157,7 @@ export const spec = {
     } catch (e) {
       referrer = window.location.href;
     }
-    for (var i = 0; i < validBidRequests.length; i++) {
+    for (const i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
       const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
