@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/acuityAdsBidAdapter';
+import { spec } from '../../../modules/acuityadsBidAdapter';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
