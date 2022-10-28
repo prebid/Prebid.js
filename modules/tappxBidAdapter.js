@@ -273,7 +273,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
     let site = {};
     site.name = bundle;
-    site.page = deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
+    site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
     site.ext = {};
     site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || "-";
