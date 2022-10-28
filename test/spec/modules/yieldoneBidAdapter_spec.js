@@ -505,7 +505,7 @@ describe('yieldoneBidAdapter', function() {
         'currency': 'JPY',
         'statusMessage': 'Bid available',
         'dealId': 'P1-FIX-7800-DSP-MON',
-        'admoain': [
+        'adomain': [
           'www.example.com'
         ],
       }
@@ -542,6 +542,7 @@ describe('yieldoneBidAdapter', function() {
       expect(result[0].currency).to.equal(expectedResponse[0].currency);
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
       expect(result[0].ad).to.equal(expectedResponse[0].ad);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     let serverResponseVideo = {
