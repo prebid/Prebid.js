@@ -140,7 +140,7 @@ describe('yieldoneBidAdapter', function() {
       });
     });
 
-    describe('New Format', function () {
+    describe('Single Format', function () {
       const bidRequests = [
         {
           params: {placementId: '0'},
