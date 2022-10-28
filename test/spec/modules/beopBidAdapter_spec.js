@@ -216,4 +216,43 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
     });
   });
+
+  describe("Ensure keywords is always array of string", function () {
+    let bidRequests = [];
+    bidRequests.push(validBid);
+
+    it("should work with keywords as an array", function () {
+      config.setConfig({
+        currency: { adServerCurrency: "USD" },
+        ortb: { site: { keywords: ["a", "b"] } },
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwd).to.exist;
+      expect(payload.kwd).to.equal(["a", "b"]);
+    });
+
+    it("should work with keywords as a string", function () {
+      config.setConfig({
+        currency: { adServerCurrency: "USD" },
+        ortb: { site: { keywords: "list of keywords" } },
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwd).to.exist;
+      expect(payload.kwd).to.equal(["list of keywords"]);
+    });
+
+    it("should work with keywords as a string containing a comma", function () {
+      config.setConfig({
+        currency: { adServerCurrency: "USD" },
+        ortb: { site: { keywords: "list, of, keywords" } },
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwd).to.exist;
+      expect(payload.kwd).to.equal(["list", "of", "keywords"]);
 });

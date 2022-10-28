@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
+import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter, isStr } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -40,6 +40,19 @@ export const spec = {
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
+    const kwdsFromRequest = bidderRequest.ortb2?.site?.keywords;
+    let keywords = [];
+    if (kwdsFromRequest) {
+      if (isArray(kwdsFromRequest)) {
+        keywords = kwdsFromRequest;
+      } else if (isStr(kwdsFromRequest)) {
+        if (kwdsFromRequest.indexOf(",") != -1) {
+          keywords = kwdsFromRequest.split(",");
+        } else {
+          keywords.push(kwdsFromRequest);
+        }
+      }
+    }
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
@@ -47,12 +60,13 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: bidderRequest.ortb2?.site?.keywords || [],
+      kwds: keywords,
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
     const payloadString = JSON.stringify(payloadObject);
     return {
       method: 'POST',
