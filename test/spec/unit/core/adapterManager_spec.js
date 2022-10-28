@@ -20,6 +20,7 @@ import { setSizeConfig } from 'src/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
+import {auctionManager} from '../../../../src/auctionManager.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -2542,5 +2543,106 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
       })
     });
+  });
+
+  describe('callDataDeletionRequest', () => {
+    function delMethodForBidder(bidderCode) {
+      const del = sinon.stub();
+      adapterManager.registerBidAdapter({
+        callBids: sinon.stub(),
+        getSpec() {
+          return {
+            onDataDeletionRequest: del
+          }
+        }
+      }, bidderCode);
+      return del;
+    }
+
+    function delMethodForAnalytics(provider) {
+      const del = sinon.stub();
+      adapterManager.registerAnalyticsAdapter({
+        code: provider,
+        adapter: {
+          enableAnalytics: sinon.stub(),
+          onDataDeletionRequest: del,
+        },
+      })
+      return del;
+    }
+
+    Object.entries({
+      'bid adapters': delMethodForBidder,
+      'analytics adapters': delMethodForAnalytics
+    }).forEach(([t, getDelMethod]) => {
+      describe(t, () => {
+        it('invokes onDataDeletionRequest', () => {
+          const del = getDelMethod('mockAdapter');
+          adapterManager.callDataDeletionRequest();
+          sinon.assert.calledOnce(del);
+        });
+
+        it('does not choke if onDeletionRequest throws', () => {
+          const del1 = getDelMethod('mockAdapter1');
+          const del2 = getDelMethod('mockAdapter2');
+          del1.throws(new Error());
+          adapterManager.callDataDeletionRequest();
+          sinon.assert.calledOnce(del1);
+          sinon.assert.calledOnce(del2);
+        });
+      })
+    })
+
+    describe('for bid adapters', () => {
+      let bidderRequests;
+
+      beforeEach(() => {
+        bidderRequests = [];
+        sinon.stub(auctionManager, 'getBidsRequested').callsFake(() => bidderRequests);
+      })
+      afterEach(() => {
+        auctionManager.getBidsRequested.restore();
+      })
+
+      it('does not invoke onDataDeletionRequest on aliases', () => {
+        const del = delMethodForBidder('mockBidder');
+        adapterManager.aliasBidAdapter('mockBidder', 'mockBidderAlias');
+        adapterManager.aliasBidAdapter('mockBidderAlias2', 'mockBidderAlias');
+        adapterManager.callDataDeletionRequest();
+        sinon.assert.calledOnce(del);
+      });
+
+      it('passes known bidder requests', () => {
+        const del1 = delMethodForBidder('mockBidder1');
+        const del2 = delMethodForBidder('mockBidder2');
+        adapterManager.aliasBidAdapter('mockBidder1', 'mockBidder1Alias');
+        adapterManager.aliasBidAdapter('mockBidder1Alias', 'mockBidder1Alias2')
+        bidderRequests = [
+          {
+            bidderCode: 'mockBidder1',
+            id: 0
+          },
+          {
+            bidderCode: 'mockBidder2',
+            id: 1,
+          },
+          {
+            bidderCode: 'mockBidder1Alias',
+            id: 2,
+          },
+          {
+            bidderCode: 'someOtherBidder',
+            id: 3
+          },
+          {
+            bidderCode: 'mockBidder1Alias2',
+            id: 4
+          }
+        ];
+        adapterManager.callDataDeletionRequest();
+        sinon.assert.calledWith(del1, [bidderRequests[0], bidderRequests[2], bidderRequests[4]]);
+        sinon.assert.calledWith(del2, [bidderRequests[1]]);
+      })
+    })
   });
 });

@@ -19,7 +19,8 @@ const _approvedLoadExternalJSList = [
   'inskin',
   'hadron',
   'medianet',
-  'improvedigital'
+  'improvedigital',
+  'aaxBlockmeter'
 ]
 
 /**

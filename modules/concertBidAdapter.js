@@ -34,6 +34,9 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     logMessage(validBidRequests);
     logMessage(bidderRequest);
+
+    const eids = [];
+
     let payload = {
       meta: {
         prebidVersion: '$prebid.version$',
@@ -49,6 +52,10 @@ export const spec = {
     };
 
     payload.slots = validBidRequests.map(bidRequest => {
+      collectEid(eids, bidRequest);
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode)
+      const coordinates = getOffset(adUnitElement)
+
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
@@ -59,11 +66,14 @@ export const spec = {
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
         site: bidRequest.params.site || bidderRequest.refererInfo.page,
-        ref: bidderRequest.refererInfo.ref
-      };
+        ref: bidderRequest.refererInfo.ref,
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top }
+      }
 
       return slot;
     });
+
+    payload.meta.eids = eids.filter(Boolean);
 
     logMessage(payload);
 
@@ -215,4 +225,36 @@ function consentAllowsPpid(bidderRequest) {
   const gdprConsent = bidderRequest?.gdprConsent && hasPurpose1Consent(bidderRequest?.gdprConsent);
 
   return (uspConsent || gdprConsent);
+}
+
+function collectEid(eids, bid) {
+  if (bid.userId) {
+    const eid = getUserId(bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com', undefined, 3)
+    eids.push(eid)
+  }
+}
+
+function getUserId(id, source, uidExt, atype) {
+  if (id) {
+    const uid = { id, atype };
+
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+
+    return {
+      source,
+      uids: [ uid ]
+    };
+  }
+}
+
+function getOffset(el) {
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY
+    };
+  }
 }

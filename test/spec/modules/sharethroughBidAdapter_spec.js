@@ -172,6 +172,7 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
+        auctionId: 'auction-id'
       };
     });
 
@@ -233,7 +234,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
-            expect(openRtbReq.source.tid).to.equal(bidRequests[0].transactionId);
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.auctionId);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
