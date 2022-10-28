@@ -276,10 +276,10 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
     site.ext = {};
-    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || "-";
-    site.ext.page_rip = bidderRequest?.refererInfo?.page || "-";
-    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || "-";
-    site.ext.page_wlh = window.location.href|| "-";
+    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
+    site.ext.page_rip = bidderRequest?.refererInfo?.page || '-';
+    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || '-';
+    site.ext.page_wlh = window.location.href|| '-';
     publisher.name = bundle;
     publisher.domain = bundle;
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
