@@ -589,7 +589,7 @@ describe('yieldoneBidAdapter', function() {
         'currency': 'JPY',
         'netRevenue': true,
         'ttl': 3000,
-        'referrer': '',
+        'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
         'meta': {
           'advertiserDomains': []
         },
@@ -611,8 +611,10 @@ describe('yieldoneBidAdapter', function() {
       expect(result[0].currency).to.equal(expectedResponse[0].currency);
       expect(result[0].vastXml).to.equal(expectedResponse[0].vastXml);
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+      expect(result[0].referrer).to.equal(expectedResponse[0].referrer);
       expect(result[0].renderer.id).to.equal(expectedResponse[0].renderer.id);
       expect(result[0].renderer.url).to.equal(expectedResponse[0].renderer.url);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('handles empty bid response', function () {
