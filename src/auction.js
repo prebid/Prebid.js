@@ -666,6 +666,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
  */
 function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionManager.index} = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
+  const adUnit = index.getAdUnit(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
 
   Object.assign(bidResponse, {
@@ -675,6 +676,10 @@ function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionMa
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
   });
+
+  if (adUnit?.ttlBuffer != null) {
+    bidResponse.ttlBuffer = adUnit.ttlBuffer;
+  }
 
   bidResponse.timeToRespond = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
 }
