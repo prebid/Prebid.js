@@ -421,9 +421,12 @@ export function createEidsArray(bidRequestUserId) {
       } else if (subModuleKey === 'ftrackId') {
         // Schema based on the return value of ftrack decode() method
         eids.push({
-          atype: 1,
-          ext: bidRequestUserId.ftrackId.ext,
-          id: bidRequestUserId.ftrackId.uid
+          source: 'flashtalking.com',
+          uids: [{
+            atype: 1,
+            ext: bidRequestUserId.ftrackId.ext,
+            id: bidRequestUserId.ftrackId.uid            
+          }]
         });
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {

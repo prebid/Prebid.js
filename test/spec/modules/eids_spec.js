@@ -461,13 +461,16 @@ describe('eids array generation for known sub-modules', function() {
           ipsum: ''
         }
       })).to.deep.equal([{
-        atype: 1,
-        id: 'test-device-id',
-        ext: {
-          DeviceID: 'test-device-id',
-          SingleDeviceID: 'test-single-device-id',
-          HHID: 'test-household-id'
-        }
+        source: 'flashtalking.com',
+        uids: [{
+          atype: 1,
+          id: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        }]
       }]);
     });
   });
