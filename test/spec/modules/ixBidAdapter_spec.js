@@ -402,6 +402,78 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_MULTIFORMAT_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        tagId: '123',
+        siteId: '456',
+        video: {
+          siteId: '1111'
+        },
+        banner: {
+          siteId: '2222'
+        },
+        native: {
+          siteId: '3333'
+        },
+        size: [300, 250]
+      },
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[300, 250]],
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [1]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        },
+        native: {
+          icon: {
+            required: false
+          },
+          title: {
+            len: 25,
+            required: true
+          },
+          body: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
+        }
+      },
+      nativeOrtbRequest: {
+        assets: [{id: 0, required: 0, img: {type: 1}}, {id: 1, required: 1, title: {len: 140}}, {id: 2, required: 1, data: {type: 2}}, {id: 3, required: 1, img: {type: 3}}, {id: 4, required: false, video: {mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6]}}]
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_NATIVE_VALID_BID = [
     {
       bidder: 'ix',
@@ -2683,6 +2755,37 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.pbadslot).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].ortb2Imp.ext.data.pbadslot)
         expect(diagObj.tagid).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].params.tagId)
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
+      });
+    });
+
+    describe('siteId overrides', function () {
+      it('should use siteId override', function () {
+        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
+        const request = spec.buildRequests(validBids, {});
+        const bannerImps = request[0].data.imp[0];
+        const videoImps = request[1].data.imp[0];
+        const nativeImps = request[2].data.imp[0];
+        expect(videoImps.ext.siteID).to.equal('1111');
+        bannerImps.banner.format.map(({ ext }) => {
+          expect(ext.siteID).to.equal('2222');
+        });
+        expect(nativeImps.ext.siteID).to.equal('3333');
+      });
+
+      it('should use default siteId if overrides are not provided', function () {
+        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
+        delete validBids[0].params.banner;
+        delete validBids[0].params.video;
+        delete validBids[0].params.native;
+        const request = spec.buildRequests(validBids, {});
+        const bannerImps = request[0].data.imp[0];
+        const videoImps = request[1].data.imp[0];
+        const nativeImps = request[2].data.imp[0];
+        expect(videoImps.ext.siteID).to.equal('456');
+        bannerImps.banner.format.map(({ ext }) => {
+          expect(ext.siteID).to.equal('456');
+        });
+        expect(nativeImps.ext.siteID).to.equal('456');
       });
     });
   });

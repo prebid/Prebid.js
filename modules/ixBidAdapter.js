@@ -158,7 +158,7 @@ const MEDIA_TYPES = {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToBannerImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, BANNER);
   imp.banner = {};
   const impSize = deepAccess(bid, 'params.size');
   if (impSize) {
@@ -180,7 +180,7 @@ function bidToBannerImp(bid) {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToVideoImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, VIDEO);
   const videoAdUnitRef = deepAccess(bid, 'mediaTypes.video');
   const videoParamRef = deepAccess(bid, 'params.video');
   const videoParamErrors = checkVideoParams(videoAdUnitRef, videoParamRef);
@@ -248,7 +248,7 @@ function bidToVideoImp(bid) {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToNativeImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, NATIVE);
 
   const request = bid.nativeOrtbRequest
   request.eventtrackers = [{
@@ -275,13 +275,28 @@ function bidToNativeImp(bid) {
  * @param {object} bid   PBJS bid object
  * @returns {object}     IX impression object
  */
-function bidToImp(bid) {
+function bidToImp(bid, mediaType) {
   const imp = {};
 
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId.toString();
+
+  if (deepAccess(bid, `params.${mediaType}.siteId`) && !isNaN(Number(bid.params[mediaType].siteId))) {
+    switch (mediaType) {
+      case BANNER:
+        imp.ext.siteID = bid.params.banner.siteId.toString();
+        break;
+      case VIDEO:
+        imp.ext.siteID = bid.params.video.siteId.toString();
+        break;
+      case NATIVE:
+        imp.ext.siteID = bid.params.native.siteId.toString();
+        break;
+    }
+  } else {
+    imp.ext.siteID = bid.params.siteId.toString();
+  }
 
   // populate imp level sid
   if (bid.params.hasOwnProperty('id') && (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
@@ -1426,7 +1441,7 @@ export const spec = {
 
     // Step 1: Create impresssions from IX params
     validBidRequests.forEach((validBidRequest) => {
-      const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}))
+      const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}));
 
       for (const type in adUnitMediaTypes) {
         switch (adUnitMediaTypes[type]) {
