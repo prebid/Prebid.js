@@ -22,7 +22,7 @@ const bidderIframeList = {
   maxTopicCaller: 1,
   bidders: [{
     bidder: 'pubmatic',
-    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html' // dummy URL for NOW
+    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
   }]
 }
 
