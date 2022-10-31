@@ -1459,7 +1459,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub;
+    let makeRequestsStub, createAuctionStub;
     let adUnits;
     let clock;
     before(function () {
@@ -1670,6 +1670,16 @@ describe('Unit: Prebid Module', function () {
         })
       })
     })
+
+    it('should transfer ttlBuffer to adUnit.ttlBuffer', () => {
+      $$PREBID_GLOBAL$$.requestBids({
+        ttlBuffer: 123,
+        adUnits: [adUnits[0], {...adUnits[0], ttlBuffer: 0}]
+      });
+      sinon.assert.calledWithMatch(auctionModule.newAuction, {
+        adUnits: sinon.match((units) => units[0].ttlBuffer === 123 && units[1].ttlBuffer === 0)
+      })
+    });
   })
 
   describe('requestBids', function () {
