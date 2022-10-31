@@ -419,13 +419,13 @@ export function createEidsArray(bidRequestUserId) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
       } else if (subModuleKey === 'ftrackId') {
-        // Schema based on the return value of ftrack decode() method
+        // UIDS array/schema based on the return value of ftrack decode() method
         eids.push({
           source: 'flashtalking.com',
           uids: [{
             atype: 1,
             ext: bidRequestUserId.ftrackId.ext,
-            id: bidRequestUserId.ftrackId.uid            
+            id: bidRequestUserId.ftrackId.uid
           }]
         });
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {

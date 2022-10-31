@@ -458,7 +458,7 @@ describe('FTRACK ID System', () => {
               HHID: 'household_test_id',
               DeviceID: 'device_test_id',
               SingleDeviceID: 'single_device_test_id'
-            }              
+            }
           }]
         }]);
       });
@@ -484,8 +484,8 @@ describe('FTRACK ID System', () => {
           });
 
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          source: 'flashtalking.com',
-          uids: [{
+            source: 'flashtalking.com',
+            uids: [{
               id: 'device_test_id',
               atype: 1,
               ext: {
