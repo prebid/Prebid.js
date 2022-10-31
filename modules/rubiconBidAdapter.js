@@ -318,7 +318,6 @@ export const spec = {
       filteredHttpRequest.push({
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
-        // url: `http://localhost:5500/pbs/v1/openrtb2/auction`,
         data,
         bidRequest: filteredRequests
       });
