@@ -4,11 +4,12 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -354,3 +355,23 @@ export function setConsentConfig(config) {
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+
+export function setOrtbGdpr(ortbRequest, bidderRequest) {
+  const consent = bidderRequest.gdprConsent;
+  if (consent) {
+    if (typeof consent.gdprApplies === 'boolean') {
+      deepSetValue(ortbRequest, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+    }
+    deepSetValue(ortbRequest, 'user.ext.consent', consent.consentString);
+  }
+}
+
+export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+  const addtl = bidderRequest.gdprConsent?.addtlConsent;
+  if (addtl && typeof addtl === 'string') {
+    deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'gdpr', fn: setOrtbGdpr});
+registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})

@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "7.23.0-pre",
+  "version": "7.24.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -105,6 +105,10 @@
     "through2": "^4.0.2",
     "url": "^0.11.0",
     "url-parse": "^1.0.5",
+    "video.js": "^7.17.0",
+    "videojs-contrib-ads": "^6.9.0",
+    "videojs-ima": "^1.11.0",
+    "videojs-playlist": "^5.0.0",
     "webdriverio": "^7.6.1",
     "webpack": "^5.70.0",
     "webpack-bundle-analyzer": "^4.5.0",

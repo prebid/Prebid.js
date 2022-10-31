@@ -52,6 +52,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "blueconicRtdProvider",
@@ -63,6 +64,7 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
@@ -75,6 +77,10 @@
       "enrichmentFpdModule",
       "validationFpdModule",
       "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
   }
 }
