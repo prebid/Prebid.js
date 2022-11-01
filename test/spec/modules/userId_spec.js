@@ -2769,46 +2769,6 @@ describe('User ID', function () {
       })
     });
 
-    describe('findRootDomain', function () {
-      let sandbox;
-
-      beforeEach(function () {
-        init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        config.setConfig({
-          userSync: {
-            syncDelay: 0,
-            userIds: [
-              {
-                name: 'pubCommonId',
-                value: { pubcid: '11111' },
-              },
-            ],
-          },
-        });
-        sandbox = sinon.createSandbox();
-        sandbox
-          .stub(coreStorage, 'getCookie')
-          .onFirstCall()
-          .returns(null) // .co.uk
-          .onSecondCall()
-          .returns('writeable'); // realdomain.co.uk;
-      });
-
-      afterEach(function () {
-        sandbox.restore();
-      });
-
-      it('should just find the root domain', function () {
-        var domain = findRootDomain('sub.realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
-      });
-
-      it('should find the full domain when no subdomain is present', function () {
-        var domain = findRootDomain('realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
-      });
-    });
   });
 
   describe('handles config with ESP configuration in user sync object', function() {
