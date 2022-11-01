@@ -25,8 +25,6 @@ Prebid.js is open source software that is offered for free as a convenience. Whi
 
 ## Usage (as a npm dependency)
 
-*Note:* Requires Prebid.js v1.38.0+
-
 Prebid.js depends on Babel and some Babel Plugins in order to run correctly in the browser.  Here are some examples for 
 configuring webpack to work with Prebid.js.
 
