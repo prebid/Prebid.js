@@ -16,15 +16,15 @@ import {
   parseQueryStringParameters,
   safeJSONParse
 } from '../src/utils.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import CONSTANTS from '../src/constants.json';
-import {getStorageManager} from '../src/storageManager.js';
+import { getStorageManager } from '../src/storageManager.js';
 import * as events from '../src/events.js';
-import {find} from '../src/polyfill.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import {Renderer} from '../src/Renderer.js';
+import { find } from '../src/polyfill.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -38,7 +38,6 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NATIVE_TIME_TO_LIVE = 3600; // Since native can have video, use ttl same as video
 const NET_REVENUE = true;
-const MAX_REQUEST_SIZE = 8000;
 const MAX_REQUEST_LIMIT = 4;
 const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
@@ -102,13 +101,13 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 let hasRegisteredHandler = false;
-export const storage = getStorageManager({gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   featureToggles: {},
-  isFeatureEnabled: function(ft) {
+  isFeatureEnabled: function (ft) {
     return deepAccess(this.featureToggles, `features.${ft}.activated`)
   },
-  getFeatureToggles: function() {
+  getFeatureToggles: function () {
     if (storage.localStorageIsEnabled()) {
       const parsedToggles = safeJSONParse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
       if (deepAccess(parsedToggles, 'expiry') && parsedToggles.expiry >= new Date().getTime()) {
@@ -118,7 +117,7 @@ export const FEATURE_TOGGLES = {
       }
     }
   },
-  setFeatureToggles: function(serverResponse) {
+  setFeatureToggles: function (serverResponse) {
     const responseBody = serverResponse.body;
     const expiryTime = new Date();
     const toggles = deepAccess(responseBody, 'ext.features');
@@ -133,7 +132,7 @@ export const FEATURE_TOGGLES = {
       }
     }
   },
-  clearFeatureToggles: function() {
+  clearFeatureToggles: function () {
     this.featureToggles = {};
     if (storage.localStorageIsEnabled()) {
       storage.removeDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
@@ -159,7 +158,7 @@ const MEDIA_TYPES = {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToBannerImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, BANNER);
   imp.banner = {};
   const impSize = deepAccess(bid, 'params.size');
   if (impSize) {
@@ -181,7 +180,7 @@ function bidToBannerImp(bid) {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToVideoImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, VIDEO);
   const videoAdUnitRef = deepAccess(bid, 'mediaTypes.video');
   const videoParamRef = deepAccess(bid, 'params.video');
   const videoParamErrors = checkVideoParams(videoAdUnitRef, videoParamRef);
@@ -249,7 +248,7 @@ function bidToVideoImp(bid) {
  * @return {object}     A impression object that will be sent to ad server.
  */
 function bidToNativeImp(bid) {
-  const imp = bidToImp(bid);
+  const imp = bidToImp(bid, NATIVE);
 
   const request = bid.nativeOrtbRequest
   request.eventtrackers = [{
@@ -276,13 +275,28 @@ function bidToNativeImp(bid) {
  * @param {object} bid   PBJS bid object
  * @returns {object}     IX impression object
  */
-function bidToImp(bid) {
+function bidToImp(bid, mediaType) {
   const imp = {};
 
   imp.id = bid.bidId;
 
   imp.ext = {};
-  imp.ext.siteID = bid.params.siteId.toString();
+
+  if (deepAccess(bid, `params.${mediaType}.siteId`) && !isNaN(Number(bid.params[mediaType].siteId))) {
+    switch (mediaType) {
+      case BANNER:
+        imp.ext.siteID = bid.params.banner.siteId.toString();
+        break;
+      case VIDEO:
+        imp.ext.siteID = bid.params.video.siteId.toString();
+        break;
+      case NATIVE:
+        imp.ext.siteID = bid.params.native.siteId.toString();
+        break;
+    }
+  } else {
+    imp.ext.siteID = bid.params.siteId.toString();
+  }
 
   // populate imp level sid
   if (bid.params.hasOwnProperty('id') && (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
@@ -391,7 +405,7 @@ function parseBid(rawBid, currency, bidRequest) {
     bid.mediaTypes = bidRequest.mediaTypes;
     bid.ttl = isValidExpiry ? rawBid.exp : VIDEO_TIME_TO_LIVE;
   } else if (parsedAdm && parsedAdm.native) {
-    bid.native = {ortb: parsedAdm.native};
+    bid.native = { ortb: parsedAdm.native };
     bid.width = rawBid.w ? rawBid.w : 1;
     bid.height = rawBid.h ? rawBid.h : 1;
     bid.mediaType = NATIVE;
@@ -586,6 +600,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let userEids = eidInfo.toSend;
   const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
 
+  let MAX_REQUEST_SIZE = 8000;
+  // Modify request size limit if its FT is enabeld.
+  if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_32kb_size_limit')) {
+    MAX_REQUEST_SIZE = 32000
+  }
+
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
   if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
@@ -641,6 +661,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   if (!isEmpty(cachedErrors)) {
     r.ext.ixdiag.err = cachedErrors;
   }
+
+  // Add number of available imps to ixDiag.
+  r.ext.ixdiag.imps = Object.keys(impressions).length;
 
   // set source.tid to auctionId for outgoing request to Exchange.
   r.source = {
@@ -708,18 +731,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
 
-  if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-    if (version) {
-      payload.v = version;
-    }
-    payload.ac = 'j';
-    payload.sd = 1;
-
-    if (version === VIDEO_ENDPOINT_VERSION) {
-      payload.nf = 1;
-    }
-  }
-
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
   const otherIxConfig = config.getConfig(bidderCode);
@@ -760,13 +771,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         currentRequestSize += fpdRequestSize;
       } else {
         logError('IX Bid Adapter: IX config FPD request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE });
-      }
-    }
-
-    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-      // Create t in payload if timeout is configured.
-      if (typeof otherIxConfig.timeout === 'number') {
-        payload.t = otherIxConfig.timeout;
       }
     }
   }
@@ -909,36 +913,21 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
     if (wasAdUnitImpressionsTrimmed || isLastAdUnit) {
-      const clonedPayload = deepClone(payload);
       if (!isLastAdUnit || requestSequenceNumber) {
         r.ext.ixdiag.sn = requestSequenceNumber;
-        clonedPayload.sn = requestSequenceNumber;
       }
 
       requestSequenceNumber++;
-      clonedPayload.r = JSON.stringify(r);
 
-      let requestData;
-
-      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-        requestData = {
-          method: 'POST',
-          url: baseUrl + '?s=' + payload.s,
-          data: deepClone(r),
-          option: {
-            contentType: 'text/plain',
-          },
-          validBidRequests
-        }
-      } else {
-        requestData = {
-          method: 'GET',
-          url: baseUrl,
-          data: clonedPayload,
-          validBidRequests
-        }
-      }
-      requests.push(requestData);
+      requests.push({
+        method: 'POST',
+        url: baseUrl + '?s=' + siteID,
+        data: deepClone(r),
+        option: {
+          contentType: 'text/plain',
+        },
+        validBidRequests
+      });
 
       currentRequestSize = baseRequestSize;
       r.imp = [];
@@ -1452,7 +1441,7 @@ export const spec = {
 
     // Step 1: Create impresssions from IX params
     validBidRequests.forEach((validBidRequest) => {
-      const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}))
+      const adUnitMediaTypes = Object.keys(deepAccess(validBidRequest, 'mediaTypes', {}));
 
       for (const type in adUnitMediaTypes) {
         switch (adUnitMediaTypes[type]) {
@@ -1532,13 +1521,7 @@ export const spec = {
 
       // Transform rawBid in bid response to the format that will be accepted by prebid.
       const innerBids = seatbid[i].bid;
-      let requestBid;
-
-      if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_post')) {
-        requestBid = bidderRequest.data;
-      } else {
-        requestBid = safeJSONParse(bidderRequest.data.r);
-      }
+      const requestBid = bidderRequest.data;
 
       for (let j = 0; j < innerBids.length; j++) {
         const bidRequest = getBidRequest(innerBids[j].impid, requestBid.imp, bidderRequest.validBidRequests);
