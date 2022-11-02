@@ -178,19 +178,14 @@ describe('YieldmoAdapter', function () {
       it('should place bid information into the p parameter of data', function () {
         let bidArray = [mockBannerBid()];
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-
           '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"auctionId":"1d1a030790a475"}]'
-
         );
-
         // multiple placements
         bidArray.push(mockBannerBid(
           {adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222', transactionId: '444'}, {bidFloor: 0.2}));
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-
           '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"auctionId":"1d1a030790a475"},' +
         '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2,"auctionId":"222"}]'
-
         );
       });
 
@@ -199,7 +194,6 @@ describe('YieldmoAdapter', function () {
         let placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
         expect(placementInfo).not.to.include('"ym_placement_id":"ym_0987654321"');
-
         bidArray.push(mockBannerBid({}, {placementId: 'ym_0987654321'}));
         placementInfo = buildAndGetPlacementInfo(bidArray);
         expect(placementInfo).to.include('"ym_placement_id":"ym_1293871298"');
@@ -502,7 +496,6 @@ describe('YieldmoAdapter', function () {
 
       it('should add transaction id to video bid request', function() {
         const transactionId = '54a58774-7a41-494e-8cbc-fa7b79164f0c';
-
         const requestData = {
           ortb2Imp: {
             ext: {
@@ -511,7 +504,6 @@ describe('YieldmoAdapter', function () {
           }
         };
         expect(buildAndGetData([mockVideoBid({...requestData})]).imp[0].ext.tid).to.equal(transactionId);
-
       });
 
       it('should add auction id to video bid request', function() {
