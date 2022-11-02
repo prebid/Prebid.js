@@ -562,6 +562,20 @@ function findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi,
     }
   })
 }
+/**
+ * Checks if window.location.search(i.e. string of query params on the page URL) 
+ * has specified query param with a value.
+ * ex. pubmaticTest=1
+ * @param {*} paramName Query param name ex. pubmaticTest
+ * @param {*} value Value for the same ex. 1
+ * @returns boolean
+ */
+function hasQueryParam(paramName, value) {
+  const queryParams = window?.location?.search;
+  if(!queryParams || !paramName || !value) return false;
+  const searchStr = `${paramName}=${value}`;
+  return (queryParams.indexOf(searchStr)) > -1 ? true : false;
+}
 
 function ORTB2(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
   this.s2sBidRequest = s2sBidRequest;
@@ -897,6 +911,10 @@ Object.assign(ORTB2.prototype, {
         }
       }
     };
+
+    //  Check if location URL has a query param pubmaticTest=1 then set test=1
+    //  else we don't need to send test: 0 to request payload.
+    if(hasQueryParam("pubmaticTest", 1)) request.test = 1;
 
     // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
     if (typeof deepAccess(firstBidRequest, 'bids.0.floorData') === 'object') {
