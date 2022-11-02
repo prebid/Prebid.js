@@ -1615,6 +1615,18 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('returns a promise that resolves', () => {
+      function delayHook(next, ...args) {
+        setTimeout(() => next(...args))
+      }
+
+      beforeEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+      });
+
       Object.entries({
         'immediately, without bidsBackHandler': (req) => $$PREBID_GLOBAL$$.requestBids(req),
         'after bidsBackHandler': (() => {
@@ -1665,7 +1677,7 @@ describe('Unit: Prebid Module', function () {
               sinon.assert.match(bids[bid.adUnitCode].bids[0], bid)
               done();
             });
-            completeAuction([bid]);
+            setTimeout(() => completeAuction([bid]));
           })
         })
       })
