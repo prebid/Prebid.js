@@ -6,6 +6,7 @@ import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {deepAccess, deepSetValue, prefixLog} from '../../src/utils.js';
 import {startAuction} from '../../src/prebid.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 const LOG_PRE_FIX = 'Data_Controller : ';
 const ALL = '*';
@@ -18,7 +19,7 @@ const _logger = prefixLog(LOG_PRE_FIX);
 /**
  * BidderRequests hook to intiate module and reset data object
  */
-export function filterBidData(fn, req) {
+export const filterBidData = timedAuctionHook('dataController', function filterBidData(fn, req) {
   if (_dataControllerConfig.filterEIDwhenSDA) {
     filterEIDs(req.adUnits, req.ortb2Fragments);
   }
@@ -28,7 +29,7 @@ export function filterBidData(fn, req) {
   }
   fn.call(this, req);
   return req;
-}
+});
 
 function containsConfiguredEIDS(eidSourcesMap, bidderCode) {
   if (_dataControllerConfig.filterSDAwhenEID.includes(ALL)) {
@@ -111,7 +112,7 @@ function constructSegment(userData) {
 function getEIDsSource(adUnits) {
   let bidderEIDSMap = new Map();
   adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
+    (adUnit.bids || []).forEach(bid => {
       let userEIDs = deepAccess(bid, 'userIdAsEids') || [];
 
       if (userEIDs) {
