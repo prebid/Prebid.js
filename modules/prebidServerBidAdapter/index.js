@@ -566,17 +566,16 @@ function findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi,
  * Checks if window.location.search(i.e. string of query params on the page URL) 
  * has specified query param with a values.
  * ex. pubmaticTest=1
- * @param {*} paramName Query param name ex. pubmaticTest
+ * @param {*} regexp regexp for which param lokking for ex. /pubmatictest=(.*?)(&|$)/g
  * @param {*} values Values for the same ex. [1, true]
  * @returns boolean
  */
-function hasQueryParam(paramName, values) {
-  const queryParams = window?.location?.search;
-  if(!queryParams || !paramName || !values || !values?.length) return false;
-  return values.some(value => {
-    const searchStr = `${paramName.toLowerCase()}=${value}`;
-    return (queryParams.toLowerCase().indexOf(searchStr)) > -1 ? true : false;   
-  });
+function hasQueryParamByRegex(regexp, values) {
+  const queryParams = window?.location?.search?.toLowerCase();
+  if(!queryParams || !regexp || !values || !values?.length) return false;
+  var matches = regexp.exec(queryParams);
+  if (matches?.length >= 2) return values?.some(value => value?.toString()?.toLowerCase() == matches?.[1]);
+  return false;
 }
 
 function ORTB2(s2sBidRequest, bidderRequests, adUnits, requestedBidders) {
@@ -916,7 +915,7 @@ Object.assign(ORTB2.prototype, {
 
     //  Check if location URL has a query param pubmaticTest=1 then set test=1
     //  else we don't need to send test: 0 to request payload.
-    if(hasQueryParam("pubmaticTest", [1, true])) request.test = 1;
+    if(hasQueryParamByRegex(/pubmatictest=(.*?)(&|$)/g, [1, true])) request.test = 1;
 
     // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
     if (typeof deepAccess(firstBidRequest, 'bids.0.floorData') === 'object') {
