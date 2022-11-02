@@ -5,8 +5,12 @@ import {
   extractConfig,
   buildOrtb2Updates,
   updateBidderConfig,
-  setTargetingDataToConfig
+  setTargetingDataToConfig,
+  extractConsent,
+  getPapiUrl
 } from 'modules/1plusXRtdProvider';
+import assert from 'assert';
+import { extractFpid } from '../../../modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
@@ -249,6 +253,94 @@ describe('1plusXRtdProvider', () => {
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
     })
+  })
+
+  describe('extractConsent', () => {
+    it('extracts consent strings correctly if given', () => {
+      const consent = {
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 'myConsent'
+        }
+      }
+      const output = extractConsent(consent)
+      const expectedOutput = {
+        gdpr_applies: 1,
+        consent_string: 'myConsent'
+      }
+      expect(expectedOutput).to.deep.include(output)
+      expect(output).to.deep.include(expectedOutput)
+    })
+    it('extracts null if consent object is empty', () => {
+      const consent1 = {}
+      expect(extractConsent(consent1)).to.equal(null)
+    })
+
+    it('throws an error if the consent is malformed', () => {
+      const consent1 = {
+        gdpr: {
+          consentString: 'myConsent'
+        }
+      }
+      const consent2 = {
+        gdpr: {
+          gdprApplies: 1,
+          consentString: 3
+        }
+      }
+      const consent3 = {
+        gdpr: {
+          gdprApplies: 'yes',
+          consentString: 'myConsent'
+        }
+      }
+      const consent4 = {
+        gdpr: {}
+      }
+
+      for (const consent of [consent1, consent2, consent3, consent4]) {
+        var failed = false;
+        try {
+          extractConsent(consent)
+        } catch (e) {
+          failed = true;
+        } finally {
+          assert(failed, 'Should be throwing an exception')
+        }
+      }
+    })
+  })
+
+  describe('extractFpid', () => {
+    it('correctly extracts an ope fpid if present', () => {
+      window.localStorage.setItem('ope_fpid', 'oneplusx_test_key')
+      const id1 = extractFpid()
+      window.localStorage.removeItem('ope_fpid')
+      const id2 = extractFpid()
+      expect(id1).to.equal('oneplusx_test_key')
+      expect(id2).to.equal(null)
+    })
+  })
+
+  describe('getPapiUrl', () => {
+    const customer = 'acme'
+    const consent = {
+      gdpr: {
+        gdprApplies: 1,
+        consentString: 'myConsent'
+      }
+    }
+
+    it('correctly builds URLs if gdpr parameters are present', () => {
+      const url1 = getPapiUrl(customer)
+      const url2 = getPapiUrl(customer, extractConsent(consent))
+      expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''))
+    })
+
+    it('correctly builds URLs if fpid parameters are present')
+    const url1 = getPapiUrl(customer)
+    const url2 = getPapiUrl(customer, {}, 'my_first_party_id')
+    expect(url2.replace(url1, '')).to.equal('&fpid=my_first_party_id')
   })
 
   describe('updateBidderConfig', () => {

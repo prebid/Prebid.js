@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/andBeyondMediaBidAdapter.js';
+import { spec } from '../../../modules/acuityAdsBidAdapter';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'beyondmedia'
+const bidder = 'acuityads'
 
-describe('AndBeyondMediaBidAdapter', function () {
+describe('AcuityAdsBidAdapter', function () {
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -82,8 +82,6 @@ describe('AndBeyondMediaBidAdapter', function () {
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and key parameters present', function () {
       expect(spec.isBidRequestValid(bids[0])).to.be.true;
-      expect(spec.isBidRequestValid(bids[1])).to.be.true;
-      expect(spec.isBidRequestValid(bids[2])).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
       expect(spec.isBidRequestValid(invalidBid)).to.be.false;
@@ -105,7 +103,7 @@ describe('AndBeyondMediaBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://backend.andbeyond.media/pbjs');
+      expect(serverRequest.url).to.equal('https://prebid.admanmedia.com/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -383,7 +381,7 @@ describe('AndBeyondMediaBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookies.andbeyond.media/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.admanmedia.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -394,7 +392,7 @@ describe('AndBeyondMediaBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cookies.andbeyond.media/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.admanmedia.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
   });
 });

@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { spec } from 'modules/brightcomBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import {config} from '../../../src/config';
 
 const URL = 'https://brightcombid.marphezis.com/hb';
 
@@ -52,7 +53,21 @@ describe('brightcomBidAdapter', function() {
       },
       'bidId': '5fb26ac22bde4',
       'bidderRequestId': '4bf93aeb730cb9',
-      'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e'
+      'auctionId': 'ffe9a1f7-7b67-4bda-a8e0-9ee5dc9f442e',
+      'schain': {
+        'ver': '1.0',
+        'complete': 1,
+        'nodes': [
+          {
+            'asi': 'exchange1.com',
+            'sid': '1234',
+            'hp': 1,
+            'rid': 'bid-request-1',
+            'name': 'publisher',
+            'domain': 'publisher.com'
+          }
+        ]
+      },
     }];
 
     sandbox = sinon.sandbox.create();
@@ -165,6 +180,84 @@ describe('brightcomBidAdapter', function() {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.user.ext.consent).to.exist.and.to.be.a('string');
       expect(data.user.ext.consent).to.equal(consentString);
+    });
+
+    it('sends us_privacy', function () {
+      const bidderRequest = {
+        uspConsent: '1YYY'
+      };
+      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data)
+
+      expect(data.regs).to.not.equal(null);
+      expect(data.regs.ext).to.not.equal(null);
+      expect(data.regs.ext.us_privacy).to.equal('1YYY');
+    });
+
+    it('sends coppa', function () {
+      sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+
+      const data = JSON.parse(spec.buildRequests(bidRequests).data)
+      expect(data.regs).to.not.be.undefined;
+      expect(data.regs.coppa).to.equal(1);
+    });
+
+    it('sends schain', function () {
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data).to.not.be.undefined;
+      expect(data.source).to.not.be.undefined;
+      expect(data.source.ext).to.not.be.undefined;
+      expect(data.source.ext.schain).to.not.be.undefined;
+      expect(data.source.ext.schain.complete).to.equal(1);
+      expect(data.source.ext.schain.ver).to.equal('1.0');
+      expect(data.source.ext.schain.nodes).to.not.be.undefined;
+      expect(data.source.ext.schain.nodes).to.lengthOf(1);
+      expect(data.source.ext.schain.nodes[0].asi).to.equal('exchange1.com');
+      expect(data.source.ext.schain.nodes[0].sid).to.equal('1234');
+      expect(data.source.ext.schain.nodes[0].hp).to.equal(1);
+      expect(data.source.ext.schain.nodes[0].rid).to.equal('bid-request-1');
+      expect(data.source.ext.schain.nodes[0].name).to.equal('publisher');
+      expect(data.source.ext.schain.nodes[0].domain).to.equal('publisher.com');
+    });
+
+    it('sends user eid parameters', function () {
+      bidRequests[0].userIdAsEids = [{
+        source: 'pubcid.org',
+        uids: [{
+          id: 'userid_pubcid'
+        }]
+      }, {
+        source: 'adserver.org',
+        uids: [{
+          id: 'userid_ttd',
+          ext: {
+            rtiPartner: 'TDID'
+          }
+        }]
+      }
+      ];
+
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+
+      expect(data.user).to.not.be.undefined;
+      expect(data.user.ext).to.not.be.undefined;
+      expect(data.user.ext.eids).to.not.be.undefined;
+      expect(data.user.ext.eids).to.deep.equal(bidRequests[0].userIdAsEids);
+    });
+
+    it('sends user id parameters', function () {
+      const userId = {
+        sharedid: {
+          id: '01*******',
+          third: '01E*******'
+        }
+      };
+
+      bidRequests[0].userId = userId;
+
+      const data = JSON.parse(spec.buildRequests(bidRequests).data);
+      expect(data.user).to.not.be.undefined;
+      expect(data.user.ext).to.not.be.undefined;
+      expect(data.user.ext.ids).is.deep.equal(userId);
     });
 
     context('when element is fully in view', function() {
