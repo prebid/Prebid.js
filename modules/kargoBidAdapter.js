@@ -64,7 +64,7 @@ export const spec = {
     // User Agent Client Hints / SUA
     const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
     if (uaClientHints) {
-      transformedParams.device.sua = pick(uaClientHints, ['browsers', 'platform', 'model']);
+      transformedParams.device.sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
     }
 
     // Pull Social Canvas segments and embed URL
