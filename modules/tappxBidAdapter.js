@@ -571,7 +571,6 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  // TODO: does the fallback make sense?
   let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   return parseDomain(url, {noLeadingWww: true});
 }
