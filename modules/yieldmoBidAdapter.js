@@ -20,6 +20,7 @@ import {find, includes} from '../src/polyfill.js';
 import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
+const GVLID = 173;
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
@@ -42,7 +43,7 @@ const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
+  gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
    * @param {object} bid, bid to validate
