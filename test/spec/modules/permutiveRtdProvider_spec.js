@@ -13,13 +13,13 @@ import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
 
 describe('permutiveRtdProvider', function () {
-  before(function () {
+  beforeEach(function () {
     const data = getTargetingData()
     setLocalStorage(data)
     config.resetConfig()
   })
 
-  after(function () {
+  afterEach(function () {
     const data = getTargetingData()
     removeLocalStorage(data)
     config.resetConfig()
@@ -317,6 +317,7 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
+
     it('sets segment targeting for Magnite', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
@@ -337,6 +338,38 @@ describe('permutiveRtdProvider', function () {
         })
       }
     })
+
+    it('sets segment targeting for Magnite video', function () {
+      const targetingData = getTargetingData()
+      targetingData._prubicons.push(321)
+
+      setLocalStorage(targetingData)
+
+      const data = transformedTargeting(targetingData)
+      const config = getConfig()
+
+      const adUnits = getAdUnits().filter(adUnit => adUnit.mediaTypes.video)
+      expect(adUnits).to.have.lengthOf(1)
+
+      initSegments({ adUnits }, callback, config)
+
+      function callback() {
+        adUnits.forEach(adUnit => {
+          adUnit.bids.forEach(bid => {
+            const { bidder, params } = bid
+
+            if (bidder === 'rubicon') {
+              expect(
+                deepAccess(params, 'visitor.permutive'),
+                'Should map all targeting values to a string',
+              ).to.eql(data.rubicon.map(String))
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+            }
+          })
+        })
+      }
+    })
+
     it('sets segment targeting for Ozone', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
@@ -516,9 +549,7 @@ function getConfig () {
   }
 }
 
-function transformedTargeting () {
-  const data = getTargetingData()
-
+function transformedTargeting (data = getTargetingData()) {
   return {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
@@ -640,6 +671,34 @@ function getAdUnits () {
           }
         }
       ]
+    },
+    {
+      code: 'myVideoAdUnit',
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [640, 480],
+          mimes: ['video/mp4', 'video/x-ms-wmv'],
+          protocols: [2, 3, 5, 6],
+          api: [2],
+          maxduration: 30,
+          linearity: 1
+        }
+      },
+      bids: [{
+        bidder: 'rubicon',
+        params: {
+          accountId: '9840',
+          siteId: '123564',
+          zoneId: '583584',
+          video: {
+            language: 'en'
+          },
+          visitor: {
+            test_kv: ['true']
+          }
+        }
+      }]
     }
   ]
 }
