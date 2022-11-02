@@ -4,7 +4,7 @@ import {
   getPriceGranularity,
   masSizeOrdering,
   resetUserSync,
-  hasVideoMediaType,
+  classifiedAsVideo,
   resetRubiConf
 } from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
@@ -248,7 +248,6 @@ describe('the rubicon adapter', function () {
       criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
-    bid.storedAuctionResponse = 11111;
   }
 
   function createVideoBidderRequestNoVideo() {
@@ -258,7 +257,7 @@ describe('the rubicon adapter', function () {
         context: 'instream'
       },
     };
-    bid.params.video = '';
+    bid.params.video = false;
   }
 
   function createVideoBidderRequestOutstream() {
@@ -666,7 +665,7 @@ describe('the rubicon adapter', function () {
 
         it('should add referer info to request data', function () {
           let refererInfo = {
-            referer: 'https://www.prebid.org',
+            page: 'https://www.prebid.org',
             reachedTop: true,
             numIframes: 1,
             stack: [
@@ -683,29 +682,20 @@ describe('the rubicon adapter', function () {
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
-        it('page_url should use params.referrer, config.getConfig("pageUrl"), bidderRequest.refererInfo in that order', function () {
+        it('page_url should use params.referrer, bidderRequest.refererInfo in that order', function () {
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('localhost');
 
           delete bidderRequest.bids[0].params.referrer;
-          let refererInfo = {referer: 'https://www.prebid.org'};
+          let refererInfo = {page: 'https://www.prebid.org'};
           bidderRequest = Object.assign({refererInfo}, bidderRequest);
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
 
-          let origGetConfig = config.getConfig;
-          sandbox.stub(config, 'getConfig').callsFake(function (key) {
-            if (key === 'pageUrl') {
-              return 'https://www.rubiconproject.com';
-            }
-            return origGetConfig.apply(config, arguments);
-          });
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
-
+          bidderRequest.refererInfo.page = 'http://www.prebid.org';
           bidderRequest.bids[0].params.secure = true;
           [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(parseQuery(request.data).rf).to.equal('https://www.rubiconproject.com');
+          expect(parseQuery(request.data).rf).to.equal('https://www.prebid.org');
         });
 
         it('should use rubicon sizes if present (including non-mappable sizes)', function () {
@@ -927,15 +917,10 @@ describe('the rubicon adapter', function () {
               }
             };
 
-            sandbox.stub(config, 'getConfig').callsFake(key => {
-              const config = {
-                ortb2: {
-                  site,
-                  user
-                }
-              };
-              return utils.deepAccess(config, key);
-            });
+            const ortb2 = {
+              site,
+              user
+            }
 
             const expectedQuery = {
               'kw': 'a,b,c,d',
@@ -953,7 +938,7 @@ describe('the rubicon adapter', function () {
             };
 
             // get the built request
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
             let data = parseQuery(request.data);
 
             // make sure that tg_v, tg_i, and kw values are correct
@@ -1630,6 +1615,47 @@ describe('the rubicon adapter', function () {
           expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
         });
 
+        describe('ortb2imp sent to video bids', function () {
+          beforeEach(function () {
+            // initialize
+            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+              delete bidderRequest.bids[0].ortb2Imp;
+            }
+          });
+
+          it('should add ortb values to video requests', function () {
+            createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                gpid: '/test/gpid',
+                data: {
+                  pbadslot: '/test/pbadslot'
+                },
+                prebid: {
+                  storedauctionresponse: {
+                    id: 'sample_video_response'
+                  }
+                }
+              }
+            }
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+
+            expect(post).to.have.property('imp');
+            // .with.length.of(1);
+            let imp = post.imp[0];
+            expect(imp.ext.gpid).to.equal('/test/gpid');
+            expect(imp.ext.data.pbadslot).to.equal('/test/pbadslot');
+            expect(imp.ext.prebid.storedauctionresponse.id).to.equal('sample_video_response');
+          });
+        });
+
         it('should correctly set bidfloor on imp when getfloor in scope', function () {
           createVideoBidderRequest();
           // default getFloor response is empty object so should not break and not send hard_floor
@@ -2072,17 +2098,12 @@ describe('the rubicon adapter', function () {
             data: [{foo: 'bar'}]
           };
 
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              ortb2: {
-                site,
-                user
-              }
-            };
-            return utils.deepAccess(config, key);
-          });
+          const ortb2 = {
+            site,
+            user
+          };
 
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
 
           const expected = {
             site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
@@ -2098,22 +2119,6 @@ describe('the rubicon adapter', function () {
           expect(request.data.user.keywords).to.deep.equal('d');
           expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
           expect(request.data.user.ext.data).to.deep.equal(expected.userData);
-        });
-
-        it('should include storedAuctionResponse in video bid request', function () {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp).to.exist.and.to.be.a('array');
-          expect(request.data.imp).to.have.lengthOf(1);
-          expect(request.data.imp[0].ext).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse).to.exist.and.to.be.a('object');
-          expect(request.data.imp[0].ext.prebid.storedauctionresponse.id).to.equal('11111');
         });
 
         it('should include pbadslot in bid request', function () {
@@ -2132,6 +2137,33 @@ describe('the rubicon adapter', function () {
 
           const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
           expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
+        });
+
+        it('should NOT include storedrequests in pbs payload', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].ortb2 = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-top-level-sr'
+              }
+            }
+          }
+
+          bidderRequest.bids[0].ortb2Imp = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-imp-sr'
+              }
+            }
+          }
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.storedrequest).to.be.undefined;
+          expect(request.data.imp[0].ext.prebid.storedrequest).to.be.undefined;
         });
 
         it('should include GAM ad unit in bid request', function () {
@@ -2288,57 +2320,50 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      describe('hasVideoMediaType', function () {
-        it('should return true if mediaType is video and size_id is set', function () {
+      describe('classifiedAsVideo', function () {
+        it('should return true if mediaTypes is video', function () {
           createVideoBidderRequest();
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
-          expect(legacyVideoTypeBidRequest).is.equal(true);
+          const bidClassifiedAsVideo = classifiedAsVideo(bidderRequest.bids[0]);
+          expect(bidClassifiedAsVideo).is.equal(true);
         });
 
         it('should return false if trying to use legacy mediaType with video', function () {
           createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes;
           bidderRequest.bids[0].mediaType = 'video';
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
+          const legacyVideoTypeBidRequest = classifiedAsVideo(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not equal to video', function () {
-          expect(hasVideoMediaType({
+        it('should return false if bid.mediaTypes is not equal to video', function () {
+          expect(classifiedAsVideo({
             mediaType: 'banner'
           })).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not defined', function () {
-          expect(hasVideoMediaType({})).is.equal(false);
+        it('should return false if bid.mediaTypes is not defined', function () {
+          expect(classifiedAsVideo({})).is.equal(false);
         });
 
-        it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', function () {
-          expect(hasVideoMediaType({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {
-                size_id: 7
-              }
-            }
-          })).is.equal(true);
+        it('Should return false if both banner and video mediaTypes are set and params.video is not an object', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
+          expect(classifiedAsVideo(bid)).to.equal(false);
+        });
+        it('Should return true if both banner and video mediaTypes are set and params.video is an object', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
+          bid.params.video = {};
+          expect(classifiedAsVideo(bid)).to.equal(true);
         });
 
-        it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', function () {
-          expect(spec.isBidRequestValid({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {}
-            }
-          })).is.equal(false);
+        it('Should return true and create a params.video object if one is not already present', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0]
+          expect(classifiedAsVideo(bid)).to.equal(true);
+          expect(bid.params.video).to.not.be.undefined;
         });
       });
     });

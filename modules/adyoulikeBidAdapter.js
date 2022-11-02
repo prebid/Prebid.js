@@ -1,9 +1,9 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {createEidsArray} from './userId/eids.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -61,6 +61,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     let hasVideo = false;
     const payload = {
       Version: VERSION,
@@ -116,6 +118,10 @@ export const spec = {
       payload.uspConsent = bidderRequest.uspConsent;
     }
 
+    if (bidderRequest.ortb2) {
+      payload.ortb2 = bidderRequest.ortb2;
+    }
+
     if (deepAccess(bidderRequest, 'userId')) {
       payload.userId = createEidsArray(bidderRequest.userId);
     }
@@ -164,23 +170,6 @@ function getHostname(bidderRequest) {
   let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
-  }
-  return '';
-}
-
-/* Get current page canonical url */
-function getCanonicalUrl() {
-  let link;
-  if (window.self !== window.top) {
-    try {
-      link = window.top.document.head.querySelector('link[rel="canonical"][href]');
-    } catch (e) { }
-  } else {
-    link = document.head.querySelector('link[rel="canonical"][href]');
-  }
-
-  if (link) {
-    return link.href;
   }
   return '';
 }
@@ -236,25 +225,32 @@ function createEndpoint(bidRequests, bidderRequest, hasVideo) {
 /* Create endpoint query string */
 function createEndpointQS(bidderRequest) {
   const qs = {};
-
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
     if (ref) {
-      qs.RefererUrl = encodeURIComponent(ref.referer);
-      if (ref.numIframes > 0) {
-        qs.SafeFrame = true;
+      if (ref.location) {
+        // RefererUrl will be removed in a future version.
+        qs.RefererUrl = encodeURIComponent(ref.location);
+        if (!ref.reachedTop) {
+          qs.SafeFrame = true;
+        }
       }
+
+      qs.PageUrl = encodeURIComponent(ref.topmostLocation);
+      qs.PageReferrer = encodeURIComponent(ref.location);
+    }
+
+    // retreive info from ortb2 object if present (prebid7)
+    const siteInfo = bidderRequest.ortb2?.site;
+    if (siteInfo) {
+      qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
+      qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
     }
   }
 
-  const can = getCanonicalUrl();
+  const can = bidderRequest?.refererInfo?.canonicalUrl;
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
-  }
-
-  const domain = config.getConfig('publisherDomain');
-  if (domain) {
-    qs.PublisherDomain = encodeURIComponent(domain);
   }
 
   return qs;
@@ -454,7 +450,7 @@ function getNativeAssets(response, nativeConfig) {
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
-    return
+    return;
   }
 
   const request = bidRequests && bidRequests[response.BidID];
