@@ -532,7 +532,12 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
+          if (!native.javascriptTrackers) {
+            native.javascriptTrackers = script;
+          } else {
+            native.javascriptTrackers += `\n${script}`;
+          }
           break;
       }
     });
@@ -623,7 +628,16 @@ export function setExtraParam(bid, paramName) {
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
-    bid.params[paramName] = detected;
+    // First Party Data can be an array.
+    // As we consider that params detected from FPD are fallbacks, we just keep the 1st value.
+    if (Array.isArray(detected)) {
+      if (detected.length) {
+        bid.params[paramName] = detected[0].toString();
+      }
+      return;
+    }
+
+    bid.params[paramName] = detected.toString();
   }
 }
 
@@ -780,9 +794,10 @@ function getSlotPosition(adUnitElementId) {
 
     if (mustDisplayElement) {
       domElement.style = domElement.style || {};
+      const originalDisplay = domElement.style.display;
       domElement.style.display = 'block';
       box = domElement.getBoundingClientRect();
-      domElement.style.display = elComputedDisplay;
+      domElement.style.display = originalDisplay || null;
     }
     position.x = Math.round(box.left + scrollLeft - clientLeft);
     position.y = Math.round(box.top + scrollTop - clientTop);

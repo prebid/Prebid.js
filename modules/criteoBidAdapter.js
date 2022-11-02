@@ -27,7 +27,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 123;
+export const FAST_BID_VERSION_CURRENT = 132;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -469,15 +469,20 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-      if (bidRequest.params.nativeCallback || deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
+
+      if (bidRequest.params.nativeCallback || hasNativeMediaType(bidRequest)) {
         slot.native = true;
         if (!checkNativeSendId(bidRequest)) {
           logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
-        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseNativeSize);
-      } else {
-        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
       }
+
+      if (hasBannerMediaType(bidRequest)) {
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
+      } else {
+        slot.sizes = [];
+      }
+
       if (hasVideoMediaType(bidRequest)) {
         const video = {
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
@@ -554,15 +559,16 @@ function parseSize(size) {
   return size[0] + 'x' + size[1];
 }
 
-function parseNativeSize(size) {
-  if (size[0] === undefined && size[1] === undefined) {
-    return '2x2';
-  }
-  return size[0] + 'x' + size[1];
-}
-
 function hasVideoMediaType(bidRequest) {
   return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
+}
+
+function hasBannerMediaType(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.banner') !== undefined;
+}
+
+function hasNativeMediaType(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.native') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -638,26 +644,46 @@ for (var i = 0; i < 10; ++i) {
 </script>`;
 }
 
+function pickAvailableGetFloorFunc(bidRequest) {
+  if (bidRequest.getFloor) {
+    return bidRequest.getFloor;
+  }
+  if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
+    try {
+      const floor = parseFloat(bidRequest.params.bidFloor);
+      return () => {
+        return {
+          currency: bidRequest.params.bidFloorCur,
+          floor: floor
+        };
+      };
+    } catch { }
+  }
+  return undefined;
+}
+
 function enrichSlotWithFloors(slot, bidRequest) {
   try {
     const slotFloors = {};
 
-    if (bidRequest.getFloor) {
+    const getFloor = pickAvailableGetFloorFunc(bidRequest);
+
+    if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({size: bannerSize, mediaType: BANNER}));
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = getFloor({ size: bannerSize, mediaType: BANNER }));
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({size: videoSize, mediaType: VIDEO}));
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = getFloor({ size: videoSize, mediaType: VIDEO }));
       }
 
       if (bidRequest.mediaTypes?.native) {
         slotFloors.native = {};
-        slotFloors.native['*'] = bidRequest.getFloor({size: '*', mediaType: NATIVE});
+        slotFloors.native['*'] = getFloor({ size: '*', mediaType: NATIVE });
       }
 
       if (Object.keys(slotFloors).length > 0) {

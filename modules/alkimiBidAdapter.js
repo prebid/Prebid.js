@@ -31,7 +31,8 @@ export const spec = {
         bidFloor: bidRequest.params.bidFloor,
         width: sizes[0].width,
         height: sizes[0].height,
-        impMediaType: getFormatType(bidRequest)
+        impMediaType: getFormatType(bidRequest),
+        adUnitCode: bidRequest.adUnitCode
       })
       bidIds.push(bidRequest.bidId)
     })

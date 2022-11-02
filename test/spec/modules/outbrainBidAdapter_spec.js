@@ -318,6 +318,27 @@ describe('Outbrain Adapter', function () {
         expect(resData.badv).to.deep.equal(['bad-advertiser'])
       });
 
+      it('first party data', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        }
+        const bidderRequest = {
+          ortb2: {
+            bcat: ['IAB1', 'IAB2-1'],
+            badv: ['domain1.com', 'domain2.com'],
+            wlang: ['en'],
+          },
+          ...commonBidderRequest,
+        }
+
+        const res = spec.buildRequests([bidRequest], bidderRequest)
+        const resData = JSON.parse(res.data)
+        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
+        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+      });
+
       it('should pass bidder timeout', function () {
         const bidRequest = {
           ...commonBidRequest,

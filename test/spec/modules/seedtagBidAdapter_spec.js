@@ -356,6 +356,48 @@ describe('Seedtag Adapter', function () {
         expect(videoBid.requestCount).to.equal(1);
       });
     });
+
+    describe('schain param', function () {
+      it('should add schain to payload when exposed on validBidRequest', function () {
+        // https://github.com/prebid/Prebid.js/blob/master/modules/schain.md#sample-code-for-passing-the-schain-object
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1,
+            },
+
+            {
+              asi: 'indirectseller-2.com',
+              sid: '00002',
+              hp: 1,
+            },
+          ],
+        };
+
+        // duplicate
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].schain = schain;
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.exist;
+        expect(payload.schain).to.deep.equal(schain);
+      });
+
+      it("shouldn't add schain to payload when not exposed", function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.not.exist;
+      });
+    });
   });
 
   describe('interpret response method', function () {
