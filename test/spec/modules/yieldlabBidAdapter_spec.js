@@ -533,36 +533,65 @@ describe('yieldlabBidAdapter', () => {
   });
 
   describe('getBidFloor', function () {
-    let bidRequest, getFloor;
+    let bidRequest, bidRequest2, currency, floor;
+    const getFloor = () => {
+      return {
+        currency: currency,
+        floor: floor
+      }
+    }
 
-    it('should add valid bid floor', () => {
-      getFloor = () => {
-        return {
-          currency: 'EUR',
-          floor: 1.33
-        };
-      };
+    it('should add valid bid floor in the format floor={adslotId}:{floorPriceInCents}[, ...]', () => {
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {
+        getFloor: () => {
+          return {
+            currency: 'EUR',
+            floor: 1.33
+          }
+        }});
+      bidRequest2 = Object.assign(DEFAULT_REQUEST(), {
+        params: {
+          adslotId: 2222
+        },
+        getFloor: () => {
+          return {
+            currency: 'EUR',
+            floor: 2.99
+          }
+        }
+      });
+      const result = spec.buildRequests([bidRequest, bidRequest2], REQPARAMS)
+      expect(result).to.have.nested.property('queryParams.floor', '1111:133,2222:299')
+    });
+
+    it('should round the floor price up', () => {
+      currency = 'EUR';
+      floor = 0.745;
       bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
       const result = spec.buildRequests([bidRequest], REQPARAMS)
-      expect(result).to.have.nested.property('queryParams.floor', 1.33)
+      expect(result).to.have.nested.property('queryParams.floor', '1111:75')
+    });
+
+    it('should round the floor price down', () => {
+      currency = 'EUR';
+      floor = 0.034;
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
+      const result = spec.buildRequests([bidRequest], REQPARAMS)
+      expect(result).to.have.nested.property('queryParams.floor', '1111:3')
     });
 
     it('should not add empty bid floor', () => {
-      getFloor = () => {
-        return {};
-      };
-      bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
+      bidRequest = Object.assign(DEFAULT_REQUEST(), {
+        getFloor: () => {
+          return {};
+        }})
       const result = spec.buildRequests([bidRequest], REQPARAMS)
       expect(result).not.to.have.nested.property('queryParams.floor')
     });
 
     it('should not add bid floor when currency is not matching', () => {
-      getFloor = (currency, mediaType, size) => {
-        return {
-          currency: 'USD',
-          floor: 1.33
-        };
-      };
+      currency = 'USD';
+      floor = 1.33;
       bidRequest = Object.assign(DEFAULT_REQUEST(), {getFloor})
       const result = spec.buildRequests([bidRequest], REQPARAMS)
       expect(result).not.to.have.nested.property('queryParams.floor')

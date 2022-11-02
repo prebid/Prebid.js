@@ -41,6 +41,7 @@ export const spec = {
 
     const adslotIds = []
     const adslotSizes = [];
+    const adslotFloors = [];
     const timestamp = Date.now()
     const query = {
       ts: timestamp,
@@ -77,7 +78,7 @@ export const spec = {
       }
       const floor = getBidFloor(bid, sizes)
       if (floor) {
-        query.floor = floor;
+        adslotFloors.push(bid.params.adslotId + ':' + floor);
       }
     })
 
@@ -99,6 +100,11 @@ export const spec = {
     if (adslotSizes.length > 0) {
       query.sizes = adslotSizes.join(',')
     }
+
+    if (adslotFloors.length > 0) {
+      query.floor = adslotFloors.join(',')
+    }
+
     const queryString = createQueryString(query)
 
     return {
@@ -452,7 +458,7 @@ function extractSizes(bid) {
  *
  * @param {Object} bid
  * @param {string[]} sizes
- * @returns The floor CPM of a matched rule based on the rule selection process (mediaType, size and currency),
+ * @returns The floor CPM in cents of a matched rule based on the rule selection process (mediaType, size and currency),
  *          using the getFloor() inputs. Multi sizes and unsupported media types will default to '*'
  */
 function getBidFloor(bid, sizes) {
@@ -464,10 +470,10 @@ function getBidFloor(bid, sizes) {
   const floor = bid.getFloor({
     currency: CURRENCY_CODE,
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
-    size: sizes.length !== 1 ? '*' : extractSizes(sizes)
+    size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN)
   });
   if (floor.currency === CURRENCY_CODE) {
-    return floor.floor;
+    return (floor.floor * 100).toFixed(0);
   }
   return undefined;
 }
