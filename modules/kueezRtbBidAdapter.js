@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'kueezrtb';
 const BIDDER_VERSION = '1.0.0';
@@ -21,7 +22,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
-const storage = getStorageManager({ gvlid: null, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 
 function getTopWindowQueryParams() {
   try {
@@ -266,6 +267,7 @@ export function tryParseJSON(value) {
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
