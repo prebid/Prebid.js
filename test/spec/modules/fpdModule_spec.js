@@ -1,14 +1,14 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
-import {getRefererInfo} from 'src/refererDetection.js';
-import {processFpd, registerSubmodules, startAuctionHook, reset} from 'modules/fpdModule/index.js';
-import * as validationModule from 'modules/validationFpdModule/index.js';
-import {GreedyPromise} from '../../../src/utils/promise.js';
+import {registerSubmodules, reset, startAuctionHook} from 'modules/fpdModule/index.js';
 
 describe('the first party data module', function () {
   afterEach(function () {
     config.resetConfig();
   });
+  after(() => {
+    reset();
+  })
 
   describe('startAuctionHook', () => {
     const mockFpd = {
@@ -48,5 +48,4 @@ describe('the first party data module', function () {
       });
     });
   });
-
 });
