@@ -635,14 +635,17 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
-    // if the request does not specify adUnits, clone the global adUnit array - before
-    // any hook has a chance to run.
+    // unlike the main body of `delegate`, this runs before any other hook has a chance to;
+    // it's also not restricted in its return value in the way `async` hooks are.
+
+    // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    req.metrics = newMetrics();
-    req.metrics.checkpoint('requestBids');
     let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
+
+    req.metrics = newMetrics();
+    req.metrics.checkpoint('requestBids');
     req.defer = defer({promiseFactory: (r) => new Promise(r)})
     delegate.call(this, req);
     return req.defer.promise;
