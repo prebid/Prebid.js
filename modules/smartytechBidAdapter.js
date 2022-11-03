@@ -4,7 +4,7 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
-export const ENDPOINT_DOMAIN = 'server.greencuttlefish.com';
+export const ENDPOINT_DOMAIN = 'server.smartytech.io';
 export const ENDPOINT_PATH = '/hb/bidder';
 
 export const spec = {

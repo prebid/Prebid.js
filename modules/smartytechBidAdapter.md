@@ -21,9 +21,9 @@ About us : https://smartytech.io
         sizes: [[300, 250]],
         bids: [
             {
-                bidder: "smartytechDSP",
+                bidder: "smartytech",
                 params: {
-                    endpoint_id: 6698
+                    endpointId: 14
                 }
             }
         ]
@@ -33,9 +33,9 @@ About us : https://smartytech.io
         sizes: [[300, 250]],
         bids: [
             {
-                bidder: "smartytechDSP",
+                bidder: "smartytech",
                 params: {
-                    endpoint_id: 7698
+                    endpointId: 14
                 }
             }
         ]
