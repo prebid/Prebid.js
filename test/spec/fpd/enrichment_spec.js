@@ -1,7 +1,6 @@
 import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
-import {GreedyPromise} from '../../../src/utils/promise.js';
 import {config} from 'src/config.js';
 
 describe('FPD enrichment', () => {
