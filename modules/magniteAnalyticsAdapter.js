@@ -254,9 +254,14 @@ export const parseBidResponse = (bid, previousBidResponse) => {
       const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
       return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
     },
+    'networkId', () => {
+      const networkId = deepAccess(bid, 'meta.networkId');
+      // if not a valid after this, set to undefined so it gets filtered out
+      return (networkId && networkId.toString()) || undefined;
+    },
     'conversionError', conversionError => conversionError === true || undefined, // only pass if exactly true
     'ogCurrency',
-    'ogPrice'
+    'ogPrice',
   ]);
 }
 
