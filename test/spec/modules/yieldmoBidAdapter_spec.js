@@ -2,9 +2,13 @@ import { expect } from 'chai';
 import { spec } from 'modules/yieldmoBidAdapter.js';
 import * as utils from 'src/utils.js';
 
+/* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
+// above is used for debugging purposes only
+
 describe('YieldmoAdapter', function () {
   const BANNER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
   const VIDEO_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+  const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
 
   const mockBannerBid = (rootParams = {}, params = {}) => ({
     bidder: 'yieldmo',
@@ -37,6 +41,7 @@ describe('YieldmoAdapter', function () {
     bidder: 'yieldmo',
     adUnitCode: 'adunit-code-video',
     bidId: '321video123',
+    auctionId: '1d1a03073455',
     mediaTypes: {
       video: {
         playerSize: [640, 480],
@@ -171,15 +176,15 @@ describe('YieldmoAdapter', function () {
       it('should place bid information into the p parameter of data', function () {
         let bidArray = [mockBannerBid()];
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1}]'
+          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"auctionId":"1d1a030790a475"}]'
         );
 
         // multiple placements
         bidArray.push(mockBannerBid(
           {adUnitCode: 'adunit-2', bidId: '123a', bidderRequestId: '321', auctionId: '222'}, {bidFloor: 0.2}));
         expect(buildAndGetPlacementInfo(bidArray)).to.equal(
-          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1},' +
-        '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2}]'
+          '[{"placement_id":"adunit-code","callback_id":"30b31c1838de1e","sizes":[[300,250],[300,600]],"bidFloor":0.1,"auctionId":"1d1a030790a475"},' +
+        '{"placement_id":"adunit-2","callback_id":"123a","sizes":[[300,250],[300,600]],"bidFloor":0.2,"auctionId":"222"}]'
         );
       });
 
@@ -215,6 +220,24 @@ describe('YieldmoAdapter', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
         const pubcidBid = mockBannerBid({crumbs: undefined, userId: {pubcid}});
         expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
+      });
+
+      it('should add transaction id as parameter of request', function () {
+        const transactionId = '54a58774-7a41-494e-9aaf-fa7b79164f0c';
+        const pubcidBid = mockBannerBid({ ortb2Imp: {
+          ext: {
+            tid: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
+          }
+        }});
+        const bidRequest = buildAndGetData([pubcidBid]);
+        expect(bidRequest.p).to.contain(transactionId);
+      });
+
+      it('should add auction id as parameter of request', function () {
+        const auctionId = '1d1a030790a475';
+        const pubcidBid = mockBannerBid({});
+        const bidRequest = buildAndGetData([pubcidBid]);
+        expect(bidRequest.p).to.contain(auctionId);
       });
 
       it('should add unified id as parameter of request', function () {
@@ -307,7 +330,7 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should only shortcut properties rather then completely remove it', () => {
-        const longString = new Array(7516).join('a');
+        const longString = new Array(8000).join('a');
         const localWindow = utils.getWindowTop();
 
         const originalTitle = localWindow.document.title;
@@ -319,7 +342,7 @@ describe('YieldmoAdapter', function () {
             refererInfo: {
               numIframes: 1,
               reachedTop: true,
-              referer: longString,
+              title: longString,
             },
           })
         )[0];
@@ -328,14 +351,114 @@ describe('YieldmoAdapter', function () {
 
         localWindow.document.title = originalTitle;
       });
+
+      it('should add ats_envelope to banner bid request', function() {
+        const envelope = 'test_envelope';
+        const requests = build([mockBannerBid({}, { lr_env: envelope })]);
+
+        expect(requests[0].data.ats_envelope).to.equal(envelope);
+      });
+
+      it('should add gpid to the banner bid request', function () {
+        let bidArray = [mockBannerBid({
+          ortb2Imp: {
+            ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
+          }
+        })];
+        let placementInfo = buildAndGetPlacementInfo(bidArray);
+        expect(placementInfo).to.include('"gpid":"/6355419/Travel/Europe/France/Paris"');
+      });
+
+      it('should add eids to the banner bid request', function () {
+        const params = {
+          userId: {pubcid: 'fake_pubcid'},
+          fakeUserIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [{
+              id: 'fake_pubcid',
+              atype: 1
+            }]
+          }]
+        };
+        expect(buildAndGetData([mockBannerBid({...params})]).eids).equal(JSON.stringify(params.fakeUserIdAsEids));
+      });
     });
 
     describe('Instream video:', function () {
+      let videoBid;
+      const buildVideoBidAndGetVideoParam = () => build([videoBid])[0].data.imp[0].video;
+
+      beforeEach(() => {
+        videoBid = mockVideoBid();
+      });
+
       it('should attempt to send video bid requests to the endpoint via POST', function () {
-        const requests = build([mockVideoBid()]);
+        const requests = build([videoBid]);
         expect(requests.length).to.equal(1);
         expect(requests[0].method).to.equal('POST');
         expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
+      });
+
+      it('should add mediaTypes.video prop to the imp.video prop', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = 40;
+        expect(buildVideoBidAndGetVideoParam().minduration).to.equal(40);
+      });
+
+      it('should override mediaTypes.video prop if params.video prop is present', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = 50;
+        utils.deepAccess(videoBid, 'params.video')['minduration'] = 40;
+        expect(buildVideoBidAndGetVideoParam().minduration).to.equal(40);
+      });
+
+      it('should add mediaTypes.video.mimes prop to the imp.video', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = ['video/mp4'];
+        expect(buildVideoBidAndGetVideoParam().minduration).to.deep.equal(['video/mp4']);
+      });
+
+      it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {
+        utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
+        utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];
+        expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
+      });
+
+      describe('video.skip state check', () => {
+        it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
+          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skip is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skip'] = 1;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if params.video.skip is present', function () {
+          utils.deepAccess(videoBid, 'params.video')['skip'] = 1;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should set video.skip=1 if mediaTypes.video.skippable is present', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = true;
+          expect(buildVideoBidAndGetVideoParam().skip).to.equal(1);
+        });
+
+        it('should not set video.skip if params.video.skippable is false', function () {
+          utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = true;
+          utils.deepAccess(videoBid, 'params.video')['skippable'] = false;
+          expect(buildVideoBidAndGetVideoParam().skip).to.undefined;
+        });
       });
 
       it('should process floors module if available', function () {
@@ -362,6 +485,65 @@ describe('YieldmoAdapter', function () {
         const requests = build([mockVideoBid()]);
         expect(requests[0].data.imp[0].bidfloor).to.equal(0);
       });
+
+      it('should add ats_envelope to video bid request', function() {
+        const envelope = 'test_envelope';
+        const requests = build([mockVideoBid({}, { lr_env: envelope })]);
+
+        expect(requests[0].data.ats_envelope).to.equal(envelope);
+      });
+
+      it('should add transaction id to video bid request', function() {
+        const transactionId = '54a58774-7a41-494e-8cbc-fa7b79164f0c';
+        const requestData = {
+          ortb2Imp: {
+            ext: {
+              tid: '54a58774-7a41-494e-8cbc-fa7b79164f0c',
+            }
+          }
+        };
+        expect(buildAndGetData([mockVideoBid({...requestData})]).imp[0].ext.tid).to.equal(transactionId);
+      });
+
+      it('should add auction id to video bid request', function() {
+        const auctionId = '1d1a03073455';
+
+        expect(buildAndGetData([mockVideoBid({})]).auctionId).to.deep.equal(auctionId);
+      });
+
+      it('should add schain if it is in the bidRequest', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [{
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }],
+        };
+        expect(buildAndGetData([mockVideoBid({schain})]).schain).to.deep.equal(schain);
+      });
+
+      it('should add gpid to the video request', function () {
+        const ortb2Imp = {
+          ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
+        };
+        expect(buildAndGetData([mockVideoBid({ortb2Imp})]).imp[0].ext.gpid).to.be.equal(ortb2Imp.ext.data.pbadslot);
+      });
+
+      it('should add eids to the video bid request', function () {
+        const params = {
+          userId: {pubcid: 'fake_pubcid'},
+          fakeUserIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [{
+              id: 'fake_pubcid',
+              atype: 1
+            }]
+          }]
+        };
+        expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
+      });
     });
   });
 
@@ -370,6 +552,7 @@ describe('YieldmoAdapter', function () {
       body: [{
         callback_id: '21989fdbef550a',
         cpm: 3.45455,
+        publisherDealId: 'YMO_123',
         width: 300,
         height: 250,
         ad: '<html><head></head><body><script>//GEX ad object</script>' +
@@ -384,6 +567,7 @@ describe('YieldmoAdapter', function () {
       const newResponse = spec.interpretResponse(mockServerResponse());
       expect(newResponse.length).to.be.equal(1);
       expect(newResponse[0]).to.deep.equal({
+        dealId: 'YMO_123',
         requestId: '21989fdbef550a',
         cpm: 3.45455,
         width: 300,
@@ -411,6 +595,7 @@ describe('YieldmoAdapter', function () {
             crid: 'dd65c0a7536aff',
             impid: '91ea8bba1',
             price: 1.5,
+            dealid: 'YMO_456'
           },
         },
       ];
@@ -433,6 +618,7 @@ describe('YieldmoAdapter', function () {
       const newResponse = spec.interpretResponse(response, bidRequest);
       expect(newResponse.length).to.be.equal(2);
       expect(newResponse[1]).to.deep.equal({
+        dealId: 'YMO_456',
         cpm: 1.5,
         creativeId: 'dd65c0a7536aff',
         currency: 'USD',
@@ -461,8 +647,20 @@ describe('YieldmoAdapter', function () {
   });
 
   describe('getUserSync', function () {
-    it('should return a tracker with type and url as parameters', function () {
-      expect(spec.getUserSyncs()).to.deep.equal([]);
+    const gdprFlag = `&gdpr=0`;
+    const usPrivacy = `us_privacy=`;
+    const gdprString = `&gdpr_consent=`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
+    it('should use type iframe when iframeEnabled', function() {
+      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'iframe', url: pbCookieAssistSyncUrl + '&type=iframe'}])
+    });
+    it('should use type image when pixelEnabled', function() {
+      const syncs = spec.getUserSyncs({pixelEnabled: true});
+      expect(syncs).to.deep.equal([{type: 'image', url: pbCookieAssistSyncUrl + '&type=image'}])
+    });
+    it('should register no syncs', function () {
+      expect(spec.getUserSyncs({})).to.deep.equal([]);
     });
   });
 });

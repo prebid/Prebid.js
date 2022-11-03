@@ -1,9 +1,9 @@
+import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
-const utils = require('../src/utils.js');
 const storage = getStorageManager();
 
 /****
@@ -76,7 +76,7 @@ function enrichWithUTM(dataBag) {
   let newUtm = false;
   try {
     for (let prop in utmKeys) {
-      utmKeys[prop] = utils.getParameterByName(prop);
+      utmKeys[prop] = getParameterByName(prop);
       if (utmKeys[prop]) {
         newUtm = true;
         dataBag[prop] = utmKeys[prop];
@@ -157,7 +157,7 @@ function extendUserSessionTimeout() {
 }
 
 function userSessionID() {
-  return storage.getDataFromLocalStorage(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
 function sessionExpired() {
@@ -192,7 +192,7 @@ function markEnabled() {
 }
 
 function pwInfo(info, context) {
-  utils.logInfo(`${analyticsName} ` + info, context);
+  logInfo(`${analyticsName} ` + info, context);
 }
 
 function filterBidResponse(data) {
@@ -224,7 +224,8 @@ function filterAuctionInit(data) {
   modified.refererInfo = {};
   // handle clean referrer, we only need one
   if (typeof modified.bidderRequests !== 'undefined' && typeof modified.bidderRequests[0] !== 'undefined' && typeof modified.bidderRequests[0].refererInfo !== 'undefined') {
-    modified.refererInfo = modified.bidderRequests[0].refererInfo;
+    // TODO: please do not send internal data structures over the network
+    modified.refererInfo = modified.bidderRequests[0].refererInfo.legacy;
   }
 
   if (typeof modified.adUnitCodes !== 'undefined') {
@@ -294,7 +295,7 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
   if (eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON) {
     flushEvents();
   }
-}
+};
 
 pubwiseAnalytics.storeSessionID = function (userSessID) {
   storage.setDataInLocalStorage(localStorageSessName(), userSessID);
@@ -304,7 +305,7 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
   if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
-    let generatedId = utils.generateUUID();
+    let generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
@@ -320,10 +321,10 @@ pubwiseAnalytics.enableAnalytics = function (config) {
   configOptions = Object.assign(configOptions, config.options);
   // take the PBJS debug for our debug setting if no PW debug is defined
   if (configOptions.debug === null) {
-    configOptions.debug = utils.debugTurnedOn();
+    configOptions.debug = debugTurnedOn();
   }
   markEnabled();
-  sessionData.activationId = utils.generateUUID();
+  sessionData.activationId = generateUUID();
   this.ensureSession();
   pubwiseAnalytics.adapterEnableAnalytics(config);
 };

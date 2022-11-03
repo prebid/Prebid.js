@@ -439,7 +439,7 @@ describe('BlueBillywigAdapter', () => {
     it('should add referrerInfo as site when no app is set', () => {
       const newValidBidderRequest = deepClone(validBidderRequest);
 
-      newValidBidderRequest.refererInfo = { referer: 'https://www.bluebillywig.com' };
+      newValidBidderRequest.refererInfo = { page: 'https://www.bluebillywig.com' };
 
       const request = spec.buildRequests(baseValidBidRequests, newValidBidderRequest);
       const payload = JSON.parse(request.data);
@@ -759,6 +759,10 @@ describe('BlueBillywigAdapter', () => {
       expect(bid.creativeId).to.equal(serverResponse.body.seatbid[0].bid[0].crid);
       expect(bid.currency).to.equal(serverResponse.body.cur);
       expect(bid.ttl).to.equal(BB_CONSTANTS.DEFAULT_TTL);
+
+      expect(bid).to.have.property('meta');
+      expect(bid.meta).to.have.property('advertiserDomains');
+      expect(bid.meta.advertiserDomains[0]).to.equal('bluebillywig.com');
 
       expect(bid.publicationName).to.equal(validBidderRequest.bids[0].params.publicationName);
       expect(bid.rendererCode).to.equal(validBidderRequest.bids[0].params.rendererCode);

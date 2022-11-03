@@ -1,147 +1,147 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+const ENDPOINT_URL = 'https://layer.serve.admatic.com.tr/pb';
+const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
 const BIDDER_CODE = 'admatic';
-const ENDPOINT_URL = 'https://ads4.admatic.com.tr/prebid/v3/bidrequest';
 
 export const spec = {
-  code: BIDDER_CODE,
-  aliases: ['admatic'], // short code
+  code: 'admatic',
+  supportedMediaTypes: ['video', 'banner'],
   /**
-  * Determines whether or not the given bid request is valid.
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
-  isBidRequestValid: function (bid) {
-    return !!(bid.params.pid && bid.params.wid && bid.params.url);
-  },
-  /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
-  buildRequests: function (validBidRequests) {
-    const payload = {
-      request: []
-    };
-
-    for (var i = 0; i < validBidRequests.length; i++) {
-      var validBidRequest = validBidRequests[i];
-      payload.auctionId = validBidRequest.auctionId;
-      payload.bidder = validBidRequest.bidder;
-      payload.bidderRequestId = validBidRequest.bidderRequestId;
-      payload.pid = validBidRequest.params.pid;
-      payload.wid = validBidRequest.params.wid;
-      payload.url = validBidRequest.params.url;
-
-      var request = {
-        adUnitCode: validBidRequest.adUnitCode,
-        bidId: validBidRequest.bidId,
-        transactionId: validBidRequest.transactionId,
-        priceType: validBidRequest.params.priceType,
-        sizes: transformSizes(validBidRequest.sizes)
-      }
-
-      payload.request.push(request);
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
+  isBidRequestValid: function(bid) {
+    let isValid = false;
+    if (typeof bid.params !== 'undefined') {
+      let isValidNetworkId = _validateId(getValue(bid.params, 'networkId'));
+      isValid = isValidNetworkId;// && isValidTypeId;
     }
 
-    const payloadString = JSON.stringify(payload);
+    if (!isValid) {
+      logError('AdMatic networkId parameters are required. Bid aborted.');
+    }
+    return isValid;
+  },
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
+  buildRequests: function(validBidRequests, bidderRequest) {
+    const bids = validBidRequests.map(buildRequestObject);
+    const networkId = getValue(validBidRequests[0].params, 'networkId');
+    const currency = getValue(validBidRequests[0].params, 'currency') || 'TRY';
 
+    setTimeout(() => {
+      loadExternalScript(SYNC_URL, BIDDER_CODE);
+    }, bidderRequest.timeout);
+
+    const payload = {
+      'user': {
+        'ua': navigator.userAgent
+      },
+      'blacklist': [],
+      'site': {
+        'page': location.href,
+        'ref': location.origin,
+        'publisher': {
+          'name': location.hostname,
+          'publisherId': networkId
+        }
+      },
+      imp: bids,
+      ext: {
+        'cur': currency,
+        'type': 'admatic'
+      }
+    };
+
+    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
       url: ENDPOINT_URL,
       data: payloadString,
-      bidder: 'admatic',
-      bids: validBidRequests
+      options: {
+        contentType: 'application/json'
+      }
     };
   },
-
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {ServerResponse} serverResponse A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
-  interpretResponse: function (serverResponse, bidRequest) {
-    const serverBody = serverResponse.body;
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
+  interpretResponse: (response, request) => {
+    const body = response.body || response;
     const bidResponses = [];
-
-    if (serverBody) {
-      if (serverBody.tags && serverBody.tags.length > 0) {
-        serverBody.tags.forEach(serverBid => {
-          if (serverBid != null) {
-            if (serverBid.cpm !== 0) {
-              const bidResponse = {
-                requestId: serverBid.bidId,
-                cpm: serverBid.cpm,
-                width: serverBid.width,
-                height: serverBid.height,
-                creativeId: serverBid.creativeId,
-                dealId: serverBid.dealId,
-                currency: serverBid.currency,
-                netRevenue: serverBid.netRevenue,
-                ttl: serverBid.ttl,
-                referrer: serverBid.referrer,
-                ad: serverBid.ad
-              };
-
-              bidResponses.push(bidResponse);
-            }
-          }
-        });
-      }
-    }
-
+    if (body.data.length > 0) {
+      body.data.forEach(function (bid) {
+        const resbid = {
+          requestId: bid.id,
+          cpm: bid.price,
+          width: bid.width,
+          height: bid.height,
+          currency: body.cur,
+          netRevenue: true,
+          ad: bid.party_tag,
+          creativeId: bid.creative_id,
+          meta: {
+            advertiserDomains: bid && bid.adomain ? bid.adomain : []
+          },
+          ttl: 360,
+          bidder: 'admatic',
+          timeToRespond: 1,
+          requestTimestamp: 1
+        };
+        bidResponses.push(resbid);
+      });
+    };
     return bidResponses;
-  },
-  /**
-  * Register the user sync pixels which should be dropped after the auction.
-  *
-  * @param {SyncOptions} syncOptions Which user syncs are allowed?
-  * @param {ServerResponse[]} serverResponses List of server's responses.
-  * @return {UserSync[]} The user syncs which should be dropped.
-  */
-  getUserSyncs: function (syncOptions, serverResponses) {
-    const syncs = [];
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: 'https://ads4.admatic.com.tr/prebid/static/usersync/v3/async_usersync.html'
-      });
-    }
+  }
+};
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: 'https://ads5.admatic.com.tr/prebid/v3/bidrequest/usersync'
-      });
-    }
-    return syncs;
+function buildRequestObject(bid) {
+  const reqObj = {};
+  reqObj.size = getSizes(bid);
+  reqObj.id = getBidIdParameter('bidId', bid);
+  reqObj.floor = getValue(bid.params, 'floor') || 0.01;
+  return reqObj;
+}
+
+function getSizes(bid) {
+  return concatSizes(bid);
+}
+
+function concatSizes(bid) {
+  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
+
+  if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
+    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    return mediaTypesSizes
+      .reduce(function(acc, currSize) {
+        if (isArray(currSize)) {
+          if (isArray(currSize[0])) {
+            currSize.forEach(function (childSize) {
+              acc.push({ w: childSize[0], h: childSize[1] });
+            })
+          }
+        }
+        return acc;
+      }, []);
   }
 }
 
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  let sizes = [];
-  let sizeObj = {};
-
-  if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
-    }
-  }
-
-  return sizes;
+function _validateId(id) {
+  return (parseInt(id) > 0);
 }
 
 registerBidder(spec);

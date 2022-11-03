@@ -1,8 +1,9 @@
-import {expect} from 'chai';
-import {spec} from 'modules/pubmaticBidAdapter.js';
+import { expect } from 'chai';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { bidderSettings } from 'src/bidderSettings.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -791,6 +792,228 @@ describe('PubMatic adapter', function () {
           isValid = spec.isBidRequestValid(validBid);
         expect(isValid).to.equal(true);
       });
+
+      it('should check for context if video is present', function() {
+        let bid = {
+            'bidder': 'pubmatic',
+            'params': {
+              'adSlot': 'SLOT_NHB1@728x90',
+              'publisherId': '5890'
+            },
+            'mediaTypes': {
+              'video': {
+                'playerSize': [
+                  [640, 480]
+                ],
+                'protocols': [1, 2, 5],
+                'context': 'instream',
+                'mimes': ['video/flv'],
+                'skippable': false,
+                'skip': 1,
+                'linearity': 2
+              }
+            },
+            'adUnitCode': 'video1',
+            'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+            'sizes': [
+              [640, 480]
+            ],
+            'bidId': '2c95df014cfe97',
+            'bidderRequestId': '1fe59391566442',
+            'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0
+          },
+          isValid = spec.isBidRequestValid(bid);
+        expect(isValid).to.equal(true);
+      })
+
+      it('should return false if context is not present in video', function() {
+        let bid = {
+            'bidder': 'pubmatic',
+            'params': {
+              'adSlot': 'SLOT_NHB1@728x90',
+              'publisherId': '5890'
+            },
+            'mediaTypes': {
+              'video': {
+                'w': 640,
+                'h': 480,
+                'protocols': [1, 2, 5],
+                'mimes': ['video/flv'],
+                'skippable': false,
+                'skip': 1,
+                'linearity': 2
+              }
+            },
+            'adUnitCode': 'video1',
+            'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+            'sizes': [
+              [640, 480]
+            ],
+            'bidId': '2c95df014cfe97',
+            'bidderRequestId': '1fe59391566442',
+            'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+            'src': 'client',
+            'bidRequestsCount': 1,
+            'bidderRequestsCount': 1,
+            'bidderWinsCount': 0
+          },
+          isValid = spec.isBidRequestValid(bid);
+        expect(isValid).to.equal(false);
+      })
+
+      it('bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array', function() {
+        let bid = {
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5890',
+            'video': {}
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'skippable': false,
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '2c95df014cfe97',
+          'bidderRequestId': '1fe59391566442',
+          'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        };
+
+        delete bid.params.video.mimes; // Undefined
+        bid.mediaTypes.video.mimes = 'string'; // NOT array
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.params.video.mimes; // Undefined
+        delete bid.mediaTypes.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.params.video.mimes; // Undefined
+        bid.mediaTypes.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        bid.params.video = {mimes: 'string'}; // NOT array
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        delete bid.params.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        delete bid.mediaTypes.video.mimes; // mediaTypes.video.mimes undefined
+        bid.params.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // Undefined
+        bid.params.video.mimes = ['video/flv']; // Valid
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        delete bid.mediaTypes.video.mimes; // Undefined
+        delete bid.params.video.mimes; // Undefined
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('checks on bid.params.outstreamAU & bid.renderer & bid.mediaTypes.video.renderer', function() {
+        const getThebid = function() {
+          let bid = utils.deepClone(validOutstreamBidRequest.bids[0]);
+          bid.params.outstreamAU = 'pubmatic-test';
+          bid.renderer = ' '; // we are only checking if this key is set or not
+          bid.mediaTypes.video.renderer = ' '; // we are only checking if this key is set or not
+          return bid;
+        }
+
+        // true: when all are present
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : Y
+        let bid = getThebid();
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : Y
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : Y
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: atleast one is present; 3 cases
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : Y
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // false: none present; only outstream
+        // mdiatype: outstream
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+
+        // true: none present; outstream + Banner
+        // mdiatype: outstream, banner
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.banner = {sizes: [ [300, 250], [300, 600] ]};
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+
+        // true: none present; outstream + Native
+        // mdiatype: outstream, native
+        // bid.params.outstreamAU : N
+        // bid.renderer : N
+        // bid.mediaTypes.video.renderer : N
+        bid = getThebid();
+        delete bid.params.outstreamAU;
+        delete bid.renderer;
+        delete bid.mediaTypes.video.renderer;
+        bid.mediaTypes.native = {}
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
   	describe('Request formation', function () {
@@ -858,8 +1081,6 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
   		  expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-        expect(data.site.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
   		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
@@ -879,9 +1100,82 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.ext.epoch).to.exist;
   		});
+
+      it('Set tmax from global config if not set by requestBids method', function() {
+        let sandbox = sinon.sandbox.create();
+        sandbox.stub(config, 'getConfig').callsFake((key) => {
+			  var config = {
+            bidderTimeout: 3000
+			  };
+			  return config[key];
+        });
+        let request = spec.buildRequests(bidRequests, {
+			  auctionId: 'new-auction-id', timeout: 3000
+        });
+        let data = JSON.parse(request.data);
+        expect(data.tmax).to.deep.equal(3000);
+        sandbox.restore();
+      });
+      describe('Marketplace parameters', function() {
+        let bidderSettingStub;
+        beforeEach(function() {
+          bidderSettingStub = sinon.stub(bidderSettings, 'get');
+        });
+
+        afterEach(function() {
+          bidderSettingStub.restore();
+        });
+
+        it('should not be present when allowAlternateBidderCodes is undefined', function () {
+          bidderSettingStub.returns(undefined);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace).to.equal(undefined);
+        });
+
+        it('should be pubmatic and groupm when allowedAlternateBidderCodes is \'groupm\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['groupm']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders.length).to.equal(2);
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('pubmatic');
+          expect(data.ext.marketplace.allowedbidders[1]).to.equal('groupm');
+        });
+
+        it('should be ALL by default', function () {
+          bidderSettingStub.returns(true);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+
+        it('should be ALL when allowedAlternateBidderCodes is \'*\'', function () {
+          bidderSettingStub.withArgs('pubmatic', 'allowAlternateBidderCodes').returns(true);
+          bidderSettingStub.withArgs('pubmatic', 'allowedAlternateBidderCodes').returns(['*']);
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            bidderCode: 'pubmatic'
+          });
+          let data = JSON.parse(request.data);
+          expect(data.ext.marketplace.allowedbidders).to.be.an('array');
+          expect(data.ext.marketplace.allowedbidders[0]).to.equal('all');
+        });
+      })
 
       it('Set content from config, set site.content', function() {
         let sandbox = sinon.sandbox.create();
@@ -920,7 +1214,7 @@ describe('PubMatic adapter', function () {
         expect(data.device.dnt).to.equal((navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0);
         expect(data.device.h).to.equal(screen.height);
         expect(data.device.w).to.equal(screen.width);
-        expect(data.device.language).to.equal(navigator.language);
+        expect(data.device.language).to.equal(navigator.language.split('-')[0]);
         expect(data.device.newkey).to.equal('new-device-data');// additional data from config
         sandbox.restore();
       });
@@ -967,7 +1261,6 @@ describe('PubMatic adapter', function () {
         expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
         expect(data.app.domain).to.equal('prebid.org');
         expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
-        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.site).to.not.exist;
         sandbox.restore();
       });
@@ -994,7 +1287,6 @@ describe('PubMatic adapter', function () {
         expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
         expect(data.app.domain).to.equal('prebid.org');
         expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
-        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.app.content).to.deep.equal(content);
         expect(data.site).to.not.exist;
         sandbox.restore();
@@ -1026,7 +1318,6 @@ describe('PubMatic adapter', function () {
         expect(data.app.bundle).to.equal('org.prebid.mobile.demoapp');
         expect(data.app.domain).to.equal('prebid.org');
         expect(data.app.publisher.id).to.equal(bidRequests[0].params.publisherId);
-        expect(data.app.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.app.content).to.deep.equal(appContent);
         expect(data.site).to.not.exist;
         sandbox.restore();
@@ -1043,8 +1334,6 @@ describe('PubMatic adapter', function () {
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl); // forced pageURL
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
-        expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-        expect(data.site.ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
         expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
@@ -1063,6 +1352,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].banner.w).to.equal(728); // width
         expect(data.imp[0].banner.h).to.equal(90); // height
         expect(data.imp[0].banner.format).to.deep.equal([{w: 160, h: 600}]);
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
       });
@@ -1348,47 +1638,145 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      it('Request params check with JW player params', function() {
+        let bidRequests = [
+          {
+            bidder: 'pubmatic',
+            params: {
+              publisherId: '301',
+              adSlot: '/15671365/DMDemo@300x250:0',
+              dctr: 'key1=val1|key2=val2,val3'
+            },
+            placementCode: '/19968336/header-bid-tag-1',
+            sizes: [[300, 250], [300, 600]],
+            bidId: '23acc48ad47af5',
+            requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+            bidderRequestId: '1c56ad30b9b8ca8',
+            transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+            rtd: {
+              jwplayer: {
+                targeting: {
+                  content: { id: 'jw_d9J2zcaA' },
+                  segments: ['80011026', '80011035']
+                }
+              }
+            }
+          }];
+        let key_val_output = 'key1=val1|key2=val2,val3|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1'
+        let request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
+
+        // jw player data not available. Only dctr sent.
+        delete bidRequests[0].rtd;
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object'); // dctr parameter
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
+
+        // jw player data is available, but dctr is not present
+        bidRequests[0].rtd = {
+          jwplayer: {
+            targeting: {
+              content: { id: 'jw_d9J2zcaA' },
+              segments: ['80011026', '80011035']
+            }
+          }
+        };
+
+        delete bidRequests[0].params.dctr;
+        key_val_output = 'jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1';
+        request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        data = JSON.parse(request.data);
+
+        expect(data.imp[0].ext).to.exist.and.to.be.an('object');
+        expect(data.imp[0].ext.key_val).to.exist.and.to.equal(key_val_output);
+      });
+
       describe('FPD', function() {
         let newRequest;
 
-        it('ortb2.site should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                site: {
-                  domain: 'page.example.com',
-                  cat: ['IAB2'],
-                  sectioncat: ['IAB2-2']
-                }
+        describe('ortb2.site should not override page, domain & ref values', function() {
+          it('When above properties are present in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html'
               }
             };
-            return config[key];
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
           });
-          const request = spec.buildRequests(bidRequests, {});
+
+          it('When above properties are absent in ortb2.site', function () {
+            const ortb2 = {
+              site: {}
+            };
+            let request = spec.buildRequests(bidRequests, {
+              auctionId: 'new-auction-id',
+              ortb2
+            });
+            let data = JSON.parse(request.data);
+            let response = spec.interpretResponse(bidResponses, request);
+            expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl);
+            expect(data.site.domain).to.equal(_getDomainFromURL(data.site.page));
+            expect(response[0].referrer).to.equal(data.site.ref);
+          });
+
+          it('With some extra properties in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html',
+                cat: ['IAB2'],
+                sectioncat: ['IAB2-2']
+              }
+            };
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
+            expect(data.site.cat).to.deep.equal(['IAB2']);
+            expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
+          });
+        });
+
+        it('ortb2.site should be merged except page, domain & ref in the request', function() {
+          const ortb2 = {
+            site: {
+              cat: ['IAB2'],
+              sectioncat: ['IAB2-2']
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
-          expect(data.site.domain).to.equal('page.example.com');
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
-          sandbox.restore();
         });
 
         it('ortb2.user should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                user: {
-                  yob: 1985
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            user: {
+              yob: 1985
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.user.yob).to.equal(1985);
-          sandbox.restore();
         });
 
         describe('ortb2Imp', function() {
@@ -1566,14 +1954,25 @@ describe('PubMatic adapter', function () {
         let newRequest;
         let floorModuleTestData;
         let getFloor = function(req) {
-          return floorModuleTestData[req.mediaType];
+          // actual getFloor module does not work like this :)
+          // special treatment for banner since for other mediaTypes we pass *
+          if (req.mediaType === 'banner') {
+            return floorModuleTestData[req.mediaType][ req.size[0] + 'x' + req.size[1] ] || {};
+          }
+          return floorModuleTestData[req.mediaType] || {};
         };
 
         beforeEach(() => {
           floorModuleTestData = {
             'banner': {
-              'currency': 'USD',
-              'floor': 1.50
+              '300x250': {
+                'currency': 'USD',
+                'floor': 1.50
+              },
+              '300x600': {
+                'currency': 'USD',
+                'floor': 2.0
+              }
             },
             'video': {
               'currency': 'USD',
@@ -1589,7 +1988,7 @@ describe('PubMatic adapter', function () {
         });
 
         it('bidfloor should be undefined if calculation is <= 0', function() {
-          floorModuleTestData.banner.floor = 0; // lowest of them all
+          floorModuleTestData.banner['300x250'].floor = 0; // lowest of them all
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1600,7 +1999,8 @@ describe('PubMatic adapter', function () {
         });
 
         it('ignore floormodule o/p if floor is not number', function() {
-          floorModuleTestData.banner.floor = 'INR';
+          floorModuleTestData.banner['300x250'].floor = 'Not-a-Number';
+          floorModuleTestData.banner['300x600'].floor = 'Not-a-Number';
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1611,7 +2011,8 @@ describe('PubMatic adapter', function () {
         });
 
         it('ignore floormodule o/p if currency is not matched', function() {
-          floorModuleTestData.banner.currency = 'INR';
+          floorModuleTestData.banner['300x250'].currency = 'INR';
+          floorModuleTestData.banner['300x600'].currency = 'INR';
           newRequest[0].params.kadfloor = undefined;
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -1641,7 +2042,7 @@ describe('PubMatic adapter', function () {
           expect(data.bidfloor).to.equal(3);
         });
 
-        it('kadfloor is passed as 1, use min of fllorModule as it is highest', function() {
+        it('kadfloor is passed as 1, use min of floorModule as it is highest', function() {
           newRequest[0].params.kadfloor = '1.0';// yes, we want it as a string
           let request = spec.buildRequests(newRequest, {
             auctionId: 'new-auction-id'
@@ -2105,7 +2506,6 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.imp[0].video).to.exist;
         expect(data.imp[0].tagid).to.equal('Div1');
-        expect(data.imp[0].video.ext['video_skippable']).to.equal(videoBidRequests[0].params.video.skippable ? 1 : 0);
         expect(data.imp[0]['video']['mimes']).to.exist.and.to.be.an('array');
         expect(data.imp[0]['video']['mimes'][0]).to.equal(videoBidRequests[0].params.video['mimes'][0]);
         expect(data.imp[0]['video']['mimes'][1]).to.equal(videoBidRequests[0].params.video['mimes'][1]);
@@ -2175,7 +2575,6 @@ describe('PubMatic adapter', function () {
         // video imp object check
         expect(data.imp[1].video).to.exist;
         expect(data.imp[1].tagid).to.equal('Div1');
-        expect(data.imp[1].video.ext['video_skippable']).to.equal(multipleMediaRequests[1].params.video.skippable ? 1 : 0);
         expect(data.imp[1]['video']['mimes']).to.exist.and.to.be.an('array');
         expect(data.imp[1]['video']['mimes'][0]).to.equal(multipleMediaRequests[1].params.video['mimes'][0]);
         expect(data.imp[1]['video']['mimes'][1]).to.equal(multipleMediaRequests[1].params.video['mimes'][1]);
@@ -2494,6 +2893,93 @@ describe('PubMatic adapter', function () {
         expect(data.video).to.exist;
         expect(data.native).to.not.exist;
       });
+
+      it('should build video impression if video params are present in adunit.mediaTypes instead of bid.params', function() {
+        let videoReq = [{
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5890',
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'mimes': ['video/flv'],
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': 'adc36682-887c-41e9-9848-8b72c08332c0',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '21b59b1353ba82',
+          'bidderRequestId': '1a08245305e6dd',
+          'auctionId': 'bad3a743-7491-4d19-9a96-b0a69dd24a67',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        }]
+        let request = spec.buildRequests(videoReq, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+        expect(data.video).to.exist;
+      });
+
+      it('should build video impression with overwriting video params present in adunit.mediaTypes with bid.params', function() {
+        let videoReq = [{
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5890',
+            'video': {
+              'mimes': ['video/mp4'],
+              'protocols': [1, 2, 5],
+              'linearity': 1
+            }
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'mimes': ['video/flv'],
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': 'adc36682-887c-41e9-9848-8b72c08332c0',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '21b59b1353ba82',
+          'bidderRequestId': '1a08245305e6dd',
+          'auctionId': 'bad3a743-7491-4d19-9a96-b0a69dd24a67',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        }]
+        let request = spec.buildRequests(videoReq, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.video).to.exist;
+        expect(data.video.linearity).to.equal(1);
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -2503,17 +2989,6 @@ describe('PubMatic adapter', function () {
           params: {
             publisherId: '301',
             adSlot: '/15671365/DMDemo@300x250:0',
-            kadfloor: '1.2',
-            pmzoneid: 'aabc, ddef',
-            kadpageurl: 'www.publisher.com',
-            yob: '1986',
-            gender: 'M',
-            lat: '12.3',
-            lon: '23.7',
-            wiid: '1234567890',
-            profId: '100',
-            verId: '200',
-            currency: 'AUD',
             dctr: 'key1=val1|key2=val2,!val3'
           },
           placementCode: '/19968336/header-bid-tag-1',
@@ -2559,11 +3034,11 @@ describe('PubMatic adapter', function () {
         dctr is found in adunit[0]
       */
 
-      expect(data.site.ext).to.exist.and.to.be.an('object'); // dctr parameter
-      expect(data.site.ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
+      expect(data.imp[0].ext).to.exist.and.to.be.an('object'); // dctr parameter
+      expect(data.imp[0].ext.key_val).to.exist.and.to.equal(multipleBidRequests[0].params.dctr);
 
       /* case 2 -
-        dctr not present in adunit[0]
+        dctr not present in adunit[0] but present in adunit[1]
       */
       delete multipleBidRequests[0].params.dctr;
       request = spec.buildRequests(multipleBidRequests, {
@@ -2571,7 +3046,9 @@ describe('PubMatic adapter', function () {
       });
       data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+      expect(data.imp[0].ext).to.exist.and.to.deep.equal({});
+      expect(data.imp[1].ext).to.exist.and.to.be.an('object'); // dctr parameter
+      expect(data.imp[1].ext.key_val).to.exist.and.to.equal(multipleBidRequests[1].params.dctr);
 
       /* case 3 -
         dctr is present in adunit[0], but is not a string value
@@ -2582,7 +3059,7 @@ describe('PubMatic adapter', function () {
       });
       data = JSON.parse(request.data);
 
-      expect(data.site.ext).to.not.exist;
+      expect(data.imp[0].ext).to.exist.and.to.deep.equal({});
     });
 
     it('Request params deals check', function () {
@@ -2699,6 +3176,109 @@ describe('PubMatic adapter', function () {
       });
     });
 
+    describe('Request param acat checking', function() {
+      let multipleBidRequests = [
+		  {
+          bidder: 'pubmatic',
+          params: {
+			  publisherId: '301',
+			  adSlot: '/15671365/DMDemo@300x250:0',
+			  kadfloor: '1.2',
+			  pmzoneid: 'aabc, ddef',
+			  kadpageurl: 'www.publisher.com',
+			  yob: '1986',
+			  gender: 'M',
+			  lat: '12.3',
+			  lon: '23.7',
+			  wiid: '1234567890',
+			  profId: '100',
+			  verId: '200',
+			  currency: 'AUD',
+			  dctr: 'key1=val1|key2=val2,!val3'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+		  },
+		  {
+          bidder: 'pubmatic',
+          params: {
+			  publisherId: '301',
+			  adSlot: '/15671365/DMDemo@300x250:0',
+			  kadfloor: '1.2',
+			  pmzoneid: 'aabc, ddef',
+			  kadpageurl: 'www.publisher.com',
+			  yob: '1986',
+			  gender: 'M',
+			  lat: '12.3',
+			  lon: '23.7',
+			  wiid: '1234567890',
+			  profId: '100',
+			  verId: '200',
+			  currency: 'GBP',
+			  dctr: 'key1=val3|key2=val1,!val3|key3=val123'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: '23acc48ad47af5',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+		  }
+      ];
+
+      it('acat: pass only strings', function() {
+		  multipleBidRequests[0].params.acat = [1, 2, 3, 'IAB1', 'IAB2'];
+		  let request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id'
+		  });
+		  let data = JSON.parse(request.data);
+		  expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
+      });
+
+	  it('acat: trim the strings', function() {
+        multipleBidRequests[0].params.acat = ['   IAB1    ', '   IAB2   '];
+        let request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2']);
+      });
+
+	  it('acat: pass only unique strings', function() {
+        multipleBidRequests[0].params.acat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2'];
+        multipleBidRequests[1].params.acat = ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB3'];
+        let request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
+      });
+      it('ortb2.ext.prebid.bidderparams.pubmatic.acat should be passed in request payload', function() {
+        const ortb2 = {
+          ext: {
+            prebid: {
+              bidderparams: {
+                pubmatic: {
+                  acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
+                }
+              }
+            }
+          }
+        };
+        const request = spec.buildRequests(bidRequests, {
+          auctionId: 'new-auction-id',
+          bidderCode: 'pubmatic',
+          ortb2
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.acat).to.deep.equal(['IAB1', 'IAB2']);
+      });
+    });
+
     describe('Request param bcat checking', function() {
       let multipleBidRequests = [
         {
@@ -2800,6 +3380,20 @@ describe('PubMatic adapter', function () {
         });
         let data = JSON.parse(request.data);
         expect(data.bcat).to.deep.equal(undefined);
+      });
+
+	  it('ortb2.bcat should merged with slot level bcat param', function() {
+        multipleBidRequests[0].params.bcat = ['IAB-1', 'IAB-2'];
+        const ortb2 = {
+          bcat: ['IAB-3', 'IAB-4']
+        };
+        const request = spec.buildRequests(multipleBidRequests, {
+          auctionId: 'new-auction-id',
+          bidderCode: 'pubmatic',
+          ortb2
+        });
+        let data = JSON.parse(request.data);
+        expect(data.bcat).to.deep.equal(['IAB-1', 'IAB-2', 'IAB-3', 'IAB-4']);
       });
     });
 
@@ -2966,10 +3560,159 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(bidResponses, request);
         expect(response[0].renderer).to.not.exist;
       });
+
+      it('should assign mediaType by reading bid.ext.mediaType', function() {
+        let newvideoRequests = [{
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5670',
+            'video': {
+              'mimes': ['video/mp4'],
+              'skippable': true,
+              'protocols': [1, 2, 5],
+              'linearity': 1
+            }
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'mimes': ['video/flv'],
+              'skippable': false,
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '2c95df014cfe97',
+          'bidderRequestId': '1fe59391566442',
+          'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        }];
+        let newvideoBidResponses = {
+          'body': {
+            'id': '1621441141473',
+            'cur': 'USD',
+            'customdata': 'openrtb1',
+            'ext': {
+              'buyid': 'myBuyId'
+            },
+            'seatbid': [{
+              'bid': [{
+                'id': '2c95df014cfe97',
+                'impid': '2c95df014cfe97',
+                'price': 4.2,
+                'cid': 'test1',
+                'crid': 'test2',
+                'adm': "<VAST version='3.0'><Ad id='601364'><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Creatives><Creative AdID='601364'><Linear skipoffset='20%'><TrackingEvents><Tracking event='close'><![CDATA[https://mytracking.com/linear/close]]></Tracking><Tracking event='skip'><![CDATA[https://mytracking.com/linear/skip]]></Tracking><MediaFiles><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://localhost/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
+                'w': 0,
+                'h': 0,
+                'dealId': 'ASEA-MS-KLY-TTD-DESKTOP-ID-VID-6S-030420',
+                'ext': {
+                  'bidtype': 1
+                }
+              }],
+              'ext': {
+                'buyid': 'myBuyId'
+              }
+            }]
+          },
+          'headers': {}
+        }
+        let newrequest = spec.buildRequests(newvideoRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let newresponse = spec.interpretResponse(newvideoBidResponses, newrequest);
+        expect(newresponse[0].mediaType).to.equal('video')
+      })
+
+      it('should assign mediaType even if bid.ext.mediaType does not exists', function() {
+        let newvideoRequests = [{
+          'bidder': 'pubmatic',
+          'params': {
+            'adSlot': 'SLOT_NHB1@728x90',
+            'publisherId': '5670',
+            'video': {
+              'mimes': ['video/mp4'],
+              'skippable': true,
+              'protocols': [1, 2, 5],
+              'linearity': 1
+            }
+          },
+          'mediaTypes': {
+            'video': {
+              'playerSize': [
+                [640, 480]
+              ],
+              'protocols': [1, 2, 5],
+              'context': 'instream',
+              'mimes': ['video/flv'],
+              'skippable': false,
+              'skip': 1,
+              'linearity': 2
+            }
+          },
+          'adUnitCode': 'video1',
+          'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+          'sizes': [
+            [640, 480]
+          ],
+          'bidId': '2c95df014cfe97',
+          'bidderRequestId': '1fe59391566442',
+          'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+          'src': 'client',
+          'bidRequestsCount': 1,
+          'bidderRequestsCount': 1,
+          'bidderWinsCount': 0
+        }];
+        let newvideoBidResponses = {
+          'body': {
+            'id': '1621441141473',
+            'cur': 'USD',
+            'customdata': 'openrtb1',
+            'ext': {
+              'buyid': 'myBuyId'
+            },
+            'seatbid': [{
+              'bid': [{
+                'id': '2c95df014cfe97',
+                'impid': '2c95df014cfe97',
+                'price': 4.2,
+                'cid': 'test1',
+                'crid': 'test2',
+                'adm': "<VAST version='3.0'><Ad id='601364'><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Creatives><Creative AdID='601364'><Linear skipoffset='20%'><TrackingEvents><Tracking event='close'><![CDATA[https://mytracking.com/linear/close]]></Tracking><Tracking event='skip'><![CDATA[https://mytracking.com/linear/skip]]></Tracking><MediaFiles><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://localhost/pubmatic.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
+                'w': 0,
+                'h': 0,
+                'dealId': 'ASEA-MS-KLY-TTD-DESKTOP-ID-VID-6S-030420'
+              }],
+              'ext': {
+                'buyid': 'myBuyId'
+              }
+            }]
+          },
+          'headers': {}
+        }
+        let newrequest = spec.buildRequests(newvideoRequests, {
+          auctionId: 'new-auction-id'
+        });
+        let newresponse = spec.interpretResponse(newvideoBidResponses, newrequest);
+        expect(newresponse[0].mediaType).to.equal('video')
+      })
     });
 
     describe('getUserSyncs', function() {
-      const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/showad.js#PIX&kdntuid=1&p=5670';
+      const syncurl_iframe = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=5670';
       const syncurl_image = 'https://image8.pubmatic.com/AdServer/ImgSync?p=5670';
       let sandbox;
       beforeEach(function () {
@@ -3063,6 +3806,344 @@ describe('PubMatic adapter', function () {
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
       });
+    });
+
+    describe('JW player segment data for S2S', function() {
+      let sandbox = sinon.sandbox.create();
+      beforeEach(function () {
+        sandbox = sinon.sandbox.create();
+      });
+      afterEach(function() {
+        sandbox.restore();
+      });
+      it('Should append JW player segment data to dctr values in auction endpoint', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'rtd': {
+                'jwplayer': {
+                  'targeting': {
+                    'segments': ['80011026', '80011035'],
+                    'content': {
+                      'id': 'jw_d9J2zcaA'
+                    }
+                  }
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
+      });
+      it('Should send only JW player segment data in auction endpoint, if dctr is missing', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'rtd': {
+                'jwplayer': {
+                  'targeting': {
+                    'segments': ['80011026', '80011035'],
+                    'content': {
+                      'id': 'jw_d9J2zcaA'
+                    }
+                  }
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+
+        delete bidRequests[0].params.dctr;
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
+      });
+
+      it('Should not send any JW player segment data in auction endpoint, if it is not available', function() {
+        var videoAdUnit = {
+          'bidderCode': 'pubmatic',
+          'bids': [
+            {
+              'bidder': 'pubmatic',
+              'params': {
+                'publisherId': '156276',
+                'adSlot': 'pubmatic_video2',
+                'dctr': 'key1=123|key2=345',
+                'pmzoneid': '1243',
+                'video': {
+                  'mimes': ['video/mp4', 'video/x-flv'],
+                  'skippable': true,
+                  'minduration': 5,
+                  'maxduration': 30,
+                  'startdelay': 5,
+                  'playbackmethod': [1, 3],
+                  'api': [1, 2],
+                  'protocols': [2, 3],
+                  'battr': [13, 14],
+                  'linearity': 1,
+                  'placement': 2,
+                  'minbitrate': 10,
+                  'maxbitrate': 10
+                }
+              },
+              'bid_id': '17a6771be26cc4',
+              'ortb2Imp': {
+                'ext': {
+                  'data': {
+                    'pbadslot': 'abcd',
+                    'jwTargeting': {
+                      'playerID': 'myElement1',
+                      'mediaID': 'd9J2zcaA'
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          'auctionStart': 1630923178417,
+          'timeout': 1000,
+          'src': 's2s'
+        }
+        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
+        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1');
+      });
+    })
+
+    describe('Checking for Video.Placement property', function() {
+      let sandbox, utilsMock;
+      const adUnit = 'Div1';
+      const msg_placement_missing = 'Video.Placement param missing for Div1';
+      let videoData = {
+        battr: [6, 7],
+        skipafter: 15,
+        maxduration: 50,
+        context: 'instream',
+        playerSize: [640, 480],
+        skip: 0,
+        connectiontype: [1, 2, 6],
+        skipmin: 10,
+        minduration: 10,
+        mimes: ['video/mp4', 'video/x-flv'],
+      }
+      beforeEach(() => {
+        utilsMock = sinon.mock(utils);
+        sandbox = sinon.sandbox.create();
+        sandbox.spy(utils, 'logWarn');
+      });
+
+      afterEach(() => {
+        utilsMock.restore();
+        sandbox.restore();
+      })
+
+      it('should log Video.Placement param missing', function() {
+        checkVideoPlacement(videoData, adUnit);
+        sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
+      })
+      it('shoud not log Video.Placement param missing', function() {
+        videoData['placement'] = 1;
+        checkVideoPlacement(videoData, adUnit);
+        sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
+      })
+    });
+  });
+
+  describe('Video request params', function() {
+    let sandbox, utilsMock, newVideoRequest;
+    beforeEach(() => {
+      utilsMock = sinon.mock(utils);
+      sandbox = sinon.sandbox.create();
+      sandbox.spy(utils, 'logWarn');
+      newVideoRequest = utils.deepClone(videoBidRequests)
+    });
+
+    afterEach(() => {
+      utilsMock.restore();
+      sandbox.restore();
+    })
+
+    it('Should log warning if video params from mediaTypes and params obj of bid are not present', function () {
+      delete newVideoRequest[0].mediaTypes.video;
+      delete newVideoRequest[0].params.video;
+
+      let request = spec.buildRequests(newVideoRequest, {
+        auctionId: 'new-auction-id'
+      });
+
+      sinon.assert.calledOnce(utils.logWarn);
+      expect(request).to.equal(undefined);
+    });
+
+    it('Should consider video params from mediaType object of bid', function () {
+      delete newVideoRequest[0].params.video;
+
+      let request = spec.buildRequests(newVideoRequest, {
+        auctionId: 'new-auction-id'
+      });
+      let data = JSON.parse(request.data);
+      expect(data.imp[0].video).to.exist;
+      expect(data.imp[0]['video']['w']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[0]);
+      expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
+      expect(data.imp[0]['video']['battr']).to.equal(undefined);
+    });
+
+    describe('Assign Deal Tier (i.e. prebidDealPriority)', function () {
+      let videoSeatBid, request, newBid;
+      // let data = JSON.parse(request.data);
+      beforeEach(function () {
+        videoSeatBid = videoBidResponse.body.seatbid[0].bid[0];
+        // const adpodValidOutstreamBidRequest = validOutstreamBidRequest.bids[0].mediaTypes.video.context = 'adpod';
+        request = spec.buildRequests(bidRequests, validOutstreamBidRequest);
+        newBid = {
+          requestId: '47acc48ad47af5'
+        };
+        videoSeatBid.ext = videoSeatBid.ext || {};
+        videoSeatBid.ext.video = videoSeatBid.ext.video || {};
+        // videoBidRequests[0].mediaTypes.video = videoBidRequests[0].mediaTypes.video || {};
+      });
+
+      it('should not assign video object if deal priority is missing', function () {
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      it('should not assign video object if context is not a adpod', function () {
+        videoSeatBid.ext.prebiddealpriority = 5;
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      describe('when video deal tier object is present', function () {
+        beforeEach(function () {
+          videoSeatBid.ext.prebiddealpriority = 5;
+          request.bidderRequest.bids[0].mediaTypes.video = {
+            ...request.bidderRequest.bids[0].mediaTypes.video,
+            context: 'adpod',
+            maxduration: 50
+          };
+        });
+
+        it('should set video deal tier object, when maxduration is present in ext', function () {
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(50);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+
+        it('should set video deal tier object, when duration is present in ext', function () {
+          videoSeatBid.ext.video.duration = 20;
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(20);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+      });
+    });
+  });
+
+  describe('Marketplace params', function () {
+    let sandbox, utilsMock, newBidRequests, newBidResponses;
+    beforeEach(() => {
+      utilsMock = sinon.mock(utils);
+      sandbox = sinon.sandbox.create();
+      sandbox.spy(utils, 'logInfo');
+      newBidRequests = utils.deepClone(bidRequests)
+      newBidRequests[0].bidder = 'groupm';
+      newBidResponses = utils.deepClone(bidResponses);
+      newBidResponses.body.seatbid[0].bid[0].ext.marketplace = 'groupm'
+    });
+
+    afterEach(() => {
+      utilsMock.restore();
+      sandbox.restore();
+    })
+
+    it('Should add bidder code as groupm for marketplace groupm response ', function () {
+      let request = spec.buildRequests(newBidRequests, {
+        auctionId: 'new-auction-id'
+      });
+      let response = spec.interpretResponse(newBidResponses, request);
+      expect(response).to.be.an('array').with.length.above(0);
+      expect(response[0].bidderCode).to.equal('groupm');
     });
   });
 });

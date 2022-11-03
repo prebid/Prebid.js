@@ -68,6 +68,7 @@ describe('RTBHouseAdapter', () => {
           'params': {
             'publisherId': 'PREBID_TEST',
             'region': 'prebid-eu',
+            'channel': 'Partner_Site - news',
             'test': 1
           },
           'adUnitCode': 'adunit-code',
@@ -100,6 +101,25 @@ describe('RTBHouseAdapter', () => {
       let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
       expect(JSON.parse(builtTestRequest).test).to.equal(1);
     });
+
+    it('should build channel param into request.site', () => {
+      let builtTestRequest = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(JSON.parse(builtTestRequest).site.channel).to.equal('Partner_Site - news');
+    })
+
+    it('should not build channel param into request.site if no value is passed', () => {
+      let bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].params.channel = undefined;
+      let builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
+      expect(JSON.parse(builtTestRequest).site.channel).to.be.undefined
+    })
+
+    it('should cap the request.site.channel length to 50', () => {
+      let bidRequest = Object.assign([], bidRequests);
+      bidRequest[0].params.channel = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent scelerisque ipsum eu purus lobortis iaculis.';
+      let builtTestRequest = spec.buildRequests(bidRequest, bidderRequest).data;
+      expect(JSON.parse(builtTestRequest).site.channel.length).to.equal(50)
+    })
 
     it('should build valid OpenRTB banner object', () => {
       const request = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data);
