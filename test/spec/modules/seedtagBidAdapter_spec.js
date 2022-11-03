@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { config } from '../../../src/config.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
@@ -327,6 +328,30 @@ describe('Seedtag Adapter', function () {
         expect(videoBid.requestCount).to.equal(1);
       });
     });
+
+    describe('COPPA param', function () {
+      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
+        config.setConfig({ coppa: true })
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.equal(true);
+      })
+
+      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
+        config.setConfig({ coppa: false })
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      })
+
+      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      })
+    })
   });
 
   describe('interpret response method', function () {
@@ -465,11 +490,11 @@ describe('Seedtag Adapter', function () {
       const timeoutUrl = getTimeoutUrl(timeoutData);
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-          params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
-          '&timeout=' +
-          timeout
+        params.publisherId +
+        '&adUnitId=' +
+        params.adUnitId +
+        '&timeout=' +
+        timeout
       );
     });
 
@@ -481,11 +506,11 @@ describe('Seedtag Adapter', function () {
       expect(
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-            params.publisherId +
-            '&adUnitId=' +
-            params.adUnitId +
-            '&timeout=' +
-            timeout
+          params.publisherId +
+          '&adUnitId=' +
+          params.adUnitId +
+          '&timeout=' +
+          timeout
         )
       ).to.equal(true);
     });

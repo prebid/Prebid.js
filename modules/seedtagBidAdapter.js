@@ -1,6 +1,7 @@
 import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
@@ -202,6 +203,11 @@ export const spec = {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
       payload['cd'] = bidderRequest.gdprConsent.consentString;
+    }
+
+    let coppa = config.getConfig('coppa')
+    if (coppa) {
+      payload.coppa = coppa
     }
 
     const payloadString = JSON.stringify(payload)
