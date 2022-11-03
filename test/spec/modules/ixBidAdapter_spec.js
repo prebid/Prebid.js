@@ -402,6 +402,78 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_MULTIFORMAT_VALID_BID = [
+    {
+      bidder: 'ix',
+      params: {
+        tagId: '123',
+        siteId: '456',
+        video: {
+          siteId: '1111'
+        },
+        banner: {
+          siteId: '2222'
+        },
+        native: {
+          siteId: '3333'
+        },
+        size: [300, 250]
+      },
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+          playerSize: [[300, 250]],
+          skippable: false,
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [1]
+        },
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        },
+        native: {
+          icon: {
+            required: false
+          },
+          title: {
+            len: 25,
+            required: true
+          },
+          body: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          sponsoredBy: {
+            required: true
+          }
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
+          data: {
+            pbadslot: 'div-gpt-ad-1460505748562-0'
+          }
+        }
+      },
+      nativeOrtbRequest: {
+        assets: [{id: 0, required: 0, img: {type: 1}}, {id: 1, required: 1, title: {len: 140}}, {id: 2, required: 1, data: {type: 2}}, {id: 3, required: 1, img: {type: 3}}, {id: 4, required: false, video: {mimes: ['video/mp4', 'video/webm'], minduration: 0, maxduration: 120, protocols: [2, 3, 5, 6]}}]
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_NATIVE_VALID_BID = [
     {
       bidder: 'ix',
@@ -1563,6 +1635,13 @@ describe('IndexexchangeAdapter', function () {
       expect(r.ext.ixdiag.tmax).to.be.undefined
     });
 
+    it('should set ixdiag.imps to number of impressions', function () {
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
+      const r = extractPayload(request);
+
+      expect(r.ext.ixdiag.imps).to.equal(1);
+    });
+
     it('should not send information that is not part of openRTB spec v2.5 using ortb2', function () {
       const ortb2 = {
         site: {
@@ -2678,6 +2757,37 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.adunitcode).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].adUnitCode)
       });
     });
+
+    describe('siteId overrides', function () {
+      it('should use siteId override', function () {
+        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
+        const request = spec.buildRequests(validBids, {});
+        const bannerImps = request[0].data.imp[0];
+        const videoImps = request[1].data.imp[0];
+        const nativeImps = request[2].data.imp[0];
+        expect(videoImps.ext.siteID).to.equal('1111');
+        bannerImps.banner.format.map(({ ext }) => {
+          expect(ext.siteID).to.equal('2222');
+        });
+        expect(nativeImps.ext.siteID).to.equal('3333');
+      });
+
+      it('should use default siteId if overrides are not provided', function () {
+        const validBids = DEFAULT_MULTIFORMAT_VALID_BID;
+        delete validBids[0].params.banner;
+        delete validBids[0].params.video;
+        delete validBids[0].params.native;
+        const request = spec.buildRequests(validBids, {});
+        const bannerImps = request[0].data.imp[0];
+        const videoImps = request[1].data.imp[0];
+        const nativeImps = request[2].data.imp[0];
+        expect(videoImps.ext.siteID).to.equal('456');
+        bannerImps.banner.format.map(({ ext }) => {
+          expect(ext.siteID).to.equal('456');
+        });
+        expect(nativeImps.ext.siteID).to.equal('456');
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -3387,6 +3497,99 @@ describe('IndexexchangeAdapter', function () {
       FEATURE_TOGGLES.getFeatureToggles(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
       expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.undefined;
       expect(FEATURE_TOGGLES.featureToggles).to.deep.equal({});
+    });
+
+    it('should set request size limit to 32KB when its feature enabled', () => {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
+        activated: true
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
+      bid.bidderRequestId = Array(10000).join('#');
+
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+      spec.buildRequests([bid], {});
+      const lsData = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
+      expect(lsData.features.pbjs_use_32kb_size_limit.activated).to.be.true;
+    });
+
+    it('6 ad units should generate only 2 requests if 32kb size limit FT is enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
+        activated: true
+      };
+      serverResponse.body.ext.features.pbjs_enable_post = {
+        activated: true
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+      bid1.params.siteId = '121';
+      bid1.adUnitCode = 'div-gpt-1'
+      bid1.transactionId = 'tr1';
+      bid1.bidId = '2f6g5s5e';
+
+      const bid2 = utils.deepClone(bid1);
+      bid2.transactionId = 'tr2';
+
+      const bid3 = utils.deepClone(bid1);
+      bid3.transactionId = 'tr3';
+
+      const bid4 = utils.deepClone(bid1);
+      bid4.transactionId = 'tr4';
+
+      const bid5 = utils.deepClone(bid1);
+      bid5.transactionId = 'tr5';
+
+      const bid6 = utils.deepClone(bid1);
+      bid6.transactionId = 'tr6';
+
+      const requests = spec.buildRequests([bid1, bid2, bid3, bid4, bid5, bid6], DEFAULT_OPTION);
+
+      expect(requests).to.be.an('array');
+      // 32KB size limit causes only 2 requests to get generated.
+      expect(requests).to.have.lengthOf(2);
+      for (let request of requests) {
+        expect(request.method).to.equal('POST');
+      }
+    });
+
+    it('4 ad units should generate only 1 requests if 32kb size limit FT is enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
+        activated: true
+      };
+      serverResponse.body.ext.features.pbjs_enable_post = {
+        activated: true
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+      bid1.params.siteId = '121';
+      bid1.adUnitCode = 'div-gpt-1'
+      bid1.transactionId = 'tr1';
+      bid1.bidId = '2f6g5s5e';
+
+      const bid2 = utils.deepClone(bid1);
+      bid2.transactionId = 'tr2';
+
+      const bid3 = utils.deepClone(bid1);
+      bid3.transactionId = 'tr3';
+
+      const bid4 = utils.deepClone(bid1);
+      bid4.transactionId = 'tr4';
+
+      const requests = spec.buildRequests([bid1, bid2, bid3, bid4], DEFAULT_OPTION);
+
+      expect(requests).to.be.an('array');
+      // 32KB size limit causes only 1 requests to get generated.
+      expect(requests).to.have.lengthOf(1);
+      for (let request of requests) {
+        expect(request.method).to.equal('POST');
+      }
     });
   });
 
