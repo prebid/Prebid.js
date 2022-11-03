@@ -64,6 +64,7 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
