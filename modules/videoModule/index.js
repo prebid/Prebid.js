@@ -18,7 +18,7 @@ import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
-import { AdQueueCoordinator } from './adQueue'
+import { AdQueueCoordinator } from './adQueue.js';
 
 const videoKey = 'video';
 
