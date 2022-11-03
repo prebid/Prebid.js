@@ -1615,6 +1615,19 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('returns a promise that resolves', () => {
+      function delayHook(next, ...args) {
+        setTimeout(() => next(...args))
+      }
+
+      beforeEach(() => {
+        // make sure the return value works correctly when hooks give up priority
+        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+      });
+
       Object.entries({
         'immediately, without bidsBackHandler': (req) => $$PREBID_GLOBAL$$.requestBids(req),
         'after bidsBackHandler': (() => {
@@ -1665,7 +1678,10 @@ describe('Unit: Prebid Module', function () {
               sinon.assert.match(bids[bid.adUnitCode].bids[0], bid)
               done();
             });
-            completeAuction([bid]);
+            // `completeAuction` won't work until we're out of `delayHook`
+            // and the mocked auction has been set up;
+            // setTimeout here takes us after the setTimeout in `delayHook`
+            setTimeout(() => completeAuction([bid]));
           })
         })
       })
