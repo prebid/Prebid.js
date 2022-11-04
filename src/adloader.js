@@ -7,7 +7,7 @@ const _approvedLoadExternalJSList = [
   'debugging',
   'adloox',
   'admatic',
-  'adpixel',
+  'pixad',
   'criteo',
   'outstream',
   'adagio',
