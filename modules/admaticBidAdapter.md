@@ -18,7 +18,8 @@ Use `admatic` as bidder.
       bids: [{
           bidder: 'admatic',
           params: { 
-              networkId: 12345
+              networkId: 12345,
+              host: 'layer.serve.admatic.com.tr'
           }
       }]
     },{
@@ -27,14 +28,14 @@ Use `admatic` as bidder.
       bids: [{
           bidder: 'admatic',
           params: { 
-              networkId: 12345
+              networkId: 12345,
+              host: 'layer.serve.admatic.com.tr'
           }
       }]
     }];
 ```
 
 ## UserSync example
-
 ```
 pbjs.setConfig({
   userSync: {

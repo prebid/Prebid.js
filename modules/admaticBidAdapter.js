@@ -2,13 +2,13 @@ import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../s
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-
-const ENDPOINT_URL = 'https://layer.serve.admatic.com.tr/pb';
 const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
-const BIDDER_CODE = 'admatic';
 
 export const spec = {
   code: 'admatic',
+  aliases: [
+    {code: 'adpixel'}
+  ],
   supportedMediaTypes: ['video', 'banner'],
   /**
    * Determines whether or not the given bid request is valid.
@@ -20,11 +20,12 @@ export const spec = {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
       let isValidNetworkId = _validateId(getValue(bid.params, 'networkId'));
-      isValid = isValidNetworkId;// && isValidTypeId;
+      let isValidHost = getValue(bid.params, 'host');
+      isValid = isValidNetworkId && isValidHost;
     }
 
     if (!isValid) {
-      logError('AdMatic networkId parameters are required. Bid aborted.');
+      logError(`${bid.bidder} networkId and host parameters are required. Bid aborted.`);
     }
     return isValid;
   },
@@ -36,11 +37,13 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const bidderName = validBidRequests[0].bidder;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
+    const host = getValue(validBidRequests[0].params, 'host');
     const currency = getValue(validBidRequests[0].params, 'currency') || 'TRY';
 
     setTimeout(() => {
-      loadExternalScript(SYNC_URL, BIDDER_CODE);
+      loadExternalScript(SYNC_URL, bidderName);
     }, bidderRequest.timeout);
 
     const payload = {
@@ -59,14 +62,14 @@ export const spec = {
       imp: bids,
       ext: {
         'cur': currency,
-        'type': 'admatic'
+        'bidder': bidderName
       }
     };
 
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: `https://${host}/pb?bidder=${bidderName}`,
       data: payloadString,
       options: {
         contentType: 'application/json'
@@ -97,7 +100,7 @@ export const spec = {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
           ttl: 360,
-          bidder: 'admatic',
+          bidder: JSON.parse(request.data).ext.bidder,
           timeToRespond: 1,
           requestTimestamp: 1
         };
@@ -108,6 +111,8 @@ export const spec = {
     return bidResponses;
   }
 };
+
+registerBidder(spec);
 
 function enrichSlotWithFloors(slot, bidRequest) {
   try {
