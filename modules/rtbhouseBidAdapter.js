@@ -9,6 +9,7 @@ import { config } from '../src/config.js';
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
+const FLEDGE_ENDPOINT_URL = 'creativecdn.com/bidder/prebidfledge/bids';
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
@@ -94,21 +95,21 @@ export const spec = {
       mergeDeep(request, { device: ortb2Params.device });
     }
 
+    let computed_endpoint_url = ENDPOINT_URL;
+
     const fledgeConfig = config.getConfig('fledgeConfig');
     if(bidderRequest.fledgeEnabled && fledgeConfig) {
       mergeDeep(request, { ext: { fledge_config: fledgeConfig }});
+      computed_endpoint_url = FLEDGE_ENDPOINT_URL;
     }
-
 
     return {
       method: 'POST',
-      url: config.getConfig('customBidderEndpoint') || 'https://' + validBidRequests[0].params.region + '.' + ENDPOINT_URL,
+      url: 'https://' + validBidRequests[0].params.region + '.' + computed_endpoint_url,
       data: JSON.stringify(request)
     };
   },
   interpretOrtbResponse: function (serverResponse, originalRequest) {
-    logInfo('Interpreting response', serverResponse);
-
     const responseBody = serverResponse.body;
     if (!isArray(responseBody)) {
       return [];
@@ -160,7 +161,6 @@ export const spec = {
           sellerTimeout
         );
       });
-      logInfo('fledgeAuctionConfigs from response:', fledgeAuctionConfigs);
     } else {
       bids = this.interpretOrtbResponse(serverResponse, originalRequest);
     }
@@ -172,7 +172,7 @@ export const spec = {
           auctionSignals: {}
         }, cfg);
       });
-      logInfo('Returning from interpretResponse:', { bids, fledgeAuctionConfigs })
+      logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
         fledgeAuctionConfigs,
