@@ -1,0 +1,103 @@
+<html>
+
+<head>
+    <link href="https://vjs.zencdn.net/7.20.2/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css"
+          integrity="sha512-0gIqgiX1dWTChdWUl8XGIBDFvLo7aTvmd6FAhJjzWx5bzYsCJTiPJLKqLF3q31IN4Kfrc0NbTO+EthoT6O0olQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.css"
+          integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://vjs.zencdn.net/7.20.2/video.min.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
+            integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/1.11.0/videojs.ima.js"
+            integrity="sha512-9ocW9fl8CKJhZp4cmDpLDGPuTQ93gvw1iIS6daMYc5Y0Xh1all8iwdoI+iNmZpiydpdDGyKMTriXDX0wfs2OEg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <title>VideoJS with Media Metadata</title>
+
+    <!-- This Demo loads media with metadata which is used to enrich the auction by populating the ortb site.content -->
+
+    <script>
+      // Setup ad units
+      var adUnits = [{
+        code: 'div-gpt-ad-51545-0',
+        mediaTypes: {
+          video: {}
+        },
+        video: {
+          divId: 'player', // required to indicate which player is being used to render this ad unit.
+        },
+
+        bids: [{
+          bidder: 'ix',
+          params: {
+            siteId: '300',
+          }
+        }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 2, // videojs vendorCode
+              playerConfig: {
+                params: {
+                  adPluginConfig: {
+                    numRedirects: 10
+                  },
+                  vendorConfig: {
+                    controls: true,
+                    autoplay: false,
+                    preload: "auto",
+                  }
+                }
+              }
+            },]
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+
+        pbjs.onEvent('videoSetupComplete', e => {
+          // Load media with its Metadata when the video player is done instantiating.
+          videojs('player').loadMedia({
+            id: 'XYXYXYXY',
+            src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+            title: 'Subaru Outback On Street And Dirt',
+            description: 'Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.',
+            type: 'video/mp4'
+          });
+        });
+
+        pbjs.onEvent('videoSetupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
+        pbjs.onEvent('videoContentLoaded', (e) => {
+          console.log('videos pb contentLoaded: ', e);
+        });
+
+        pbjs.requestBids(adUnits);
+      });
+    </script>
+
+</head>
+
+<body>
+<h2>VideoJS with Media Metadata</h2>
+
+<h5>Div-1: Player placeholder div</h5>
+<video-js id='player' class="vjs-big-play-centered"></video-js>
+</body>
+
+</html>
