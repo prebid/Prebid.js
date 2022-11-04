@@ -11,6 +11,7 @@ const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_rendere
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 104,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -129,7 +130,7 @@ export const spec = {
     }
 
     if (validBidRequests[0].schain) {
-      payload.schain = JSON.stringify(validBidRequests[0].schain)
+      payload.schain = JSON.stringify(validBidRequests[0].schain);
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
       const userIds = deepClone(validBidRequests[0].userId);
@@ -217,7 +218,7 @@ export const spec = {
         ] = bid.sbi_size.split('x');
         let aDomains = [];
         if (bid.sbi_adomain) {
-          aDomains = [bid.sbi_adomain]
+          aDomains = [bid.sbi_adomain];
         }
         const bids = {
           requestId: bidId,
@@ -255,7 +256,7 @@ export const spec = {
           ));
           let videoSize = deepAccess(bidRequest, 'params.sizes');
           if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
-            videoSize = videoSize[0] // Only take the first size for outstream
+            videoSize = videoSize[0]; // Only take the first size for outstream
           }
           if (videoSize) {
             bids.width = videoSize[0];

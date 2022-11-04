@@ -345,6 +345,209 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+        },
+        // outstream video only
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'adunit-code-outstream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // banner and incomplete outstream (missing size)
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            },
+            banner: {
+              sizes: [
+                [970, 250],
+                [1, 1]
+              ]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // outstream video; valid placement
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              placement: 3
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // outstream video; valid placement
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              placement: 4
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // outstream video; valid placement
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              placement: 5
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // outstream video; undefined placement
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480]
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
+        },
+        // outstream video; invalid placement
+        {
+          bidder: 'triplelift',
+          params: {
+            inventoryCode: 'outstream_test',
+            floor: 1.0,
+            video: {
+              mimes: ['video/mp4'],
+              maxduration: 30,
+              minduration: 6,
+              w: 640,
+              h: 480
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              placement: 6
+            }
+          },
+          adUnitCode: 'adunit-code-instream',
+          sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
+          userId: {},
+          schain,
         }
       ];
 
@@ -415,13 +618,16 @@ describe('triplelift adapter', function () {
       expect(payload.imp[0].tagid).to.equal('12345');
       expect(payload.imp[0].floor).to.equal(1.0);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      // instream
       expect(payload.imp[1].tagid).to.equal('insteam_test');
       expect(payload.imp[1].floor).to.equal(1.0);
       expect(payload.imp[1].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[1].video.placement).to.equal(1);
       // banner and outstream video
-      expect(payload.imp[2]).to.not.have.property('video');
+      expect(payload.imp[2]).to.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -434,10 +640,51 @@ describe('triplelift adapter', function () {
       expect(payload.imp[5]).to.not.have.property('banner');
       expect(payload.imp[5]).to.have.property('video');
       expect(payload.imp[5].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[5].video.placement).to.equal(1);
       // banner and outream video and native
-      expect(payload.imp[6]).to.not.have.property('video');
+      expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      // outstream video only
+      expect(payload.imp[7]).to.have.property('video');
+      expect(payload.imp[7]).to.not.have.property('banner');
+      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3});
+      // banner and incomplete outstream (missing size); video request is permitted so banner can still monetize
+      expect(payload.imp[8]).to.have.property('video');
+      expect(payload.imp[8]).to.have.property('banner');
+      expect(payload.imp[8].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
+      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 3});
+    });
+
+    it('should check for valid outstream placement values', function () {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      // outstream video; valid placement
+      expect(payload.imp[9]).to.not.have.property('banner');
+      expect(payload.imp[9]).to.have.property('video');
+      expect(payload.imp[9].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[9].video.placement).to.equal(3);
+      // outstream video; valid placement
+      expect(payload.imp[10]).to.not.have.property('banner');
+      expect(payload.imp[10]).to.have.property('video');
+      expect(payload.imp[10].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[10].video.placement).to.equal(4);
+      // outstream video; valid placement
+      expect(payload.imp[11]).to.not.have.property('banner');
+      expect(payload.imp[11]).to.have.property('video');
+      expect(payload.imp[11].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[11].video.placement).to.equal(5);
+      // outstream video; undefined placement
+      expect(payload.imp[12]).to.not.have.property('banner');
+      expect(payload.imp[12]).to.have.property('video');
+      expect(payload.imp[12].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[12].video.placement).to.equal(3);
+      // outstream video; invalid placement
+      expect(payload.imp[13]).to.not.have.property('banner');
+      expect(payload.imp[13]).to.have.property('video');
+      expect(payload.imp[13].video).to.exist.and.to.be.a('object');
+      expect(payload.imp[13].video.placement).to.equal(3);
     });
 
     it('should add tdid to the payload if included', function () {
@@ -465,6 +712,24 @@ describe('triplelift adapter', function () {
       const payload = request.data;
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'criteo.com', uids: [{id, ext: {rtiPartner: 'criteoId'}}]}]}});
+    });
+
+    it('should add adqueryId to the payload if included', function () {
+      const id = '%7B%22qid%22%3A%229c985f8cc31d9b3c000d%22%7D';
+      bidRequests[0].userIdAsEids = [{ source: 'adquery.io', uids: [{ id }] }];
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adquery.io', uids: [{id, ext: {rtiPartner: 'adquery.io'}}]}]}});
+    });
+
+    it('should add amxRtbId to the payload if included', function () {
+      const id = 'Ok9JQkBM-UFlAXEZQ-UUNBQlZOQzgrUFhW-UUNBQkRQTUBPQVpVWVxNXlZUUF9AUFhAUF9PXFY/';
+      bidRequests[0].userIdAsEids = [{ source: 'amxrtb.com', uids: [{ id }] }];
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const payload = request.data;
+      expect(payload).to.exist;
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxrtb.com', uids: [{id, ext: {rtiPartner: 'amxrtb.com'}}]}]}});
     });
 
     it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
@@ -714,6 +979,20 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should prioritize topmostLocation for referrer', function () {
+      bidderRequest.refererInfo.topmostLocation = 'https://topmostlocation.com?foo=bar'
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)referrer=https%3A%2F%2Ftopmostlocation.com%3Ffoo%3Dbar/);
+      delete bidderRequest.refererInfo.topmostLocation
+    });
+    it('should fall back to page for referrer if topmostLocation is unavailable', function () {
+      bidderRequest.refererInfo.topmostLocation = null
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)referrer=https%3A%2F%2Fexamplereferer.com/);
+      delete bidderRequest.refererInfo.topmostLocation
+    });
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -913,14 +1192,40 @@ describe('triplelift adapter', function () {
               iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
               tl_source: 'tlx',
               advertiser_name: 'fake advertiser name',
-              adomain: ['basspro.com', 'internetalerts.org']
+              adomain: ['basspro.com', 'internetalerts.org'],
+              media_type: 'banner'
             },
             {
               imp_id: 1,
               crid: '10092_76480_i2j6qm8u',
               cpm: 9.99,
-              ad: '<VAST version=\"2.0\"><Ad id=\"gsen95th\"><Wrapper><Error><![CDATA[https://eb2.3lift.net/ive?aid=156025986241697082890&bmid=10092&bsid=76480&crid=10092_76480_i2j6qm8u&e=[ERRORCODE]]]></Error><Impression><![CDATA[https://eb2.3lift.net/r?rr=creative&bc=0.011&uid=8217096503606905723&pr=%24%7BAUCTION_PRICE%7D&brid=554350&bmid=10092&biid=10066&aid=156025986241697082890&bcud=11&sid=76480&ts=1593552049&fid=11]]></Impression><Impression><![CDATA[https://tlx.3lift.net/header/notify?px=1&pr=${AUCTION_PRICE}&ts=1593552049&aid=156025986241697082890&ec=10092_76480_i2j6qm8u&n=GgDyAqABCAASFTE1NjAyNTk4NjI0MTY5NzA4Mjg5MBgAIAEo7E4wwNUEQAFIAFAAYAtogIAEcO7qIZABAJgBAKgBALABC7gBAMABCsgBC%2BABCvABAPgBlo0GgAL%2FlwWIAgqRAgAAAAAAAPA%2FmQIzMzMzMzPDP6ECAAAAAAAAAACoAgCwAgDIAgTYAgDxAmZmZmZmZuY%2F%2BALSTpADAJgDAKADAKgDA%2FgCDIgDAJIDBDEyMzQ%3D]]></Impression><AdSystem version=\"1.0\">The Trade Desk</AdSystem><VASTAdTagURI><![CDATA[https://insight.adsrvr.org/enduser/vast/?iid=590299b9-1817-4859-a2af-ef007bb4c78e&crid=gsen95th&wp=0.011&aid=1&wpc=USD&sfe=10fba14e&puid=&tdid=&pid=13hzg59&ag=l2w0772&adv=ct0nqrx&sig=1BGM_YxB0HAcl-s55S_NKIu-oLW94YpTn_DjMRmdWHzs.&bp=0.3&cf=1448159&fq=0&td_s=388389451&rcats=&mcat=&mste=&mfld=2&mssi=None&mfsi=ve35dsnkwp&uhow=75&agsa=&rgco=South%20Korea&rgre=Gyeonggi-do&rgme=&rgci=Ansan-si&rgz=15345&svbttd=1&dt=Mobile&osf=iOS&os=iOS134&br=WebView&rlangs=01&mlang=&svpid=7453-EB&did=&rcxt=InApp&lat=37.324400&lon=126.823700&tmpc=9.66&daid=d7804da7-147b-421d-bb44-60ad3ac32681&vp=0&osi=&osv=&svscid=388389451&bffi=41&mk=Apple&mdl=iPhone&vpb=PreRoll&dc=14&vcc=EDwYPDICCAI6BAgBCAJAAUgBUASIAQKgAZ4DqAGwBsgBAdABA-gBAoACA4oCCAgCCAMIBQgGmgIICAMIBQgGCAegAgKoAgGwAgC4AgDAAgE.&sv=triplelift&pidi=3584&advi=270782&cmpi=1319400&agi=6167705&cridi=13268739&svi=70&cmp=a9nj9ex&tsig=tlN4j1OujX9nrFakJmfpTuNNfg-D0qArlSjjNAb8tLg.&c=MAQ4AEgAUAc.&dur=&crrelr=&adpt=tl_ltriplelift&ipl=39250&fpa=826&pcm=3&said=40286845772363793660&ict=Unknown&auct=1&im=1]]></VASTAdTagURI><Creatives><Creative><Linear><VideoClicks><ClickTracking><![CDATA[https://eb2.3lift.net/ec?aid=156025986241697082890]]></ClickTracking></VideoClicks><TrackingEvents><Tracking event=\"mute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=5]]></Tracking><Tracking event=\"unmute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=6]]></Tracking><Tracking event=\"expand\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=7]]></Tracking><Tracking event=\"collapse\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=8]]></Tracking><Tracking event=\"pause\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=14]]></Tracking><Tracking event=\"resume\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=15]]></Tracking><Tracking event=\"fullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=16]]></Tracking><Tracking event=\"exitFullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=17]]></Tracking><Tracking event=\"skip\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=18]]></Tracking><Tracking event=\"start\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=7]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=1]]></Tracking><Tracking event=\"midpoint\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=2]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=3]]></Tracking><Tracking event=\"complete\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:02\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=1]]></Tracking><Tracking event=\"progress\" offset=\"00:00:03\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=2]]></Tracking><Tracking event=\"progress\" offset=\"00:00:05\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=3]]></Tracking><Tracking event=\"progress\" offset=\"00:00:10\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:15\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=5]]></Tracking><Tracking event=\"progress\" offset=\"00:00:30\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=6]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
-              tlx_source: 'hdx'
+              ad: '<VAST version="2.0"><Ad id="gsen95th"><Wrapper><Error><![CDATA[https://eb2.3lift.net/ive?aid=156025986241697082890&bmid=10092&bsid=76480&crid=10092_76480_i2j6qm8u&e=[ERRORCODE]]]></Error><Impression><![CDATA[https://eb2.3lift.net/r?rr=creative&bc=0.011&uid=8217096503606905723&pr=%24%7BAUCTION_PRICE%7D&brid=554350&bmid=10092&biid=10066&aid=156025986241697082890&bcud=11&sid=76480&ts=1593552049&fid=11]]></Impression><Impression><![CDATA[https://tlx.3lift.net/header/notify?px=1&pr=${AUCTION_PRICE}&ts=1593552049&aid=156025986241697082890&ec=10092_76480_i2j6qm8u&n=GgDyAqABCAASFTE1NjAyNTk4NjI0MTY5NzA4Mjg5MBgAIAEo7E4wwNUEQAFIAFAAYAtogIAEcO7qIZABAJgBAKgBALABC7gBAMABCsgBC%2BABCvABAPgBlo0GgAL%2FlwWIAgqRAgAAAAAAAPA%2FmQIzMzMzMzPDP6ECAAAAAAAAAACoAgCwAgDIAgTYAgDxAmZmZmZmZuY%2F%2BALSTpADAJgDAKADAKgDA%2FgCDIgDAJIDBDEyMzQ%3D]]></Impression><AdSystem version="1.0">The Trade Desk</AdSystem><VASTAdTagURI><![CDATA[https://insight.adsrvr.org/enduser/vast/?iid=590299b9-1817-4859-a2af-ef007bb4c78e&crid=gsen95th&wp=0.011&aid=1&wpc=USD&sfe=10fba14e&puid=&tdid=&pid=13hzg59&ag=l2w0772&adv=ct0nqrx&sig=1BGM_YxB0HAcl-s55S_NKIu-oLW94YpTn_DjMRmdWHzs.&bp=0.3&cf=1448159&fq=0&td_s=388389451&rcats=&mcat=&mste=&mfld=2&mssi=None&mfsi=ve35dsnkwp&uhow=75&agsa=&rgco=South%20Korea&rgre=Gyeonggi-do&rgme=&rgci=Ansan-si&rgz=15345&svbttd=1&dt=Mobile&osf=iOS&os=iOS134&br=WebView&rlangs=01&mlang=&svpid=7453-EB&did=&rcxt=InApp&lat=37.324400&lon=126.823700&tmpc=9.66&daid=d7804da7-147b-421d-bb44-60ad3ac32681&vp=0&osi=&osv=&svscid=388389451&bffi=41&mk=Apple&mdl=iPhone&vpb=PreRoll&dc=14&vcc=EDwYPDICCAI6BAgBCAJAAUgBUASIAQKgAZ4DqAGwBsgBAdABA-gBAoACA4oCCAgCCAMIBQgGmgIICAMIBQgGCAegAgKoAgGwAgC4AgDAAgE.&sv=triplelift&pidi=3584&advi=270782&cmpi=1319400&agi=6167705&cridi=13268739&svi=70&cmp=a9nj9ex&tsig=tlN4j1OujX9nrFakJmfpTuNNfg-D0qArlSjjNAb8tLg.&c=MAQ4AEgAUAc.&dur=&crrelr=&adpt=tl_ltriplelift&ipl=39250&fpa=826&pcm=3&said=40286845772363793660&ict=Unknown&auct=1&im=1]]></VASTAdTagURI><Creatives><Creative><Linear><VideoClicks><ClickTracking><![CDATA[https://eb2.3lift.net/ec?aid=156025986241697082890]]></ClickTracking></VideoClicks><TrackingEvents><Tracking event="mute"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=5]]></Tracking><Tracking event="unmute"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=6]]></Tracking><Tracking event="expand"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=7]]></Tracking><Tracking event="collapse"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=8]]></Tracking><Tracking event="pause"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=14]]></Tracking><Tracking event="resume"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=15]]></Tracking><Tracking event="fullscreen"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=16]]></Tracking><Tracking event="exitFullscreen"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=17]]></Tracking><Tracking event="skip"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=18]]></Tracking><Tracking event="start"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=7]]></Tracking><Tracking event="firstQuartile"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=1]]></Tracking><Tracking event="midpoint"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=2]]></Tracking><Tracking event="thirdQuartile"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=3]]></Tracking><Tracking event="complete"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=4]]></Tracking><Tracking event="progress" offset="00:00:02"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=1]]></Tracking><Tracking event="progress" offset="00:00:03"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=2]]></Tracking><Tracking event="progress" offset="00:00:05"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=3]]></Tracking><Tracking event="progress" offset="00:00:10"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=4]]></Tracking><Tracking event="progress" offset="00:00:15"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=5]]></Tracking><Tracking event="progress" offset="00:00:30"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=6]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
+              tl_source: 'hdx',
+              media_type: 'video'
+            },
+            // video bid on banner+outstream request
+            {
+              imp_id: 2,
+              crid: '5989_33264_352817187',
+              cpm: 20,
+              ad: '<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd">\n  <Ad id="21641499">\n  \t<Wrapper><Error><![CDATA[https://eb2.3lift.com/sce?aid=148508128401385324170&inv_code=testing_mobile_outstream&e=[ERRORCODE]&block=video]]>',
+              tl_source: 'hdx',
+              advertiser_name: 'zennioptical.com',
+              adomain: ['zennioptical.com'],
+              media_type: 'video'
+            },
+            // banner bid on banner+outstream request
+            {
+              imp_id: 3,
+              crid: '5989_33264_352817187',
+              cpm: 20,
+              width: 970,
+              height: 250,
+              ad: 'ad-markup',
+              tl_source: 'hdx',
+              advertiser_name: 'zennioptical.com',
+              adomain: ['zennioptical.com'],
+              media_type: 'banner'
             }
           ]
         }
@@ -946,13 +1251,13 @@ describe('triplelift adapter', function () {
                 ]
               }
             },
-            bidId: '30b31c1838de1e',
+            bidId: '30b31c1838de1e'
           },
           {
             imp_id: 1,
             crid: '10092_76480_i2j6qm8u',
             cpm: 9.99,
-            ad: '<VAST version=\"2.0\"><Ad id=\"gsen95th\"><Wrapper><Error><![CDATA[https://eb2.3lift.net/ive?aid=156025986241697082890&bmid=10092&bsid=76480&crid=10092_76480_i2j6qm8u&e=[ERRORCODE]]]></Error><Impression><![CDATA[https://eb2.3lift.net/r?rr=creative&bc=0.011&uid=8217096503606905723&pr=%24%7BAUCTION_PRICE%7D&brid=554350&bmid=10092&biid=10066&aid=156025986241697082890&bcud=11&sid=76480&ts=1593552049&fid=11]]></Impression><Impression><![CDATA[https://tlx.3lift.net/header/notify?px=1&pr=${AUCTION_PRICE}&ts=1593552049&aid=156025986241697082890&ec=10092_76480_i2j6qm8u&n=GgDyAqABCAASFTE1NjAyNTk4NjI0MTY5NzA4Mjg5MBgAIAEo7E4wwNUEQAFIAFAAYAtogIAEcO7qIZABAJgBAKgBALABC7gBAMABCsgBC%2BABCvABAPgBlo0GgAL%2FlwWIAgqRAgAAAAAAAPA%2FmQIzMzMzMzPDP6ECAAAAAAAAAACoAgCwAgDIAgTYAgDxAmZmZmZmZuY%2F%2BALSTpADAJgDAKADAKgDA%2FgCDIgDAJIDBDEyMzQ%3D]]></Impression><AdSystem version=\"1.0\">The Trade Desk</AdSystem><VASTAdTagURI><![CDATA[https://insight.adsrvr.org/enduser/vast/?iid=590299b9-1817-4859-a2af-ef007bb4c78e&crid=gsen95th&wp=0.011&aid=1&wpc=USD&sfe=10fba14e&puid=&tdid=&pid=13hzg59&ag=l2w0772&adv=ct0nqrx&sig=1BGM_YxB0HAcl-s55S_NKIu-oLW94YpTn_DjMRmdWHzs.&bp=0.3&cf=1448159&fq=0&td_s=388389451&rcats=&mcat=&mste=&mfld=2&mssi=None&mfsi=ve35dsnkwp&uhow=75&agsa=&rgco=South%20Korea&rgre=Gyeonggi-do&rgme=&rgci=Ansan-si&rgz=15345&svbttd=1&dt=Mobile&osf=iOS&os=iOS134&br=WebView&rlangs=01&mlang=&svpid=7453-EB&did=&rcxt=InApp&lat=37.324400&lon=126.823700&tmpc=9.66&daid=d7804da7-147b-421d-bb44-60ad3ac32681&vp=0&osi=&osv=&svscid=388389451&bffi=41&mk=Apple&mdl=iPhone&vpb=PreRoll&dc=14&vcc=EDwYPDICCAI6BAgBCAJAAUgBUASIAQKgAZ4DqAGwBsgBAdABA-gBAoACA4oCCAgCCAMIBQgGmgIICAMIBQgGCAegAgKoAgGwAgC4AgDAAgE.&sv=triplelift&pidi=3584&advi=270782&cmpi=1319400&agi=6167705&cridi=13268739&svi=70&cmp=a9nj9ex&tsig=tlN4j1OujX9nrFakJmfpTuNNfg-D0qArlSjjNAb8tLg.&c=MAQ4AEgAUAc.&dur=&crrelr=&adpt=tl_ltriplelift&ipl=39250&fpa=826&pcm=3&said=40286845772363793660&ict=Unknown&auct=1&im=1]]></VASTAdTagURI><Creatives><Creative><Linear><VideoClicks><ClickTracking><![CDATA[https://eb2.3lift.net/ec?aid=156025986241697082890]]></ClickTracking></VideoClicks><TrackingEvents><Tracking event=\"mute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=5]]></Tracking><Tracking event=\"unmute\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=6]]></Tracking><Tracking event=\"expand\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=7]]></Tracking><Tracking event=\"collapse\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=8]]></Tracking><Tracking event=\"pause\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=14]]></Tracking><Tracking event=\"resume\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=15]]></Tracking><Tracking event=\"fullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=16]]></Tracking><Tracking event=\"exitFullscreen\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=17]]></Tracking><Tracking event=\"skip\"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=18]]></Tracking><Tracking event=\"start\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=7]]></Tracking><Tracking event=\"firstQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=1]]></Tracking><Tracking event=\"midpoint\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=2]]></Tracking><Tracking event=\"thirdQuartile\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=3]]></Tracking><Tracking event=\"complete\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:02\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=1]]></Tracking><Tracking event=\"progress\" offset=\"00:00:03\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=2]]></Tracking><Tracking event=\"progress\" offset=\"00:00:05\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=3]]></Tracking><Tracking event=\"progress\" offset=\"00:00:10\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=4]]></Tracking><Tracking event=\"progress\" offset=\"00:00:15\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=5]]></Tracking><Tracking event=\"progress\" offset=\"00:00:30\"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=6]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
+            ad: '<VAST version="2.0"><Ad id="gsen95th"><Wrapper><Error><![CDATA[https://eb2.3lift.net/ive?aid=156025986241697082890&bmid=10092&bsid=76480&crid=10092_76480_i2j6qm8u&e=[ERRORCODE]]]></Error><Impression><![CDATA[https://eb2.3lift.net/r?rr=creative&bc=0.011&uid=8217096503606905723&pr=%24%7BAUCTION_PRICE%7D&brid=554350&bmid=10092&biid=10066&aid=156025986241697082890&bcud=11&sid=76480&ts=1593552049&fid=11]]></Impression><Impression><![CDATA[https://tlx.3lift.net/header/notify?px=1&pr=${AUCTION_PRICE}&ts=1593552049&aid=156025986241697082890&ec=10092_76480_i2j6qm8u&n=GgDyAqABCAASFTE1NjAyNTk4NjI0MTY5NzA4Mjg5MBgAIAEo7E4wwNUEQAFIAFAAYAtogIAEcO7qIZABAJgBAKgBALABC7gBAMABCsgBC%2BABCvABAPgBlo0GgAL%2FlwWIAgqRAgAAAAAAAPA%2FmQIzMzMzMzPDP6ECAAAAAAAAAACoAgCwAgDIAgTYAgDxAmZmZmZmZuY%2F%2BALSTpADAJgDAKADAKgDA%2FgCDIgDAJIDBDEyMzQ%3D]]></Impression><AdSystem version="1.0">The Trade Desk</AdSystem><VASTAdTagURI><![CDATA[https://insight.adsrvr.org/enduser/vast/?iid=590299b9-1817-4859-a2af-ef007bb4c78e&crid=gsen95th&wp=0.011&aid=1&wpc=USD&sfe=10fba14e&puid=&tdid=&pid=13hzg59&ag=l2w0772&adv=ct0nqrx&sig=1BGM_YxB0HAcl-s55S_NKIu-oLW94YpTn_DjMRmdWHzs.&bp=0.3&cf=1448159&fq=0&td_s=388389451&rcats=&mcat=&mste=&mfld=2&mssi=None&mfsi=ve35dsnkwp&uhow=75&agsa=&rgco=South%20Korea&rgre=Gyeonggi-do&rgme=&rgci=Ansan-si&rgz=15345&svbttd=1&dt=Mobile&osf=iOS&os=iOS134&br=WebView&rlangs=01&mlang=&svpid=7453-EB&did=&rcxt=InApp&lat=37.324400&lon=126.823700&tmpc=9.66&daid=d7804da7-147b-421d-bb44-60ad3ac32681&vp=0&osi=&osv=&svscid=388389451&bffi=41&mk=Apple&mdl=iPhone&vpb=PreRoll&dc=14&vcc=EDwYPDICCAI6BAgBCAJAAUgBUASIAQKgAZ4DqAGwBsgBAdABA-gBAoACA4oCCAgCCAMIBQgGmgIICAMIBQgGCAegAgKoAgGwAgC4AgDAAgE.&sv=triplelift&pidi=3584&advi=270782&cmpi=1319400&agi=6167705&cridi=13268739&svi=70&cmp=a9nj9ex&tsig=tlN4j1OujX9nrFakJmfpTuNNfg-D0qArlSjjNAb8tLg.&c=MAQ4AEgAUAc.&dur=&crrelr=&adpt=tl_ltriplelift&ipl=39250&fpa=826&pcm=3&said=40286845772363793660&ict=Unknown&auct=1&im=1]]></VASTAdTagURI><Creatives><Creative><Linear><VideoClicks><ClickTracking><![CDATA[https://eb2.3lift.net/ec?aid=156025986241697082890]]></ClickTracking></VideoClicks><TrackingEvents><Tracking event="mute"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=5]]></Tracking><Tracking event="unmute"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=6]]></Tracking><Tracking event="expand"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=7]]></Tracking><Tracking event="collapse"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=8]]></Tracking><Tracking event="pause"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=14]]></Tracking><Tracking event="resume"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=15]]></Tracking><Tracking event="fullscreen"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=16]]></Tracking><Tracking event="exitFullscreen"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=17]]></Tracking><Tracking event="skip"><![CDATA[https://eb2.3lift.net/eee?aid=156025986241697082890&inv_code=niice_main_instream&ev=1&eid=18]]></Tracking><Tracking event="start"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=7]]></Tracking><Tracking event="firstQuartile"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=1]]></Tracking><Tracking event="midpoint"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=2]]></Tracking><Tracking event="thirdQuartile"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=3]]></Tracking><Tracking event="complete"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&quartile=4]]></Tracking><Tracking event="progress" offset="00:00:02"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=1]]></Tracking><Tracking event="progress" offset="00:00:03"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=2]]></Tracking><Tracking event="progress" offset="00:00:05"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=3]]></Tracking><Tracking event="progress" offset="00:00:10"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=4]]></Tracking><Tracking event="progress" offset="00:00:15"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=5]]></Tracking><Tracking event="progress" offset="00:00:30"><![CDATA[https://eb2.3lift.net/evd?aid=156025986241697082890&inv_code=niice_main_instream&bmid=10092&vlt=2&bypassDuration=true&progress=6]]></Tracking></TrackingEvents></Linear></Creative></Creatives></Wrapper></Ad></VAST>',
             tlx_source: 'hdx',
             mediaTypes: {
               video: {
@@ -960,7 +1265,89 @@ describe('triplelift adapter', function () {
                 playerSize: [640, 480]
               }
             },
-            bidId: '30b31c1838de1e',
+            bidId: '30b31c1838de1e'
+          },
+          // banner and outstream
+          {
+            bidder: 'triplelift',
+            params: {
+              inventoryCode: 'testing_desktop_outstream',
+              floor: 1
+            },
+            nativeParams: {},
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [[640, 480]],
+                mimes: ['video/mp4'],
+                protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                playbackmethod: [2],
+                skip: 1
+              },
+              banner: {
+                sizes: [
+                  [728, 90],
+                  [970, 250],
+                  [970, 90]
+                ]
+              },
+              native: {}
+            },
+            adUnitCode: 'video-outstream',
+            transactionId: '135061c3-f546-4e28-8a07-44c2fb58a958',
+            sizes: [
+              [728, 90],
+              [970, 250],
+              [970, 90]
+            ],
+            bidId: '73edc0ba8de203',
+            bidderRequestId: '3d81143328560b',
+            auctionId: 'f6427dc0-b954-4010-a76c-d498380796a2',
+            src: 'client',
+            bidRequestsCount: 2,
+            bidderRequestsCount: 2,
+            bidderWinsCount: 0
+          },
+          // banner and outstream
+          {
+            bidder: 'triplelift',
+            params: {
+              inventoryCode: 'testing_desktop_outstream',
+              floor: 1
+            },
+            nativeParams: {},
+            mediaTypes: {
+              video: {
+                context: 'outstream',
+                playerSize: [[640, 480]],
+                mimes: ['video/mp4'],
+                protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                playbackmethod: [2],
+                skip: 1
+              },
+              banner: {
+                sizes: [
+                  [728, 90],
+                  [970, 250],
+                  [970, 90]
+                ]
+              },
+              native: {}
+            },
+            adUnitCode: 'video-outstream',
+            transactionId: '135061c3-f546-4e28-8a07-44c2fb58a958',
+            sizes: [
+              [728, 90],
+              [970, 250],
+              [970, 90]
+            ],
+            bidId: '73edc0ba8de203',
+            bidderRequestId: '3d81143328560b',
+            auctionId: 'f6427dc0-b954-4010-a76c-d498380796a2',
+            src: 'client',
+            bidRequestsCount: 2,
+            bidderRequestsCount: 2,
+            bidderWinsCount: 0
           }
         ],
         refererInfo: {
@@ -1007,16 +1394,29 @@ describe('triplelift adapter', function () {
         }
       ];
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result).to.have.length(2);
+      expect(result).to.have.length(4);
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       expect(Object.keys(result[1])).to.have.members(Object.keys(expectedResponse[1]));
       expect(result[0].ttl).to.equal(300);
       expect(result[1].ttl).to.equal(3600);
     });
 
+    it('should identify format of bid and respond accordingly', function() {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.mediaType).to.equal('native');
+      expect(result[1].mediaType).to.equal('video');
+      expect(result[1].meta.mediaType).to.equal('video');
+      // video bid on banner+outstream request
+      expect(result[2].mediaType).to.equal('video');
+      expect(result[2].meta.mediaType).to.equal('video');
+      expect(result[2].vastXml).to.include('aid=148508128401385324170&inv_code=testing_mobile_outstream');
+      // banner bid on banner+outstream request
+      expect(result[3].meta.mediaType).to.equal('banner');
+    })
+
     it('should return multiple responses to support SRA', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result).to.have.length(2);
+      expect(result).to.have.length(4);
     });
 
     it('should include the advertiser name in the meta field if available', function () {

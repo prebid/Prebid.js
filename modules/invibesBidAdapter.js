@@ -9,11 +9,12 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 8,
+  PREBID_VERSION: 9,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
-  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
+  DISABLE_USER_SYNC: true
 };
 
 const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
@@ -40,15 +41,7 @@ export const spec = {
   interpretResponse: function (responseObj, requestParams) {
     return handleResponse(responseObj, requestParams != null ? requestParams.bidRequests : null);
   },
-  getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      const syncUrl = buildSyncUrl();
-      return {
-        type: 'iframe',
-        url: syncUrl
-      };
-    }
-  }
+  getUserSyncs: getUserSync,
 };
 
 registerBidder(spec);
@@ -60,7 +53,9 @@ invibes.purposes = invibes.purposes || [false, false, false, false, false, false
 invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
 invibes.placementBids = invibes.placementBids || [];
 invibes.pushedCids = invibes.pushedCids || {};
+let preventPageViewEvent = false;
 let _customUserSync;
+let _disableUserSyncs;
 
 function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
@@ -73,6 +68,18 @@ function isBidRequestValid(bid) {
   }
 
   return true;
+}
+
+function getUserSync(syncOptions) {
+  if (syncOptions.iframeEnabled) {
+    if (!(_disableUserSyncs == null || _disableUserSyncs == undefined ? CONSTANTS.DISABLE_USER_SYNC : _disableUserSyncs)) {
+      const syncUrl = buildSyncUrl();
+      return {
+        type: 'iframe',
+        url: syncUrl
+      };
+    }
+  }
 }
 
 function buildRequest(bidRequests, bidderRequest) {
@@ -89,6 +96,7 @@ function buildRequest(bidRequests, bidderRequest) {
     _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
+    _disableUserSyncs = bidRequest?.params?.disableUserSyncs;
     _userId = _userId || bidRequest.userId;
   });
 
@@ -129,6 +137,7 @@ function buildRequest(bidRequests, bidderRequest) {
 
     tc: invibes.gdpr_consent,
     isLocalStorageEnabled: storage.hasLocalStorage(),
+    preventPageViewEvent: preventPageViewEvent,
   };
 
   let lid = readFromLocalStorage('ivbsdid');
@@ -157,6 +166,8 @@ function buildRequest(bidRequests, bidderRequest) {
   }
 
   let endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
+
+  preventPageViewEvent = true;
 
   return {
     method: CONSTANTS.METHOD,
@@ -381,7 +392,10 @@ function getUserIds(bidUserId) {
 function parseQueryStringParams() {
   let params = {};
   try {
-    params = JSON.parse(localStorage.ivbs);
+    let storedParam = storage.getDataFromLocalStorage('ivbs');
+    if (storedParam != null) {
+      params = JSON.parse(storedParam);
+    }
   } catch (e) {
   }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;

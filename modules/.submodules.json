@@ -29,12 +29,14 @@
       "naveggIdSystem",
       "netIdSystem",
       "novatiqIdSystem",
+      "oneKeyIdSystem",
       "parrableIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
+      "teadsIdSystem",
       "tncIdSystem",
       "trustpidSystem",
       "uid2IdSystem",
@@ -49,6 +51,8 @@
       "dfpAdServerVideo"
     ],
     "rtdModule": [
+      "1plusXRtdProvider",
+      "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "blueconicRtdProvider",
@@ -60,6 +64,8 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
+      "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
       "reconciliationRtdProvider",
@@ -69,19 +75,12 @@
     ],
     "fpdModule": [
       "enrichmentFpdModule",
-      "validationFpdModule"
+      "validationFpdModule",
+      "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
-  },
-  "libraries": {
-    "getOrigin": {
-      "files": [
-        "./index.js"
-      ],
-      "dependants": [
-        "ooloAnalyticsAdapter",
-        "resetdigitalBidAdapter",
-        "rtbhouseBidAdapter.js"
-      ]
-    }
   }
 }

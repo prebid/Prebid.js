@@ -38,7 +38,7 @@ export const spec = {
     const UA = navigator.userAgent;
     const USP = BIDDER_REQUEST.uspConsent || null;
     // TODO: does the fallback make sense here?
-    const REFERER = BIDDER_REQUEST?.refererInfo?.domain || window.location.host
+    const REFERER = BIDDER_REQUEST?.refererInfo?.domain || window.location.host;
     const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null;
     const BIDDER_GDPRS = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.consentString ? BIDDER_REQUEST.gdprConsent.consentString : null;
 
@@ -74,7 +74,7 @@ export const spec = {
             us_privacy: USP
           }
         }
-      }
+      };
 
       if (isSet(DNT)) {
         requestData.device.dnt = DNT;
@@ -94,7 +94,7 @@ export const spec = {
           id: bid.params.aid,
           name: bid.params.appname,
           bundle: bid.params.bundleid
-        }
+        };
 
         if (bid.params.contentId) {
           requestData.app.content = {

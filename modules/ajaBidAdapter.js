@@ -2,6 +2,7 @@ import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'aja';
 const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
@@ -35,6 +36,9 @@ export const spec = {
    * @returns {ServerRequest|ServerRequest[]}
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const bidRequests = [];
     const pageUrl = bidderRequest?.refererInfo?.page || undefined;
 

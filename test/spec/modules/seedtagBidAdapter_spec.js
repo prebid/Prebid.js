@@ -224,6 +224,7 @@ describe('Seedtag Adapter', function () {
     });
 
     it('Common data request should be correct', function () {
+      const now = Date.now();
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.url).to.equal('referer');
@@ -232,6 +233,9 @@ describe('Seedtag Adapter', function () {
       expect(
         ['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)
       ).to.be.above(-1);
+      expect(data.auctionStart).to.be.greaterThanOrEqual(now);
+      expect(data.ttfb).to.be.greaterThanOrEqual(0);
+
       expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
     });
 
@@ -288,6 +292,31 @@ describe('Seedtag Adapter', function () {
         });
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
+        });
+        it('should handle uspConsent', function () {
+          const uspConsent = '1---';
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.exist;
+          expect(payload.uspConsent).to.equal(uspConsent);
+        });
+
+        it("shouldn't send uspConsent when not available", function () {
+          const uspConsent = undefined;
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(
+            validBidRequests,
+            bidderRequest
+          );
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.not.exist;
         });
       });
     });
@@ -352,6 +381,47 @@ describe('Seedtag Adapter', function () {
         expect(data.coppa).to.be.undefined;
       })
     })
+    describe('schain param', function () {
+      it('should add schain to payload when exposed on validBidRequest', function () {
+        // https://github.com/prebid/Prebid.js/blob/master/modules/schain.md#sample-code-for-passing-the-schain-object
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1,
+            },
+
+            {
+              asi: 'indirectseller-2.com',
+              sid: '00002',
+              hp: 1,
+            },
+          ],
+        };
+
+        // duplicate
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].schain = schain;
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.exist;
+        expect(payload.schain).to.deep.equal(schain);
+      });
+
+      it("shouldn't add schain to payload when not exposed", function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.not.exist;
+      });
+    });
   });
 
   describe('interpret response method', function () {
