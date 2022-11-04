@@ -138,7 +138,21 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.not.equal(false);
     });
 
-    it('should grab uid from local storage if it exists', function() {
+    it('should use sharedid if it exists', function() {
+      storage.removeDataFromLocalStorage('c_nap');
+      const request = spec.buildRequests(bidRequests, {
+        ...bidRequest,
+        userId: {
+          _sharedid: {
+            id: '123abc'
+          }
+        }
+      });
+      const payload = JSON.parse(request.data);
+      expect(payload.meta.uid).to.equal('123abc');
+    })
+
+    it('should grab uid from local storage if it exists and sharedid does not', function() {
       storage.setDataInLocalStorage('vmconcert_uid', 'foo');
       storage.removeDataFromLocalStorage('c_nap');
       const request = spec.buildRequests(bidRequests, bidRequest);

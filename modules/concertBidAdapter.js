@@ -1,4 +1,4 @@
-import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
@@ -186,6 +186,12 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 function getUid(bidderRequest) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
+  }
+
+  const sharedId = deepAccess(bidderRequest, 'userId._sharedid.id');
+
+  if (sharedId) {
+    return sharedId;
   }
 
   const LEGACY_CONCERT_UID_KEY = 'c_uid';
