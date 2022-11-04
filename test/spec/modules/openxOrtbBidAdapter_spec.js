@@ -682,21 +682,21 @@ describe('OpenxRtbAdapter', function () {
 
           it('should send a signal to specify that GDPR applies to this request', function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.gdpr).to.equal(1);
             expect(request[1].data.regs.ext.gdpr).to.equal(1);
           });
 
           it('should send the consent string', function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
             expect(request[1].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
           });
 
           it('should send the addtlConsent string', function () {
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent);
             expect(request[1].data.user.ext.ConsentedProvidersSettings.consented_providers).to.equal(bidderRequest.gdprConsent.addtlConsent);
           });
@@ -704,7 +704,7 @@ describe('OpenxRtbAdapter', function () {
           it('should send a signal to specify that GDPR does not apply to this request', function () {
             bidderRequest.gdprConsent.gdprApplies = false;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.gdpr).to.equal(0);
             expect(request[1].data.regs.ext.gdpr).to.equal(0);
           });
@@ -713,7 +713,7 @@ describe('OpenxRtbAdapter', function () {
             'but can send consent data, ', function () {
             delete bidderRequest.gdprConsent.gdprApplies;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs?.ext?.gdpr).to.not.be.ok;
             expect(request[0].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
             expect(request[1].data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
@@ -722,7 +722,7 @@ describe('OpenxRtbAdapter', function () {
           it('when consent string is undefined, should not send the consent string, ', function () {
             delete bidderRequest.gdprConsent.consentString;
             bidderRequest.bids = bidRequests;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.imp[0].ext.consent).to.equal(undefined);
             expect(request[1].data.imp[0].ext.consent).to.equal(undefined);
           });
@@ -731,7 +731,7 @@ describe('OpenxRtbAdapter', function () {
 
       context('coppa', function() {
         it('when there are no coppa param settings, should not send a coppa flag', function () {
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.regs?.coppa).to.be.not.ok;
         });
 

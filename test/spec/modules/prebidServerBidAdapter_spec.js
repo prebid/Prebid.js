@@ -30,7 +30,7 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import {syncAddFPDEnrichments} from '../../helpers/fpd.js';
+import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 
 let CONFIG = {
   accountId: '1',
@@ -543,12 +543,12 @@ const RESPONSE_OPENRTB_NATIVE = {
   ]
 };
 
-function addFpdEnrichmentsToS2SRequest(req, bidderRequests) {
+function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
   return {
-    ...req,
+    ...s2sReq,
     ortb2Fragments: {
-      ...(req.ortb2Fragments || {}),
-      global: syncAddFPDEnrichments(req.ortb2Fragments?.global || {}, {getRefererInfo() { return bidderRequests?.[0]?.refererInfo || {} }}),
+      ...(s2sReq.ortb2Fragments || {}),
+      global: syncAddFPDToBidderRequest({...(bidderRequests?.[0] || {}), ortb2: s2sReq.ortb2Fragments?.global || {}}).ortb2
     }
   }
 }
@@ -775,7 +775,7 @@ describe('S2S Adapter', function () {
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = mockConsent();
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
@@ -784,7 +784,7 @@ describe('S2S Adapter', function () {
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
 
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
         expect(requestBid.regs).to.not.exist;
@@ -800,7 +800,7 @@ describe('S2S Adapter', function () {
           addtlConsent: 'superduperconsent',
         });
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
@@ -886,7 +886,7 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('is added to ortb2 request when in bidRequest', function () {
+      it('is added to ortb2 request when in FPD', function () {
         config.setConfig({ s2sConfig: CONFIG });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
@@ -938,7 +938,7 @@ describe('S2S Adapter', function () {
         consentBidRequest[0].uspConsent = '1NYN';
         consentBidRequest[0].gdprConsent = mockConsent();
 
-        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, consentBidRequest), consentBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
