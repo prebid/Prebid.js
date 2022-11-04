@@ -3,7 +3,7 @@ import {GreedyPromise} from '../../src/utils/promise.js';
 import {deepClone} from '../../src/utils.js';
 import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
 
-export function addFPDEnrichments(ortb2 = {}, overrides = {}) {
+export function mockFpdEnrichments(sandbox, overrides = {}) {
   overrides = Object.assign({}, {
     // override window getters, required for ChromeHeadless, apparently it sees window.self !== window
     getWindowTop() {
@@ -16,7 +16,6 @@ export function addFPDEnrichments(ortb2 = {}, overrides = {}) {
       return GreedyPromise.resolve()
     }
   }, overrides)
-  const sandbox = sinon.sandbox.create();
   Object.entries(overrides)
     .filter(([k]) => dep[k])
     .forEach(([k, v]) => {
@@ -31,6 +30,11 @@ export function addFPDEnrichments(ortb2 = {}, overrides = {}) {
       sandbox.stub(handler, 'getConsentData').callsFake(v);
     }
   })
+}
+
+export function addFPDEnrichments(ortb2 = {}, overrides) {
+  const sandbox = sinon.sandbox.create();
+  mockFpdEnrichments(sandbox, overrides)
   return enrichFPD(GreedyPromise.resolve(deepClone(ortb2))).finally(() => sandbox.restore());
 }
 
