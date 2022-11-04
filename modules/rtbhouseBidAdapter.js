@@ -184,28 +184,6 @@ export const spec = {
 registerBidder(spec);
 
 /**
- * Deletes the deepest key in the object along the path. 
- * When the containing object has no other keys it's been also deleted 
- * (and up to the top key in the path if possible)
- * @param {object} obj Object to delete a key/subkey
- * @param {string} path dot-separated path of the key/subkey to delete
- */
-function deepDelete(obj, path) {
-  if(!path || !obj || typeof obj !== 'object') return;
-  const pathArray = path.split('.');
-  const topPathElem = pathArray[0];
-  if(pathArray.length > 1) {
-    const del = deepDelete(obj[topPathElem], pathArray.slice(1).join('.'));
-    if(del) delete obj[topPathElem];
-  } else {
-    delete obj[topPathElem];
-    if(Object.keys(obj).length == 0) {
-      return true
-    }
-  }
-}
-
-/**
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {int} floor by imp type
  */
