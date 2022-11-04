@@ -519,8 +519,3 @@ function interpretNativeAd(adm) {
   });
   return result;
 }
-
-
-function interpretFledgeBid(fledgeBid) {
-  // fledgeBid is an ext.igbid[] element
-}
