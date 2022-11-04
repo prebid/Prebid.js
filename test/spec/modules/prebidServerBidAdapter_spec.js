@@ -892,7 +892,7 @@ describe('S2S Adapter', function () {
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1NYN';
 
-        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, uspBidRequest), uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
@@ -900,7 +900,7 @@ describe('S2S Adapter', function () {
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
 
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
         expect(requestBid.regs).to.not.exist;

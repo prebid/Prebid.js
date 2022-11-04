@@ -422,7 +422,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should add CCPA consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...{ uspConsent: '1YYY' }});
+      const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
       const payload = JSON.parse(request[0].data);
       expect(payload.regs.ext.us_privacy).to.equal('1YYY');
     });

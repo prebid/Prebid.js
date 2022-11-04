@@ -640,14 +640,14 @@ describe('OpenxRtbAdapter', function () {
           });
 
           it('should send a signal to specify that US Privacy applies to this request', function () {
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs.ext.us_privacy).to.equal('1YYN');
             expect(request[1].data.regs.ext.us_privacy).to.equal('1YYN');
           });
 
           it('should not send the regs object, when consent string is undefined', function () {
             delete bidderRequest.uspConsent;
-            const request = spec.buildRequests(bidRequests, bidderRequest);
+            const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
             expect(request[0].data.regs?.us_privacy).to.not.exist;
           });
         });
@@ -1509,5 +1509,4 @@ describe('OpenxRtbAdapter', function () {
       });
     });
   });
-})
-;
+});
