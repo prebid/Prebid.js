@@ -14,10 +14,16 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {deepClone} from 'src/utils.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {hook} from '../../../src/hook.js';
 
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
 describe('OpenxRtbAdapter', function () {
+  before(() => {
+    hook.ready();
+  });
+
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -738,7 +744,7 @@ describe('OpenxRtbAdapter', function () {
             return utils.deepAccess(mockConfig, key);
           });
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.regs.coppa).to.equal(1);
         });
 
@@ -760,21 +766,21 @@ describe('OpenxRtbAdapter', function () {
         it('when there is a do not track, should send a dnt', function () {
           doNotTrackStub.returns(1);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(1);
         });
 
         it('when there is not do not track, don\'t send dnt', function () {
           doNotTrackStub.returns(0);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });
 
         it('when there is no defined do not track, don\'t send dnt', function () {
           doNotTrackStub.returns(null);
 
-          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
           expect(request[0].data.device.dnt).to.equal(0);
         });
       });

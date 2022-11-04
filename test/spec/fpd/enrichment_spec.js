@@ -24,7 +24,9 @@ describe('FPD enrichment', () => {
     return {
       innerHeight: 1,
       innerWidth: 1,
-      navigator: {},
+      navigator: {
+        language: ''
+      },
       document: {
         querySelector: sinon.stub()
       }
@@ -122,21 +124,59 @@ describe('FPD enrichment', () => {
           });
         });
       });
+
+      it('sets ua', () => {
+        win.navigator.userAgent = 'mock-ua';
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.ua).to.eql('mock-ua');
+        })
+      });
+
+      it('sets language', () => {
+        win.navigator.language = 'lang-ignored';
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.language).to.eql('lang');
+        })
+      });
     });
   });
 
   describe('regs', () => {
-    let win;
-    beforeEach(() => {
-      win = mockWindow();
-    });
-    testWindows(() => win, () => {
-      it('sets ext.gpc if globalPrivacyControl is set', () => {
-        win.navigator = {globalPrivacyControl: true};
-        return fpd().then(ortb2 => {
-          expect(ortb2.regs.ext.gpc).to.eql(1);
-        });
+    describe('gpc', () => {
+      let win;
+      beforeEach(() => {
+        win = mockWindow();
       });
+      testWindows(() => win, () => {
+        it('is set if globalPrivacyControl is set', () => {
+          win.navigator.globalPrivacyControl = true;
+          return fpd().then(ortb2 => {
+            expect(ortb2.regs.ext.gpc).to.eql(1);
+          });
+        });
+
+        it('is not set otherwise', () => {
+          return fpd().then(ortb2 => {
+            expect(ortb2.regs?.ext?.gpc).to.not.exist;
+          })
+        })
+      });
+    })
+    describe('coppa', () => {
+      [[true, 1], [false, 0]].forEach(([cfgVal, regVal]) => {
+        it(`is set to ${regVal} if config = ${cfgVal}`, () => {
+          config.setConfig({coppa: cfgVal});
+          return fpd().then(ortb2 => {
+            expect(ortb2.regs.coppa).to.eql(regVal);
+          })
+        });
+      })
+
+      it('is not set if not configured', () => {
+        return fpd().then(ortb2 => {
+          expect(ortb2.regs?.coppa).to.not.exist;
+        })
+      })
     });
   });
 

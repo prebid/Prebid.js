@@ -2768,7 +2768,6 @@ describe('User ID', function () {
         })
       })
     });
-
   });
 
   describe('handles config with ESP configuration in user sync object', function() {

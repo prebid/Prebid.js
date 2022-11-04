@@ -1,7 +1,7 @@
 import {hook} from '../hook.js';
 import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
-import {getDefinedParams, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
+import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from '../../libraries/fpd/sua.js';
 import {GreedyPromise} from '../utils/promise.js';
@@ -25,12 +25,12 @@ export const enrichFPD = hook('sync', (fpd) => {
     .then(([ortb2, sua]) => {
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments();
-        if (data) {
+        if (data && Object.keys(data).length > 0) {
           ortb2[section] = mergeDeep({}, data, ortb2[section]);
         }
       });
       if (sua) {
-        ortb2.device.sua = mergeDeep({}, sua, ortb2.device.sua);
+        deepSetValue(ortb2, 'device.sua', Object.assign({}, sua, ortb2.device.sua));
       }
       return ortb2;
     });
@@ -68,22 +68,27 @@ const ENRICHMENTS = {
     });
   },
   device() {
-    const [w, h] = winFallback((win) => [
-      win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth,
-      win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight
-    ]);
-    return {
-      w,
-      h
-    };
+    return winFallback((win) => {
+      const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
+      const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
+      return {
+        w,
+        h,
+        dnt: getDNT() ? 1 : 0,
+        ua: win.navigator.userAgent,
+        language: win.navigator.language.split('-').shift(),
+      };
+    })
   },
   regs() {
+    const regs = {};
     if (winFallback((win) => win.navigator.globalPrivacyControl)) {
-      return {
-        ext: {
-          gpc: 1
-        }
-      };
+      deepSetValue(regs, 'ext.gpc', 1);
     }
+    const coppa = config.getConfig('coppa');
+    if (typeof coppa === 'boolean') {
+      regs.coppa = coppa ? 1 : 0;
+    }
+    return regs;
   }
 };
