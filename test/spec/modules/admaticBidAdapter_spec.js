@@ -18,8 +18,7 @@ describe('admaticBidAdapter', () => {
     let bid = {
       'bidder': 'admatic',
       'params': {
-        'networkId': 10433394,
-        'host': 'layer.serve.admatic.com.tr'
+        'networkId': 10433394
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -38,8 +37,7 @@ describe('admaticBidAdapter', () => {
       delete bid.params;
 
       bid.params = {
-        'networkId': 0,
-        'host': 'layer.serve.admatic.com.tr'
+        'networkId': 0
       };
 
       expect(spec.isBidRequestValid(bid)).to.equal(false);

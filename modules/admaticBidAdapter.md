@@ -19,7 +19,7 @@ Use `admatic` as bidder.
           bidder: 'admatic',
           params: { 
               networkId: 12345,
-              host: 'layer.serve.admatic.com.tr'
+              floor: 0.5
           }
       }]
     },{
@@ -29,7 +29,7 @@ Use `admatic` as bidder.
           bidder: 'admatic',
           params: { 
               networkId: 12345,
-              host: 'layer.serve.admatic.com.tr'
+              floor: 0.5
           }
       }]
     }];
