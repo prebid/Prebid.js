@@ -7,6 +7,7 @@ const _approvedLoadExternalJSList = [
   'debugging',
   'adloox',
   'admatic',
+  'pixad',
   'criteo',
   'outstream',
   'adagio',
@@ -20,8 +21,7 @@ const _approvedLoadExternalJSList = [
   'inskin',
   'hadron',
   'medianet',
-  'improvedigital',
-  'aaxBlockmeter'
+  'improvedigital'
 ]
 
 /**
