@@ -49,6 +49,7 @@ import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHand
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
+import {defer} from './utils/promise.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -485,86 +486,99 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   logMessage('Calling renderAd with adId :' + id);
 
-  if (doc && id) {
-    try {
-      // lookup ad by ad Id
-      const bid = auctionManager.findBidByAdId(id);
-
-      if (bid) {
-        let shouldRender = true;
-        if (bid && bid.status === CONSTANTS.BID_STATUS.RENDERED) {
-          logWarn(`Ad id ${bid.adId} has been rendered before`);
-          events.emit(STALE_RENDER, bid);
-          if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-            shouldRender = false;
-          }
-        }
-
-        if (shouldRender) {
-          // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
-          // replacing clickthrough if submitted
-          if (options && options.clickThrough) {
-            const {clickThrough} = options;
-            bid.ad = replaceClickThrough(bid.ad, clickThrough);
-            bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
-          }
-
-          // save winning bids
-          auctionManager.addWinningBid(bid);
-
-          // emit 'bid won' event here
-          events.emit(BID_WON, bid);
-
-          const {height, width, ad, mediaType, adUrl, renderer} = bid;
-
-          const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          insertElement(creativeComment, doc, 'html');
-
-          if (isRendererRequired(renderer)) {
-            executeRenderer(renderer, bid, doc);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if ((doc === document && !inIframe()) || mediaType === 'video') {
-            const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-            emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
-          } else if (ad) {
-            doc.write(ad);
-            doc.close();
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if (adUrl) {
-            const iframe = createInvisibleIframe();
-            iframe.height = height;
-            iframe.width = width;
-            iframe.style.display = 'inline';
-            iframe.style.overflow = 'hidden';
-            iframe.src = adUrl;
-
-            insertElement(iframe, doc, 'body');
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else {
-            const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-            emitAdRenderFail({reason: NO_AD, message, bid, id});
-          }
-        }
-      } else {
-        const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-        emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
-      }
-    } catch (e) {
-      const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-      emitAdRenderFail({ reason: EXCEPTION, message, id });
-    }
-  } else {
-    const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
+  if (!id) {
+    const message = `Error trying to write ad Id :${id} to the page. Missing adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
+    return;
+  }
+
+  try {
+    // lookup ad by ad Id
+    const bid = auctionManager.findBidByAdId(id);
+    if (!bid) {
+      const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
+      emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
+      return;
+    }
+
+    if (bid.status === CONSTANTS.BID_STATUS.RENDERED) {
+      logWarn(`Ad id ${bid.adId} has been rendered before`);
+      events.emit(STALE_RENDER, bid);
+      if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+        return;
+      }
+    }
+
+    // replace macros according to openRTB with price paid = bid.cpm
+    bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+    bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
+    // replacing clickthrough if submitted
+    if (options && options.clickThrough) {
+      const {clickThrough} = options;
+      bid.ad = replaceClickThrough(bid.ad, clickThrough);
+      bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
+    }
+
+    // save winning bids
+    auctionManager.addWinningBid(bid);
+
+    // emit 'bid won' event here
+    events.emit(BID_WON, bid);
+
+    const {height, width, ad, mediaType, adUrl, renderer} = bid;
+
+    // video module
+    const adUnitCode = bid.adUnitCode;
+    const adUnit = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnit.code === adUnitCode);
+    const videoModule = $$PREBID_GLOBAL$$.videoModule;
+    if (adUnit.video && videoModule) {
+      videoModule.renderBid(adUnit.video.divId, bid);
+      return;
+    }
+
+    if (!doc) {
+      const message = `Error trying to write ad Id :${id} to the page. Missing document`;
+      emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
+      return;
+    }
+
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
+
+    if (isRendererRequired(renderer)) {
+      executeRenderer(renderer, bid, doc);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if ((doc === document && !inIframe()) || mediaType === 'video') {
+      const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
+      emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
+    } else if (ad) {
+      doc.write(ad);
+      doc.close();
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if (adUrl) {
+      const iframe = createInvisibleIframe();
+      iframe.height = height;
+      iframe.width = width;
+      iframe.style.display = 'inline';
+      iframe.style.overflow = 'hidden';
+      iframe.src = adUrl;
+
+      insertElement(iframe, doc, 'body');
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else {
+      const message = `Error trying to write ad. No ad for bid response id: ${id}`;
+      emitAdRenderFail({reason: NO_AD, message, bid, id});
+    }
+  } catch (e) {
+    const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
+    emitAdRenderFail({ reason: EXCEPTION, message, id });
   }
 });
 
@@ -609,7 +623,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, metrics } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -617,23 +631,28 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics});
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
-    // if the request does not specify adUnits, clone the global adUnit array - before
-    // any hook has a chance to run.
+    // unlike the main body of `delegate`, this runs before any other hook has a chance to;
+    // it's also not restricted in its return value in the way `async` hooks are.
+
+    // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    req.metrics = newMetrics();
-    req.metrics.checkpoint('requestBids');
     let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
-    return delegate.call(this, req);
+
+    req.metrics = newMetrics();
+    req.metrics.checkpoint('requestBids');
+    req.defer = defer({promiseFactory: (r) => new Promise(r)})
+    delegate.call(this, req);
+    return req.defer.promise;
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics } = {}) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
@@ -643,6 +662,17 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   } else {
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+  }
+
+  function auctionDone(bids, timedOut, auctionId) {
+    if (typeof bidsBackHandler === 'function') {
+      try {
+        bidsBackHandler(bids, timedOut, auctionId);
+      } catch (e) {
+        logError('Error executing bidsBackHandler', null, e);
+      }
+    }
+    defer.resolve({bids, timedOut, auctionId})
   }
 
   /*
@@ -663,6 +693,9 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
     adUnit.transactionId = tid;
+    if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {
+      adUnit.ttlBuffer = ttlBuffer;
+    }
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
     deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
@@ -687,35 +720,27 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === 'function') {
-      // executeCallback, this will only be called in case of first request
-      try {
-        bidsBackHandler();
-      } catch (e) {
-        logError('Error executing bidsBackHandler', null, e);
-      }
+    auctionDone();
+  } else {
+    const auction = auctionManager.createAuction({
+      adUnits,
+      adUnitCodes,
+      callback: auctionDone,
+      cbTimeout,
+      labels,
+      auctionId,
+      ortb2Fragments,
+      metrics,
+    });
+
+    let adUnitsLen = adUnits.length;
+    if (adUnitsLen > 15) {
+      logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
-    return;
+
+    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+    auction.callBids();
   }
-
-  const auction = auctionManager.createAuction({
-    adUnits,
-    adUnitCodes,
-    callback: bidsBackHandler,
-    cbTimeout,
-    labels,
-    auctionId,
-    ortb2Fragments,
-    metrics,
-  });
-
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
-  }
-
-  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
-  auction.callBids();
 }, 'startAuction');
 
 export function executeCallbacks(fn, reqBidsConfigObj) {

@@ -602,6 +602,32 @@ describe('magnite analytics adapter', function () {
         let message = JSON.parse(server.requests[0].requestBody);
         expect(message.auctions[0].adUnits[0].bids[0].bidResponse.adomains).to.deep.equal(test.expected);
       });
+
+      // Network Id tests
+      [
+        { input: 'magnite.com', expected: 'magnite.com' },
+        { input: 12345, expected: '12345' },
+        { input: ['magnite.com', 12345], expected: 'magnite.com,12345' }
+      ].forEach((test, index) => {
+        it(`should handle networkId correctly - #${index + 1}`, function () {
+          events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+          events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+          let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+          bidResponse.meta = {
+            networkId: test.input
+          };
+
+          events.emit(BID_RESPONSE, bidResponse);
+          events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+          events.emit(AUCTION_END, MOCK.AUCTION_END);
+          events.emit(BID_WON, MOCK.BID_WON);
+          clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+          let message = JSON.parse(server.requests[0].requestBody);
+          expect(message.auctions[0].adUnits[0].bids[0].bidResponse.networkId).to.equal(test.expected);
+        });
+      });
     });
 
     describe('with session handling', function () {

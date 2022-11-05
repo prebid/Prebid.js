@@ -21,7 +21,8 @@ import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
 import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 import {resetAuctionState} from 'src/auction.js';
-
+import {stubAuctionIndex} from '../../helpers/indexStub.js';
+import {createBid} from '../../../src/bidfactory.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -1241,7 +1242,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should require doc and id params', function () {
       $$PREBID_GLOBAL$$.renderAd();
-      var error = 'Error trying to write ad Id :undefined to the page. Missing document or adId';
+      var error = 'Error trying to write ad Id :undefined to the page. Missing adId';
       assert.ok(spyLogError.calledWith(error), 'expected param error was logged');
     });
 
@@ -1458,7 +1459,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub;
+    let makeRequestsStub, createAuctionStub;
     let adUnits;
     let clock;
     before(function () {
@@ -1467,7 +1468,6 @@ describe('Unit: Prebid Module', function () {
     after(function () {
       clock.restore();
     });
-    let bidsBackHandlerStub = sinon.stub();
 
     const BIDDER_CODE = 'sampleBidder';
     let bids = [{
@@ -1504,11 +1504,12 @@ describe('Unit: Prebid Module', function () {
       'start': 1000
     }];
 
+    let spec, indexStub, auction, completeAuction;
+
     beforeEach(function () {
       logMessageSpy = sinon.spy(utils, 'logMessage');
       makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
       makeRequestsStub.returns(bidRequests);
-
       adUnits = [{
         code: 'adUnit-code',
         mediaTypes: {
@@ -1516,45 +1517,53 @@ describe('Unit: Prebid Module', function () {
             sizes: [[300, 250]]
           }
         },
+        transactionId: 'mock-tid',
         bids: [
           {bidder: BIDDER_CODE, params: {placementId: 'id'}},
         ]
       }];
-      let adUnitCodes = ['adUnit-code'];
-      let auction = auctionModule.newAuction({
-        adUnits,
-        adUnitCodes,
-        callback: bidsBackHandlerStub,
-        cbTimeout: 2000
-      });
-      let createAuctionStub = sinon.stub(auctionModule, 'newAuction');
-      createAuctionStub.returns(auction);
-    });
-
-    afterEach(function () {
-      clock.restore();
-      adapterManager.makeBidRequests.restore();
-      auctionModule.newAuction.restore();
-      utils.logMessage.restore();
-    });
-
-    it('should execute callback after timeout', function () {
-      let spec = {
+      indexStub = sinon.stub(auctionManager, 'index');
+      indexStub.get(() => stubAuctionIndex({adUnits, bidRequests}))
+      sinon.stub(adapterManager, 'callBids').callsFake((_, bidrequests, addBidResponse, adapterDone) => {
+        completeAuction = (bidsReceived) => {
+          bidsReceived.forEach((bid) => addBidResponse(bid.adUnitCode, Object.assign(createBid(), bid)));
+          bidRequests.forEach((req) => adapterDone.call(req));
+        }
+      })
+      const origNewAuction = auctionModule.newAuction;
+      sinon.stub(auctionModule, 'newAuction').callsFake(function (opts) {
+        auction = origNewAuction(opts);
+        return auction;
+      })
+      spec = {
         code: BIDDER_CODE,
         isBidRequestValid: sinon.stub(),
         buildRequests: sinon.stub(),
         interpretResponse: sinon.stub(),
         getUserSyncs: sinon.stub(),
-        onTimeout: sinon.stub()
+        onTimeout: sinon.stub(),
+        onSetTargeting: sinon.stub(),
       };
 
       registerBidder(spec);
       spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
       spec.isBidRequestValid.returns(true);
       spec.interpretResponse.returns(bids);
+    });
 
+    afterEach(function () {
+      clock.restore();
+      adapterManager.makeBidRequests.restore();
+      adapterManager.callBids.restore();
+      indexStub.restore();
+      auction.getBidsReceived = () => [];
+      auctionModule.newAuction.restore();
+      utils.logMessage.restore();
+    });
+
+    it('should execute callback after timeout', function () {
       let requestObj = {
-        bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
+        bidsBackHandler: sinon.stub(),
         timeout: 2000,
         adUnits: adUnits
       };
@@ -1567,26 +1576,13 @@ describe('Unit: Prebid Module', function () {
       clock.tick(1);
       assert.ok(logMessageSpy.calledWith(sinon.match(re)), 'executeCallback called');
 
-      expect(bidsBackHandlerStub.getCall(0).args[1]).to.equal(true,
+      expect(requestObj.bidsBackHandler.getCall(0).args[1]).to.equal(true,
         'bidsBackHandler should be called with timedOut=true');
 
       sinon.assert.called(spec.onTimeout);
     });
 
-    it('should execute callback after setTargeting', function () {
-      let spec = {
-        code: BIDDER_CODE,
-        isBidRequestValid: sinon.stub(),
-        buildRequests: sinon.stub(),
-        interpretResponse: sinon.stub(),
-        onSetTargeting: sinon.stub()
-      };
-
-      registerBidder(spec);
-      spec.buildRequests.returns([{'id': 123, 'method': 'POST'}]);
-      spec.isBidRequestValid.returns(true);
-      spec.interpretResponse.returns(bids);
-
+    it('should execute `onSetTargeting` after setTargetingForGPTAsync', function () {
       const bidId = 1;
       const auctionId = 1;
       let adResponse = Object.assign({
@@ -1595,6 +1591,7 @@ describe('Unit: Prebid Module', function () {
         width: 300,
         height: 250,
         adUnitCode: bidRequests[0].bids[0].adUnitCode,
+        transactionId: 'mock-tid',
         adserverTargeting: {
           'hb_bidder': BIDDER_CODE,
           'hb_adid': bidId,
@@ -1603,19 +1600,101 @@ describe('Unit: Prebid Module', function () {
         },
         bidder: bids[0].bidderCode,
       }, bids[0]);
-      auction.getBidsReceived = function() { return [adResponse]; }
-      auction.getAuctionId = () => auctionId;
 
       let requestObj = {
-        bidsBackHandler: null, // does not need to be defined because of newAuction mock in beforeEach
+        bidsBackHandler: null,
         timeout: 2000,
         adUnits: adUnits
       };
 
       $$PREBID_GLOBAL$$.requestBids(requestObj);
+      completeAuction([adResponse]);
       $$PREBID_GLOBAL$$.setTargetingForGPTAsync();
 
       sinon.assert.called(spec.onSetTargeting);
+    });
+
+    describe('returns a promise that resolves', () => {
+      function delayHook(next, ...args) {
+        setTimeout(() => next(...args))
+      }
+
+      beforeEach(() => {
+        // make sure the return value works correctly when hooks give up priority
+        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+      });
+
+      Object.entries({
+        'immediately, without bidsBackHandler': (req) => $$PREBID_GLOBAL$$.requestBids(req),
+        'after bidsBackHandler': (() => {
+          const bidsBackHandler = sinon.stub();
+          return function (req) {
+            return $$PREBID_GLOBAL$$.requestBids({...req, bidsBackHandler}).then(({bids, timedOut, auctionId}) => {
+              sinon.assert.calledWith(bidsBackHandler, bids, timedOut, auctionId);
+              return {bids, timedOut, auctionId};
+            })
+          }
+        })(),
+        'after a bidsBackHandler that throws': (req) => $$PREBID_GLOBAL$$.requestBids({...req, bidsBackHandler: () => { throw new Error() }})
+      }).forEach(([t, requestBids]) => {
+        describe(t, () => {
+          it('with no args, when no adUnits are defined', () => {
+            return requestBids({}).then((res) => {
+              expect(res).to.eql({
+                bids: undefined,
+                timedOut: undefined,
+                auctionId: undefined
+              });
+            });
+          });
+
+          it('on timeout', (done) => {
+            requestBids({
+              auctionId: 'mock-auctionId',
+              adUnits,
+              timeout: 10
+            }).then(({timedOut, bids, auctionId}) => {
+              expect(timedOut).to.be.true;
+              expect(bids).to.eql({});
+              expect(auctionId).to.eql('mock-auctionId');
+              done();
+            });
+            clock.tick(12);
+          });
+
+          it('with auction result', (done) => {
+            const bid = {
+              bidder: 'mock-bidder',
+              adUnitCode: adUnits[0].code,
+              transactionId: adUnits[0].transactionId
+            }
+            requestBids({
+              adUnits,
+            }).then(({bids}) => {
+              sinon.assert.match(bids[bid.adUnitCode].bids[0], bid)
+              done();
+            });
+            // `completeAuction` won't work until we're out of `delayHook`
+            // and the mocked auction has been set up;
+            // setTimeout here takes us after the setTimeout in `delayHook`
+            setTimeout(() => completeAuction([bid]));
+          })
+        })
+      })
+    })
+
+    it('should transfer ttlBuffer to adUnit.ttlBuffer', () => {
+      $$PREBID_GLOBAL$$.requestBids({
+        ttlBuffer: 123,
+        adUnits: [adUnits[0], {...adUnits[0], ttlBuffer: 0}]
+      });
+      sinon.assert.calledWithMatch(auctionModule.newAuction, {
+        adUnits: sinon.match((units) => units[0].ttlBuffer === 123 && units[1].ttlBuffer === 0)
+      })
     });
   })
 

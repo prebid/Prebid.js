@@ -475,7 +475,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     return handleBidResponse(adUnitCode, bid, (done) => {
       // return a "NO_BID" replacement that the caller can decide to continue with
       // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
-      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
+      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers?.());
       Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => !noBid.hasOwnProperty(k) && ![
         'ad',
         'adUrl',
@@ -666,6 +666,7 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
  */
 function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionManager.index} = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
+  const adUnit = index.getAdUnit(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
 
   Object.assign(bidResponse, {
@@ -675,6 +676,10 @@ function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionMa
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
   });
+
+  if (adUnit?.ttlBuffer != null) {
+    bidResponse.ttlBuffer = adUnit.ttlBuffer;
+  }
 
   bidResponse.timeToRespond = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
 }
@@ -690,7 +695,7 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
   // a publisher-defined renderer can be used to render bids
-  const adUnitRenderer = index.getAdUnit(bid).renderer;
+  const bidRenderer = index.getBidRequest(bid)?.renderer || index.getAdUnit(bid).renderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
@@ -704,8 +709,8 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   // the renderer for the mediaType takes precendence
   if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
     renderer = mediaTypeRenderer;
-  } else if (adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render && !(adUnitRenderer.backupOnly === true && bid.renderer)) {
-    renderer = adUnitRenderer;
+  } else if (bidRenderer && bidRenderer.url && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
+    renderer = bidRenderer;
   }
 
   if (renderer) {
