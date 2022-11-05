@@ -7,7 +7,7 @@ const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
 export const spec = {
   code: 'admatic',
   aliases: [
-    {code: 'pixad'}
+    {code: 'adpixel'}
   ],
   supportedMediaTypes: ['video', 'banner'],
   /**
