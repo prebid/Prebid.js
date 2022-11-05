@@ -20,7 +20,7 @@ export const spec = {
     let isValid = false;
     if (typeof bid.params !== 'undefined') {
       let isValidNetworkId = _validateId(getValue(bid.params, 'networkId'));
-      let isValidHost = _validateString(getValue(bid.params, 'host'));
+      let isValidHost = getValue(bid.params, 'host');
       isValid = isValidNetworkId && isValidHost;
     }
 
@@ -196,10 +196,6 @@ function concatSizes(bid) {
 
 function _validateId(id) {
   return (parseInt(id) > 0);
-}
-
-function _validateString(str) {
-  return (typeof str == 'string');
 }
 
 registerBidder(spec);

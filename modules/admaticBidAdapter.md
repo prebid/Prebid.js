@@ -36,7 +36,6 @@ Use `admatic` as bidder.
 ```
 
 ## UserSync example
-
 ```
 pbjs.setConfig({
   userSync: {
