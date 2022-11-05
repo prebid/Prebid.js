@@ -111,6 +111,7 @@ function buildRequestObject(bid) {
   const reqObj = {};
   reqObj.size = getSizes(bid);
   reqObj.id = getBidIdParameter('bidId', bid);
+  reqObj.floor = getValue(bid.params, 'floor') || 0.01;
   return reqObj;
 }
 

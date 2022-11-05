@@ -18,7 +18,8 @@ Use `admatic` as bidder.
       bids: [{
           bidder: 'admatic',
           params: { 
-              networkId: 12345
+              networkId: 12345,
+              floor: 0.5
           }
       }]
     },{
@@ -27,7 +28,8 @@ Use `admatic` as bidder.
       bids: [{
           bidder: 'admatic',
           params: { 
-              networkId: 12345
+              networkId: 12345,
+              floor: 0.5
           }
       }]
     }];
