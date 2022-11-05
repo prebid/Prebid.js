@@ -1,7 +1,6 @@
 import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const ENDPOINT_URL = 'https://layer.serve.admatic.com.tr/pb';
 const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
@@ -101,7 +100,6 @@ export const spec = {
           timeToRespond: 1,
           requestTimestamp: 1
         };
-
         bidResponses.push(resbid);
       });
     };
@@ -109,58 +107,10 @@ export const spec = {
   }
 };
 
-function enrichSlotWithFloors(slot, bidRequest) {
-  try {
-    const slotFloors = {};
-
-    if (bidRequest.getFloor) {
-      if (bidRequest.mediaTypes?.banner) {
-        slotFloors.banner = {};
-        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
-      }
-
-      if (bidRequest.mediaTypes?.video) {
-        slotFloors.video = {};
-        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
-      }
-
-      if (Object.keys(slotFloors).length > 0) {
-        if (!slot) {
-          slot = {}
-        }
-        Object.assign(slot, {
-          floors: slotFloors
-        });
-      }
-    }
-  } catch (e) {
-    logError('Could not parse floors from Prebid: ' + e);
-  }
-}
-
-function parseSizes(sizes, parser = s => s) {
-  if (sizes == undefined) {
-    return [];
-  }
-  if (Array.isArray(sizes[0])) { // is there several sizes ? (ie. [[728,90],[200,300]])
-    return sizes.map(size => parser(size));
-  }
-  return [parser(sizes)]; // or a single one ? (ie. [728,90])
-}
-
-function parseSize(size) {
-  return size[0] + 'x' + size[1];
-}
-
 function buildRequestObject(bid) {
   const reqObj = {};
   reqObj.size = getSizes(bid);
   reqObj.id = getBidIdParameter('bidId', bid);
-
-  enrichSlotWithFloors(reqObj, bid);
-
   return reqObj;
 }
 
