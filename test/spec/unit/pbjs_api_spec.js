@@ -1459,7 +1459,7 @@ describe('Unit: Prebid Module', function () {
 
   describe('requestBids', function () {
     let logMessageSpy;
-    let makeRequestsStub;
+    let makeRequestsStub, createAuctionStub;
     let adUnits;
     let clock;
     before(function () {
@@ -1615,6 +1615,19 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('returns a promise that resolves', () => {
+      function delayHook(next, ...args) {
+        setTimeout(() => next(...args))
+      }
+
+      beforeEach(() => {
+        // make sure the return value works correctly when hooks give up priority
+        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+      });
+
       Object.entries({
         'immediately, without bidsBackHandler': (req) => $$PREBID_GLOBAL$$.requestBids(req),
         'after bidsBackHandler': (() => {
@@ -1665,11 +1678,24 @@ describe('Unit: Prebid Module', function () {
               sinon.assert.match(bids[bid.adUnitCode].bids[0], bid)
               done();
             });
-            completeAuction([bid]);
+            // `completeAuction` won't work until we're out of `delayHook`
+            // and the mocked auction has been set up;
+            // setTimeout here takes us after the setTimeout in `delayHook`
+            setTimeout(() => completeAuction([bid]));
           })
         })
       })
     })
+
+    it('should transfer ttlBuffer to adUnit.ttlBuffer', () => {
+      $$PREBID_GLOBAL$$.requestBids({
+        ttlBuffer: 123,
+        adUnits: [adUnits[0], {...adUnits[0], ttlBuffer: 0}]
+      });
+      sinon.assert.calledWithMatch(auctionModule.newAuction, {
+        adUnits: sinon.match((units) => units[0].ttlBuffer === 123 && units[1].ttlBuffer === 0)
+      })
+    });
   })
 
   describe('requestBids', function () {

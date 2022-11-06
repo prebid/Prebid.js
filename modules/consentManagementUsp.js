@@ -6,7 +6,7 @@
  */
 import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {uspDataHandler} from '../src/adapterManager.js';
+import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
@@ -115,6 +115,11 @@ function lookupUspConsent({onSuccess, onError}) {
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
+    uspapiFunction(
+      'registerDeletion',
+      USPAPI_VERSION,
+      adapterManager.callDataDeletionRequest
+    )
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
@@ -124,12 +129,17 @@ function lookupUspConsent({onSuccess, onError}) {
       uspapiFrame,
       callbackHandler.consentDataCallback
     );
+    callUspApiWhileInIframe(
+      'registerDeletion',
+      uspapiFrame,
+      adapterManager.callDataDeletionRequest
+    );
   }
 
+  let listening = false;
+
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
-    /* Setup up a __uspapi function to do the postMessage and stash the callback.
-      This function behaves, from the caller's perspective, identicially to the in-frame __uspapi call (although it is not synchronous) */
-    window.__uspapi = function (cmd, ver, callback) {
+    function callUsp(cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
         __uspapiCall: {
@@ -144,10 +154,13 @@ function lookupUspConsent({onSuccess, onError}) {
     };
 
     /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
+    if (!listening) {
+      window.addEventListener('message', readPostMessageResponse, false);
+      listening = true;
+    }
 
     // call uspapi
-    window.__uspapi(commandName, USPAPI_VERSION, moduleCallback);
+    callUsp(commandName, USPAPI_VERSION, moduleCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;

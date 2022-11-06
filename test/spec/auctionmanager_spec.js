@@ -955,6 +955,12 @@ describe('auctionmanager.js', function () {
         const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
+
+      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
+        adUnits[0].ttlBuffer = 0;
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
+      });
     });
 
     describe('when auction timeout is 20', function () {
@@ -1634,6 +1640,15 @@ describe('auctionmanager.js', function () {
           rejectionReason: undefined,
         });
       });
+
+      it('should return NO_BID replacement when rejected bid is not a "proper" bid', () => {
+        const noBid = cbs.addBidResponse.reject(AU_CODE, {});
+        sinon.assert.match(noBid, {
+          status: CONSTANTS.BID_STATUS.BID_REJECTED,
+          statusMessage: 'Bid returned empty or error response',
+          cpm: 0,
+        });
+      })
 
       it('addBidResponse hooks should not be able to reject the same bid twice', () => {
         cbs.addBidResponse(AU_CODE, bid);

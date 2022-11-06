@@ -29,5 +29,6 @@ The below parameters apply only to the Yahoo ConnectID user ID Module.
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the Yahoo ConnectID module - `"connectId"` | `"connectId"` |
 | params | Required | Object | Data for Yahoo ConnectID initialization. | |
-| params.pixelId | Required | Number | The Yahoo supplied publisher specific pixel Id  | `8976` |
-| params.he | Required | String | The SHA-256 hashed user email address | `"529cb86de31e9547a712d9f380146e98bbd39beec"` |
+| params.pixelId | Required | Number | The Yahoo supplied publisher specific pixel Id.  | `8976` |
+| params.he | Optional | String | The SHA-256 hashed user email address. One of either the `he` parameter or the `puid` parameter must be supplied. | `"529cb86de31e9547a712d9f380146e98bbd39beec"` |
+| params.puid | Optional | String | The publisher-supplied user identifier. One of either the `he` parameter or the `puid` parameter must be supplied. | `"P-975484817"` |
