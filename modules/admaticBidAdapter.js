@@ -100,9 +100,7 @@ export const spec = {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
           ttl: 360,
-          bidder: JSON.parse(request.data).ext.bidder,
-          timeToRespond: 1,
-          requestTimestamp: 1
+          bidder: JSON.parse(request.data).ext.bidder
         };
 
         bidResponses.push(resbid);
