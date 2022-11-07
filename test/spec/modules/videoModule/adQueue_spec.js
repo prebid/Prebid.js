@@ -94,5 +94,42 @@ describe('Ad Queue Coordinator', function () {
     expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
     setAdTagArgs = mockVideoCore.setAdTagUrl.thirdCall.args;
     expect(setAdTagArgs[0]).to.be.equal('testAdTag3');
-  })
+
+    adBreakEnd({ divId: testId });
+    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+  });
+
+  it('should empty queue as adBreaks end', function () {
+    const mockVideoCore = mockVideoCoreFactory();
+    let setupComplete;
+    let adBreakEnd;
+
+    mockVideoCore.onEvents = function(events, callback, id) {
+      if (events[0] === SETUP_COMPLETE && id === testId) {
+        setupComplete = callback;
+      }
+
+      if (events[0] === AD_BREAK_END && id === testId) {
+        adBreakEnd = callback;
+      }
+    };
+
+    const coordinator = AdQueueCoordinator(mockVideoCore);
+    coordinator.registerProvider(testId);
+    coordinator.queueAd('testAdTag', testId);
+    coordinator.queueAd('testAdTag2', testId);
+    coordinator.queueAd('testAdTag3', testId);
+
+    setupComplete({ divId: testId });
+    adBreakEnd({ divId: testId });
+    adBreakEnd({ divId: testId });
+    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+    expect(coordinator.requiresQueueing(testId)).to.be.true;
+    adBreakEnd({ divId: testId });
+    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+    expect(coordinator.requiresQueueing(testId)).to.be.false;
+    adBreakEnd({ divId: testId });
+    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+    expect(coordinator.requiresQueueing(testId)).to.be.false;
+  });
 });
