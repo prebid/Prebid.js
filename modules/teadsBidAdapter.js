@@ -55,11 +55,13 @@ export const spec = {
       deviceWidth: screen.width,
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
-      ...getFirstPartyTeadsIdParameter()
+      ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
 
-    if (validBidRequests[0].schain) {
-      payload.schain = validBidRequests[0].schain;
+    const firstBidRequest = validBidRequests[0];
+
+    if (firstBidRequest.schain) {
+      payload.schain = firstBidRequest.schain;
     }
 
     let gdpr = bidderRequest.gdprConsent;
@@ -78,6 +80,11 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    if (userAgentClientHints) {
+      payload.userAgentClientHints = userAgentClientHints;
     }
 
     const payloadString = JSON.stringify(payload);
@@ -261,14 +268,25 @@ function _validateId(id) {
 
 /**
  * Get the first-party cookie Teads ID parameter to be sent in bid request.
+ * @param validBidRequests an array of bids
  * @returns `{} | {firstPartyCookieTeadsId: string}`
  */
-function getFirstPartyTeadsIdParameter() {
-  if (!storage.cookiesAreEnabled()) {
-    return {};
+function getFirstPartyTeadsIdParameter(validBidRequests) {
+  const firstPartyTeadsIdFromUserIdModule = deepAccess(validBidRequests, '0.userId.teadsId');
+
+  if (firstPartyTeadsIdFromUserIdModule) {
+    return {firstPartyCookieTeadsId: firstPartyTeadsIdFromUserIdModule};
   }
-  const firstPartyTeadsId = storage.getCookie(FP_TEADS_ID_COOKIE_NAME);
-  return firstPartyTeadsId ? { firstPartyCookieTeadsId: firstPartyTeadsId } : {};
+
+  if (storage.cookiesAreEnabled(null)) {
+    const firstPartyTeadsIdFromCookie = storage.getCookie(FP_TEADS_ID_COOKIE_NAME, null);
+
+    if (firstPartyTeadsIdFromCookie) {
+      return {firstPartyCookieTeadsId: firstPartyTeadsIdFromCookie};
+    }
+  }
+
+  return {};
 }
 
 registerBidder(spec);
