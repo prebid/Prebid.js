@@ -570,7 +570,7 @@ function findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi,
  * @param {*} values Values for the same ex. [1, true]
  * @returns boolean
  */
-function hasQueryParamByRegex(paramName, values) {
+function hasQueryParam(paramName, values) {
   if(!paramName || !values || !values?.length) return false;
   let paramValue = getParameterByName(paramName);
   if(!paramValue) return false;
@@ -914,7 +914,7 @@ Object.assign(ORTB2.prototype, {
 
     //  TEST BID: Check if location URL has a query param pubmaticTest=true then set test=1
     //  else we don't need to send test: 0 to request payload.
-    if(hasQueryParamByRegex('pubmaticTest', [true])) request.test = 1;
+    if(hasQueryParam('pubmaticTest', [true])) request.test = 1;
 
     // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
     if (typeof deepAccess(firstBidRequest, 'bids.0.floorData') === 'object') {
