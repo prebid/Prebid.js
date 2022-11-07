@@ -7,7 +7,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=ow-client';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator';
 const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=';
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
@@ -1069,6 +1069,16 @@ export function prepareMetaObject(br, bid, seat) {
   }
 }
 
+/**
+ * Allow translator request to execute it as GET if flag is set.
+ * @returns 
+ */
+function allowToExecTranslatorGetRequest() {
+  if(!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
+  const randomValue100 = Math.ceil(Math.random()*100);
+  const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
+  return randomValue100 <= testGroupPercentage ? true : false;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -1308,9 +1318,18 @@ export const spec = {
       delete payload.site;
     }
 
+    if(allowToExecTranslatorGetRequest()) {
+      return {
+        method: 'GET',
+        url: ENDPOINT,
+        data: {"source":"ow-client", "payload": JSON.stringify(payload)},
+        bidderRequest: bidderRequest
+      };
+    }
+    
     return {
       method: 'POST',
-      url: ENDPOINT,
+      url: ENDPOINT + '?source=ow-client',
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
