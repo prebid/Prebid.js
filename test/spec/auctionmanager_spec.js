@@ -21,6 +21,7 @@ import {auctionManager} from '../../src/auctionManager.js';
 import 'modules/debugging/index.js' // some tests look for debugging side effects
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import {expect} from 'chai';
+import {deepClone} from '../../src/utils.js';
 
 var assert = require('assert');
 
@@ -57,7 +58,16 @@ function mockBid(opts) {
     'currency': 'USD',
     'netRevenue': true,
     'ttl': 360,
-    getSize: () => '300x250'
+    getSize: () => '300x250',
+    getIdentifiers() {
+      return {
+        src: this.source,
+        bidder: this.bidderCode,
+        bidId: this.requestId,
+        transactionId: this.transactionId,
+        auctionId: this.auctionId
+      }
+    }
   };
 }
 
@@ -726,6 +736,7 @@ describe('auctionmanager.js', function () {
     let auction;
     let ajaxStub;
     let bids;
+    let bidderRequests;
     let makeRequestsStub;
 
     before(function () {
@@ -749,7 +760,8 @@ describe('auctionmanager.js', function () {
         adUnitCodes = [ADUNIT_CODE];
         auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 3000});
         bids = TEST_BIDS.slice();
-        makeRequestsStub.returns(bids.map(b => mockBidRequest(b, {auctionId: auction.getAuctionId()})));
+        bidderRequests = bids.map(b => mockBidRequest(b, {auctionId: auction.getAuctionId()}));
+        makeRequestsStub.returns(bidderRequests);
         indexAuctions = [auction];
         createAuctionStub = sinon.stub(auctionModule, 'newAuction');
         createAuctionStub.returns(auction);
@@ -803,25 +815,32 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
 
-      it('installs publisher-defined renderers on bids', function () {
-        let renderer = {
-          url: 'renderer.js',
-          render: (bid) => bid
-        };
-        Object.assign(adUnits[0], {renderer});
+      describe('install publisher-defined renderers', () => {
+        Object.entries({
+          'on adUnit': () => adUnits[0],
+          'on bid': () => bidderRequests[0].bids[0],
+        }).forEach(([t, getObj]) => {
+          it(t, () => {
+            let renderer = {
+              url: 'renderer.js',
+              render: (bid) => bid
+            };
 
-        let bids1 = Object.assign({},
-          bids[0],
-          {
-            bidderCode: BIDDER_CODE,
-            mediaType: 'video-outstream',
-          }
-        );
-        spec.interpretResponse.returns(bids1);
-        auction.callBids();
-        const addedBid = auction.getBidsReceived().pop();
-        assert.equal(addedBid.renderer.url, 'renderer.js');
-      });
+            let bids1 = Object.assign({},
+              bids[0],
+              {
+                bidderCode: BIDDER_CODE,
+                mediaType: 'video-outstream',
+              }
+            );
+            Object.assign(getObj(), {renderer});
+            spec.interpretResponse.returns(bids1);
+            auction.callBids();
+            const addedBid = auction.getBidsReceived().pop();
+            assert.equal(addedBid.renderer.url, 'renderer.js');
+          })
+        })
+      })
 
       it('installs publisher-defined backup renderers on bids', function () {
         let renderer = {
@@ -935,6 +954,12 @@ describe('auctionmanager.js', function () {
 
         const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
+      });
+
+      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
+        adUnits[0].ttlBuffer = 0;
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
       });
     });
 
@@ -1323,6 +1348,7 @@ describe('auctionmanager.js', function () {
       getAdUnits: () => getBidRequests().flatMap(br => br.bids).map(br => ({ code: br.adUnitCode, transactionId: br.transactionId, mediaTypes: br.mediaTypes })),
       getAuctionId: () => '1',
       addBidReceived: () => true,
+      addBidRejected: () => true,
       getTimeout: () => 1000,
       getAuctionStart: () => start,
     }
@@ -1382,26 +1408,32 @@ describe('auctionmanager.js', function () {
       bidRequests = null;
     });
 
-    it('should call auction done after bid is added to auction for mediaType banner', function () {
-      let ADUNIT_CODE2 = 'adUnitCode2';
-      let BIDDER_CODE2 = 'sampleBidder2';
+    Object.entries({
+      'added to': (cbs) => cbs.addBidResponse,
+      'rejected from': (cbs) => cbs.addBidResponse.reject,
+    }).forEach(([t, getMethod]) => {
+      it(`should call auction done after bid is ${t} auction for mediaType banner`, function () {
+        let ADUNIT_CODE2 = 'adUnitCode2';
+        let BIDDER_CODE2 = 'sampleBidder2';
 
-      let bids1 = [mockBid({ bidderCode: BIDDER_CODE1, transactionId: ADUNIT_CODE1 })];
-      let bids2 = [mockBid({ bidderCode: BIDDER_CODE2, transactionId: ADUNIT_CODE2 })];
-      bidRequests = [
-        mockBidRequest(bids[0]),
-        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-        mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
-      ];
-      let cbs = auctionCallbacks(doneSpy, auction);
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
-      cbs.adapterDone.call(bidRequests[0]);
-      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone.call(bidRequests[1]);
-      cbs.addBidResponse.call(bidRequests[2], ADUNIT_CODE2, bids2[0]);
-      cbs.adapterDone.call(bidRequests[2]);
-      assert.equal(doneSpy.callCount, 1);
-    });
+        let bids1 = [mockBid({ bidderCode: BIDDER_CODE1, transactionId: ADUNIT_CODE1 })];
+        let bids2 = [mockBid({ bidderCode: BIDDER_CODE2, transactionId: ADUNIT_CODE2 })];
+        bidRequests = [
+          mockBidRequest(bids[0]),
+          mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+          mockBidRequest(bids2[0], { adUnitCode: ADUNIT_CODE2 })
+        ];
+        let cbs = auctionCallbacks(doneSpy, auction);
+        const method = getMethod(cbs);
+        method(ADUNIT_CODE, bids[0]);
+        cbs.adapterDone.call(bidRequests[0]);
+        method(ADUNIT_CODE1, bids1[0]);
+        cbs.adapterDone.call(bidRequests[1]);
+        method(ADUNIT_CODE2, bids2[0]);
+        cbs.adapterDone.call(bidRequests[2]);
+        assert.equal(doneSpy.callCount, 1);
+      });
+    })
 
     it('should call auction done after prebid cache is complete for mediaType video', function() {
       bids[0].mediaType = 'video';
@@ -1543,6 +1575,86 @@ describe('auctionmanager.js', function () {
         });
       })
     });
+
+    describe('when bids are rejected', () => {
+      let cbs, bid, expectedRejection;
+      const onBidRejected = sinon.stub();
+      const REJECTION_REASON = 'Bid rejected';
+      const AU_CODE = 'au';
+
+      function rejectHook(fn, adUnitCode, bid, reject) {
+        reject(REJECTION_REASON);
+        reject(REJECTION_REASON); // second call should do nothing
+      }
+
+      before(() => {
+        addBidResponse.before(rejectHook, 999);
+        events.on(CONSTANTS.EVENTS.BID_REJECTED, onBidRejected);
+      });
+
+      after(() => {
+        addBidResponse.getHooks({hook: rejectHook}).remove();
+        events.off(CONSTANTS.EVENTS.BID_REJECTED, onBidRejected);
+      });
+
+      beforeEach(() => {
+        onBidRejected.reset();
+        bid = mockBid({bidderCode: BIDDER_CODE});
+        bidRequests = [
+          mockBidRequest(bid),
+        ];
+        cbs = auctionCallbacks(doneSpy, auction);
+        expectedRejection = sinon.match(Object.assign({}, bid, {
+          rejectionReason: REJECTION_REASON,
+          adUnitCode: AU_CODE
+        }));
+        auction.addBidRejected = sinon.stub();
+      });
+
+      Object.entries({
+        'with addBidResponse.reject': () => cbs.addBidResponse.reject(AU_CODE, deepClone(bid), REJECTION_REASON),
+        'from addBidResponse hooks': () => cbs.addBidResponse(AU_CODE, deepClone(bid))
+      }).forEach(([t, rejectBid]) => {
+        describe(t, () => {
+          it('should emit a BID_REJECTED event', () => {
+            rejectBid();
+            sinon.assert.calledWith(onBidRejected, expectedRejection);
+          });
+
+          it('should pass bid to auction.addBidRejected', () => {
+            rejectBid();
+            sinon.assert.calledWith(auction.addBidRejected, expectedRejection);
+          });
+        })
+      });
+
+      it('should return a NO_BID replacement', () => {
+        const noBid = cbs.addBidResponse.reject(AU_CODE, {...bid, statusMessage: 'Bid available', status: CONSTANTS.BID_STATUS.RENDERED}, 'Rejected');
+        sinon.assert.match(noBid, {
+          status: CONSTANTS.BID_STATUS.BID_REJECTED,
+          statusMessage: 'Bid returned empty or error response',
+          cpm: 0,
+          requestId: bid.requestId,
+          auctionId: bid.auctionId,
+          adUnitCode: AU_CODE,
+          rejectionReason: undefined,
+        });
+      });
+
+      it('should return NO_BID replacement when rejected bid is not a "proper" bid', () => {
+        const noBid = cbs.addBidResponse.reject(AU_CODE, {});
+        sinon.assert.match(noBid, {
+          status: CONSTANTS.BID_STATUS.BID_REJECTED,
+          statusMessage: 'Bid returned empty or error response',
+          cpm: 0,
+        });
+      })
+
+      it('addBidResponse hooks should not be able to reject the same bid twice', () => {
+        cbs.addBidResponse(AU_CODE, bid);
+        expect(auction.addBidRejected.calledOnce).to.be.true;
+      });
+    })
   });
 
   describe('auctionOptions', function() {

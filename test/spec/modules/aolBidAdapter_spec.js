@@ -81,20 +81,46 @@ describe('AolAdapter', function () {
   const ONE_DISPLAY_TTL = 60;
   const ONE_MOBILE_TTL = 3600;
   const SUPPORTED_USER_ID_SOURCES = {
-    'adserver.org': '100',
-    'criteo.com': '200',
-    'id5-sync.com': '300',
-    'intentiq.com': '400',
-    'liveintent.com': '500',
-    'quantcast.com': '600',
-    'verizonmedia.com': '700',
-    'liveramp.com': '800'
+    'admixer.net': '100',
+    'adserver.org': '200',
+    'adtelligent.com': '300',
+    'amxrtb.com': '500',
+    'audigent.com': '600',
+    'britepool.com': '700',
+    'criteo.com': '800',
+    'crwdcntrl.net': '900',
+    'deepintent.com': '1000',
+    'epsilon.com': '1100',
+    'hcn.health': '1200',
+    'id5-sync.com': '1300',
+    'idx.lat': '1400',
+    'intentiq.com': '1500',
+    'intimatemerger.com': '1600',
+    'liveintent.com': '1700',
+    'liveramp.com': '1800',
+    'mediawallahscript.com': '1900',
+    'netid.de': '2100',
+    'neustar.biz': '2200',
+    'pubcid.org': '2600',
+    'quantcast.com': '2700',
+    'tapad.com': '2800',
+    'zeotap.com': '3200'
   };
 
   const USER_ID_DATA = {
+    admixerId: SUPPORTED_USER_ID_SOURCES['admixer.net'],
+    adtelligentId: SUPPORTED_USER_ID_SOURCES['adtelligent.com'],
+    amxId: SUPPORTED_USER_ID_SOURCES['amxrtb.com'],
+    britepoolid: SUPPORTED_USER_ID_SOURCES['britepool.com'],
     criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
     connectid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
+    dmdId: SUPPORTED_USER_ID_SOURCES['hcn.health'],
+    hadronId: SUPPORTED_USER_ID_SOURCES['audigent.com'],
+    lotamePanoramaId: SUPPORTED_USER_ID_SOURCES['crwdcntrl.net'],
+    deepintentId: SUPPORTED_USER_ID_SOURCES['deepintent.com'],
+    fabrickId: SUPPORTED_USER_ID_SOURCES['neustar.biz'],
     idl_env: SUPPORTED_USER_ID_SOURCES['liveramp.com'],
+    IDP: SUPPORTED_USER_ID_SOURCES['zeotap.com'],
     lipb: {
       lipbid: SUPPORTED_USER_ID_SOURCES['liveintent.com'],
       segments: ['100', '200']
@@ -104,8 +130,15 @@ describe('AolAdapter', function () {
       uid: SUPPORTED_USER_ID_SOURCES['id5-sync.com'],
       ext: {foo: 'bar'}
     },
+    idx: SUPPORTED_USER_ID_SOURCES['idx.lat'],
+    imuid: SUPPORTED_USER_ID_SOURCES['intimatemerger.com'],
     intentIqId: SUPPORTED_USER_ID_SOURCES['intentiq.com'],
-    quantcastId: SUPPORTED_USER_ID_SOURCES['quantcast.com']
+    mwOpenLinkId: SUPPORTED_USER_ID_SOURCES['mediawallahscript.com'],
+    netId: SUPPORTED_USER_ID_SOURCES['netid.de'],
+    quantcastId: SUPPORTED_USER_ID_SOURCES['quantcast.com'],
+    publinkId: SUPPORTED_USER_ID_SOURCES['epsilon.com'],
+    pubcid: SUPPORTED_USER_ID_SOURCES['pubcid.org'],
+    tapadId: SUPPORTED_USER_ID_SOURCES['tapad.com']
   };
 
   function createCustomBidRequest({bids, params} = {}) {

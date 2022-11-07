@@ -125,12 +125,23 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pas')
     })
 
+    it('ntv_url should contain query params', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          location: 'https://www.test.com?queryTest=true',
+        },
+      })
+      console.log(request.url) // eslint-disable-line no-console
+      expect(request.url).to.include(encodeURIComponent('?queryTest=true'))
+    })
+
     it('ntv_url parameter should NOT be empty even if the utl parameter was set as an empty value', function () {
       bidRequests[0].params.url = ''
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          referer: 'https://www.test.com',
+          location: 'https://www.test.com',
         },
       })
 
@@ -144,7 +155,7 @@ describe('nativoBidAdapterTests', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          referer: 'https://www.test.com',
+          location: 'https://www.test.com',
         },
       })
 
