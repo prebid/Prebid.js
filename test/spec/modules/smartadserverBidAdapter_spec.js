@@ -200,6 +200,27 @@ describe('Smart bid adapter tests', function () {
     }).to.not.throw();
   });
 
+  it('Should not nest response if ad and adUrl empty', () => {
+    const BID_RESPONSE_EMPTY = {
+      body: {
+        ad: null,
+        adUrl: null,
+        cpm: 0.92,
+        isNoAd: false
+      }
+    };
+
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse(BID_RESPONSE_EMPTY, request[0]);
+
+    expect(bids).to.have.lengthOf(0);
+    expect(() => {
+      spec.interpretResponse(BID_RESPONSE_EMPTY, {
+        data: 'invalid Json'
+      });
+    }).to.not.throw();
+  });
+
   it('Verify parse response', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS);
     const bids = spec.interpretResponse(BID_RESPONSE, request[0]);
@@ -338,7 +359,6 @@ describe('Smart bid adapter tests', function () {
   describe('gdpr tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with GDPR', function () {
@@ -390,7 +410,6 @@ describe('Smart bid adapter tests', function () {
   describe('ccpa/us privacy tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with us privacy', function () {
@@ -419,7 +438,6 @@ describe('Smart bid adapter tests', function () {
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const INSTREAM_DEFAULT_PARAMS = [{
@@ -678,7 +696,6 @@ describe('Smart bid adapter tests', function () {
   describe('Outstream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const OUTSTREAM_DEFAULT_PARAMS = [{
@@ -1019,7 +1036,6 @@ describe('Smart bid adapter tests', function () {
   describe('Verify bid requests with multiple mediaTypes', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{
