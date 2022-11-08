@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
+import { batchingCache } from '../../src/auction.js';
 
 const should = chai.should();
 
@@ -295,6 +296,35 @@ describe('The video cache', function () {
       };
 
       JSON.parse(request.requestBody).should.deep.equal(payload);
+    });
+
+    it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+      const mockAfterBidAdded = function() {};
+      let callback = null;
+      let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          batchSize: 3,
+          batchTimeout: 20
+        }
+      });
+
+      let stubCache = sinon.stub();
+      const batchAndStore = batchingCache(mockTimeout, stubCache);
+      for (let i = 0; i < 3; i++) {
+        batchAndStore({}, {}, mockAfterBidAdded);
+      }
+
+      sinon.assert.calledOnce(mockTimeout);
+      sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
+
+      const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
+
+      callback();
+
+      sinon.assert.calledWith(stubCache, expectedBatch);
     });
 
     function assertRequestMade(bid, expectedValue) {

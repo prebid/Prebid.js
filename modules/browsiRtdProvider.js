@@ -348,7 +348,7 @@ export const browsiSubmodule = {
 function getTargetingData(uc, c, us, a) {
   const targetingData = getRTD(uc);
   const auctionId = a.auctionId;
-  const sendAdRequestEvent = _browsiData['bet'] === 'AD_REQUEST';
+  const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
   uc.forEach(auc => {
     if (isNumber(_ic[auc])) {
       _ic[auc] = _ic[auc] + 1;

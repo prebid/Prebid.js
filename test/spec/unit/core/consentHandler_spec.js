@@ -56,4 +56,38 @@ describe('Consent data handler', () => {
       })
     })
   });
+
+  it('should run onConsentChange listeners when consent data changes', () => {
+    handler.setConsentData({consent: 'data'});
+    const listener = sinon.stub();
+    handler.onConsentChange(listener);
+    handler.setConsentData({consent: 'data'});
+    sinon.assert.notCalled(listener);
+    const newConsent = {other: 'data'};
+    handler.setConsentData(newConsent);
+    sinon.assert.calledWith(listener, newConsent);
+  });
+
+  it('should not choke if listener throws', () => {
+    handler.onConsentChange(sinon.stub().throws(new Error()));
+    const listener = sinon.stub();
+    handler.onConsentChange(listener);
+    const consent = {consent: 'data'};
+    handler.setConsentData(consent);
+    sinon.assert.calledWith(listener, consent);
+  });
+
+  Object.entries({
+    'undefined': undefined,
+    'null': null
+  }).forEach(([t, val]) => {
+    it(`should run onConsentChange when consent is first set to ${t}`, () => {
+      const listener = sinon.stub();
+      handler.onConsentChange(listener);
+      handler.setConsentData(val);
+      handler.setConsentData(val);
+      sinon.assert.calledOnce(listener);
+      sinon.assert.calledWith(listener, val);
+    })
+  })
 })
