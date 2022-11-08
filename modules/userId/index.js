@@ -588,20 +588,28 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
     return gdprDataHandler.promise.finally(initMetrics.startTiming('userId.init.gdpr'));
   }
 
-  let done = cancelAndTry(
-    GreedyPromise.all([hooksReady, startInit.promise])
-      .then(timeGdpr)
-      .then(checkRefs((consentData) => {
-        initSubmodules(initModules, allModules, consentData);
-      }))
-      .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
-      .then(checkRefs(() => {
-        const modWithCb = initModules.filter(item => isFn(item.callback));
-        if (modWithCb.length) {
-          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
-        }
-      }))
-  );
+  let done = GreedyPromise.resolve();
+
+  function loadIds() {
+    done = cancelAndTry(
+      done.catch(() => null)
+        .then(() => GreedyPromise.all([hooksReady, startInit.promise]))
+        .then(timeGdpr)
+        .then(checkRefs((consentData) => {
+          initSubmodules(initModules, allModules, consentData);
+        }))
+        .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
+        .then(checkRefs(() => {
+          const modWithCb = initModules.filter(item => isFn(item.callback));
+          if (modWithCb.length) {
+            return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+          }
+        }))
+    );
+  }
+
+  loadIds();
+  gdprDataHandler.onConsentChange(loadIds);
 
   /**
    * with `ready` = true, starts initialization; with `refresh` = true, reinitialize submodules (optionally
