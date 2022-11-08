@@ -1070,14 +1070,36 @@ export function prepareMetaObject(br, bid, seat) {
 }
 
 /**
- * Allow translator request to execute it as GET if flag is set.
- * @returns 
+ * Checks url length is not exceeding the configured length.
+ * @param {*} payload - payload data
+ * @param {*} maxLength - length of URL characters
+ * @returns boolean
  */
-function allowToExecTranslatorGetRequest() {
+function hasUrlLengthIsNotExceeding(payload, maxLength) {
+  const encodedPayload = btoa(JSON.stringify(payload));
+  const urlLength = (ENDPOINT + "?source=ow-client&payload=" + encodedPayload)?.length;
+  return urlLength <= maxLength;
+}
+
+/**
+ * returns, boolean value according to translator get request is enabled 
+ * and random value should be less than or equal to testGroupPercentage
+ * @returns boolean
+ */
+function hasGetRequestEnabled(){
   if(!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
   const randomValue100 = Math.ceil(Math.random()*100);
   const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
   return randomValue100 <= testGroupPercentage ? true : false;
+}
+
+/**
+ * Allow translator request to execute it as GET if flag is set.
+ * @returns boolean
+ */
+function allowToExecTranslatorGetRequest(payload) {
+  const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
+  return hasGetRequestEnabled() && hasUrlLengthIsNotExceeding(payload, maxUrlLength);
 }
 
 export const spec = {
@@ -1319,10 +1341,13 @@ export const spec = {
     }
 
     if(allowToExecTranslatorGetRequest()) {
+      const encodedPayload = btoa(JSON.stringify(payload));  
       return {
         method: 'GET',
         url: ENDPOINT,
-        data: {"source":"ow-client", "payload": JSON.stringify(payload)},
+        data: {
+          "source": "ow-client", "payload": encodedPayload
+        },
         bidderRequest: bidderRequest
       };
     }
