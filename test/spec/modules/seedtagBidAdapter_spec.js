@@ -29,7 +29,6 @@ function createInStreamSlotConfig(mediaType) {
   return getSlotConfigs(mediaType, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
-    placement: "inStream",
   });
 }
 
@@ -48,13 +47,7 @@ describe("Seedtag Adapter", function () {
               }
             );
           };
-          const placements = [
-            "inBanner",
-            "inStream",
-            "inImage",
-            "inScreen",
-            "inArticle",
-          ];
+          const placements = ["inBanner", "inImage", "inScreen", "inArticle"];
           placements.forEach((placement) => {
             it("should be " + placement, function () {
               const isBidRequestValid = spec.isBidRequestValid(
@@ -77,7 +70,6 @@ describe("Seedtag Adapter", function () {
             {
               publisherId: PUBLISHER_ID,
               adUnitId: ADUNIT_ID,
-              placement: "inStream",
             }
           );
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
@@ -95,7 +87,6 @@ describe("Seedtag Adapter", function () {
             {
               publisherId: PUBLISHER_ID,
               adUnitId: ADUNIT_ID,
-              placement: "inStream",
             }
           );
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
@@ -146,14 +137,8 @@ describe("Seedtag Adapter", function () {
           expect(isBidRequestValid).to.equal(false);
         });
       });
+
       describe("when video mediaType object is not correct", function () {
-        function createVideoSlotconfig(mediaType) {
-          return getSlotConfigs(mediaType, {
-            publisherId: PUBLISHER_ID,
-            adUnitId: ADUNIT_ID,
-            placement: "inStream",
-          });
-        }
         it("is a void object", function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createInStreamSlotConfig({ video: {} })
