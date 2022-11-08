@@ -1040,6 +1040,7 @@ describe('Smart bid adapter tests', function () {
   describe('Verify bid requests with multiple mediaTypes', function () {
     afterEach(function () {
       config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{
