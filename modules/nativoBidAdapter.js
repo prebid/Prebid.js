@@ -145,7 +145,7 @@ export const spec = {
         'params.url',
       )
       if (pageUrl == undefined || pageUrl === '') {
-        pageUrl = bidderRequest.refererInfo.page
+        pageUrl = bidderRequest.refererInfo.location
       }
 
       placementId = deepAccess(bidRequest, 'params.placementId')
@@ -465,8 +465,9 @@ export function parseFloorPriceData(bidRequest) {
     // Setup price floor data per media type
     let mediaTypeData = bidMediaTypes[mediaType]
     let mediaTypeFloorPriceData = {}
+    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || [];
     // Step through each size of the media type so we can get floor data for each size per media type
-    mediaTypeData.sizes.forEach((size) => {
+    mediaTypeSizes.forEach((size) => {
       // Get floor price data per the getFloor method and respective media type / size combination
       const priceFloorData = bidRequest.getFloor({
         currency: FLOOR_PRICE_CURRENCY,

@@ -238,7 +238,8 @@ function getDefaultBidderFn (bidder) {
         deepSetValue(bid, 'params.visitor.p_standard', data.ac)
       }
       if (data.rubicon && data.rubicon.length) {
-        deepSetValue(bid, 'params.visitor.permutive', data.rubicon)
+        const rubiconCohorts = deepAccess(bid, 'params.video') ? data.rubicon.map(String) : data.rubicon
+        deepSetValue(bid, 'params.visitor.permutive', rubiconCohorts)
       }
 
       return bid
