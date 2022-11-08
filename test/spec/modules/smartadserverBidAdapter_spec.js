@@ -359,6 +359,7 @@ describe('Smart bid adapter tests', function () {
   describe('gdpr tests', function () {
     afterEach(function () {
       config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with GDPR', function () {
@@ -410,6 +411,7 @@ describe('Smart bid adapter tests', function () {
   describe('ccpa/us privacy tests', function () {
     afterEach(function () {
       config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with us privacy', function () {
@@ -438,6 +440,7 @@ describe('Smart bid adapter tests', function () {
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const INSTREAM_DEFAULT_PARAMS = [{
@@ -696,6 +699,7 @@ describe('Smart bid adapter tests', function () {
   describe('Outstream video tests', function () {
     afterEach(function () {
       config.resetConfig();
+      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const OUTSTREAM_DEFAULT_PARAMS = [{
