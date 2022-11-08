@@ -91,7 +91,20 @@ var adUnits = [{
   mediaTypes: {
     video: {
       context: 'instream',   // required
-      playerSize: [600, 300] // required
+      playerSize: [600, 300], // required
+      // Video object as specified in OpenRTB 2.5
+      mimes: ['video/mp4'], // recommended
+      minduration: 5,       // optional
+      maxduration: 60,      // optional
+      boxingallowed: 1,     // optional
+      skip: 1,              // optional
+      startdelay: 1,        // optional
+      linearity: 1,         // optional
+      battr: [1, 2],        // optional
+      maxbitrate: 10,       // optional
+      playbackmethod: [1],  // optional
+      delivery: [1],        // optional
+      placement: 1,         // optional
     }
   },
   bids: [
@@ -100,23 +113,6 @@ var adUnits = [{
       params: {
         publisherId: '0000-0000-01',    // required
         adUnitId: '0000',               // required
-        placement: 'inStream',             // required
-        adPosition: 0,                  // optional
-        // Video object as specified in OpenRTB 2.5
-        video: {
-          mimes: ['video/mp4'], // recommended
-          minduration: 5,       // optional
-          maxduration: 60,      // optional
-          boxingallowed: 1,     // optional
-          skip: 1,              // optional
-          startdelay: 1,        // optional
-          linearity: 1,         // optional
-          battr: [1, 2],        // optional
-          maxbitrate: 10,       // optional
-          playbackmethod: [1],  // optional
-          delivery: [1],        // optional
-          placement: 1,         // optional
-        }
       }
     }
   ]
