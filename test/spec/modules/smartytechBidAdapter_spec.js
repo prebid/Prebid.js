@@ -36,15 +36,15 @@ describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
   });
 });
 
-function mockRandomSizeArray(length) {
-  return new Array(length).map(i => {
+function mockRandomSizeArray(len) {
+  return Array.apply(null, {length: len}).map(i => {
     return [Math.floor(Math.random() * 800), Math.floor(Math.random() * 800)]
   });
 }
 
 function mockBidRequestListData(size) {
-  return new Array(Math.floor(Math.random() * size)).map((i, index) => {
-    const id = Math.floor(Math.random() * 800) * index;
+  return Array.apply(null, {length: size}).map((i, index) => {
+    const id = Math.floor(Math.random() * 800) * (index + 1);
     return {
       adUnitCode: `adUnitCode-${id}`,
       sizes: mockRandomSizeArray(index + 1),
@@ -65,24 +65,25 @@ function mockRefererData() {
 }
 
 function mockResponseData(requestData) {
-  const data = requestData.data.map((request, index) => {
-    const sizeArrayIndex = Math.floor(Math.random() * (request.size.length() - 1));
+  let data = {}
+
+  requestData.data.forEach((request, index) => {
+    const sizeArrayIndex = Math.floor(Math.random() * (request.sizes.length - 1));
     const rndIndex = Math.floor(Math.random() * 800);
-    return {
-      [request.adUnitCode]: {
-        ad: `ad-${rndIndex}`,
-        width: request.size[sizeArrayIndex][0],
-        height: request.size[sizeArrayIndex][1],
-        creativeId: `creative-id-${index}`,
-        cpm: Math.floor(Math.random() * 100),
-        currency: `UAH-${rndIndex}`
-      }
-    }
+
+    data[request.adUnitCode] = {
+      ad: `ad-${rndIndex}`,
+      width: request.sizes[sizeArrayIndex][0],
+      height: request.sizes[sizeArrayIndex][1],
+      creativeId: `creative-id-${index}`,
+      cpm: Math.floor(Math.random() * 100),
+      currency: `UAH-${rndIndex}`
+    };
   });
   return {
     body: data
   }
-}
+};
 
 describe('SmartyTechDSPAdapter: buildRequests', () => {
   let mockBidRequest;
@@ -130,37 +131,32 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
     mockResponse = mockResponseData(request);
   });
 
-  it('interpretResponse: does not return data with out ads', () => {
-    const keys = Object.keys(mockResponse.body);
-    for (let key in keys) {
-      mockResponse.body[key].ad = undefined;
-    }
+  it('interpretResponse: empty data request', () => {
+    delete mockResponse['body']
     const data = spec.interpretResponse(mockResponse, mockBidRequest);
     expect(data.length).to.be.equal(0);
   });
 
-  it('interpretResponse: response data ans convert data arrays has same length', () => {
+  it('interpretResponse: response data and convert data arrays has same length', () => {
     const keys = Object.keys(mockResponse.body);
     const data = spec.interpretResponse(mockResponse, mockBidRequest);
     expect(data.length).to.be.equal(keys.length);
   });
 
   it('interpretResponse: convert to correct data', () => {
+    const keys = Object.keys(mockResponse.body);
     const data = spec.interpretResponse(mockResponse, mockBidRequest);
-    const responseBody = mockResponse.body;
-    const keys = Object.keys(responseBody);
+
     data.forEach((responseItem, index) => {
-      expect(responseItem.ad).to.be.equal(responseBody[keys[index]].ad);
-      expect(responseItem.cpm).to.be.equal(responseBody[keys[index]].cpm);
-      expect(responseItem.creativeId).to.be.equal(responseBody[keys[index]].creativeId);
-      expect(responseItem.currency).to.be.equal(responseBody[keys[index]].currency);
+      expect(responseItem.ad).to.be.equal(mockResponse.body[keys[index]].ad);
+      expect(responseItem.cpm).to.be.equal(mockResponse.body[keys[index]].cpm);
+      expect(responseItem.creativeId).to.be.equal(mockResponse.body[keys[index]].creativeId);
+      expect(responseItem.currency).to.be.equal(mockResponse.body[keys[index]].currency);
       expect(responseItem.netRevenue).to.be.true;
       expect(responseItem.ttl).to.be.equal(60);
       expect(responseItem.requestId).to.be.equal(mockBidRequest.data[index].bidId);
-      const sizeList = responseBody[keys[index]].size.filter(s => {
-        return s[0] === responseItem.width && s[1] === responseItem.height
-      });
-      expect(sizeList.length).to.be.equal(1);
+      expect(responseItem.width).to.be.equal(mockResponse.body[keys[index]].width);
+      expect(responseItem.height).to.be.equal(mockResponse.body[keys[index]].height);
     });
   });
-})
+});

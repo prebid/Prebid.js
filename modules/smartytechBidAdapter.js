@@ -41,13 +41,13 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
+    if (typeof serverResponse.body === 'undefined') {
+      return [];
+    }
+
     const validBids = bidRequest.data;
     const keys = Object.keys(serverResponse.body)
     const responseBody = serverResponse.body;
-
-    if (typeof responseBody === 'undefined') {
-      return [];
-    }
 
     return keys.filter(key => {
       return responseBody[key].ad
