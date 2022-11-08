@@ -2,6 +2,7 @@ import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined, isSlotMatch
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -19,9 +20,14 @@ const STORAGE_VIEW_PREFIX = 'pbvi_';
 const mobileUserAgent = isMobileUserAgent();
 const PRIORITY_ORDER_FOR_MOBILE_SIZES_ASC = ['1x1', '300x50', '320x50', '300x250'];
 const PRIORITY_ORDER_FOR_DESKTOP_SIZES_ASC = ['1x1', '970x90', '970x250', '160x600', '300x600', '728x90', '300x250'];
+const VAST_INSTREAM = 1;
+const VAST_OUTSTREAM = 2;
+const VAST_VERSION_DEFAULT = 3;
+const DEFAULT_SIZE_VAST = '640x480';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
     return Boolean(bid.params.ci) || Boolean(bid.params.t);
@@ -38,14 +44,14 @@ export const spec = {
     const spaces = getSpaces(bidRequests, urlConfig.ml);
     // TODO: do the fallbacks make sense here?
     const pageUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-    const domain = bidderRequest.refererInfo.domain || window.location.host
+    const domain = bidderRequest.refererInfo.domain || window.location.host;
     if (urlConfig.t) {
       url = 'https://' + urlConfig.isv + '/layers/t_pbjs_2.json';
       params = {};
     } else {
       url = 'https://' + (urlConfig.sv || DEFAULT_SV) + '/pbjs/1/' + urlConfig.ci + '/' + dfpClientId + '/' + domain + '/' + sec;
       // TODO: does the fallback make sense here?
-      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation
+      const referrerUrl = bidderRequest.refererInfo.ref || bidderRequest.refererInfo.topmostLocation;
 
       if (storage.hasLocalStorage()) {
         registerViewabilityAllBids(bidRequests);
@@ -86,6 +92,10 @@ export const spec = {
           params['e_' + id] = (typeof userIds[id] === 'object') ? encodeURIComponent(JSON.stringify(userIds[id])) : encodeURIComponent(userIds[id]);
         }
       }
+      if (spaces.impType) {
+        params.vctx = spaces.impType & VAST_INSTREAM ? VAST_INSTREAM : VAST_OUTSTREAM;
+        params.vv = VAST_VERSION_DEFAULT;
+      }
     }
 
     return {
@@ -108,7 +118,6 @@ export const spec = {
               cpm: ad.pr,
               width: ad.w,
               height: ad.h,
-              ad: ad.adm,
               ttl: TTL,
               creativeId: ad.crid,
               netRevenue: NET_REVENUE,
@@ -119,6 +128,13 @@ export const spec = {
                 advertiserDomains: ad.adom
               };
             }
+            if (isVastResponse(ad)) {
+              bidResponse.vastXml = ad.adm;
+              bidResponse.mediaTypes = VIDEO;
+            } else {
+              bidResponse.ad = ad.adm;
+            }
+
             bidResponses.push(bidResponse);
           });
         }
@@ -150,7 +166,7 @@ export const spec = {
 
     return syncs;
   },
-}
+};
 
 function getUserAgent() {
   return window.navigator.userAgent;
@@ -236,17 +252,42 @@ function getSpacesStruct(bids) {
   return e;
 }
 
+function getFirstSizeVast(sizes) {
+  if (sizes == undefined || !Array.isArray(sizes)) {
+    return undefined;
+  }
+
+  let size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+
+  return (Array.isArray(size) && size.length == 2) ? size : undefined;
+}
+
 function cleanName(name) {
   return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 
 function getSpaces(bidRequests, ml) {
+  let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
+  // Only one type of auction is supported at a time
+  if (impType) {
+    bidRequests = bidRequests.filter((bid) => bid.mediaTypes && bid.mediaTypes[VIDEO] && (impType & VAST_INSTREAM ? (!bid.mediaTypes[VIDEO].context || bid.mediaTypes[VIDEO].context == 'instream') : (bid.mediaTypes[VIDEO].context == 'outstream')));
+  }
+
   let spacesStruct = getSpacesStruct(bidRequests);
-  let es = {str: '', vs: '', map: {}};
+  let es = {str: '', vs: '', map: {}, impType: impType};
   es.str = Object.keys(spacesStruct).map(size => spacesStruct[size].map((bid, i) => {
     es.vs += getVs(bid);
 
     let name;
+
+    if (impType) {
+      let firstSize = getFirstSizeVast(bid.mediaTypes[VIDEO].playerSize);
+      let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
+      name = 'video_' + sizeVast + '_' + i;
+      es.map[name] = bid.bidId;
+      return name + ':' + sizeVast + ';1';
+    }
+
     if (ml) {
       name = cleanName(bid.adUnitCode);
     } else {
@@ -462,4 +503,9 @@ function registerAuction(storageID) {
 
   return true;
 }
+
+function isVastResponse(bid) {
+  return bid.adm.match(/^(<VAST)|(<VideoAdServingTemplate)/gmi);
+}
+
 registerBidder(spec);

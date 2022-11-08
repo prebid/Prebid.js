@@ -10,7 +10,7 @@ Connects to Adagio demand source to fetch bids.
 
 ## Configuration
 
-Adagio require several params. These params must be set at Prebid.js global config level or at adUnit level.
+Adagio require several params. These params must be set at Prebid.js BidderConfig config level or at adUnit level.
 
 Below, the list of Adagio params and where they can be set.
 
@@ -57,6 +57,16 @@ pbjs.setConfig({
   },
 });
 ```
+
+#### Note on FPD support
+
+Adagio will use FPD data as fallback for the params below:
+- pagetype
+- environment
+- category
+- subcategory
+
+If the FPD value is an array, the 1st value of this array will be used.
 
 ### adUnit configuration
 

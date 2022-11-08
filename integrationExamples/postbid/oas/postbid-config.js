@@ -3,10 +3,10 @@ var pbjs = pbjs || {};
 pbjs.que = pbjs.que || [];
 
 (function() {
-    var pbjsEl = document.createElement("script"); pbjsEl.type = "text/javascript";
-    pbjsEl.async = true; var isHttps = 'https:' === document.location.protocol;
-    pbjsEl.src = (isHttps ? "https" : "http") + "://acdn.adnxs.com/prebid/not-for-prod/prebid.js";
-    var pbjsTargetEl = document.getElementsByTagName("head")[0];
+    var pbjsEl = document.createElement('script'); pbjsEl.type = 'text/javascript';
+    pbjsEl.async = true;
+    pbjsEl.src = 'https://acdn.adnxs.com/prebid/not-for-prod/prebid.js'
+    var pbjsTargetEl = document.getElementsByTagName('head')[0];
     pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
 })();
 

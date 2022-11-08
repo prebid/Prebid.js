@@ -2,6 +2,7 @@ import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
@@ -20,6 +21,9 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequest = convertOrtbRequestToProprietaryNative(validRequest);
+
     let w;
     let docRef;
     do {
@@ -48,7 +52,7 @@ export const spec = {
           consentString: bidderRequest.gdprConsent.consentString,
           // will check if the gdprApplies field was populated with a boolean value (ie from page config).  If it's undefined, then default to true
           gdprApplies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-        }
+        };
       }
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;

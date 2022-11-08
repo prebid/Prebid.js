@@ -7,41 +7,45 @@
  * @requires module:modules/realTimeData
  */
 
-/**
+/** profile metadata
  * @typedef dataCallbackMetadata
- * @property {Boolean} user if true it is user-centric data
- * @property {String} source describe the source of data, if "contextual" or "wam"
- * @property {Boolean} isDefault if true it the default profile defined in the configuration
+ * @property {boolean} user if true it is user-centric data
+ * @property {string} source describe the source of data, if 'contextual' or 'wam'
+ * @property {boolean} isDefault if true it the default profile defined in the configuration
+ */
+
+/** profile from contextual, wam or sfbx
+ * @typedef {Object.<string,string[]>} Profile
  */
 
 /** onData callback type
  * @callback dataCallback
- * @param {Object} data profile data
+ * @param {Profile} data profile data
  * @param {dataCallbackMetadata} meta metadata
  * @returns {void}
  */
 
 /** setPrebidTargeting callback type
  * @callback setPrebidTargetingCallback
- * @param {String} adUnitCode
- * @param {Object} data
+ * @param {string} adUnitCode
+ * @param {Profile} data
  * @param {dataCallbackMetadata} metadata
- * @returns {Boolean}
+ * @returns {boolean}
  */
 
 /** sendToBidders callback type
  * @callback sendToBiddersCallback
  * @param {Object} bid
- * @param {String} adUnitCode
- * @param {Object} data
+ * @param {string} adUnitCode
+ * @param {Profile} data
  * @param {dataCallbackMetadata} metadata
- * @returns {Boolean}
+ * @returns {boolean}
  */
 
 /**
  * @typedef {Object} ModuleParams
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
  * @property {?WeboCtxConf} weboCtxConf site-centric contextual configuration
  * @property {?WeboUserDataConf} weboUserDataConf user-centric wam configuration
@@ -49,41 +53,52 @@
  */
 
 /**
+ * @callback assetIDcallback
+ * @returns {string} should return asset identifier using the form datasource:docId
+ */
+/**
  * @typedef {Object} WeboCtxConf
  * @property {string} token required token to be used on bigsea contextual API requests
  * @property {?string} targetURL specify the target url instead use the referer
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?assetIDcallback|?string} assetID specifies the assert identifier using the form datasource:docId or via callback
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
- * @property {?object} defaultProfile to be used if the profile is not found
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?Profile} defaultProfile to be used if the profile is not found
+ * @property {?boolean} enabled if false, will ignore this configuration
  * @property {?string} baseURLProfileAPI to be used to point to a different domain than ctx.weborama.com
  */
 
 /**
  * @typedef {Object} WeboUserDataConf
  * @property {?number} accountId wam account id
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
- * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?boolean} enabled if false, will ignore this configuration
  */
 
 /**
  * @typedef {Object} SfbxLiteDataConf
- * @property {?setPrebidTargetingCallback|?Boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
- * @property {?sendToBiddersCallback|?Boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
- * @property {?object} defaultProfile to be used if the profile is not found
+ * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
+ * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
+ * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
- * @property {?Boolean} enabled if false, will ignore this configuration
+ * @property {?boolean} enabled if false, will ignore this configuration
  */
+
+/** common configuration between contextual, wam and sfbx
+ * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
+ */
+
 import {
   getGlobal
 } from '../src/prebidGlobal.js';
 import {
+  deepClone,
   deepSetValue,
   isEmpty,
   isFn,
@@ -93,8 +108,9 @@ import {
   isStr,
   isBoolean,
   isPlainObject,
-  deepClone,
-  tryAppendQueryString, mergeDeep, logWarn
+  logWarn,
+  mergeDeep,
+  tryAppendQueryString
 } from '../src/utils.js';
 import {
   submodule
@@ -127,438 +143,876 @@ const WEBO_CTX_CONF_SECTION = 'weboCtxConf';
 const WEBO_USER_DATA_CONF_SECTION = 'weboUserDataConf';
 /** @type {string} */
 const SFBX_LITE_DATA_CONF_SECTION = 'sfbxLiteDataConf';
-
+/** @type {string} */
+const WEBO_CTX_SOURCE_LABEL = 'contextual';
+/** @type {string} */
+const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
+/** @type {string} */
+const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
-/** @type {?Object} */
+
 export const storage = getStorageManager({
   gvlid: GVLID,
   moduleName: SUBMODULE_NAME
 });
 
-/** @type {null|Object} */
-let _weboContextualProfile = null;
-
-/** @type {Boolean} */
-let _weboCtxInitialized = false;
-
-/** @type {?Object} */
-let _weboUserDataUserProfile = null;
-
-/** @type {Boolean} */
-let _weboUserDataInitialized = false;
-
-/** @type {?Object} */
-let _sfbxLiteDataProfile = null;
-
-/** @type {Boolean} */
-let _sfbxLiteDataInitialized = false;
-
-/** Initialize module
- * @param {object} moduleConfig
- * @return {Boolean} true if module was initialized with success
+/**
+ * @typedef {Object} Component
+ * @property {boolean} initialized
+ * @property {?Profile} data
+ * @property {boolean} user if true it is user-centric data
+ * @property {string} source describe the source of data, if 'contextual' or 'wam'
+ * @property {buildProfileHandlerCallbackBuilder} callbackBuilder
  */
-function init(moduleConfig) {
-  const moduleParams = moduleConfig?.params || {};
 
-  _weboContextualProfile = null;
-  _weboUserDataUserProfile = null;
-  _sfbxLiteDataProfile = null;
-
-  _weboCtxInitialized = initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-  _weboUserDataInitialized = initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
-  _sfbxLiteDataInitialized = initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
-
-  return _weboCtxInitialized || _weboUserDataInitialized || _sfbxLiteDataInitialized;
-}
-
-/** Initialize subsection module
- * @param {Object} moduleParams
- * @param {string} subSection subsection name to initialize
- * @param {[]string} requiredFields
- * @return {Boolean} true if module subsection was initialized with success
+/**
+ * @typedef {Object} Components
+ * @property {Component} WeboCtx
+ * @property {Component} WeboUserData
+ * @property {Component} SfbxLiteData
  */
-function initSubSection(moduleParams, subSection, ...requiredFields) {
-  const weboSectionConf = moduleParams[subSection] || {enabled: false};
 
-  if (weboSectionConf.enabled === false) {
-    delete moduleParams[subSection];
+/**
+ * @classdesc Weborama Real Time Data Provider
+ * @class
+ */
+class WeboramaRtdProvider {
+  #components;
+  name = SUBMODULE_NAME;
+  /**
+   * @param  {Components} components
+   */
+  constructor(components) {
+    this.#components = components;
+  }
+  /** Initialize module
+   * @method
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @return {boolean} true if module was initialized with success
+   */
+  init(moduleConfig) {
+    /** @type {Object} */
+    const globalDefaults = {
+      setPrebidTargeting: true,
+      sendToBidders: true,
+      onData: () => {
+        /* do nothing */
+      }
+    };
+    /** @type {ModuleParams} */
+    const moduleParams = Object.assign({}, globalDefaults, moduleConfig?.params || {});
 
-    return false;
+    // reset profiles
+
+    this.#components.WeboCtx.data = null;
+    this.#components.WeboUserData.data = null;
+    this.#components.SfbxLiteData.data = null;
+
+    this.#components.WeboCtx.initialized = this.#initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
+    this.#components.WeboUserData.initialized = this.#initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+    this.#components.SfbxLiteData.initialized = this.#initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
+
+    return Object.values(this.#components).some((c) => c.initialized);
   }
 
-  requiredFields ||= [];
+  /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+   * @method
+   * @param {Object} reqBidsConfigObj
+   * @param {doneCallback} onDone
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @returns {void}
+   */
+  getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
+    /** @type {ModuleParams} */
+    const moduleParams = moduleConfig?.params || {};
 
-  try {
-    normalizeConf(moduleParams, weboSectionConf);
+    if (!this.#components.WeboCtx.initialized) {
+      this.#handleBidRequestData(reqBidsConfigObj, moduleParams);
 
-    requiredFields.forEach(field => {
-      if (!weboSectionConf[field]) {
-        throw `missing required field "{field}" on {section}`;
+      onDone();
+
+      return;
+    }
+
+    /** @type {WeboCtxConf} */
+    const weboCtxConf = moduleParams.weboCtxConf || {};
+
+    this.#fetchContextualProfile(weboCtxConf, (data) => {
+      logMessage('fetchContextualProfile on getBidRequestData is done');
+
+      this.#setWeboContextualProfile(data);
+    }, () => {
+      this.#handleBidRequestData(reqBidsConfigObj, moduleParams);
+
+      onDone();
+    });
+  }
+
+  /** function that provides ad server targeting data to RTD-core
+   * @method
+   * @param {string[]} adUnitsCodes
+   * @param {Object} moduleConfig
+   * @param {?ModuleParams} moduleConfig.params
+   * @returns {Object} target data
+   */
+  getTargetingData(adUnitsCodes, moduleConfig) {
+    /** @type {ModuleParams} */
+    const moduleParams = moduleConfig?.params || {};
+
+    const profileHandlers = this.#buildProfileHandlers(moduleParams);
+
+    if (isEmpty(profileHandlers)) {
+      logMessage('no data to set targeting');
+      return {};
+    }
+
+    try {
+      return adUnitsCodes.reduce((data, adUnitCode) => {
+        data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
+          // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
+          const [data, metadata] = this.#copyDataAndMetadata(ph);
+          if (ph.setTargeting(adUnitCode, data, metadata)) {
+            // logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
+
+            mergeDeep(targeting, data);
+          }
+
+          return targeting;
+        }, {});
+
+        return data;
+      }, {});
+    } catch (e) {
+      logError(`unable to format weborama rtd targeting data:`, e);
+
+      return {};
+    }
+  }
+
+  /** Initialize subsection module
+   * @method
+   * @private
+   * @param {ModuleParams} moduleParams
+   * @param {string} subSection subsection name to initialize
+   * @param {string[]} requiredFields
+   * @return {boolean} true if module subsection was initialized with success
+   */
+  #initSubSection(moduleParams, subSection, ...requiredFields) {
+    /** @type {CommonConf} */
+    const weboSectionConf = moduleParams[subSection] || { enabled: false };
+
+    if (weboSectionConf.enabled === false) {
+      delete moduleParams[subSection];
+
+      return false;
+    }
+
+    try {
+      this.#normalizeConf(moduleParams, weboSectionConf);
+
+      requiredFields.forEach(field => {
+        if (!(field in weboSectionConf)) {
+          throw `missing required field '${field}''`;
+        }
+      });
+    } catch (e) {
+      logError(`unable to initialize: error on ${subSection} configuration:`, e);
+      return false;
+    }
+
+    logMessage(`weborama ${subSection} initialized with success`);
+
+    return true;
+  }
+
+  /** normalize submodule configuration
+   * @method
+   * @private
+   * @param {ModuleParams} moduleParams
+   * @param {CommonConf} submoduleParams
+   * @return {void}
+   * @throws will throw an error in case of invalid configuration
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #normalizeConf(moduleParams, submoduleParams) {
+    submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
+
+    const { setPrebidTargeting, sendToBidders, onData } = moduleParams;
+
+    submoduleParams.setPrebidTargeting ??= setPrebidTargeting;
+    submoduleParams.sendToBidders ??= sendToBidders;
+    submoduleParams.onData ??= onData;
+
+    // handle setPrebidTargeting
+    this.#coerceSetPrebidTargeting(submoduleParams);
+
+    // handle sendToBidders
+    this.#coerceSendToBidders(submoduleParams);
+
+    if (!isFn(submoduleParams.onData)) {
+      throw 'onData parameter should be a callback';
+    }
+
+    if (!isValidProfile(submoduleParams.defaultProfile)) {
+      throw 'defaultProfile is not valid';
+    }
+  }
+
+  /** coerce setPrebidTargeting to a callback
+   * @method
+   * @private
+   * @param {CommonConf} submoduleParams
+   * @return {void}
+   * @throws will throw an error in case of invalid configuration
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #coerceSetPrebidTargeting(submoduleParams) {
+    try {
+      submoduleParams.setPrebidTargeting = this.#wrapValidatorCallback(submoduleParams.setPrebidTargeting);
+    } catch (e) {
+      throw `invalid setPrebidTargeting: ${e}`;
+    }
+  }
+
+  /** coerce sendToBidders to a callback
+   * @method
+   * @private
+   * @param {CommonConf} submoduleParams
+   * @return {void}
+   * @throws will throw an error in case of invalid configuration
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #coerceSendToBidders(submoduleParams) {
+    let sendToBidders = submoduleParams.sendToBidders;
+
+    if (isPlainObject(sendToBidders)) {
+      const sendToBiddersMap = Object.entries(sendToBidders).reduce((map, [key, value]) => {
+        map[key] = this.#wrapValidatorCallback(value);
+        return map;
+      }, {});
+
+      submoduleParams.sendToBidders = (bid, adUnitCode) => {
+        const bidder = bid.bidder;
+        if (!(bidder in sendToBiddersMap)) {
+          return false;
+        }
+
+        const validatorCallback = sendToBiddersMap[bidder];
+
+        try {
+          return validatorCallback(adUnitCode);
+        } catch (e) {
+          throw `invalid sendToBidders[${bidder}]: ${e}`;
+        }
+      };
+
+      return;
+    }
+
+    try {
+      submoduleParams.sendToBidders = this.#wrapValidatorCallback(submoduleParams.sendToBidders,
+        (bid) => bid.bidder);
+    } catch (e) {
+      throw `invalid sendToBidders: ${e}`;
+    }
+  }
+
+  /**
+   * @typedef {Object} AdUnit
+   * @property {Object[]} bids
+   */
+  /** function that handles bid request data
+   * @method
+   * @private
+   * @param {Object} reqBidsConfigObj
+   * @param {AdUnit[]} reqBidsConfigObj.adUnits
+   * @param {Object} reqBidsConfigObj.ortb2Fragments
+   * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
+   * @param {ModuleParams} moduleParams
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleBidRequestData(reqBidsConfigObj, moduleParams) {
+    const profileHandlers = this.#buildProfileHandlers(moduleParams);
+
+    if (isEmpty(profileHandlers)) {
+      logMessage('no data to send to bidders');
+      return;
+    }
+
+    const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
+    try {
+      adUnits.forEach(
+        adUnit => adUnit.bids?.forEach(
+          bid => profileHandlers.forEach(ph => {
+            // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
+
+            const [data, metadata] = this.#copyDataAndMetadata(ph);
+            if (ph.sendToBidders(bid, adUnit.code, data, metadata)) {
+              // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
+
+              this.#handleBid(reqBidsConfigObj, bid, data, ph.metadata);
+            }
+          })
+        )
+      );
+    } catch (e) {
+      logError('unable to send data to bidders:', e);
+    }
+
+    profileHandlers.forEach(ph => {
+      try {
+        const [data, metadata] = this.#copyDataAndMetadata(ph);
+        ph.onData(data, metadata);
+      } catch (e) {
+        logError(`error while execute onData callback with ${ph.metadata.source}-based data:`, e);
       }
     });
-  } catch (e) {
-    logError(`unable to initialize: error on ${subSection} configuration: ${e}`);
-    return false
   }
 
-  logMessage(`weborama ${subSection} initialized with success`);
+  /** onSuccess callback type
+   * @callback successCallback
+   * @param {?Object} data
+   * @returns {void}
+   */
 
-  return true;
-}
+  /** onDone callback type
+   * @callback doneCallback
+   * @returns {void}
+   */
 
-/** @type {Object} */
-const globalDefaults = {
-  setPrebidTargeting: true,
-  sendToBidders: true,
-  onData: () => {
-    /* do nothing */ },
-}
+  /** Fetch Bigsea Contextual Profile
+   * @method
+   * @private
+   * @param {WeboCtxConf} weboCtxConf
+   * @param {successCallback} onSuccess callback
+   * @param {doneCallback} onDone callback
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
+    const token = weboCtxConf.token;
+    const baseURLProfileAPI = weboCtxConf.baseURLProfileAPI || BASE_URL_CONTEXTUAL_PROFILE_API;
 
-/** normalize submodule configuration
- * @param {ModuleParams} moduleParams
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
- * @return {void}
- */
-function normalizeConf(moduleParams, submoduleParams) {
-  // handle defaults
-  Object.entries(globalDefaults).forEach(([propertyName, globalDefaultValue]) => {
-    if (!submoduleParams.hasOwnProperty(propertyName)) {
-      const hasModuleParam = moduleParams.hasOwnProperty(propertyName);
-      submoduleParams[propertyName] = (hasModuleParam) ? moduleParams[propertyName] : globalDefaultValue;
+    let path = '/profile';
+    let queryString = '';
+    queryString = tryAppendQueryString(queryString, 'token', token);
+
+    if (weboCtxConf.assetID) {
+      path = '/document-profile';
+
+      let assetID = weboCtxConf.assetID;
+      if (isFn(assetID)) {
+        try {
+          assetID = weboCtxConf.assetID();
+        } catch (e) {
+          logError('unexpected error while fetching asset id from callback', e);
+
+          onDone();
+
+          return;
+        }
+      }
+
+      if (!assetID) {
+        logError('missing asset id');
+
+        onDone();
+
+        return;
+      }
+
+      queryString = tryAppendQueryString(queryString, 'assetId', assetID);
     }
-  })
 
-  // handle setPrebidTargeting
-  coerceSetPrebidTargeting(submoduleParams)
+    const targetURL = weboCtxConf.targetURL || document.URL;
+    queryString = tryAppendQueryString(queryString, 'url', targetURL);
 
-  // handle sendToBidders
-  coerceSendToBidders(submoduleParams)
+    const urlProfileAPI = `https://${baseURLProfileAPI}/api${path}?${queryString}`;
 
-  if (!isFn(submoduleParams.onData)) {
-    throw 'onData parameter should be a callback';
-  }
-
-  submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
-
-  if (!isValidProfile(submoduleParams.defaultProfile)) {
-    throw 'defaultProfile is not valid';
-  }
-}
-
-/** coerce set prebid targeting to function
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
- * @return {void}
- */
-function coerceSetPrebidTargeting(submoduleParams) {
-  const setPrebidTargeting = submoduleParams.setPrebidTargeting;
-
-  if (isFn(setPrebidTargeting)) {
-    return
-  }
-
-  if (isBoolean(setPrebidTargeting)) {
-    const shouldSetPrebidTargeting = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = () => shouldSetPrebidTargeting;
-
-    return
-  }
-
-  if (isStr(setPrebidTargeting)) {
-    const allowedAdUnitCode = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCode == adUnitCode;
-
-    return
-  }
-
-  if (isArray(setPrebidTargeting)) {
-    const allowedAdUnitCodes = setPrebidTargeting;
-
-    submoduleParams.setPrebidTargeting = (adUnitCode) => allowedAdUnitCodes.includes(adUnitCode);
-
-    return
-  }
-
-  throw `unexpected format for setPrebidTargeting: ${typeof setPrebidTargeting}`;
-}
-
-/** coerce send to bidders to function
- * @param {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} submoduleParams
- * @return {void}
- */
-function coerceSendToBidders(submoduleParams) {
-  const sendToBidders = submoduleParams.sendToBidders;
-
-  if (isFn(sendToBidders)) {
-    return
-  }
-
-  if (isBoolean(sendToBidders)) {
-    const shouldSendToBidders = sendToBidders;
-
-    submoduleParams.sendToBidders = () => shouldSendToBidders;
-
-    return
-  }
-
-  if (isStr(sendToBidders)) {
-    const allowedBidder = sendToBidders;
-
-    submoduleParams.sendToBidders = (bid) => allowedBidder == bid.bidder;
-
-    return
-  }
-
-  if (isArray(sendToBidders)) {
-    const allowedBidders = sendToBidders;
-
-    submoduleParams.sendToBidders = (bid) => allowedBidders.includes(bid.bidder);
-
-    return
-  }
-
-  if (isPlainObject(sendToBidders)) {
-    const sendToBiddersMap = sendToBidders;
-    submoduleParams.sendToBidders = (bid, adUnitCode) => {
-      const bidder = bid.bidder;
-      if (!sendToBiddersMap.hasOwnProperty(bidder)) {
-        return false
+    const success = (response, req) => {
+      if (req.status === 200) {
+        const data = JSON.parse(response);
+        onSuccess(data);
+      } else {
+        throw `unexpected http status response ${req.status} with response ${response}`;
       }
 
-      const value = sendToBiddersMap[bidder];
-
-      if (isBoolean(value)) {
-        return value
-      }
-
-      if (isStr(value)) {
-        return value == adUnitCode
-      }
-
-      if (isArray(value)) {
-        return value.includes(adUnitCode)
-      }
-
-      throw `unexpected format for sendToBidders[${bidder}]: ${typeof value}`;
+      onDone();
     };
 
-    return
+    const error = (e, req) => {
+      logError(`unable to get weborama data`, e, req);
+
+      onDone();
+    };
+
+    const callback = {
+      success,
+      error,
+    };
+
+    const options = {
+      method: 'GET',
+      withCredentials: false,
+    };
+
+    ajax(urlProfileAPI, callback, null, options);
   }
 
-  throw `unexpected format for sendToBidders: ${typeof sendToBidders}`;
+  /** set bigsea contextual profile on module state
+   * @method
+   * @private
+   * @param {?Object} data
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #setWeboContextualProfile(data) {
+    if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
+      this.#components.WeboCtx.data = data;
+    }
+  }
+
+  /** function that provides data handlers based on the configuration
+   * @method
+   * @private
+   * @param {ModuleParams} moduleParams
+   * @returns {ProfileHandler[]}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #buildProfileHandlers(moduleParams) {
+    const steps = [{
+      component: this.#components.WeboCtx,
+      conf: moduleParams?.weboCtxConf,
+    }, {
+      component: this.#components.WeboUserData,
+      conf: moduleParams?.weboUserDataConf,
+    }, {
+      component: this.#components.SfbxLiteData,
+      conf: moduleParams?.sfbxLiteDataConf,
+    }];
+
+    return steps.filter(step => step.component.initialized).reduce((ph, { component, conf }) => {
+      const user = component.user;
+      const source = component.source;
+      const callback = component.callbackBuilder(component /* equivalent to this */);
+      const profileHandler = this.#buildProfileHandler(conf, callback, user, source);
+      if (profileHandler) {
+        ph.push(profileHandler);
+      } else {
+        logMessage(`skip ${source} profile: no data`);
+      }
+
+      return ph;
+    }, []);
+  }
+
+  /**
+   * @typedef {Object} ProfileHandler
+   * @property {Profile} data
+   * @property {dataCallbackMetadata} metadata
+   * @property {setPrebidTargetingCallback} setTargeting
+   * @property {sendToBiddersCallback} sendToBidders
+   * @property {dataCallback} onData
+   */
+
+  /**
+   * @callback buildProfileHandlerCallbackBuilder
+   * @param {Component} component
+   * @returns {buildProfileHandlerCallback}
+   */
+
+  /**
+   * @callback buildProfileHandlerCallback
+   * @param {CommonConf} dataConf
+   * @returns {[Profile,boolean]} profile + is default flag
+   */
+
+  /**
+   * return specific profile handler
+   * @method
+   * @private
+   * @param {CommonConf} dataConf
+   * @param {buildProfileHandlerCallback} callback
+   * @param {boolean} user
+   * @param {string} source
+   * @returns {ProfileHandler}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #buildProfileHandler(dataConf, callback, user, source) {
+    if (!dataConf) {
+      return;
+    }
+
+    const [data, isDefault] = callback(dataConf);
+    if (isEmpty(data)) {
+      return;
+    }
+
+    return {
+      data: data,
+      metadata: {
+        user: user,
+        source: source,
+        isDefault: !!isDefault,
+      },
+      setTargeting: dataConf.setPrebidTargeting,
+      sendToBidders: dataConf.sendToBidders,
+      onData: dataConf.onData,
+    };
+  }
+  /** handle individual bid
+   * @method
+   * @private
+   * @param {Object} reqBidsConfigObj
+   * @param {Object} reqBidsConfigObj.ortb2Fragments
+   * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
+   * @param {Object} bid
+   * @param {string} bid.bidder
+   * @param {Profile} profile
+   * @param {dataCallbackMetadata} metadata
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleBid(reqBidsConfigObj, bid, profile, metadata) {
+    this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
+
+    /** @type {Object.<string,string>} */
+    const bidderAliasRegistry = adapterManager.aliasRegistry || {};
+
+    /** @type {string} */
+    const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
+
+    switch (bidder) {
+      case 'appnexus':
+        this.#handleAppnexusBid(bid, profile);
+        break;
+      case 'pubmatic':
+        this.#handlePubmaticBid(bid, profile);
+        break;
+      case 'smartadserver':
+        this.#handleSmartadserverBid(bid, profile);
+        break;
+      case 'rubicon':
+        this.#handleRubiconBid(bid, profile, metadata);
+        break;
+    }
+  }
+
+  /** function that handles bid request data
+   * @method
+   * @private
+   * @param {ProfileHandler} ph profile handler
+   * @returns {[Profile,dataCallbackMetadata]} deeply copy data + metadata
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #copyDataAndMetadata(ph) {
+    return [deepClone(ph.data), deepClone(ph.metadata)];
+  }
+
+  /** handle appnexus/xandr bid
+   * @method
+   * @private
+   * @param {Object} bid
+   * @param {Object} bid.params
+   * @param {Object} bid.params.keyword
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleAppnexusBid(bid, profile) {
+    const base = 'params.keywords';
+    this.#assignProfileToObject(bid, base, profile);
+  }
+
+  /** handle pubmatic bid
+   * @method
+   * @private
+   * @param {Object} bid
+   * @param {Object} bid.params
+   * @param {string} bid.params.dctr
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handlePubmaticBid(bid, profile) {
+    const sep = '|';
+    const subsep = ',';
+
+    bid.params ||= {};
+
+    const data = bid.params.dctr || '';
+    const target = new Set(data.split(sep).filter((x) => x.length > 0));
+
+    Object.entries(profile).forEach(([key, values]) => {
+      const value = values.join(subsep);
+      const keyword = `${key}=${value}`;
+      target.add(keyword);
+    });
+
+    bid.params.dctr = Array.from(target).join(sep);
+  }
+
+  /** handle smartadserver bid
+   * @method
+   * @private
+   * @param {Object} bid
+   * @param {Object} bid.params
+   * @param {string} bid.params.target
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleSmartadserverBid(bid, profile) {
+    const sep = ';';
+
+    bid.params ||= {};
+
+    const data = bid.params.target || '';
+    const target = new Set(data.split(sep).filter((x) => x.length > 0));
+
+    Object.entries(profile).forEach(([key, values]) => {
+      values.forEach(value => {
+        const keyword = `${key}=${value}`;
+        target.add(keyword);
+      })
+    });
+
+    bid.params.target = Array.from(target).join(sep);
+  }
+
+  /** handle rubicon bid
+   * @method
+   * @private
+   * @param {Object} bid
+   * @param {string} bid.bidder
+   * @param {Profile} profile
+   * @param {dataCallbackMetadata} metadata
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleRubiconBid(bid, profile, metadata) {
+    if (isBoolean(metadata.user)) {
+      const section = metadata.user ? 'visitor' : 'inventory';
+      const base = `params.${section}`;
+      this.#assignProfileToObject(bid, base, profile);
+    } else {
+      logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+    }
+  }
+
+  /** handle generic bid via ortb2 arbitrary data
+   * @method
+   * @private
+   * @param {Object} reqBidsConfigObj
+   * @param {Object} reqBidsConfigObj.ortb2Fragments
+   * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
+   * @param {string} bidder
+   * @param {Profile} profile
+   * @param {dataCallbackMetadata} metadata
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
+    if (isBoolean(metadata.user)) {
+      logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
+      const section = metadata.user ? 'user' : 'site';
+      const base = `${bidder}.${section}.ext.data`;
+
+      this.#assignProfileToObject(reqBidsConfigObj.ortb2Fragments?.bidder, base, profile);
+    } else {
+      logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+    }
+  }
+
+  /**
+   * assign profile to object
+   * @method
+   * @private
+   * @param {Object} destination
+   * @param {string} base
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #assignProfileToObject(destination, base, profile) {
+    Object.entries(profile).forEach(([key, values]) => {
+      const path = `${base}.${key}`;
+      deepSetValue(destination, path, values);
+    })
+  }
+
+  /**
+   * @callback validatorCallback
+   * @param {string} target
+   * @returns {boolean}
+   */
+
+  /**
+   * @callback coerceCallback
+   * @param {*} input
+   * @returns {*}
+   */
+
+  /**
+   * wrap value into validator
+   * @method
+   * @private
+   * @param {*} value
+   * @param {coerceCallback} coerce
+   * @returns {validatorCallback}
+   * @throws will throw an error in case of unsupported type
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #wrapValidatorCallback(value, coerce = (x) => x) {
+    if (isFn(value)) {
+      return value;
+    }
+
+    if (isBoolean(value)) {
+      return (_) => value;
+    }
+
+    if (isStr(value)) {
+      return (target) => {
+        return value == coerce(target);
+      };
+    }
+
+    if (isArray(value)) {
+      return (target) => {
+        return value.includes(coerce(target));
+      };
+    }
+
+    throw `unexpected format: ${typeof value} (expects function, boolean, string or array)`;
+  }
 }
+
 /**
  * check if profile is valid
  * @param {*} profile
- * @returns {Boolean}
+ * @returns {boolean}
  */
-function isValidProfile(profile) {
+export function isValidProfile(profile) {
   if (!isPlainObject(profile)) {
     return false;
   }
 
-  const keys = Object.keys(profile);
+  return Object.values(profile).every((field) => isArray(field) && field.every(isStr));
+}
 
-  for (var i in keys) {
-    const key = keys[i];
-    const value = profile[key];
-    if (!isArray(value)) {
-      return false;
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
+ */
+function getContextualProfile(component /* equivalent to this */) {
+  /** return contextual profile
+   * @param {WeboCtxConf} weboCtxConf
+   * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
+   */
+  return function (weboCtxConf) {
+    if (component.data) {
+      return [component.data, false];
     }
 
-    for (var j in value) {
-      const elem = value[j]
-      if (!isStr(elem)) {
-        return false;
-      }
-    }
-  }
+    const defaultContextualProfile = weboCtxConf.defaultProfile || {};
 
-  return true;
+    return [defaultContextualProfile, true];
+  }
 }
 
-/** function that provides ad server targeting data to RTD-core
- * @param {Array} adUnitsCodes
- * @param {Object} moduleConfig
- * @returns {Object} target data
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
  */
-function getTargetingData(adUnitsCodes, moduleConfig) {
-  const moduleParams = moduleConfig?.params || {};
-
-  const profileHandlers = buildProfileHandlers(moduleParams);
-
-  if (isEmpty(profileHandlers)) {
-    logMessage('no data to set targeting');
-    return {};
-  }
-
-  try {
-    const td = adUnitsCodes.reduce((data, adUnitCode) => {
-      data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
-        // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
-        const cph = copyProfileHandler(ph);
-        if (ph.setTargeting(adUnitCode, cph.data, cph.metadata)) {
-          // logMessage(`set targeting for adunit '${adUnitCode}', source '${ph.metadata.source}'`);
-
-          mergeDeep(targeting, cph.data);
-        }
-        return targeting;
-      }, {});
-      return data;
-    }, {});
-
-    return td;
-  } catch (e) {
-    logError('unable to format weborama rtd targeting data', e);
-    return {};
+function getWeboUserDataProfile(component /* equivalent to this */) {
+  /** return weboUserData profile
+   * @param {WeboUserDataConf} weboUserDataConf
+   * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
+   */
+  return function (weboUserDataConf) {
+    return getDataFromLocalStorage(weboUserDataConf,
+      () => component.data,
+      (data) => component.data = data,
+      DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
+      LOCAL_STORAGE_USER_TARGETING_SECTION,
+      WEBO_USER_DATA_SOURCE_LABEL);
   }
 }
 
-/** function that provides data handlers based on the configuration
- * @param {ModuleParams} moduleParams
- * @returns {Array<Object>} handlers
+/**
+ * bind callback with component
+ * @param {Component} component
+ * @returns {buildProfileHandlerCallback}
  */
-function buildProfileHandlers(moduleParams) {
-  const profileHandlers = [];
-
-  if (_weboCtxInitialized && moduleParams?.weboCtxConf) {
-    const weboCtxConf = moduleParams.weboCtxConf;
-    const [data, isDefault] = getContextualProfile(weboCtxConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: false,
-          source: 'contextual',
-          isDefault: !!isDefault,
-        },
-        setTargeting: weboCtxConf.setPrebidTargeting,
-        sendToBidders: weboCtxConf.sendToBidders,
-        onData: weboCtxConf.onData,
-      })
-    } else {
-      logMessage('skip contextual profile: no data');
-    }
+function getSfbxLiteDataProfile(component /* equivalent to this */) {
+  /** return weboUserData profile
+   * @param {SfbxLiteDataConf} sfbxLiteDataConf
+   * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
+   */
+  return function getSfbxLiteDataProfile(sfbxLiteDataConf) {
+    return getDataFromLocalStorage(sfbxLiteDataConf,
+      () => component.data,
+      (data) => component.data = data,
+      DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
+      LOCAL_STORAGE_LITE_TARGETING_SECTION,
+      SFBX_LITE_DATA_SOURCE_LABEL);
   }
-
-  if (_weboUserDataInitialized && moduleParams?.weboUserDataConf) {
-    const weboUserDataConf = moduleParams.weboUserDataConf;
-    const [data, isDefault] = getWeboUserDataProfile(weboUserDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: true,
-          source: 'wam',
-          isDefault: !!isDefault,
-        },
-        setTargeting: weboUserDataConf.setPrebidTargeting,
-        sendToBidders: weboUserDataConf.sendToBidders,
-        onData: weboUserDataConf.onData,
-      })
-    } else {
-      logMessage('skip wam profile: no data');
-    }
-  }
-
-  if (_sfbxLiteDataInitialized && moduleParams?.sfbxLiteDataConf) {
-    const sfbxLiteDataConf = moduleParams.sfbxLiteDataConf;
-    const [data, isDefault] = getSfbxLiteDataProfile(sfbxLiteDataConf);
-    if (!isEmpty(data)) {
-      profileHandlers.push({
-        data: data,
-        metadata: {
-          user: false,
-          source: 'lite',
-          isDefault: !!isDefault,
-        },
-        setTargeting: sfbxLiteDataConf.setPrebidTargeting,
-        sendToBidders: sfbxLiteDataConf.sendToBidders,
-        onData: sfbxLiteDataConf.onData,
-      })
-    } else {
-      logMessage('skip sfbx lite profile: no data');
-    }
-  }
-
-  return profileHandlers;
 }
 
-/** return contextual profile
- * @param {WeboCtxConf} weboCtxConf
- * @returns {Array} contextual profile + isDefault boolean flag
+/**
+ * @callback cacheGetCallback
+ * @returns {Profile}
  */
-function getContextualProfile(weboCtxConf) {
-  if (_weboContextualProfile) {
-    return [_weboContextualProfile, false];
-  }
-
-  const defaultContextualProfile = weboCtxConf.defaultProfile || {};
-
-  return [defaultContextualProfile, true];
-}
-
-/** return weboUserData profile
- * @param {WeboUserDataConf} weboUserDataConf
- * @returns {Array} weboUserData profile  + isDefault boolean flag
+/**
+ * @callback cacheSetCallback
+ * @param {Profile} profile
+ * @returns {void}
  */
-function getWeboUserDataProfile(weboUserDataConf) {
-  return getDataFromLocalStorage(weboUserDataConf,
-    () => _weboUserDataUserProfile,
-    (data) => _weboUserDataUserProfile = data,
-    DEFAULT_LOCAL_STORAGE_USER_PROFILE_KEY,
-    LOCAL_STORAGE_USER_TARGETING_SECTION,
-    'wam');
-}
-
-/** return weboUserData profile
- * @param {SfbxLiteDataConf} sfbxLiteDataConf
- * @returns {Array} sfbxLiteData profile + isDefault boolean flag
- */
-function getSfbxLiteDataProfile(sfbxLiteDataConf) {
-  return getDataFromLocalStorage(sfbxLiteDataConf,
-    () => _sfbxLiteDataProfile,
-    (data) => _sfbxLiteDataProfile = data,
-    DEFAULT_LOCAL_STORAGE_LITE_PROFILE_KEY,
-    LOCAL_STORAGE_LITE_TARGETING_SECTION,
-    'lite');
-}
 
 /** return generic webo data profile
  * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet
- * @param {String} defaultLocalStorageProfileKey
- * @param {String} targetingSection
- * @param {String} source
- * @returns {Array} webo (user|lite) data profile + isDefault boolean flag
+ * @param {string} defaultLocalStorageProfileKey
+ * @param {string} targetingSection
+ * @param {string} source
+ * @returns {[Profile,boolean]} webo (user|lite) data profile + isDefault boolean flag
  */
 function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalStorageProfileKey, targetingSection, source) {
   const defaultProfile = weboDataConf.defaultProfile || {};
 
-  if (storage.localStorageIsEnabled() && !cacheGet()) {
+  if (storage.hasLocalStorage() && storage.localStorageIsEnabled() && !cacheGet()) {
     const localStorageProfileKey = weboDataConf.localStorageProfileKey || defaultLocalStorageProfileKey;
 
     const entry = storage.getDataFromLocalStorage(localStorageProfileKey);
     if (entry) {
       const data = JSON.parse(entry);
-      if (data && isPlainObject(data) && data.hasOwnProperty(targetingSection)) {
+      if (data && isPlainObject(data) && targetingSection in data) {
+        /** @type {profile} */
         const profile = data[targetingSection];
         const valid = isValidProfile(profile);
         if (!valid) {
           logWarn(`found invalid ${source} profile on local storage key ${localStorageProfileKey}, section ${targetingSection}`);
+
+          return;
         }
 
-        if (valid && !isEmpty(data)) {
+        if (!isEmpty(data)) {
           cacheSet(profile);
         }
       }
     }
   }
 
-  const profile = cacheGet()
+  const profile = cacheGet();
 
   if (profile) {
     return [profile, false];
@@ -566,328 +1020,31 @@ function getDataFromLocalStorage(weboDataConf, cacheGet, cacheSet, defaultLocalS
 
   return [defaultProfile, true];
 }
-
-/** function that will allow RTD sub-modules to modify the AdUnit object for each auction
- * @param {Object} reqBidsConfigObj
- * @param {doneCallback} onDone
- * @param {Object} moduleConfig
- * @returns {void}
- */
-export function getBidRequestData(reqBidsConfigObj, onDone, moduleConfig) {
-  const moduleParams = moduleConfig?.params || {};
-
-  if (!_weboCtxInitialized) {
-    handleBidRequestData(reqBidsConfigObj, moduleParams);
-
-    onDone();
-
-    return;
-  }
-
-  const weboCtxConf = moduleParams.weboCtxConf || {};
-
-  fetchContextualProfile(weboCtxConf, (data) => {
-    logMessage('fetchContextualProfile on getBidRequestData is done');
-
-    setWeboContextualProfile(data);
-  }, () => {
-    handleBidRequestData(reqBidsConfigObj, moduleParams);
-
-    onDone();
-  });
-}
-
-/** function that handles bid request data
- * @param {Object} reqBids
- * @param {ModuleParams} moduleParams
- * @returns {void}
- */
-function handleBidRequestData(reqBids, moduleParams) {
-  const profileHandlers = buildProfileHandlers(moduleParams);
-
-  if (isEmpty(profileHandlers)) {
-    logMessage('no data to send to bidders');
-    return;
-  }
-
-  const adUnits = reqBids.adUnits || getGlobal().adUnits;
-
-  try {
-    adUnits.filter(
-      adUnit => adUnit.hasOwnProperty('bids')
-    ).forEach(
-      adUnit => adUnit.bids.forEach(
-        bid => profileHandlers.forEach(ph => {
-          // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
-
-          const cph = copyProfileHandler(ph);
-          if (ph.sendToBidders(bid, adUnit.code, cph.data, cph.metadata)) {
-            // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
-
-            handleBid(reqBids, bid, cph.data, ph.metadata);
-          }
-        })
-      )
-    );
-  } catch (e) {
-    logError('unable to send data to bidders:', e);
-  }
-
-  profileHandlers.forEach(ph => {
-    try {
-      const cph = copyProfileHandler(ph);
-      ph.onData(cph.data, cph.metadata);
-    } catch (e) {
-      logError(`error while executure onData callback with ${ph.metadata.source}-based data:`, e);
-    }
-  });
-}
-/** function that handles bid request data
- * @param {Object} ph profile handler
- *@returns {Object} of deeply copy data and metadata
- */
-function copyProfileHandler(ph) {
-  return {
-    data: deepClone(ph.data),
-    metadata: deepClone(ph.metadata),
-  };
-}
-
-/** @type {string} */
-const APPNEXUS = 'appnexus';
-
-/** @type {string} */
-const PUBMATIC = 'pubmatic';
-
-/** @type {string} */
-const RUBICON = 'rubicon';
-
-/** @type {string} */
-const SMARTADSERVER = 'smartadserver';
-
-/** @type {Object} */
-const bidderAliasRegistry = adapterManager.aliasRegistry || {};
-
-/** handle individual bid
- * @param reqBids
- * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
- * @returns {void}
- */
-function handleBid(reqBids, bid, profile, metadata) {
-  const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
-
-  switch (bidder) {
-    // TODO: these special cases should not be necessary - all adapters should look into FPD, not just their params
-    case APPNEXUS:
-      handleAppnexusBid(bid, profile);
-
-      break;
-
-    case PUBMATIC:
-      handlePubmaticBid(bid, profile);
-
-      break;
-
-    case SMARTADSERVER:
-      handleSmartadserverBid(bid, profile);
-
-      break;
-    case RUBICON:
-      handleRubiconBid(bid, profile, metadata);
-
-      break;
-    default:
-      handleBidViaORTB2(reqBids, bid, profile, metadata);
-  }
-}
-
-/** handle appnexus/xandr bid
- * @param {Object} bid
- * @param {Object} profile
- * @returns {void}
- */
-function handleAppnexusBid(bid, profile) {
-  const base = 'params.keywords';
-  assignProfileToObject(bid, base, profile);
-}
-
-/** handle pubmatic bid
- * @param {Object} bid
- * @param {Object} profile
- * @returns {void}
- */
-function handlePubmaticBid(bid, profile) {
-  const sep = '|';
-  const subsep = ',';
-  const target = [];
-
-  bid.params ||= {};
-
-  const data = bid.params.dctr;
-  if (data) {
-    data.split(sep).forEach(t => target.push(t));
-  }
-
-  Object.keys(profile).forEach(key => {
-    const value = profile[key].join(subsep);
-    const keyword = `${key}=${value}`;
-    if (target.indexOf(keyword) === -1) {
-      target.push(keyword);
-    }
-  });
-
-  bid.params.dctr = target.join(sep);
-}
-
-/** handle smartadserver bid
- * @param {Object} bid
- * @param {Object} profile
- * @returns {void}
- */
-function handleSmartadserverBid(bid, profile) {
-  const sep = ';';
-  const target = [];
-
-  bid.params ||= {};
-
-  const data = bid.params.target;
-  if (data) {
-    data.split(sep).forEach(t => target.push(t));
-  }
-
-  Object.keys(profile).forEach(key => {
-    profile[key].forEach(value => {
-      const keyword = `${key}=${value}`;
-      if (target.indexOf(keyword) === -1) {
-        target.push(keyword);
-      }
-    });
-  });
-
-  bid.params.target = target.join(sep);
-}
-
-/** handle rubicon bid
- * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
- * @returns {void}
- */
-function handleRubiconBid(bid, profile, metadata) {
-  if (isBoolean(metadata.user)) {
-    const section = (metadata.user) ? 'visitor' : 'inventory';
-    const base = `params.${section}`;
-    assignProfileToObject(bid, base, profile);
-  } else {
-    logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-  }
-}
-
-/** handle generic bid via ortb2 arbitrary data
- * @param reqBids
- * @param {Object} bid
- * @param {Object} profile
- * @param {Object} metadata
- * @returns {void}
- */
-function handleBidViaORTB2(reqBids, bid, profile, metadata) {
-  if (isBoolean(metadata.user)) {
-    logMessage(`bidder '${bid.bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
-    const section = ((metadata.user) ? 'user' : 'site');
-    const base = `${bid.bidder}.${section}.ext.data`;
-
-    assignProfileToObject(reqBids.ortb2Fragments?.bidder, base, profile);
-  } else {
-    logMessage(`SKIP unsupported bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-  }
-}
-
-/**
- * assign profile to object
- * @param {Object} destination
- * @param {string} base
- * @param {Object} profile
- * @returns {void}
- */
-function assignProfileToObject(destination, base, profile) {
-  Object.keys(profile).forEach(key => {
-    const path = `${base}.${key}`;
-    deepSetValue(destination, path, profile[key])
-  })
-}
-
-/** set bigsea contextual profile on module state
- * @param {null|Object} data
- * @returns {void}
- */
-export function setWeboContextualProfile(data) {
-  if (data && isPlainObject(data) && isValidProfile(data) && !isEmpty(data)) {
-    _weboContextualProfile = data;
-  }
-}
-
-/** onSuccess callback type
- * @callback successCallback
- * @param {null|Object} data
- * @returns {void}
- */
-
-/** onDone callback type
- * @callback doneCallback
- * @returns {void}
- */
-
-/** Fetch Bigsea Contextual Profile
- * @param {WeboCtxConf} weboCtxConf
- * @param {successCallback} onSuccess callback
- * @param {doneCallback} onDone callback
- * @returns {void}
- */
-function fetchContextualProfile(weboCtxConf, onSuccess, onDone) {
-  const targetURL = weboCtxConf.targetURL || document.URL;
-  const token = weboCtxConf.token;
-  const baseURLProfileAPI = weboCtxConf.baseURLProfileAPI || BASE_URL_CONTEXTUAL_PROFILE_API;
-
-  let queryString = '';
-  queryString = tryAppendQueryString(queryString, 'token', token);
-  queryString = tryAppendQueryString(queryString, 'url', targetURL);
-
-  const urlProfileAPI = `https://${baseURLProfileAPI}/api/profile?${queryString}`;
-
-  ajax(urlProfileAPI, {
-    success: (response, req) => {
-      if (req.status === 200) {
-        try {
-          const data = JSON.parse(response);
-          onSuccess(data);
-          onDone();
-        } catch (e) {
-          onDone();
-          logError('unable to parse weborama data', e);
-          throw e;
-        }
-      } else if (req.status === 204) {
-        onDone();
-      }
-    },
-    error: () => {
-      onDone();
-      logError('unable to get weborama data');
-    }
+/** @type {Components} */
+const components = {
+  WeboCtx: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: WEBO_CTX_SOURCE_LABEL,
+    callbackBuilder: getContextualProfile,
   },
-  null, {
-    method: 'GET',
-    withCredentials: false,
-  });
-}
-
-export const weboramaSubmodule = {
-  name: SUBMODULE_NAME,
-  init: init,
-  getTargetingData: getTargetingData,
-  getBidRequestData: getBidRequestData,
+  WeboUserData: {
+    initialized: false,
+    data: null,
+    user: true,
+    source: WEBO_USER_DATA_SOURCE_LABEL,
+    callbackBuilder: getWeboUserDataProfile,
+  },
+  SfbxLiteData: {
+    initialized: false,
+    data: null,
+    user: false,
+    source: SFBX_LITE_DATA_SOURCE_LABEL,
+    callbackBuilder: getSfbxLiteDataProfile,
+  },
 };
+
+export const weboramaSubmodule = new WeboramaRtdProvider(components);
 
 submodule(MODULE_NAME, weboramaSubmodule);

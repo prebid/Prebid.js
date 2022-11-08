@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {triggerPixel} from '../src/utils.js';
 import {NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adrino';
 const REQUEST_METHOD = 'POST';
@@ -28,6 +29,8 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const bidRequests = [];
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -37,7 +40,7 @@ export const spec = {
         bidId: validBidRequests[i].bidId,
         nativeParams: validBidRequests[i].nativeParams,
         placementHash: validBidRequests[i].params.hash,
-        // TODO: is 'page' the right value here?
+        userId: validBidRequests[i].userId,
         referer: bidderRequest.refererInfo.page,
         userAgent: navigator.userAgent,
       }

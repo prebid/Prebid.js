@@ -1,21 +1,42 @@
 import {
-  uniques, isGptPubadsDefined, getHighestCpm, getOldestHighestCpmBid, groupBy, isAdUnitCodeMatchingSlot, timestamp,
-  deepAccess, deepClone, logError, logWarn, logInfo, isFn, isArray, logMessage, isStr,
+  deepAccess,
+  deepClone,
+  getHighestCpm,
+  getOldestHighestCpmBid,
+  groupBy,
+  isAdUnitCodeMatchingSlot,
+  isArray,
+  isFn,
+  isGptPubadsDefined,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  timestamp,
+  uniques,
 } from './utils.js';
-import { config } from './config.js';
-import { NATIVE_TARGETING_KEYS } from './native.js';
-import { auctionManager } from './auctionManager.js';
-import { sizeSupported } from './sizeMapping.js';
-import { ADPOD } from './mediaTypes.js';
-import { hook } from './hook.js';
-import { bidderSettings } from './bidderSettings.js';
-import {includes, find} from './polyfill.js';
+import {config} from './config.js';
+import {NATIVE_TARGETING_KEYS} from './native.js';
+import {auctionManager} from './auctionManager.js';
+import {ADPOD} from './mediaTypes.js';
+import {hook} from './hook.js';
+import {bidderSettings} from './bidderSettings.js';
+import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 
 var pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
-const TTL_BUFFER = 1000;
+let DEFAULT_TTL_BUFFER = 1;
+
+config.getConfig('ttlBuffer', (cfg) => {
+  if (typeof cfg.ttlBuffer === 'number') {
+    DEFAULT_TTL_BUFFER = cfg.ttlBuffer;
+  } else {
+    logError('Invalid value for ttlBuffer', cfg.ttlBuffer);
+  }
+})
 
 const CFG_ALLOW_TARGETING_KEYS = `targetingControls.allowTargetingKeys`;
 const CFG_ADD_TARGETING_KEYS = `targetingControls.addTargetingKeys`;
@@ -26,15 +47,22 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + (bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : DEFAULT_TTL_BUFFER)) * 1000) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
 
 export let filters = {
+  isActualBid(bid) {
+    return bid.getStatusCode() === CONSTANTS.STATUS.GOOD
+  },
   isBidNotExpired,
   isUnusedBid
 };
+
+export function isBidUsable(bid) {
+  return !Object.values(filters).some((predicate) => !predicate(bid));
+}
 
 // If two bids are found for same adUnitCode, we will use the highest one to take part in auction
 // This can happen in case of concurrent auctions
@@ -63,7 +91,7 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
   }
 
   return bidsReceived;
-})
+});
 
 /**
 * A descending sort function that will sort the list of objects based on the following two dimensions:
@@ -449,10 +477,7 @@ export function newTargeting(auctionManager) {
 
     bidsReceived = bidsReceived
       .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
-      .filter(bid => bid.mediaType !== 'banner' || sizeSupported([bid.width, bid.height]))
-      .filter(filters.isUnusedBid)
-      .filter(filters.isBidNotExpired)
-    ;
+      .filter(isBidUsable);
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }

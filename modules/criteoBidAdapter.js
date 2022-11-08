@@ -1,4 +1,4 @@
-import { deepAccess, getUniqueIdentifierStr, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -6,6 +6,9 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 91;
 export const ADAPTER_VERSION = 34;
@@ -24,18 +27,117 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 123;
+export const FAST_BID_VERSION_CURRENT = 132;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
+const SID_COOKIE_NAME = 'cto_sid';
+const IDCPY_COOKIE_NAME = 'cto_idcpy';
+const LWID_COOKIE_NAME = 'cto_lwid';
+const OPTOUT_COOKIE_NAME = 'cto_optout';
+const BUNDLE_COOKIE_NAME = 'cto_bundle';
+const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
+const OPTOUT_RETENTION_TIME_HOUR = 5 * 12 * 30 * 24; // 5 years
+
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+
+  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
+    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    if (canFastBid(fastBidVersion)) {
+      return [];
+    }
+
+    const refererInfo = getRefererInfo();
+    const origin = 'criteoPrebidAdapter';
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      const queryParams = [];
+      queryParams.push(`origin=${origin}`);
+      queryParams.push(`topUrl=${refererInfo.domain}`);
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies) {
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`us_privacy=${uspConsent}`);
+      }
+
+      const requestId = Math.random().toString();
+
+      const jsonHash = {
+        bundle: readFromAllStorages(BUNDLE_COOKIE_NAME),
+        cw: storage.cookiesAreEnabled(),
+        localWebId: readFromAllStorages(LWID_COOKIE_NAME),
+        lsw: storage.localStorageIsEnabled(),
+        optoutCookie: readFromAllStorages(OPTOUT_COOKIE_NAME),
+        origin: origin,
+        requestId: requestId,
+        secureIdCookie: readFromAllStorages(SID_COOKIE_NAME),
+        tld: refererInfo.domain,
+        topUrl: refererInfo.domain,
+        uid: readFromAllStorages(IDCPY_COOKIE_NAME),
+        version: '$prebid.version$'.replace(/\./g, '_'),
+      };
+
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin != 'https://gum.criteo.com') {
+          return;
+        }
+
+        if (event.data.requestId !== requestId) {
+          return;
+        }
+
+        this.removeEventListener('message', handler);
+
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+
+        if (response.optout) {
+          deleteFromAllStorages(IDCPY_COOKIE_NAME);
+          deleteFromAllStorages(SID_COOKIE_NAME);
+          deleteFromAllStorages(BUNDLE_COOKIE_NAME);
+          deleteFromAllStorages(LWID_COOKIE_NAME);
+
+          saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR);
+        } else {
+          if (response.uid) {
+            saveOnAllStorages(IDCPY_COOKIE_NAME, response.uid, GUID_RETENTION_TIME_HOUR);
+          }
+
+          if (response.bundle) {
+            saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
+          }
+
+          if (response.removeSid) {
+            deleteFromAllStorages(SID_COOKIE_NAME);
+          } else if (response.sid) {
+            saveOnAllStorages(SID_COOKIE_NAME, response.sid, GUID_RETENTION_TIME_HOUR);
+          }
+        }
+      }, true);
+
+      const jsonHashSerialized = JSON.stringify(jsonHash).replace(/"/g, '%22');
+
+      return [{
+        type: 'iframe',
+        url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+      }];
+    }
+    return [];
+  },
 
   /** f
    * @param {object} bid
@@ -63,6 +165,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let url;
     let data;
     let fpd = bidderRequest.ortb2 || {};
@@ -70,7 +175,8 @@ export const spec = {
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
       userExt: fpd.user?.ext,
-      ceh: config.getConfig('criteo.ceh')
+      ceh: config.getConfig('criteo.ceh'),
+      coppa: config.getConfig('coppa')
     });
 
     // If publisher tag not already loaded try to get it from fast bid
@@ -129,7 +235,6 @@ export const spec = {
         const bidId = bidRequest.bidId;
         const bid = {
           requestId: bidId,
-          adId: slot.bidId || getUniqueIdentifierStr(),
           cpm: slot.cpm,
           currency: slot.currency,
           netRevenue: true,
@@ -209,6 +314,27 @@ export const spec = {
   },
 };
 
+function readFromAllStorages(name) {
+  const fromCookie = storage.getCookie(name);
+  const fromLocalStorage = storage.getDataFromLocalStorage(name);
+
+  return fromCookie || fromLocalStorage || undefined;
+}
+
+function saveOnAllStorages(name, value, expirationTimeHours) {
+  const date = new Date();
+  date.setTime(date.getTime() + (expirationTimeHours * 60 * 60 * 1000));
+  const expires = `expires=${date.toUTCString()}`;
+
+  storage.setCookie(name, value, expires);
+  storage.setDataInLocalStorage(name, value);
+}
+
+function deleteFromAllStorages(name) {
+  storage.setCookie(name, '', 0);
+  storage.removeDataFromLocalStorage(name);
+}
+
 /**
  * @return {boolean}
  */
@@ -271,6 +397,26 @@ function buildCdbUrl(context) {
     url += '&nolog=1';
   }
 
+  const bundle = readFromAllStorages(BUNDLE_COOKIE_NAME);
+  if (bundle) {
+    url += `&bundle=${bundle}`;
+  }
+
+  const optout = readFromAllStorages(OPTOUT_COOKIE_NAME);
+  if (optout) {
+    url += `&optout=1`;
+  }
+
+  const sid = readFromAllStorages(SID_COOKIE_NAME);
+  if (sid) {
+    url += `&sid=${sid}`;
+  }
+
+  const idcpy = readFromAllStorages(IDCPY_COOKIE_NAME);
+  if (idcpy) {
+    url += `&idcpy=${idcpy}`;
+  }
+
   return url;
 }
 
@@ -300,6 +446,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       url: context.url,
       ext: bidderRequest.publisherExt,
     },
+    regs: {
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+    },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
@@ -320,15 +469,20 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
-      if (bidRequest.params.nativeCallback || deepAccess(bidRequest, `mediaTypes.${NATIVE}`)) {
+
+      if (bidRequest.params.nativeCallback || hasNativeMediaType(bidRequest)) {
         slot.native = true;
         if (!checkNativeSendId(bidRequest)) {
           logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
         }
-        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseNativeSize);
-      } else {
-        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
       }
+
+      if (hasBannerMediaType(bidRequest)) {
+        slot.sizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'), parseSize);
+      } else {
+        slot.sizes = [];
+      }
+
       if (hasVideoMediaType(bidRequest)) {
         const video = {
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
@@ -353,6 +507,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
         slot.video = video;
       }
+
+      enrichSlotWithFloors(slot, bidRequest);
+
       return slot;
     }),
   };
@@ -364,7 +521,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: {
         schain: schain
       }
-    }
+    };
   };
   request.user = {
     ext: bidderRequest.userExt
@@ -388,7 +545,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   return request;
 }
 
-function parseSizes(sizes, parser) {
+function parseSizes(sizes, parser = s => s) {
   if (sizes == undefined) {
     return [];
   }
@@ -402,15 +559,16 @@ function parseSize(size) {
   return size[0] + 'x' + size[1];
 }
 
-function parseNativeSize(size) {
-  if (size[0] === undefined && size[1] === undefined) {
-    return '2x2';
-  }
-  return size[0] + 'x' + size[1];
-}
-
 function hasVideoMediaType(bidRequest) {
   return deepAccess(bidRequest, 'mediaTypes.video') !== undefined;
+}
+
+function hasBannerMediaType(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.banner') !== undefined;
+}
+
+function hasNativeMediaType(bidRequest) {
+  return deepAccess(bidRequest, 'mediaTypes.native') !== undefined;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -484,6 +642,62 @@ for (var i = 0; i < 10; ++i) {
   break;
 }
 </script>`;
+}
+
+function pickAvailableGetFloorFunc(bidRequest) {
+  if (bidRequest.getFloor) {
+    return bidRequest.getFloor;
+  }
+  if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
+    try {
+      const floor = parseFloat(bidRequest.params.bidFloor);
+      return () => {
+        return {
+          currency: bidRequest.params.bidFloorCur,
+          floor: floor
+        };
+      };
+    } catch { }
+  }
+  return undefined;
+}
+
+function enrichSlotWithFloors(slot, bidRequest) {
+  try {
+    const slotFloors = {};
+
+    const getFloor = pickAvailableGetFloorFunc(bidRequest);
+
+    if (getFloor) {
+      if (bidRequest.mediaTypes?.banner) {
+        slotFloors.banner = {};
+        const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = getFloor({ size: bannerSize, mediaType: BANNER }));
+      }
+
+      if (bidRequest.mediaTypes?.video) {
+        slotFloors.video = {};
+        const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = getFloor({ size: videoSize, mediaType: VIDEO }));
+      }
+
+      if (bidRequest.mediaTypes?.native) {
+        slotFloors.native = {};
+        slotFloors.native['*'] = getFloor({ size: '*', mediaType: NATIVE });
+      }
+
+      if (Object.keys(slotFloors).length > 0) {
+        if (!slot.ext) {
+          slot.ext = {}
+        }
+        Object.assign(slot.ext, {
+          floors: slotFloors
+        });
+      }
+    }
+  } catch (e) {
+    logError('Could not parse floors from Prebid: ' + e);
+  }
 }
 
 export function canFastBid(fastBidVersion) {
