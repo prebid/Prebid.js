@@ -1,18 +1,16 @@
 import { isArray, _map, triggerPixel } from "../src/utils.js";
 import { registerBidder } from "../src/adapters/bidderFactory.js";
 import { VIDEO, BANNER } from "../src/mediaTypes.js";
-import { config } from "../src/config.js";
 
 const BIDDER_CODE = "seedtag";
 const SEEDTAG_ALIAS = "st";
 const SEEDTAG_SSP_ENDPOINT = "https://s.seedtag.com/c/hb/bid";
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = "https://s.seedtag.com/se/hb/timeout";
-const ALLOWED_PLACEMENTS = {
+const ALLOWED_DISPLAY_PLACEMENTS = {
   inImage: true,
   inScreen: true,
   inArticle: true,
   inBanner: true,
-  inVideo: true,
 };
 
 // Global Vendor List Id
@@ -61,12 +59,13 @@ function hasVideoMediaType(bid) {
   return !!bid.mediaTypes && !!bid.mediaTypes.video;
 }
 
-function hasMandatoryParams(params) {
+function hasMandatoryDisplayParams(bid) {
+  const p = bid.params;
   return (
-    !!params.publisherId &&
-    !!params.adUnitId &&
-    !!params.placement &&
-    !!ALLOWED_PLACEMENTS[params.placement]
+    !!p.publisherId &&
+    !!p.adUnitId &&
+    !!p.placement &&
+    !!ALLOWED_DISPLAY_PLACEMENTS[p.placement]
   );
 }
 
@@ -74,6 +73,8 @@ function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
   return (
+    !!bid.params.publisherId &&
+    !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
     !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
@@ -217,8 +218,8 @@ export const spec = {
    */
   isBidRequestValid(bid) {
     return hasVideoMediaType(bid)
-      ? hasMandatoryParams(bid.params) && hasMandatoryVideoParams(bid)
-      : hasMandatoryParams(bid.params);
+      ? hasMandatoryVideoParams(bid)
+      : hasMandatoryDisplayParams(bid);
   },
 
   /**

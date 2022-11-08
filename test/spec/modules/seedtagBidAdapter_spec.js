@@ -185,21 +185,26 @@ describe("Seedtag Adapter", function () {
       refererInfo: { page: "referer" },
       timeout: 1000,
     };
-    const mandatoryParams = {
+    const mandatoryDisplayParams = {
       publisherId: PUBLISHER_ID,
       adUnitId: ADUNIT_ID,
       placement: "inBanner",
     };
-    const inStreamParams = Object.assign({}, mandatoryParams, {
-      video: {
-        mimes: "mp4",
-      },
-    });
+    const mandatoryVideoParams = {
+      publisherId: PUBLISHER_ID,
+      adUnitId: ADUNIT_ID,
+    };
     const validBidRequests = [
-      getSlotConfigs({ banner: {} }, mandatoryParams),
+      getSlotConfigs({ banner: {} }, mandatoryDisplayParams),
       getSlotConfigs(
-        { video: { context: "instream", playerSize: [[300, 200]] } },
-        inStreamParams
+        {
+          video: {
+            context: "instream",
+            playerSize: [[300, 200]],
+            mimes: ["video/mp4"],
+          },
+        },
+        mandatoryVideoParams
       ),
     ];
     it("Url params should be correct ", function () {
@@ -222,26 +227,6 @@ describe("Seedtag Adapter", function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal("adunit-code");
-    });
-
-    describe("adPosition param", function () {
-      it("should sended when publisher set adPosition param", function () {
-        const params = Object.assign({}, mandatoryParams, {
-          adPosition: 1,
-        });
-        const validBidRequests = [getSlotConfigs({ banner: {} }, params)];
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.bidRequests[0].adPosition).to.equal(1);
-      });
-      it("should not sended when publisher has not set adPosition param", function () {
-        const validBidRequests = [
-          getSlotConfigs({ banner: {} }, mandatoryParams),
-        ];
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.bidRequests[0].adPosition).to.equal(undefined);
-      });
     });
 
     describe("GDPR params", function () {
@@ -329,7 +314,7 @@ describe("Seedtag Adapter", function () {
         );
         expect(videoBid.supplyTypes[0]).to.equal("video");
         expect(videoBid.adUnitId).to.equal("000000");
-        expect(videoBid.videoParams.mimes).to.equal("mp4");
+        expect(videoBid.videoParams.mimes).to.eql(["video/mp4"]);
         expect(videoBid.videoParams.w).to.equal(300);
         expect(videoBid.videoParams.h).to.equal(200);
         expect(videoBid.sizes[0][0]).to.equal(300);
