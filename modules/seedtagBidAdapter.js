@@ -11,48 +11,57 @@ const ALLOWED_PLACEMENTS = {
   inImage: true,
   inScreen: true,
   inArticle: true,
-  banner: true,
-  video: true
-}
+  inBanner: true,
+  inVideo: true,
+};
 
 // Global Vendor List Id
 // https://iabeurope.eu/vendor-list-tcf-v2-0/
 const GVLID = 157;
 
 const mediaTypesMap = {
-  [BANNER]: 'display',
-  [VIDEO]: 'video'
+  [BANNER]: "display",
+  [VIDEO]: "video",
 };
 
 const deviceConnection = {
-  FIXED: 'fixed',
-  MOBILE: 'mobile',
-  UNKNOWN: 'unknown'
+  FIXED: "fixed",
+  MOBILE: "mobile",
+  UNKNOWN: "unknown",
 };
 
 const getConnectionType = () => {
-  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {}
+  const connection =
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection ||
+    {};
   switch (connection.type || connection.effectiveType) {
-    case 'wifi':
-    case 'ethernet':
-      return deviceConnection.FIXED
-    case 'cellular':
-    case 'wimax':
-      return deviceConnection.MOBILE
+    case "wifi":
+    case "ethernet":
+      return deviceConnection.FIXED;
+    case "cellular":
+    case "wimax":
+      return deviceConnection.MOBILE;
     default:
-      const isMobile = /iPad|iPhone|iPod/.test(navigator.userAgent) || /android/i.test(navigator.userAgent)
-      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED
+      const isMobile =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        /android/i.test(navigator.userAgent);
+      return isMobile ? deviceConnection.UNKNOWN : deviceConnection.FIXED;
   }
 };
 
 function mapMediaType(seedtagMediaType) {
-  if (seedtagMediaType === 'display') return BANNER;
-  if (seedtagMediaType === 'video') return VIDEO;
+  if (seedtagMediaType === "display") return BANNER;
+  if (seedtagMediaType === "video") return VIDEO;
   else return seedtagMediaType;
 }
 
 function hasVideoMediaType(bid) {
-  return (!!bid.mediaTypes && !!bid.mediaTypes.video) || (!!bid.params && !!bid.params.video)
+  return (
+    (!!bid.mediaTypes && !!bid.mediaTypes.video) ||
+    (!!bid.params && !!bid.params.video)
+  );
 }
 
 function hasMandatoryParams(params) {
@@ -65,11 +74,15 @@ function hasMandatoryParams(params) {
 }
 
 function hasMandatoryVideoParams(bid) {
-  const videoParams = getVideoParams(bid)
+  const videoParams = getVideoParams(bid);
 
-  return hasVideoMediaType(bid) && !!videoParams.playerSize &&
+  return (
+    hasVideoMediaType(bid) &&
+    !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
-    videoParams.playerSize.length > 0;
+    videoParams.playerSize.length > 0 &&
+    bid.params.placement === "inStream" // only inStream is supported for video
+  );
 }
 
 function buildBidRequest(validBidRequest) {
