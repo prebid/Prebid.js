@@ -95,17 +95,17 @@ export const spec = {
       mergeDeep(request, { device: ortb2Params.device });
     }
 
-    let computed_endpoint_url = ENDPOINT_URL;
+    let computedEndpointUrl = ENDPOINT_URL;
 
     const fledgeConfig = config.getConfig('fledgeConfig');
-    if(bidderRequest.fledgeEnabled && fledgeConfig) {
-      mergeDeep(request, { ext: { fledge_config: fledgeConfig }});
-      computed_endpoint_url = FLEDGE_ENDPOINT_URL;
+    if (bidderRequest.fledgeEnabled && fledgeConfig) {
+      mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
+      computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }
 
     return {
       method: 'POST',
-      url: 'https://' + validBidRequests[0].params.region + '.' + computed_endpoint_url,
+      url: 'https://' + validBidRequests[0].params.region + '.' + computedEndpointUrl,
       data: JSON.stringify(request)
     };
   },
@@ -120,13 +120,17 @@ export const spec = {
       if (!serverBid.price) { // price may exist and is === 0 or there's no price prop at all (fledge req case)
         return;
       }
+
+      let interpretedBid;
+
       // try...catch would be risky cause JSON.parse throws SyntaxError
       if (serverBid.adm.indexOf('{') === 0) {
         interpretedBid = interpretNativeBid(serverBid);
       } else {
         interpretedBid = interpretBannerBid(serverBid);
       }
-      if(serverBid.ext) interpretedBid.ext = serverBid.ext;
+      if (serverBid.ext) interpretedBid.ext = serverBid.ext;
+
       bids.push(interpretedBid);
     });
     return bids;
@@ -144,7 +148,7 @@ export const spec = {
 
       const seller = responseBody.ext.seller;
       const decisionLogicUrl = responseBody.ext.decisionLogicUrl;
-      const sellerTimeout = "sellerTimeout" in responseBody.ext ? { sellerTimeout: responseBody.ext.sellerTimeout } : {};
+      const sellerTimeout = 'sellerTimeout' in responseBody.ext ? { sellerTimeout: responseBody.ext.sellerTimeout } : {};
       responseBody.ext.igbid.forEach((igbid) => {
         const perBuyerSignals = {};
         igbid.igbuyer.forEach(buyerItem => {
