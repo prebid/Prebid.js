@@ -8,6 +8,7 @@ const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
 const SUPPORTED_VIDEO_MIMES = ['video/mp4', 'video/x-flv']
 const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4]
+const GVLID = 773;
 
 function _getDeviceObj () {
   let device = {}
@@ -19,8 +20,7 @@ function _getDeviceObj () {
 
 function _getSiteObj (bidderRequest) {
   let site = {}
-  // TODO: does the fallback to window.location make sense?
-  let url = bidderRequest?.refererInfo?.page || window.location.href
+  let url = bidderRequest?.refererInfo?.page
   if (url.length > 0) {
     url = url.split('?')[0]
   }
@@ -140,6 +140,7 @@ function _buildResponse (bid, currency, ttl) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
