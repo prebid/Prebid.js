@@ -49,6 +49,7 @@ import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHand
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
+import {defer} from './utils/promise.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -622,7 +623,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ortb2, metrics } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -630,23 +631,28 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics});
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
-    // if the request does not specify adUnits, clone the global adUnit array - before
-    // any hook has a chance to run.
+    // unlike the main body of `delegate`, this runs before any other hook has a chance to;
+    // it's also not restricted in its return value in the way `async` hooks are.
+
+    // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    req.metrics = newMetrics();
-    req.metrics.checkpoint('requestBids');
     let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
-    return delegate.call(this, req);
+
+    req.metrics = newMetrics();
+    req.metrics.checkpoint('requestBids');
+    req.defer = defer({promiseFactory: (r) => new Promise(r)})
+    delegate.call(this, req);
+    return req.defer.promise;
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ortb2Fragments, metrics } = {}) {
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
@@ -656,6 +662,17 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   } else {
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+  }
+
+  function auctionDone(bids, timedOut, auctionId) {
+    if (typeof bidsBackHandler === 'function') {
+      try {
+        bidsBackHandler(bids, timedOut, auctionId);
+      } catch (e) {
+        logError('Error executing bidsBackHandler', null, e);
+      }
+    }
+    defer.resolve({bids, timedOut, auctionId})
   }
 
   /*
@@ -676,6 +693,9 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
     adUnit.transactionId = tid;
+    if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {
+      adUnit.ttlBuffer = ttlBuffer;
+    }
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
     deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
@@ -700,35 +720,27 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === 'function') {
-      // executeCallback, this will only be called in case of first request
-      try {
-        bidsBackHandler();
-      } catch (e) {
-        logError('Error executing bidsBackHandler', null, e);
-      }
+    auctionDone();
+  } else {
+    const auction = auctionManager.createAuction({
+      adUnits,
+      adUnitCodes,
+      callback: auctionDone,
+      cbTimeout,
+      labels,
+      auctionId,
+      ortb2Fragments,
+      metrics,
+    });
+
+    let adUnitsLen = adUnits.length;
+    if (adUnitsLen > 15) {
+      logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
-    return;
+
+    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+    auction.callBids();
   }
-
-  const auction = auctionManager.createAuction({
-    adUnits,
-    adUnitCodes,
-    callback: bidsBackHandler,
-    cbTimeout,
-    labels,
-    auctionId,
-    ortb2Fragments,
-    metrics,
-  });
-
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
-  }
-
-  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
-  auction.callBids();
 }, 'startAuction');
 
 export function executeCallbacks(fn, reqBidsConfigObj) {

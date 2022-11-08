@@ -254,9 +254,14 @@ export const parseBidResponse = (bid, previousBidResponse) => {
       const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
       return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
     },
+    'networkId', () => {
+      const networkId = deepAccess(bid, 'meta.networkId');
+      // if not a valid after this, set to undefined so it gets filtered out
+      return (networkId && networkId.toString()) || undefined;
+    },
     'conversionError', conversionError => conversionError === true || undefined, // only pass if exactly true
     'ogCurrency',
-    'ogPrice'
+    'ogPrice',
   ]);
 }
 
@@ -701,7 +706,7 @@ magniteAdapter.track = ({ eventType, args }) => {
           'code as adUnitCode',
           'transactionId',
           'mediaTypes', mediaTypes => Object.keys(mediaTypes),
-          'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
+          'sizes as dimensions', sizes => (sizes || [[1, 1]]).map(sizeToDimensions),
         ]);
         ad.pbAdSlot = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
         ad.pattern = deepAccess(adUnit, 'ortb2Imp.ext.data.aupname');

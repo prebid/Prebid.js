@@ -9,7 +9,7 @@ import {
   setSubmoduleRegistry,
   syncDelay,
   PBJS_USER_ID_OPTOUT_NAME,
-  findRootDomain,
+  findRootDomain, requestDataDeletion,
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -53,6 +53,8 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {gdprDataHandler} from '../../../src/adapterManager.js';
+import {GreedyPromise} from '../../../src/utils/promise.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -149,6 +151,8 @@ describe('User ID', function () {
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 
+  let restoreGdprConsent;
+
   beforeEach(function () {
     // TODO: this whole suite needs to be redesigned; it is passing by accident
     // some tests do not pass if consent data is available
@@ -157,7 +161,7 @@ describe('User ID', function () {
     resetConsentData();
     sandbox = sinon.sandbox.create();
     consentData = null;
-    mockGdprConsent(sandbox, () => consentData);
+    restoreGdprConsent = mockGdprConsent(sandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
@@ -985,6 +989,7 @@ describe('User ID', function () {
       let adUnits;
       let mockIdCallback;
       let auctionSpy;
+      let mockIdSystem;
 
       beforeEach(function () {
         sandbox = sinon.createSandbox();
@@ -998,7 +1003,7 @@ describe('User ID', function () {
 
         auctionSpy = sandbox.spy();
         mockIdCallback = sandbox.stub();
-        const mockIdSystem = {
+        mockIdSystem = {
           name: 'mockId',
           decode: function (value) {
             return {
@@ -1022,6 +1027,30 @@ describe('User ID', function () {
         config.resetConfig();
         sandbox.restore();
       });
+
+      it('waits for GDPR if it was enabled after userId', () => {
+        restoreGdprConsent();
+        mockIdSystem.getId = function (_, consent) {
+          if (consent?.given) {
+            return {id: {MOCKID: 'valid'}};
+          } else {
+            return {id: {MOCKID: 'invalid'}};
+          }
+        }
+        config.setConfig({
+          userSync: {
+            auctionDelay: 0,
+            userIds: [{
+              name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
+            }]
+          }
+        });
+        const consent = {given: true};
+        gdprDataHandler.setConsentData(consent);
+        return expectImmediateBidHook(auctionSpy, {adUnits}).then(() => {
+          expect(adUnits[0].bids[0].userId.mid).to.eql('valid');
+        })
+      })
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
         config.setConfig({
@@ -2701,6 +2730,72 @@ describe('User ID', function () {
           sinon.assert.calledOnce(mockExtendId);
         });
       });
+    });
+
+    describe('requestDataDeletion', () => {
+      function idMod(name, value) {
+        return {
+          name,
+          getId() {
+            return {id: value}
+          },
+          decode(d) {
+            return {[name]: d}
+          },
+          onDataDeletionRequest: sinon.stub()
+        }
+      }
+      let mod1, mod2, mod3, cfg1, cfg2, cfg3;
+
+      beforeEach(() => {
+        init(config);
+        mod1 = idMod('id1', 'val1');
+        mod2 = idMod('id2', 'val2');
+        mod3 = idMod('id3', 'val3');
+        cfg1 = getStorageMock('id1', 'id1', 'cookie');
+        cfg2 = getStorageMock('id2', 'id2', 'html5');
+        cfg3 = {name: 'id3', value: {id3: 'val3'}};
+        setSubmoduleRegistry([mod1, mod2, mod3]);
+        config.setConfig({
+          auctionDelay: 1,
+          userSync: {
+            userIds: [cfg1, cfg2, cfg3]
+          }
+        });
+        return getGlobal().refreshUserIds();
+      });
+
+      it('deletes stored IDs', () => {
+        expect(coreStorage.getCookie('id1')).to.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.exist;
+        requestDataDeletion(sinon.stub());
+        expect(coreStorage.getCookie('id1')).to.not.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.not.exist;
+      });
+
+      it('invokes onDataDeletionRequest', () => {
+        requestDataDeletion(sinon.stub());
+        sinon.assert.calledWith(mod1.onDataDeletionRequest, cfg1, {id1: 'val1'});
+        sinon.assert.calledWith(mod2.onDataDeletionRequest, cfg2, {id2: 'val2'})
+        sinon.assert.calledWith(mod3.onDataDeletionRequest, cfg3, {id3: 'val3'})
+      });
+
+      describe('does not choke when onDataDeletionRequest', () => {
+        Object.entries({
+          'is missing': () => { delete mod1.onDataDeletionRequest },
+          'throws': () => { mod1.onDataDeletionRequest.throws(new Error()) }
+        }).forEach(([t, setup]) => {
+          it(t, () => {
+            setup();
+            const next = sinon.stub();
+            const arg = {random: 'value'};
+            requestDataDeletion(next, arg);
+            sinon.assert.calledOnce(mod2.onDataDeletionRequest);
+            sinon.assert.calledOnce(mod3.onDataDeletionRequest);
+            sinon.assert.calledWith(next, arg);
+          })
+        })
+      })
     });
 
     describe('findRootDomain', function () {
