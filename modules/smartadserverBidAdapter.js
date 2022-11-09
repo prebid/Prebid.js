@@ -154,7 +154,9 @@ export const spec = {
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',
-        schain: spec.serializeSupplyChain(bid.schain)
+        schain: spec.serializeSupplyChain(bid.schain),
+        sda: deepAccess(bidderRequest, 'ortb2.user.data', undefined),
+        sdc: deepAccess(bidderRequest, 'ortb2.site.content.data', undefined)
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
