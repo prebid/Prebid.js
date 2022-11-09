@@ -31,6 +31,7 @@ describe('PubMatic adapter', function () {
   let outstreamBidRequest;
   let validOutstreamBidRequest;
   let outstreamVideoBidResponse;
+  const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator';
 
   beforeEach(() => {
     schainConfig = {
@@ -2511,6 +2512,118 @@ describe('PubMatic adapter', function () {
               }
             }]
           }]);
+        });
+      });
+
+      describe('buildRequests function: Translator POST or GET request, depends on config', function() {
+        it('should return POST request when config is not set', function () {
+          let request = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id'
+          });
+          expect(request.method).to.equal('POST');
+          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
+        });
+
+        it('should return POST request, when translatorGetRequest config is enabled=false', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: false
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('POST');
+          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
+          sandbox.restore();
+        });
+
+        it('should return POST request, when translatorGetRequest config is enabled=true, testGroupPercentage is not provided so considering default 0', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: true
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('POST');
+          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
+          sandbox.restore();
+        });
+
+        it('should return POST request, when translatorGetRequest config is enabled=true, testGroupPercentage: 0', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: true,
+                testGroupPercentage: 0
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('POST');
+          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
+          sandbox.restore();
+        });
+
+        it('should return POST request, when translatorGetRequest config is enabled=true, testGroupPercentage: 100, maxUrlLength is small than URL length', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: true,
+                testGroupPercentage: 100,
+                maxUrlLength: 10
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('POST');
+          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
+          sandbox.restore();
+        });
+
+        it('should return GET request, when translatorGetRequest config is enabled=true, testGroupPercentage: 100, maxUrlLength is not provided should take default', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: true,
+                testGroupPercentage: 100
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('GET');
+          expect(request.url).to.equal(ENDPOINT);
+          sandbox.restore();
+        });
+
+        it('should return GET request, when translatorGetRequest config is enabled=true, testGroupPercentage: 100, maxUrlLength: 63000', () => {
+          let sandbox = sinon.sandbox.create();
+          sandbox.stub(config, 'getConfig').callsFake(key => {
+            const config = {
+              translatorGetRequest: {
+                enabled: true,
+                testGroupPercentage: 100,
+                maxUrlLength: 63000
+              }
+            };
+            return utils.deepAccess(config, key);
+          });
+          const request = spec.buildRequests(bidRequests, {});
+          expect(request.method).to.equal('GET');
+          expect(request.url).to.equal(ENDPOINT);
+          sandbox.restore();
         });
       });
     });

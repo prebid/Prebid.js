@@ -1076,20 +1076,20 @@ export function prepareMetaObject(br, bid, seat) {
  * @returns boolean
  */
 function hasUrlLengthIsNotExceeding(encodedPayload, maxLength) {
-  const urlLength = (ENDPOINT + "?source=ow-client&payload=" + encodedPayload)?.length;
+  const urlLength = (ENDPOINT + '?source=ow-client&payload=' + encodedPayload)?.length;
   return urlLength <= maxLength;
 }
 
 /**
- * returns, boolean value according to translator get request is enabled 
+ * returns, boolean value according to translator get request is enabled
  * and random value should be less than or equal to testGroupPercentage
  * @returns boolean
  */
-function hasGetRequestEnabled(){
-  if(!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
-  const randomValue100 = Math.ceil(Math.random()*100);
+function hasGetRequestEnabled() {
+  if (!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
+  const randomValue100 = Math.ceil(Math.random() * 100);
   const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
-  return randomValue100 <= testGroupPercentage ? true : false;
+  return randomValue100 <= testGroupPercentage;
 }
 
 export const spec = {
@@ -1345,7 +1345,7 @@ export const spec = {
         serverRequest = {
           method: 'GET',
           url: ENDPOINT,
-          data: { "source": "ow-client", "payload": encodedPayload },
+          data: { 'source': 'ow-client', 'payload': encodedPayload },
           bidderRequest: bidderRequest
         };
       }
