@@ -175,7 +175,7 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
     return
   }
 
-  passCohortsToAppnexusAuctionKeywords(segmentData?.ssp ?? {})
+  passCohortsToAppnexusAuctionKeywords(segmentData.ssp)
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
@@ -379,7 +379,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * @param {Object} sspData -- {ssp?: string[], cohorts?: string[]}
  */
 function passCohortsToAppnexusAuctionKeywords(sspData) {
-  const shouldSetConfig = Object.hasOwnProperty('ssp') && Object.hasOwnProperty('cohorts') && sspData.ssp.includes('appnexus')
+  const shouldSetConfig = sspData?.ssp?.includes('appnexus') && sspData?.cohorts
   if(shouldSetConfig) {
     config.setConfig({
       appnexusAuctionKeywords: {
