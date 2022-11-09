@@ -10,7 +10,7 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
-import {config} from '../src/config'
+import {config} from '../src/config.js';
 
 const MODULE_NAME = 'permutive'
 
@@ -225,10 +225,19 @@ function getCustomBidderFn (moduleConfig, bidder) {
  * @return {Object} Bidder function
  */
 function getDefaultBidderFn (bidder) {
+  const isPStandardTargetingEnabled = (data, acEnabled) => {
+    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.length)
+  }
+  const pStandardTargeting = (data, acEnabled) => {
+    const ac = (acEnabled) ? (data.ac ?? []) : []
+    const ssp = data.ssp ?? []
+    return [...new Set([...ac, ...ssp])]
+  }
   const bidderMap = {
     appnexus: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.keywords.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.keywords.p_standard', segments)
       }
       if (data.appnexus && data.appnexus.length) {
         deepSetValue(bid, 'params.keywords.permutive', data.appnexus)
@@ -237,8 +246,9 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     rubicon: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.visitor.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.visitor.p_standard', segments)
       }
       if (data.rubicon && data.rubicon.length) {
         deepSetValue(bid, 'params.visitor.permutive', data.rubicon)
@@ -247,8 +257,9 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     ozone: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.customData.0.targeting.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.customData.0.targeting.p_standard', segments)
       }
 
       return bid
@@ -309,12 +320,13 @@ export function getSegments (maxSegs) {
     rubicon: readSegments('_prubicons'),
     appnexus: readSegments('_papns'),
     gam: readSegments('_pdfps'),
-    ssp: _pssps,
   }
 
   for (const bidder in segments) {
     segments[bidder] = segments[bidder].slice(0, maxSegs)
   }
+
+  segments.ssp = _pssps
 
   return segments
 }
@@ -380,7 +392,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  */
 function passCohortsToAppnexusAuctionKeywords(sspData) {
   const shouldSetConfig = sspData?.ssp?.includes('appnexus') && sspData?.cohorts
-  if(shouldSetConfig) {
+  if (shouldSetConfig) {
     config.setConfig({
       appnexusAuctionKeywords: {
         'p_standard': sspData.cohorts
