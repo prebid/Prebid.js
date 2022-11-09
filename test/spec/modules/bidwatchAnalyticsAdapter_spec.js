@@ -293,6 +293,7 @@ describe('BidWatch Analytics', function () {
       expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
       expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
       expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
+      expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId');
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
@@ -315,6 +316,7 @@ describe('BidWatch Analytics', function () {
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).not.to.have.property('ad');
+      expect(message).to.have.property('adId')
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
       sinon.assert.callCount(bidwatchAnalytics.track, 1);
     });

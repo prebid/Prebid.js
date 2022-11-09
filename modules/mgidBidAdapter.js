@@ -66,6 +66,7 @@ _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = 
 export const spec = {
   VERSION: '1.5',
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
   reId: /^[1-9][0-9]*$/,
   NATIVE_ASSET_ID_TO_KEY_MAP: _NATIVE_ASSET_ID_TO_KEY_MAP,
@@ -177,6 +178,8 @@ export const spec = {
       return;
     }
 
+    const ortb2Data = bidderRequest?.ortb2 || {};
+
     let request = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
       site: {domain, page},
@@ -190,7 +193,11 @@ export const spec = {
         w: screen.width,
         language: getLanguage()
       },
-      ext: {mgid_ver: spec.VERSION, prebid_ver: '$prebid.version$'},
+      ext: {
+        mgid_ver: spec.VERSION,
+        prebid_ver: '$prebid.version$',
+        ...ortb2Data
+      },
       imp
     };
     if (bidderRequest && bidderRequest.gdprConsent) {

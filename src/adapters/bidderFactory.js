@@ -202,6 +202,8 @@ export function newBidder(spec) {
         adUnitCodesHandled[adUnitCode] = true;
         if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
+        } else {
+          addBidResponse.reject(adUnitCode, bid, CONSTANTS.REJECTION_REASON.INVALID)
         }
       }
 
@@ -262,6 +264,7 @@ export function newBidder(spec) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -272,6 +275,7 @@ export function newBidder(spec) {
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bid, CONSTANTS.REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
