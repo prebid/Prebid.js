@@ -555,6 +555,7 @@ function transformedTargeting (data = getTargetingData()) {
     appnexus: data._papns,
     rubicon: data._prubicons,
     gam: data._pdfps,
+    ssp: data._pssps,
   }
 }
 
@@ -565,7 +566,8 @@ function getTargetingData () {
     _papns: ['appnexus1', 'appnexus2'],
     _psegs: ['1234', '1000001', '1000002'],
     _ppam: ['ppam1', 'ppam2'],
-    _pcrprs: ['pcrprs1', 'pcrprs2']
+    _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
+    _pssps: ['xyz', 'abc', 'dup'],
   }
 }
 
