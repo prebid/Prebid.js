@@ -217,42 +217,44 @@ describe('BeOp Bid Adapter tests', () => {
     });
   });
 
-  describe("Ensure keywords is always array of string", function () {
+  describe('Ensure keywords is always array of string"', function () {
     let bidRequests = [];
     bidRequests.push(validBid);
 
-    it("should work with keywords as an array", function () {
+    it('should work with keywords as an array', function () {
       config.setConfig({
-        currency: { adServerCurrency: "USD" },
-        ortb: { site: { keywords: ["a", "b"] } },
+        currency: { adServerCurrency: 'USD' },
+        ortb: { site: { keywords: ['a', 'b'] } },
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
       expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(["a", "b"]);
+      expect(payload.kwd).to.equal(['a', 'b']);
     });
 
-    it("should work with keywords as a string", function () {
+    it('should work with keywords as a string', function () {
       config.setConfig({
-        currency: { adServerCurrency: "USD" },
-        ortb: { site: { keywords: "list of keywords" } },
+        currency: { adServerCurrency: 'USD' },
+        ortb: { site: { keywords: 'list of keywords' } },
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
       expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(["list of keywords"]);
+      expect(payload.kwd).to.equal(['list of keywords']);
     });
 
-    it("should work with keywords as a string containing a comma", function () {
+    it('should work with keywords as a string containing a comma', function () {
       config.setConfig({
-        currency: { adServerCurrency: "USD" },
-        ortb: { site: { keywords: "list, of, keywords" } },
+        currency: { adServerCurrency: 'USD' },
+        ortb: { site: { keywords: 'list, of, keywords' } },
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
       expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(["list", "of", "keywords"]);
+      expect(payload.kwd).to.equal(['list', 'of', 'keywords']);
+    })
+  })
 });

@@ -46,8 +46,8 @@ export const spec = {
       if (isArray(kwdsFromRequest)) {
         keywords = kwdsFromRequest;
       } else if (isStr(kwdsFromRequest)) {
-        if (kwdsFromRequest.indexOf(",") != -1) {
-          keywords = kwdsFromRequest.split(",");
+        if (kwdsFromRequest.indexOf(',') != -1) {
+          keywords = kwdsFromRequest.split(',');
         } else {
           keywords.push(kwdsFromRequest);
         }
