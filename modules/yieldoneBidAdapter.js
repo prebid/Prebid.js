@@ -20,7 +20,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
+   * @returns boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
@@ -29,7 +29,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    * @param {validBidRequests[]} - An array of bids.
    * @param {bidderRequest} bidderRequest - bidder request object.
-   * @return ServerRequest Info describing the request to the server.
+   * @returns ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
@@ -111,7 +111,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
    * @param {BidRequest} bidRequests
-   * @return {BidResponse} - An array of bids which were nested inside the server.
+   * @returns {BidResponse} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
@@ -208,7 +208,7 @@ export const spec = {
   /**
    * Register the user sync pixels which should be dropped after the auction.
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @return {UserSync[]} The user syncs which should be dropped.
+   * @returns {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
@@ -224,7 +224,7 @@ export const spec = {
  * NOTE: server side does not yet support multiple formats.
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @return {string|null} - `"banner"` or `"video"` or `null`.
+ * @returns {string|null} - `"banner"` or `"video"` or `null`.
  */
 function getMediaType(bidRequest, enabledOldFormat = true) {
   let hasBannerType = Boolean(deepAccess(bidRequest, 'mediaTypes.banner'));
@@ -261,7 +261,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
  * @param  {Object} bidRequest.banner -
  * @param  {Array<string>} bidRequest.banner.sizes -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @return {string} - strings like `"300x250"` or `"300x250,728x90"`.
+ * @returns {string} - strings like `"300x250"` or `"300x250,728x90"`.
  */
 function getBannerSizes(bidRequest, enabledOldFormat = true) {
   let sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
@@ -277,7 +277,7 @@ function getBannerSizes(bidRequest, enabledOldFormat = true) {
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
  * @param  {boolean} [enabledFlux = true] - default: `true`.
- * @return {{w: number, h: number}} -
+ * @returns {{w: number, h: number}} -
  */
 function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
   /**
