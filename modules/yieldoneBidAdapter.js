@@ -288,10 +288,10 @@ function getBannerSizes(bidRequest, enabledOldFormat = true) {
 /**
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @param  {boolean} [enabledFlux = true] - default: `true`.
+ * @param  {boolean} [enabled1x1 = true] - default: `true`.
  * @returns {{w: number, h: number}} -
  */
-function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
+function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
   /**
    * @param  {Array<number, number> | Array<Array<number, number>>} sizes -
    * @return {{w: number, h: number} | null} -
@@ -321,10 +321,10 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
     playerSize = playerSize || _getPlayerSize(bidRequest.sizes);
   }
 
-  if (enabledFlux) {
-    // NOTE: `video.playerSize` in Flux is always [1,1].
+  if (enabled1x1) {
+    // NOTE: `video.playerSize` in 1x1 is always [1,1].
     if (playerSize && (playerSize.w === 1 && playerSize.h === 1)) {
-      // NOTE: `params.playerSize` is a specific object to support `FLUX`.
+      // NOTE: `params.playerSize` is a specific object to support `1x1`.
       playerSize = _getPlayerSize(deepAccess(bidRequest, 'params.playerSize'));
     }
   }

@@ -269,7 +269,7 @@ describe('yieldoneBidAdapter', function() {
       });
     });
 
-    describe('FLUX Format', function () {
+    describe('1x1 Format', function () {
       const bidRequests = [
         {
           // It will be treated as a banner.
