@@ -10,6 +10,7 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {config} from '../src/config'
 
 const MODULE_NAME = 'permutive'
 
@@ -174,6 +175,8 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
     return
   }
 
+  passCohortsToAppnexusAuctionKeywords(segmentData?.ssp ?? {})
+
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
       let { bidder } = bid
@@ -238,8 +241,7 @@ function getDefaultBidderFn (bidder) {
         deepSetValue(bid, 'params.visitor.p_standard', data.ac)
       }
       if (data.rubicon && data.rubicon.length) {
-        const rubiconCohorts = deepAccess(bid, 'params.video') ? data.rubicon.map(String) : data.rubicon
-        deepSetValue(bid, 'params.visitor.permutive', rubiconCohorts)
+        deepSetValue(bid, 'params.visitor.permutive', data.rubicon)
       }
 
       return bid
@@ -276,6 +278,22 @@ export function isPermutiveOnPage () {
 }
 
 /**
+ * Parses the _pssps string in LS into a JS object
+ * @param {string} sspKVString -- in form of "stuff,stuff;somemorestuff,1234"
+ * @example For a given _pssps string in the form of "appnexus,pubmatic;1234,5678,abcd" this function will return { ssps: [appnexus, pubmatic], cohorts: [1234, 5678, "abcd"] }
+ */
+function permutiveSspParser(sspKVString) {
+  if (!sspKVString) return {}
+
+  const intermediateTuple = sspKVString.split(';')
+
+  return {
+    ssps: intermediateTuple[0].split(','),
+    cohorts: intermediateTuple[1].split(',')
+  }
+}
+
+/**
  * Get all relevant segment IDs in an object
  * @param {number} maxSegs - Maximum number of segments to be included
  * @return {Object}
@@ -284,12 +302,14 @@ export function getSegments (maxSegs) {
   const legacySegs = readSegments('_psegs').map(Number).filter(seg => seg >= 1000000).map(String)
   const _ppam = readSegments('_ppam')
   const _pcrprs = readSegments('_pcrprs')
+  const _pssps = readPermutiveSspData()
 
   const segments = {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
     rubicon: readSegments('_prubicons'),
     appnexus: readSegments('_papns'),
     gam: readSegments('_pdfps'),
+    ssp: _pssps,
   }
 
   for (const bidder in segments) {
@@ -310,6 +330,19 @@ function readSegments (key) {
     return JSON.parse(storage.getDataFromLocalStorage(key) || '[]')
   } catch (e) {
     return []
+  }
+}
+
+/**
+ * Gets the permutive ssp data string and parses it into an object
+ * or returns an empty object
+ * @return {{ ssp?: string[], cohorts?: string[] }}
+ */
+function readPermutiveSspData() {
+  try {
+    return permutiveSspParser(storage.getDataFromLocalStorage('_pssps') || '')
+  } catch (e) {
+    return {}
   }
 }
 
@@ -339,6 +372,21 @@ const ortb2UserDataTransformations = {
  */
 function iabSegmentId(permutiveSegmentId, iabIds) {
   return iabIds[permutiveSegmentId] || unknownIabSegmentId
+}
+
+/**
+ * Passes Permutive's standard cohorts to Appnexus/Xandr via auction level keywords
+ * @param {Object} sspData -- {ssp?: string[], cohorts?: string[]}
+ */
+function passCohortsToAppnexusAuctionKeywords(sspData) {
+  const shouldSetConfig = Object.hasOwnProperty('ssp') && Object.hasOwnProperty('cohorts') && sspData.ssp.includes('appnexus')
+  if(shouldSetConfig) {
+    config.setConfig({
+      appnexusAuctionKeywords: {
+        'p_standard': sspData.cohorts
+      }
+    })
+  }
 }
 
 /** @type {RtdSubmodule} */
