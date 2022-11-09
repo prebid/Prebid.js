@@ -84,14 +84,14 @@ const adUnits = [
 ]
 ```
 
-## inStream Video Ad Unit
+## inStream Video
 ```js
 var adUnits = [{
   code: 'video',
   mediaTypes: {
     video: {
       context: 'instream',   // required
-      playerSize: [600, 300], // required
+      playerSize: [640, 360], // required
       // Video object as specified in OpenRTB 2.5
       mimes: ['video/mp4'], // recommended
       minduration: 5,       // optional
@@ -113,6 +113,7 @@ var adUnits = [{
       params: {
         publisherId: '0000-0000-01',    // required
         adUnitId: '0000',               // required
+        placement: 'inStream',          // required
       }
     }
   ]

@@ -6,7 +6,12 @@ const BIDDER_CODE = "seedtag";
 const SEEDTAG_ALIAS = "st";
 const SEEDTAG_SSP_ENDPOINT = "https://s.seedtag.com/c/hb/bid";
 const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = "https://s.seedtag.com/se/hb/timeout";
-const displayPlacements = ["inScreen", "inImage", "inArticle", "inBanner"];
+const ALLOWED_DISPLAY_PLACEMENTS = [
+  "inScreen",
+  "inImage",
+  "inArticle",
+  "inBanner",
+];
 
 // Global Vendor List Id
 // https://iabeurope.eu/vendor-list-tcf-v2-0/
@@ -59,7 +64,7 @@ function hasMandatoryDisplayParams(bid) {
   return (
     !!p.publisherId &&
     !!p.adUnitId &&
-    displayPlacements.indexOf(p.placement) > -1
+    ALLOWED_DISPLAY_PLACEMENTS.indexOf(p.placement) > -1
   );
 }
 
