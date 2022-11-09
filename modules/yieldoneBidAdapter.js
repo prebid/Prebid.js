@@ -17,9 +17,20 @@ export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
   supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * Determines whether or not the given bid request is valid.
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
+  /**
+   * Make a server request from the list of BidRequests.
+   * @param {validBidRequests[]} - An array of bids.
+   * @param {bidderRequest} bidderRequest - bidder request object.
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
@@ -96,6 +107,12 @@ export const spec = {
       };
     });
   },
+  /**
+   * Unpack the response from the server into a list of bids.
+   * @param {ServerResponse} serverResponse - A successful response from the server.
+   * @param {BidRequest} bidRequests
+   * @return {BidResponse} - An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
@@ -188,6 +205,11 @@ export const spec = {
     }
     return bidResponses;
   },
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
@@ -298,6 +320,11 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
   return playerSize || DEFAULT_VIDEO_SIZE;
 }
 
+/**
+ * Create render for outstream video.
+ * @param {Object} serverResponse.body -
+ * @returns {Renderer} - Prebid Renderer object
+ */
 function newRenderer(response) {
   const renderer = Renderer.install({
     id: response.uid,
@@ -314,12 +341,21 @@ function newRenderer(response) {
   return renderer;
 }
 
+/**
+ * Handles an outstream response after the library is loaded
+ * @param {Object} bid
+ */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
   });
 }
 
+/**
+ * Create render for cmer outstream video.
+ * @param {Object} serverResponse.body -
+ * @returns {Renderer} - Prebid Renderer object
+ */
 function newCmerRenderer(response) {
   const renderer = Renderer.install({
     id: response.uid,
@@ -336,6 +372,10 @@ function newCmerRenderer(response) {
   return renderer;
 }
 
+/**
+ * Handles an outstream response after the library is loaded
+ * @param {Object} bid
+ */
 function cmerRender(bid) {
   bid.renderer.push(() => {
     window.CMERYONEPREBID.renderPrebid(bid);
