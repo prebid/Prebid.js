@@ -87,7 +87,6 @@
 
         pbjs.onEvent('videoPlaybackRequest', (e) => {
           console.log('videos pb playbackRequest: ', e);
-          pbjs.requestBids(adUnits);
         });
 
         pbjs.onEvent('videoAutostartBlocked', (e) => {
@@ -233,6 +232,8 @@
         pbjs.onEvent('videoBidError', event => {
           console.log('The ad error resulted from a bid! \n', event);
         });
+
+        pbjs.requestBids(adUnits);
       });
     </script>
 </head>

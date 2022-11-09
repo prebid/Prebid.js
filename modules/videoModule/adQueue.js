@@ -25,13 +25,13 @@ export function AdQueueCoordinator(videoCore) {
     queueAd
   };
 
-  function onSetupComplete(eventPayload) {
+  function onSetupComplete(eventName, eventPayload) {
     const divId = eventPayload.divId;
     videoCore.offEvents([SETUP_COMPLETE], onSetupComplete, divId);
     loadNextAd(divId);
   }
 
-  function onAdBreakEnd(eventPayload) {
+  function onAdBreakEnd(eventName, eventPayload) {
     loadNextAd(eventPayload.divId);
   }
 
