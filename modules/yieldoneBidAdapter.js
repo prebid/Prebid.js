@@ -7,11 +7,12 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory').ServerRequest} ServerRequest
  * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
  * @typedef {import('../src/auction').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
  */
 
 const BIDDER_CODE = 'yieldone';
@@ -40,7 +41,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    * @param {Bid[]} validBidRequests - An array of bids.
    * @param {BidderRequest} bidderRequest - bidder request object.
-   * @returns {Object} ServerRequest Info describing the request to the server.
+   * @returns {ServerRequest|ServerRequest[]} ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
@@ -122,7 +123,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
    * @param {BidRequest} bidRequests
-   * @returns {Object} - An array of bids which were nested inside the server.
+   * @returns {Bid[]} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
