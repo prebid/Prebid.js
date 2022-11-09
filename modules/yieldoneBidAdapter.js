@@ -4,6 +4,16 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
+ * @typedef {import('../src/auction').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
+ */
+
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -13,6 +23,7 @@ const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstvi
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
+/** @type BidderSpec */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
@@ -27,9 +38,9 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   * @param {[]} validBidRequests - An array of bids.
+   * @param {Bid[]} validBidRequests - An array of bids.
    * @param {BidderRequest} bidderRequest - bidder request object.
-   * @returns {ServerRequest} Info describing the request to the server.
+   * @returns {Object} ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
@@ -111,7 +122,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    * @param {ServerResponse} serverResponse - A successful response from the server.
    * @param {BidRequest} bidRequests
-   * @returns {BidResponse} - An array of bids which were nested inside the server.
+   * @returns {Object} - An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
