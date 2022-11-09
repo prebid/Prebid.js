@@ -10,12 +10,14 @@ import {
   triggerPixel,
   getDefinedParams,
   parseGPTSingleSizeArrayToRtbSize,
+  getDNT,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import * as events from '../src/events.js';
 
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
@@ -31,6 +33,7 @@ const VIDEO_PARAMS = [
 
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
+const { getConfig } = config;
 
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 cleanWurl();
@@ -57,8 +60,15 @@ export const spec = {
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
-      const site = getSiteObj();
-      const device = getDeviceObj();
+      const site = getConfig('site') || getSiteObj();
+      const device = getConfig('device') || {};
+      device.w = device.w || window.innerWidth;
+      device.h = device.h || window.innerHeight;
+      device.ua = device.ua || navigator.userAgent;
+      device.js = 1;
+      device.os = getOS();
+      device.dnt = getDNT() ? 1 : 0;
+      device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
 
       const postBody = {
         'id': bid.auctionId,
@@ -293,6 +303,23 @@ function getAd(bid) {
   return {ad, adUrl, vastXml, vastUrl};
 }
 
+function getOS() {
+  const os = {
+    'Win': 'Windows',
+    'Mac': 'MacOS',
+    'Linux': 'Linux',
+    'X11': 'UNIX',
+  };
+
+  for (const k in os) {
+    if (navigator.userAgent.indexOf(k) != -1) {
+      return os[k];
+    }
+  }
+
+  return 'Unknown';
+}
+
 function getSiteObj() {
   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
@@ -300,13 +327,6 @@ function getSiteObj() {
     page: refInfo.page,
     ref: refInfo.ref,
     domain: refInfo.domain
-  };
-}
-
-function getDeviceObj() {
-  return {
-    w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
-    h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
   };
 }
 
