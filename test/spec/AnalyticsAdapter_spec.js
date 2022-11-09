@@ -14,7 +14,7 @@ const AD_RENDER_SUCCEEDED = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED;
 const AUCTION_DEBUG = CONSTANTS.EVENTS.AUCTION_DEBUG;
 const ADD_AD_UNITS = CONSTANTS.EVENTS.ADD_AD_UNITS;
 
-const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
+const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
 const config = {
   url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
@@ -36,6 +36,14 @@ FEATURE: Analytics Adapters API
   afterEach(function () {
     adapter.disableAnalytics();
   });
+
+  it('should track enable status in `enabled`', () => {
+    expect(adapter.enabled).to.equal(false);
+    adapter.enableAnalytics();
+    expect(adapter.enabled).to.equal(true);
+    adapter.disableAnalytics();
+    expect(adapter.enabled).to.equal(false);
+  })
 
   it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, function () {
     const eventType = BID_REQUESTED;

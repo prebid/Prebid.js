@@ -1,32 +1,54 @@
-import {isStr, timestamp} from './utils.js';
+import {isStr, timestamp, deepEqual, logError} from './utils.js';
+import {defer, GreedyPromise} from './utils/promise.js';
 
 export class ConsentHandler {
   #enabled;
   #data;
-  #promise;
-  #resolve;
+  #hasData = false;
+  #defer;
   #ready;
+  #listeners;
   generatedTime;
 
   constructor() {
     this.reset();
   }
 
+  #resolve(data) {
+    this.#ready = true;
+    const hasChanged = !this.#hasData || !deepEqual(this.#data, data);
+    this.#data = data;
+    this.#hasData = true;
+    this.#defer.resolve(data);
+    if (hasChanged) {
+      this.#listeners.forEach(cb => {
+        try {
+          cb(data)
+        } catch (e) {
+          logError(e);
+        }
+      })
+    }
+  }
+
   /**
    * reset this handler (mainly for tests)
    */
   reset() {
-    this.#promise = new Promise((resolve) => {
-      this.#resolve = (data) => {
-        this.#ready = true;
-        this.#data = data;
-        resolve(data);
-      };
-    });
+    this.#defer = defer();
     this.#enabled = false;
     this.#data = null;
     this.#ready = false;
     this.generatedTime = null;
+    this.#listeners = [];
+  }
+
+  /**
+   * Register a callback to run each time consent data changes.
+   * @param {(consentData) => any} fn
+   */
+  onConsentChange(fn) {
+    this.#listeners.push(fn);
   }
 
   /**
@@ -56,12 +78,12 @@ export class ConsentHandler {
    */
   get promise() {
     if (this.#ready) {
-      return Promise.resolve(this.#data);
+      return GreedyPromise.resolve(this.#data);
     }
     if (!this.#enabled) {
       this.#resolve(null);
     }
-    return this.#promise;
+    return this.#defer.promise;
   }
 
   setConsentData(data, time = timestamp()) {

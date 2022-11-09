@@ -16,7 +16,6 @@ import { loadExternalScript } from '../../../src/adloader.js';
 import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
 import { executeRenderer } from '../../../src/Renderer.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
@@ -124,11 +123,18 @@ describe('Adagio bid adapter', () => {
     adagioMock = sinon.mock(adagio);
     utilsMock = sinon.mock(utils);
 
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      adagio: {
+        storageAllowed: true
+      }
+    };
+
     sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
     window.ADAGIO = undefined;
+    $$PREBID_GLOBAL$$.bidderSettings = {};
 
     adagioMock.restore();
     utilsMock.restore();
@@ -137,24 +143,26 @@ describe('Adagio bid adapter', () => {
   });
 
   describe('get and set params at adUnit level from global Prebid configuration', function() {
-    it('should set params get from ortb2 config or bidderSettings. Priority to bidderSetting', function() {
+    it('should set params get from bid.ortb2', function() {
       const bid = new BidRequestBuilder().build();
+      bid.ortb2 = {
+        site: {
+          ext: {
+            data: {
+              environment: 'desktop',
+              pagetype: 'abc',
+              category: ['cat1', 'cat2', 'cat3'],
+              subcategory: []
+            }
+          }
+        }
+      };
 
       sandbox.stub(config, 'getConfig').callsFake(key => {
         const config = {
           adagio: {
             pagetype: 'article'
           },
-          ortb2: {
-            site: {
-              ext: {
-                data: {
-                  environment: 'desktop',
-                  pagetype: 'abc'
-                }
-              }
-            }
-          }
         };
         return utils.deepAccess(config, key);
       });
@@ -164,6 +172,12 @@ describe('Adagio bid adapter', () => {
 
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
+
+      setExtraParam(bid, 'category');
+      expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
+
+      setExtraParam(bid, 'subcategory');
+      expect(bid.params.subcategory).to.be.undefined;
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -1075,7 +1089,7 @@ describe('Adagio bid adapter', () => {
           impressionTrackers: [
             'https://eventrack.local/impression'
           ],
-          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          javascriptTrackers: '<script async src=\"https://eventrack.local/impression\"></script>',
           clickTrackers: [
             'https://i.am.a.clicktracker.url'
           ],
@@ -1097,6 +1111,19 @@ describe('Adagio bid adapter', () => {
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
+      });
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const serverResponseWithNativeCopy = utils.deepClone(serverResponseWithNative);
+        serverResponseWithNativeCopy.body.bids[0].admNative.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression-2'
+          },)
+        const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
+        const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
+        expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
   });
@@ -1237,6 +1264,29 @@ describe('Adagio bid adapter', () => {
       expect(result.print_number).to.be.a('String');
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
+    });
+
+    it('should return `adunit_position` feature when the slot is hidden', function () {
+      const elem = fixtures.getElementById();
+      sandbox.stub(window.top.document, 'getElementById').returns(elem);
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const bidRequest = new BidRequestBuilder({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+        },
+      })
+        .withParams()
+        .build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
+      expect(elem.style.display).to.equal(null); // set null to reset style
     });
   });
 
@@ -1381,21 +1431,14 @@ describe('Adagio bid adapter', () => {
 
   describe('site information using refererDetection or window.top', function() {
     it('should returns domain, page and window.referrer in a window.top context', function() {
-      sandbox.stub(utils, 'getWindowTop').returns({
-        location: {
-          hostname: 'test.io',
-          href: 'https://test.io/article/a.html'
-        },
-        document: {
-          referrer: 'https://google.com'
-        }
-      });
-
       const bidderRequest = new BidderRequestBuilder({
         refererInfo: {
           numIframes: 0,
           reachedTop: true,
-          referer: 'https://test.io/article/a.html'
+          topmostLocation: 'https://test.io/article/a.html',
+          page: 'https://test.io/article/a.html',
+          domain: 'test.io',
+          ref: 'https://google.com'
         }
       }).build();
 
@@ -1418,13 +1461,16 @@ describe('Adagio bid adapter', () => {
       const info = {
         numIframes: 0,
         reachedTop: true,
-        referer: 'http://level.io/',
+        page: 'http://level.io/',
+        topmostLocation: 'http://level.io/',
         stack: [
           'http://level.io/',
           'http://example.com/iframe1.html',
           'http://example.com/iframe2.html'
         ],
-        canonicalUrl: ''
+        canonicalUrl: '',
+        domain: 'level.io',
+        ref: null,
       };
 
       const bidderRequest = new BidderRequestBuilder({
@@ -1445,13 +1491,16 @@ describe('Adagio bid adapter', () => {
       const info = {
         numIframes: 2,
         reachedTop: false,
-        referer: 'http://example.com/iframe1.html',
+        topmostLocation: 'http://example.com/iframe1.html',
         stack: [
           null,
           'http://example.com/iframe1.html',
           'http://example.com/iframe2.html'
         ],
-        canonicalUrl: ''
+        canonicalUrl: '',
+        page: null,
+        domain: null,
+        ref: null
       };
 
       const bidderRequest = new BidderRequestBuilder({

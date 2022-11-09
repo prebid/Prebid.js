@@ -245,7 +245,7 @@ export const novatiqIdSubmodule = {
     } else {
       srcId = configParams.sourceid;
     }
-    return srcId
+    return srcId;
   }
 };
 submodule('userId', novatiqIdSubmodule);
