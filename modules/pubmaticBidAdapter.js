@@ -1075,8 +1075,7 @@ export function prepareMetaObject(br, bid, seat) {
  * @param {*} maxLength - length of URL characters
  * @returns boolean
  */
-function hasUrlLengthIsNotExceeding(payload, maxLength) {
-  const encodedPayload = btoa(JSON.stringify(payload));
+function hasUrlLengthIsNotExceeding(encodedPayload, maxLength) {
   const urlLength = (ENDPOINT + "?source=ow-client&payload=" + encodedPayload)?.length;
   return urlLength <= maxLength;
 }
@@ -1091,15 +1090,6 @@ function hasGetRequestEnabled(){
   const randomValue100 = Math.ceil(Math.random()*100);
   const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
   return randomValue100 <= testGroupPercentage ? true : false;
-}
-
-/**
- * Allow translator request to execute it as GET if flag is set.
- * @returns boolean
- */
-function allowToExecTranslatorGetRequest(payload) {
-  const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
-  return hasGetRequestEnabled() && hasUrlLengthIsNotExceeding(payload, maxUrlLength);
 }
 
 export const spec = {
@@ -1340,24 +1330,27 @@ export const spec = {
       delete payload.site;
     }
 
-    if(allowToExecTranslatorGetRequest()) {
-      const encodedPayload = btoa(JSON.stringify(payload));  
-      return {
-        method: 'GET',
-        url: ENDPOINT,
-        data: {
-          "source": "ow-client", "payload": encodedPayload
-        },
-        bidderRequest: bidderRequest
-      };
-    }
-    
-    return {
+    let serverRequest = {
       method: 'POST',
       url: ENDPOINT + '?source=ow-client',
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
+
+    // Allow translator request to execute it as GET Methoid if flag is set.
+    if (hasGetRequestEnabled()) {
+      const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
+      const encodedPayload = btoa(JSON.stringify(payload));
+      if (hasUrlLengthIsNotExceeding(encodedPayload, maxUrlLength)) {
+        serverRequest = {
+          method: 'GET',
+          url: ENDPOINT,
+          data: { "source": "ow-client", "payload": encodedPayload },
+          bidderRequest: bidderRequest
+        };
+      }
+    }
+    return serverRequest;
   },
 
   /**
