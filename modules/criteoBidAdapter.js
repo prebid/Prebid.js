@@ -574,6 +574,7 @@ function hasNativeMediaType(bidRequest) {
 function hasValidVideoMediaType(bidRequest) {
   let isValid = true;
 
+  bidRequest.mediaTypes.video.maxduration = bidRequest.mediaTypes.video.maxduration || 60;
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function (param) {
