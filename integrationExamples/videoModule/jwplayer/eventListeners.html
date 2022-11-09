@@ -221,6 +221,10 @@
           console.log('videos pb auction ad load attempt: ', e);
         });
 
+        pbjs.onEvent('videoAuctionAdLoadQueued', (e) => {
+          console.log('videos pb auction ad load queued: ', e);
+        });
+
         pbjs.onEvent('videoAuctionAdLoadAttempt', event => {
           console.log('The Video Module is attempting to load an ad into the player! \n', event);
         });
