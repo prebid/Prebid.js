@@ -141,7 +141,7 @@ export const spec = {
         url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         },
 

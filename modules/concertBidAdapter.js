@@ -1,4 +1,4 @@
-import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
@@ -34,6 +34,9 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     logMessage(validBidRequests);
     logMessage(bidderRequest);
+
+    const eids = [];
+
     let payload = {
       meta: {
         prebidVersion: '$prebid.version$',
@@ -49,6 +52,10 @@ export const spec = {
     };
 
     payload.slots = validBidRequests.map(bidRequest => {
+      collectEid(eids, bidRequest);
+      const adUnitElement = document.getElementById(bidRequest.adUnitCode)
+      const coordinates = getOffset(adUnitElement)
+
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
@@ -59,11 +66,14 @@ export const spec = {
         adSlot: bidRequest.params.slot || bidRequest.adUnitCode,
         placementId: bidRequest.params.placementId || '',
         site: bidRequest.params.site || bidderRequest.refererInfo.page,
-        ref: bidderRequest.refererInfo.ref
-      };
+        ref: bidderRequest.refererInfo.ref,
+        offsetCoordinates: { x: coordinates?.left, y: coordinates?.top }
+      }
 
       return slot;
     });
+
+    payload.meta.eids = eids.filter(Boolean);
 
     logMessage(payload);
 
@@ -168,7 +178,7 @@ export const spec = {
 
 registerBidder(spec);
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Check or generate a UID for the current user.
@@ -178,9 +188,23 @@ function getUid(bidderRequest) {
     return false;
   }
 
-  const CONCERT_UID_KEY = 'c_uid';
+  const sharedId = deepAccess(bidderRequest, 'userId._sharedid.id');
 
+  if (sharedId) {
+    return sharedId;
+  }
+
+  const LEGACY_CONCERT_UID_KEY = 'c_uid';
+  const CONCERT_UID_KEY = 'vmconcert_uid';
+
+  const legacyUid = storage.getDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
   let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
+
+  if (legacyUid) {
+    uid = legacyUid;
+    storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
+    storage.removeDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
+  }
 
   if (!uid) {
     uid = generateUUID();
@@ -215,4 +239,36 @@ function consentAllowsPpid(bidderRequest) {
   const gdprConsent = bidderRequest?.gdprConsent && hasPurpose1Consent(bidderRequest?.gdprConsent);
 
   return (uspConsent || gdprConsent);
+}
+
+function collectEid(eids, bid) {
+  if (bid.userId) {
+    const eid = getUserId(bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com', undefined, 3)
+    eids.push(eid)
+  }
+}
+
+function getUserId(id, source, uidExt, atype) {
+  if (id) {
+    const uid = { id, atype };
+
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+
+    return {
+      source,
+      uids: [ uid ]
+    };
+  }
+}
+
+function getOffset(el) {
+  if (el) {
+    const rect = el.getBoundingClientRect();
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.top + window.scrollY
+    };
+  }
 }
