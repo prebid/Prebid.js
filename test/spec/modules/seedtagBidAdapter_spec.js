@@ -29,6 +29,7 @@ function createInStreamSlotConfig(mediaType) {
   return getSlotConfigs(mediaType, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
+    placement: "inStream",
   });
 }
 
@@ -60,6 +61,16 @@ describe("Seedtag Adapter", function () {
       });
       describe("when video slot has all mandatory params", function () {
         it("should return true, when video context is instream", function () {
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: "instream",
+              playerSize: [[600, 200]],
+            },
+          });
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
+          expect(isBidRequestValid).to.equal(true);
+        });
+        it("should return true, when video context is instream, but placement is not inStream", function () {
           const slotConfig = getSlotConfigs(
             {
               video: {
@@ -70,25 +81,19 @@ describe("Seedtag Adapter", function () {
             {
               publisherId: PUBLISHER_ID,
               adUnitId: ADUNIT_ID,
+              placement: "inBanner",
             }
           );
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(true);
+          expect(isBidRequestValid).to.equal(false);
         });
-
         it("should return false, when video context is outstream", function () {
-          const slotConfig = getSlotConfigs(
-            {
-              video: {
-                context: "outstream",
-                playerSize: [[600, 200]],
-              },
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: "outstream",
+              playerSize: [[600, 200]],
             },
-            {
-              publisherId: PUBLISHER_ID,
-              adUnitId: ADUNIT_ID,
-            }
-          );
+          });
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(false);
         });
@@ -193,6 +198,7 @@ describe("Seedtag Adapter", function () {
     const mandatoryVideoParams = {
       publisherId: PUBLISHER_ID,
       adUnitId: ADUNIT_ID,
+      placement: "inStream",
     };
     const validBidRequests = [
       getSlotConfigs({ banner: {} }, mandatoryDisplayParams),
