@@ -20,16 +20,16 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    * @param {BidRequest} bid The bid params to validate.
-   * @returns boolean True if this is a valid bid, and false otherwise.
+   * @returns {boolean} True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
   /**
    * Make a server request from the list of BidRequests.
-   * @param {validBidRequests[]} - An array of bids.
-   * @param {bidderRequest} bidderRequest - bidder request object.
-   * @returns ServerRequest Info describing the request to the server.
+   * @param {[]} validBidRequests - An array of bids.
+   * @param {BidderRequest} bidderRequest - bidder request object.
+   * @returns {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
