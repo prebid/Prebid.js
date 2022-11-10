@@ -30,6 +30,7 @@ import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -113,6 +114,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let localBidRequests = [];
     bidRequests.forEach(bid => {
       if (Array.isArray(bid.params.placementId)) {
@@ -203,7 +207,7 @@ export const spec = {
       payload['iab_support'] = {
         omidpn: 'Appnexus',
         omidpv: '$prebid.version$'
-      }
+      };
     }
 
     if (member > 0) {
@@ -211,7 +215,7 @@ export const spec = {
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
@@ -242,7 +246,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -252,7 +256,7 @@ export const spec = {
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      }
+      };
       payload.referrer_detection = refererinfo;
     }
 
@@ -437,7 +441,7 @@ export const spec = {
       reloadViewabilityScriptWithCorrectParameters(bid);
     }
   }
-}
+};
 
 function isPopulatedArray(arr) {
   return !!(isArray(arr) && arr.length > 0);
@@ -455,7 +459,7 @@ function reloadViewabilityScriptWithCorrectParameters(bid) {
   if (viewJsPayload) {
     let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
 
-    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
+    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload);
 
     let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
 
@@ -549,7 +553,7 @@ function formatRequest(payload, bidderRequest) {
   if (getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
     options.customHeaders = {
       'X-Is-Test': 1
-    }
+    };
   }
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
@@ -762,7 +766,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);

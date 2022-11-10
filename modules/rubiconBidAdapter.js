@@ -333,7 +333,7 @@ export const spec = {
       }
     });
 
-    if (rubiConf.singleRequest !== true) {
+    if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -939,7 +939,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('Rubicon: no sizes are setup or found');
   }
@@ -1032,7 +1032,7 @@ function applyFPD(bidRequest, mediaType, data) {
         if (segments.length > 0) return segments.toString();
       }).toString();
     } else if (typeof prop === 'object' && !Array.isArray(prop)) {
-      logWarn('Rubicon: Filtered FPD key: ', key, ': Expected value to be string, integer, or an array of strings/ints');
+      return undefined;
     } else if (typeof prop !== 'undefined') {
       return (Array.isArray(prop)) ? prop.filter(value => {
         if (typeof value !== 'object' && typeof value !== 'undefined') return value.toString();
@@ -1045,7 +1045,7 @@ function applyFPD(bidRequest, mediaType, data) {
     let val = validate(obj, key, name);
     let loc = (MAP[key] && isParent) ? `${MAP[key]}` : (key === 'data') ? `${MAP[name]}iab` : `${MAP[name]}${key}`;
     data[loc] = (data[loc]) ? data[loc].concat(',', val) : val;
-  }
+  };
 
   if (mediaType === BANNER) {
     ['site', 'user'].forEach(name => {
@@ -1109,15 +1109,25 @@ function mapSizes(sizes) {
 
 /**
  * Test if bid has mediaType or mediaTypes set for video.
- * Also makes sure the video object is present in the rubicon bidder params
+ * Also checks if the video object is present in the rubicon bidder params
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
-export function hasVideoMediaType(bidRequest) {
-  if (typeof deepAccess(bidRequest, 'params.video') !== 'object') {
-    return false;
+export function classifiedAsVideo(bidRequest) {
+  let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
+  // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
+  // based on whether or not there is a video object defined in the params
+  // Given this legacy implementation, other code depends on params.video being defined
+
+  if (isBanner && isMissingVideoParams) {
+    isVideo = false;
   }
-  return (typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  if (isVideo && isMissingVideoParams) {
+    deepSetValue(bidRequest, 'params.video', {});
+  }
+  return isVideo;
 }
 
 /**
@@ -1128,7 +1138,7 @@ export function hasVideoMediaType(bidRequest) {
  */
 function bidType(bid, log = false) {
   // Is it considered video ad unit by rubicon
-  if (hasVideoMediaType(bid)) {
+  if (classifiedAsVideo(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
     // We require either context as instream or outstream
     if (['outstream', 'instream'].indexOf(deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
@@ -1269,8 +1279,7 @@ export function hasValidSupplyChainParams(schain) {
 }
 
 /**
- * Creates a URL key value param, encoding the
- * param unless the key is schain
+ * Creates a URL key value param, encoding the param unless the key is schain
  * @param {String} key
  * @param {String} param
  * @returns {String}

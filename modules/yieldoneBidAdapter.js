@@ -74,17 +74,26 @@ export const spec = {
       }
 
       // DACID
-      const dacId = deepAccess(bidRequest, 'userId.dacId.id');
-      if (isStr(dacId) && !isEmpty(dacId)) {
-        payload.dac_id = dacId;
-        payload.fuuid = dacId;
+      const fuuid = deepAccess(bidRequest, 'userId.dacId.fuuid');
+      const dacid = deepAccess(bidRequest, 'userId.dacId.id');
+      if (isStr(fuuid) && !isEmpty(fuuid)) {
+        payload.fuuid = fuuid;
+      }
+      if (isStr(dacid) && !isEmpty(dacid)) {
+        payload.dac_id = dacid;
+      }
+
+      // ID5
+      const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
+      if (isStr(id5id) && !isEmpty(id5id)) {
+        payload.id5Id = id5id;
       }
 
       return {
         method: 'GET',
         url: ENDPOINT_URL,
         data: payload,
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -206,7 +215,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
   }
 
   if (hasBannerType && hasVideoType) {
-    const playerParams = deepAccess(bidRequest, 'params.playerParams')
+    const playerParams = deepAccess(bidRequest, 'params.playerParams');
     if (playerParams) {
       return VIDEO;
     } else {

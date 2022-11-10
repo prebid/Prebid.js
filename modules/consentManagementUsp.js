@@ -4,10 +4,12 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import { isFn, logInfo, logWarn, isStr, isNumber, isPlainObject, logError } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { uspDataHandler } from '../src/adapterManager.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {getHook} from '../src/hook.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -18,7 +20,7 @@ export let consentTimeout = DEFAULT_CONSENT_TIMEOUT;
 export let staticConsentData;
 
 let consentData;
-let addedConsentHook = false;
+let enabled = false;
 
 // consent APIs
 const uspCallMap = {
@@ -44,7 +46,7 @@ function lookupUspConsent({onSuccess, onError}) {
     let uspapiFrame;
     let uspapiFunction;
 
-    while (!uspapiFrame) {
+    while (true) {
       try {
         if (typeof f.__uspapi === 'function') {
           uspapiFunction = f.__uspapi;
@@ -113,6 +115,11 @@ function lookupUspConsent({onSuccess, onError}) {
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
+    uspapiFunction(
+      'registerDeletion',
+      USPAPI_VERSION,
+      adapterManager.callDataDeletionRequest
+    )
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
@@ -122,12 +129,17 @@ function lookupUspConsent({onSuccess, onError}) {
       uspapiFrame,
       callbackHandler.consentDataCallback
     );
+    callUspApiWhileInIframe(
+      'registerDeletion',
+      uspapiFrame,
+      adapterManager.callDataDeletionRequest
+    );
   }
 
+  let listening = false;
+
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
-    /* Setup up a __uspapi function to do the postMessage and stash the callback.
-      This function behaves, from the caller's perspective, identicially to the in-frame __uspapi call (although it is not synchronous) */
-    window.__uspapi = function (cmd, ver, callback) {
+    function callUsp(cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
         __uspapiCall: {
@@ -142,15 +154,18 @@ function lookupUspConsent({onSuccess, onError}) {
     };
 
     /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
+    if (!listening) {
+      window.addEventListener('message', readPostMessageResponse, false);
+      listening = true;
+    }
 
     // call uspapi
-    window.__uspapi(commandName, USPAPI_VERSION, moduleCallback);
+    callUsp(commandName, USPAPI_VERSION, moduleCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
       if (res && res.callId) {
-        if (typeof uspapiCallbacks[res.callId] !== 'undefined') {
+        if (uspapiCallbacks.hasOwnProperty(res.callId)) {
           uspapiCallbacks[res.callId](res.returnValue, res.success);
           delete uspapiCallbacks[res.callId];
         }
@@ -211,14 +226,17 @@ function loadConsentData(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(fn, reqBidsConfigObj) {
+  if (!enabled) {
+    enableConsentManagement();
+  }
   loadConsentData((errMsg, ...extraArgs) => {
     if (errMsg != null) {
       logWarn(errMsg, ...extraArgs);
     }
     fn.call(this, reqBidsConfigObj);
   });
-}
+});
 
 /**
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
@@ -257,8 +275,7 @@ export function resetConsentData() {
   consentAPI = undefined;
   consentTimeout = undefined;
   uspDataHandler.reset();
-  getGlobal().requestBids.getHooks({hook: requestBidsHook}).remove();
-  addedConsentHook = false;
+  enabled = false;
 }
 
 /**
@@ -295,13 +312,21 @@ export function setConsentConfig(config) {
 }
 
 function enableConsentManagement(configFromUser = false) {
-  if (!addedConsentHook) {
+  if (!enabled) {
     logInfo(`USPAPI consentManagement module has been activated${configFromUser ? '' : ` using default values (api: '${consentAPI}', timeout: ${consentTimeout}ms)`}`);
-    getGlobal().requestBids.before(requestBidsHook, 50);
+    enabled = true;
+    uspDataHandler.enable();
   }
-  addedConsentHook = true;
-  uspDataHandler.enable();
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
-setTimeout(() => !addedConsentHook && enableConsentManagement())
+
+getHook('requestBids').before(requestBidsHook, 50);
+
+export function setOrtbUsp(ortbRequest, bidderRequest) {
+  if (bidderRequest.uspConsent) {
+    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});

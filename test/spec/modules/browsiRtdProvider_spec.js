@@ -3,6 +3,7 @@ import {makeSlot} from '../integration/faker/googletag.js';
 import * as utils from '../../../src/utils'
 import * as events from '../../../src/events';
 import * as sinon from 'sinon';
+import {sendPageviewEvent} from '../../../modules/browsiRtdProvider.js';
 
 describe('browsi Real time  data sub module', function () {
   const conf = {
@@ -160,7 +161,19 @@ describe('browsi Real time  data sub module', function () {
     })
   })
 
-  describe('should emit billable event', function () {
+  describe('should emit ad request billable event', function () {
+    before(() => {
+      const data = {
+        p: {
+          'adUnit1': {ps: {0: 0.234}},
+          'adUnit2': {ps: {0: 0.134}}},
+        kn: 'bv',
+        pmd: undefined,
+        bet: 'AD_REQUEST'
+      };
+      browsiRTD.setData(data);
+    })
+
     beforeEach(() => {
       eventsEmitSpy.resetHistory();
     })
@@ -230,6 +243,32 @@ describe('browsi Real time  data sub module', function () {
       // billing id is random, we can't check its value
       delete callArguments['billingId'];
       expect(callArguments).to.eql(expectedCall);
+    })
+  })
+
+  describe('should emit pageveiw billable event', function () {
+    beforeEach(() => {
+      eventsEmitSpy.resetHistory();
+    })
+    it('should send event if type is correct', function () {
+      sendPageviewEvent('PAGEVIEW')
+
+      const expectedCall = {
+        vendor: 'browsi',
+        type: 'pageview',
+      }
+
+      expect(eventsEmitSpy.callCount).to.equal(1);
+      const callArguments = eventsEmitSpy.getCalls()[0].args[1];
+      // billing id is random, we can't check its value
+      delete callArguments['billingId'];
+      expect(callArguments).to.eql(expectedCall);
+    })
+    it('should not send event if type is incorrect', function () {
+      sendPageviewEvent('AD_REQUEST');
+      sendPageviewEvent('INACTIVE');
+      sendPageviewEvent(undefined);
+      expect(eventsEmitSpy.callCount).to.equal(0);
     })
   })
 });

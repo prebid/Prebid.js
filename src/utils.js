@@ -4,7 +4,7 @@ import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
-export { default as deepSetValue } from 'dset';
+export { dset as deepSetValue } from 'dset';
 
 var tArr = 'Array';
 var tStr = 'String';
@@ -52,7 +52,7 @@ export const internal = {
   deepEqual
 };
 
-let prebidInternal = {}
+let prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -955,14 +955,22 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
     matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
   }
+  return matchingSlot;
+};
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (matchingSlot) {
     return {
       gptSlot: matchingSlot.getAdUnitPath(),
@@ -1368,3 +1376,64 @@ export function safeJSONParse(data) {
     return JSON.parse(data);
   } catch (e) {}
 }
+
+/**
+ * Returns a memoized version of `fn`.
+ *
+ * @param fn
+ * @param key cache key generator, invoked with the same arguments passed to `fn`.
+ *        By default, the first argument is used as key.
+ * @return {function(): any}
+ */
+export function memoize(fn, key = function (arg) { return arg; }) {
+  const cache = new Map();
+  const memoized = function () {
+    const cacheKey = key.apply(this, arguments);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, fn.apply(this, arguments));
+    }
+    return cache.get(cacheKey);
+  }
+  memoized.clear = cache.clear.bind(cache);
+  return memoized;
+}
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
+}
+
+/**
+ * Encode a string for inclusion in HTML.
+ * See https://pragmaticwebsecurity.com/articles/spasecurity/json-stringify-xss.html and
+ * https://codeql.github.com/codeql-query-help/javascript/js-bad-code-sanitization/
+ * @return {string}
+ */
+export const escapeUnsafeChars = (() => {
+  const escapes = {
+    '<': '\\u003C',
+    '>': '\\u003E',
+    '/': '\\u002F',
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\0': '\\0',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029'
+  };
+
+  return function(str) {
+    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
+  }
+})();

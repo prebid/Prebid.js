@@ -1,8 +1,9 @@
-import { generateUUID, _each } from '../src/utils.js';
+import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
@@ -46,6 +47,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: function(bids, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bids = convertOrtbRequestToProprietaryNative(bids);
+
     return bids.map(bid => {
       return {
         method: 'GET',
@@ -247,6 +251,7 @@ function getRequestData(bid, bidderRequest) {
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const supplyChain = getSupplyChain(bid.schain);
   const bidFloor = getFloor(bid, size, bid.mediaTypes);
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   // general bid data
   let bidData = {
     ver: VER,
@@ -263,16 +268,14 @@ function getRequestData(bid, bidderRequest) {
     bidData.fp = bidFloor;
   }
 
-  addUserId(bidData, bid.userId);
-  // TODO: is 'page' the right value here? does the fallback make sense?
-  bidData.u = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
-  try {
-    bidData.host = window.top.location.hostname;
-    bidData.xr = 0;
-  } catch (e) {
-    bidData.host = window.location.hostname;
-    bidData.xr = 1;
+  if (gpid) {
+    bidData.gpid = gpid;
   }
+
+  addUserId(bidData, bid.userId);
+
+  bidData.u = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+  bidData.host = bidderRequest.refererInfo.domain;
 
   if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
     bidData.ao = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];

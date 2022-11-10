@@ -11,7 +11,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.2.12';
+const ADAPTER_VERSION = '1.4.0';
 
 function getClientWidth() {
   const documentElementClientWidth = window.top.document.documentElement.clientWidth
@@ -56,6 +56,10 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     {
       type: 'image',
       url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
     }
   ]
 }
@@ -110,7 +114,10 @@ function buildRequests(validBidRequests, bidderRequest) {
         banner: {
           format: sizes
         },
-        ext: bidRequest.params
+        ext: {
+          ...bidRequest.params,
+          timeSpentOnPage: document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
+        }
       });
     }
   });
