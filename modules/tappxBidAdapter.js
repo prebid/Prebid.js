@@ -1,6 +1,6 @@
 'use strict';
 
-import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
+import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -271,11 +271,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     api[0] = deepAccess(validBidRequests, 'params.api') ? deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
-    let site = {};
+    let site = deepAccess(validBidRequests, 'params.site') || {};
     site.name = bundle;
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
+    site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
     site.ext = {};
+    site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
     site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
     site.ext.page_rip = bidderRequest?.refererInfo?.page || '-';
     site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || '-';
@@ -283,6 +285,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     publisher.name = bundle;
     publisher.domain = bundle;
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
+    let site_name = document.getElementsByTagName('meta')['title'];
+    if (site_name && site_name.content) {
+      site.name = site_name.content;
+    }
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      site.keywords = keywords.content;
+    }
     payload.site = site;
   }
   // < App/Site object
@@ -298,12 +308,13 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     h = bannerMediaType.sizes[0][1];
     banner.w = w;
     banner.h = h;
+    banner.topframe = inIframe() ? 0 : 1;
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7;
+      banner.pos = 0;
     } else {
-      banner.pos = 4;
+      banner.pos = 0;
     }
 
     banner.api = api;

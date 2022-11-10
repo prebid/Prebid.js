@@ -206,6 +206,7 @@ describe('Tappx bid adapter', function () {
 
       const data = JSON.parse(request[0].data);
       expect(data.site).to.not.equal(null);
+      expect(data.site.domain).to.exist;
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
       expect(data.imp[0].banner).to.not.equal(null);
@@ -227,6 +228,7 @@ describe('Tappx bid adapter', function () {
 
       const data = JSON.parse(request[0].data);
       expect(data.site).to.not.equal(null);
+      expect(data.site.domain).to.exist;
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
       expect(data.imp[0].video).to.not.equal(null);
@@ -246,6 +248,7 @@ describe('Tappx bid adapter', function () {
 
       const data = JSON.parse(request[0].data);
       expect(data.site).to.not.equal(null);
+      expect(data.site.domain).to.exist;
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
       expect(data.imp[0].video).to.not.equal(null);
@@ -266,6 +269,7 @@ describe('Tappx bid adapter', function () {
 
       const data = JSON.parse(request[0].data);
       expect(data.site).to.not.equal(null);
+      expect(data.site.domain).to.exist;
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
       expect(data.imp[0].video).to.not.equal(null);
@@ -286,6 +290,7 @@ describe('Tappx bid adapter', function () {
 
       const data = JSON.parse(request[0].data);
       expect(data.site).to.not.equal(null);
+      expect(data.site.domain).to.exist;
       expect(data.imp).to.have.lengthOf(1);
       expect(data.imp[0].bidfloor, data).to.not.be.null;
       expect(data.imp[0].banner).to.not.equal(null);
