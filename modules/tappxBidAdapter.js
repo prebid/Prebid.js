@@ -284,11 +284,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.ext.page_wlh = window.location.href || '-';
     publisher.name = bundle;
     publisher.domain = bundle;
-    tagid = `${site.name}_typeAdBanVid_${getOs()}`;
-    let site_name = document.getElementsByTagName('meta')['title'];
-    if (site_name && site_name.content) {
-      site.name = site_name.content;
+    let sitename = document.getElementsByTagName('meta')['title'];
+    if (sitename && sitename.content) {
+      site.name = sitename.content;
     }
+    tagid = `${site.name}_typeAdBanVid_${getOs()}`;
     let keywords = document.getElementsByTagName('meta')['keywords'];
     if (keywords && keywords.content) {
       site.keywords = keywords.content;
