@@ -182,6 +182,7 @@ describe('VidazooBidAdapter', function () {
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
+          ptrace: '1000',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',

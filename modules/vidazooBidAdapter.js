@@ -12,6 +12,7 @@ const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
+const OPT_CACHE_KEY = 'vdzwopt';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
@@ -66,6 +67,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const cId = extractCID(params);
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
+  const ptrace = getCacheOpt();
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -83,7 +85,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
-    schain: schain
+    schain: schain,
+    ptrace: ptrace
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -256,6 +259,16 @@ export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
 
 export function getVidazooSessionId() {
   return getStorageItem(SESSION_ID_KEY) || '';
+}
+
+export function getCacheOpt() {
+  let data = storage.getDataFromLocalStorage(OPT_CACHE_KEY);
+  if (!data) {
+    data = String(Date.now());
+    storage.setDataInLocalStorage(OPT_CACHE_KEY, data);
+  }
+
+  return data;
 }
 
 export function getStorageItem(key) {

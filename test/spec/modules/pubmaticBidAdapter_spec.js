@@ -3406,7 +3406,7 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].cpm).to.equal(parseFloat((bidResponses.body.seatbid[0].bid[0].price).toFixed(2)));
         expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
         expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
         if (bidResponses.body.seatbid[0].bid[0].crid) {
@@ -3430,7 +3430,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
-        expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+        expect(response[1].cpm).to.equal(parseFloat((bidResponses.body.seatbid[1].bid[0].price).toFixed(2)));
         expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
         expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
         if (bidResponses.body.seatbid[1].bid[0].crid) {
