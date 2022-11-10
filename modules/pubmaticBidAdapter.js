@@ -1,4 +1,4 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, parseQueryStringParameters } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -1070,17 +1070,6 @@ export function prepareMetaObject(br, bid, seat) {
 }
 
 /**
- * Checks url length is not exceeding the configured length.
- * @param {*} payload - payload data
- * @param {*} maxLength - length of URL characters
- * @returns boolean
- */
-function hasUrlLengthIsNotExceeding(encodedPayload, maxLength) {
-  const urlLength = (ENDPOINT + '?source=ow-client&payload=' + encodedPayload)?.length;
-  return urlLength <= maxLength;
-}
-
-/**
  * returns, boolean value according to translator get request is enabled
  * and random value should be less than or equal to testGroupPercentage
  * @returns boolean
@@ -1340,16 +1329,17 @@ export const spec = {
     // Allow translator request to execute it as GET Methoid if flag is set.
     if (hasGetRequestEnabled()) {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
-      const encodedPayload = btoa(JSON.stringify(payload));
-      if (hasUrlLengthIsNotExceeding(encodedPayload, maxUrlLength)) {
+      const urlEncodedPayloadStr = parseQueryStringParameters({ 'source': 'ow-client', 'payload': JSON.stringify(payload) });
+      if ((ENDPOINT + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
           url: ENDPOINT,
-          data: { 'source': 'ow-client', 'payload': encodedPayload },
+          data: urlEncodedPayloadStr,
           bidderRequest: bidderRequest
         };
       }
     }
+
     return serverRequest;
   },
 
