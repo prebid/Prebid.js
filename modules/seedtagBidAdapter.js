@@ -1,16 +1,17 @@
-import { isArray, _map, triggerPixel } from "../src/utils.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { VIDEO, BANNER } from "../src/mediaTypes.js";
+import { isArray, _map, triggerPixel } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { VIDEO, BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 
-const BIDDER_CODE = "seedtag";
-const SEEDTAG_ALIAS = "st";
-const SEEDTAG_SSP_ENDPOINT = "https://s.seedtag.com/c/hb/bid";
-const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = "https://s.seedtag.com/se/hb/timeout";
+const BIDDER_CODE = 'seedtag';
+const SEEDTAG_ALIAS = 'st';
+const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
+const SEEDTAG_SSP_ONTIMEOUT_ENDPOINT = 'https://s.seedtag.com/se/hb/timeout';
 const ALLOWED_DISPLAY_PLACEMENTS = [
-  "inScreen",
-  "inImage",
-  "inArticle",
-  "inBanner",
+  'inScreen',
+  'inImage',
+  'inArticle',
+  'inBanner',
 ];
 
 // Global Vendor List Id
@@ -18,14 +19,14 @@ const ALLOWED_DISPLAY_PLACEMENTS = [
 const GVLID = 157;
 
 const mediaTypesMap = {
-  [BANNER]: "display",
-  [VIDEO]: "video",
+  [BANNER]: 'display',
+  [VIDEO]: 'video',
 };
 
 const deviceConnection = {
-  FIXED: "fixed",
-  MOBILE: "mobile",
-  UNKNOWN: "unknown",
+  FIXED: 'fixed',
+  MOBILE: 'mobile',
+  UNKNOWN: 'unknown',
 };
 
 const getConnectionType = () => {
@@ -35,11 +36,11 @@ const getConnectionType = () => {
     navigator.webkitConnection ||
     {};
   switch (connection.type || connection.effectiveType) {
-    case "wifi":
-    case "ethernet":
+    case 'wifi':
+    case 'ethernet':
       return deviceConnection.FIXED;
-    case "cellular":
-    case "wimax":
+    case 'cellular':
+    case 'wimax':
       return deviceConnection.MOBILE;
     default:
       const isMobile =
@@ -50,8 +51,8 @@ const getConnectionType = () => {
 };
 
 function mapMediaType(seedtagMediaType) {
-  if (seedtagMediaType === "display") return BANNER;
-  if (seedtagMediaType === "video") return VIDEO;
+  if (seedtagMediaType === 'display') return BANNER;
+  if (seedtagMediaType === 'video') return VIDEO;
   else return seedtagMediaType;
 }
 
@@ -79,8 +80,8 @@ function hasMandatoryVideoParams(bid) {
     isArray(videoParams.playerSize) &&
     videoParams.playerSize.length > 0 &&
     // only instream is supported for video
-    videoParams.context === "instream" &&
-    bid.params.placement === "inStream"
+    videoParams.context === 'instream' &&
+    bid.params.placement === 'inStream'
   );
 }
 
@@ -163,7 +164,7 @@ function ttfb() {
   const ttfb = (() => {
     // Timing API V2
     try {
-      const entry = performance.getEntriesByType("navigation")[0];
+      const entry = performance.getEntriesByType('navigation')[0];
       return Math.round(entry.responseStart - entry.startTime);
     } catch (e) {
       // Timing API V1
@@ -184,7 +185,7 @@ function ttfb() {
 }
 
 export function getTimeoutUrl(data) {
-  let queryParams = "";
+  let queryParams = '';
   if (
     isArray(data) &&
     data[0] &&
@@ -195,11 +196,11 @@ export function getTimeoutUrl(data) {
     const timeout = data[0].timeout;
 
     queryParams =
-      "?publisherToken=" +
+      '?publisherToken=' +
       params.publisherId +
-      "&adUnitId=" +
+      '&adUnitId=' +
       params.adUnitId +
-      "&timeout=" +
+      '&timeout=' +
       timeout;
   }
   return SEEDTAG_SSP_ONTIMEOUT_ENDPOINT + queryParams;
@@ -234,7 +235,7 @@ export const spec = {
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
-      version: "$prebid.version$",
+      version: '$prebid.version$',
       connectionType: getConnectionType(),
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
@@ -243,25 +244,25 @@ export const spec = {
 
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-      if (gdprApplies !== undefined) payload["ga"] = gdprApplies;
-      payload["cd"] = bidderRequest.gdprConsent.consentString;
+      if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
+      payload['cd'] = bidderRequest.gdprConsent.consentString;
     }
     if (bidderRequest.uspConsent) {
-      payload["uspConsent"] = bidderRequest.uspConsent;
+      payload['uspConsent'] = bidderRequest.uspConsent;
     }
 
     if (validBidRequests[0].schain) {
       payload.schain = validBidRequests[0].schain;
     }
 
-    let coppa = config.getConfig("coppa");
+    let coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
     }
 
     const payloadString = JSON.stringify(payload);
     return {
-      method: "POST",
+      method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,
       data: payloadString,
     };
@@ -295,7 +296,7 @@ export const spec = {
     const serverResponse = serverResponses[0];
     if (syncOptions.iframeEnabled && serverResponse) {
       const cookieSyncUrl = serverResponse.body.cookieSync;
-      return cookieSyncUrl ? [{ type: "iframe", url: cookieSyncUrl }] : [];
+      return cookieSyncUrl ? [{ type: 'iframe', url: cookieSyncUrl }] : [];
     } else {
       return [];
     }
