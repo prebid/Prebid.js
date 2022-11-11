@@ -6,7 +6,6 @@ import {server} from '../../mocks/xhr';
 import {config} from '../../../src/config';
 import {NATIVE} from '../../../src/mediaTypes.js';
 
-// TODO implement more extensive VALID_BIDS
 // Full banner + Full Video + Basic Banner + Basic Video
 const VALID_BIDS = [
   {
@@ -40,7 +39,6 @@ const VALID_BIDS = [
   },
 ]
 
-// TODO add some invalid requests
 const INVALID_BIDS = [
   {
     bidder: 'aidem',
@@ -84,36 +82,6 @@ const INVALID_BIDS = [
     bidder: 'aidem',
     mediaTypes: {
       banner: {}
-    },
-  },
-  {
-    bidder: 'aidem',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250], [300, 600]],
-      }
-    },
-    params: {
-      siteId: '301491',
-      placementId: 13144370,
-      banner: {
-        size: [250, 250]
-      }
-    },
-  },
-  {
-    bidder: 'aidem',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250], [300, 600]],
-      }
-    },
-    params: {
-      siteId: '301491',
-      placementId: 13144370,
-      banner: {
-        size: '250x250'
-      }
     },
   },
   {
@@ -234,35 +202,30 @@ const VALID_BIDDER_REQUEST = {
 const SERVER_RESPONSE_BANNER = {
   body: {
     id: 'efa1930a-bc3e-4fd0-8368-08bc40236b4f',
-    seatbid: [
+    bid: [
+      // BANNER
       {
-        bid: [
-          // BANNER
-          {
-            'id': '2e614be960ee1d',
-            'impid': '2e614be960ee1d',
-            'price': 7.91,
-            'mediatype': 'banner',
-            'adid': '24277955',
-            'adm': 'creativity_banner',
-            'adomain': [
-              'aidem.com'
-            ],
-            'iurl': 'http://www.aidem.com',
-            'cat': [],
-            'cid': '4193561',
-            'crid': '24277955',
-            'w': 300,
-            'h': 250,
-            'ext': {
-              'dspid': 85,
-              'advbrandid': 1246,
-              'advbrand': 'AIDEM'
-            }
-          },
+        'id': '2e614be960ee1d',
+        'impid': '2e614be960ee1d',
+        'price': 7.91,
+        'mediatype': 'banner',
+        'adid': '24277955',
+        'adm': 'creativity_banner',
+        'adomain': [
+          'aidem.com'
         ],
-        seat: '6047231'
-      }
+        'iurl': 'http://www.aidem.com',
+        'cat': [],
+        'cid': '4193561',
+        'crid': '24277955',
+        'w': 300,
+        'h': 250,
+        'ext': {
+          'dspid': 85,
+          'advbrandid': 1246,
+          'advbrand': 'AIDEM'
+        }
+      },
     ],
     cur: 'USD'
   },
@@ -271,34 +234,29 @@ const SERVER_RESPONSE_BANNER = {
 const SERVER_RESPONSE_VIDEO = {
   body: {
     id: 'efa1930a-bc3e-4fd0-8368-08bc40236b4f',
-    seatbid: [
+    bid: [
+      // VIDEO
       {
-        bid: [
-          // VIDEO
-          {
-            'id': '2876a29392a47c',
-            'impid': '2876a29392a47c',
-            'price': 7.93,
-            'mediatype': 'video',
-            'adid': '24277955',
-            'adm': 'https://hermes.aidemsrv.com/vast-tag/cl9mzhhd502uq09l720uegb02?auction_id={{AUCTION_ID}}&cachebuster={{CACHEBUSTER}}',
-            'adomain': [
-              'aidem.com'
-            ],
-            'iurl': 'http://www.aidem.com',
-            'cat': [],
-            'cid': '4193561',
-            'crid': '24277955',
-            'w': 640,
-            'h': 480,
-            'ext': {
-              'dspid': 85,
-              'advbrandid': 1246,
-              'advbrand': 'AIDEM'
-            }
-          }
+        'id': '2876a29392a47c',
+        'impid': '2876a29392a47c',
+        'price': 7.93,
+        'mediatype': 'video',
+        'adid': '24277955',
+        'adm': 'https://hermes.aidemsrv.com/vast-tag/cl9mzhhd502uq09l720uegb02?auction_id={{AUCTION_ID}}&cachebuster={{CACHEBUSTER}}',
+        'adomain': [
+          'aidem.com'
         ],
-        seat: '6047231'
+        'iurl': 'http://www.aidem.com',
+        'cat': [],
+        'cid': '4193561',
+        'crid': '24277955',
+        'w': 640,
+        'h': 480,
+        'ext': {
+          'dspid': 85,
+          'advbrandid': 1246,
+          'advbrand': 'AIDEM'
+        }
       }
     ],
     cur: 'USD'
@@ -411,13 +369,6 @@ describe('Aidem adapter', () => {
       deepSetValue(validVideoRequest.params, 'video.size', [640, 480])
       expect(spec.isBidRequestValid(validVideoRequest)).to.be.true
     });
-
-    it('should return false if  params size is not an array', function () {
-      // spec.isBidRequestValid()
-      const validVideoRequest = utils.deepClone(VALID_BIDS[1])
-      deepSetValue(validVideoRequest.params, 'video.size', [[300], [[300, 600]]])
-      expect(spec.isBidRequestValid(validVideoRequest)).to.be.false
-    });
   });
 
   describe('buildRequests', () => {
@@ -433,12 +384,12 @@ describe('Aidem adapter', () => {
       const requests = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       const payload = JSON.parse(requests.data)
       expect(payload).to.be.a('object').that.has.all.keys(
-        'id', 'imp', 'mediaTypes', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at', 'user'
+        'id', 'imp', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at'
       )
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'banner', 'id', 'mediatype', 'imp_ext', 'tid', 'siteId'
+        'banner', 'id', 'mediatype', 'imp_ext', 'tid'
       )
       expect(payload.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
@@ -449,12 +400,12 @@ describe('Aidem adapter', () => {
       const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
       const payload = JSON.parse(requests.data)
       expect(payload).to.be.a('object').that.has.all.keys(
-        'id', 'imp', 'mediaTypes', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at', 'user'
+        'id', 'imp', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at'
       )
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'video', 'id', 'mediatype', 'imp_ext', 'tid', 'siteId'
+        'video', 'id', 'mediatype', 'imp_ext', 'tid'
       )
       expect(payload.imp[0].video).to.be.a('object').that.has.all.keys(
         'format', 'mimes', 'minDuration', 'maxDuration', 'protocols'
@@ -501,7 +452,7 @@ describe('Aidem adapter', () => {
 
     it('should return a valid bid array with netRevenue', () => {
       const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      response.body.seatbid[0].bid[0].isNet = true
+      response.body.bid[0].isNet = true
       const interpreted = spec.interpretResponse(response)
       expect(interpreted).to.be.a('array').that.has.lengthOf(1)
       expect(interpreted[0].netRevenue).to.be.true
@@ -509,14 +460,14 @@ describe('Aidem adapter', () => {
 
     it('should return an empty bid array if one of seatbid entry is missing price property', () => {
       const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      delete response.body.seatbid[0].bid[0].price
+      delete response.body.bid[0].price
       const interpreted = spec.interpretResponse(response)
       expect(interpreted).to.be.a('array').that.has.lengthOf(0)
     });
 
     it('should return an empty bid array if one of seatbid entry is missing adm property', () => {
       const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      delete response.body.seatbid[0].bid[0].adm
+      delete response.body.bid[0].adm
       const interpreted = spec.interpretResponse(response)
       expect(interpreted).to.be.a('array').that.has.lengthOf(0)
     });
@@ -549,7 +500,7 @@ describe('Aidem adapter', () => {
       const { bids } = JSON.parse(server.requests[0].requestBody)
       expect(bids).to.be.a('array').that.has.lengthOf(1)
       _each(bids, (bid) => {
-        expect(bid).to.be.a('object').that.has.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'transactionId', 'metrics')
+        expect(bid).to.be.a('object').that.has.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'transactionId')
       })
     });
   });
@@ -694,43 +645,13 @@ describe('Aidem adapter', () => {
       expect(request.device.connectiontype).to.equal(2)
     });
 
-    it(`should populate prebidRequest site object`, function () {
-      config.setConfig({
-        ortb2: {
-          site: {
-            name: 'example',
-            domain: 'page.example.com',
-            cat: ['IAB2'],
-            sectioncat: ['IAB2-2'],
-            pagecat: ['IAB2-2'],
-            keywords: 'power tools, drills',
-            ext: {
-              data: { // fields that aren't part of openrtb 2.5
-                pageType: 'article',
-                category: 'repair'
-              }
-            }
-          },
-        }
-      });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const payload = JSON.parse(data)
-      // expect(payload.imp).to.be.a('array').that.has.lengthOf(1)
-      expect(payload.site).to.be.exist
-      const { site } = payload
-      expect(site).to.be.a('object').that.has.all.keys('cat', 'domain', 'page', 'referer', 'sectioncat', 'keywords', 'site_ext')
-      expect(site.cat).to.be.eql(['IAB2'])
-      expect(site.sectioncat).to.be.eql(['IAB2-2'])
-      expect(site.keywords).to.be.eql('power tools, drills')
-    });
-
     it(`should set coppa`, function () {
       config.setConfig({
         coppa: true
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       const request = JSON.parse(data)
-      expect(request.regs.coppa).to.equal(true)
+      expect(request.regs.coppa_applies).to.equal(true)
     });
 
     it(`should set gdpr to true`, function () {
@@ -743,7 +664,7 @@ describe('Aidem adapter', () => {
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       const request = JSON.parse(data)
-      expect(request.regs.gdpr).to.equal(true)
+      expect(request.regs.gdpr_applies).to.equal(true)
     });
 
     it(`should set usp_consent string`, function () {

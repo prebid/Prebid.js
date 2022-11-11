@@ -1,15 +1,4 @@
-import {
-  _each,
-  contains,
-  deepAccess,
-  deepSetValue,
-  getDNT,
-  isInteger,
-  logError,
-  logInfo,
-  isBoolean,
-  isStr
-} from '../src/utils.js';
+import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -60,14 +49,8 @@ export function setEndPoints(env = null, path = '', mediaType = BANNER) {
   return endpoints
 }
 
-let ortb2 = {}
-
 config.getConfig('aidem', function (config) {
   if (config.aidem.env) { setEndPoints(config.aidem.env, config.aidem.path, config.aidem.mediaType) }
-})
-
-config.getConfig('ortb2', function (config) {
-  ortb2 = Object.assign({}, ortb2, config.ortb2)
 })
 
 // AIDEM Custom FN
@@ -76,7 +59,7 @@ function recur(obj) {
   for (var i in obj) {
     // enabledPlugin is too nested, also skip functions
     if (!(i === 'enabledPlugin' || typeof obj[i] === 'function')) {
-      if (typeof obj[i] === 'object') {
+      if (typeof obj[i] === 'object' && obj[i] !== null) {
         // get props recursively
         _tmp = recur(obj[i]);
         // if object is not {}
@@ -90,37 +73,6 @@ function recur(obj) {
     }
   }
   return result;
-}
-
-/**
- * Determines whether or not the given object is valid size format.
- *
- * @param  {*}       size The object to be validated.
- * @return {boolean}      True if this is a valid size format, and false otherwise.
- */
-function isValidSize(size) {
-  return Array.isArray(size) && size.length === 2 && isInteger(size[0]) && isInteger(size[1]);
-}
-
-/**
- * Determines whether or not the given size object is an element of the size
- * array.
- *
- * @param  {array}  sizeArray The size array.
- * @param  {object} size      The size object.
- * @return {boolean}          True if the size object is an element of the size array, and false
- *                            otherwise.
- */
-function includesSize(sizeArray = [], size = []) {
-  if (isValidSize(sizeArray)) {
-    return sizeArray[0] === size[0] && sizeArray[1] === size[1];
-  }
-  for (let i = 0; i < sizeArray.length; i++) {
-    if (sizeArray[i][0] === size[0] && sizeArray[i][1] === size[1]) {
-      return true;
-    }
-  }
-  return false;
 }
 
 // =================================================================================
@@ -158,7 +110,7 @@ function getDevice() {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   return {
     ua: navigator.userAgent,
-    dnt: getDNT() ? 1 : 0,
+    dnt: !!getDNT(),
     language: language,
     connectiontype: getConnectionType(),
     screen_width: screen.width,
@@ -171,68 +123,43 @@ function getRegs() {
   const consentManagement = config.getConfig('consentManagement')
   const coppa = config.getConfig('coppa')
   if (consentManagement && !!(consentManagement.gdpr)) {
-    deepSetValue(regs, 'gdpr', !!consentManagement.gdpr);
+    deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
+  } else {
+    deepSetValue(regs, 'gdpr_applies', false);
   }
   if (consentManagement && deepAccess(consentManagement, 'usp.cmpApi') === 'static') {
+    deepSetValue(regs, 'usp_applies', !!deepAccess(consentManagement, 'usp'));
     deepSetValue(regs, 'us_privacy', deepAccess(consentManagement, 'usp.consentData.getUSPData.uspString'));
+  } else {
+    deepSetValue(regs, 'usp_applies', false);
   }
+
   if (isBoolean(coppa)) {
-    deepSetValue(regs, 'coppa', !!coppa);
+    deepSetValue(regs, 'coppa_applies', !!coppa);
+  } else {
+    deepSetValue(regs, 'coppa_applies', false);
   }
 
   return regs;
 }
 
-/**
- * Returns bidder request page url.
- *
- * @param {Object} bidderRequest
- * @return {string}
- */
 function getPageUrl(bidderRequest) {
   return bidderRequest?.refererInfo?.page
 }
 
-function buildWonBidNotice(bid) {
-  const winNotice = {
-    adId: bid.adId,
-    adUnitCode: bid.adUnitCode,
-    creativeId: bid.creativeId,
+function buildWinNotice(bid) {
+  return {
+    burl: deepAccess(bid, 'meta.burl'),
     cpm: bid.cpm,
-    netRevenue: bid.netRevenue,
-    adserverTargeting: bid.adserverTargeting,
-    auctionId: bid.auctionId,
     currency: bid.currency,
-    mediaType: bid.mediaType,
-    size: bid.size,
-    width: bid.width,
-    height: bid.height,
-    status: bid.status,
+    impid: deepAccess(bid, 'meta.impid'),
+    adUnitCode: bid.adUnitCode,
+    auctionId: bid.auctionId,
     transactionId: bid.transactionId,
     ttl: bid.ttl,
     requestTimestamp: bid.requestTimestamp,
     responseTimestamp: bid.responseTimestamp,
-    metrics: {}
   }
-
-  if (bid.metrics && typeof bid.metrics.getMetrics === 'function') {
-    const metrics = bid.metrics.getMetrics()
-    deepSetValue(winNotice.metrics, 'requestBids.validate', metrics['requestBids.validate'])
-    deepSetValue(winNotice.metrics, 'requestBids.makeRequests', metrics['requestBids.makeRequests'])
-    deepSetValue(winNotice.metrics, 'requestBids.total', metrics['requestBids.total'])
-    deepSetValue(winNotice.metrics, 'requestBids.callBids', metrics['requestBids.callBids'])
-    deepSetValue(winNotice.metrics, 'adapter.client.validate', metrics['adapter.client.validate'])
-    deepSetValue(winNotice.metrics, 'adapter.client.buildRequests', metrics['adapter.client.buildRequests'])
-    deepSetValue(winNotice.metrics, 'adapter.client.total', metrics['adapter.client.total'])
-    deepSetValue(winNotice.metrics, 'adapter.client.net', metrics['adapter.client.net'])
-    deepSetValue(winNotice.metrics, 'adapter.client.interpretResponse', metrics['adapter.client.interpretResponse'])
-    deepSetValue(winNotice.metrics, 'addBidResponse.validate', metrics['addBidResponse.validate'])
-    deepSetValue(winNotice.metrics, 'addBidResponse.total', metrics['addBidResponse.total'])
-    deepSetValue(winNotice.metrics, 'render.pending', metrics['render.pending'])
-    deepSetValue(winNotice.metrics, 'render.e2e', metrics['render.e2e'])
-  }
-
-  return winNotice
 }
 
 // Called for every bid that has timed out
@@ -247,24 +174,8 @@ function buildTimeoutNotice(prebidTimeoutBids) {
       bidId: bid.bidId,
       bidderRequestId: bid.bidderRequestId,
       transactionId: bid.transactionId,
-      mediaTypes: bid.mediaTypes,
-      metrics: { },
-      timeout: bid.timeout,
+      mediaTypes: bid.mediaTypes
     }
-
-    if (bid.metrics && typeof bid.metrics.getMetrics === 'function') {
-      const metrics = bid.metrics.getMetrics()
-      deepSetValue(notice.metrics, 'requestBids.validate', metrics['requestBids.validate'])
-      deepSetValue(notice.metrics, 'requestBids.makeRequests', metrics['requestBids.makeRequests'])
-      deepSetValue(notice.metrics, 'requestBids.total', metrics['requestBids.total'])
-      deepSetValue(notice.metrics, 'requestBids.callBids', metrics['requestBids.callBids'])
-      deepSetValue(notice.metrics, 'adapter.client.validate', metrics['adapter.client.validate'])
-      deepSetValue(notice.metrics, 'adapter.client.buildRequests', metrics['adapter.client.buildRequests'])
-      deepSetValue(notice.metrics, 'adapter.client.total', metrics['adapter.client.total'])
-      deepSetValue(notice.metrics, 'adapter.client.net', metrics['adapter.client.net'])
-      deepSetValue(notice.metrics, 'adapter.client.interpretResponse', metrics['adapter.client.interpretResponse'])
-    }
-
     timeoutNotice.bids.push(notice)
   })
 
@@ -272,42 +183,13 @@ function buildTimeoutNotice(prebidTimeoutBids) {
 }
 
 function buildErrorNotice(prebidErrorResponse) {
-  const errorNotice = {
+  return {
     message: `Prebid.js: Server call for ${prebidErrorResponse.bidderCode} failed.`,
     url: encodeURIComponent(getPageUrl(prebidErrorResponse)),
     auctionId: prebidErrorResponse.auctionId,
     bidderRequestId: prebidErrorResponse.bidderRequestId,
     metrics: {}
   }
-  if (prebidErrorResponse.metrics && typeof prebidErrorResponse.metrics.getMetrics === 'function') {
-    const metrics = prebidErrorResponse.metrics.getMetrics()
-    deepSetValue(errorNotice.metrics, 'requestBids.validate', metrics['requestBids.validate'])
-    deepSetValue(errorNotice.metrics, 'requestBids.makeRequests', metrics['requestBids.makeRequests'])
-    deepSetValue(errorNotice.metrics, 'requestBids.total', metrics['requestBids.total'])
-    deepSetValue(errorNotice.metrics, 'requestBids.callBids', metrics['requestBids.callBids'])
-    deepSetValue(errorNotice.metrics, 'adapter.client.validate', metrics['adapter.client.validate'])
-    deepSetValue(errorNotice.metrics, 'adapter.client.buildRequests', metrics['adapter.client.buildRequests'])
-    deepSetValue(errorNotice.metrics, 'adapter.client.total', metrics['adapter.client.total'])
-    deepSetValue(errorNotice.metrics, 'adapter.client.net', metrics['adapter.client.net'])
-    deepSetValue(errorNotice.metrics, 'adapter.client.interpretResponse', metrics['adapter.client.interpretResponse'])
-  }
-  return errorNotice
-}
-
-/**
- * Get One size from Size Array
- * [[250,350]] -> [250, 350]
- * [250, 350]  -> [250, 350]
- * @param {array} sizes array of sizes
- */
-function getFirstSize(sizes = []) {
-  if (isValidSize(sizes)) {
-    return sizes;
-  } else if (isValidSize(sizes[0])) {
-    return sizes[0];
-  }
-
-  return false;
 }
 
 function hasValidFloor(obj) {
@@ -344,27 +226,21 @@ function getPrebidRequestFields(bidderRequest, bidRequests) {
   setPrebidRequestEnvironment(payload)
   // AT auction type
   deepSetValue(payload, 'at', 1);
-  // User
-  payload.user = {};
 
   return payload
 }
 
 function setPrebidImpressionObject(bidRequests, payload) {
   payload.imp = [];
-  payload.mediaTypes = []
   _each(bidRequests, function (bidRequest) {
     const impressionObject = {};
     // Placement or ad tag used to initiate the auction
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
-    // Site id
-    deepSetValue(impressionObject, 'siteId', deepAccess(bidRequest, 'params.siteId'));
-    // Tag id
+    // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // Site id
+    deepSetValue(payload, 'site.id', deepAccess(bidRequest, 'params.siteId'));
     const mediaType = getMediaType(bidRequest)
-    if (!payload.mediaTypes.includes(mediaType)) {
-      payload.mediaTypes.push(mediaType)
-    }
     switch (mediaType) {
       case 'banner':
         setPrebidImpressionObjectBanner(bidRequest, impressionObject)
@@ -387,10 +263,10 @@ function setPrebidSiteObject(bidderRequest, payload) {
   deepSetValue(payload, 'site.domain', deepAccess(bidderRequest, 'refererInfo.domain'));
   deepSetValue(payload, 'site.page', deepAccess(bidderRequest, 'refererInfo.page'));
   deepSetValue(payload, 'site.referer', deepAccess(bidderRequest, 'refererInfo.ref'));
-  deepSetValue(payload, 'site.cat', deepAccess(ortb2, 'site.cat'));
-  deepSetValue(payload, 'site.sectioncat', deepAccess(ortb2, 'site.sectioncat'));
-  deepSetValue(payload, 'site.keywords', deepAccess(ortb2, 'site.keywords'));
-  deepSetValue(payload, 'site.site_ext', deepAccess(ortb2, 'site.ext')); // see https://docs.prebid.org/features/firstPartyData.html
+  deepSetValue(payload, 'site.cat', deepAccess(bidderRequest, 'ortb2.site.cat'));
+  deepSetValue(payload, 'site.sectioncat', deepAccess(bidderRequest, 'ortb2.site.sectioncat'));
+  deepSetValue(payload, 'site.keywords', deepAccess(bidderRequest, 'ortb2.site.keywords'));
+  deepSetValue(payload, 'site.site_ext', deepAccess(bidderRequest, 'ortb2.site.ext')); // see https://docs.prebid.org/features/firstPartyData.html
 }
 
 function setPrebidRequestEnvironment(payload) {
@@ -452,15 +328,15 @@ function setPrebidImpressionObjectVideo(bidRequest, impressionObject) {
 function getPrebidResponseBidObject(openRTBResponseBidObject) {
   const prebidResponseBidObject = {};
   // Common properties
-  deepSetValue(prebidResponseBidObject, 'requestId', openRTBResponseBidObject.id);
+  deepSetValue(prebidResponseBidObject, 'requestId', openRTBResponseBidObject.impid);
   deepSetValue(prebidResponseBidObject, 'cpm', parseFloat(openRTBResponseBidObject.price));
-  deepSetValue(prebidResponseBidObject, 'currency', openRTBResponseBidObject.currency ? openRTBResponseBidObject.currency.toUpperCase() : DEFAULT_CURRENCY);
+  deepSetValue(prebidResponseBidObject, 'creativeId', openRTBResponseBidObject.crid);
+  deepSetValue(prebidResponseBidObject, 'currency', openRTBResponseBidObject.cur ? openRTBResponseBidObject.cur.toUpperCase() : DEFAULT_CURRENCY);
   deepSetValue(prebidResponseBidObject, 'width', openRTBResponseBidObject.w);
   deepSetValue(prebidResponseBidObject, 'height', openRTBResponseBidObject.h);
-  deepSetValue(prebidResponseBidObject, 'creativeId', openRTBResponseBidObject.adid);
-  deepSetValue(prebidResponseBidObject, 'dealId', openRTBResponseBidObject.deal)
-  deepSetValue(prebidResponseBidObject, 'netRevenue', openRTBResponseBidObject.isNet ? openRTBResponseBidObject.isNet : false);
-  deepSetValue(prebidResponseBidObject, 'ttl', 300);
+  deepSetValue(prebidResponseBidObject, 'dealId', openRTBResponseBidObject.dealid)
+  deepSetValue(prebidResponseBidObject, 'netRevenue', true);
+  deepSetValue(prebidResponseBidObject, 'ttl', 60000);
 
   if (openRTBResponseBidObject.mediatype === VIDEO) {
     logInfo('bidObject.mediatype == VIDEO');
@@ -476,7 +352,18 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
 }
 
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
-  deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', openRTBResponseBidObject.adomain && Array.isArray(openRTBResponseBidObject.adomain) ? openRTBResponseBidObject.adomain : []);
+  deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', openRTBResponseBidObject.adomain);
+  if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
+    const primaryCatId = openRTBResponseBidObject.cat.shift();
+    deepSetValue(prebidResponseBidObject, 'meta.primaryCatId', primaryCatId);
+    deepSetValue(prebidResponseBidObject, 'meta.secondaryCatIds', openRTBResponseBidObject.cat);
+  }
+  deepSetValue(prebidResponseBidObject, 'meta.id', openRTBResponseBidObject.id);
+  deepSetValue(prebidResponseBidObject, 'meta.adid', openRTBResponseBidObject.adid);
+  deepSetValue(prebidResponseBidObject, 'meta.burl', openRTBResponseBidObject.burl);
+  deepSetValue(prebidResponseBidObject, 'meta.impid', openRTBResponseBidObject.impid);
+  deepSetValue(prebidResponseBidObject, 'meta.cat', openRTBResponseBidObject.cat);
+  deepSetValue(prebidResponseBidObject, 'meta.cid', openRTBResponseBidObject.cid);
 }
 
 function hasValidMediaType(bidRequest) {
@@ -513,39 +400,6 @@ function hasValidVideoMediaType(bidRequest) {
   return true
 }
 
-function hasValidBannerBidderParameters(bidRequest) {
-  const mediaTypesSizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
-  const size = deepAccess(bidRequest, 'params.banner.size');
-  const flatten = getFirstSize(size);
-  if (size && !flatten) {
-    logError('AIDEM Bid Adapter: size has invalid format.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_INVALID_FORMAT });
-    return false;
-  }
-
-  if (size && !(includesSize(mediaTypesSizes, flatten))) {
-    logError('AIDEM Bid Adapter: bidder banner size is not included in ad unit banner sizes.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_NOT_INCLUDED });
-    return false;
-  }
-
-  return true
-}
-
-function hasValidVideoBidderParameters(bidRequest) {
-  const mediaTypesSizes = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
-  const size = deepAccess(bidRequest, 'params.video.size');
-  const flatten = getFirstSize(size);
-  if (size && !flatten) {
-    logError('AIDEM Bid Adapter: size has invalid format.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_INVALID_FORMAT });
-    return false;
-  }
-  if (size && !(includesSize(mediaTypesSizes, size))) {
-    logError('AIDEM Bid Adapter: bidder banner size is not included in ad unit playerSize.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_NOT_INCLUDED });
-    return false;
-  }
-
-  return hasValidVideoParameters(bidRequest);
-}
-
 function hasValidVideoParameters(bidRequest) {
   let valid = true
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
@@ -576,12 +430,6 @@ function hasValidParameters(bidRequest) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bidRequest The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
   isBidRequestValid: function(bidRequest) {
     logInfo('bid: ', bidRequest);
 
@@ -592,28 +440,18 @@ export const spec = {
     if (hasBannerMediaType(bidRequest) && !hasValidBannerMediaType(bidRequest)) {
       return false
     }
+
     if (hasVideoMediaType(bidRequest) && !hasValidVideoMediaType(bidRequest)) {
       return false
     }
 
-    // check if request has valid media type parameters at adUnit level
-    if (hasBannerMediaType(bidRequest) && !hasValidBannerBidderParameters(bidRequest)) {
-      return false
-    }
-    if (hasVideoMediaType(bidRequest) && !hasValidVideoBidderParameters(bidRequest)) {
+    if (hasVideoMediaType(bidRequest) && !hasValidVideoParameters(bidRequest)) {
       return false
     }
 
     return hasValidParameters(bidRequest)
   },
 
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param validBidRequests[] - An array of bidRequest objects, one for each AdUnit that your module is involved in
-   * @param bidderRequest - The master bidRequest object. This object is useful because it carries a couple of bid parameters that are global to all the bids
-   * @return ServerRequest Info describing the request to the server.
-   */
   buildRequests: function(validBidRequests, bidderRequest) {
     logInfo('validBidRequests: ', validBidRequests);
     logInfo('bidderRequest: ', bidderRequest);
@@ -630,47 +468,28 @@ export const spec = {
     };
   },
 
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {ServerResponse} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
   interpretResponse: function (serverResponse) {
     const bids = [];
     logInfo('serverResponse: ', serverResponse);
-    _each(serverResponse.body.seatbid, function (bidSeatObject) {
-      logInfo('bidSeatObject: ', bidSeatObject);
-      _each(bidSeatObject.bid, function (bidObject) {
-        logInfo('bidObject: ', bidObject);
-        if (!bidObject.price || !bidObject.adm) {
-          return;
-        }
-        logInfo('CPM OK');
-        const bid = getPrebidResponseBidObject(bidObject)
-        bids.push(bid);
-      });
+    _each(serverResponse.body.bid, function (bidObject) {
+      logInfo('bidObject: ', bidObject);
+      if (!bidObject.price || !bidObject.adm) {
+        return;
+      }
+      logInfo('CPM OK');
+      const bid = getPrebidResponseBidObject(bidObject)
+      bids.push(bid);
     });
-
     return bids;
   },
 
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} bid that won the auction
-   */
   onBidWon: function(bid) {
     // Bidder specific code
     logInfo('onBidWon bid: ', bid);
-    const notice = buildWonBidNotice(bid)
+    const notice = buildWinNotice(bid)
     ajax(endpoints.notice.win, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
   },
 
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   *
-   * @param {Array} data timeout specific data
-   */
   onTimeout: (data) => {
     if (Array.isArray(data)) {
       const payload = buildTimeoutNotice(data)
@@ -679,9 +498,6 @@ export const spec = {
     }
   },
 
-  /**
-   * Register bidder specific code, which will execute if the bidder responded with an error
-   */
   onBidderError: function({ bidderRequest }) {
     // Bidder specific code
     const notice = buildErrorNotice(bidderRequest)
