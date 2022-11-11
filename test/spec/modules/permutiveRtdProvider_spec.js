@@ -291,7 +291,11 @@ describe('permutiveRtdProvider', function () {
       const segments = getSegments(max)
 
       for (const key in segments) {
-        expect(segments[key]).to.have.length(max)
+        if (key === 'ssp') {
+          expect(segments[key].cohorts).to.have.length(max)
+        } else {
+          expect(segments[key]).to.have.length(max)
+        }
       }
     })
   })
@@ -311,7 +315,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'appnexus') {
               expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
-              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -332,7 +336,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'rubicon') {
               expect(deepAccess(params, 'visitor.permutive')).to.eql(data.rubicon)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -363,7 +367,7 @@ describe('permutiveRtdProvider', function () {
                 deepAccess(params, 'visitor.permutive'),
                 'Should map all targeting values to a string',
               ).to.eql(data.rubicon.map(String))
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -383,7 +387,7 @@ describe('permutiveRtdProvider', function () {
             const { bidder, params } = bid
 
             if (bidder === 'ozone') {
-              expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -417,7 +421,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'rubicon') {
               expect(deepAccess(params, 'visitor.permutive')).to.eql(data.gam)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -567,7 +571,7 @@ function getTargetingData () {
     _psegs: ['1234', '1000001', '1000002'],
     _ppam: ['ppam1', 'ppam2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
-    _pssps: ['xyz', 'abc', 'dup'],
+    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
   }
 }
 
