@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from '../../../modules/redtramBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
+import * as utils from '../../../src/utils.js';
 
 describe('RedtramBidAdapter', function () {
   const bid = {
@@ -158,6 +159,89 @@ describe('RedtramBidAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    it('should do nothing on getUserSyncs', function () {
+      spec.getUserSyncs()
+    });
+  });
+
+  describe('on bidWon', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('should replace nurl for banner', function () {
+      const nurl = 'nurl/?ap=${' + 'AUCTION_PRICE}';
+      const bid = {
+        'bidderCode': 'redtram',
+        'width': 300,
+        'height': 250,
+        'statusMessage': 'Bid available',
+        'adId': '5691dd18ba6ab6',
+        'requestId': '23dc19818e5293',
+        'transactionId': '948c716b-bf64-4303-bcf4-395c2f6a9770',
+        'auctionId': 'a6b7c61f-15a9-481b-8f64-e859787e9c07',
+        'mediaType': 'banner',
+        'source': 'client',
+        'ad': "<div class=\"r23611\"></div>\n<script type=\"text/javascript\">\n(function() {\nvar tag = (function() {\nvar informers = document.getElementsByClassName('r23611'),\nlen = informers.length;\nreturn len ? informers[len - 1] : null;\n})(),\nidn = (function() {\nvar i, num, idn = '', chars = \"abcdefghiklmnopqrstuvwxyz\",\nlen = Math.floor((Math.random() * 2) + 4);\nfor (i = 0; i < len; i++) {\nnum = Math.floor(Math.random() * chars.length);\nidn += chars.substring(num, num + 1);\n}\nreturn idn;\n})();\nvar container = document.createElement('div');\ncontainer.id = idn;\ntag.appendChild(container);\nvar script = document.createElement('script');\nscript.className = 's23611';\nscript.src = 'https://goods.redtram.com/j/23611/?v=1';\nscript.charset = 'utf-8';\nscript.dataset.idn = idn;\ntag.parentNode.insertBefore(script, tag);\n})();\n</script>",
+        'cpm': 0.68,
+        'nurl': nurl,
+        'creativeId': 'test',
+        'currency': 'USD',
+        'dealId': '',
+        'meta': {
+          'advertiserDomains': [],
+          'dchain': {
+            'ver': '1.0',
+            'complete': 0,
+            'nodes': [
+              {
+                'name': 'redtram'
+              }
+            ]
+          }
+        },
+        'netRevenue': true,
+        'ttl': 120,
+        'metrics': {},
+        'adapterCode': 'redtram',
+        'originalCpm': 0.68,
+        'originalCurrency': 'USD',
+        'responseTimestamp': 1668162732297,
+        'requestTimestamp': 1668162732292,
+        'bidder': 'redtram',
+        'adUnitCode': 'div-prebid',
+        'timeToRespond': 5,
+        'pbLg': '0.50',
+        'pbMg': '0.60',
+        'pbHg': '0.68',
+        'pbAg': '0.65',
+        'pbDg': '0.68',
+        'pbCg': '',
+        'size': '300x250',
+        'adserverTargeting': {
+          'hb_bidder': 'redtram',
+          'hb_adid': '5691dd18ba6ab6',
+          'hb_pb': '0.68',
+          'hb_size': '300x250',
+          'hb_source': 'client',
+          'hb_format': 'banner',
+          'hb_adomain': ''
+        },
+        'status': 'rendered',
+        'params': [
+          {
+            'placementId': 23611
+          }
+        ]
+      };
+      spec.onBidWon(bid);
+      expect(bid.nurl).to.deep.equal('nurl/?ap=0.68');
     });
   });
 });
