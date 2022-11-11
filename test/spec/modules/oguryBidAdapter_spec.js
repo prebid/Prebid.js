@@ -244,11 +244,15 @@ describe('OguryBidAdapter', function () {
   describe('buildRequests', function () {
     const stubbedWidth = 200
     const stubbedHeight = 600
+    const stubbedCurrentTime = 1234567890
     const stubbedWidthMethod = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
       return stubbedWidth;
     });
     const stubbedHeightMethod = sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
       return stubbedHeight;
+    });
+    const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
+      return stubbedCurrentTime;
     });
 
     const defaultTimeout = 1000;
@@ -266,7 +270,10 @@ describe('OguryBidAdapter', function () {
             h: 250
           }]
         },
-        ext: bidRequests[0].params
+        ext: {
+          ...bidRequests[0].params,
+          timeSpentOnPage: stubbedCurrentTime
+        }
       }, {
         id: bidRequests[1].bidId,
         tagid: bidRequests[1].params.adUnitId,
@@ -276,7 +283,10 @@ describe('OguryBidAdapter', function () {
             h: 500
           }]
         },
-        ext: bidRequests[1].params
+        ext: {
+          ...bidRequests[1].params,
+          timeSpentOnPage: stubbedCurrentTime
+        }
       }],
       regs: {
         ext: {
@@ -295,7 +305,7 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.3.0'
+        adapterversion: '1.4.0'
       },
       device: {
         w: stubbedWidth,
@@ -306,6 +316,7 @@ describe('OguryBidAdapter', function () {
     after(function() {
       stubbedWidthMethod.restore();
       stubbedHeightMethod.restore();
+      stubbedCurrentTimeMethod.restore();
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -314,6 +325,17 @@ describe('OguryBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.url).to.equal(BID_URL);
       expect(request.method).to.equal('POST');
+    });
+
+    it('timeSpentOnpage should be 0 if timeline is undefined', function () {
+      const stubbedTimelineMethod = sinon.stub(document, 'timeline').get(function() {
+        return undefined;
+      });
+      const validBidRequests = utils.deepClone(bidRequests)
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data.imp[0].ext.timeSpentOnPage).to.equal(0);
+      stubbedTimelineMethod.restore();
     });
 
     it('bid request object should be conform', function () {
@@ -675,7 +697,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.3.0',
+        adapterVersion: '1.4.0',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -692,7 +714,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.3.0',
+        adapterVersion: '1.4.0',
         prebidVersion: '$prebid.version$'
       }]
 

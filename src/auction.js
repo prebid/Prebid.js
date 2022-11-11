@@ -475,7 +475,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     return handleBidResponse(adUnitCode, bid, (done) => {
       // return a "NO_BID" replacement that the caller can decide to continue with
       // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
-      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
+      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers?.());
       Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => !noBid.hasOwnProperty(k) && ![
         'ad',
         'adUrl',

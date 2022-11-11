@@ -207,6 +207,7 @@ const isTrue = (boolValue) =>
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 737,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid(bid) {
