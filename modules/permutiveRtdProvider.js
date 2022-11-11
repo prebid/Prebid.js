@@ -230,8 +230,8 @@ function getDefaultBidderFn (bidder) {
   }
   const pStandardTargeting = (data, acEnabled) => {
     const ac = (acEnabled) ? (data.ac ?? []) : []
-    const ssp = (data.ssp && data.ssp.cohorts) ? data.ssp : { ssps: [], cohorts: [] }
-    return [...new Set([...ac, ...ssp.cohorts])]
+    const ssp = data?.ssp?.cohorts ?? []
+    return [...new Set([...ac, ...ssp])]
   }
   const bidderMap = {
     appnexus: function (bid, data, acEnabled) {
