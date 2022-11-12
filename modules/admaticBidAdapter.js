@@ -3,24 +3,22 @@ import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
-
+const BIDDER_CODE = 'admatic';
 export const spec = {
-  code: 'admatic',
+  code: BIDDER_CODE,
   aliases: [
     {code: 'pixad'}
   ],
-  supportedMediaTypes: ['video', 'banner'],
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
+  supportedMediaTypes: [BANNER, VIDEO],
+  /** f
+   * @param {object} bid
+   * @return {boolean}
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: (bid) => {
     let isValid = false;
-    if (typeof bid.params !== 'undefined') {
-      let isValidNetworkId = _validateId(getValue(bid.params, 'networkId'));
-      let isValidHost = _validateString(getValue(bid.params, 'host'));
+    if (bid?.params) {
+      const isValidNetworkId = _validateId(getValue(bid.params, 'networkId'));
+      const isValidHost = _validateString(getValue(bid.params, 'host'));
       isValid = isValidNetworkId && isValidHost;
     }
 
@@ -29,70 +27,63 @@ export const spec = {
     }
     return isValid;
   },
+
   /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {validBidRequests[]} an array of bids
-   * @return ServerRequest Info describing the request to the server.
+   * @param {BidRequest[]} validBidRequests
+   * @return {ServerRequest}
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(buildRequestObject);
-    const bidderName = validBidRequests[0].bidder;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
     const currency = getValue(validBidRequests[0].params, 'currency') || 'TRY';
-
-    setTimeout(() => {
-      loadExternalScript(SYNC_URL, bidderName);
-    }, bidderRequest.timeout);
+    const bidderName = validBidRequests[0].bidder;
 
     const payload = {
-      'user': {
-        'ua': navigator.userAgent
+      user: {
+        ua: navigator.userAgent
       },
-      'blacklist': [],
-      'site': {
-        'page': location.href,
-        'ref': location.origin,
-        'publisher': {
-          'name': location.hostname,
-          'publisherId': networkId
+      blacklist: [],
+      site: {
+        page: location.href,
+        ref: location.origin,
+        publisher: {
+          name: location.hostname,
+          publisherId: networkId
         }
       },
       imp: bids,
       ext: {
-        'cur': currency,
-        'bidder': bidderName
+        cur: currency,
+        bidder: bidderName
       }
     };
 
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: `https://${host}/pb?bidder=${bidderName}`,
-      data: payloadString,
-      options: {
-        contentType: 'application/json'
-      }
-    };
+    setTimeout(() => {
+      loadExternalScript(SYNC_URL, bidderName);
+    }, 10);
+
+    if (payload) {
+      return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
+    }
   },
+
   /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @param {*} response
+   * @param {ServerRequest} request
+   * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
     const body = response.body || response;
     const bidResponses = [];
-    if (body.data.length > 0) {
-      body.data.forEach(function (bid) {
+    if (body && body?.data && isArray(body.data)) {
+      body.data.forEach(bid => {
         const resbid = {
           requestId: bid.id,
           cpm: bid.price,
           width: bid.width,
           height: bid.height,
-          currency: body.cur,
+          currency: body.cur || 'TRY',
           netRevenue: true,
           ad: bid.party_tag,
           creativeId: bid.creative_id,
@@ -100,17 +91,15 @@ export const spec = {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
           ttl: 360,
-          bidder: JSON.parse(request.data).ext.bidder
+          bidder: bid.bidder
         };
 
         bidResponses.push(resbid);
       });
-    };
+    }
     return bidResponses;
   }
 };
-
-registerBidder(spec);
 
 function enrichSlotWithFloors(slot, bidRequest) {
   try {
