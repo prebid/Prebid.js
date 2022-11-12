@@ -74,9 +74,6 @@ export const spec = {
     return bidObject;
   },
 
-  postRequest(endpoint, data) {
-    ajax(endpoint, null, data, {method: 'POST'});
-  }
 }
 
 registerBidder(spec);
