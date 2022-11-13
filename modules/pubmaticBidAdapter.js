@@ -1254,7 +1254,7 @@ export const spec = {
             seatbidder.bid.forEach(bid => {
               let newBid = {
                 requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
+                cpm: parseFloat((bid.price || 0).toFixed(2)),
                 width: bid.w,
                 height: bid.h,
                 creativeId: bid.crid || bid.id,
