@@ -1,6 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {buildUrl} from '../src/utils.js'
-import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
