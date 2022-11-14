@@ -187,7 +187,7 @@ const initConfigDefaults = config => {
   config[MODULE_NAME][TARGETING].enabled =
     typeof config.viewabilityScoreGeneration?.targeting?.enabled === 'boolean'
       ? config.viewabilityScoreGeneration?.targeting?.enabled
-      : false;
+      : true;
 
   config[MODULE_NAME][TARGETING].bucketCategories =
     config.viewabilityScoreGeneration?.targeting?.bucketCategories && config.viewabilityScoreGeneration?.targeting?.bucketCategories.every(i => typeof i === 'string')
