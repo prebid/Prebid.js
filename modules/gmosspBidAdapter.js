@@ -6,7 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,

@@ -94,7 +94,7 @@ export const novatiqIdSubmodule = {
         logInfo('NOVATIQ sharedID name redefined: ' + cookieOrStorageID);
       }
 
-      const storage = getStorageManager('', 'pubCommonId');
+      const storage = getStorageManager({moduleName: 'pubCommonId'});
 
       // first check local storage
       if (storage.hasLocalStorage()) {
