@@ -27,10 +27,10 @@ window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
 
 mnData.urlData = {
-  domain: parseUrl(refererInfo.referer).hostname,
+  domain: parseUrl(refererInfo.referer, {noDecodeWholeURL: true}).hostname,
   page: refererInfo.referer,
   isTop: refererInfo.reachedTop
-}
+};
 
 $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
 

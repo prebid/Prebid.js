@@ -25,6 +25,7 @@ export let staticConsentData;
 let cmpVersion = 0;
 let consentData;
 let addedConsentHook = false;
+let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -36,8 +37,8 @@ const cmpCallMap = {
  * This function reads the consent string from the config to obtain the consent information of the user.
  * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
-function lookupStaticConsentData({onSuccess}) {
-  onSuccess(staticConsentData);
+function lookupStaticConsentData({onSuccess, onError}) {
+  processCmpData(staticConsentData, {onSuccess, onError})
 }
 
 /**
@@ -100,6 +101,8 @@ function lookupIabConsent({onSuccess, onError, width, height}) {
     if (success) {
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         processCmpData(tcfData, {onSuccess, onError});
+      } else {
+        provisionalConsent = tcfData;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -297,17 +300,24 @@ function loadConsentData(cb, width = 1, height = 1) {
   });
 
   if (!isDone) {
-    if (consentTimeout === 0) {
-      processCmpData(undefined, callbacks);
-    } else {
-      timer = setTimeout(function () {
-        if (cmpVersion === 2) {
-          // for TCFv2, we allow the auction to continue on timeout
-          done(storeConsentData(undefined), false, `No response from CMP, continuing auction...`)
-        } else {
-          callbacks.onError('CMP workflow exceeded timeout threshold.');
+    const onTimeout = () => {
+      if (cmpVersion === 2) {
+        // for TCFv2, we allow the auction to continue on timeout
+        const continueToAuction = (data) => {
+          done(data, false, 'CMP did not load, continuing auction...');
         }
-      }, consentTimeout);
+        processCmpData(provisionalConsent, {
+          onSuccess: continueToAuction,
+          onError: () => continueToAuction(storeConsentData(undefined))
+        })
+      } else {
+        callbacks.onError('CMP workflow exceeded timeout threshold.');
+      }
+    }
+    if (consentTimeout === 0) {
+      onTimeout();
+    } else {
+      timer = setTimeout(onTimeout, consentTimeout);
     }
   }
 }
@@ -335,8 +345,8 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       let height = 1;
       if (Array.isArray(adUnits) && adUnits.length > 0) {
         let sizes = getAdUnitSizes(adUnits[0]);
-        width = sizes[0][0];
-        height = sizes[0][1];
+        width = sizes?.[0]?.[0] || 1;
+        height = sizes?.[0]?.[1] || 1;
       }
 
       return function (cb) {
@@ -394,7 +404,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     let tcString = consentObject && consentObject.tcString;
     return !!(
       (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && !isStr(tcString))
+      (gdprApplies === true && (!tcString || !isStr(tcString)))
     );
   }
 

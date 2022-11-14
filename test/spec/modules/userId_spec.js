@@ -52,6 +52,7 @@ import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
+import {getPPID} from '../../../src/adserver.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -445,6 +446,23 @@ describe('User ID', function () {
       });
     });
 
+    it('should make PPID available to core', () => {
+      init(config);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
+      const id = 'thishastobelongerthan32characters';
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          userIds: [
+            { name: 'pubCommonId', value: {'pubcid': id} },
+          ]
+        }
+      });
+      return getGlobal().refreshUserIds().then(() => {
+        expect(getPPID()).to.eql(id);
+      })
+    });
+
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
@@ -497,8 +515,67 @@ describe('User ID', function () {
           mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
         })
       });
+
+      it('should not get stuck when init fails', () => {
+        const err = new Error();
+        mockIdCallback.callsFake(() => { throw err; });
+        return getGlobal().getUserIdsAsync().catch((e) =>
+          expect(e).to.equal(err)
+        );
+      });
     });
 
+    describe('when ID systems throw errors', () => {
+      function mockIdSystem(name) {
+        return {
+          name,
+          decode: function(value) {
+            return {
+              [name]: value
+            };
+          },
+          getId: sinon.stub().callsFake(() => ({id: name}))
+        };
+      }
+      let id1, id2;
+      beforeEach(() => {
+        id1 = mockIdSystem('mock1');
+        id2 = mockIdSystem('mock2');
+        init(config);
+        setSubmoduleRegistry([id1, id2]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'mock1',
+              storage: {name: 'mock1', type: 'cookie'}
+            }, {
+              name: 'mock2',
+              storage: {name: 'mock2', type: 'cookie'}
+            }]
+          }
+        })
+      });
+      afterEach(() => {
+        config.resetConfig();
+      })
+      Object.entries({
+        'in init': () => id1.getId.callsFake(() => { throw new Error() }),
+        'in callback': () => {
+          const mockCallback = sinon.stub().callsFake(() => { throw new Error() });
+          id1.getId.callsFake(() => ({callback: mockCallback}))
+        }
+      }).forEach(([t, setup]) => {
+        describe(`${t}`, () => {
+          beforeEach(setup);
+          it('should still retrieve IDs that do not throw', () => {
+            return getGlobal().getUserIdsAsync().then((uid) => {
+              expect(uid.mock2).to.not.be.undefined;
+            })
+          });
+        })
+      })
+    });
     it('pbjs.refreshUserIds updates submodules', function(done) {
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
@@ -1744,7 +1821,7 @@ describe('User ID', function () {
         }, {adUnits});
       });
 
-      it('test hook from merkleId cookies', function (done) {
+      it('test hook from merkleId cookies - legacy', function (done) {
         // simulate existing browser local storage values
         coreStorage.setCookie('merkleId', JSON.stringify({'pam_id': {'id': 'testmerkleId', 'keyID': 1}}), (new Date(Date.now() + 5000).toUTCString()));
 
@@ -1761,6 +1838,32 @@ describe('User ID', function () {
                 source: 'merkleinc.com',
                 uids: [{id: 'testmerkleId', atype: 3, ext: {keyID: 1}}]
               });
+            });
+          });
+          coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from merkleId cookies', function (done) {
+        // simulate existing browser local storage values
+        coreStorage.setCookie('merkleId', JSON.stringify({
+          'merkleId': [{id: 'testmerkleId', ext: { keyID: 1, ssp: 'ssp1' }}, {id: 'another-random-id-value', ext: { ssp: 'ssp2' }}],
+          '_svsid': 'svs-id-1'
+        }), (new Date(Date.now() + 5000).toUTCString()));
+
+        init(config);
+        setSubmoduleRegistry([merkleIdSubmodule]);
+        config.setConfig(getConfigMock(['merkleId', 'merkleId', 'cookie']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.merkleId');
+              expect(bid.userId.merkleId.length).to.equal(2);
+              expect(bid.userIdAsEids.length).to.equal(2);
+              expect(bid.userIdAsEids[0]).to.deep.equal({ source: 'ssp1.merkleinc.com', uids: [{id: 'testmerkleId', atype: 3, ext: { keyID: 1, ssp: 'ssp1' }}] });
+              expect(bid.userIdAsEids[1]).to.deep.equal({ source: 'ssp2.merkleinc.com', uids: [{id: 'another-random-id-value', atype: 3, ext: { ssp: 'ssp2' }}] });
             });
           });
           coreStorage.setCookie('merkleId', '', EXPIRED_COOKIE_DATE);

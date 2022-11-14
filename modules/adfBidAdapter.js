@@ -206,6 +206,11 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
+
+    if (config.getConfig('coppa')) {
+      deepSetValue(request, 'regs.coppa', 1);
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
@@ -227,9 +232,6 @@ export const spec = {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
       bids: validBidRequests
     };
   },
