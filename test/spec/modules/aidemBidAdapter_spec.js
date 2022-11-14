@@ -625,26 +625,6 @@ describe('Aidem adapter', () => {
       expect(requestURL.host).to.equal('127.0.0.1:8787')
     });
 
-    it(`should set correct connection default`, function () {
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.device.connectiontype).to.equal(0)
-    });
-
-    it(`should set correct connection type ethernet`, function () {
-      navigator.connection.type = 'ethernet'
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.device.connectiontype).to.equal(1)
-    });
-
-    it(`should set correct connection type wifi`, function () {
-      navigator.connection.type = 'wifi'
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.device.connectiontype).to.equal(2)
-    });
-
     it(`should set coppa`, function () {
       config.setConfig({
         coppa: true
