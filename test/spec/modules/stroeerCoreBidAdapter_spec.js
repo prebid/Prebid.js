@@ -21,15 +21,34 @@ describe('stroeerCore bid adapter', function () {
     sandbox.restore();
   });
 
-  function assertStandardFieldsOnBid(bidObject, bidId, ad, width, height, cpm) {
+  function assertStandardFieldsBid(bidObject, bidId, width, height, cpm) {
     assert.propertyVal(bidObject, 'requestId', bidId);
-    assert.propertyVal(bidObject, 'ad', ad);
     assert.propertyVal(bidObject, 'width', width);
     assert.propertyVal(bidObject, 'height', height);
     assert.propertyVal(bidObject, 'cpm', cpm);
     assert.propertyVal(bidObject, 'currency', 'EUR');
     assert.propertyVal(bidObject, 'netRevenue', true);
     assert.propertyVal(bidObject, 'creativeId', '');
+  }
+
+  function assertStandardFieldsOnBannerBid(bidObject, bidId, ad, width, height, cpm) {
+    assertStandardFieldsBid(bidObject, bidId, width, height, cpm);
+    assertBannerAdMarkup(bidObject, ad);
+  }
+
+  function assertStandardFieldsOnVideoBid(bidObject, bidId, vastXml, width, height, cpm) {
+    assertStandardFieldsBid(bidObject, bidId, width, height, cpm);
+    assertVideoVastXml(bidObject, vastXml);
+  }
+
+  function assertBannerAdMarkup(bidObject, ad) {
+    assert.propertyVal(bidObject, 'ad', ad);
+    assert.notProperty(bidObject, 'vastXml');
+  }
+
+  function assertVideoVastXml(bidObject, vastXml) {
+    assert.propertyVal(bidObject, 'vastXml', vastXml);
+    assert.notProperty(bidObject, 'ad');
   }
 
   const AUCTION_ID = utils.getUniqueIdentifierStr();
@@ -59,7 +78,8 @@ describe('stroeerCore bid adapter', function () {
     timeout: 5000,
     auctionStart: 10000,
     refererInfo: {
-      referer: 'https://www.example.com/index.html'
+      page: 'https://www.example.com/monkey/index.html',
+      ref: 'https://www.example.com/?search=monkey'
     },
     bids: [{
       bidId: 'bid1',
@@ -90,16 +110,6 @@ describe('stroeerCore bid adapter', function () {
     }],
   });
 
-  const buildBidderRequestPreVersion3 = () => {
-    const request = buildBidderRequest();
-    request.bids.forEach((bid) => {
-      bid.sizes = bid.mediaTypes.banner.sizes;
-      delete bid.mediaTypes;
-      bid.mediaType = 'banner';
-    });
-    return request;
-  };
-
   const buildBidderResponse = () => ({
     'bids': [{
       'bidId': 'bid1', 'cpm': 4.0, 'width': 300, 'height': 600, 'ad': '<div>tag1</div>', 'tracking': {'brandId': 123}
@@ -108,10 +118,16 @@ describe('stroeerCore bid adapter', function () {
     }]
   });
 
-  const createWindow = (href, params = {}) => {
-    let {parent, referrer, top, frameElement, placementElements = []} = params;
+  const buildBidderResponseWithVideo = () => ({
+    'bids': [{
+      'bidId': 'bid1', 'cpm': 4.0, 'width': 800, 'height': 250, 'vastXml': '<vast>video</vast>'
+    }]
+  });
 
-    const protocol = (href.indexOf('https') === 0) ? 'https:' : 'http:';
+  const createWindow = (href, params = {}) => {
+    let {parent, top, frameElement, placementElements = []} = params;
+
+    const protocol = href.startsWith('https') ? 'https:' : 'http:';
     const win = {
       frameElement,
       parent,
@@ -126,7 +142,6 @@ describe('stroeerCore bid adapter', function () {
             }
           }
         },
-        referrer,
         getElementById: id => find(placementElements, el => el.id === id)
       }
     };
@@ -169,7 +184,7 @@ describe('stroeerCore bid adapter', function () {
   }
 
   function setupNestedWindows(sandBox, placementElements = [createElement('div-1', 17), createElement('div-2', 54)]) {
-    const topWin = createWindow('http://www.abc.org/', {referrer: 'http://www.google.com/?query=monkey'});
+    const topWin = createWindow('http://www.abc.org/');
     topWin.innerHeight = 800;
 
     const midWin = createWindow('http://www.abc.org/', {parent: topWin, top: topWin, frameElement: createElement()});
@@ -187,8 +202,12 @@ describe('stroeerCore bid adapter', function () {
     return {topWin, midWin, win};
   }
 
-  it('should only support BANNER mediaType', function () {
-    assert.deepEqual(spec.supportedMediaTypes, [BANNER]);
+  it('should support BANNER and VIDEO mediaType', function () {
+    assert.deepEqual(spec.supportedMediaTypes, [BANNER, VIDEO]);
+  });
+
+  it('should have GDPR vendor list id (gvlid) set on the spec', function () {
+    assert.equal(spec.gvlid, 136);
   });
 
   describe('bid validation entry point', () => {
@@ -211,16 +230,86 @@ describe('stroeerCore bid adapter', function () {
       assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
 
-    it('should exclude non-banner bids', () => {
+    it('should allow instream video bids', () => {
       delete bidRequest.mediaTypes.banner;
       bidRequest.mediaTypes.video = {
-        playerSize: [640, 480]
+        playerSize: [640, 480],
+        context: 'instream'
+      };
+
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
+    });
+
+    it('should allow outstream video bids', () => {
+      delete bidRequest.mediaTypes.banner;
+      bidRequest.mediaTypes.video = {
+        playerSize: [640, 480],
+        context: 'outstream'
+      };
+
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
+    });
+
+    it('should allow multi-format bid that has banner and instream video', () => {
+      assert.isTrue('banner' in bidRequest.mediaTypes);
+
+      // Allowed because instream video component of the bid will be ignored in buildRequest()
+      bidRequest.mediaTypes.video = {
+        playerSize: [640, 480],
+        context: 'instream'
+      };
+
+      assert.isTrue(spec.isBidRequestValid(bidRequest))
+    });
+
+    it('should exclude multi-format bid that has no format of interest', () => {
+      bidRequest.mediaTypes = {
+        video: {
+          playerSize: [640, 480],
+          context: 'adpod'
+        },
+        native: {
+          image: {
+            required: true,
+            sizes: [150, 50]
+          },
+          title: {
+            required: true,
+            len: 80
+          },
+          sponsoredBy: {
+            required: true
+          },
+          clickUrl: {
+            required: true
+          },
+          privacyLink: {
+            required: false
+          },
+          body: {
+            required: true
+          },
+          icon: {
+            required: true,
+            sizes: [50, 50]
+          }
+        }
       };
 
       assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
 
-    it('should exclude non-banner, pre-version 3 bids', () => {
+    it('should exclude video bids without context', () => {
+      delete bidRequest.mediaTypes.banner;
+      bidRequest.mediaTypes.video = {
+        playerSize: [640, 480],
+        context: undefined
+      };
+
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
+    });
+
+    it('should exclude video, pre-version 3 bids', () => {
       delete bidRequest.mediaTypes;
       bidRequest.mediaType = VIDEO;
       assert.isFalse(spec.isBidRequestValid(bidRequest));
@@ -253,9 +342,13 @@ describe('stroeerCore bid adapter', function () {
 
       describe('should use custom url if provided', () => {
         const samples = [{
-          protocol: 'http:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'http:',
+          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          expected: 'https://other.com:234/xyz'
         }, {
-          protocol: 'https:', params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'}, expected: 'https://other.com:234/xyz'
+          protocol: 'https:',
+          params: {sid: 'ODA=', host: 'other.com', port: '234', path: '/xyz'},
+          expected: 'https://other.com:234/xyz'
         }, {
           protocol: 'https:',
           params: {sid: 'ODA=', host: 'other.com', port: '234', securePort: '871', path: '/xyz'},
@@ -310,14 +403,24 @@ describe('stroeerCore bid adapter', function () {
         const expectedJsonPayload = {
           'id': AUCTION_ID,
           'timeout': expectedTimeout,
-          'ref': topWin.document.referrer,
+          'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
           'ssl': false,
-          'url': 'https://www.example.com/index.html',
+          'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
-            'sid': 'NDA=', 'bid': 'bid1', 'siz': [[300, 600], [160, 60]], 'viz': true
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'viz': true,
+            'ban': {
+              'siz': [[300, 600], [160, 60]]
+            }
           }, {
-            'sid': 'ODA=', 'bid': 'bid2', 'siz': [[728, 90]], 'viz': true
+            'sid': 'ODA=',
+            'bid': 'bid2',
+            'viz': true,
+            'ban': {
+              'siz': [[728, 90]]
+            }
           }],
           'user': {
             'euids': userIds
@@ -330,13 +433,182 @@ describe('stroeerCore bid adapter', function () {
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
       });
 
-      it('should handle banner sizes for pre version 3', () => {
-        // Version 3 changes the way how banner sizes are accessed.
-        // We can support backwards compatibility with version 2.x
-        const bidReq = buildBidderRequestPreVersion3();
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
-        assert.deepEqual(serverRequestInfo.data.bids[0].siz, [[300, 600], [160, 60]]);
-        assert.deepEqual(serverRequestInfo.data.bids[1].siz, [[728, 90]]);
+      describe('video bids', () => {
+        it('should be able to build instream video bid', () => {
+          bidderRequest.bids = [{
+            bidId: 'bid1',
+            bidder: 'stroeerCore',
+            adUnitCode: 'div-1',
+            mediaTypes: {
+              video: {
+                context: 'instream',
+                playerSize: [640, 480],
+                mimes: ['video/mp4', 'video/quicktime']
+              }
+            },
+            params: {
+              sid: 'NDA='
+            },
+            userId: userIds
+          }];
+
+          const expectedBids = [{
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'viz': true,
+            'vid': {
+              'ctx': 'instream',
+              'siz': [640, 480],
+              'mim': ['video/mp4', 'video/quicktime']
+            }
+          }];
+
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          const bids = JSON.parse(JSON.stringify(serverRequestInfo.data.bids));
+          assert.deepEqual(bids, expectedBids);
+        });
+      });
+
+      describe('multi-formats', () => {
+        it(`should create a request for video and banner`, () => {
+          const videoBid = {
+            bidId: 'bid3',
+            bidder: 'stroeerCore',
+            adUnitCode: 'div-1',
+            mediaTypes: {
+              video: {
+                context: 'instream',
+                playerSize: [640, 480],
+                mimes: ['video/mp4', 'video/quicktime'],
+              }
+            },
+            params: {
+              sid: 'ODA=',
+            },
+            userId: userIds
+          }
+
+          const bannerBid1 = {
+            bidId: 'bid8',
+            bidder: 'stroeerCore',
+            adUnitCode: 'div-2',
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 600], [160, 60]],
+              }
+            },
+            params: {
+              sid: 'NDA=',
+            },
+            userId: userIds
+          }
+
+          const bannerBid2 = {
+            bidId: 'bid12',
+            bidder: 'stroeerCore',
+            adUnitCode: 'div-3',
+            mediaTypes: {
+              banner: {
+                sizes: [[100, 200], [300, 500]],
+              }
+            },
+            params: {
+              sid: 'ABC=',
+            },
+            userId: userIds
+          }
+
+          bidderRequest.bids = [bannerBid1, videoBid, bannerBid2];
+
+          const expectedBannerBids = [
+            {
+              'sid': 'NDA=',
+              'bid': 'bid8',
+              'viz': true,
+              'ban': {
+                'siz': [[300, 600], [160, 60]]
+              }
+            },
+            {
+              'sid': 'ABC=',
+              'bid': 'bid12',
+              'ban': {
+                'siz': [[100, 200], [300, 500]]
+              },
+              'viz': undefined
+            }
+          ];
+
+          const expectedVideoBids = [
+            {
+              'sid': 'ODA=',
+              'bid': 'bid3',
+              'viz': true,
+              'vid': {
+                'ctx': 'instream',
+                'siz': [640, 480],
+                'mim': ['video/mp4', 'video/quicktime']
+              }
+            }
+          ];
+
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
+        });
+
+        it('should split multi-format bid', function() {
+          const multiFormatBid = {
+            bidId: 'bid3',
+            bidder: 'stroeerCore',
+            adUnitCode: 'div-1',
+            mediaTypes: {
+              video: {
+                context: 'instream',
+                playerSize: [640, 480],
+                mimes: ['video/mp4', 'video/quicktime'],
+              },
+              banner: {
+                sizes: [[100, 200], [300, 500]],
+              }
+            },
+            params: {
+              sid: 'ODA=',
+            },
+            userId: userIds
+          }
+
+          bidderRequest.bids = [multiFormatBid];
+
+          const serverRequestInfo = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+          const expectedBannerBids = [
+            {
+              'sid': 'ODA=',
+              'bid': 'bid3',
+              'viz': true,
+              'ban': {
+                'siz': [[100, 200], [300, 500]]
+              }
+            }
+          ];
+
+          const expectedVideoBids = [
+            {
+              'sid': 'ODA=',
+              'bid': 'bid3',
+              'viz': true,
+              'vid': {
+                'ctx': 'instream',
+                'siz': [640, 480],
+                'mim': ['video/mp4', 'video/quicktime']
+              }
+            }
+          ];
+
+          assert.deepEqual(serverRequestInfo.data.bids, [...expectedBannerBids, ...expectedVideoBids]);
+        });
       });
 
       describe('optional fields', () => {
@@ -364,7 +636,10 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {consentString: 'UGluZyBQb25n', gdprApplies: false}];
+        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {
+          consentString: 'UGluZyBQb25n',
+          gdprApplies: false
+        }];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
             const bidReq = buildBidderRequest();
@@ -403,6 +678,29 @@ describe('stroeerCore bid adapter', function () {
           assert.lengthOf(serverRequestInfo.data.bids, 2);
           assert.notProperty(serverRequestInfo, 'uids');
         });
+
+        it('should add schain if available', () => {
+          const schain = Object.freeze({
+            ver: '1.0',
+            complete: 1,
+            'nodes': [
+              {
+                asi: 'exchange1.com',
+                sid: 'ABC',
+                hp: 1,
+                rid: 'bid-request-1',
+                name: 'publisher',
+                domain: 'publisher.com'
+              }
+            ]
+          });
+
+          const bidReq = buildBidderRequest();
+          bidReq.bids.forEach(bid => bid.schain = schain);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          assert.deepEqual(serverRequestInfo.data.schain, schain);
+        });
       });
     });
   });
@@ -425,14 +723,21 @@ describe('stroeerCore bid adapter', function () {
       const bidderResponse = buildBidderResponse();
 
       const result = spec.interpretResponse({body: bidderResponse});
-      assertStandardFieldsOnBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
-      assertStandardFieldsOnBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
+      assertStandardFieldsOnBannerBid(result[0], 'bid1', '<div>tag1</div>', 300, 600, 4);
+      assertStandardFieldsOnBannerBid(result[1], 'bid2', '<div>tag2</div>', 728, 90, 7.3);
     });
 
     it('should return empty array, when response contains no bids', () => {
       const result = spec.interpretResponse({body: {bids: []}});
       assert.deepStrictEqual(result, []);
     });
+
+    it('should interpret a video response', () => {
+      const bidderResponse = buildBidderResponseWithVideo();
+      const bidResponses = spec.interpretResponse({body: bidderResponse});
+      let videoBidResponse = bidResponses[0];
+      assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
+    })
 
     it('should add data to meta object', () => {
       const response = buildBidderResponse();
@@ -446,6 +751,7 @@ describe('stroeerCore bid adapter', function () {
 
   describe('get user syncs entry point', () => {
     let win;
+
     beforeEach(() => {
       win = setupSingleWindow(sandbox);
 

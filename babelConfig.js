@@ -22,9 +22,15 @@ module.exports = function (options = {}) {
         }
       ]
     ],
-    'plugins': [
-      [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
-      useLocal('babel-plugin-transform-object-assign'),
-    ],
+    'plugins': (() => {
+      const plugins = [
+        [path.resolve(__dirname, './plugins/pbjsGlobals.js'), options],
+        [useLocal('@babel/plugin-transform-runtime')],
+      ];
+      if (options.codeCoverage) {
+        plugins.push([useLocal('babel-plugin-istanbul')])
+      }
+      return plugins;
+    })(),
   }
 }

@@ -1,12 +1,12 @@
 # Overview
 
-- Module Name: Conversant Bidder Adapter
+- Module Name: Epsilon Bidder Adapter
 - Module Type: Bidder Adapter
-- Maintainer: mediapsr@conversantmedia.com
+- Maintainer: mediapsr@epsilon.com
 
 # Description
 
-Module that connects to Conversant's demand sources.  Supports banners and videos.
+Module that connects to Epsilon's (formerly Conversant) demand sources.  Supports banners and videos.
 
 # Test Parameters
 ```

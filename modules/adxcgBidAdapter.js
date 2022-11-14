@@ -17,6 +17,7 @@ import {
   triggerPixel
 } from '../src/utils.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const { getConfig } = config;
 
@@ -65,6 +66,9 @@ export const spec = {
     return !!(adzoneid);
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let app, site;
 
     const commonFpd = bidderRequest.ortb2 || {};
@@ -94,7 +98,7 @@ export const spec = {
     device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
 
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
