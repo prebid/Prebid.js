@@ -33,7 +33,7 @@ import adapterManager from '../../src/adapterManager.js';
 import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import {find, includes} from '../../src/polyfill.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
@@ -99,6 +99,7 @@ let eidPermissions;
  * @type {S2SDefaultConfig}
  */
 const s2sDefaultConfig = {
+  bidders: Object.freeze([]),
   timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
@@ -143,7 +144,7 @@ function updateConfigDefaultVendor(option) {
  */
 function validateConfigRequiredProps(option) {
   const keys = Object.keys(option);
-  if (['accountId', 'bidders', 'endpoint'].filter(key => {
+  if (['accountId', 'endpoint'].filter(key => {
     if (!includes(keys, key)) {
       logError(key + ' missing in server to server config');
       return true;
@@ -706,6 +707,7 @@ Object.assign(ORTB2.prototype, {
       // get bidder params in form { <bidder code>: {...params} }
       // initialize reduce function with the user defined `ext` properties on the ad unit
       const ext = adUnit.bids.reduce((acc, bid) => {
+        if (bid.bidder == null) return acc;
         const adapter = adapterManager.bidderRegistry[bid.bidder];
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
@@ -914,10 +916,15 @@ Object.assign(ORTB2.prototype, {
       // a seatbid object contains a `bid` array and a `seat` string
       response.seatbid.forEach(seatbid => {
         (seatbid.bid || []).forEach(bid => {
-          const bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
-          if (bidRequest == null && !s2sConfig.allowUnknownBidderCodes) {
-            logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-            return;
+          let bidRequest = this.getBidRequest(bid.impid, seatbid.seat);
+          if (bidRequest == null) {
+            if (!s2sConfig.allowUnknownBidderCodes) {
+              logWarn(`PBS adapter received bid from unknown bidder (${seatbid.seat}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
+              return;
+            }
+            // for stored impression, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
+            // can work as expected (otherwise, the original request will always result in NO_BID).
+            bidRequest = this.getBidRequest(bid.impid, null);
           }
 
           const cpm = bid.price;

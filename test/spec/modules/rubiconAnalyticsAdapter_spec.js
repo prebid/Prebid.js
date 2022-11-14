@@ -27,7 +27,6 @@ function validate(message) {
   expect(validator.errors).to.deep.equal(null);
 }
 
-// using es6 "import * as events from 'src/events.js'" causes the events.getEvents stub not to work...
 let events = require('src/events.js');
 let utils = require('src/utils.js');
 
@@ -2097,6 +2096,35 @@ describe('rubicon analytics adapter', function () {
       validate(message);
       expect(message.auctions[0].adUnits[0].pattern).to.equal('1234/mycoolsite/*&gpt_leaderboard&deviceType=mobile');
       expect(message.auctions[0].adUnits[1].pattern).to.equal('1234/mycoolsite/*&gpt_skyscraper&deviceType=mobile');
+    });
+
+    it('should pass gpid if defined', function () {
+      let bidRequest = utils.deepClone(MOCK.BID_REQUESTED);
+      bidRequest.bids[0].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/lowerbox'
+        }
+      };
+      bidRequest.bids[1].ortb2Imp = {
+        ext: {
+          gpid: '1234/mycoolsite/leaderboard'
+        }
+      };
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, bidRequest);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+
+      clock.tick(SEND_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      validate(message);
+      expect(message.auctions[0].adUnits[0].gpid).to.equal('1234/mycoolsite/lowerbox');
+      expect(message.auctions[0].adUnits[1].gpid).to.equal('1234/mycoolsite/leaderboard');
     });
 
     it('should pass bidderDetail for multibid auctions', function () {
