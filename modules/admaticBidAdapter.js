@@ -1,8 +1,7 @@
 import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.js';
+const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
 const BIDDER_CODE = 'admatic';
 export const spec = {
   code: BIDDER_CODE,
@@ -59,12 +58,17 @@ export const spec = {
       }
     };
 
-    setTimeout(() => {
-      loadExternalScript(SYNC_URL, bidderName);
-    }, 10);
-
     if (payload) {
       return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
+    }
+  },
+
+  getUserSyncs: function (syncOptions, responses) {
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: SYNC_URL
+      }];
     }
   },
 
