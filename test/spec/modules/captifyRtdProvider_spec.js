@@ -84,7 +84,7 @@ describe('captifyRtdProvider', function () {
       expect(matchedBidders).to.eql(['appnexus']);
     });
 
-    it('throw an error, when there are no bidders configured for adUnits', function () {
+    it('return empty result, when there are no bidders configured for adUnits', function () {
       const moduleConfig = {
         params: {
           pubId: 123,
@@ -96,10 +96,10 @@ describe('captifyRtdProvider', function () {
           bids: []
         }]
       };
-      expect(() => getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.throw();
+      expect(getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.be.empty;
     });
 
-    it('throw an error, when there are no bidders matched', function () {
+    it('return empty result, when there are no bidders matched', function () {
       const moduleConfig = {
         params: {
           pubId: 123,
@@ -116,10 +116,10 @@ describe('captifyRtdProvider', function () {
           }]
         }]
       };
-      expect(() => getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.throw();
+      expect(getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.be.empty;
     });
 
-    it('throw an error, when there are no adUnits with bidders', function () {
+    it('return empty result, when there are no adUnits with bidders', function () {
       const moduleConfig = {
         params: {
           pubId: 123,
@@ -135,7 +135,7 @@ describe('captifyRtdProvider', function () {
           }]
         }]
       };
-      expect(() => getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.throw();
+      expect(getMatchingBidders(moduleConfig, reqBidsConfigObj)).to.be.empty;
     });
   });
 
@@ -175,6 +175,20 @@ describe('captifyRtdProvider', function () {
       request.respond(200, responseHeader, JSON.stringify(data));
       expect(deepAccess(config.getConfig(), 'appnexusAuctionKeywords.captify_segments')).to.eql(data['xandr']);
       expect(callbackSpy.calledOnce).to.be.true;
+    });
+
+    it('do not send classification request, if no matching adUnits on page', function () {
+      config.resetConfig();
+      let reqBidsConfigObj = {
+        adUnits: [{
+          bids: [
+            {bidder: 'pubmatic'}
+          ]
+        }]
+      };
+      const callbackSpy = sinon.spy();
+      setCaptifyTargeting(reqBidsConfigObj, callbackSpy, moduleConfig, {});
+      expect(server.requests).to.be.empty;
     });
 
     it('gets data from async request and adds segment data, using URL from config', function () {

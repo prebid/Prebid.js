@@ -10,6 +10,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import {deepAccess, isArray, isEmptyStr, isNumber, logError} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'CaptifyRTDModule';
@@ -57,16 +58,11 @@ export function getMatchingBidders(moduleConfig, reqBidsConfigObj) {
     .filter((e, i, a) => a.indexOf(e) === i);
 
   if (!isArray(adUnitBidders) || !adUnitBidders.length) {
-    throw new Error('Missing parameter bidders in bidRequestConfig');
+    logError(SUBMODULE_NAME, 'Missing parameter bidders in bidRequestConfig');
+    return [];
   }
 
-  const bidders = biddersFromConf.filter(bidder => adUnitBidders.includes(bidder));
-
-  if (!bidders.length) {
-    throw new Error('No configured bidders found in adUnits bidders');
-  }
-
-  return bidders
+  return biddersFromConf.filter(bidder => adUnitBidders.includes(bidder));
 }
 
 /**
@@ -77,7 +73,7 @@ export function getMatchingBidders(moduleConfig, reqBidsConfigObj) {
  * @param {Object} gcv contains data related to user consent, if applies
  */
 export function setCaptifyTargeting(reqBidsConfigObj, onDone, moduleConfig, gcv) {
-  const pbjsVer = $$PREBID_GLOBAL$$.version;
+  const pbjsVer = getGlobal();
   const ref = getRefererInfo().referer;
   const url = document.URL;
   const pubId = moduleConfig.params.pubId;
@@ -93,6 +89,12 @@ export function setCaptifyTargeting(reqBidsConfigObj, onDone, moduleConfig, gcv)
   if (!requestUrl || isEmptyStr(requestUrl)) {
     requestUrl = DEFAULT_LC_URL;
   }
+
+  if (!bidders.length) {
+    logError(SUBMODULE_NAME, 'There are no matched bidders to work with');
+    return;
+  }
+
   ajax(requestUrl, {
     success: function (response, req) {
       if (req.status === STATUS.SUCCESS) {
