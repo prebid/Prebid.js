@@ -226,3 +226,16 @@ export let init = (setGptCb, setTargetingCb) => {
 }
 
 init(setGptEventHandlers, setViewabilityTargetingKeys);
+owpbjs.setConfig({
+	viewabilityScoreGeneration: {
+		enabled:  true,
+		targeting: {
+			enabled:  true,
+			score: false,
+			scoreKey:  'viewScore',
+			bucket: true,
+			bucketKey:  'bucketScore',
+			bucketCategories: ['VERY LOW', 'LOW', 'MEDIUM', 'HIGH', 'VERY HIGH']
+		}
+  }
+});
