@@ -1,10 +1,32 @@
 import Adapter from '../../src/adapter.js';
-import { createBid } from '../../src/bidfactory.js';
+import {createBid} from '../../src/bidfactory.js';
 import {
-  getPrebidInternal, logError, isStr, isPlainObject, logWarn, generateUUID, bind, logMessage,
-  triggerPixel, insertUserSyncIframe, deepAccess, mergeDeep, deepSetValue, cleanObj, parseSizesInput,
-  getBidRequest, getDefinedParams, createTrackPixelHtml, pick, deepClone, uniques, flatten, isNumber,
-  isEmpty, isArray, logInfo, timestamp
+  bind,
+  cleanObj,
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  getBidRequest,
+  getDefinedParams,
+  getPrebidInternal,
+  insertUserSyncIframe,
+  isArray,
+  isEmpty,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  parseSizesInput,
+  pick, timestamp,
+  triggerPixel,
+  uniques
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
@@ -12,10 +34,9 @@ import { config } from '../../src/config.js';
 import { VIDEO, NATIVE } from '../../src/mediaTypes.js';
 import { isValid } from '../../src/adapters/bidderFactory.js';
 import events from '../../src/events.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {find, includes} from '../../src/polyfill.js';
 import { S2S_VENDORS } from './config.js';
 import { ajax } from '../../src/ajax.js';
-import find from 'core-js-pure/features/array/find.js';
 import {hook} from '../../src/hook.js';
 
 const getConfig = config.getConfig;
@@ -693,7 +714,7 @@ Object.assign(ORTB2.prototype, {
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
 
-      const imp = { id: impressionId, ext, secure: s2sConfig.secure };
+      const imp = { ...adUnit.ortb2Imp, id: impressionId, ext, secure: s2sConfig.secure };
 
       const ortb2 = {...deepAccess(adUnit, 'ortb2Imp.ext.data')};
       Object.keys(ortb2).forEach(prop => {
@@ -724,7 +745,7 @@ Object.assign(ORTB2.prototype, {
         }
       });
 
-      Object.assign(imp, mediaTypes);
+      mergeDeep(imp, mediaTypes);
 
       // if storedAuctionResponse has been set, pass SRID
       const storedAuctionResponseBid = find(firstBidRequest.bids, bid => (bid.adUnitCode === adUnit.code && bid.storedAuctionResponse));

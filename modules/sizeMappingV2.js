@@ -5,18 +5,18 @@
  */
 
 import {
-  isArray,
-  logError,
-  isArrayOfNums,
   deepClone,
-  logWarn,
   getWindowTop,
+  isArray,
+  isArrayOfNums,
+  isValidMediaTypes,
+  logError,
   logInfo,
-  isValidMediaTypes
+  logWarn
 } from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getHook } from '../src/hook.js';
-import { adUnitSetupChecks } from '../src/prebid.js';
+import {includes} from '../src/polyfill.js';
+import {getHook} from '../src/hook.js';
+import {adUnitSetupChecks} from '../src/prebid.js';
 
 // Allows for stubbing of these functions while writing unit tests.
 export const internal = {

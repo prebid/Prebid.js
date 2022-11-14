@@ -1,10 +1,10 @@
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {_each, deepAccess, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
-import includes from 'core-js-pure/features/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum'
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
