@@ -201,6 +201,17 @@ export const spec = {
       payload.app = appIdObj;
     }
 
+    let auctionKeywords = config.getConfig('appnexusAuctionKeywords');
+    if (isPlainObject(auctionKeywords)) {
+      let aucKeywords = transformBidderParamKeywords(auctionKeywords);
+
+      if (aucKeywords.length > 0) {
+        aucKeywords.forEach(deleteValues);
+      }
+
+      payload.keywords = aucKeywords;
+    }
+
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_category_uniqueness = true;
     }

@@ -544,6 +544,52 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests)[0];
       expect(!!bidRequest.data.lt).to.be.true;
     });
+
+    it('should handle no gg params', function () {
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&param2=bar&param3=baz' } })[0];
+
+      // no params are in object
+      expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
+      expect(bidRequest.data.hasOwnProperty('adBuyId')).to.be.false;
+      expect(bidRequest.data.hasOwnProperty('ggdeal')).to.be.false;
+    });
+
+    it('should handle encrypted ad buy id', function () {
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=bar&param3=baz' } })[0];
+
+      // correct params are in object
+      expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;
+      expect(bidRequest.data.hasOwnProperty('adBuyId')).to.be.false;
+      expect(bidRequest.data.hasOwnProperty('ggdeal')).to.be.false;
+
+      // params are stripped from pu property
+      expect(bidRequest.data.pu.includes('ggad')).to.be.false;
+    });
+
+    it('should handle unencrypted ad buy id', function () {
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?param1=foo&ggad=123&param3=baz' } })[0];
+
+      // correct params are in object
+      expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.false;
+      expect(bidRequest.data.hasOwnProperty('adBuyId')).to.be.true;
+      expect(bidRequest.data.hasOwnProperty('ggdeal')).to.be.false;
+
+      // params are stripped from pu property
+      expect(bidRequest.data.pu.includes('ggad')).to.be.false;
+    });
+
+    it('should handle multiple gg params', function () {
+      const bidRequest = spec.buildRequests(bidRequests, { refererInfo: { referer: 'https://www.prebid.org/?ggdeal=foo&ggad=bar&param3=baz' } })[0];
+
+      // correct params are in object
+      expect(bidRequest.data.hasOwnProperty('eAdBuyId')).to.be.true;
+      expect(bidRequest.data.hasOwnProperty('adBuyId')).to.be.false;
+      expect(bidRequest.data.hasOwnProperty('ggdeal')).to.be.true;
+
+      // params are stripped from pu property
+      expect(bidRequest.data.pu.includes('ggad')).to.be.false;
+      expect(bidRequest.data.pu.includes('ggdeal')).to.be.false;
+    });
   })
 
   describe('interpretResponse', function () {
