@@ -3,7 +3,7 @@ import { _each, deepAccess, logError, logWarn, parseSizesInput } from '../src/ut
 
 import { config } from '../src/config.js'
 import { getStorageManager } from '../src/storageManager.js';
-import includes from 'prebidjs-polyfill/includes.js';
+import includes from 'core-js-pure/features/array/includes';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 
 const storage = getStorageManager();

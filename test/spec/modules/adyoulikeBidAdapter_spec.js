@@ -805,5 +805,9 @@ describe('Adyoulike Adapter', function () {
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);
     });
+
+    it('should expose gvlid', function() {
+      expect(spec.gvlid).to.equal(259)
+    })
   });
 });
