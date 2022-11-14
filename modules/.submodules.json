@@ -69,7 +69,8 @@
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider", 
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
       "enrichmentFpdModule",
