@@ -10,7 +10,6 @@ import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/esm/initializer.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
@@ -113,7 +112,7 @@ function initializeLiveConnect(configParams) {
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
-  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls, liveIntentIdSubmodule.moduleMode);
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash })
   }
@@ -140,7 +139,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+    return LiveConnect
   },
 
   /**
