@@ -128,9 +128,47 @@ describe('Referer detection', () => {
           numIframes: 0,
           stack: ['https://example.com/some/page'],
           canonicalUrl: 'https://example.com/canonical/page',
-          page: 'https://example.com/canonical/page',
+          page: 'https://example.com/some/page',
           ref: 'https://othersite.com/',
           domain: 'example.com'
+        });
+      });
+
+      it('Should set page and canonical to pageUrl value set in config if present, even if canonical url is also present in head', () => {
+        config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
+        const testWindow = buildWindowTree(['https://example.com/some/page'], 'https://othersite.com/', 'https://example.com/canonical/page'),
+          result = detectReferer(testWindow)();
+
+        sinon.assert.match(result, {
+          topmostLocation: 'https://example.com/some/page',
+          location: 'https://example.com/some/page',
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 0,
+          stack: ['https://example.com/some/page'],
+          canonicalUrl: 'https://www.set-from-config.com/path',
+          page: 'https://www.set-from-config.com/path',
+          ref: 'https://othersite.com/',
+          domain: 'www.set-from-config.com'
+        });
+      });
+
+      it('Should set page with query params if canonical url is present without query params but the current page does have them', () => {
+        config.setConfig({'pageUrl': 'https://www.set-from-config.com/path'});
+        const testWindow = buildWindowTree(['https://example.com/some/page?query1=123&query2=456'], 'https://othersite.com/', 'https://example.com/canonical/page'),
+          result = detectReferer(testWindow)();
+
+        sinon.assert.match(result, {
+          topmostLocation: 'https://example.com/some/page?query1=123&query2=456',
+          location: 'https://example.com/some/page?query1=123&query2=456',
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 0,
+          stack: ['https://example.com/some/page?query1=123&query2=456'],
+          canonicalUrl: 'https://www.set-from-config.com/path',
+          page: 'https://www.set-from-config.com/path?query1=123&query2=456',
+          ref: 'https://othersite.com/',
+          domain: 'www.set-from-config.com'
         });
       });
     });
@@ -174,7 +212,7 @@ describe('Referer detection', () => {
             'https://example.com/third/page'
           ],
           canonicalUrl: 'https://example.com/canonical/page',
-          page: 'https://example.com/canonical/page',
+          page: 'https://example.com/some/page',
           ref: 'https://othersite.com/',
           domain: 'example.com'
         });
@@ -317,7 +355,7 @@ describe('Referer detection', () => {
           'https://ad-iframe.ampproject.org/ad'
         ],
         canonicalUrl: 'https://example.com/some/page/',
-        page: 'https://example.com/some/page/',
+        page: 'https://example.com/some/page/amp/',
         ref: null,
         domain: 'example.com'
       });
@@ -344,7 +382,7 @@ describe('Referer detection', () => {
           'https://ad-iframe.ampproject.org/ad'
         ],
         canonicalUrl: 'https://example.com/some/page/',
-        page: 'https://example.com/some/page/',
+        page: 'https://example.com/some/page/amp/',
         ref: null,
         domain: 'example.com'
       });
@@ -384,7 +422,7 @@ describe('Referer detection', () => {
             'https://ad-iframe.ampproject.org/ad'
           ],
           canonicalUrl: 'https://example.com/some/page/',
-          page: 'https://example.com/some/page/',
+          page: 'https://example.com/some/page/amp/',
           ref: null,
           domain: 'example.com',
         });
@@ -412,7 +450,7 @@ describe('Referer detection', () => {
             'https://ad-iframe.ampproject.org/ad'
           ],
           canonicalUrl: 'https://example.com/some/page/',
-          page: 'https://example.com/some/page/',
+          page: 'https://example.com/some/page/amp/',
           ref: null,
           domain: 'example.com'
         });
@@ -441,7 +479,7 @@ describe('Referer detection', () => {
             'https://ad-iframe.ampproject.org/ad'
           ],
           canonicalUrl: 'https://example.com/some/page/',
-          page: 'https://example.com/some/page/',
+          page: 'https://example.com/some/page/amp/',
           ref: null,
           domain: 'example.com',
         });
