@@ -273,6 +273,15 @@ describe('bid interceptor', () => {
   });
 });
 
+describe('Debugging config', () => {
+  it('should behave gracefully when sessionStorage throws', () => {
+    const logError = sinon.stub();
+    const getStorage = () => { throw new Error() };
+    getConfig({enabled: false}, {getStorage, logger: {logError}, hook});
+    expect(logError.called).to.be.true;
+  });
+});
+
 describe('bidderBidInterceptor', () => {
   let next, interceptBids, onCompletion, interceptResult, done, addBid;
 
