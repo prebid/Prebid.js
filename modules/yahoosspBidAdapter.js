@@ -288,7 +288,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
