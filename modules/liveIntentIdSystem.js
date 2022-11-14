@@ -112,7 +112,7 @@ function initializeLiveConnect(configParams) {
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
-  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls, liveIntentIdSubmodule.moduleMode);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash })
   }
@@ -139,7 +139,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return LiveConnect
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
   },
 
   /**
