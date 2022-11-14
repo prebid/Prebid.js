@@ -204,7 +204,7 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
 
   // used for analytics
   bid.getCpmInNewCurrency = function(toCurrency) {
-    return (parseFloat(this.cpm) * getCurrencyConversion(this.currency, toCurrency)).toFixed(3);
+    return Number((parseFloat(this.cpm) * getCurrencyConversion(this.currency, toCurrency)).toFixed(3));
   };
 
   // execute immediately if the bid is already in the desired currency
@@ -234,7 +234,7 @@ function wrapFunction(fn, context, params) {
       try {
         let conversion = getCurrencyConversion(fromCurrency);
         if (conversion !== 1) {
-          bid.cpm = (parseFloat(bid.cpm) * conversion).toFixed(4);
+          bid.cpm = Number((parseFloat(bid.cpm) * conversion).toFixed(4));
           bid.currency = adServerCurrency;
         }
       } catch (e) {
