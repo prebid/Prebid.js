@@ -266,7 +266,7 @@ ascAdapter.getVisitorData = function (data = {}) {
   }
 
   const { clientId } = initOptions;
-  var userId = storage.getDataFromLocalStorage('userId')
+  var userId = storage.getDataFromLocalStorage('userId');
   if (!userId) {
     userId = generateUid();
     storage.setDataInLocalStorage('userId', userId);

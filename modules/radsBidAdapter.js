@@ -65,7 +65,7 @@ export const spec = {
         method: 'GET',
         url: endpoint,
         data: objectToQueryString(payload),
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {

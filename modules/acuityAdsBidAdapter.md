@@ -1,15 +1,15 @@
 # Overview
 
 ```
-Module Name: AndBeyond.Media Bidder Adapter
-Module Type: AndBeyond.Media Bidder Adapter
-Maintainer: sysengg@andbeyond.media
+Module Name: AcuityAds Bidder Adapter
+Module Type: AcuityAds Bidder Adapter
+Maintainer: sa-support@brightcom.com
 ```
 
 # Description
 
-Connects to AndBeyond.Media exchange for bids.
-AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and Native.
+Connects to AcuityAds exchange for bids.
+AcuityAds bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```
@@ -24,7 +24,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'acuityads',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'acuityads',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'acuityads',
                             params: {
                                 placementId: 'testNative',
                             }

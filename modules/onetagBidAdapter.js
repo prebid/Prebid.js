@@ -6,7 +6,6 @@ import { Renderer } from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { createEidsArray } from './userId/eids.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
@@ -65,8 +64,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userId) {
-    payload.userId = createEidsArray(validBidRequests[0].userId);
+  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
+    payload.userId = validBidRequests[0].userIdAsEids;
   }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
     payload.schain = validBidRequests[0].schain;

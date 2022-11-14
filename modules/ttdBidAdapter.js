@@ -59,7 +59,7 @@ function getBidFloor(bid) {
 
 function getSource(validBidRequests) {
   let source = {
-    tid: validBidRequests[0].transactionId
+    tid: validBidRequests[0].auctionId
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -121,12 +121,20 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
+  // gather user.data
+  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
+  if (ortb2UserData && ortb2UserData.length) {
+    user = utils.mergeDeep(user, {
+      data: [...ortb2UserData]
+    });
+  };
   return user;
 }
 
 function getSite(bidderRequest, firstPartyData) {
   var site = {
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
+    ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
@@ -221,7 +229,7 @@ function banner(bid) {
 
   const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
   if (battr) {
-    banner.battr = battr
+    banner.battr = battr;
   }
 
   return banner;
@@ -245,7 +253,7 @@ function video(bid) {
   const maxbitrate = utils.deepAccess(bid, 'mediaTypes.video.maxbitrate');
 
   if (!minduration || !utils.isInteger(minduration)) {
-    minduration = 0
+    minduration = 0;
   }
   let video = {
     minduration: minduration,
@@ -293,7 +301,7 @@ function video(bid) {
 
   const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
   if (battr) {
-    video.battr = battr
+    video.battr = battr;
   }
 
   return video;
@@ -364,7 +372,7 @@ export const spec = {
         return false;
       }
       if (!mediaTypesVideo.protocols) {
-        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values')
+        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values');
         return false;
       }
     }

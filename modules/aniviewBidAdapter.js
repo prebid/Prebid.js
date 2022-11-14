@@ -306,7 +306,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo', 'didnavideo', 'ottadvisors'],
+  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo', 'didnavideo', 'ottadvisors', 'pgammedia'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid,
   buildRequests,

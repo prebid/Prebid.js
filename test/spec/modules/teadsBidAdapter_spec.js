@@ -418,6 +418,74 @@ describe('teadsBidAdapter', () => {
       });
     });
 
+    it('should add userAgentClientHints info to payload if available', function () {
+      const bidRequest = Object.assign({}, bidRequests[0], {
+        ortb2: {
+          device: {
+            sua: {
+              source: 2,
+              platform: {
+                brand: 'macOS',
+                version: [ '12', '4', '0' ]
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Not;A=Brand',
+                  version: [ '99', '0', '0', '0' ]
+                }
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'x86'
+            }
+          }
+        }
+      });
+
+      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const payload = JSON.parse(requestWithUserAgentClientHints.data);
+
+      expect(payload.userAgentClientHints).to.exist;
+      expect(payload.userAgentClientHints).to.deep.equal({
+        source: 2,
+        platform: {
+          brand: 'macOS',
+          version: [ '12', '4', '0' ]
+        },
+        browsers: [
+          {
+            brand: 'Chromium',
+            version: [ '106', '0', '5249', '119' ]
+          },
+          {
+            brand: 'Google Chrome',
+            version: [ '106', '0', '5249', '119' ]
+          },
+          {
+            brand: 'Not;A=Brand',
+            version: [ '99', '0', '0', '0' ]
+          }
+        ],
+        mobile: 0,
+        model: '',
+        bitness: '64',
+        architecture: 'x86'
+      }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderResquestDefault);
+      expect(JSON.parse(defaultRequest.data).userAgentClientHints).to.not.exist;
+    });
+
     it('should use good mediaTypes video sizes', function() {
       const mediaTypesVideoSizes = {
         'mediaTypes': {
@@ -470,64 +538,163 @@ describe('teadsBidAdapter', () => {
         'deviceWidth': 1680
       };
 
-      describe('Unified ID v2', function () {
-        it('should not add unifiedId2 param to payload if uid2 system is not enabled', function () {
+      const userIdModules = {
+        unifiedId2: {uid2: {id: 'unifiedId2-id'}},
+        liveRampId: {idl_env: 'liveRampId-id'},
+        lotamePanoramaId: {lotamePanoramaId: 'lotamePanoramaId-id'},
+        id5Id: {id5id: {uid: 'id5Id-id'}},
+        criteoId: {criteoId: 'criteoId-id'},
+        yahooConnectId: {connectId: 'yahooConnectId-id'},
+        quantcastId: {quantcastId: 'quantcastId-id'},
+        epsilonPublisherLinkId: {publinkId: 'epsilonPublisherLinkId-id'},
+        publisherFirstPartyViewerId: {pubcid: 'publisherFirstPartyViewerId-id'},
+        merkleId: {merkleId: {id: 'merkleId-id'}},
+        kinessoId: {kpuid: 'kinessoId-id'}
+      };
+
+      describe('User Id Modules', function () {
+        it(`should not add param to payload if user id system is not enabled`, function () {
           const bidRequest = {
             ...baseBidRequest,
-            userId: {} // no "uid2" property -> assumption that the Unified ID v2 system is disabled
+            userId: {} // no property -> assumption that the system is disabled
           };
 
           const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
-          expect(payload).not.to.have.property('unifiedId2');
+          for (const userId in userIdModules) {
+            expect(payload, userId).not.to.have.property(userId);
+          }
         });
 
-        it('should add unifiedId2 param to payload if uid2 system is enabled', function () {
+        it(`should not add param to payload if user id field is absent`, function () {
+          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          for (const userId in userIdModules) {
+            expect(payload, userId).not.to.have.property(userId);
+          }
+        });
+
+        it(`should not add param to payload if user id is enabled but there is no value`, function () {
           const bidRequest = {
             ...baseBidRequest,
             userId: {
-              uid2: {
-                id: 'my-unified-id-2'
-              }
+              idl_env: '',
+              pubcid: 'publisherFirstPartyViewerId-id'
             }
           };
 
           const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
-          expect(payload.unifiedId2).to.equal('my-unified-id-2');
-        })
-      });
+          expect(payload).not.to.have.property('liveRampId');
+          expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
+        });
+
+        it(`should add userId param to payload for each enabled user id system`, function () {
+          let userIdObject = {};
+          for (const userId in userIdModules) {
+            userIdObject = {
+              ...userIdObject,
+              ...userIdModules[userId]
+            }
+          }
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: userIdObject
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const payload = JSON.parse(request.data);
+
+          expect(payload['unifiedId2']).to.equal('unifiedId2-id');
+          expect(payload['liveRampId']).to.equal('liveRampId-id');
+          expect(payload['lotamePanoramaId']).to.equal('lotamePanoramaId-id');
+          expect(payload['id5Id']).to.equal('id5Id-id');
+          expect(payload['criteoId']).to.equal('criteoId-id');
+          expect(payload['yahooConnectId']).to.equal('yahooConnectId-id');
+          expect(payload['quantcastId']).to.equal('quantcastId-id');
+          expect(payload['epsilonPublisherLinkId']).to.equal('epsilonPublisherLinkId-id');
+          expect(payload['publisherFirstPartyViewerId']).to.equal('publisherFirstPartyViewerId-id');
+          expect(payload['merkleId']).to.equal('merkleId-id');
+          expect(payload['kinessoId']).to.equal('kinessoId-id');
+        });
+      })
 
       describe('First-party cookie Teads ID', function () {
-        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled', function () {
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled' +
+            ' and teads user id not available', function () {
           cookiesAreEnabledStub.returns(false);
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
         });
 
-        it('should not add firstPartyCookieTeadsId param to payload if first-party cookie is not available', function () {
+        it('should not add firstPartyCookieTeadsId param to payload if cookies are enabled ' +
+            'but first-party cookie and teads user id are not available', function () {
           cookiesAreEnabledStub.returns(true);
           getCookieStub.withArgs('_tfpvi').returns(undefined);
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
         });
 
-        it('should add firstPartyCookieTeadsId param to payload if first-party cookie is available', function () {
+        it('should add firstPartyCookieTeadsId from cookie if it\'s available ' +
+            'and teads user id is not', function () {
           cookiesAreEnabledStub.returns(true);
           getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
 
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+
           const payload = JSON.parse(request.data);
 
           expect(payload.firstPartyCookieTeadsId).to.equal('my-teads-id');
+        });
+
+        it('should add firstPartyCookieTeadsId from user id module if it\'s available ' +
+            'even if cookie is available too', function () {
+          cookiesAreEnabledStub.returns(true);
+          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+
+          const bidRequest = {
+            ...baseBidRequest,
+            userId: {
+              pubcid: 'publisherFirstPartyViewerId-id',
+              teadsId: 'teadsId-fake-id'
+            }
+          };
+
+          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+
+          const payload = JSON.parse(request.data);
+
+          expect(payload.firstPartyCookieTeadsId).to.equal('teadsId-fake-id');
         });
       });
     });

@@ -256,7 +256,7 @@ const addNativeParameters = bidRequest => {
         wmin = sizes[0];
         hmin = sizes[1];
       }
-      asset[props.name] = {}
+      asset[props.name] = {};
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;
       if (wmin) asset[props.name]['wmin'] = wmin;
