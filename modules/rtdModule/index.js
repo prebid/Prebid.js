@@ -36,6 +36,7 @@
  * @param {string[]} adUnitsCodes
  * @param {SubmoduleConfig} config
  * @param {UserConsentData} userConsent
+ * @param {auction} auction
  */
 
 /**
@@ -339,7 +340,7 @@ export function getAdUnitTargeting(auction) {
   }
   let targeting = [];
   for (let i = relevantSubModules.length - 1; i >= 0; i--) {
-    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent);
+    const smTargeting = relevantSubModules[i].getTargetingData(adUnitCodes, relevantSubModules[i].config, _userConsent, auction);
     if (smTargeting && typeof smTargeting === 'object') {
       targeting.push(smTargeting);
     } else {
@@ -353,6 +354,7 @@ export function getAdUnitTargeting(auction) {
     if (!kv) {
       return
     }
+    logInfo('RTD set ad unit targeting of', kv, 'for', adUnit);
     adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = Object.assign(adUnit[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] || {}, kv);
   });
   return auction.adUnits;
