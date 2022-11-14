@@ -3,11 +3,11 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import { BID_STATUS, EVENTS, TARGETING_KEYS } from '../src/constants.json';
+import CONSTANTS from '../src/constants.json'
 
-const {CACHE_ID, UUID} = TARGETING_KEYS;
-const {BID_WON, AUCTION_END} = EVENTS;
-const {RENDERED} = BID_STATUS;
+const {CACHE_ID, UUID} = CONSTANTS.TARGETING_KEYS;
+const {BID_WON, AUCTION_END} = CONSTANTS.EVENTS;
+const {RENDERED} = CONSTANTS.BID_STATUS;
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,

@@ -15,7 +15,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -30,7 +30,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -48,7 +48,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: PLACEMENT_ID
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div1',
       auctionId: 'a1',
       sizes: [
         [300, 250],
@@ -67,7 +67,7 @@ describe('invibesBidAdapter:', function () {
       params: {
         placementId: 'abcde'
       },
-      adUnitCode: 'test-div',
+      adUnitCode: 'test-div2',
       auctionId: 'a2',
       sizes: [
         [300, 250],
@@ -158,6 +158,125 @@ describe('invibesBidAdapter:', function () {
       expect(request.method).to.equal('GET');
     });
 
+    it('sends bid request to custom endpoint via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          customEndpoint: 'sub.domain.com/Bid/VideoAdContent'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('sub.domain.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when no placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint when null placement', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: null
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal(ENDPOINT);
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to default endpoint 1 via GET', function () {
+	  const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1001
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id endpoint 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'placement',
+          domainId: 1002
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 1 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs1'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 2 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs2'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
+    it('sends bid request to network id by placement 10 via GET', function () {
+      const request = spec.buildRequests([{
+        bidId: 'b1',
+        bidder: BIDDER_CODE,
+        params: {
+          placementId: 'infeed_ivbs10'
+        },
+        adUnitCode: 'test-div1'
+      }]);
+      expect(request.url).to.equal('https://bid10.videostep.com/Bid/VideoAdContent');
+      expect(request.method).to.equal('GET');
+    });
+
     it('sends cookies with the bid request', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.options.withCredentials).to.equal(true);
@@ -221,6 +340,12 @@ describe('invibesBidAdapter:', function () {
       const request = spec.buildRequests(bidRequests);
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[0].params.placementId);
       expect(JSON.parse(request.data.bidParamsJson).placementIds).to.contain(bidRequests[1].params.placementId);
+    });
+
+    it('sends all adUnitCodes', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[0].adUnitCode);
+      expect(JSON.parse(request.data.bidParamsJson).adUnitCodes).to.contain(bidRequests[1].adUnitCode);
     });
 
     it('sends all Placement Ids and userId', function () {
@@ -823,6 +948,20 @@ describe('invibesBidAdapter:', function () {
       }
     };
 
+    let responseWithAdUnit = {
+      Ads: [{
+        BidPrice: 0.5,
+        VideoExposedId: 123
+      }],
+      BidModel: {
+        BidVersion: 1,
+        PlacementId: '12345_test-div1',
+        AuctionStartTime: Date.now(),
+        CreativeHtml: '<!-- Creative -->'
+      },
+	  UseAdUnitCode: true
+    };
+
     var buildResponse = function(placementId, cid, blcids, creativeId) {
       return {
         MultipositionEnabled: true,
@@ -910,6 +1049,11 @@ describe('invibesBidAdapter:', function () {
         let result = spec.interpretResponse({body: response}, {bidRequests});
         let secondResult = spec.interpretResponse({body: response}, {bidRequests});
         expect(secondResult).to.be.empty;
+      });
+
+      it('bids using the adUnitCode', function () {
+        let result = spec.interpretResponse({body: responseWithAdUnit}, {bidRequests});
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
       });
     });
 

@@ -161,11 +161,20 @@ export const spec = {
           domain: domain,
           publisher: {
             id: publisherId
+          },
+          content: {
+            ext: {
+              prebid: {
+                name: 'pbjs',
+                version: '$prebid.version$'
+              }
+            }
           }
         },
         device: device,
         at: at,
-        cur: cur
+        cur: cur,
+        ext: {}
       };
 
       const userExt = {};
@@ -193,6 +202,8 @@ export const spec = {
           ext: userExt
         };
       }
+
+      //     requestPayload.user.ext.ver = pbjs.version;
 
       // Targeting
       if (getBidIdParameter('data', bid.params.user)) {
@@ -336,6 +347,7 @@ function createOutstreamConfig(bid) {
   let confTitle = getBidIdParameter('title', bid.renderer.config.outstream_options);
   let confSkipOffset = getBidIdParameter('skipOffset', bid.renderer.config.outstream_options);
   let confDesiredBitrate = getBidIdParameter('desiredBitrate', bid.renderer.config.outstream_options);
+  let confVisibilityThreshold = getBidIdParameter('visibilityThreshold', bid.renderer.config.outstream_options);
   let elementId = getBidIdParameter('slot', bid.renderer.config.outstream_options) || bid.adUnitCode;
 
   logMessage('[SMARTX][renderer] Handle SmartX outstream renderer');
@@ -382,6 +394,10 @@ function createOutstreamConfig(bid) {
 
   if (confDesiredBitrate) {
     smartPlayObj.desiredBitrate = confDesiredBitrate;
+  }
+
+  if (confVisibilityThreshold) {
+    smartPlayObj.visibilityThreshold = confVisibilityThreshold;
   }
 
   smartPlayObj.adResponse = bid.vastContent;

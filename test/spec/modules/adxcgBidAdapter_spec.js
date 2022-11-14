@@ -215,7 +215,7 @@ describe('Adxcg adapter', function () {
           site: {
             publisher: {
               id: 4441,
-              name: 'publishers name'
+              name: 'publisher\'s name'
             }
           }
         }
@@ -227,23 +227,16 @@ describe('Adxcg adapter', function () {
       let refererInfo = {referer: 'page'};
       let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo}).data);
 
-      let expected = {
+      assert.deepEqual(request.site, {
+        domain: 'localhost',
         id: '123123',
+        page: refererInfo.referer,
         publisher: {
           domain: 'publisher.domain.com',
           id: 4441,
-          name: 'publishers name'
-        },
-        page: 'page',
-        domain: 'localhost'
-      };
-
-      assert.deepEqual(request.site.id, expected.id);
-      assert.deepEqual(request.site.publisher, expected.publisher);
-      assert.deepEqual(request.site.page, expected.page);
-      // assert.deepEqual(request.site.domain, expected.site.domain); // disabled for browser specific problem (IE11)
-      // in browserstack IE 11 we get empty "" request.site.domain, while in gulp test we get "localhost"
-      // all other browserstack enabled browsers work without problem
+          name: 'publisher\'s name'
+        }
+      });
     });
 
     it('should pass extended ids', function () {

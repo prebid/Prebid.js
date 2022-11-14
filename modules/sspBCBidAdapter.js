@@ -9,11 +9,13 @@ const BIDDER_URL = 'https://ssp.wp.pl/bidder/';
 const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const TMAX = 450;
-const BIDDER_VERSION = '5.2';
+const BIDDER_VERSION = '5.3';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
+const adUnitsCalled = {};
 const adSizesCalled = {};
+const pageView = {};
 var consentApiVersion;
 
 /**
@@ -70,6 +72,7 @@ const cookieSupport = () => {
 };
 
 const applyClientHints = ortbRequest => {
+  const { location } = document;
   const { connection = {}, deviceMemory, userAgentData = {} } = navigator;
   const viewport = W.visualViewport || false;
   const segments = [];
@@ -84,6 +87,16 @@ const applyClientHints = ortbRequest => {
     'CH-BrowserBrands': JSON.stringify(userAgentData.brands),
     'CH-isMobile': userAgentData.mobile,
   };
+
+  /**
+    Check / generate page view id
+    Should be generated dureing first call to applyClientHints(),
+    and re-generated if pathname has changed
+  */
+  if (!pageView.id || location.pathname !== pageView.path) {
+    pageView.path = location.pathname;
+    pageView.id = Math.floor(1E20 * Math.random());
+  }
 
   Object.keys(hints).forEach(key => {
     const hint = hints[key];
@@ -100,6 +113,14 @@ const applyClientHints = ortbRequest => {
       id: '12',
       name: 'NetInfo',
       segment: segments,
+    }, {
+      id: '7',
+      name: 'pvid',
+      segment: [
+        {
+          value: `${pageView.id}`
+        }
+      ]
     }];
 
   ortbRequest.user = Object.assign(ortbRequest.user, { data });
@@ -129,6 +150,7 @@ const setOnAny = (collection, key) => collection.reduce((prev, next) => prev || 
  */
 const sendNotification = payload => {
   ajax(NOTIFY_URL, null, JSON.stringify(payload), {
+    contentType: 'application/json',
     withCredentials: false,
     method: 'POST',
     crossOrigin: true
@@ -267,8 +289,14 @@ const mapImpression = slot => {
      send this info as ext.pbsize
   */
   const slotSize = slot.sizes.length ? slot.sizes.reduce((prev, next) => prev[0] * prev[1] <= next[0] * next[1] ? next : prev).join('x') : '1x1';
-  adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
-  ext.data = Object.assign({ pbsize: `${slotSize}_${adSizesCalled[slotSize]}` }, ext.data);
+
+  if (!adUnitsCalled[adUnitCode]) {
+    // this is a new adunit - assign & save pbsize
+    adSizesCalled[slotSize] = adSizesCalled[slotSize] ? adSizesCalled[slotSize] += 1 : 1;
+    adUnitsCalled[adUnitCode] = `${slotSize}_${adSizesCalled[slotSize]}`
+  }
+
+  ext.data = Object.assign({ pbsize: adUnitsCalled[adUnitCode] }, ext.data);
 
   const imp = {
     id: id && siteId ? id : 'bidid-' + bidId,
@@ -324,6 +352,9 @@ const parseNative = nativeData => {
     switch (id) {
       case 0:
         result.title = asset.title.text;
+        break;
+      case 1:
+        result.cta = asset.data.value;
         break;
       case 2:
         result.icon = {

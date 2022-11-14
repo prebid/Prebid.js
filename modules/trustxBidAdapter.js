@@ -6,9 +6,8 @@ import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'trustx';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson?sp=trustx';
-const ADDITIONAL_SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
-const ADAPTER_SYNC_URL = 'https://sofia.trustx.org/push_sync';
+const ADAPTER_SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 const LOG_ERROR_MESS = {
@@ -76,7 +75,7 @@ export const spec = {
       if (!userIdAsEids) {
         userIdAsEids = bid.userIdAsEids;
       }
-      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd} = bid;
+      const {params: {uid, keywords}, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp} = bid;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       if (rtd) {
@@ -101,6 +100,15 @@ export const spec = {
           divid: adUnitCode && adUnitCode.toString()
         }
       };
+
+      if (ortb2Imp && ortb2Imp.ext && ortb2Imp.ext.data) {
+        impObj.ext.data = ortb2Imp.ext.data;
+        if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+          impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+        } else {
+          impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+        }
+      }
 
       if (!isEmpty(keywords)) {
         if (!pageKeywords) {
@@ -272,12 +280,12 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
     if (syncOptions.pixelEnabled) {
-      const syncsPerBidder = config.getConfig('userSync.syncsPerBidder');
       let params = [];
-      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
-        } else {
+          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}`);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
           params.push(`gdpr_consent=${gdprConsent.consentString}`);
         }
       }
@@ -285,17 +293,10 @@ export const spec = {
         params.push(`us_privacy=${uspConsent}`);
       }
       const stringParams = params.join('&');
-      const syncs = [{
+      return {
         type: 'image',
-        url: ADAPTER_SYNC_URL + (stringParams ? `?${stringParams}` : '')
-      }];
-      if (syncsPerBidder > 1) {
-        syncs.push({
-          type: 'image',
-          url: ADDITIONAL_SYNC_URL + (stringParams ? `&${stringParams}` : '')
-        });
-      }
-      return syncs;
+        url: ADAPTER_SYNC_URL + stringParams
+      };
     }
   }
 }

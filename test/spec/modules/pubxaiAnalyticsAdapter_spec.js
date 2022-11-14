@@ -28,6 +28,7 @@ describe('pubxai analytics adapter', function() {
     };
 
     let location = utils.getWindowLocation();
+    let storage = window.top['sessionStorage'];
 
     let prebidEvent = {
       'auctionInit': {
@@ -514,6 +515,11 @@ describe('pubxai analytics adapter', function() {
         'path': location.pathname,
         'search': location.search
       },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
+      }
     };
 
     let expectedAfterBid = {
@@ -576,6 +582,11 @@ describe('pubxai analytics adapter', function() {
         'deviceType': getDeviceType(),
         'deviceOS': getOS(),
         'browser': getBrowser()
+      },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
       },
       'initOptions': initOptions
     };

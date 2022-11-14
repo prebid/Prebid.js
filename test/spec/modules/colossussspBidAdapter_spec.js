@@ -7,7 +7,8 @@ describe('ColossussspAdapter', function () {
     bidder: 'colossusssp',
     bidderRequestId: '145e1d6a7837c9',
     params: {
-      placement_id: 0
+      placement_id: 0,
+      group_id: 0
     },
     placementCode: 'placementid_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -60,6 +61,7 @@ describe('ColossussspAdapter', function () {
     });
     it('Should return false when placement_id is not a number', function () {
       bid.params.placement_id = 'aaa';
+      delete bid.params.group_id;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
   });
@@ -95,9 +97,10 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
+        expect(placement.groupId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
         expect(placement.sizes).to.be.an('array');
@@ -185,6 +188,15 @@ describe('ColossussspAdapter', function () {
       });
     });
   });
+
+  describe('onBidWon', function () {
+    it('should make an ajax call', function () {
+      const bid = {
+        nurl: 'http://example.com/win',
+      };
+      expect(spec.onBidWon(bid)).to.equals(undefined);
+    });
+  })
 
   describe('getUserSyncs', function () {
     let userSync = spec.getUserSyncs();

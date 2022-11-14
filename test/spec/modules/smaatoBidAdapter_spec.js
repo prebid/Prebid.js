@@ -287,6 +287,23 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.regs.ext.us_privacy).to.equal('uspConsentString');
       });
 
+      it('sends no schain if no schain exists', () => {
+        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.ext.schain).to.not.exist;
+      });
+
+      it('sends instl if instl exists', () => {
+        const instl = { instl: 1 };
+        const bidRequestWithInstl = Object.assign({}, singleBannerBidRequest, {ortb2Imp: instl});
+
+        const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].instl).to.equal(1);
+      });
+
       it('sends tmax', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -435,6 +452,16 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.imp[0].bidfloor).to.be.equal(0.456);
       });
 
+      it('sends instl if instl exists', () => {
+        const instl = { instl: 1 };
+        const bidRequestWithInstl = Object.assign({}, singleVideoBidRequest, {ortb2Imp: instl});
+
+        const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].instl).to.equal(1);
+      });
+
       it('splits multi format bid requests', () => {
         const combinedBannerAndVideoBidRequest = {
           bidder: 'smaato',
@@ -514,6 +541,17 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[1].video.h).to.be.equal(H);
             expect(req.imp[1].video.maxduration).to.be.equal(DURATION_RANGE[1]);
             expect(req.imp[1].video.sequence).to.be.equal(2);
+          });
+
+          it('sends instl if instl exists', () => {
+            const instl = { instl: 1 };
+            const bidRequestWithInstl = Object.assign({}, longFormVideoBidRequest, {ortb2Imp: instl});
+
+            const reqs = spec.buildRequests([bidRequestWithInstl], defaultBidderRequest);
+
+            const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+            expect(req.imp[0].instl).to.equal(1);
+            expect(req.imp[1].instl).to.equal(1);
           });
 
           it('sends bidfloor when configured', () => {
@@ -852,6 +890,29 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.ext.eids).to.exist;
         expect(req.user.ext.eids).to.have.length(2);
+      });
+    });
+
+    describe('schain in request', () => {
+      it('schain is added to source.ext.schain', () => {
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'asi',
+              'sid': 'sid',
+              'rid': 'rid',
+              'hp': 1
+            }
+          ]
+        };
+        const bidRequestWithSchain = Object.assign({}, singleBannerBidRequest, {schain: schain});
+
+        const reqs = spec.buildRequests([bidRequestWithSchain], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.source.ext.schain).to.deep.equal(schain);
       });
     });
   });

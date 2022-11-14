@@ -47,8 +47,7 @@ $$PREBID_GLOBAL$$.libLoaded = true;
 $$PREBID_GLOBAL$$.version = 'v$prebid.version$';
 logInfo('Prebid.js v$prebid.version$ loaded');
 
-// modules list generated from build
-$$PREBID_GLOBAL$$.installedModules = ['v$prebid.modulesList$'];
+$$PREBID_GLOBAL$$.installedModules = $$PREBID_GLOBAL$$.installedModules || [];
 
 // create adUnit array
 $$PREBID_GLOBAL$$.adUnits = $$PREBID_GLOBAL$$.adUnits || [];
@@ -463,8 +462,6 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
           const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
           const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          // It is important that the comment with metadata is injected before the ad is actually rendered,
-          // so the creativeId can be used by e.g. ad quality scanners to check against blocking rules
           insertElement(creativeComment, doc, 'html');
 
           if (isRendererRequired(renderer)) {
@@ -918,6 +915,8 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  */
 $$PREBID_GLOBAL$$.getConfig = config.getConfig;
 $$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
+$$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.

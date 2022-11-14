@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
-const ADAPTER_VERSION = '1.0.1';
+const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -357,6 +357,10 @@ function appendImpObject(bid, openRtbObject) {
 
     if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
+    };
+
+    if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl) && (bid.ortb2Imp.instl === 1)) {
+      impObject.instl = bid.ortb2Imp.instl;
     };
 
     if (getPubIdMode(bid) === false) {

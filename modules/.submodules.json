@@ -35,7 +35,8 @@
     "uid2IdSystem",
     "unifiedIdSystem",
     "verizonMediaIdSystem",
-    "zeotapIdPlusIdSystem"
+    "zeotapIdPlusIdSystem",
+    "adqueryIdSystem"
   ],
   "adpod": [
     "freeWheelAdserverVideo",

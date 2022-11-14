@@ -141,7 +141,7 @@ import { createEidsArray, buildEidPermissions } from './eids.js';
 import { getCoreStorageManager } from '../../src/storageManager.js';
 import {
   getPrebidInternal, isPlainObject, logError, isArray, cyrb53Hash, deepAccess, timestamp, delayExecution, logInfo, isFn,
-  logWarn, isEmptyStr, isNumber
+  logWarn, isEmptyStr, isNumber, isGptPubadsDefined
 } from '../../src/utils.js';
 import includes from 'core-js-pure/features/array/includes.js';
 
@@ -183,6 +183,9 @@ export let syncDelay;
 
 /** @type {(number|undefined)} */
 export let auctionDelay;
+
+/** @type {(string|undefined)} */
+let ppidSource;
 
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
@@ -557,6 +560,26 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
   initializeSubmodulesAndExecuteCallbacks(function () {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
+
+    // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
+    const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+    if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
+      const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
+      if (ppidValue.length >= 32 && ppidValue.length <= 150) {
+        if (isGptPubadsDefined()) {
+          window.googletag.pubads().setPublisherProvidedId(ppidValue);
+        } else {
+          window.googletag = window.googletag || {};
+          window.googletag.cmd = window.googletag.cmd || [];
+          window.googletag.cmd.push(function() {
+            window.googletag.pubads().setPublisherProvidedId(ppidValue);
+          });
+        }
+      } else {
+        logWarn(`User ID - Googletag Publisher Provided ID for ${ppidSource} is not between 32 and 150 characters - ${ppidValue}`);
+      }
+    }
+
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
   });
@@ -817,6 +840,7 @@ export function attachIdSystem(submodule) {
  * @param {{getConfig:function}} config
  */
 export function init(config) {
+  ppidSource = undefined;
   submodules = [];
   configRegistry = [];
   addedUserIdHook = false;
@@ -839,9 +863,10 @@ export function init(config) {
   }
 
   // listen for config userSyncs to be set
-  config.getConfig(conf => {
+  config.getConfig('userSync', conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
     const userSync = conf.userSync;
+    ppidSource = userSync.ppid;
     if (userSync && userSync.userIds) {
       configRegistry = userSync.userIds;
       syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;

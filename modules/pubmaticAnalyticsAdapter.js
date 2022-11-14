@@ -200,6 +200,21 @@ function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
 }
 
+function getAdDomain(bidResponse) {
+  if (bidResponse.meta && bidResponse.meta.advertiserDomains) {
+    let adomain = bidResponse.meta.advertiserDomains[0]
+    if (adomain) {
+      try {
+        let hostname = (new URL(adomain));
+        return hostname.hostname.replace('www.', '');
+      } catch (e) {
+        logWarn(LOG_PRE_FIX + 'Adomain URL (Not a proper URL):', adomain);
+        return adomain.replace('www.', '');
+      }
+    }
+  }
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
@@ -218,6 +233,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
       'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
       'l2': 0,
+      'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
       'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
       't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
       'wb': (highestBid && highestBid.requestId === bid.bidId ? 1 : 0),

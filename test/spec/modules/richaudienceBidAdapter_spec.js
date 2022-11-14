@@ -791,6 +791,46 @@ describe('Richaudience adapter tests', function () {
     })).to.equal(true);
   });
 
+  it('should pass schain', function() {
+    let schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [{
+        'asi': 'richaudience.com',
+        'sid': '00001',
+        'hp': 1
+      }, {
+        'asi': 'richaudience-2.com',
+        'sid': '00002',
+        'hp': 1
+      }]
+    }
+
+    DEFAULT_PARAMS_NEW_SIZES[0].schain = {
+      'ver': '1.0',
+      'complete': 1,
+      'nodes': [{
+        'asi': 'richaudience.com',
+        'sid': '00001',
+        'hp': 1
+      }, {
+        'asi': 'richaudience-2.com',
+        'sid': '00002',
+        'hp': 1
+      }]
+    }
+
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('schain').to.deep.equal(schain);
+  })
+
   describe('userSync', function () {
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
@@ -905,7 +945,7 @@ describe('Richaudience adapter tests', function () {
       }, [], {
         consentString: null,
         referer: 'http://domain.com',
-        gdprApplies: true
+        gdprApplies: false
       })
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
@@ -942,7 +982,7 @@ describe('Richaudience adapter tests', function () {
       }, [], {
         consentString: null,
         referer: 'http://domain.com',
-        gdprApplies: true
+        gdprApplies: false
       })
       expect(syncs).to.have.lengthOf(0);
     });

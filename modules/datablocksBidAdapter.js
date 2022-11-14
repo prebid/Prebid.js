@@ -94,7 +94,7 @@ export const spec = {
   code: 'datablocks',
 
   // DATABLOCKS SCOPED OBJECT
-  db_obj: {metrics_host: 'prebid.datablocks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
+  db_obj: {metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
@@ -388,12 +388,12 @@ export const spec = {
     };
 
     let sourceId = validRequests[0].params.source_id || 0;
-    let host = validRequests[0].params.host || 'prebid.datablocks.net';
+    let host = validRequests[0].params.host || 'prebid.dblks.net';
 
     // RETURN WITH THE REQUEST AND PAYLOAD
     return {
       method: 'POST',
-      url: `https://${sourceId}.${host}/openrtb/?sid=${sourceId}`,
+      url: `https://${host}/openrtb/?sid=${sourceId}`,
       data: {
         id: bidderRequest.auctionId,
         imp: imps,
