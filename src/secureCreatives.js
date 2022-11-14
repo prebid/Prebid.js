@@ -27,6 +27,24 @@ export function listenMessagesFromCreative() {
   window.addEventListener('message', receiveMessage, false);
 }
 
+export function getReplier(ev) {
+  if (ev.origin == null && ev.ports.length === 0) {
+    return function () {
+      const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870'
+      logError(msg)
+      throw new Error(msg);
+    }
+  } else if (ev.ports.length > 0) {
+    return function (message) {
+      ev.ports[0].postMessage(JSON.stringify(message));
+    }
+  } else {
+    return function (message) {
+      ev.source.postMessage(JSON.stringify(message), ev.origin);
+    }
+  }
+}
+
 export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
@@ -41,12 +59,12 @@ export function receiveMessage(ev) {
       return bid.adId === data.adId;
     });
     if (HANDLER_MAP.hasOwnProperty(data.message)) {
-      HANDLER_MAP[data.message](ev, data, adObject);
+      HANDLER_MAP[data.message](getReplier(ev), data, adObject);
     }
   }
 }
 
-function handleRenderRequest(ev, data, adObject) {
+function handleRenderRequest(reply, data, adObject) {
   if (adObject == null) {
     emitAdRenderFail({
       reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
@@ -64,7 +82,7 @@ function handleRenderRequest(ev, data, adObject) {
   }
 
   try {
-    _sendAdToCreative(adObject, ev);
+    _sendAdToCreative(adObject, reply);
   } catch (e) {
     emitAdRenderFail({
       reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -81,7 +99,7 @@ function handleRenderRequest(ev, data, adObject) {
   events.emit(BID_WON, adObject);
 }
 
-function handleNativeRequest(ev, data, adObject) {
+function handleNativeRequest(reply, data, adObject) {
   // handle this script from native template in an ad server
   // window.parent.postMessage(JSON.stringify({
   //   message: 'Prebid Native',
@@ -111,13 +129,9 @@ function handleNativeRequest(ev, data, adObject) {
       auctionManager.addWinningBid(adObject);
       events.emit(BID_WON, adObject);
   }
-
-  function reply(message) {
-    ev.source.postMessage(JSON.stringify(message), ev.origin);
-  }
 }
 
-function handleEventRequest(ev, data, adObject) {
+function handleEventRequest(reply, data, adObject) {
   if (adObject == null) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
@@ -147,21 +161,21 @@ function handleEventRequest(ev, data, adObject) {
   }
 }
 
-export function _sendAdToCreative(adObject, ev) {
+export function _sendAdToCreative(adObject, reply) {
   const { adId, ad, adUrl, width, height, renderer, cpm } = adObject;
   // rendering for outstream safeframe
   if (isRendererRequired(renderer)) {
     executeRenderer(renderer, adObject);
   } else if (adId) {
     resizeRemoteCreative(adObject);
-    ev.source.postMessage(JSON.stringify({
+    reply({
       message: 'Prebid Response',
       ad: replaceAuctionPrice(ad, cpm),
       adUrl: replaceAuctionPrice(adUrl, cpm),
       adId,
       width,
       height
-    }), ev.origin);
+    });
   }
 }
 

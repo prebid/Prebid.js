@@ -1,5 +1,5 @@
 import {
-  _sendAdToCreative, receiveMessage
+  _sendAdToCreative, getReplier, receiveMessage
 } from 'src/secureCreatives.js';
 import * as secureCreatives from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
@@ -17,6 +17,44 @@ import { expect } from 'chai';
 var CONSTANTS = require('src/constants.json');
 
 describe('secureCreatives', () => {
+  function makeEvent(ev) {
+    return Object.assign({origin: 'mock-origin', ports: []}, ev)
+  }
+
+  describe('getReplier', () => {
+    it('should use source.postMessage if no MessagePort is available', () => {
+      const ev = {
+        ports: [],
+        source: {
+          postMessage: sinon.spy()
+        },
+        origin: 'mock-origin'
+      };
+      getReplier(ev)('test');
+      sinon.assert.calledWith(ev.source.postMessage, JSON.stringify('test'));
+    });
+
+    it('should use MesagePort.postMessage if available', () => {
+      const ev = {
+        ports: [{
+          postMessage: sinon.spy()
+        }]
+      }
+      getReplier(ev)('test');
+      sinon.assert.calledWith(ev.ports[0].postMessage, JSON.stringify('test'));
+    });
+
+    it('should throw if origin is null and no MessagePort is available', () => {
+      const ev = {
+        origin: null,
+        ports: [],
+        postMessage: sinon.spy()
+      }
+      const reply = getReplier(ev);
+      expect(() => reply('test')).to.throw();
+    });
+  });
+
   describe('_sendAdToCreative', () => {
     beforeEach(function () {
       sinon.stub(utils, 'logError');
@@ -42,14 +80,10 @@ describe('secureCreatives', () => {
         cpm: '1.00',
         adUnitCode: 'some_dom_id'
       };
-      const event = {
-        source: { postMessage: sinon.stub() },
-        origin: 'origin.sf.com'
-      };
-
-      _sendAdToCreative(mockAdObject, event);
-      expect(JSON.parse(event.source.postMessage.args[0][0]).ad).to.equal('<script src="http://prebid.org/creative/1.00"></script>');
-      expect(JSON.parse(event.source.postMessage.args[0][0]).adUrl).to.equal('http://creative.prebid.org/1.00');
+      const reply = sinon.spy();
+      _sendAdToCreative(mockAdObject, reply);
+      expect(reply.args[0][0].ad).to.equal('<script src="http://prebid.org/creative/1.00"></script>');
+      expect(reply.args[0][0].adUrl).to.equal('http://creative.prebid.org/1.00');
       window.googletag = oldVal;
       window.apntag = oldapntag;
     });
@@ -143,9 +177,9 @@ describe('secureCreatives', () => {
           message: 'Prebid Request'
         };
 
-        const ev = {
-          data: JSON.stringify(data)
-        };
+        const ev = makeEvent({
+          data: JSON.stringify(data),
+        });
 
         receiveMessage(ev);
 
@@ -170,9 +204,9 @@ describe('secureCreatives', () => {
           message: 'Prebid Request'
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data)
-        };
+        });
 
         receiveMessage(ev);
 
@@ -211,9 +245,9 @@ describe('secureCreatives', () => {
           message: 'Prebid Request'
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data)
-        };
+        });
 
         receiveMessage(ev);
 
@@ -241,12 +275,12 @@ describe('secureCreatives', () => {
       });
 
       it('should emit AD_RENDER_FAILED if requested missing adId', () => {
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify({
             message: 'Prebid Request',
             adId: 'missing'
           })
-        };
+        });
         receiveMessage(ev);
         sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
           reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
@@ -256,7 +290,7 @@ describe('secureCreatives', () => {
 
       it('should emit AD_RENDER_FAILED if creative can\'t be sent to rendering frame', () => {
         pushBidResponseToAuction({});
-        const ev = {
+        const ev = makeEvent({
           source: {
             postMessage: sinon.stub().callsFake(() => { throw new Error(); })
           },
@@ -264,7 +298,7 @@ describe('secureCreatives', () => {
             message: 'Prebid Request',
             adId: bidId
           })
-        }
+        });
         receiveMessage(ev)
         sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
           reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -283,13 +317,13 @@ describe('secureCreatives', () => {
           action: 'allAssetRequest'
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data),
           source: {
             postMessage: sinon.stub()
           },
           origin: 'any origin'
-        };
+        });
 
         receiveMessage(ev);
 
@@ -312,13 +346,13 @@ describe('secureCreatives', () => {
           action: 'allAssetRequest'
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data),
           source: {
             postMessage: sinon.stub()
           },
           origin: 'any origin'
-        };
+        });
 
         receiveMessage(ev);
 
@@ -356,13 +390,13 @@ describe('secureCreatives', () => {
           action: 'allAssetRequest'
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data),
           source: {
             postMessage: sinon.stub()
           },
           origin: 'any origin'
-        };
+        });
 
         receiveMessage(ev);
 
@@ -400,13 +434,13 @@ describe('secureCreatives', () => {
           action: 'click',
         };
 
-        const ev = {
+        const ev = makeEvent({
           data: JSON.stringify(data),
           source: {
             postMessage: sinon.stub()
           },
           origin: 'any origin'
-        };
+        });
 
         receiveMessage(ev);
 
@@ -442,7 +476,7 @@ describe('secureCreatives', () => {
           });
 
           it(`should${shouldEmit ? ' ' : ' not '}emit AD_RENDER_FAILED`, () => {
-            const event = {
+            const event = makeEvent({
               data: JSON.stringify({
                 message: 'Prebid Event',
                 event: CONSTANTS.EVENTS.AD_RENDER_FAILED,
@@ -452,7 +486,7 @@ describe('secureCreatives', () => {
                   message: 'Fail message',
                 },
               })
-            };
+            });
             receiveMessage(event);
             expect(stubEmit.calledWith(CONSTANTS.EVENTS.AD_RENDER_FAILED, {
               adId: bidId,
@@ -463,13 +497,13 @@ describe('secureCreatives', () => {
           });
 
           it(`should${shouldEmit ? ' ' : ' not '}emit AD_RENDER_SUCCEEDED`, () => {
-            const event = {
+            const event = makeEvent({
               data: JSON.stringify({
                 message: 'Prebid Event',
                 event: CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED,
                 adId: bidId,
               })
-            };
+            });
             receiveMessage(event);
             expect(stubEmit.calledWith(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, {
               adId: bidId,

@@ -3,7 +3,9 @@ import {
   auctionCallbacks,
   AUCTION_COMPLETED,
   adjustBids,
-  getMediaTypeGranularity, addBidResponse,
+  getMediaTypeGranularity,
+  getPriceByGranularity,
+  addBidResponse
 } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
 import * as auctionModule from 'src/auction.js';
@@ -1279,6 +1281,36 @@ describe('auctionmanager.js', function () {
       })).to.equal('high');
     });
   });
+
+  describe('getPriceByGranularity', () => {
+    beforeEach(() => {
+      config.setConfig({
+        mediaTypePriceGranularity: {
+          video: 'medium',
+          banner: 'low'
+        }
+      });
+    })
+
+    afterEach(() => {
+      config.resetConfig();
+    })
+
+    it('evaluates undef granularity on each call', () => {
+      const gpbg = getPriceByGranularity();
+      expect(gpbg({
+        mediaType: 'video', pbMg: 'medium'
+      }, {
+        'mediaTypes': {video: {id: '1'}}
+      })).to.equal('medium');
+      expect(gpbg({
+        mediaType: 'banner',
+        pbLg: 'low'
+      }, {
+        'mediaTypes': {banner: {}}
+      })).to.equal('low');
+    });
+  })
 
   describe('auctionCallbacks', function() {
     let bids = TEST_BIDS;
