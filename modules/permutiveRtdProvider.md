@@ -45,16 +45,51 @@ as well as enabling settings for specific use cases mentioned above (e.g. acbidd
 | params.acBidders       | String[] | An array of bidders which should receive AC cohorts.                                          | `[]`    |
 | params.maxSegs         | Integer  | Maximum number of cohorts to be included in either the `permutive` or `p_standard` key-value. | `500`   |
 | params.transformations | Object[] | An array of configurations for ORTB2 user data transformations                                |         |
+| params.overwrites      | Object   | An object specifying functions for custom targeting logic for bidders.                        | -       |
 
 ##### The `transformations` parameter
 
 This array contains configurations for transformations we'll apply to the Permutive object in the ORTB2 `user.data` array. The results of these transformations will be appended to the `user.data` array that's attached to ORTB2 bid requests.
 
-##### Supported transformations
+###### Supported transformations
 
 | Name           | ID  | Config structure                                  | Description                                                                          |
 |----------------|-----|---------------------------------------------------|--------------------------------------------------------------------------------------|
 | IAB taxonomies | iab | { segtax: number, iabIds: Object<number, number>} | Transform segment IDs from Permutive to IAB (note: alpha version, subject to change) |
+
+##### The `overwrites` parameter
+
+The keys for this object should match a bidder (e.g. `rubicon`), which then can define a function to overwrite the customer targeting logic.
+
+```javascript
+{
+  params: {
+    overwrites: {
+      rubicon: function customTargeting(bid, data, acEnabled, utils, defaultFn) {
+        if (defaultFn) {
+          bid = defaultFn(bid, data, acEnabled)
+        }
+        if (data.gam && data.gam.length) {
+          utils.deepSetValue(bid, 'params.visitor.permutive', data.gam)
+        }
+      } 
+    }
+  }
+}
+```
+
+###### `customTargeting` function parameters
+
+| Name         | Description                                                                    |
+|--------------|--------------------------------------------------------------------------------|
+| `bid`        | The bid request object.                                                        |
+| `data`       | Permutive's targeting data read from localStorage.                             |
+| `acEnabled`  | Boolean stating whether Audience Connect is enabled via `acBidders`.           |
+| `utils`      | An object of helpful utilities. `(deepSetValue, deepAccess, isFn, mergeDeep)`. |
+| `defaultFn`  | The default targeting function.                                                |
+
+
+
 
 #### Context
 

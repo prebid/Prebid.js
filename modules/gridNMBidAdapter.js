@@ -34,8 +34,6 @@ const LOG_ERROR_MESS = {
   hasNoArrayOfBids: 'Seatbid from response has no array of bid objects - '
 };
 
-const VIDEO_KEYS = ['mimes', 'protocols', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [ VIDEO ],
@@ -105,7 +103,7 @@ export const spec = {
       const impObj = {
         id: bidId.toString(),
         tagid: secid.toString(),
-        video: createVideoForImp(video, sizes, mediaTypes && mediaTypes.video),
+        video: createVideoForImp(mergeDeep({}, video, mediaTypes && mediaTypes.video), sizes),
         ext: {
           divid: adUnitCode.toString()
         }
@@ -208,7 +206,7 @@ export const spec = {
           ext: {
             gdpr: gdprConsent.gdprApplies ? 1 : 0
           }
-        }
+        };
       }
 
       if (uspConsent) {
@@ -386,13 +384,7 @@ function createRenderer (bid, rendererParams) {
   return renderer;
 }
 
-function createVideoForImp({ mind, maxd, size, ...paramsVideo }, bidSizes, bidVideo = {}) {
-  VIDEO_KEYS.forEach((key) => {
-    if (!(key in paramsVideo) && key in bidVideo) {
-      paramsVideo[key] = bidVideo[key];
-    }
-  });
-
+function createVideoForImp({ mind, maxd, size, ...paramsVideo }, bidSizes) {
   if (size && isStr(size)) {
     const sizeArray = size.split('x');
     if (sizeArray.length === 2 && parseInt(sizeArray[0]) && parseInt(sizeArray[1])) {
@@ -402,7 +394,7 @@ function createVideoForImp({ mind, maxd, size, ...paramsVideo }, bidSizes, bidVi
   }
 
   if (!paramsVideo.w || !paramsVideo.h) {
-    const playerSizes = bidVideo.playerSize && bidVideo.playerSize.length === 2 ? bidVideo.playerSize : bidSizes;
+    const playerSizes = paramsVideo.playerSize && paramsVideo.playerSize.length === 2 ? paramsVideo.playerSize : bidSizes;
     if (playerSizes) {
       const playerSize = playerSizes[0];
       if (playerSize) {
@@ -411,9 +403,13 @@ function createVideoForImp({ mind, maxd, size, ...paramsVideo }, bidSizes, bidVi
     }
   }
 
-  const durationRangeSec = bidVideo.durationRangeSec || [];
-  const minDur = mind || durationRangeSec[0] || bidVideo.minduration;
-  const maxDur = maxd || durationRangeSec[1] || bidVideo.maxduration;
+  if (paramsVideo.playerSize) {
+    delete paramsVideo.playerSize;
+  }
+
+  const durationRangeSec = paramsVideo.durationRangeSec || [];
+  const minDur = mind || durationRangeSec[0] || paramsVideo.minduration;
+  const maxDur = maxd || durationRangeSec[1] || paramsVideo.maxduration;
 
   if (minDur) {
     paramsVideo.minduration = minDur;
