@@ -1,6 +1,6 @@
 'use strict';
 
-import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray, inIframe } from '../src/utils.js';
+import { logWarn, deepAccess, isFn, isPlainObject, getDNT, isBoolean, isNumber, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -308,7 +308,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     h = bannerMediaType.sizes[0][1];
     banner.w = w;
     banner.h = h;
-    banner.topframe = inIframe() ? 0 : 1;
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
