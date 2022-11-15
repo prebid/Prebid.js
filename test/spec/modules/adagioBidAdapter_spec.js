@@ -400,7 +400,7 @@ describe('Adagio bid adapter', () => {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: [3],
+            placement: 3,
             protocols: [8]
           }
         }).build();
@@ -415,7 +415,7 @@ describe('Adagio bid adapter', () => {
           skipafter: 4,
           minduration: 10,
           maxduration: 30,
-          placement: [3],
+          placement: 3,
           protocols: [8],
           w: 300,
           h: 250
