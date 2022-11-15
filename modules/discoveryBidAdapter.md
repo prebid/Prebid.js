@@ -7,7 +7,7 @@ Module Type: Bidder Adapter
 
 # Description
 
-Module that connects to popIn's demand sources
+Module that connects to popIn's demand sources.
 
 The discovery Bidding adapter requires setup before beginning. Please contact us at <media-support@popin.cc>
 
