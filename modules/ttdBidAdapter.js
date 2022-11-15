@@ -132,14 +132,15 @@ function getUser(bidderRequest) {
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = {
+  var site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
     ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
-    ...firstPartyData.site
-  };
+  },
+  firstPartyData.site
+  );
 
   var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
