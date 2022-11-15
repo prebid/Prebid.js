@@ -14,6 +14,12 @@ import { config } from './config.js';
 import {auctionManager} from './auctionManager.js';
 
 /**
+ * Might be useful to be configurable in the future
+ * Depending on publisher needs
+ */
+const ttlBufferInSeconds = 15;
+
+/**
  * @typedef {object} CacheableUrlBid
  * @property {string} vastUrl A URL which loads some valid VAST XML.
  */
@@ -67,10 +73,11 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   if (window && window.PWT) {
     vastValue = window.PWT.UpdateVastWithTracker(bid, vastValue);
   }
+  const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
     type: 'xml',
     value: vastValue,
-    ttlseconds: Number(bid.ttl)
+    ttlseconds: ttlWithBuffer
   };
 
   if (config.getConfig('cache.vasttrack')) {

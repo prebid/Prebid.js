@@ -1,5 +1,5 @@
 import { _each, pick, logWarn, isStr, isArray, logError, isFn } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
@@ -109,8 +109,7 @@ function copyRequiredBidDetails(bid) {
 }
 
 function setBidStatus(bid, args) {
-	if(bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR)
-    return;
+  if (bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR) { return; }
   switch (args.getStatusCode()) {
     case CONSTANTS.STATUS.GOOD:
       bid.status = SUCCESS;
@@ -255,7 +254,7 @@ function getAdDomain(bidResponse) {
 }
 
 function isObject(object) {
-  return typeof object === "object" && object !== null;
+  return typeof object === 'object' && object !== null;
 };
 
 function isEmptyObject(object) {
@@ -264,7 +263,7 @@ function isEmptyObject(object) {
 
 /**
  * Prepare meta object to pass in logger call
- * @param {*} meta 
+ * @param {*} meta
  */
 function getMetadata(meta) {
   if (!meta || isEmptyObject(meta)) return;
@@ -282,7 +281,7 @@ function getMetadata(meta) {
   if (meta.demandSource) metaObj.ds = meta.demandSource;
   if (meta.secondaryCatIds) metaObj.scids = meta.secondaryCatIds;
 
-  if(isEmptyObject(metaObj)) return;
+  if (isEmptyObject(metaObj)) return;
   return metaObj;
 }
 
@@ -317,7 +316,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
         'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
-        });
+      });
     });
     return partnerBids;
   }, [])
@@ -478,7 +477,7 @@ function auctionInitHandler(args) {
   cacheEntry.adUnitCodes = {};
   cacheEntry.origAdUnits = args.adUnits;
   cacheEntry.floorData = {};
-  cacheEntry.referer = args.bidderRequests[0].refererInfo.referer;
+  cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
   cache.auctions[args.auctionId] = cacheEntry;
 }
 
@@ -505,9 +504,9 @@ function bidResponseHandler(args) {
     return;
   }
 
-  if (bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) {
+  if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
     bid = copyRequiredBidDetails(args);
-    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid)
+    cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
   }
 
   if (args.floorData) {

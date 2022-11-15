@@ -62,21 +62,21 @@ describe('SmartyadsAdapter', function () {
     });
   });
 
-  describe('with COPPA', function() {
-    beforeEach(function() {
-      sinon.stub(config, 'getConfig')
-        .withArgs('coppa')
-        .returns(true);
-    });
-    afterEach(function() {
-      config.getConfig.restore();
-    });
+  // describe('with COPPA', function() {
+  //   beforeEach(function() {
+  //     sinon.stub(config, 'getConfig')
+  //       .withArgs('coppa')
+  //       .returns(true);
+  //   });
+  //   afterEach(function() {
+  //     config.getConfig.restore();
+  //   });
 
-    it('should send the Coppa "required" flag set to "1" in the request', function () {
-      let serverRequest = spec.buildRequests([bid]);
-      expect(serverRequest.data.coppa).to.equal(1);
-    });
-  });
+  //   it('should send the Coppa "required" flag set to "1" in the request', function () {
+  //     let serverRequest = spec.buildRequests([bid]);
+  //     expect(serverRequest.data.coppa).to.equal(1);
+  //   });
+  // });
 
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {

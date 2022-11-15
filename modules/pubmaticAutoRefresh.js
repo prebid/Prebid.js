@@ -29,6 +29,7 @@ let beforeRequestBidsHandlerAdded = false;
 let pbjsAuctionTimeoutFromLastAuction;
 let excludedGptSlotNames = {};
 let pbjsAdUnits = {};
+let PWT = window.PWT || {};
 
 let pbjsSetup = {
   callbackFunction: function(gptSlotName, gptSlot, pbjsAdUnit, KeyValuePairs) {

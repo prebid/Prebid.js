@@ -109,6 +109,7 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | :------------ | :------------ | :------------ |:------------ |
 | token | String | Security Token provided by Weborama, unique per client | Mandatory |
 | targetURL | String | Url to be profiled in the contextual api | Optional. Defaults to `document.URL` |
+| assetID | Function or String | if provided, we will call the document-profile api using this asset id. |Optional|
 | setPrebidTargeting|Various|If true, will use the contextual profile to set the prebid (GPT/GAM or AST) targeting of all adunits managed by prebid.js| Optional. Default is `params.setPrebidTargeting` (if any) or `true`.|
 | sendToBidders|Various|If true, will send the contextual profile to all bidders. If an array, will specify the bidders to send data| Optional. Default is `params.sendToBidders` (if any) or `true`.|
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
@@ -379,6 +380,37 @@ pbjs.que.push(function () {
                 }
             }]
         }
+    });
+});
+```
+
+An alternative version, using asset id instead of target url on contextual, can be found here:
+
+```javascript
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+pbjs.que.push(function () {
+    pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [{
+                name: "weborama",
+                waitForIt: true,
+                params: {
+                    weboCtxConf: {
+                        token: "<<to-be-defined>>", // mandatory
+                        assetID: "datasource:docId", // can be a callback to be executed in runtime and returns the identifier
+                        setPrebidTargeting: true, // override param.setPrebidTargeting. default is true
+                        sendToBidders: true,      // override param.sendToBidders. default is true
+                        defaultProfile: {         // optional, used if nothing is found
+                            webo_ctx: [ ... ],    // contextual segments
+                            webo_ds: [ ...],      // data science segments
+                        },
+                        enabled: true,
+                    },
+                    ...
     });
 });
 ```

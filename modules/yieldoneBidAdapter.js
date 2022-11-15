@@ -25,11 +25,14 @@ export const spec = {
       const params = bidRequest.params;
       const placementId = params.placementId;
       const cb = Math.floor(Math.random() * 99999999999);
-      const referrer = bidderRequest.refererInfo.referer;
+      // TODO: is 'page' the right value here?
+      const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
       const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
       const timeout = config.getConfig('bidderTimeout');
+      const language = window.navigator.language;
+      const screenSize = window.screen.width + 'x' + window.screen.height;
       const payload = {
         v: 'hb1',
         p: placementId,
@@ -39,7 +42,9 @@ export const spec = {
         tid: transactionId,
         uc: unitCode,
         tmax: timeout,
-        t: 'i'
+        t: 'i',
+        language: language,
+        screen_size: screenSize
       };
 
       const mediaType = getMediaType(bidRequest);
@@ -68,11 +73,27 @@ export const spec = {
         payload.imuid = imuid;
       }
 
+      // DACID
+      const fuuid = deepAccess(bidRequest, 'userId.dacId.fuuid');
+      const dacid = deepAccess(bidRequest, 'userId.dacId.id');
+      if (isStr(fuuid) && !isEmpty(fuuid)) {
+        payload.fuuid = fuuid;
+      }
+      if (isStr(dacid) && !isEmpty(dacid)) {
+        payload.dac_id = dacid;
+      }
+
+      // ID5
+      const id5id = deepAccess(bidRequest, 'userId.id5id.uid');
+      if (isStr(id5id) && !isEmpty(id5id)) {
+        payload.id5Id = id5id;
+      }
+
       return {
         method: 'GET',
         url: ENDPOINT_URL,
         data: payload,
-      }
+      };
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
@@ -194,7 +215,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
   }
 
   if (hasBannerType && hasVideoType) {
-    const playerParams = deepAccess(bidRequest, 'params.playerParams')
+    const playerParams = deepAccess(bidRequest, 'params.playerParams');
     if (playerParams) {
       return VIDEO;
     } else {

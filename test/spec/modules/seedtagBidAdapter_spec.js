@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { config } from '../../../src/config.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
@@ -196,7 +197,7 @@ describe('Seedtag Adapter', function () {
 
   describe('buildRequests method', function () {
     const bidderRequest = {
-      refererInfo: { referer: 'referer' },
+      refererInfo: { page: 'referer' },
       timeout: 1000,
     };
     const mandatoryParams = {
@@ -223,6 +224,7 @@ describe('Seedtag Adapter', function () {
     });
 
     it('Common data request should be correct', function () {
+      const now = Date.now();
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.url).to.equal('referer');
@@ -231,6 +233,9 @@ describe('Seedtag Adapter', function () {
       expect(
         ['fixed', 'mobile', 'unknown'].indexOf(data.connectionType)
       ).to.be.above(-1);
+      expect(data.auctionStart).to.be.greaterThanOrEqual(now);
+      expect(data.ttfb).to.be.greaterThanOrEqual(0);
+
       expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
     });
 
@@ -288,6 +293,31 @@ describe('Seedtag Adapter', function () {
         it('should expose gvlid', function () {
           expect(spec.gvlid).to.equal(157);
         });
+        it('should handle uspConsent', function () {
+          const uspConsent = '1---';
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.exist;
+          expect(payload.uspConsent).to.equal(uspConsent);
+        });
+
+        it("shouldn't send uspConsent when not available", function () {
+          const uspConsent = undefined;
+
+          bidderRequest['uspConsent'] = uspConsent;
+
+          const request = spec.buildRequests(
+            validBidRequests,
+            bidderRequest
+          );
+          const payload = JSON.parse(request.data);
+
+          expect(payload.uspConsent).to.not.exist;
+        });
       });
     });
 
@@ -325,6 +355,71 @@ describe('Seedtag Adapter', function () {
         expect(videoBid.sizes[1][0]).to.equal(300);
         expect(videoBid.sizes[1][1]).to.equal(600);
         expect(videoBid.requestCount).to.equal(1);
+      });
+    });
+
+    describe('COPPA param', function () {
+      xit('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
+        config.setConfig({ coppa: true })
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.equal(true);
+      })
+
+      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
+        config.setConfig({ coppa: false })
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      })
+
+      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      })
+    })
+    describe('schain param', function () {
+      it('should add schain to payload when exposed on validBidRequest', function () {
+        // https://github.com/prebid/Prebid.js/blob/master/modules/schain.md#sample-code-for-passing-the-schain-object
+        const schain = {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'indirectseller.com',
+              sid: '00001',
+              hp: 1,
+            },
+
+            {
+              asi: 'indirectseller-2.com',
+              sid: '00002',
+              hp: 1,
+            },
+          ],
+        };
+
+        // duplicate
+        const bidRequests = JSON.parse(JSON.stringify(validBidRequests));
+        bidRequests[0].schain = schain;
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.exist;
+        expect(payload.schain).to.deep.equal(schain);
+      });
+
+      it("shouldn't add schain to payload when not exposed", function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+
+        const payload = JSON.parse(request.data);
+
+        expect(payload.schain).to.not.exist;
       });
     });
   });
@@ -465,11 +560,11 @@ describe('Seedtag Adapter', function () {
       const timeoutUrl = getTimeoutUrl(timeoutData);
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-          params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
-          '&timeout=' +
-          timeout
+        params.publisherId +
+        '&adUnitId=' +
+        params.adUnitId +
+        '&timeout=' +
+        timeout
       );
     });
 
@@ -481,11 +576,11 @@ describe('Seedtag Adapter', function () {
       expect(
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-            params.publisherId +
-            '&adUnitId=' +
-            params.adUnitId +
-            '&timeout=' +
-            timeout
+          params.publisherId +
+          '&adUnitId=' +
+          params.adUnitId +
+          '&timeout=' +
+          timeout
         )
       ).to.equal(true);
     });

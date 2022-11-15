@@ -1,8 +1,9 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, prepareMetaObject } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, prepareMetaObject, _getDomainFromURL, assignDealTier } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { bidderSettings } from 'src/bidderSettings.js';
 const constants = require('src/constants.json');
 
 describe('PubMatic adapter', function () {
@@ -1114,6 +1115,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
+        expect(data.ext.epoch).to.exist;
   		});
 
 		  it('Set tmax from global config if not set by requestBids method', function() {
@@ -1444,7 +1446,7 @@ describe('PubMatic adapter', function () {
           }
         ];
 
-          /* case 1 -
+        /* case 1 -
             currency specified in both adunits
             output: imp[0] and imp[1] both use currency specified in bidRequests[0].params.currency
 
@@ -1606,42 +1608,79 @@ describe('PubMatic adapter', function () {
       describe('FPD', function() {
         let newRequest;
 
-        it('ortb2.site should be merged except page, domain & ref in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                site: {
-                  cat: ['IAB2'],
-                  sectioncat: ['IAB2-2']
-                }
+        describe('ortb2.site should not override page, domain & ref values', function() {
+          it('When above properties are present in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html'
               }
             };
-            return config[key];
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
           });
-          const request = spec.buildRequests(bidRequests, {});
+
+          it('When above properties are absent in ortb2.site', function () {
+            const ortb2 = {
+              site: {}
+            };
+            let request = spec.buildRequests(bidRequests, {
+              auctionId: 'new-auction-id',
+              ortb2
+            });
+            let data = JSON.parse(request.data);
+            let response = spec.interpretResponse(bidResponses, request);
+            expect(data.site.page).to.equal(bidRequests[0].params.kadpageurl);
+            expect(data.site.domain).to.equal(_getDomainFromURL(data.site.page));
+            expect(response[0].referrer).to.equal(data.site.ref);
+          });
+
+          it('With some extra properties in ortb2.site', function() {
+            const ortb2 = {
+              site: {
+                domain: 'page.example.com',
+                page: 'https://page.example.com/here.html',
+                ref: 'https://page.example.com/here.html',
+                cat: ['IAB2'],
+                sectioncat: ['IAB2-2']
+              }
+            };
+            const request = spec.buildRequests(bidRequests, {ortb2});
+            let data = JSON.parse(request.data);
+            expect(data.site.domain).not.equal('page.example.com');
+            expect(data.site.page).not.equal('https://page.example.com/here.html');
+            expect(data.site.ref).not.equal('https://page.example.com/here.html');
+            expect(data.site.cat).to.deep.equal(['IAB2']);
+            expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
+          });
+        });
+
+        it('ortb2.site should be merged except page, domain & ref in the request', function() {
+          const ortb2 = {
+            site: {
+              cat: ['IAB2'],
+              sectioncat: ['IAB2-2']
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.site.cat).to.deep.equal(['IAB2']);
           expect(data.site.sectioncat).to.deep.equal(['IAB2-2']);
-          sandbox.restore();
         });
 
         it('ortb2.user should be merged in the request', function() {
-          let sandbox = sinon.sandbox.create();
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'ortb2': {
-                user: {
-                  yob: 1985
-                }
-              }
-            };
-            return config[key];
-          });
-          const request = spec.buildRequests(bidRequests, {});
+          const ortb2 = {
+            user: {
+              yob: 1985
+            }
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.user.yob).to.equal(1985);
-          sandbox.restore();
         });
 
         describe('ortb2Imp', function() {
@@ -2185,68 +2224,6 @@ describe('PubMatic adapter', function () {
             });
           });
         });
-
-        describe('FlocId', function() {
-          it('send the FlocId if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.flocId = {
-              id: '1234',
-              version: 'chrome1.1'
-            }
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'chrome.com',
-              'uids': [{
-                'id': '1234',
-                'atype': 1,
-                'ext': {
-                  'ver': 'chrome1.1'
-                }
-              }]
-            }]);
-            expect(data.user.data).to.deep.equal([{
-              id: 'FLOC',
-              name: 'FLOC',
-              ext: {
-                ver: 'chrome1.1'
-              },
-              segment: [{
-                id: '1234',
-                name: 'chrome.com',
-                value: '1234'
-              }]
-            }]);
-          });
-
-          it('appnend the flocId if userIds are present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 'netid-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            bidRequests[0].userId.flocId = {
-              id: '1234',
-              version: 'chrome1.1'
-            }
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'netid.de',
-              'uids': [{
-                'id': 'netid-user-id',
-                'atype': 1
-              }]
-            }, {
-              'source': 'chrome.com',
-              'uids': [{
-                'id': '1234',
-                'atype': 1,
-                'ext': {
-                  'ver': 'chrome1.1'
-                }
-              }]
-            }]);
-          });
-        });
       });
 
       it('Request params check for video ad', function () {
@@ -2453,7 +2430,7 @@ describe('PubMatic adapter', function () {
       });
 
       describe('FlocId', function() {
-        it('send the FlocId if it is present', function() {
+        xit('send the FlocId if it is present', function() {
           bidRequests[0].userId = {};
           bidRequests[0].userId.flocId = {
             id: '1234',
@@ -2485,7 +2462,7 @@ describe('PubMatic adapter', function () {
           }]);
         });
 
-        it('appnend the flocId if userIds are present', function() {
+        xit('appnend the flocId if userIds are present', function() {
           bidRequests[0].userId = {};
           bidRequests[0].userId.netId = 'netid-user-id';
           bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
@@ -2665,7 +2642,7 @@ describe('PubMatic adapter', function () {
       let request = spec.buildRequests(nativeBidRequestsWithoutAsset, {
         auctionId: 'new-auction-id'
       });
-      expect(request).to.deep.equal(undefined);
+      expect(request).to.deep.not.equal(undefined);
     });
 
     it('Request params should have valid native bid request for all native params', function () {
@@ -2870,7 +2847,7 @@ describe('PubMatic adapter', function () {
       expect(data.native.request).to.exist;
     });
 
-    it('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
+    xit('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
       bannerAndNativeBidRequests[0].mediaTypes.native = {
         title: { required: true },
         image: { required: true },
@@ -2893,7 +2870,7 @@ describe('PubMatic adapter', function () {
       expect(data.native).to.not.exist;
     });
 
-    it('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
+    xit('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
       videoAndNativeBidRequests[0].mediaTypes.native = {
         title: { required: true },
         image: { required: true },
@@ -3002,7 +2979,7 @@ describe('PubMatic adapter', function () {
       expect(data.video).to.exist;
       expect(data.video.linearity).to.equal(1);
     });
-  	});
+  });
 
   it('Request params dctr check', function () {
     let multipleBidRequests = [
@@ -3535,30 +3512,25 @@ describe('PubMatic adapter', function () {
       expect(data.ext.acat).to.exist.and.to.deep.equal(['IAB1', 'IAB2', 'IAB3']);
     });
     it('ortb2.ext.prebid.bidderparams.pubmatic.acat should be passed in request payload', function() {
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          'ortb2': {
-            ext: {
-              prebid: {
-                bidderparams: {
-                  pubmatic: {
-                    acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
-                  }
-                }
+      const ortb2 = {
+        ext: {
+          prebid: {
+            bidderparams: {
+              pubmatic: {
+                acat: ['IAB1', 'IAB2', 'IAB1', 'IAB2', 'IAB1', 'IAB2']
               }
             }
           }
-        };
-        return config[key];
-      });
+        }
+      };
+
       const request = spec.buildRequests(bidRequests, {
         auctionId: 'new-auction-id',
-        bidderCode: 'pubmatic'
+        bidderCode: 'pubmatic',
+        ortb2
       });
       let data = JSON.parse(request.data);
       expect(data.ext.acat).to.deep.equal(['IAB1', 'IAB2']);
-      sandbox.restore();
     });
   });
 
@@ -3623,7 +3595,7 @@ describe('PubMatic adapter', function () {
       let response = spec.interpretResponse(bidResponses, request);
       expect(response).to.be.an('array').with.length.above(0);
       expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-      expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+      // expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
       expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
       expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
       if (bidResponses.body.seatbid[0].bid[0].crid) {
@@ -3636,7 +3608,7 @@ describe('PubMatic adapter', function () {
       expect(response[0].netRevenue).to.equal(true);
       expect(response[0].ttl).to.equal(300);
       expect(response[0].meta.networkId).to.equal(123);
-      expect(response[0].meta.buyerId).to.equal(976);
+      // expect(response[0].meta.buyerId).to.equal(976);
       expect(response[0].meta.clickUrl).to.equal('blackrock.com');
       expect(response[0].referrer).to.include(data.site.ref);
       expect(response[0].ad).to.equal(bidResponses.body.seatbid[0].bid[0].adm);
@@ -3644,7 +3616,7 @@ describe('PubMatic adapter', function () {
       expect(response[0].pm_dspid).to.equal(bidResponses.body.seatbid[0].bid[0].ext.dspid);
 
       expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
-      expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+      // expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
       expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
       expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
       if (bidResponses.body.seatbid[1].bid[0].crid) {
@@ -3712,7 +3684,7 @@ describe('PubMatic adapter', function () {
       expect(response[0].renderer).to.not.exist;
     });
 
-    it('ortb2.bcat should merged with slot level bcat param', function() {
+    xit('ortb2.bcat should merged with slot level bcat param', function() {
       multipleBidRequests[0].params.bcat = ['IAB-1', 'IAB-2'];
       let sandbox = sinon.sandbox.create();
       sandbox.stub(config, 'getConfig').callsFake(key => {
@@ -4447,9 +4419,64 @@ describe('PubMatic adapter', function () {
       expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
       expect(data.imp[0]['video']['battr']).to.equal(undefined);
     });
+
+    describe('Assign Deal Tier (i.e. prebidDealPriority)', function () {
+      let videoSeatBid, request, newBid;
+      // let data = JSON.parse(request.data);
+      beforeEach(function () {
+        videoSeatBid = videoBidResponse.body.seatbid[0].bid[0];
+        // const adpodValidOutstreamBidRequest = validOutstreamBidRequest.bids[0].mediaTypes.video.context = 'adpod';
+        request = spec.buildRequests(bidRequests, validOutstreamBidRequest);
+        newBid = {
+          requestId: '47acc48ad47af5'
+        };
+        videoSeatBid.ext = videoSeatBid.ext || {};
+        videoSeatBid.ext.video = videoSeatBid.ext.video || {};
+        // videoBidRequests[0].mediaTypes.video = videoBidRequests[0].mediaTypes.video || {};
+      });
+
+      it('should not assign video object if deal priority is missing', function () {
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      it('should not assign video object if context is not a adpod', function () {
+        videoSeatBid.ext.prebiddealpriority = 5;
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      describe('when video deal tier object is present', function () {
+        beforeEach(function () {
+          videoSeatBid.ext.prebiddealpriority = 5;
+          request.bidderRequest.bids[0].mediaTypes.video = {
+            ...request.bidderRequest.bids[0].mediaTypes.video,
+            context: 'adpod',
+            maxduration: 50
+          };
+        });
+
+        it('should set video deal tier object, when maxduration is present in ext', function () {
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(50);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+
+        it('should set video deal tier object, when duration is present in ext', function () {
+          videoSeatBid.ext.video.duration = 20;
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(20);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+      });
+    });
   });
 
-  describe('Marketplace params', function() {
+  describe('Marketplace params', function () {
     let sandbox, utilsMock, newBidRequests, newBidResponses;
     beforeEach(() => {
       utilsMock = sinon.mock(utils);
@@ -4466,7 +4493,7 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should add bidder code as groupm for marketplace groupm response', function () {
+    it('Should add bidder code as groupm for marketplace groupm response ', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
       });
@@ -4483,7 +4510,7 @@ describe('PubMatic adapter', function () {
         'adomain': [
           'mystartab.com'
         ],
-        cat:["IAB_CATEGORY"],
+        cat: ['IAB_CATEGORY'],
         ext: {
           advid: '12',
           'dspid': 6,
@@ -4508,14 +4535,14 @@ describe('PubMatic adapter', function () {
       expect(br.meta.networkId).to.equal(6); // dspid
       expect(br.meta.buyerId).to.equal('12'); // adid
       expect(br.meta.advertiserId).to.equal('12');
-      //expect(br.meta.networkName).to.equal('nwnm');
+      // expect(br.meta.networkName).to.equal('nwnm');
       expect(br.meta.primaryCatId).to.equal('IAB_CATEGORY');
-      //expect(br.meta.advertiserName).to.equal('adnm');
+      // expect(br.meta.advertiserName).to.equal('adnm');
       expect(br.meta.agencyId).to.equal('12');
-      //expect(br.meta.agencyName).to.equal('agnm');
+      // expect(br.meta.agencyName).to.equal('agnm');
       expect(br.meta.brandId).to.equal('mystartab.com');
-      //expect(br.meta.brandName).to.equal('brnm');
-      //expect(br.meta.dchain).to.equal('dc');
+      // expect(br.meta.brandName).to.equal('brnm');
+      // expect(br.meta.dchain).to.equal('dc');
       expect(br.meta.demandSource).to.equal(6);
       expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
       expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');

@@ -1,4 +1,4 @@
-import { _each, deepAccess, parseSizesInput } from '../src/utils.js';
+import {_each, deepAccess, parseSizesInput, parseUrl, uniques} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -10,12 +10,12 @@ const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
-const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
+const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
+const OPT_CACHE_KEY = 'vdzwopt';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
-  'digitrustid': 1,
   'id5id': 1,
   'idl_env': 1,
   'lipb': 1,
@@ -23,8 +23,18 @@ export const SUPPORTED_ID_SYSTEMS = {
   'parrableId': 1,
   'pubcid': 1,
   'tdid': 1,
+  'pubProvidedId': 1
 };
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+
+function getTopWindowQueryParams() {
+  try {
+    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    return parsedUrl.search;
+  } catch (e) {
+    return '';
+  }
+}
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
@@ -57,12 +67,15 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const cId = extractCID(params);
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
+  const ptrace = getCacheOpt();
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
+    uqs: getTopWindowQueryParams(),
     cb: Date.now(),
     bidFloor: bidFloor,
     bidId: bidId,
+    referrer: bidderRequest.refererInfo.ref,
     adUnitCode: adUnitCode,
     publisherId: pId,
     sessionId: sId,
@@ -72,7 +85,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
-    schain: schain
+    schain: schain,
+    ptrace: ptrace
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -86,7 +100,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     }
   }
   if (bidderRequest.uspConsent) {
-    data.usPrivacy = bidderRequest.uspConsent
+    data.usPrivacy = bidderRequest.uspConsent;
   }
 
   const dto = {
@@ -129,7 +143,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  const topWindowUrl = bidderRequest.refererInfo.referer;
+  // TODO: does the fallback make sense here?
+  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);
@@ -179,17 +194,19 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
   let syncs = [];
   const { iframeEnabled, pixelEnabled } = syncOptions;
   const { gdprApplies, consentString = '' } = gdprConsent;
-  const params = `?gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+
+  const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
+  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
-      url: `https://prebid.cootlogix.com/api/sync/iframe/${params}`
+      url: `https://sync.cootlogix.com/api/sync/iframe/${params}`
     });
   }
   if (pixelEnabled) {
     syncs.push({
       type: 'image',
-      url: `https://prebid.cootlogix.com/api/sync/image/${params}`
+      url: `https://sync.cootlogix.com/api/sync/image/${params}`
     });
   }
   return syncs;
@@ -242,6 +259,16 @@ export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
 
 export function getVidazooSessionId() {
   return getStorageItem(SESSION_ID_KEY) || '';
+}
+
+export function getCacheOpt() {
+  let data = storage.getDataFromLocalStorage(OPT_CACHE_KEY);
+  if (!data) {
+    data = String(Date.now());
+    storage.setDataInLocalStorage(OPT_CACHE_KEY, data);
+  }
+
+  return data;
 }
 
 export function getStorageItem(key) {

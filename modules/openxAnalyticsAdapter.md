@@ -6,7 +6,8 @@
 ---
 
 # NOTE: OPENX NO LONGER OFFERS ANALYTICS
-# THIS ADAPTER NO LONGER FUNCTIONS
+# THIS ADAPTER NO LONGER FUNCTIONS AND 
+# WILL BE REMOVED IN PREBID 8
 
 # About this Guide
 This implementation guide walks through the flow of onboarding an alpha Publisher to test OpenX’s new Analytics Adapter.

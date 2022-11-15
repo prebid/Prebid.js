@@ -145,7 +145,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
     });
@@ -525,7 +525,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -553,7 +553,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -571,7 +571,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -585,7 +585,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
       delete bid.params.bidfloor;
