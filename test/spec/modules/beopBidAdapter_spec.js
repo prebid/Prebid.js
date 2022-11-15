@@ -217,44 +217,55 @@ describe('BeOp Bid Adapter tests', () => {
     });
   });
 
-  describe('Ensure keywords is always array of string"', function () {
+  describe('Ensure keywords is always array of string', function () {
     let bidRequests = [];
-    bidRequests.push(validBid);
+    afterEach(function () {
+      bidRequests = [];
+    });
 
     it('should work with keywords as an array', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = ['a', 'b'];
+      bidRequests.push(bid);
       config.setConfig({
-        currency: { adServerCurrency: 'USD' },
-        ortb: { site: { keywords: ['a', 'b'] } },
+        currency: { adServerCurrency: 'USD' }
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
-      expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(['a', 'b']);
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('a');
+      expect(payload.kwds).to.include('b');
     });
 
     it('should work with keywords as a string', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list of keywords';
+      bidRequests.push(bid);
       config.setConfig({
-        currency: { adServerCurrency: 'USD' },
-        ortb: { site: { keywords: 'list of keywords' } },
+        currency: { adServerCurrency: 'USD' }
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
-      expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(['list of keywords']);
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list of keywords');
     });
 
     it('should work with keywords as a string containing a comma', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list, of, keywords';
+      bidRequests.push(bid);
       config.setConfig({
-        currency: { adServerCurrency: 'USD' },
-        ortb: { site: { keywords: 'list, of, keywords' } },
+        currency: { adServerCurrency: 'USD' }
       });
       const request = spec.buildRequests(bidRequests, {});
       const payload = JSON.parse(request.data);
       const url = request.url;
-      expect(payload.kwd).to.exist;
-      expect(payload.kwd).to.equal(['list', 'of', 'keywords']);
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list');
+      expect(payload.kwds).to.include('of');
+      expect(payload.kwds).to.include('keywords');
     })
   })
 });
