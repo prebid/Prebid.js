@@ -8,6 +8,8 @@ import {
   logMessage,
   parseUrl,
   triggerPixel,
+  getDefinedParams,
+  parseGPTSingleSizeArrayToRtbSize,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
@@ -22,6 +24,10 @@ const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
 const TIME_TO_LIVE = 360;
+const VIDEO_PARAMS = [
+  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
+  'playbackmethod', 'protocols', 'startdelay'
+];
 
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
@@ -72,20 +78,37 @@ export const spec = {
 
         device,
         site,
-        'imp': [{
-          'banner': {
-            'format': (sizes || []).map(s => { return {w: s[0], h: s[1]} })
-          },
-
-          'ext': {
-            'prebid': {
-              'storedrequest': {
-                'id': id
-              }
-            }
-          }
-        }]
+        imp: []
       };
+
+      const imp = {
+        ext: {
+          prebid: {
+            storedrequest: {id}
+          }
+        }
+      };
+
+      if (deepAccess(bid, 'mediaTypes.banner')) {
+        imp.banner = {
+          format: (sizes || []).map(s => { return {w: s[0], h: s[1]} })
+        };
+      };
+
+      const video = deepAccess(bid, 'mediaTypes.video');
+      if (video) {
+        imp.video = getDefinedParams(video, VIDEO_PARAMS);
+        if (video.playerSize) {
+          imp.video = Object.assign(
+            imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize[0]) || {}
+          );
+        } else if (video.w && video.h) {
+          imp.video.w = video.w;
+          imp.video.h = video.h;
+        };
+      };
+
+      postBody.imp.push(imp);
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
       const uspConsent = bidderRequest && bidderRequest.uspConsent;
@@ -118,7 +141,7 @@ export const spec = {
         url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         },
 

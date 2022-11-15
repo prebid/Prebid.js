@@ -35,6 +35,7 @@ import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
+import {auctionManager} from './auctionManager.js';
 
 export const PARTITIONS = {
   CLIENT: 'client',
@@ -357,8 +358,6 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
   let counter = 0;
 
-  // $.source.tid MUST be a unique UUID and also THE SAME between all PBS Requests for a given Auction
-  const sourceTid = generateUUID();
   _s2sConfigs.forEach((s2sConfig) => {
     if (s2sConfig && uniqueServerBidRequests[counter] && getS2SBidderSet(s2sConfig).has(uniqueServerBidRequests[counter].bidderCode)) {
       // s2s should get the same client side timeout as other client side requests.
@@ -374,7 +373,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {tid: sourceTid, 'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
+        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -387,7 +386,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
             // add the new sourceTid
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: sourceTid});
+            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: bidRequest.auctionId});
           });
 
           // make bid requests
@@ -555,16 +554,27 @@ adapterManager.getAnalyticsAdapter = function(code) {
   return _analyticsRegistry[code];
 }
 
-function tryCallBidderMethod(bidder, method, param) {
+function getBidderMethod(bidder, method) {
+  const adapter = _bidderRegistry[bidder];
+  const spec = adapter?.getSpec && adapter.getSpec();
+  if (spec && spec[method] && typeof spec[method] === 'function') {
+    return [spec, spec[method]]
+  }
+}
+
+function invokeBidderMethod(bidder, method, spec, fn, ...params) {
   try {
-    const adapter = _bidderRegistry[bidder];
-    const spec = adapter.getSpec();
-    if (spec && spec[method] && typeof spec[method] === 'function') {
-      logInfo(`Invoking ${bidder}.${method}`);
-      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
-    }
+    logInfo(`Invoking ${bidder}.${method}`);
+    config.runWithBidder(bidder, fn.bind(spec, ...params));
   } catch (e) {
     logWarn(`Error calling ${method} of ${bidder}`);
+  }
+}
+
+function tryCallBidderMethod(bidder, method, param) {
+  const target = getBidderMethod(bidder, method);
+  if (target != null) {
+    invokeBidderMethod(bidder, method, ...target, param);
   }
 }
 
@@ -601,5 +611,42 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   const param = { error, bidderRequest };
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
+
+function resolveAlias(alias) {
+  const seen = new Set();
+  while (_aliasRegistry.hasOwnProperty(alias) && !seen.has(alias)) {
+    seen.add(alias);
+    alias = _aliasRegistry[alias];
+  }
+  return alias;
+}
+/**
+ * Ask every adapter to delete PII.
+ * See https://github.com/prebid/Prebid.js/issues/9081
+ */
+adapterManager.callDataDeletionRequest = hook('sync', function (...args) {
+  const method = 'onDataDeletionRequest';
+  Object.keys(_bidderRegistry)
+    .filter((bidder) => !_aliasRegistry.hasOwnProperty(bidder))
+    .forEach(bidder => {
+      const target = getBidderMethod(bidder, method);
+      if (target != null) {
+        const bidderRequests = auctionManager.getBidsRequested().filter((br) =>
+          resolveAlias(br.bidderCode) === bidder
+        );
+        invokeBidderMethod(bidder, method, ...target, bidderRequests, ...args);
+      }
+    });
+  Object.entries(_analyticsRegistry).forEach(([name, entry]) => {
+    const fn = entry?.adapter?.[method];
+    if (typeof fn === 'function') {
+      try {
+        fn.apply(entry.adapter, args);
+      } catch (e) {
+        logError(`error calling ${method} of ${name}`, e);
+      }
+    }
+  });
+});
 
 export default adapterManager;
