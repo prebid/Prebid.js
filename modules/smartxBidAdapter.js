@@ -67,7 +67,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    // TODO: does the fallback make sense here?
     const page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const isPageSecure = !!page.match(/^https:/)
 
@@ -197,7 +196,7 @@ export const spec = {
         userExt.fpc = pubcid;
       }
 
-      // Add schain object if it is present
+      // Add schain object if available
       if (bid && bid.schain) {
         requestPayload['source'] = {
           ext: {
@@ -213,9 +212,7 @@ export const spec = {
         };
       }
 
-      //     requestPayload.user.ext.ver = pbjs.version;
-
-      // Targeting
+      // Add targeting
       if (getBidIdParameter('data', bid.params.user)) {
         var targetingarr = [];
         for (var i = 0; i < bid.params.user.data.length; i++) {
@@ -233,8 +230,6 @@ export const spec = {
             });
           }
         }
-
-        // Todo: USER ID MODULE
 
         requestPayload.user = {
           ext: userExt,
@@ -278,7 +273,6 @@ export const spec = {
           }
           /**
            * Make sure currency and price are the right ones
-           * TODO: what about the pre_market_bid partners sizes?
            */
           _each(currentBidRequest.params.pre_market_bids, function (pmb) {
             if (pmb.deal_id == smartxBid.id) {
