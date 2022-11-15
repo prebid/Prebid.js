@@ -314,11 +314,6 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.mimes = mimes;
   }
 
-  const protocols = deepAccess(bid, `mediaTypes.${mediaType}.protocols`);
-  if (protocols) {
-    bidObject.protocols = protocols;
-  }
-
   const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
   if (api) {
     bidObject.api = api;
@@ -363,6 +358,11 @@ function generateBidParameters(bid, bidderRequest) {
     const linearity = deepAccess(bid, `mediaTypes.video.linearity`);
     if (linearity) {
       bidObject.linearity = linearity;
+    }
+
+    const protocols = deepAccess(bid, `mediaTypes.${mediaType}.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
     }
   }
 
