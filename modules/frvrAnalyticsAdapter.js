@@ -199,11 +199,80 @@ function handleAuctionEnd(args) {
  * @param args
  */
 function handleBidWon(args) {
-  var o = deepClone(args);
+  var o = {};
 
-  if (o && o['ad']) {
-    delete o['ad'];
+  if (!args) {
+    return;
   }
+
+  if (args['bidderCode']) {
+    o.bidderCode = args['bidderCode'];
+  }
+
+  if (args['adId']) {
+    o.adId = args['adId'];
+  }
+
+  if (args['requestId']) {
+    o.requestId = args['requestId'];
+  }
+
+  if (args['transactionId']) {
+    o.transactionId = args['transactionId'];
+  }
+
+  if (args['auctionId']) {
+    o.auctionId = args['auctionId'];
+  }
+
+  if (args['mediaType']) {
+    o.mediaType = args['mediaType'];
+  }
+
+  if (args['source']) {
+    o.source = args['source'];
+  }
+
+  if (args['cpm']) {
+    o.cpm = args['cpm'];
+  }
+
+  if (args['currency']) {
+    o.currency = args['currency'];
+  }
+
+  if (args['creativeId']) {
+    o.creativeId = args['creativeId'];
+  }
+
+  if (args['netRevenue']) {
+    o.netRevenue = args['netRevenue'];
+  }
+
+  if (args['originalCpm']) {
+    o.originalCpm = args['originalCpm'];
+  }
+
+  if (args['originalCurrency']) {
+    o.originalCurrency = args['originalCurrency'];
+  }
+
+  if (args['adUnitCode']) {
+    o.adUnitCode = args['adUnitCode'];
+  }
+
+  if (args['timeToRespond']) {
+    o.timeToRespond = args['timeToRespond'];
+  }
+
+  if (args['size']) {
+    o.size = args['size'];
+  }
+
+  if (args['status']) {
+    o.status = args['status'];
+  }
+
   handleEvent('hb_bid_won', o);
 }
 
