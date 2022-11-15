@@ -496,6 +496,25 @@ describe('Consumable BidAdapter', function () {
 
       expect(data.placements[0].video).to.deep.equal(BIDDER_REQUEST_VIDEO.bidRequest[0].mediaTypes.video);
     });
+
+    it('sets bidfloor param if present', function () {
+      let bidderRequest1 = deepClone(BIDDER_REQUEST_1);
+      let bidderRequest2 = deepClone(BIDDER_REQUEST_2);
+      bidderRequest1.bidRequest[0].params.bidFloor = 0.05;
+      bidderRequest2.bidRequest[0].getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.15
+        }
+      };
+      let request1 = spec.buildRequests(bidderRequest1.bidRequest, BIDDER_REQUEST_1);
+      let data1 = JSON.parse(request1.data);
+      let request2 = spec.buildRequests(bidderRequest2.bidRequest, BIDDER_REQUEST_2);
+      let data2 = JSON.parse(request2.data);
+
+      expect(data1.placements[0].bidfloor).to.equal(0.05);
+      expect(data2.placements[0].bidfloor).to.equal(0.15);
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {

@@ -70,7 +70,6 @@ describe('LotameId', function() {
 
     it('should call the remote server when getId is called', function () {
       expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
-
       expect(callBackSpy.calledOnce).to.be.true;
     });
 

@@ -1,10 +1,12 @@
+import {getGlobal} from '../prebidGlobal.js';
+
 const SUCCESS = 0;
 const FAIL = 1;
 
 /**
  * A version of Promise that runs callbacks synchronously when it can (i.e. after it's been fulfilled or rejected).
  */
-export class GreedyPromise extends Promise {
+export class GreedyPromise extends (getGlobal().Promise || Promise) {
   #result;
   #callbacks;
   #parent = null;

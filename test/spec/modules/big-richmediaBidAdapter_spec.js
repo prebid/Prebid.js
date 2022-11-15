@@ -190,6 +190,7 @@ describe('bigRichMediaAdapterTests', function () {
     it('should get correct bid response', function () {
       const expectedResponse = [
         {
+          'adId': '3a1f23123e',
           'requestId': '3db3773286ee59',
           'cpm': 0.5,
           'creativeId': 29681110,
