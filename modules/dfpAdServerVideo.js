@@ -303,12 +303,7 @@ function getCustParams(bid, options, urlCustParams) {
   }
   // Changing PrebidTargetingSet to adServerTargeitn as for OpenWrap we don't want to set Prebid Keys and instead Set the adServerKeys sent from OpenWrap.
   const targetingSet = Object.assign({}, adserverTargeting, publisherTargetingSet, customParams);
-  let encodedParams = encodeURIComponent(formatQS(targetingSet));
-  if (urlCustParams) {
-    encodedParams = urlCustParams + '%26' + encodedParams;
-  }
-
-  return encodedParams;
+  return encodeURIComponent(formatQS(targetingSet));
 }
 
 registerVideoSupport('dfp', {
