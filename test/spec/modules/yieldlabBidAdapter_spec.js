@@ -80,6 +80,81 @@ const NATIVE_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
   }
 })
 
+const IAB_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
+  params: {
+    adslotId: '1111',
+    supplyId: '2222',
+    iabContent: {
+      id: 'foo',
+      episode: '99',
+      title: 'bar',
+      series: 'baz',
+      season: 's01',
+      artist: 'foobar',
+      genre: 'barbaz',
+      isrc: 'CC-XXX-YY-NNNNN',
+      url: 'https://foo.test',
+      cat: ['cat1', 'cat2,ppp', 'cat3|||//'],
+      context: '2',
+      keywords: ['k1', 'k2', 'k3', 'k4'],
+      live: '0',
+      album: 'foo',
+      cattax: '3',
+      prodq: 2,
+      contentrating: 'foo',
+      userrating: 'bar',
+      qagmediarating: 2,
+      sourcerelationship: 1,
+      len: 12345,
+      language: 'en',
+      embeddable: 0,
+      producer: {
+        id: 'foo',
+        name: 'bar',
+        cattax: 532,
+        cat: [1, 'foo', true],
+        domain: 'producer.test'
+      },
+      data: {
+        id: 'foo',
+        name: 'bar',
+        segment: [{
+          name: 'foo',
+          value: 'bar',
+          ext: {
+            foo: {
+              bar: 'bar'
+            }
+          },
+        }, {
+          name: 'foo2',
+          value: 'bar2',
+          ext: {
+            test: {
+              nums: {
+                int: 123,
+                float: 123.123
+              },
+              bool: true,
+              string: 'foo2'
+            }
+          }
+        }],
+      },
+      network: {
+        id: 'foo',
+        name: 'bar',
+        domain: 'network.test'
+      },
+      channel: {
+        id: 'bar',
+        name: 'foo',
+        domain: 'channel.test'
+      }
+    }
+  }
+})
+
 const RESPONSE = {
   advertiser: 'yieldlab',
   curl: 'https://www.yieldlab.de',
@@ -250,6 +325,56 @@ describe('yieldlabBidAdapter', () => {
 
         const request = spec.buildRequests([{...requestWithoutIabContent, ...siteConfig}])
         expect(request.url).to.include('iab_content=id%3Aid_from_config')
+      })
+
+      it('flattens the iabContent, encodes the values, joins the keywords into one value, and than encodes the iab_content request param ', () => {
+        const expectedIabContentValue = encodeURIComponent(
+          'id:foo,' +
+          'episode:99,' +
+          'title:bar,' +
+          'series:baz,' +
+          'season:s01,' +
+          'artist:foobar,' +
+          'genre:barbaz,' +
+          'isrc:CC-XXX-YY-NNNNN,' +
+          'url:https%3A%2F%2Ffoo.test,' +
+          'cat:cat1|cat2%2Cppp|cat3%7C%7C%7C%2F%2F,' +
+          'context:2,' +
+          'keywords:k1|k2|k3|k4,' +
+          'live:0,' +
+          'album:foo,' +
+          'cattax:3,' +
+          'prodq:2,' +
+          'contentrating:foo,' +
+          'userrating:bar,' +
+          'qagmediarating:2,' +
+          'sourcerelationship:1,' +
+          'len:12345,' +
+          'language:en,' +
+          'embeddable:0,' +
+          'producer.id:foo,' +
+          'producer.name:bar,' +
+          'producer.cattax:532,' +
+          'cat:1|foo|true,' +
+          'producer.domain:producer.test,' +
+          'data.id:foo,data.name:bar,' +
+          'data.segment.0.name:foo,' +
+          'data.segment.0.value:bar,' +
+          'data.segment.0.ext.foo.bar:bar,' +
+          'data.segment.1.name:foo2,' +
+          'data.segment.1.value:bar2,' +
+          'data.segment.1.ext.test.nums.int:123,' +
+          'data.segment.1.ext.test.nums.float:123.123,' +
+          'data.segment.1.ext.test.bool:true,' +
+          'data.segment.1.ext.test.string:foo2,' +
+          'network.id:foo,network.name:bar,' +
+          'network.domain:network.test,' +
+          'channel.id:bar,' +
+          'channel.name:foo,' +
+          'channel.domain:channel.test'
+        )
+        const request = spec.buildRequests([IAB_REQUEST()], REQPARAMS)
+        expect(request.url).to.include('iab_content=' + expectedIabContentValue)
       })
     })
 
