@@ -148,14 +148,15 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Test getUserSyncs function', function () {
     const syncOptions = {
-      'iframeEnabled': true
+      'iframeEnabled': false,
+      'pixelEnabled': true
     }
     const userSync = spec.getUserSyncs(syncOptions);
     expect(userSync).to.be.an('array').with.lengthOf(1);
     expect(userSync[0].type).to.exist;
     expect(userSync[0].url).to.exist;
-    expect(userSync[0].type).to.be.equal('iframe');
-    expect(userSync[0].url).to.be.equal('https://statics.nextmillmedia.com/load-cookie.html?v=4');
+    expect(userSync[0].type).to.be.equal('image');
+    expect(userSync[0].url).to.be.equal('https://cookies.nextmillmedia.com/sync?type=image');
   });
 
   it('validate_response_params', function() {
