@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {setEndPoints, spec} from 'modules/aidemBidAdapter.js';
 import * as utils from '../../../src/utils';
-import {_each, deepSetValue} from '../../../src/utils';
+import {deepSetValue} from '../../../src/utils';
 import {server} from '../../mocks/xhr';
 import {config} from '../../../src/config';
 import {NATIVE} from '../../../src/mediaTypes.js';
@@ -300,23 +300,6 @@ const WIN_NOTICE = {
   }
 }
 
-const TIMEOUT_NOTICE = [
-  {
-    'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'auctionId': 'b57faab7-23f7-4b63-90db-67b259d20db7',
-    'bidId': '233f0aa47ccb68',
-    'bidderRequestId': '1c53857d1ce616',
-    'transactionId': '5c09d600-6da1-4a66-8e97-a67ace3083a4',
-    metrics: {
-      getMetrics() {
-        return {
-
-        }
-      }
-    }
-  }
-]
-
 const ERROR_NOTICE = {
   'message': 'Prebid.js: Server call for aidem failed.',
   'url': 'http%3A%2F%2Flocalhost%3A9999%2FintegrationExamples%2Fgpt%2Fhello_world.html%3Fpbjs_debug%3Dtrue',
@@ -473,35 +456,17 @@ describe('Aidem adapter', () => {
     });
   })
 
-  // TODO verify that outgoing payload match expected structure
   describe('onBidWon', () => {
     it(`should exists and type function`, function () {
       expect(spec.onBidWon).to.exist.and.to.be.a('function')
     });
 
     it(`should send a valid bid won notice`, function () {
-      // TODO check parameter after zero is working
       spec.onBidWon(WIN_NOTICE);
       // server.respondWith('POST', WIN_EVENT_URL, [
       //   400, {'Content-Type': 'application/json'}, )
       // ]);
       expect(server.requests.length).to.equal(1);
-    });
-  });
-
-  describe('onTimeout', () => {
-    it(`should exists and type function`, function () {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function')
-    });
-
-    it(`should send a valid timeout notice`, function () {
-      spec.onTimeout(TIMEOUT_NOTICE);
-      expect(server.requests.length).to.equal(1);
-      const { bids } = JSON.parse(server.requests[0].requestBody)
-      expect(bids).to.be.a('array').that.has.lengthOf(1)
-      _each(bids, (bid) => {
-        expect(bid).to.be.a('object').that.has.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'transactionId')
-      })
     });
   });
 

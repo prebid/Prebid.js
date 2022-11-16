@@ -153,6 +153,7 @@ function buildWinNotice(bid) {
     cpm: bid.cpm,
     currency: bid.currency,
     impid: deepAccess(bid, 'meta.impid'),
+    dsp_id: deepAccess(bid, 'meta.dsp_id'),
     adUnitCode: bid.adUnitCode,
     auctionId: bid.auctionId,
     transactionId: bid.transactionId,
@@ -160,26 +161,6 @@ function buildWinNotice(bid) {
     requestTimestamp: bid.requestTimestamp,
     responseTimestamp: bid.responseTimestamp,
   }
-}
-
-// Called for every bid that has timed out
-function buildTimeoutNotice(prebidTimeoutBids) {
-  const timeoutNotice = {
-    bids: []
-  }
-  _each(prebidTimeoutBids, function (bid) {
-    const notice = {
-      adUnitCode: bid.adUnitCode,
-      auctionId: bid.auctionId,
-      bidId: bid.bidId,
-      bidderRequestId: bid.bidderRequestId,
-      transactionId: bid.transactionId,
-      mediaTypes: bid.mediaTypes
-    }
-    timeoutNotice.bids.push(notice)
-  })
-
-  return timeoutNotice
 }
 
 function buildErrorNotice(prebidErrorResponse) {
@@ -352,6 +333,7 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
 }
 
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
+  logInfo('AIDEM Bid Adapter meta', openRTBResponseBidObject);
   deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', openRTBResponseBidObject.adomain);
   if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
     const primaryCatId = openRTBResponseBidObject.cat.shift();
@@ -359,6 +341,7 @@ function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponse
     deepSetValue(prebidResponseBidObject, 'meta.secondaryCatIds', openRTBResponseBidObject.cat);
   }
   deepSetValue(prebidResponseBidObject, 'meta.id', openRTBResponseBidObject.id);
+  deepSetValue(prebidResponseBidObject, 'meta.dsp_id', openRTBResponseBidObject.dsp_id);
   deepSetValue(prebidResponseBidObject, 'meta.adid', openRTBResponseBidObject.adid);
   deepSetValue(prebidResponseBidObject, 'meta.burl', openRTBResponseBidObject.burl);
   deepSetValue(prebidResponseBidObject, 'meta.impid', openRTBResponseBidObject.impid);
@@ -488,14 +471,6 @@ export const spec = {
     logInfo('onBidWon bid: ', bid);
     const notice = buildWinNotice(bid)
     ajax(endpoints.notice.win, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
-  },
-
-  onTimeout: (data) => {
-    if (Array.isArray(data)) {
-      const payload = buildTimeoutNotice(data)
-      const payloadString = JSON.stringify(payload);
-      ajax(endpoints.notice.timeout, null, payloadString, { method: 'POST', withCredentials: true });
-    }
   },
 
   onBidderError: function({ bidderRequest }) {
