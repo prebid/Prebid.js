@@ -64,15 +64,15 @@ function brandSafety(badWords, maxScore) {
    * @returns {object|boolean} matched rule and occurances. If nothing is matched returns false
    */
   const wordsMatchedWithRule = function (rule, decodedWord, wordsToMatch) {
-    if (rule === "full" && wordsToMatch && wordsToMatch.includes(decodedWord)) {
+    if (rule === 'full' && wordsToMatch && wordsToMatch.includes(decodedWord)) {
       return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
-    } else if (rule === "partial" && wordsToMatch && wordsToMatch.some(element => element.indexOf(decodedWord) > -1)) {
+    } else if (rule === 'partial' && wordsToMatch && wordsToMatch.some(element => element.indexOf(decodedWord) > -1)) {
       return { rule, occurances: wordsToMatch.filter(element => element.indexOf(decodedWord) > -1).length };
-    } else if (rule === "starts" && wordsToMatch && wordsToMatch.some(word => word.startsWith(decodedWord))) {
+    } else if (rule === 'starts' && wordsToMatch && wordsToMatch.some(word => word.startsWith(decodedWord))) {
       return { rule, occurances: wordsToMatch.filter(element => element.startsWith(decodedWord)).length };
-    } else if (rule === "ends" && wordsToMatch && wordsToMatch.some(word => word.endsWith(decodedWord))) {
+    } else if (rule === 'ends' && wordsToMatch && wordsToMatch.some(word => word.endsWith(decodedWord))) {
       return { rule, occurances: wordsToMatch.filter(element => element.endsWith(decodedWord)).length };
-    } else if (rule === "regexp" && wordsToMatch && wordsToMatch.includes(decodedWord)) {
+    } else if (rule === 'regexp' && wordsToMatch && wordsToMatch.includes(decodedWord)) {
       return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
     }
     return false;
@@ -157,6 +157,17 @@ export const spec = {
     } catch (e) {
       referrer = window.location.href;
     }
+    var body = document.body;
+    var html = document.documentElement;
+    var pageHeight = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      html.clientHeight,
+      html.scrollHeight,
+      html.offsetHeight
+    );
+    var pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+
     for (const i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
@@ -168,6 +179,18 @@ export const spec = {
         const prefix = validBidRequests[i].params.prefix || 'adHash';
         recentAds = JSON.parse(storage.getDataFromLocalStorage(prefix + 'recentAds') || '[]');
       }
+
+      // Needed for the ad density calculation
+      var adHeight = validBidRequests[i].sizes[index][1];
+      var adWidth = validBidRequests[i].sizes[index][0];
+      if (!window.adsCount) {
+        window.adsCount = 0;
+      }
+      if (!window.adsTotalSurface) {
+        window.adsTotalSurface = 0;
+      }
+      window.adsTotalSurface += adHeight * adWidth;
+      window.adsCount++;
 
       bidRequests.push({
         method: 'POST',
@@ -194,7 +217,11 @@ export const spec = {
           currentTimestamp: (new Date().getTime() / 1000) | 0,
           recentAds: recentAds,
           GDPRApplies: gdprConsent ? gdprConsent.gdprApplies : null,
-          GDPR: gdprConsent ? gdprConsent.consentString : null
+          GDPR: gdprConsent ? gdprConsent.consentString : null,
+          servedAdsCount: window.adsCount,
+          adsTotalSurface: window.adsTotalSurface,
+          pageHeight: pageHeight,
+          pageWidth: pageWidth
         },
         options: {
           withCredentials: false,
