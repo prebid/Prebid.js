@@ -76,7 +76,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting} from './native.js';
+import {getNativeTargeting, toLegacyResponse} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -84,7 +84,7 @@ import {userSync} from './userSync.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO} from './mediaTypes.js';
+import {VIDEO, NATIVE} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
@@ -462,9 +462,12 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === 'video') {
+      if (bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
+        if (FEATURES.NATIVE && bidResponse.mediaType === NATIVE) {
+          addLegacyFieldsIfNeeded(bidResponse);
+        }
         addBidToAuction(auctionInstance, bidResponse);
         done();
       }
@@ -590,6 +593,17 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
+  }
+}
+
+// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
+function addLegacyFieldsIfNeeded(bidResponse) {
+  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
+  const nativeOrtbResponse = bidResponse.native?.ortb
+
+  if (nativeOrtbRequest && nativeOrtbResponse) {
+    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
+    Object.assign(bidResponse.native, legacyResponse);
   }
 }
 
