@@ -360,7 +360,7 @@ function generateBidParameters(bid, bidderRequest) {
       bidObject.linearity = linearity;
     }
 
-    const protocols = deepAccess(bid, `mediaTypes.${mediaType}.protocols`);
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
     if (protocols) {
       bidObject.protocols = protocols;
     }
