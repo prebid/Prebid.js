@@ -223,6 +223,10 @@ function mapImpression(slot, bidderRequest) {
   if (bidderRequest.fledgeEnabled) {
     imp.ext = imp.ext || {};
     imp.ext.ae = slot?.ortb2Imp?.ext?.ae
+  } else {
+    if (imp.ext?.ae) {
+      delete imp.ext.ae;
+    }
   }
   return imp;
 }
