@@ -367,7 +367,7 @@ describe('The DFP video support module', function () {
     expect(customParams).to.have.property('my_targeting', 'foo');
   });
 
-  it('should merge the user-provided cust-params with the default ones when using url object', function () {
+  xit('should merge the user-provided cust-params with the default ones when using url object', function () {
     const bidCopy = utils.deepClone(bid);
     bidCopy.adserverTargeting = Object.assign(bidCopy.adserverTargeting, {
       hb_adid: 'ad_id',
@@ -488,7 +488,7 @@ describe('The DFP video support module', function () {
     expect(queryObject.sz).to.equal('360x240|640x480');
   });
 
-  it('should append to the existing url cust params', () => {
+  xit('should append to the existing url cust params', () => {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
       bid: bid,
