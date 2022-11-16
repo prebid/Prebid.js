@@ -162,6 +162,8 @@ export const CONVERTER = ortbConverter({
         }
       },
     });
+    // Remove 2.6 device.sua; see #9250
+    delete request.device?.sua;
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {

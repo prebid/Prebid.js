@@ -824,6 +824,11 @@ describe('Improve Digital Adapter Tests', function () {
       request = spec.buildRequests([bidRequest], bidderRequestWithConsent)[0];
       expect(request.url).to.equal(AD_SERVER_URL);
     });
+
+    it('should not set device.sua in request', () => {
+      const req = JSON.parse(spec.buildRequests([simpleBidRequest], {...bidderRequest, ortb2: {device: {sua: {source: 1}}}})[0].data);
+      expect(req?.device?.sua).to.not.exist;
+    })
   });
 
   const serverResponse = {
