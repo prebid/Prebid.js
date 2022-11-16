@@ -133,6 +133,8 @@ export const spec = {
     // use bidderRequest.bids[] to get bidder-dependent request info
 
     const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
+    const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
@@ -155,8 +157,8 @@ export const spec = {
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',
         schain: spec.serializeSupplyChain(bid.schain),
-        sda: deepAccess(config, 'ortb2.user.data', deepAccess(bidderRequest, 'ortb2.user.data', undefined)),
-        sdc: deepAccess(config, 'ortb2.site.content.data', deepAccess(bidderRequest, 'ortb2.site.content.data', undefined))
+        sda: sellerDefinedAudience,
+        sdc: sellerDefinedContext
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
