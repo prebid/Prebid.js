@@ -129,6 +129,10 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout;
+    }
+
     provideEids(validBidRequests[0], payload);
     const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {

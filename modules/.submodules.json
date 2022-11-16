@@ -57,6 +57,7 @@
       "akamaiDapRtdProvider",
       "blueconicRtdProvider",
       "browsiRtdProvider",
+      "captifyRtdProvider",
       "dgkeywordRtdProvider",
       "geoedgeRtdProvider",
       "hadronRtdProvider",
@@ -71,7 +72,8 @@
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider", 
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
       "enrichmentFpdModule",
