@@ -272,10 +272,10 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
     });
 
-    it('sends transaction id in source.tid', function () {
+    it('sends auction id in source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal('1111474f-58b1-4368-b812-84f8c937a099');
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
     });
 
     it('includes the ad size in the bid request', function () {
@@ -308,6 +308,19 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
+    });
+
+    it('merges first party site data', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const requestBody = testBuildRequests(baseBannerBidRequests, {...baseBidderRequest, ortb2}).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher).to.deep.equal({domain: 'https://foo.bar', id: '13144370'});
     });
 
     it('sets keywords properly if sent', function () {
@@ -557,7 +570,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerMultipleBidRequests, baseBidderRequest).data;
       expect(requestBody.imp.length).to.equal(2);
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal('1111474f-58b1-4368-b812-84f8c937a099');
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
       expect(requestBody.imp[0].ext).to.be.not.null;
       expect(requestBody.imp[0].ext.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
       expect(requestBody.imp[1].ext).to.be.not.null;

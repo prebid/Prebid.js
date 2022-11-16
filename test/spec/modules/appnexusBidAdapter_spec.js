@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -368,6 +369,29 @@ describe('AppNexusAdapter', function () {
         external_uid: '123',
         segments: [{ id: 123 }, { id: 987, value: 876 }]
       });
+    });
+
+    it('should add debug params from query', function () {
+      let getParamStub = sinon.stub(utils, 'getParameterByName').callsFake(function(par) {
+        if (par === 'apn_debug_dongle') return 'abcdef';
+        if (par === 'apn_debug_member_id') return '1234';
+        if (par === 'apn_debug_timeout') return '1000';
+
+        return '';
+      });
+
+      let bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.debug).to.exist.and.to.deep.equal({
+        'dongle': 'abcdef',
+        'enabled': true,
+        'member_id': 1234,
+        'debug_timeout': 1000
+      });
+
+      getParamStub.restore();
     });
 
     it('should attach reserve param when either bid param or getFloor function exists', function () {
@@ -756,6 +780,82 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].sizes).to.deep.equal([{ width: 1, height: 1 }]);
       });
     }
+
+    it('should convert keyword params (when there are no ortb keywords) to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: { 'foo': 'bar' } // should be dropped
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].keywords).to.deep.equal([{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['5']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }]);
+    });
+
+    it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          ortb2Imp: {
+            ext: {
+              data: {
+                keywords: 'ortb2=yes,ortb2test, multiValMixed=4, singleValNum=456'
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].keywords).to.deep.equal([{
+        'key': 'ortb2',
+        'value': ['yes']
+      }, {
+        'key': 'ortb2test'
+      }, {
+        'key': 'multiValMixed',
+        'value': ['4']
+      }, {
+        'key': 'singleValNum',
+        'value': ['456']
+      }]);
+    });
 
     it('should convert keyword params and adUnit ortb2 keywords to proper form and attaches to request', function () {
       let bidRequest = Object.assign({},

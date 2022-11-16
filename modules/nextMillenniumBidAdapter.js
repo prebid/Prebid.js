@@ -8,6 +8,8 @@ import {
   logMessage,
   parseUrl,
   triggerPixel,
+  getDefinedParams,
+  parseGPTSingleSizeArrayToRtbSize,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
@@ -20,8 +22,12 @@ import { getRefererInfo } from '../src/refererDetection.js';
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
-const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
+const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const TIME_TO_LIVE = 360;
+const VIDEO_PARAMS = [
+  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
+  'playbackmethod', 'protocols', 'startdelay'
+];
 
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
@@ -72,20 +78,37 @@ export const spec = {
 
         device,
         site,
-        'imp': [{
-          'banner': {
-            'format': (sizes || []).map(s => { return {w: s[0], h: s[1]} })
-          },
-
-          'ext': {
-            'prebid': {
-              'storedrequest': {
-                'id': id
-              }
-            }
-          }
-        }]
+        imp: []
       };
+
+      const imp = {
+        ext: {
+          prebid: {
+            storedrequest: {id}
+          }
+        }
+      };
+
+      if (deepAccess(bid, 'mediaTypes.banner')) {
+        imp.banner = {
+          format: (sizes || []).map(s => { return {w: s[0], h: s[1]} })
+        };
+      };
+
+      const video = deepAccess(bid, 'mediaTypes.video');
+      if (video) {
+        imp.video = getDefinedParams(video, VIDEO_PARAMS);
+        if (video.playerSize) {
+          imp.video = Object.assign(
+            imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize[0]) || {}
+          );
+        } else if (video.w && video.h) {
+          imp.video.w = video.w;
+          imp.video.h = video.h;
+        };
+      };
+
+      postBody.imp.push(imp);
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
       const uspConsent = bidderRequest && bidderRequest.uspConsent;
@@ -118,7 +141,7 @@ export const spec = {
         url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         },
 
@@ -175,28 +198,24 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
-    if (!syncOptions.iframeEnabled) {
-      return;
-    };
+    const pixels = [];
+    let syncUrl = SYNC_ENDPOINT;
 
-    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT;
+    if (gdprConsent && gdprConsent.gdprApplies) {
+      syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString;
+    }
+    if (uspConsent) {
+      syncUrl += 'us_privacy=' + uspConsent;
+    }
 
-    let bidders = [];
-    if (responses) {
-      _each(responses, (response) => {
-        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return;
-        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b));
-      });
-    };
+    if (syncOptions.iframeEnabled) {
+      pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
+    }
+    if (syncOptions.pixelEnabled) {
+      pixels.push({type: 'image', url: syncUrl + 'type=image'});
+    }
 
-    if (bidders.length) {
-      syncurl += `&bidders=${bidders.join(',')}`;
-    };
-
-    return [{
-      type: 'iframe',
-      url: syncurl
-    }];
+    return pixels;
   },
 };
 
