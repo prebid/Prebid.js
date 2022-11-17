@@ -1477,6 +1477,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.exist.and.to.be.a('object');
+      expect(requestBid.app).to.not.exist;
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher.id).to.exist.and.to.be.a('string');
       expect(requestBid.site.publisher.domain).to.exist.and.to.be.a('string');
