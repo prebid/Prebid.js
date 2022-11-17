@@ -79,7 +79,7 @@ const getUserID = () => {
 
 /**
  * get object key -> value
- * @param  {Object}    obj  对象
+ * @param  {Object}   obj  对象
  * @param  {...string} keys 键名
  * @return {any}
  */
