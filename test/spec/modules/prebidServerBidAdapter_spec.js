@@ -1725,7 +1725,7 @@ describe('S2S Adapter', function () {
         },
         auctiontimestamp: 1510852447530,
         targeting: {
-          includebidderkeys: false,
+          includebidderkeys: true,
           includewinners: true
         }
       });
@@ -1808,7 +1808,7 @@ describe('S2S Adapter', function () {
         },
         auctiontimestamp: 1510852447530,
         targeting: {
-          includebidderkeys: false,
+          includebidderkeys: true,
           includewinners: true
         }
       });
@@ -1845,7 +1845,7 @@ describe('S2S Adapter', function () {
         prebid: {
           auctiontimestamp: 1510852447530,
           targeting: {
-            includebidderkeys: false,
+            includebidderkeys: true,
             includewinners: true
           },
           channel: {
@@ -1884,7 +1884,7 @@ describe('S2S Adapter', function () {
         prebid: {
           auctiontimestamp: 1510852447530,
           targeting: {
-            includebidderkeys: false,
+            includebidderkeys: true,
             includewinners: true
           },
           channel: {
@@ -2208,7 +2208,7 @@ describe('S2S Adapter', function () {
         foo: 'bar',
         targeting: {
           includewinners: true,
-          includebidderkeys: false
+          includebidderkeys: true
         }
       });
     });
