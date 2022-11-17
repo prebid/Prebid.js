@@ -1,5 +1,6 @@
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 
+import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec } from 'modules/gumgumBidAdapter.js';
@@ -279,8 +280,8 @@ describe('gumgumAdapter', function () {
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(3);
       });
-      it('should set the correct pi param if product param is found and is equal to skin', function () {
-        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skin' } };
+      it('should set the correct pi param if product param is found and is equal to skins', function () {
+        const request = { ...bidRequests[0], params: { ...zoneParam, product: 'Skins' } };
         const bidRequest = spec.buildRequests([request])[0];
         expect(bidRequest.data.pi).to.equal(8);
       });
@@ -483,6 +484,20 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gdprConsent: gdprConsent };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data).to.not.include.any.keys('gdprConsent')
+    });
+    it('should not set coppa parameter if coppa config is set to false', function () {
+      config.setConfig({
+        coppa: false
+      });
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.coppa).to.eq(undefined);
+    });
+    it('should set coppa parameter to 1 if coppa config is set to true', function () {
+      config.setConfig({
+        coppa: true
+      });
+      const bidRequest = spec.buildRequests(bidRequests)[0];
+      expect(bidRequest.data.coppa).to.eq(1);
     });
     it('should add uspConsent parameter if it is present in the bidderRequest', function () {
       const noUspBidRequest = spec.buildRequests(bidRequests)[0];

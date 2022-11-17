@@ -4,10 +4,12 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -145,7 +147,7 @@ function lookupIabConsent({onSuccess, onError}) {
       if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
         const payload = json[cmpDataPkgName];
         // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
-        if (typeof cmpCallbacks[payload.callId] !== 'undefined') {
+        if (cmpCallbacks.hasOwnProperty(payload.callId)) {
           cmpCallbacks[payload.callId](payload.returnValue, payload.success);
         }
       }
@@ -227,7 +229,7 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook(fn, reqBidsConfigObj) {
   loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
     if (errMsg) {
       let log = logWarn;
@@ -239,6 +241,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
     }
 
     if (shouldCancelAuction) {
+      fn.stopTiming();
       if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
         reqBidsConfigObj.bidsBackHandler();
       } else {
@@ -248,7 +251,7 @@ export function requestBidsHook(fn, reqBidsConfigObj) {
       fn.call(this, reqBidsConfigObj);
     }
   });
-}
+});
 
 /**
  * This function checks the consent data provided by CMP to ensure it's in an expected state.
@@ -352,3 +355,23 @@ export function setConsentConfig(config) {
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+
+export function setOrtbGdpr(ortbRequest, bidderRequest) {
+  const consent = bidderRequest.gdprConsent;
+  if (consent) {
+    if (typeof consent.gdprApplies === 'boolean') {
+      deepSetValue(ortbRequest, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+    }
+    deepSetValue(ortbRequest, 'user.ext.consent', consent.consentString);
+  }
+}
+
+export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+  const addtl = bidderRequest.gdprConsent?.addtlConsent;
+  if (addtl && typeof addtl === 'string') {
+    deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'gdpr', fn: setOrtbGdpr});
+registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})

@@ -59,9 +59,9 @@ export const spec = {
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
-      if (i.params.cur !== undefined) {
-        params.cur = i.params.cur;
-      }
+
+      params.cur = i.params.cur || 'USD';
+
       if (i.params.subid !== undefined) {
         params.subid = i.params.subid;
       }
@@ -90,7 +90,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({data: params});
     })
     return {
       method: 'POST',

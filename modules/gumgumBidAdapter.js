@@ -294,6 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
+  const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
@@ -321,7 +322,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.to = to;
 
     // ADTS-169 add adUnitCode to requests
-    if (adUnitCode) data.aun = adUnitCode
+    if (adUnitCode) data.aun = adUnitCode;
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
@@ -370,11 +371,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
-      } else if (params.product && params.product.toLowerCase() === 'skin') {
+      } else if (params.product && params.product.toLowerCase() === 'skins') {
         data.pi = 8;
       }
     } else { // legacy params
-      data = { ...data, ...handleLegacyParams(params, sizes) }
+      data = { ...data, ...handleLegacyParams(params, sizes) };
     }
 
     if (gdprConsent) {
@@ -385,6 +386,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (uspConsent) {
       data.uspConsent = uspConsent;
+    }
+    if (coppa) {
+      data.coppa = coppa;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
@@ -400,7 +404,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       url: BID_ENDPOINT,
       method: 'GET',
       data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
-    })
+    });
   });
   return bids;
 }

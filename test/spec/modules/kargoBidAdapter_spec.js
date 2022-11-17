@@ -69,7 +69,33 @@ describe('kargo adapter tests', function () {
           userId: {
             tdid: 'fake-tdid'
           },
-          sizes: [[320, 50], [300, 250], [300, 600]]
+          sizes: [[320, 50], [300, 250], [300, 600]],
+          ortb2: {
+            device: {
+              sua: {
+                platform: {
+                  brand: 'macOS',
+                  version: [ '12', '6', '0' ]
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: [ '106', '0', '5249', '119' ]
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: [ '106', '0', '5249', '119' ]
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: [ '99', '0', '0', '0' ]
+                  }
+                ],
+                mobile: 0,
+                model: ''
+              }
+            }
+          }
         },
         {
           params: {
@@ -161,7 +187,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getKrgCrbOldStyle() {
-      return '%7B%22v%22%3A%22eyJzeW5jSWRzIjp7IjIiOiI4MmZhMjU1NS01OTY5LTQ2MTQtYjRjZS00ZGNmMTA4MGU5ZjkiLCIxNiI6IlZveElrOEFvSnowQUFFZENleUFBQUFDMiY1MDIiLCIyMyI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjI0IjoiVm94SWs4QW9KejBBQUVkQ2V5QUFBQUMyJjUwMiIsIjI1IjoiNWVlMjQxMzgtNWUwMy00YjlkLWE5NTMtMzhlODMzZjI4NDlmIiwiMl84MCI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjJfOTMiOiI1ZWUyNDEzOC01ZTAzLTRiOWQtYTk1My0zOGU4MzNmMjg0OWYifSwibGV4SWQiOiI1ZjEwODgzMS0zMDJkLTExZTctYmY2Yi00NTk1YWNkM2JmNmMiLCJjbGllbnRJZCI6IjI0MTBkOGYyLWMxMTEtNDgxMS04OGE1LTdiNWUxOTBlNDc1ZiIsIm9wdE91dCI6ZmFsc2UsImV4cGlyZVRpbWUiOjE0OTc0NDkzODI2NjgsImxhc3RTeW5jZWRBdCI6MTQ5NzM2Mjk3OTAxMn0=%22%7D';
+      return '{"v":"eyJzeW5jSWRzIjp7IjIiOiI4MmZhMjU1NS01OTY5LTQ2MTQtYjRjZS00ZGNmMTA4MGU5ZjkiLCIxNiI6IlZveElrOEFvSnowQUFFZENleUFBQUFDMiY1MDIiLCIyMyI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjI0IjoiVm94SWs4QW9KejBBQUVkQ2V5QUFBQUMyJjUwMiIsIjI1IjoiNWVlMjQxMzgtNWUwMy00YjlkLWE5NTMtMzhlODMzZjI4NDlmIiwiMl84MCI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjJfOTMiOiI1ZWUyNDEzOC01ZTAzLTRiOWQtYTk1My0zOGU4MzNmMjg0OWYifSwibGV4SWQiOiI1ZjEwODgzMS0zMDJkLTExZTctYmY2Yi00NTk1YWNkM2JmNmMiLCJjbGllbnRJZCI6IjI0MTBkOGYyLWMxMTEtNDgxMS04OGE1LTdiNWUxOTBlNDc1ZiIsIm9wdE91dCI6ZmFsc2UsImV4cGlyZVRpbWUiOjE0OTc0NDkzODI2NjgsImxhc3RTeW5jZWRBdCI6MTQ5NzM2Mjk3OTAxMn0="}';
     }
 
     function initializeKrgCrb(cookieOnly) {
@@ -188,7 +214,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType2OldStyle() {
-      return '%7B%22v%22%3A%22%26%26%26%26%26%26%22%7D';
+      return '{"v":"&&&&&&"}';
     }
 
     function initializeInvalidKrgCrbType2() {
@@ -200,7 +226,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType3OldStyle() {
-      return '%7B%22v%22%3A%22Ly8v%22%7D';
+      return '{"v":"Ly8v"}';
     }
 
     function initializeInvalidKrgCrbType3Cookie() {
@@ -208,7 +234,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getInvalidKrgCrbType4OldStyle() {
-      return '%7B%22v%22%3A%22bnVsbA%3D%3D%22%7D';
+      return '{"v":"bnVsbA=="}';
     }
 
     function initializeInvalidKrgCrbType4Cookie() {
@@ -220,7 +246,7 @@ describe('kargo adapter tests', function () {
     }
 
     function getEmptyKrgCrbOldStyle() {
-      return '%7B%22v%22%3A%22eyJleHBpcmVUaW1lIjoxNDk3NDQ5MzgyNjY4LCJsYXN0U3luY2VkQXQiOjE0OTczNjI5NzkwMTJ9%22%7D';
+      return '{"v":"eyJleHBpcmVUaW1lIjoxNDk3NDQ5MzgyNjY4LCJsYXN0U3luY2VkQXQiOjE0OTczNjI5NzkwMTJ9"}';
     }
 
     function initializeEmptyKrgCrb() {
@@ -259,6 +285,28 @@ describe('kargo adapter tests', function () {
         device: {
           width: screen.width,
           height: screen.height,
+          sua: {
+            platform: {
+              brand: 'macOS',
+              version: [ '12', '6', '0' ]
+            },
+            browsers: [
+              {
+                brand: 'Chromium',
+                version: [ '106', '0', '5249', '119' ]
+              },
+              {
+                brand: 'Google Chrome',
+                version: [ '106', '0', '5249', '119' ]
+              },
+              {
+                brand: 'Not;A=Brand',
+                version: [ '99', '0', '0', '0' ]
+              }
+            ],
+            mobile: 0,
+            model: '',
+          },
         },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
@@ -276,17 +324,43 @@ describe('kargo adapter tests', function () {
           optOut: false,
           usp: '1---'
         },
-        pageURL: window.location.href,
+        pageURL: 'https://www.prebid.org',
         prebidRawBidRequests: [
           {
             bidId: 1,
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS',
+                    version: [ '12', '6', '0' ]
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: [ '99', '0', '0', '0' ]
+                    }
+                  ],
+                  mobile: 0,
+                  model: ''
+                }
+              }
+            },
             params: {
               placementId: 'foo'
             },
             userId: {
               tdid: 'fake-tdid'
             },
-            sizes: [[320, 50], [300, 250], [300, 600]]
+            sizes: [[320, 50], [300, 250], [300, 600]],
           },
           {
             bidId: 2,
@@ -327,10 +401,18 @@ describe('kargo adapter tests', function () {
       if (excludeTdid) {
         delete clonedBids[0].userId.tdid;
       }
-      var payload = { timeout: 200, uspConsent: '1---', foo: 'bar' };
+      var payload = {
+        timeout: 200,
+        uspConsent: '1---',
+        refererInfo: {
+          page: 'https://www.prebid.org',
+        },
+      };
+
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
+
       var request = spec.buildRequests(clonedBids, payload);
       expected.sessionId = getSessionId();
       sessionIds.push(expected.sessionId);
@@ -340,7 +422,6 @@ describe('kargo adapter tests', function () {
       expect(request.method).to.equal('GET');
       expect(request.currency).to.equal('USD');
       expect(request.timeout).to.equal(200);
-      expect(request.foo).to.equal('bar');
       expect(krakenParams).to.deep.equal(expected);
       // Make sure session ID stays the same across requests simulating multiple auctions on one page load
       for (let i in sessionIds) {
@@ -593,6 +674,11 @@ describe('kargo adapter tests', function () {
     var shouldSimulateOutdatedBrowser, crb, isActuallyOutdatedBrowser;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        kargo: {
+          storageAllowed: true
+        }
+      };
       crb = {};
       shouldSimulateOutdatedBrowser = false;
       isActuallyOutdatedBrowser = false;

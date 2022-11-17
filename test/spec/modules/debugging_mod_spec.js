@@ -134,6 +134,13 @@ describe('bid interceptor', () => {
             expect(result).to.include.keys(REQUIRED_KEYS);
             expect(result.outer.inner).to.eql({key: 'value'});
           });
+
+          it('should respect array vs object definitions', () => {
+            const result = matchingRule({replace: {item: [replDef]}}).replace({});
+            expect(result.item).to.be.an('array');
+            expect(result.item.length).to.equal(1);
+            expect(result.item[0]).to.eql({key: 'value'});
+          });
         });
       });
 
@@ -263,6 +270,15 @@ describe('bid interceptor', () => {
         });
       });
     });
+  });
+});
+
+describe('Debugging config', () => {
+  it('should behave gracefully when sessionStorage throws', () => {
+    const logError = sinon.stub();
+    const getStorage = () => { throw new Error() };
+    getConfig({enabled: false}, {getStorage, logger: {logError}, hook});
+    expect(logError.called).to.be.true;
   });
 });
 

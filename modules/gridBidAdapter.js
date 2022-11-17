@@ -39,7 +39,8 @@ let hasSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['playwire', 'adlivetech', 'trustx'],
+  gvlid: GVLID,
+  aliases: ['playwire', 'adlivetech', { code: 'trustx', skipPbsAliasing: true }],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -72,10 +73,14 @@ export const spec = {
     let forceBidderName = false;
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
-    // TODO: is 'page' the right value here?
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
+    const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
+    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
     const imp = [];
     const bidsMap = {};
+    const requests = [];
+    const sources = [];
+    const bidsArray = [];
 
     validBidRequests.forEach((bid) => {
       if (!bidderRequestId) {
@@ -93,7 +98,8 @@ export const spec = {
       if (!endpoint) {
         endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
-      const { params: { uid, keywords, forceBidder }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
+      const { params: { uid, keywords, forceBidder, multiRequest }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
+      const { pubdata, secid, pubid, source, content: bidParamsContent } = bid.params;
       bidsMap[bidId] = bid;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
@@ -105,9 +111,10 @@ export const spec = {
           content = jwTargeting.content;
         }
       }
+
       let impObj = {
         id: bidId.toString(),
-        tagid: uid.toString(),
+        tagid: (secid || uid).toString(),
         ext: {
           divid: adUnitCode.toString()
         }
@@ -150,7 +157,54 @@ export const spec = {
       }
 
       if (impObj.banner || impObj.video) {
-        imp.push(impObj);
+        if (multiRequest) {
+          const reqSource = {
+            tid: bid.auctionId && bid.auctionId.toString(),
+            ext: {
+              wrapper: 'Prebid_js',
+              wrapper_version: '$prebid.version$'
+            }
+          };
+          if (bid.schain) {
+            reqSource.ext.schain = bid.schain;
+          }
+          const request = {
+            id: bid.bidderRequestId && bid.bidderRequestId.toString(),
+            site: {
+              page: referer,
+            },
+            tmax,
+            source: reqSource,
+            imp: [impObj]
+          };
+
+          if (pubid) {
+            request.site.publisher = { id: pubid };
+          }
+
+          const reqJwpseg = (pubdata && pubdata.jwpseg) || (jwTargeting && jwTargeting.segments);
+
+          const siteContent = bidParamsContent || (jwTargeting && jwTargeting.content);
+
+          if (siteContent) {
+            request.site.content = siteContent;
+          }
+
+          if (reqJwpseg && reqJwpseg.length) {
+            request.user = {
+              data: [{
+                name: 'iow_labs_pub_data',
+                segment: segmentProcessing(reqJwpseg, 'jwpseg'),
+              }]
+            };
+          }
+
+          requests.push(request);
+          sources.push(source);
+          bidsArray.push(bid);
+        } else {
+          imp.push(impObj);
+        }
       }
 
       if (!forceBidderName && forceBidder && ALIAS_CONFIG[forceBidder]) {
@@ -165,7 +219,7 @@ export const spec = {
       this.forceBidderName = forceBidderName;
     }
 
-    const source = {
+    const reqSource = {
       tid: auctionId && auctionId.toString(),
       ext: {
         wrapper: 'Prebid_js',
@@ -174,28 +228,25 @@ export const spec = {
     };
 
     if (schain) {
-      source.ext.schain = schain;
+      reqSource.ext.schain = schain;
     }
 
-    const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
-
-    let request = {
+    const mainRequest = (imp.length || !requests.length) ? {
       id: bidderRequestId && bidderRequestId.toString(),
       site: {
         page: referer
       },
       tmax,
-      source,
+      source: reqSource,
       imp
-    };
+    } : null;
 
     if (content) {
-      request.site.content = content;
+      mainRequest.site.content = content;
     }
 
     if (jwpseg && jwpseg.length) {
-      user = {
+      mainRequest.user = {
         data: [{
           name: 'iow_labs_pub_data',
           segment: segmentProcessing(jwpseg, 'jwpseg'),
@@ -203,131 +254,151 @@ export const spec = {
       };
     }
 
-    const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
-    if (ortb2UserData && ortb2UserData.length) {
-      if (!user) {
-        user = { data: [] };
+    [...requests, mainRequest].forEach((request) => {
+      if (!request) {
+        return;
       }
-      user = mergeDeep(user, {
-        data: [...ortb2UserData]
-      });
-    }
 
-    if (gdprConsent && gdprConsent.consentString) {
-      userExt = {consent: gdprConsent.consentString};
-    }
+      const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
+      if (ortb2UserData && ortb2UserData.length) {
+        user = request.user || { data: [] };
+        user = mergeDeep(user, {
+          data: [...ortb2UserData]
+        });
+      }
 
-    const ortb2UserExtDevice = deepAccess(bidderRequest, 'ortb2.user.ext.device');
-    if (ortb2UserExtDevice) {
-      userExt = userExt || {};
-      userExt.device = { ...ortb2UserExtDevice };
-    }
+      if (gdprConsent && gdprConsent.consentString) {
+        userExt = {consent: gdprConsent.consentString};
+      }
 
-    if (userIdAsEids && userIdAsEids.length) {
-      userExt = userExt || {};
-      userExt.eids = [...userIdAsEids];
-    }
+      const ortb2UserExtDevice = deepAccess(bidderRequest, 'ortb2.user.ext.device');
+      if (ortb2UserExtDevice) {
+        userExt = userExt || {};
+        userExt.device = { ...ortb2UserExtDevice };
+      }
 
-    if (userExt && Object.keys(userExt).length) {
-      user = user || {};
-      user.ext = userExt;
-    }
+      if (userIdAsEids && userIdAsEids.length) {
+        userExt = userExt || {};
+        userExt.eids = [...userIdAsEids];
+      }
 
-    const fpdUserId = getUserIdFromFPDStorage();
+      if (userExt && Object.keys(userExt).length) {
+        user = user || {};
+        user.ext = userExt;
+      }
 
-    if (fpdUserId) {
-      user = user || {};
-      user.id = fpdUserId.toString();
-    }
+      const fpdUserId = getUserIdFromFPDStorage();
 
-    if (user) {
-      request.user = user;
-    }
+      if (fpdUserId) {
+        user = user || {};
+        user.id = fpdUserId.toString();
+      }
 
-    const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
-    const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
+      if (user) {
+        request.user = user;
+      }
 
-    if (userKeywords) {
-      pageKeywords = pageKeywords || {};
-      pageKeywords.user = pageKeywords.user || {};
-      pageKeywords.user.ortb2 = [
-        {
-          name: 'keywords',
-          keywords: userKeywords.split(','),
-        }
-      ];
-    }
-    if (siteKeywords) {
-      pageKeywords = pageKeywords || {};
-      pageKeywords.site = pageKeywords.site || {};
-      pageKeywords.site.ortb2 = [
-        {
-          name: 'keywords',
-          keywords: siteKeywords.split(','),
-        }
-      ];
-    }
+      const userKeywords = deepAccess(bidderRequest, 'ortb2.user.keywords') || null;
+      const siteKeywords = deepAccess(bidderRequest, 'ortb2.site.keywords') || null;
 
-    if (pageKeywords) {
-      pageKeywords = reformatKeywords(pageKeywords);
+      if (userKeywords) {
+        pageKeywords = pageKeywords || {};
+        pageKeywords.user = pageKeywords.user || {};
+        pageKeywords.user.ortb2 = [
+          {
+            name: 'keywords',
+            keywords: userKeywords.split(','),
+          }
+        ];
+      }
+      if (siteKeywords) {
+        pageKeywords = pageKeywords || {};
+        pageKeywords.site = pageKeywords.site || {};
+        pageKeywords.site.ortb2 = [
+          {
+            name: 'keywords',
+            keywords: siteKeywords.split(','),
+          }
+        ];
+      }
+
       if (pageKeywords) {
-        request.ext = {
-          keywords: pageKeywords
+        pageKeywords = reformatKeywords(pageKeywords);
+        if (pageKeywords) {
+          request.ext = {
+            keywords: pageKeywords
+          };
+        }
+      }
+
+      if (gdprConsent && gdprConsent.gdprApplies) {
+        request.regs = {
+          ext: {
+            gdpr: gdprConsent.gdprApplies ? 1 : 0
+          }
         };
       }
-    }
 
-    if (gdprConsent && gdprConsent.gdprApplies) {
-      request.regs = {
-        ext: {
-          gdpr: gdprConsent.gdprApplies ? 1 : 0
+      if (uspConsent) {
+        if (!request.regs) {
+          request.regs = {ext: {}};
+        }
+        request.regs.ext.us_privacy = uspConsent;
+      }
+
+      if (config.getConfig('coppa') === true) {
+        if (!request.regs) {
+          request.regs = {};
+        }
+        request.regs.coppa = 1;
+      }
+
+      const site = deepAccess(bidderRequest, 'ortb2.site');
+      if (site) {
+        const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
+          return category && typeof category === 'string'
+        });
+        if (pageCategory.length) {
+          request.site.cat = pageCategory;
+        }
+        const genre = deepAccess(site, 'content.genre');
+        if (genre && typeof genre === 'string') {
+          request.site.content = {...request.site.content, genre};
+        }
+        const data = deepAccess(site, 'content.data');
+        if (data && data.length) {
+          const siteContent = request.site.content || {};
+          request.site.content = mergeDeep(siteContent, { data });
+        }
+        const id = deepAccess(site, 'content.id');
+        if (id) {
+          request.site.content = {...request.site.content, id};
         }
       }
-    }
+    });
 
-    if (uspConsent) {
-      if (!request.regs) {
-        request.regs = {ext: {}};
-      }
-      request.regs.ext.us_privacy = uspConsent;
-    }
-
-    if (config.getConfig('coppa') === true) {
-      if (!request.regs) {
-        request.regs = {};
-      }
-      request.regs.coppa = 1;
-    }
-
-    const site = deepAccess(bidderRequest, 'ortb2.site');
-    if (site) {
-      const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
-        return category && typeof category === 'string'
+    return [...requests.map((req, i) => {
+      let sp;
+      const url = (endpoint || ENDPOINT_URL).replace(/[?&]sp=([^?&=]+)/, (i, found) => {
+        if (found) {
+          sp = found;
+        }
+        return '';
       });
-      if (pageCategory.length) {
-        request.site.cat = pageCategory;
-      }
-      const genre = deepAccess(site, 'content.genre');
-      if (genre && typeof genre === 'string') {
-        request.site.content = {...request.site.content, genre};
-      }
-      const data = deepAccess(site, 'content.data');
-      if (data && data.length) {
-        const siteContent = request.site.content || {};
-        request.site.content = mergeDeep(siteContent, { data });
-      }
-      const id = deepAccess(site, 'content.id');
-      if (id) {
-        request.site.content = {...request.site.content, id};
-      }
-    }
-
-    return {
+      let currentSource = sources[i] || sp;
+      const urlWithParams = url + (url.indexOf('?') > -1 ? '&' : '?') + 'no_mapping=1' + (currentSource ? `&sp=${currentSource}` : '');
+      return {
+        method: 'POST',
+        url: urlWithParams,
+        data: JSON.stringify(req),
+        bid: bidsArray[i],
+      };
+    }), ...(mainRequest ? [{
       method: 'POST',
       url: endpoint || ENDPOINT_URL,
-      data: JSON.stringify(request),
+      data: JSON.stringify(mainRequest),
       bidsMap
-    };
+    }] : [])];
   },
   /**
    * Unpack the response from the server into a list of bids.
@@ -395,7 +466,7 @@ export const spec = {
  */
 function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bid.params.bidFloor || 0;
+  let floor = bid.params.bidFloor || bid.params.floorcpm || 0;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
@@ -431,7 +502,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
   if (!serverBid.auid) errorMessage = LOG_ERROR_MESS.noAuid + JSON.stringify(serverBid);
   if (!errorMessage && !serverBid.adm && !serverBid.nurl) errorMessage = LOG_ERROR_MESS.noAdm + JSON.stringify(serverBid);
   else {
-    const bid = bidRequest.bidsMap[serverBid.impid];
+    const bid = bidRequest.bidsMap ? bidRequest.bidsMap[serverBid.impid] : bidRequest.bid;
     if (bid) {
       const bidResponse = {
         requestId: bid.bidId, // bid.bidderRequestId
@@ -483,7 +554,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
 }
 
 function createVideoRequest(bid, mediaType) {
-  const {playerSize, mimes, durationRangeSec, protocols} = mediaType;
+  const { playerSize, mimes, durationRangeSec, protocols } = mediaType;
   const size = (playerSize || bid.sizes || [])[0];
   if (!size) return;
 

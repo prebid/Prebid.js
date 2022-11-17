@@ -136,10 +136,12 @@ describe('AdoceanAdapter', function () {
       expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
 
-    it('should attach sizes information to url', function () {
+    it('should attach sizes and slaves information to url', function () {
       let requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600');
+      expect(requests[0].url).to.include('slaves=zpniqismex');
       expect(requests[1].url).to.include('aosspsizes=myaozpniqismex~300x200_600x250');
+      expect(requests[1].url).to.include('slaves=zpniqismex');
 
       const differentSlavesBids = deepClone(bidRequests);
       differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
@@ -147,6 +149,7 @@ describe('AdoceanAdapter', function () {
       expect(requests.length).to.equal(1);
       expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600-myaowafpdwlrks~300x200_600x250');
       expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
+      expect(requests[0].url).to.include('slaves=zpniqismex,wafpdwlrks');
     });
 
     it('should attach schain parameter if available', function() {

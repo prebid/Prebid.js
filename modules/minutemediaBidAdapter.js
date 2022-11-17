@@ -286,6 +286,7 @@ function generateBidParameters(bid, bidderRequest) {
     sizes: sizesArray,
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: getBidIdParameter('transactionId', bid),
   };

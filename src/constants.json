@@ -29,6 +29,7 @@
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
+    "BID_REJECTED": "bidRejected",
     "NO_BID": "noBid",
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
@@ -46,7 +47,7 @@
     "STALE_RENDER": "staleRender",
     "BILLABLE_EVENT": "billableEvent"
   },
-  "AD_RENDER_FAILED_REASON" : {
+  "AD_RENDER_FAILED_REASON": {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
     "NO_AD": "noAd",
     "EXCEPTION": "exception",
@@ -75,7 +76,7 @@
     "UUID": "hb_uuid",
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host",
-    "ADOMAIN" : "hb_adomain"
+    "ADOMAIN": "hb_adomain"
   },
   "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
@@ -109,14 +110,61 @@
     "rendererUrl": "hb_renderer_url",
     "adTemplate": "hb_adTemplate"
   },
-  "S2S" : {
-    "SRC" : "s2s",
-    "DEFAULT_ENDPOINT" : "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
+  "S2S": {
+    "SRC": "s2s",
+    "DEFAULT_ENDPOINT": "https://prebid.adnxs.com/pbs/v1/openrtb2/auction",
     "SYNCED_BIDDERS_KEY": "pbjsSyncs"
   },
-  "BID_STATUS" : {
+  "BID_STATUS": {
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
-  }
+  },
+  "REJECTION_REASON": {
+    "INVALID": "Bid has missing or invalid properties",
+    "INVALID_REQUEST_ID": "Invalid request ID",
+    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes / allowUnknownBidderCodes",
+    "FLOOR_NOT_MET": "Bid does not meet price floor",
+    "CANNOT_CONVERT_CURRENCY": "Unable to convert currency"
+  },
+  "PREBID_NATIVE_DATA_KEYS_TO_ORTB": {
+    "body": "desc",
+    "body2": "desc2",
+    "sponsoredBy": "sponsored",
+    "cta": "ctatext",
+    "rating": "rating",
+    "address": "address",
+    "downloads": "downloads",
+    "likes": "likes",
+    "phone": "phone",
+    "price": "price",
+    "salePrice": "saleprice",
+    "displayUrl": "displayurl"
+  },
+  "NATIVE_ASSET_TYPES": {
+    "sponsored": 1,
+    "desc": 2,
+    "rating": 3,
+    "likes": 4,
+    "downloads": 5,
+    "price": 6,
+    "saleprice": 7,
+    "phone": 8,
+    "address": 9,
+    "desc2": 10,
+    "displayurl": 11,
+    "ctatext": 12
+  },
+  "NATIVE_IMAGE_TYPES": {
+    "ICON": 1,
+    "MAIN": 3
+  },
+  "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
+    "privacyLink",
+    "clickUrl",
+    "sendTargetingKeys",
+    "adTemplate",
+    "rendererUrl",
+    "type"
+  ]
 }
