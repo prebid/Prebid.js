@@ -1478,7 +1478,6 @@ describe('S2S Adapter', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.exist.and.to.be.a('object');
-      expect(requestBid.app).to.not.exist;
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher.id).to.exist.and.to.be.a('string');
       expect(requestBid.site.publisher.domain).to.exist.and.to.be.a('string');
@@ -1495,6 +1494,25 @@ describe('S2S Adapter', function () {
         },
         page: 'http://mytestpage.com'
       });
+    });
+
+    it('site should not be present when app is present', function () {
+      const _config = {
+        s2sConfig: CONFIG,
+        app: { bundle: 'com.test.app' },
+        site: {
+          publisher: {
+            id: '1234',
+            domain: 'test.com'
+          }
+        }
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.site).to.not.exist;
+      expect(requestBid.app).to.exist.and.to.be.a('object');
     });
 
     it('adds appnexus aliases to request', function () {
