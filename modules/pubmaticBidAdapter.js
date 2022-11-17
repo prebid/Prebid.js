@@ -1329,11 +1329,12 @@ export const spec = {
     // Allow translator request to execute it as GET Methoid if flag is set.
     if (hasGetRequestEnabled()) {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
+      const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
       const urlEncodedPayloadStr = parseQueryStringParameters({ 'source': 'ow-client', 'payload': JSON.stringify(payload) });
-      if ((ENDPOINT + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
+      if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
-          url: ENDPOINT,
+          url: configuredEndPoint,
           data: urlEncodedPayloadStr,
           bidderRequest: bidderRequest,
           payloadStr: JSON.stringify(payload)
