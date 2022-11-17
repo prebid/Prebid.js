@@ -1462,7 +1462,6 @@ describe('S2S Adapter', function () {
     it('adds site if app is not present', function () {
       const _config = {
         s2sConfig: CONFIG,
-        app: { bundle: 'com.test.app' },
         site: {
           publisher: {
             id: '1234',
@@ -1504,6 +1503,9 @@ describe('S2S Adapter', function () {
           publisher: {
             id: '1234',
             domain: 'test.com'
+          },
+          content: {
+            language: 'en'
           }
         }
       };
