@@ -11,14 +11,12 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-  getNextDealId,
-  getVidazooSessionId,
-} from 'modules/vidazooBidAdapter.js';
+} from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 
-const SUB_DOMAIN = 'openrtb';
+const SUB_DOMAIN = 'exchange';
 
 const BID = {
   'bidId': '2d52001cabd527',
@@ -92,7 +90,7 @@ function getTopWindowQueryParams() {
   }
 }
 
-describe('VidazooBidAdapter', function () {
+describe('KueezRtbBidAdapter', function () {
   describe('validtae spec', function () {
     it('exists and is a function', function () {
       expect(adapter.isBidRequestValid).to.exist.and.to.be.a('function');
@@ -149,7 +147,7 @@ describe('VidazooBidAdapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        vidazoo: {
+        kueezrtb: {
           storageAllowed: true
         }
       };
@@ -176,13 +174,10 @@ describe('VidazooBidAdapter', function () {
           bidId: '2d52001cabd527',
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
-          dealId: 1,
-          sessionId: '',
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
-          ptrace: '1000',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
@@ -202,7 +197,7 @@ describe('VidazooBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -210,7 +205,7 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -218,7 +213,7 @@ describe('VidazooBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.cootlogix.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
     })
@@ -317,63 +312,10 @@ describe('VidazooBidAdapter', function () {
     });
   });
 
-  describe('vidazoo session id', function () {
-    before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        vidazoo: {
-          storageAllowed: true
-        }
-      };
-    });
-    after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
-    });
-    it('should get undefined vidazoo session id', function () {
-      const sessionId = getVidazooSessionId();
-      expect(sessionId).to.be.empty;
-    });
-
-    it('should get vidazoo session id from storage', function () {
-      const vidSid = '1234-5678';
-      window.localStorage.setItem('vidSid', vidSid);
-      const sessionId = getVidazooSessionId();
-      expect(sessionId).to.be.equal(vidSid);
-    });
-  });
-
-  describe('deal id', function () {
-    before(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {
-        vidazoo: {
-          storageAllowed: true
-        }
-      };
-    });
-    after(function () {
-      $$PREBID_GLOBAL$$.bidderSettings = {};
-    });
-    const key = 'myDealKey';
-
-    it('should get the next deal id', function () {
-      const dealId = getNextDealId(key);
-      const nextDealId = getNextDealId(key);
-      expect(dealId).to.be.equal(1);
-      expect(nextDealId).to.be.equal(2);
-    });
-
-    it('should get the first deal id on expiration', function (done) {
-      setTimeout(function () {
-        const dealId = getNextDealId(key, 100);
-        expect(dealId).to.be.equal(1);
-        done();
-      }, 200);
-    });
-  });
-
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        vidazoo: {
+        kueezrtb: {
           storageAllowed: true
         }
       };
@@ -408,7 +350,7 @@ describe('VidazooBidAdapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        vidazoo: {
+        kueezrtb: {
           storageAllowed: true
         }
       };
