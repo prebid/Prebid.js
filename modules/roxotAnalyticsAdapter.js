@@ -1,5 +1,5 @@
 import {deepClone, getParameterByName, logError, logInfo} from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';

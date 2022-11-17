@@ -45,7 +45,7 @@ const RESPONSE = {
             'price': 0.18,
             'adm': '<script>adm</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -74,7 +74,7 @@ const RESPONSE = {
             'price': 0.1,
             'adm': '<script>adm2</script>',
             'adid': '144762342',
-            'adomain': [
+            'advertiserDomains': [
               'https://dummydomain.com'
             ],
             'iurl': 'iurl',
@@ -191,6 +191,26 @@ describe('YieldLift', function () {
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
       expect(payload.regs.ext).to.have.property('gdpr', 1);
     });
+
+    it('should properly forward eids parameters', function () {
+      const req = Object.assign({}, REQUEST);
+      req.bidRequest[0].userIdAsEids = [
+        {
+          source: 'dummy.com',
+          uids: [
+            {
+              id: 'd6d0a86c-20c6-4410-a47b-5cba383a698a',
+              atype: 1
+            }
+          ]
+        }];
+      let request = spec.buildRequests(req.bidRequest, req);
+
+      const payload = JSON.parse(request.data);
+      expect(payload.user.ext.eids[0].source).to.equal('dummy.com');
+      expect(payload.user.ext.eids[0].uids[0].id).to.equal('d6d0a86c-20c6-4410-a47b-5cba383a698a');
+      expect(payload.user.ext.eids[0].uids[0].atype).to.equal(1);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -208,7 +228,7 @@ describe('YieldLift', function () {
         expect(bids[index]).to.have.property('height', RESPONSE.body.seatbid[0].bid[index].h);
         expect(bids[index]).to.have.property('ad', RESPONSE.body.seatbid[0].bid[index].adm);
         expect(bids[index]).to.have.property('creativeId', RESPONSE.body.seatbid[0].bid[index].crid);
-        expect(bids[index].meta).to.have.property('adomain', RESPONSE.body.seatbid[0].bid[index].adomain);
+        expect(bids[index].meta).to.have.property('advertiserDomains', RESPONSE.body.seatbid[0].bid[index].advertiserDomains);
         expect(bids[index]).to.have.property('ttl', 30);
         expect(bids[index]).to.have.property('netRevenue', true);
       }

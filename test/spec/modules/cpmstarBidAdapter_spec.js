@@ -14,7 +14,7 @@ const valid_bid_requests = [{
 
 const bidderRequest = {
   refererInfo: {
-    page: 'referer',
+    referer: 'referer',
     reachedTop: false,
   }
 };

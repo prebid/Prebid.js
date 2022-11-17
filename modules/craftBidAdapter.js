@@ -14,6 +14,7 @@ import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -30,6 +31,9 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const schain = bidRequests[0].schain;
     const payload = {

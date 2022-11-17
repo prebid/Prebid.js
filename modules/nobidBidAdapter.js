@@ -30,7 +30,7 @@ function nobidBuildRequests(bids, bidderRequest) {
   var serializeState = function(divIds, siteId, adunits) {
     var filterAdUnitsByIds = function(divIds, adUnits) {
       var filtered = [];
-      if (!divIds || !divIds.length) {
+      if (!divIds.length) {
         filtered = adUnits;
       } else if (adUnits) {
         var a = [];
@@ -147,7 +147,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (eids && eids.length > 0) state['eids'] = eids;
     if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
-  }
+  };
   function newAdunit(adunitObject, adunits) {
     var getAdUnit = function(divid, adunits) {
       for (var i = 0; i < adunits.length; i++) {
@@ -438,7 +438,7 @@ export const spec = {
             type: 'image',
             url: element
           });
-        })
+        });
       }
       return syncs;
     } else {

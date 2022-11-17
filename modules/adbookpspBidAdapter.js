@@ -19,6 +19,7 @@ import {
   uniques
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
  * CONSTANTS
@@ -101,6 +102,9 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
   const requests = [];
 
   if (validBidRequests.length > 0) {

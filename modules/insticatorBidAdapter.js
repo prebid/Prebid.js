@@ -25,7 +25,7 @@ function getUserId() {
   let uid;
 
   if (storage.localStorageIsEnabled()) {
-    uid = localStorage.getItem(USER_ID_KEY);
+    uid = storage.getDataFromLocalStorage(USER_ID_KEY);
   } else {
     uid = storage.getCookie(USER_ID_KEY);
   }
@@ -39,11 +39,11 @@ function getUserId() {
 
 function setUserId(userId) {
   if (storage.localStorageIsEnabled()) {
-    localStorage.setItem(USER_ID_KEY, userId);
+    storage.setDataInLocalStorage(USER_ID_KEY, userId);
   }
 
   if (storage.cookiesAreEnabled()) {
-    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toUTCString();
     storage.setCookie(USER_ID_KEY, userId, expires);
   }
 }

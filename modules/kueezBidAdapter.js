@@ -244,6 +244,7 @@ function generateBidParameters(bid, bidderRequest) {
   const bidObject = {
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     bidId: getBidIdParameter('bidId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     floorPrice: Math.max(getFloorPrice(bid, mediaType), paramsFloorPrice),
     mediaType,
@@ -308,7 +309,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$'
-  }
+  };
 
   if (syncEnabled) {
     const allowedSyncMethod = getSyncMethod(filterSettings, bidderCode);
@@ -351,7 +352,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     params.userIds = JSON.stringify(userIds);
   }
 
-  return params
+  return params;
 }
 
 /**
