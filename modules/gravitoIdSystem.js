@@ -39,7 +39,7 @@ export const gravitoIdSystemSubmodule = {
   * decode the stored id value for passing to bid requests
   * @function
   * @param { {gravitompId: string} } value
-  * @returns { {gravitompId: {id: string} } | undefined }
+  * @returns { {gravitompId: {string} } | undefined }
   */
   decode: function(value) {
     if (value && typeof value === 'object') {
@@ -49,10 +49,8 @@ export const gravitoIdSystemSubmodule = {
       }
       return {gravitompId: result};
     }
-    
     return undefined;
   },
-
 }
 
 submodule('userId', gravitoIdSystemSubmodule);
