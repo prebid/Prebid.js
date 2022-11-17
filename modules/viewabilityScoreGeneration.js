@@ -122,6 +122,8 @@ export const addViewabilityTargeting = (globalConfig, targetingSet, vsgLocalStor
       vsgLocalStorageObj[targetKey].hasOwnProperty('viewed') &&
       vsgLocalStorageObj[targetKey].hasOwnProperty('rendered')
     ) {
+      // Will add only required targetting keys by this module. 
+      targetingSet[targetKey] = {};
       const viewabilityScore = Math.round((vsgLocalStorageObj[targetKey].viewed / vsgLocalStorageObj[targetKey].rendered) * 10) / 10;
       const viewabilityBucket = calculateBucket(globalConfig[MODULE_NAME][TARGETING].bucketCategories, viewabilityScore);
 
