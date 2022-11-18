@@ -370,7 +370,7 @@ function passCohortsToAppnexusAuctionKeywords(sspData) {
   if (shouldSetConfig) {
     config.setConfig({
       appnexusAuctionKeywords: {
-        'p_standard': sspData.cohorts
+        'p_standard_aud': sspData.cohorts
       }
     })
   }
