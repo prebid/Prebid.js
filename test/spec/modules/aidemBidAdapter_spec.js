@@ -12,6 +12,7 @@ const VALID_BIDS = [
     bidder: 'aidem',
     params: {
       siteId: '301491',
+      publisherId: '3021491',
       placementId: 13144370,
     },
     mediaTypes: {
@@ -24,6 +25,7 @@ const VALID_BIDS = [
     bidder: 'aidem',
     params: {
       siteId: '301491',
+      publisherId: '3021491',
       placementId: 13144370,
     },
     mediaTypes: {
@@ -54,7 +56,18 @@ const INVALID_BIDS = [
       }
     },
     params: {
-      siteId: undefined
+      siteId: '3014912',
+    }
+  },
+  {
+    bidder: 'aidem',
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]],
+      }
+    },
+    params: {
+      publisherId: '3014912',
     }
   },
   {

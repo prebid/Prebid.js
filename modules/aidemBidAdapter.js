@@ -20,6 +20,7 @@ export const ERROR_CODES = {
   PROPERTY_NOT_INCLUDED: 3,
   SITE_ID_INVALID_VALUE: 4,
   MEDIA_TYPE_NOT_SUPPORTED: 5,
+  PUBLISHER_ID_INVALID_VALUE: 6,
 };
 
 const endpoints = {
@@ -219,6 +220,8 @@ function setPrebidImpressionObject(bidRequests, payload) {
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // Publisher id
+    deepSetValue(payload, 'site.publisher_id', deepAccess(bidRequest, 'params.publisherId'));
     // Site id
     deepSetValue(payload, 'site.id', deepAccess(bidRequest, 'params.siteId'));
     const mediaType = getMediaType(bidRequest)
@@ -402,8 +405,15 @@ function hasValidVideoParameters(bidRequest) {
 function hasValidParameters(bidRequest) {
   // Assigned from AIDEM to a publisher website
   const siteId = deepAccess(bidRequest, 'params.siteId');
+  const publisherId = deepAccess(bidRequest, 'params.publisherId');
+
   if (!isStr(siteId)) {
     logError('AIDEM Bid Adapter: siteId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+    return false;
+  }
+
+  if (!isStr(publisherId)) {
+    logError('AIDEM Bid Adapter: publisherId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.PUBLISHER_ID_INVALID_VALUE });
     return false;
   }
 
