@@ -131,7 +131,7 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
 
     let cohorts = []
     if (isAcBidder) cohorts = segmentData.ac
-    if (isSspBidder) cohorts = [...new Set([...cohorts, sspCohorts])].slice(0, maxSegs)
+    if (isSspBidder) cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
 
     const nextConfig = updateOrtbConfig(currConfig, cohorts, transformationConfigs) // ORTB2 uses the `ac` segment IDs
     bidderOrtb2[bidder] = nextConfig.ortb2;

@@ -279,6 +279,43 @@ describe('permutiveRtdProvider', function () {
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
       })
     })
+    it('should merge ortb2 correctly for ac and ssps', function () {
+      setLocalStorage({
+        '_ppam': [],
+        '_psegs': [],
+        '_pcrprs': ['abc', 'def', 'xyz'],
+        '_pssps': {
+          ssps: ['foo', 'bar'],
+          cohorts: ['xyz', 'uvw'],
+        }
+      })
+      const moduleConfig = {
+        name: 'permutive',
+        waitForIt: true,
+        params: {
+          acBidders: ['foo'],
+          maxSegs: 30
+        }
+      }
+      const bidderConfig = {};
+      const acBidders = moduleConfig.params.acBidders
+      const expectedTargetingData = [
+        { id: 'abc' },
+        { id: 'def' },
+        { id: 'xyz' },
+        { id: 'uvw' },
+      ]
+
+      setBidderRtb(bidderConfig, moduleConfig)
+
+      const bidders = [...new Set([...acBidders, 'foo', 'bar'])]
+      bidders.forEach(bidder => {
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
+          name: 'permutive.com',
+          segment: expectedTargetingData
+        }], `bidder is ${bidder}`)
+      })
+    })
   })
 
   describe('Getting segments', function () {
