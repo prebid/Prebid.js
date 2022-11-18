@@ -61,7 +61,7 @@ export const spec = {
     if (payload) {
       switch (bidderName) {
         case 'pixad':
-          SYNC_URL = 'https://rtb.pixad.com.tr/sync.html';
+          SYNC_URL = 'https://static.pixad.com.tr/sync.html';
           break;
         default:
           SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
