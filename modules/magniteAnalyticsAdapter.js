@@ -706,7 +706,7 @@ magniteAdapter.track = ({ eventType, args }) => {
           'code as adUnitCode',
           'transactionId',
           'mediaTypes', mediaTypes => Object.keys(mediaTypes),
-          'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
+          'sizes as dimensions', sizes => (sizes || [[1, 1]]).map(sizeToDimensions),
         ]);
         ad.pbAdSlot = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
         ad.pattern = deepAccess(adUnit, 'ortb2Imp.ext.data.aupname');
