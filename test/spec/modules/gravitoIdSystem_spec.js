@@ -39,7 +39,7 @@ describe('gravitompId module', function () {
 
   describe('decode()', function () {
     it('should return the gravitompId when it exists in cookie', function () {
-      const decoded = gravitoIdSystemSubmodule.decode(GRAVITOID_TEST_OBJ);
+      const decoded = gravitoIdSystemSubmodule.decode(GRAVITOID_TEST_OBJ);      
       expect(decoded).to.be.deep.equal({gravitompId: GRAVITOID_TEST_VALUE});
     });
 
