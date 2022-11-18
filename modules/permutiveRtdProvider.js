@@ -119,9 +119,21 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
   const segmentData = getSegments(maxSegs)
 
-  acBidders.forEach(function (bidder) {
+  const ssps = segmentData?.ssp?.ssps ?? []
+  const sspCohorts = segmentData?.ssp?.cohorts ?? []
+
+  const bidders = new Set([...acBidders, ...ssps])
+  bidders.forEach(function (bidder) {
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
-    const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
+
+    const isAcBidder = acBidders.indexOf(bidder) > -1
+    const isSspBidder = ssps.indexOf(bidder) > -1
+
+    let cohorts = []
+    if (isAcBidder) cohorts = segmentData.ac
+    if (isSspBidder) cohorts = [...new Set([...cohorts, sspCohorts])].slice(0, maxSegs)
+
+    const nextConfig = updateOrtbConfig(currConfig, cohorts, transformationConfigs) // ORTB2 uses the `ac` segment IDs
     bidderOrtb2[bidder] = nextConfig.ortb2;
   })
 }
