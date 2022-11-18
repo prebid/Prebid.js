@@ -221,7 +221,7 @@ function setPrebidImpressionObject(bidRequests, payload) {
     // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
     // Publisher id
-    deepSetValue(payload, 'site.publisher_id', deepAccess(bidRequest, 'params.publisherId'));
+    deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
     // Site id
     deepSetValue(payload, 'site.id', deepAccess(bidRequest, 'params.siteId'));
     const mediaType = getMediaType(bidRequest)
