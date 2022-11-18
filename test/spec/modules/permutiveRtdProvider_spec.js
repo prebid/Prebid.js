@@ -293,28 +293,46 @@ describe('permutiveRtdProvider', function () {
         name: 'permutive',
         waitForIt: true,
         params: {
-          acBidders: ['foo'],
+          acBidders: ['foo', 'other'],
           maxSegs: 30
         }
       }
       const bidderConfig = {};
-      const acBidders = moduleConfig.params.acBidders
-      const expectedTargetingData = [
+
+      setBidderRtb(bidderConfig, moduleConfig)
+
+      // include both ac and ssp cohorts, as foo is both in ac bidders and ssps
+      const expectedFooTargetingData = [
         { id: 'abc' },
         { id: 'def' },
         { id: 'xyz' },
         { id: 'uvw' },
       ]
+      expect(bidderConfig['foo'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedFooTargetingData
+      }])
 
-      setBidderRtb(bidderConfig, moduleConfig)
+      // don't include ac targeting as it's not in ac bidders
+      const expectedBarTargetingData = [
+        { id: 'xyz' },
+        { id: 'uvw' },
+      ]
+      expect(bidderConfig['bar'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedBarTargetingData
+      }])
 
-      const bidders = [...new Set([...acBidders, 'foo', 'bar'])]
-      bidders.forEach(bidder => {
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
-          name: 'permutive.com',
-          segment: expectedTargetingData
-        }], `bidder is ${bidder}`)
-      })
+      // only include ac targeting as this ssp is not in ssps list
+      const expectedOtherTargetingData = [
+        { id: 'abc' },
+        { id: 'def' },
+        { id: 'xyz' },
+      ]
+      expect(bidderConfig['other'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedOtherTargetingData
+      }])
     })
   })
 
