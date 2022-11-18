@@ -84,7 +84,7 @@ export const gptImpressionViewableHandler = (adSlotElementId, setToLocalStorageC
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentage, setToLocalStorageCb) => {
   if (inViewPercentage > 50) {
     const lastStarted = vsgObj[adSlotElementId].lastViewed;
-    const currentTime = performance.now();
+    const currentTime = parseInt(performance.now());
 
     if (lastStarted) {
       const diff = currentTime - lastStarted;
@@ -158,7 +158,7 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
 }
 
 export const setGptEventHandlers = () => {
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
+  // events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
     // add the GPT event listeners
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
@@ -178,7 +178,7 @@ export const setGptEventHandlers = () => {
         gptSlotVisibilityChangedHandler(currentAdSlotElement, event.inViewPercentage, setAndStringifyToLocalStorage);
       });
     });
-  });
+  // });
 };
 
 const initConfigDefaults = config => {
