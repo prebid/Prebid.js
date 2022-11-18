@@ -306,7 +306,10 @@ const SAMPLE_REQUESTS = [
       'id': '55816b39711f9b5acf3b90e313ed29e51665623f'
     }
   },
-  {
+];
+
+if (FEATURES.NATIVE) {
+  SAMPLE_REQUESTS.push({
     'id': '80ce30c53c16e6ede735f123ef6e32361bfc7b22',
     'at': 1,
     'cur': ['USD'],
@@ -341,8 +344,8 @@ const SAMPLE_REQUESTS = [
     'user': {
       'id': '55816b39711f9b5acf3b90e313ed29e51665623f'
     }
-  }
-];
+  });
+}
 
 describe('BidRequest spec', () => {
   SAMPLE_REQUESTS.forEach((req, i) => {
