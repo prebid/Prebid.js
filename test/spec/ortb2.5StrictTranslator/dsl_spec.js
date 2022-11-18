@@ -1,4 +1,4 @@
-import {Arr, ERR_ENUM, ERR_TYPE, ERR_UNKNOWN_FIELD, IntEnum, Obj} from '../../../libraries/ortb2.5Translator/dsl.js';
+import {Arr, ERR_ENUM, ERR_TYPE, ERR_UNKNOWN_FIELD, IntEnum, Obj} from '../../../libraries/ortb2.5StrictTranslator/dsl.js';
 import {deepClone} from '../../../src/utils.js';
 
 describe('DSL', () => {
@@ -48,6 +48,14 @@ describe('DSL', () => {
       it('accepts enum values in range', () => {
         scan({inner: {enum: 12}});
         sinon.assert.notCalled(onError);
+      });
+      [Infinity, NaN, -Infinity].forEach(val => {
+        it(`does not accept ${val} in enum`, () => {
+          const obj = {inner: {enum: val}};
+          scan(obj);
+          sinon.assert.calledOnce(onError);
+          sinon.assert.calledWith(onError, ERR_ENUM, 'inner.enum', obj.inner, 'enum', val);
+        });
       });
       it('accepts arrays of enums that are in range', () => {
         scan({inner: {enumArray: [12, 13]}});

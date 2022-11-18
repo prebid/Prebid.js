@@ -1,4 +1,4 @@
-import {BidRequest} from '../../../libraries/ortb2.5Translator/spec.js';
+import {BidRequest} from '../../../libraries/ortb2.5StrictTranslator/spec.js';
 
 // sample requests taken from ORTB 2.5 spec: https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 const SAMPLE_REQUESTS = [
