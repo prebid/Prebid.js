@@ -310,6 +310,19 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
     });
 
+    it('merges first party site data', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const requestBody = testBuildRequests(baseBannerBidRequests, {...baseBidderRequest, ortb2}).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher).to.deep.equal({domain: 'https://foo.bar', id: '13144370'});
+    });
+
     it('sets keywords properly if sent', function () {
       const ortb2 = {
         site: {
