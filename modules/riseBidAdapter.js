@@ -309,6 +309,16 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.placementId = placementId;
   }
 
+  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
+  if (mimes) {
+    bidObject.mimes = mimes;
+  }
+
+  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
+  if (api) {
+    bidObject.api = api;
+  }
+
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
     let playbackMethodValue;
@@ -348,6 +358,11 @@ function generateBidParameters(bid, bidderRequest) {
     const linearity = deepAccess(bid, `mediaTypes.video.linearity`);
     if (linearity) {
       bidObject.linearity = linearity;
+    }
+
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
     }
   }
 
