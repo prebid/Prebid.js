@@ -107,6 +107,7 @@ function getMacros(bid, key) {
     '%%PATTERN:hb_bidder%%': bid.bidderCode,
     '%_isHb!': true,
     '%_hbcid!': bid.creativeId || '',
+    '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
     '%%SITE%%': location.hostname,
     '%_pimp%': PV_ID
