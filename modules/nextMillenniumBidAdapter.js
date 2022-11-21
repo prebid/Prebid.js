@@ -22,6 +22,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/metrics/timeout';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
@@ -32,6 +33,7 @@ const VIDEO_PARAMS = [
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
 
+events.on(CONSTANTS.EVENTS.BID_TIMEOUT, bidTimeoutHandler);
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 cleanWurl();
 
@@ -326,6 +328,15 @@ function removeWurl({auctionId, requestId}) {
 function getWurl({auctionId, requestId}) {
   const key = getKeyWurl({auctionId, requestId});
   return wurlMap[key] && wurlMap[key].wurl;
+}
+
+function bidTimeoutHandler(bids) {
+  for (let bid of bids) {
+    const bidder = bid.bidder || bid.bidderCode
+    if (bidder != BIDDER_CODE) continue
+
+    triggerPixel(`${REPORT_ENDPOINT}?bidder=${bidder}&source=pbjs`);
+  }
 }
 
 function bidWonHandler(bid) {
