@@ -11,20 +11,29 @@ import {submodule} from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const MODULE_NAME = 'uid2';
+const MODULE_REVISION = `1.0`;
+const PREBID_VERSION = '$prebid.version$';
+const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`;
 const GVLID = 887;
 const LOG_PRE_FIX = 'UID2: ';
 const ADVERTISING_COOKIE = '__uid2_advertising_token';
 
-function isValidIdentity(identity) {
-  return (typeof identity === 'object' &&
-      identity !== null &&
-      'advertising_token' in identity &&
-      'identity_expires' in identity &&
-      'refresh_from' in identity &&
-      'refresh_token' in identity &&
-      'refresh_expires' in identity
-  );
+// eslint-disable-next-line no-unused-vars
+const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
+const UID2_PROD_URL = 'https://prod.uidapi.com';
+const UID2_BASE_URL = UID2_PROD_URL;
+
+function getStorage() {
+  return getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 }
+
+function createLogInfo(prefix) {
+  return function (...strings) {
+    logInfo(prefix + ' ', ...strings);
+  }
+}
+export const storage = getStorage();
+const _logInfo = createLogInfo(LOG_PRE_FIX);
 
 function readCookie() {
   const cookie = storage.cookiesAreEnabled() ? storage.getCookie(ADVERTISING_COOKIE) : null;
@@ -42,54 +51,28 @@ function readFromLocalStorage() {
 
 function readServerProvidedCookie(cookieName) {
   const cookie = storage.getCookie(cookieName);
-  _logInfo(cookie);
   if (!cookie) return null;
+  _logInfo(`Read UID2 from server-provided cookie`);
   return JSON.parse(cookie);
 }
 
 function storeValue(value) {
-  if (storage.cookiesAreEnabled()) { storage.setCookie(ADVERTISING_COOKIE, JSON.stringify(value)); } else if (storage.localStorageIsEnabled()) { storage.setLocalStorage(ADVERTISING_COOKIE, value); }
-}
-
-function getStorage() {
-  return getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
-}
-
-export const storage = getStorage();
-
-const _logInfo = createLogInfo(LOG_PRE_FIX);
-
-function createLogInfo(prefix) {
-  return function (...strings) {
-    logInfo(prefix + ' ', ...strings);
+  if (storage.cookiesAreEnabled()) {
+    storage.setCookie(ADVERTISING_COOKIE, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
+  } else if (storage.localStorageIsEnabled()) {
+    storage.setLocalStorage(ADVERTISING_COOKIE, value);
   }
 }
 
-/**
- * Encode the id
- * @param value
- * @returns {string|*}
- */
-function encodeId(value) {
-  const result = {};
-  if (value) {
-    const bidIds = {
-      id: value
-    }
-    result.uid2 = bidIds;
-    _logInfo('Decoded value ' + JSON.stringify(result));
-    return result;
-  }
-  return undefined;
+function isValidIdentity(identity) {
+  return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
 
+// This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
 class Uid2ApiClient {
   constructor(opts) {
-    // const client = new Uid2ApiClient({baseUrl: 'https://operator-integ.uidapi.com'});
-    this._requestsInFlight = [];
-    // TODO: Back to prod url
-    this._baseUrl = opts.baseUrl ? opts.baseUrl : 'https://operator-integ.uidapi.com';
-    this._clientVersion = 'uid2-prebidjs-1.0.0';// Maybe grab the Prebid.js version somehow?
+    this._baseUrl = opts.baseUrl ? opts.baseUrl : UID2_BASE_URL;
+    this._clientVersion = UID2_CLIENT_ID;
   }
   createArrayBuffer(text) {
     const arrayBuffer = new Uint8Array(text.length);
@@ -98,18 +81,13 @@ class Uid2ApiClient {
     }
     return arrayBuffer;
   }
-  hasActiveRequests() {
-    return this._requestsInFlight.length > 0;
-  }
-  isUnvalidatedRefreshResponse(response) {
-    return typeof (response) === 'object' && response !== null && 'status' in response;
+  hasStatusResponse(response) {
+    return typeof (response) === 'object' && response && response.status;
   }
   isValidRefreshResponse(response) {
-    if (this.isUnvalidatedRefreshResponse(response)) {
-      return response.status === 'optout' || response.status === 'expired_token' ||
-            (response.status === 'success' && 'body' in response && (0, isValidIdentity)(response.body));
-    }
-    return false;
+    return this.hasStatusResponse(response) && (
+      response.status === 'optout' || response.status === 'expired_token' || (response.status === 'success' && response.body && isValidIdentity(response.body))
+    );
   }
   ResponseToRefreshResult(response) {
     if (this.isValidRefreshResponse(response)) {
@@ -117,16 +95,9 @@ class Uid2ApiClient {
       return response;
     } else { return "Response didn't contain a valid status"; }
   }
-  abortActiveRequests() {
-    this._requestsInFlight.forEach(req => {
-      req.abort();
-    });
-    this._requestsInFlight = [];
-  }
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
     const req = new XMLHttpRequest();
-    this._requestsInFlight.push(req);
     req.overrideMimeType('text/plain');
     req.open('POST', url, true);
     req.setRequestHeader('X-UID2-Client-Version', this._clientVersion);
@@ -138,17 +109,17 @@ class Uid2ApiClient {
     });
     req.onreadystatechange = () => {
       if (req.readyState !== req.DONE) { return; }
-      this._requestsInFlight = this._requestsInFlight.filter(r => r !== req);
       try {
         if (!refreshDetails.refresh_response_key || req.status !== 200) {
-          _logInfo('No key, assuming JSON response');
+          _logInfo('Error status OR no response decryption key available, assuming unencrypted JSON');
           const response = JSON.parse(req.responseText);
           const result = this.ResponseToRefreshResult(response);
           if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
         } else {
-          _logInfo('Key, decrypting');
+          _logInfo('Decrypting refresh API response');
           const encodeResp = this.createArrayBuffer(atob(req.responseText));
           window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
+            _logInfo('Imported decryption key')
             // returns the symmetric key
             window.crypto.subtle.decrypt({
               name: 'AES-GCM',
@@ -167,7 +138,7 @@ class Uid2ApiClient {
         rejectPromise(err);
       }
     };
-    _logInfo('Sending refresh', req);
+    _logInfo('Sending refresh request', req);
     req.send(refreshDetails.refresh_token);
     return promise;
   }
@@ -193,29 +164,23 @@ export const uid2IdSubmodule = {
    * @returns {{uid2:{ id: string }} or undefined if value doesn't exists
    */
   decode(value) {
-    _logInfo('UID2 decode()', value);
-
+    _logInfo('Calling UID2 decode()', value);
     const result = decodeImpl(value);
-
     _logInfo('UID2 decode returned', result);
     return result;
   },
 
   getId(config, consentData) {
+    _logInfo('Calling UID2 getId()', config, consentData);
     const result = getIdImpl(config, consentData);
     logInfo(`UID2 getId returned`, result);
-
-    // TODO: Check debug flag first...
-    if (result && typeof result === 'object' && 'id' in result && typeof result.id === 'object' && 'latestToken' in result.id) {
-      window.__uid2_debug = result.id;
-    }
     return result;
   },
 };
 
-function refreshTokenAndStore(token) {
-  // TODO:     const apiClient = new Uid2ApiClient({ baseUrl: config?.params?.uid2ApiBase });
-  const client = new Uid2ApiClient({baseUrl: 'https://operator-integ.uidapi.com'});
+function refreshTokenAndStore(baseUrl, token) {
+  _logInfo('UID2 base url provided: ', baseUrl);
+  const client = new Uid2ApiClient({baseUrl});
   return client.callRefreshApi(token).then((response) => {
     _logInfo('Refresh responded with:', response);
     const tokens = {
@@ -229,7 +194,7 @@ function refreshTokenAndStore(token) {
 
 function decodeImpl(value) {
   if (typeof value === 'string') {
-    // This must be a legacy integration with no new token - all we can do is use it and hope
+    _logInfo('Found an old-style ID from an earlier version of the module. Refresh is unavailable for this token.');
     const result = { uid2: { id: value } };
     return result;
   }
@@ -247,21 +212,22 @@ function decodeImpl(value) {
    * @returns {uid2Id}
    */
 function getIdImpl(config, consentData) {
-  logInfo('UID2 getId()', config, consentData);
   let suppliedToken = null;
-  if ('params' in config && config.params) {
-    if ('uid2Token' in config.params && config.params.uid2Token) {
+  const uid2BaseUrl = config?.params?.uid2ApiBase ?? UID2_BASE_URL;
+  if (config && config.params) {
+    if (config.params.uid2Token) {
       suppliedToken = config.params.uid2Token;
-    } else if ('uid2ServerCookie' in config.params && config.params.uid2ServerCookie) {
+      _logInfo('Read token from params', suppliedToken);
+    } else if (config.params.uid2ServerCookie) {
       suppliedToken = readServerProvidedCookie(config.params.uid2ServerCookie);
+      _logInfo('Read token from supplied cookie', suppliedToken);
     }
-    logInfo('Supplied token:', suppliedToken)
   }
   let storedTokens = readCookie() || readFromLocalStorage();
-  _logInfo('Stored tokens:', storedTokens);
+  _logInfo('Loaded module stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
-    // Legacy value stored, this must be an old integration. If no token supplied, just use the legacy value.
+    // Legacy value stored, this must be from an old integration. If no token supplied, just use the legacy value.
 
     if (!suppliedToken) {
       _logInfo('Returning legacy cookie value.');
@@ -275,37 +241,32 @@ function getIdImpl(config, consentData) {
   if (suppliedToken && storedTokens) {
     if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
       _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
-      // Stored token wasn't originally sourced from the provided token - ignore the stored value.
+      // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
       storedTokens = null;
     }
   }
   // At this point, any legacy values or superseded stored tokens have been nulled out.
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  _logInfo('Decided what to use', useSuppliedToken, newestAvailableToken);
+  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
   if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
     _logInfo('Newest available token is expired and not refreshable.');
-    // TODO: If in debug mode...
-    window.__uid2_debug = {...window.__uid2_debug, expiredToken: newestAvailableToken};
     return { id: null };
   }
   if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(newestAvailableToken);
+    const promise = refreshTokenAndStore(uid2BaseUrl, newestAvailableToken);
     _logInfo('Token is expired but can be refreshed, attempting refresh.');
     return { callback: (cb) => {
       promise.then((result) => {
         _logInfo('Promise resolved, sending off the result', result);
-        if (result && 'id' in result && result.id && 'latestToken' in result.id) {
-          window.__uid2_debug = result.id;
-        }
         cb(result);
       });
     } };
   }
-  // TODO: If should refresh (but don't need to), refresh in the background.
+  // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
     _logInfo(`Should refresh but don't have to.`);
-    refreshTokenAndStore(newestAvailableToken);
+    refreshTokenAndStore(uid2BaseUrl, newestAvailableToken);
   }
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
