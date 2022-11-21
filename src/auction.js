@@ -84,7 +84,7 @@ import {userSync} from './userSync.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {OUTSTREAM} from './video.js';
-import {VIDEO, NATIVE} from './mediaTypes.js';
+import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
@@ -465,7 +465,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       if (bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
-        if (FEATURES.NATIVE && bidResponse.mediaType === NATIVE) {
+        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
+          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
+          // to treat banner responses as native
           addLegacyFieldsIfNeeded(bidResponse);
         }
         addBidToAuction(auctionInstance, bidResponse);
