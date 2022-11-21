@@ -35,7 +35,7 @@ const wurlMap = {};
 
 events.on(CONSTANTS.EVENTS.BID_TIMEOUT, bidTimeoutHandler);
 events.on(CONSTANTS.EVENTS.BID_RESPONSE, bidResponseHandler);
-events.on(CONSTANTS.EVENTS.NO_BID, bidNoBidHandler);
+events.on(CONSTANTS.EVENTS.NO_BID, noBidHandler);
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 cleanWurl();
 
@@ -348,7 +348,7 @@ function bidResponseHandler(bid) {
   triggerPixel(`${REPORT_ENDPOINT}?event=response&bidder=${bidder}&source=pbjs`);
 }
 
-function bidNoBidHandler(bid) {
+function noBidHandler(bid) {
   const bidder = bid.bidder || bid.bidderCode
   if (bidder != BIDDER_CODE) return
 
