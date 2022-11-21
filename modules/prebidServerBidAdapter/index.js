@@ -223,7 +223,7 @@ export function resetSyncedStatus() {
 /**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
+function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig, storedRequests) {
   if (_s2sConfigs.length === _syncCount) {
     return;
   }
@@ -232,7 +232,8 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   const payload = {
     uuid: generateUUID(),
     bidders: bidderCodes,
-    account: s2sConfig.accountId
+    account: s2sConfig.accountId,
+    storedRequests
   };
 
   let userSyncLimit = s2sConfig.userSyncLimit;
@@ -1122,6 +1123,23 @@ function getConsentData(bidRequests) {
 }
 
 /**
+ *
+ * @param bidRequests
+ * @param s2sBidRequest
+ * @returns {{topLevelStoredRequestId: string, placementStoredRequestIds: *[]}}
+ */
+function getStoredRequestIds(bidRequests, s2sBidRequest) {
+  let topLevelStoredRequestId = '';
+  if (typeof config.getConfig('ortb2') === 'object') {
+    topLevelStoredRequestId = deepAccess(config.getConfig('ortb2'), 'ext.prebid.storedrequest.id');
+  }
+  const placementStoredRequestIds = s2sBidRequest.ad_units
+    .map(adUnit => deepAccess(adUnit, 'ortb2Imp.ext.prebid.storedrequest.id'))
+    .filter(str => str !== undefined);
+  return {topLevelStoredRequestId, placementStoredRequestIds}
+}
+
+/**
  * Bidder adapter for Prebid Server
  */
 export function PrebidServer() {
@@ -1142,8 +1160,9 @@ export function PrebidServer() {
         let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
-
-        queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig);
+        const storedRequests = getStoredRequestIds(bidRequests, s2sBidRequest);
+        logInfo('S2S storedRequest ids for userSync', storedRequests);
+        queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig, storedRequests);
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
