@@ -21,7 +21,10 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
   if (vsgObj) {
     bidderRequests.forEach(bidderRequest => {
       bidderRequest.bids.forEach(bid => {
-        if (vsgObj[bid.adUnitCode]) bid.bidViewability = vsgObj[bid.adUnitCode];
+		const bidViewabilityFields = { ...vsgObj[bid.adUnitCode]};
+		// Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
+		delete bidViewabilityFields.lastViewStarted;
+        if (vsgObj[bid.adUnitCode]) bid.bidViewability = bidViewabilityFields;
       });
     });
   }
@@ -82,18 +85,24 @@ export const gptImpressionViewableHandler = (adSlotElementId, setToLocalStorageC
 };
 
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentage, setToLocalStorageCb) => {
-  if (inViewPercentage > 50) {
-    const lastStarted = vsgObj[adSlotElementId].lastViewed;
-    const currentTime = parseInt(performance.now());
-
-    if (lastStarted) {
-      const diff = currentTime - lastStarted;
-      vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + (diff / 1000));
-    }
-
-    vsgObj[adSlotElementId].lastViewed = currentTime;
-    setToLocalStorageCb('viewability-data', vsgObj);
-  }
+	const currentTime = Date.now();
+	const lastViewStarted = vsgObj[adSlotElementId].lastViewStarted;
+	let diff;
+	if(inViewPercentage < 50) {
+		if (lastViewStarted) {
+			diff = currentTime - lastViewStarted;
+			vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
+			delete vsgObj[adSlotElementId].lastViewStarted;
+		}
+	} else {
+	if (lastViewStarted) {
+		diff = currentTime - lastViewStarted;
+		vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
+	}
+	vsgObj[adSlotElementId].lastViewStarted = currentTime;
+	vsgObj[adSlotElementId].lastViewed = parseInt(performance.now());
+	setToLocalStorageCb('viewability-data', vsgObj);
+	}
 };
 
 export const calculateBucket = (bucketCategories, score) => {
