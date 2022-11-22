@@ -116,8 +116,6 @@ describe(`UID2 module`, function () {
     debugOutput(fullTestTitle);
     testSandbox = sinon.sandbox.create();
     testSandbox.stub(utils, 'logWarn');
-    coreStorage.setCookie(moduleCookieName, '', expireCookieDate);
-    coreStorage.setCookie(publisherCookieName, '', expireCookieDate);
 
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
@@ -136,6 +134,9 @@ describe(`UID2 module`, function () {
         await timerSpy.waitAllActiveTimers();
       }
     }
+    coreStorage.setCookie(moduleCookieName, '', expireCookieDate);
+    coreStorage.setCookie(publisherCookieName, '', expireCookieDate);
+
     debugOutput('----------------- END TEST ------------------');
   });
 
