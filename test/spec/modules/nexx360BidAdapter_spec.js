@@ -40,26 +40,6 @@ describe('Nexx360 bid adapter tests', function () {
       'pageViewId': '5b970aba-51e9-4e0a-8299-f3f5618c695e'
     }}
 
-  const DISPLAY_BID_RESPONSE = {'body': {
-    'responses': [
-      {
-        'bidId': '4d9e29504f8af6',
-        'cpm': 0.437245,
-        'width': 300,
-        'height': 250,
-        'creativeId': '98493581',
-        'currency': 'EUR',
-        'netRevenue': true,
-        'type': 'banner',
-        'ttl': 360,
-        'uuid': 'ce6d1ee3-2a05-4d7c-b97a-9e62097798ec',
-        'bidder': 'appnexus',
-        'consent': 1,
-        'tagId': 'luvxjvgn'
-      }
-    ],
-  }};
-
   const VIDEO_BID_REQUEST = [
     {
       'bidder': 'nexx360',
@@ -89,26 +69,6 @@ describe('Nexx360 bid adapter tests', function () {
       'bidderWinsCount': 0
     }
   ]
-
-  const VIDEO_BID_RESPONSE = {'body': {
-    'responses': [
-      {
-        'bidId': '2c129e8e01859a',
-        'type': 'video',
-        'uuid': 'b8e7b2f0-c378-479f-aa4f-4f55d5d7d1d5',
-        'cpm': 4.5421,
-        'width': 1,
-        'height': 1,
-        'creativeId': '97517771',
-        'currency': 'EUR',
-        'netRevenue': true,
-        'ttl': 360,
-        'bidder': 'appnexus',
-        'consent': 1,
-        'tagId': 'yqsc1tfj'
-      }
-    ]
-  }};
 
   const DEFAULT_OPTIONS = {
     gdprConsent: {
@@ -397,6 +357,93 @@ describe('Nexx360 bid adapter tests', function () {
                     'IAB3-1'
                   ],
                   'creativeuuid': 'fdddcebc-1edf-489d-880d-1418d8bdc493',
+                  'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
+                  'ext': {
+                    'dsp_id': 'ssp1',
+                    'buyer_id': 'foo',
+                    'brand_id': 'bar'
+                  }
+                }
+              ],
+              'seat': 'appnexus'
+            }
+          ],
+          'cookies': []
+        }
+      };
+      const output = spec.interpretResponse(response);
+      expect(output[0].bidderCode).to.be.eql('nexx360');
+      expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].adUrl);
+      expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].type);
+      expect(output[0].currency).to.be.eql(response.body.cur);
+      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+      expect(output[0].meta.networkId).to.be.eql(response.body.seatbid[0].bid[0].ext.dsp_id);
+      expect(output[0].meta.advertiserId).to.be.eql(response.body.seatbid[0].bid[0].ext.buyer_id);
+      expect(output[0].meta.brandId).to.be.eql(response.body.seatbid[0].bid[0].ext.brand_id);
+    });
+    it('video responses', function() {
+      const response = {
+        body: {
+          'id': '33894759-0ea2-41f1-84b3-75132eefedb6',
+          'cur': 'USD',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '294478680080716675',
+                  'impid': '2c835a6039e65f',
+                  'price': 5,
+                  'type': 'instream',
+                  'adomain': [
+                    ''
+                  ],
+                  'crid': '97517771',
+                  'ssp': 'appnexus',
+                  'h': 1,
+                  'w': 1,
+                  'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>prebid.org wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=9987328a-b15a-4549-974b-203cd9bbe5d3]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=5.002000800320127&cur=EUR&user_agent=Mozilla%2F5.0+%28iPhone%3B+CPU+iPhone+OS+13_2_3+like+Mac+OS+X%29+AppleWebKit%2F605.1.15+%28KHTML%2C+like+Gecko%29+Version%2F13.0.3+Mobile%2F15E148+Safari%2F604.1&consent=1&abtest_id=0&tag_id=yqsc1tfj&mediatype=video]]></Impression>\n        <Creatives></Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
+                }
+              ],
+              'seat': 'appnexus'
+            }
+          ],
+          'cookies': []
+        }
+      };
+      const output = spec.interpretResponse(response);
+      expect(output[0].bidderCode).to.be.eql('nexx360');
+      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].vastXml);
+      expect(output[0].mediaType).to.be.eql('video');
+      expect(output[0].currency).to.be.eql(response.body.cur);
+      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+    });
+  });
+
+  describe('interpretResponse()', function() {
+    it('banner responses', function() {
+      const response = {
+        body: {
+          'id': 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          'cur': 'USD',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '4427551302944024629',
+                  'impid': '226175918ebeda',
+                  'price': 1.5,
+                  'type': 'banner',
+                  'adomain': [
+                    'http://prebid.org'
+                  ],
+                  'crid': '98493581',
+                  'ssp': 'appnexus',
+                  'h': 600,
+                  'w': 300,
+                  'cat': [
+                    'IAB3-1'
+                  ],
+                  'creativeuuid': 'fdddcebc-1edf-489d-880d-1418d8bdc493',
                   'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493'
                 }
               ],
@@ -448,6 +495,31 @@ describe('Nexx360 bid adapter tests', function () {
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+    });
+  });
+
+  describe('getUserSyncs()', function() {
+    const response = { body: { cookies: [] } };
+    it('Verifies user sync without cookie in bid response', function () {
+      var syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
+    it('Verifies user sync with cookies in bid response', function () {
+      response.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
+      var syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0]).to.have.property('type').and.to.equal('image');
+      expect(syncs[0]).to.have.property('url').and.to.equal('http://www.cookie.sync.org/');
+    });
+    it('Verifies user sync with no bid response', function() {
+      var syncs = spec.getUserSyncs({}, null, DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+    });
+    it('Verifies user sync with no bid body response', function() {
+      var syncs = spec.getUserSyncs({}, [], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
+      var syncs = spec.getUserSyncs({}, [{}], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
+      expect(syncs).to.have.lengthOf(0);
     });
   });
 });
