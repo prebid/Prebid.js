@@ -672,7 +672,7 @@ function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionMa
   Object.assign(bidResponse, {
     responseTimestamp: bidResponse.responseTimestamp || timestamp(),
     requestTimestamp: bidResponse.requestTimestamp || start,
-    cpm: bidResponse.cpm || parseFloat(bidResponse.cpm) || 0,
+    cpm: parseFloat(bidResponse.cpm) || 0,
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
   });
