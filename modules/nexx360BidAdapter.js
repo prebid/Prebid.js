@@ -58,9 +58,6 @@ function buildRequests(bids, bidderRequest) {
     if (isVideoBid(bid)) impObject.video = getVideoObject(bid);
     data.imp.push(impObject);
   });
-  // let videoBids = bids.filter(bid => isVideoBid(bid));
-  // let bannerBids = bids.filter(bid => isBannerBid(bid));
-  // let requests = bannerBids.length ? [createBannerRequest(bannerBids, bidderRequest)] : [];
   return {
     method: 'POST',
     url: REQUEST_URL,
@@ -170,34 +167,6 @@ function enrichImp(imp, bid, floor) {
     imp.ext.data = bid.ortb2Imp.ext.data;
   }
 }
-
-// function createBannerRequest(bids, bidderRequest) {
-//   let data = getBaseRequest(bids[0], bidderRequest);
-//   data.imp = bids.map(bid => {
-//     const floor = getFloor(bid, BANNER);
-//     let imp = {
-//       id: bid.bidId,
-//       tagid: bid.params.unit,
-//       banner: {
-//         format: toFormat(bid.mediaTypes.banner.sizes),
-//         topframe: utils.inIframe() ? 0 : 1
-//       },
-//       ext: {divid: bid.adUnitCode}
-//     };
-
-//     if (bidderRequest.fledgeEnabled) {
-//       imp.ext.ae = bid?.ortb2Imp?.ext?.ae
-//     }
-
-//     enrichImp(imp, bid, floor);
-//     return imp;
-//   });
-//   return {
-//     method: 'POST',
-//     url: REQUEST_URL,
-//     data: data
-//   }
-// }
 
 function getBaseRequest(bid, bidderRequest) {
   let req = {
