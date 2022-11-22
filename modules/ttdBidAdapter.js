@@ -38,7 +38,7 @@ function getRegs(bidderRequest) {
   if (utils.deepAccess(bidderRequest, 'ortb2.regs.coppa') === 1 || config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
-  if (utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') && utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') === 'string') {
+  if (utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') && typeof utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') === 'string') {
     utils.deepSetValue(regs, 'gpp', utils.deepAccess(bidderRequest, 'ortb2.regs.gpp'));
   }
   if (utils.deepAccess(bidderRequest, 'ortb2.regs.gpp_sid') && Array.isArray(utils.deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'))) {
