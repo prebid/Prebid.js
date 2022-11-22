@@ -403,11 +403,11 @@ describe('ttdBidAdapter', function () {
     it('adds gpp consent info to the request', function () {
       let clonedBidderRequest = deepClone(baseBidderRequest);
 
-      config.setConfig(pbjs.setConfig({ ortb2: { regs: { gpp: 'somegppstring', gpp_sid: [6,7] }}}));
+      config.setConfig(pbjs.setConfig({ortb2: {regs: {gpp: 'somegppstring', gpp_sid: [6, 7] }}}));
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       config.resetConfig();
       expect(requestBody.regs.gpp).to.equal('somegppstring');
-      expect(requestBody.regs.gpp_sid).to.equal([6,7]);
+      expect(requestBody.regs.gpp_sid).to.equal([6, 7]);
     });
 
     it('adds schain info to the request', function () {
