@@ -93,13 +93,19 @@ const testApiSuccessAndFailure = (act, testDescription, failTestDescription, onl
   });
 }
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle;
+  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
     uninstallGdprEnforcement();
 
     suiteSandbox = sinon.sandbox.create();
+    // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
+    // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
+    if (typeof window.crypto.subtle === 'undefined') {
+      restoreSubtleToUndefined = true;
+      window.crypto.subtle = { importKey: () => {}, decrypt: () => {} };
+    }
     suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
     suiteSandbox.stub(window.crypto.subtle, 'decrypt').callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
   });
@@ -107,6 +113,7 @@ describe(`UID2 module`, function () {
   after(function () {
     suiteSandbox.restore();
     timerSpy.restore();
+    if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
 
   const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
