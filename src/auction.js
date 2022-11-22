@@ -740,8 +740,6 @@ function setupBidTargeting(bidObject) {
   let keyValues;
   const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
-    // eslint-disable-next-line no-console
-    console.log('meow');
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
 
@@ -810,8 +808,6 @@ export const getPriceByGranularity = (granularity) => {
  */
 export const getAdvertiserDomain = () => {
   return (bid) => {
-    // eslint-disable-next-line no-console
-    console.log('bid: ', bid);
     return (bid.meta && bid.meta.advertiserDomains && bid.meta.advertiserDomains.length > 0) ? bid.meta.advertiserDomains[0] : '';
   }
 }
@@ -822,8 +818,6 @@ export const getAdvertiserDomain = () => {
  */
 export const getPrimaryCatId = () => {
   return (bid) => {
-    // eslint-disable-next-line no-console
-    console.log('bid: ', bid);
     return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
   }
 }
@@ -897,8 +891,6 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = auctionManager.index} = {}) {
-  // eslint-disable-next-line no-console
-  console.log('test 1');
   if (!custBidObj) {
     return {};
   }
@@ -920,9 +912,6 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
   if (FEATURES.NATIVE && custBidObj['native']) {
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
-
-  // eslint-disable-next-line no-console
-  console.log('keyValues: ', keyValues);
 
   return keyValues;
 }
