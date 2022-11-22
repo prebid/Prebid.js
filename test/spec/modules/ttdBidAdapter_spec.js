@@ -411,7 +411,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       config.resetConfig();
       expect(requestBody.regs.gpp).to.equal('somegppstring');
-      expect(requestBody.regs.gpp_sid).to.equal([6, 7]);
+      expect(requestBody.regs.gpp_sid).to.eql([6, 7]);
     });
 
     it('adds schain info to the request', function () {
