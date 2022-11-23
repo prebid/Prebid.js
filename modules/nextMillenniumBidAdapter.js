@@ -32,8 +32,13 @@ const VIDEO_PARAMS = [
 
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
-let eventsWereInit = false
 cleanWurl();
+
+events.on(CONSTANTS.EVENTS.BID_TIMEOUT, eventHandler(CONSTANTS.EVENTS.BID_TIMEOUT));
+events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler(CONSTANTS.EVENTS.BID_RESPONSE));
+events.on(CONSTANTS.EVENTS.BID_REQUESTED, eventHandler(CONSTANTS.EVENTS.BID_REQUESTED));
+events.on(CONSTANTS.EVENTS.NO_BID, eventHandler(CONSTANTS.EVENTS.NO_BID));
+events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -46,7 +51,6 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
-    initEvents();
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
@@ -327,17 +331,6 @@ function removeWurl({auctionId, requestId}) {
 function getWurl({auctionId, requestId}) {
   const key = getKeyWurl({auctionId, requestId});
   return wurlMap[key] && wurlMap[key].wurl;
-}
-
-function initEvents() {
-  if (eventsWereInit) return;
-  eventsWereInit = true;
-
-  events.on(CONSTANTS.EVENTS.BID_TIMEOUT, eventHandler(CONSTANTS.EVENTS.BID_TIMEOUT));
-  events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler(CONSTANTS.EVENTS.BID_RESPONSE));
-  events.on(CONSTANTS.EVENTS.BID_REQUESTED, eventHandler(CONSTANTS.EVENTS.BID_REQUESTED));
-  events.on(CONSTANTS.EVENTS.NO_BID, eventHandler(CONSTANTS.EVENTS.NO_BID));
-  events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 }
 
 function eventHandler(eventName) {
