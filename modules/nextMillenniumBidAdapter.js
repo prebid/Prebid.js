@@ -344,6 +344,8 @@ function eventHandler(eventName) {
   const _eventHandler = getEventHandler(eventName);
   if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
     return bids => {
+      if (!Array.isArray(bids)) return
+
       for (let bid of bids) {
         _eventHandler(bid);
       };
