@@ -1,9 +1,9 @@
 import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import { createEidsArray } from './userId/eids.js';
-import {BANNER, NATIVE} from "../src/mediaTypes";
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
