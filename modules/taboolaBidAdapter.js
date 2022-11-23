@@ -170,15 +170,24 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
 
 function getImps(validBidRequests) {
   return validBidRequests.map((bid, id) => {
-    const {tagId, bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
-
-    return {
+    const {tagId} = bid.params;
+    const imp = {
       id: id + 1,
       banner: getBanners(bid),
-      tagid: tagId,
-      bidfloor,
-      bidfloorcur,
-    };
+      tagid: tagId
+    }
+    if (typeof bid.getFloor === 'function') {
+      const floorInfo = bid.getFloor({
+        currency: CURRENCY,
+        mediaType: BANNER,
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+        imp.bidfloor = parseFloat(floorInfo.floor);
+        imp.bidfloorcur = CURRENCY;
+      }
+    }
+    return imp;
   });
 }
 
