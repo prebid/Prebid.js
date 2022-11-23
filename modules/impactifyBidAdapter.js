@@ -28,10 +28,10 @@ const getDeviceType = () => {
   return 2;
 };
 
-const getFloor = (bid, type) => {
+const getFloor = (bid) => {
   const floorInfo = bid.getFloor({
     currency: DEFAULT_CURRENCY,
-    mediaType: type,
+    mediaType: '*',
     size: '*'
   });
   if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
@@ -128,7 +128,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
       imp.ext.impactify.container = bid.params.container;
     }
     if (typeof bid.getFloor === 'function') {
-      const floor = getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+      const floor = getFloor(bid);
       if (floor) {
         imp.bidfloor = floor;
       }
