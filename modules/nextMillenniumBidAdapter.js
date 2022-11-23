@@ -33,9 +33,10 @@ const VIDEO_PARAMS = [
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
 
-events.on(CONSTANTS.EVENTS.BID_TIMEOUT, bidTimeoutHandler);
-events.on(CONSTANTS.EVENTS.BID_RESPONSE, bidResponseHandler);
-events.on(CONSTANTS.EVENTS.NO_BID, noBidHandler);
+events.on(CONSTANTS.EVENTS.BID_TIMEOUT, eventHandler(CONSTANTS.EVENTS.BID_TIMEOUT));
+events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler(CONSTANTS.EVENTS.BID_RESPONSE));
+events.on(CONSTANTS.EVENTS.BID_REQUESTED, eventHandler(CONSTANTS.EVENTS.BID_REQUESTED));
+events.on(CONSTANTS.EVENTS.NO_BID, eventHandler(CONSTANTS.EVENTS.NO_BID));
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 cleanWurl();
 
@@ -332,27 +333,26 @@ function getWurl({auctionId, requestId}) {
   return wurlMap[key] && wurlMap[key].wurl;
 }
 
-function bidTimeoutHandler(bids) {
-  for (let bid of bids) {
-    const bidder = bid.bidder || bid.bidderCode
-    if (bidder != BIDDER_CODE) continue
-
-    triggerPixel(`${REPORT_ENDPOINT}?event=timeout&bidder=${bidder}&source=pbjs`);
+function eventHandler(eventName) {
+  const _eventHandler = getEventHandler(eventName)
+  if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
+    return bids => {
+      for (let bid of bids) {
+        _eventHandler(bid)
+      }
+    }
   }
+
+  return _eventHandler
 }
 
-function bidResponseHandler(bid) {
-  const bidder = bid.bidder || bid.bidderCode
-  if (bidder != BIDDER_CODE) return
+function getEventHandler(eventName) {
+  return bid => {
+    const bidder = bid.bidder || bid.bidderCode
+    if (bidder != BIDDER_CODE) return
 
-  triggerPixel(`${REPORT_ENDPOINT}?event=response&bidder=${bidder}&source=pbjs`);
-}
-
-function noBidHandler(bid) {
-  const bidder = bid.bidder || bid.bidderCode
-  if (bidder != BIDDER_CODE) return
-
-  triggerPixel(`${REPORT_ENDPOINT}?event=no_bid&bidder=${bidder}&source=pbjs`);
+    triggerPixel(`${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs`);
+  }
 }
 
 function bidWonHandler(bid) {
