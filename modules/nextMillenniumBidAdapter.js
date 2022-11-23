@@ -334,22 +334,22 @@ function getWurl({auctionId, requestId}) {
 }
 
 function eventHandler(eventName) {
-  const _eventHandler = getEventHandler(eventName)
+  const _eventHandler = getEventHandler(eventName);
   if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
     return bids => {
       for (let bid of bids) {
-        _eventHandler(bid)
-      }
+        _eventHandler(bid);
+      };
     }
-  }
+  };
 
-  return _eventHandler
+  return _eventHandler;
 }
 
 function getEventHandler(eventName) {
   return bid => {
-    const bidder = bid.bidder || bid.bidderCode
-    if (bidder != BIDDER_CODE) return
+    const bidder = bid.bidder || bid.bidderCode;
+    if (bidder != BIDDER_CODE) return;
 
     triggerPixel(`${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs`);
   }
