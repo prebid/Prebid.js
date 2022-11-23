@@ -3,6 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import {ajax} from '../src/ajax.js';
 import { createEidsArray } from './userId/eids.js';
+import {BANNER, NATIVE} from "../src/mediaTypes";
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -26,6 +27,18 @@ const getDeviceType = () => {
   }
   return 2;
 };
+
+const getFloor = (bid, type) => {
+  const floorInfo = bid.getFloor({
+    currency: DEFAULT_CURRENCY,
+    mediaType: type,
+    size: '*'
+  });
+  if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    return parseFloat(floorInfo.floor);
+  }
+  return null;
+}
 
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
@@ -113,6 +126,12 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     };
     if (bid.params.container) {
       imp.ext.impactify.container = bid.params.container;
+    }
+    if (typeof bid.getFloor === 'function') {
+      const floor = getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+      if (floor) {
+        imp.bidfloor = floor;
+      }
     }
     request.imp.push(imp);
   });
