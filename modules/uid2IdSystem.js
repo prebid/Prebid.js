@@ -51,7 +51,10 @@ function readFromLocalStorage() {
 
 function readServerProvidedCookie(cookieName) {
   const cookie = storage.getCookie(cookieName);
-  if (!cookie) return null;
+  if (!cookie) {
+    _logInfo(`Attempted to read UID2 from server-provided cookie but it was empty`);
+    return null;
+  };
   _logInfo(`Read UID2 from server-provided cookie`);
   return JSON.parse(cookie);
 }
@@ -161,17 +164,22 @@ export const uid2IdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{uid2:{ id: string }} or undefined if value doesn't exists
+   * @returns {{uid2:{ id: string } }} or undefined if value doesn't exists
    */
   decode(value) {
-    _logInfo('Calling UID2 decode()', value);
     const result = decodeImpl(value);
     _logInfo('UID2 decode returned', result);
     return result;
   },
 
+  /**
+   * performs action to obtain id and return a value.
+   * @function
+   * @param {SubmoduleConfig} [configparams]
+   * @param {ConsentData|undefined} consentData
+   * @returns {uid2Id}
+   */
   getId(config, consentData) {
-    _logInfo('Calling UID2 getId()', config, consentData);
     const result = getIdImpl(config, consentData);
     logInfo(`UID2 getId returned`, result);
     return result;
@@ -182,7 +190,7 @@ function refreshTokenAndStore(baseUrl, token) {
   _logInfo('UID2 base url provided: ', baseUrl);
   const client = new Uid2ApiClient({baseUrl});
   return client.callRefreshApi(token).then((response) => {
-    _logInfo('Refresh responded with:', response);
+    _logInfo('Refresh endpoint responded with:', response);
     const tokens = {
       originalToken: token,
       latestToken: response.identity,
@@ -204,13 +212,6 @@ function decodeImpl(value) {
   return null;
 }
 
-/**
-   * performs action to obtain id and return a value.
-   * @function
-   * @param {SubmoduleConfig} [configparams]
-   * @param {ConsentData|undefined} consentData
-   * @returns {uid2Id}
-   */
 function getIdImpl(config, consentData) {
   let suppliedToken = null;
   const uid2BaseUrl = config?.params?.uid2ApiBase ?? UID2_BASE_URL;
@@ -220,11 +221,11 @@ function getIdImpl(config, consentData) {
       _logInfo('Read token from params', suppliedToken);
     } else if (config.params.uid2ServerCookie) {
       suppliedToken = readServerProvidedCookie(config.params.uid2ServerCookie);
-      _logInfo('Read token from supplied cookie', suppliedToken);
+      _logInfo('Read token from server-supplied cookie', suppliedToken);
     }
   }
   let storedTokens = readCookie() || readFromLocalStorage();
-  _logInfo('Loaded module stored tokens:', storedTokens);
+  _logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
     // Legacy value stored, this must be from an old integration. If no token supplied, just use the legacy value.
@@ -258,14 +259,14 @@ function getIdImpl(config, consentData) {
     _logInfo('Token is expired but can be refreshed, attempting refresh.');
     return { callback: (cb) => {
       promise.then((result) => {
-        _logInfo('Promise resolved, sending off the result', result);
+        _logInfo('Refresh reponded, passing the updated token on.', result);
         cb(result);
       });
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
   if (Date.now() > newestAvailableToken.refresh_from) {
-    _logInfo(`Should refresh but don't have to.`);
+    _logInfo(`Refreshing token in background with low priority.`);
     refreshTokenAndStore(uid2BaseUrl, newestAvailableToken);
   }
   const tokens = {
