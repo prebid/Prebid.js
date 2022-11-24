@@ -851,7 +851,8 @@ function setUserIdentities(userIdentityData) {
 export function getRawPDString(emailHashes, userID) {
   let params = {
     1: (emailHashes && emailHashes['SHA256']) || undefined, // Email
-    5: userID ? btoa(userID) : undefined // UserID
+    5: userID ? btoa(userID) : undefined, // UserID
+    12: navigator?.userAgent
   };
   let pdString = Object.keys(skipUndefinedValues(params)).map(function(key) {
     return params[key] && key + '=' + params[key]

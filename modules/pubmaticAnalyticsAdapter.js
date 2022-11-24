@@ -35,6 +35,7 @@ const MEDIATYPE = {
   VIDEO: 1,
   NATIVE: 2
 }
+const PREFIX = 'PROFILE_AUCTION_INFO_'
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -109,8 +110,7 @@ function copyRequiredBidDetails(bid) {
 }
 
 function setBidStatus(bid, args) {
-	if(bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR)
-    return;
+  if (bid?.status === ERROR && bid?.error?.code === TIMEOUT_ERROR) { return; }
   switch (args.getStatusCode()) {
     case CONSTANTS.STATUS.GOOD:
       bid.status = SUCCESS;
@@ -254,6 +254,38 @@ function getAdDomain(bidResponse) {
   }
 }
 
+function isObject(object) {
+  return typeof object === "object" && object !== null;
+};
+
+function isEmptyObject(object) {
+  return isObject(object) && Object.keys(object).length === 0;
+};
+
+/**
+ * Prepare meta object to pass in logger call
+ * @param {*} meta 
+ */
+function getMetadata(meta) {
+  if (!meta || isEmptyObject(meta)) return;
+  const metaObj = {};
+  if (meta.networkId) metaObj.nwid = meta.networkId;
+  if (meta.advertiserId) metaObj.adid = meta.advertiserId;
+  if (meta.networkName) metaObj.nwnm = meta.networkName;
+  if (meta.primaryCatId) metaObj.pcid = meta.primaryCatId;
+  if (meta.advertiserName) metaObj.adnm = meta.advertiserName;
+  if (meta.agencyId) metaObj.agid = meta.agencyId;
+  if (meta.agencyName) metaObj.agnm = meta.agencyName;
+  if (meta.brandId) metaObj.brid = meta.brandId;
+  if (meta.brandName) metaObj.brnm = meta.brandName;
+  if (meta.dchain) metaObj.dc = meta.dchain;
+  if (meta.demandSource) metaObj.ds = meta.demandSource;
+  if (meta.secondaryCatIds) metaObj.scids = meta.secondaryCatIds;
+
+  if(isEmptyObject(metaObj)) return;
+  return metaObj;
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function (partnerBids, bidId) {
@@ -284,7 +316,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
-      });
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+        });
     });
     return partnerBids;
   }, [])
@@ -323,6 +356,9 @@ function getPSL(auctionId) {
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
+  const HOSTNAME = window.location.host;
+  const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
+  const frequencyDepth = storedObject !== null ? JSON.parse(storedObject) : {};
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
@@ -359,6 +395,12 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     return 0;
   })();
 
+  outputObj['tpv'] = frequencyDepth?.pageView;
+  outputObj['trc'] = frequencyDepth?.slotCnt;
+  outputObj['tbs'] = frequencyDepth?.bidServed;
+  outputObj['tis'] = frequencyDepth?.impressionServed;
+  outputObj['lip'] = frequencyDepth?.lip;
+
   if (floorData) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
     outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
@@ -373,7 +415,11 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
+      'bs': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.bidServed,
+      'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
+      'rc': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.slotCnt,
+	  'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
     };
     slotsArray.push(slotObject);
     return slotsArray;
@@ -614,4 +660,5 @@ adapterManager.registerAnalyticsAdapter({
   code: ADAPTER_CODE
 });
 
-export default pubmaticAdapter;
+// export default pubmaticAdapter;
+export { pubmaticAdapter as default, getMetadata };
