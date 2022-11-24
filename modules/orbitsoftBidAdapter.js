@@ -55,7 +55,7 @@ export const spec = {
       if (location === '') {
         location = utils.getWindowLocation();
       }
-      if (referrer === '') {
+      if (referrer === '' && bidRequest && bidRequest.refererInfo) {
         referrer = bidRequest.refererInfo.referer;
       }
 
