@@ -16,6 +16,7 @@ import {
   triggerPixel,
   uniques,
   deepAccess,
+  deepSetValue
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
@@ -417,6 +418,24 @@ function getConsentData(bidRequests) {
     uspConsent = bidRequests[0].uspConsent;
   }
   return { gdprConsent, uspConsent };
+}
+
+function appendSiteAppDooh(request, accountId) {
+  if (!request) return;
+
+  // ORTB specifies app OR site
+  if (typeof config.getConfig('app') === 'object') {
+    request.app = config.getConfig('app');
+    request.app.publisher = {id: accountId}
+  } else if (typeof config.getConfig('dooh') === 'object') {
+    request.dooh = config.getConfig('app');
+    request.dooh.publisher = {id: accountId}
+  } else {
+    request.site = {};
+    if (isPlainObject(config.getConfig('site'))) {
+      request.site = config.getConfig('site');
+    }
+  }
 }
 
 /**
