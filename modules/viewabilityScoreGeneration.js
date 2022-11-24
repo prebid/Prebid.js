@@ -24,6 +24,10 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
 		const bidViewabilityFields = { ...vsgObj[bid.adUnitCode]};
 		// Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
 		delete bidViewabilityFields.lastViewStarted;
+		// Deleteing totalTimeView incase value is less than 1 sec.
+		if(bidViewabilityFields.totalViewTime == 0) {
+			delete bidViewabilityFields.totalViewTime;
+		}
         if (vsgObj[bid.adUnitCode]) bid.bidViewability = bidViewabilityFields;
       });
     });
