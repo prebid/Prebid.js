@@ -16,7 +16,6 @@ import {
   triggerPixel,
   uniques,
   deepAccess,
-  deepSetValue
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
