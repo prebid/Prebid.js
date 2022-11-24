@@ -291,6 +291,19 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.page).to.equal('https://www.example.com/test');
     });
 
+    it('use top most location if available in the bid request', function () {
+      const topmostLocation = 'https://www.topdomain.com/xyz';
+      const bidRequestWithTopMost = {
+        ...baseBidderRequest,
+        refererInfo: {
+          ...baseBidderRequest.refererInfo,
+          topmostLocation: topmostLocation
+        }
+      };
+      const requestBody = testBuildRequests(baseBannerBidRequests, bidRequestWithTopMost).data;
+      expect(requestBody.site.page).to.equal(topmostLocation);
+    });
+
     it('sets the banner pos correctly if sent', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].mediaTypes.banner.pos = 1;
