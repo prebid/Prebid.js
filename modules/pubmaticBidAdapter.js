@@ -1,7 +1,7 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 
@@ -1027,6 +1027,29 @@ function _assignRenderer(newBid, request) {
   }
 }
 
+/**
+ * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
+ * so that adpod module can set the hb_pb_cat_dur targetting key.
+ * @param {*} newBid
+ * @param {*} bid
+ * @param {*} request
+ * @returns
+ */
+export function assignDealTier(newBid, bid, request) {
+  if (!bid?.ext?.prebiddealpriority) return;
+  const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
+  const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoObj?.context != ADPOD) return;
+
+  const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
+  // if (!duration) return;
+  newBid.video = {
+    context: ADPOD,
+    durationSeconds: duration,
+    dealTier: bid.ext.prebiddealpriority
+  };
+}
+
 function isNonEmptyArray(test) {
   if (isArray(test) === true) {
     if (test.length > 0) {
@@ -1389,6 +1412,7 @@ export const spec = {
                             br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                             br.vastXml = bid.adm;
                             _assignRenderer(br, request);
+                            assignDealTier(br, bid, request);
                             break;
                           case NATIVE:
                             _parseNativeResponse(bid, br);
