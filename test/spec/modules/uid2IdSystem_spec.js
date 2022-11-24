@@ -26,7 +26,7 @@ const setPublisherCookie = (token) => coreStorage.setCookie(publisherCookieName,
 
 const makePrebidIdentityContainer = (token) => ({uid2: {id: token}});
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {...params, uid2ApiBase: 'https://operator-integ.uidapi.com'}}] }, debug, ...extraSettings
+  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params}] }, debug, ...extraSettings
 });
 
 const initialToken = `initial-advertising-token`;
@@ -54,7 +54,7 @@ const expectModuleCookieToContain = (initialIdentity, latestIdentity) => {
   if (latestIdentity) expect(cookie.latestToken.advertising_token).to.equal(latestIdentity);
 }
 
-const apiUrl = 'https://operator-integ.uidapi.com/v2/token/refresh';
+const apiUrl = 'https://prod.uidapi.com/v2/token/refresh';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = () => btoa(JSON.stringify({ status: 'success', body: { ...makeUid2Token(), advertising_token: refreshedToken } }));
 const configureUid2Response = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
@@ -145,6 +145,20 @@ describe(`UID2 module`, function () {
     coreStorage.setCookie(publisherCookieName, '', expireCookieDate);
 
     debugOutput('----------------- END TEST ------------------');
+  });
+
+  describe('Configuration', function() {
+    it('When no baseUrl is provided in config, the module calls the production endpoint', function() {
+      const uid2Token = makeUid2Token(initialToken, true, true);
+      config.setConfig(makePrebidConfig({uid2Token}));
+      expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/');
+    });
+
+    it('When a baseUrl is provided in config, the module calls the provided endpoint', function() {
+      const uid2Token = makeUid2Token(initialToken, true, true);
+      config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
+      expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/');
+    });
   });
 
   // These tests cover 'legacy' cookies - i.e. cookies set with just the uid2 advertising token, which was how some previous integrations worked.
