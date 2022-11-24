@@ -428,7 +428,7 @@ function appendSiteAppDooh(request, accountId) {
     request.app = config.getConfig('app');
     request.app.publisher = {id: accountId}
   } else if (typeof config.getConfig('dooh') === 'object') {
-    request.dooh = config.getConfig('app');
+    request.dooh = config.getConfig('dooh');
     request.dooh.publisher = {id: accountId}
   } else {
     request.site = {};
