@@ -129,29 +129,29 @@ export const calculateBucket = (bucketCategories, score) => {
 
 export const addViewabilityTargeting = (globalConfig, targetingSet, vsgLocalStorageObj, cb) => {
   Object.keys(targetingSet).forEach(targetKey => {
-    // Will add only required targetting keys by this module. 
-    targetingSet[targetKey] = {};
-    if (
-      vsgLocalStorageObj[targetKey] &&
-      Object.keys(targetingSet[targetKey]).length !== 0 &&
-      vsgLocalStorageObj[targetKey].hasOwnProperty('viewed') &&
-      vsgLocalStorageObj[targetKey].hasOwnProperty('rendered')
-    ) {
-      const viewabilityScore = Math.round((vsgLocalStorageObj[targetKey].viewed / vsgLocalStorageObj[targetKey].rendered) * 10) / 10;
-      const viewabilityBucket = calculateBucket(globalConfig[MODULE_NAME][TARGETING].bucketCategories, viewabilityScore);
+    if(Object.keys(targetingSet[targetKey]).length !== 0) {
+      // Will add only required targetting keys by this module. 
+      targetingSet[targetKey] = {};
+      if (
+        vsgLocalStorageObj[targetKey] &&
+        vsgLocalStorageObj[targetKey].hasOwnProperty('viewed') &&
+        vsgLocalStorageObj[targetKey].hasOwnProperty('rendered')
+      ) {
+        const viewabilityScore = Math.round((vsgLocalStorageObj[targetKey].viewed / vsgLocalStorageObj[targetKey].rendered) * 10) / 10;
+        const viewabilityBucket = calculateBucket(globalConfig[MODULE_NAME][TARGETING].bucketCategories, viewabilityScore);
 
-      if (globalConfig[MODULE_NAME][TARGETING].score) {
-        const targetingScoreKey = globalConfig[MODULE_NAME][TARGETING].scoreKey ? globalConfig[MODULE_NAME][TARGETING].scoreKey : 'bidViewabilityScore';
-        targetingSet[targetKey][targetingScoreKey] = viewabilityScore;
-      }
+        if (globalConfig[MODULE_NAME][TARGETING].score) {
+          const targetingScoreKey = globalConfig[MODULE_NAME][TARGETING].scoreKey ? globalConfig[MODULE_NAME][TARGETING].scoreKey : 'bidViewabilityScore';
+          targetingSet[targetKey][targetingScoreKey] = viewabilityScore;
+        }
 
-      if (globalConfig[MODULE_NAME][TARGETING].bucket) {
-        const targetingBucketKey = globalConfig[MODULE_NAME][TARGETING].bucketKey ? globalConfig[MODULE_NAME][TARGETING].bucketKey : 'bidViewabilityBucket';
-        targetingSet[targetKey][targetingBucketKey] = viewabilityBucket;
+        if (globalConfig[MODULE_NAME][TARGETING].bucket) {
+          const targetingBucketKey = globalConfig[MODULE_NAME][TARGETING].bucketKey ? globalConfig[MODULE_NAME][TARGETING].bucketKey : 'bidViewabilityBucket';
+          targetingSet[targetKey][targetingBucketKey] = viewabilityBucket;
+        }
       }
     }
   });
-
   cb(targetingSet);
 };
 
