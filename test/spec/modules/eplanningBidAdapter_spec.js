@@ -840,7 +840,7 @@ describe('E-Planning Adapter', function () {
     });
 
     it('should correctly map the parameters in the response vast', function () {
-      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID}, data: { vv: 2} })[0];
+      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID }, data: { vv: 2} })[0];
       const expectedResponse = {
         requestId: BID_ID,
         cpm: CPM,
