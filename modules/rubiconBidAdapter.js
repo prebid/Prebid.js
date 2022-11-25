@@ -27,7 +27,9 @@ const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = {
+  multiformat: false
+};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -139,13 +141,6 @@ var sizeMap = {
   580: '505x656'
 };
 
-/**
- * This flag enables all bids (banner, native, video) to be sent to Prebid Server.
- * when rubiconf.multiformat !== MULTIFORMAT_PBS, video (and native) bids go to PBS while
- * banner will go to fastlane.
- */
-const MULTIFORMAT_PBS = 'pbs';
-
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
 const hasBannerMediaTypeOnly = bidRequest => {
@@ -171,7 +166,8 @@ export const converter = ortbConverter({
 
     deepSetValue(data, 'ext.prebid.bidders', {
       rubicon: {
-        integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION
+        integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION,
+        multiformat: rubiConf.multiformat
       }
     });
 
@@ -221,13 +217,13 @@ export const converter = ortbConverter({
     return data;
   },
   imp(buildImp, bidRequest, context) {
-    // skip banner-only requests if multiformat === 'pbs'
-    if (rubiConf.multiformat !== MULTIFORMAT_PBS && hasBannerMediaTypeOnly(bidRequest)) {
+    // skip banner-only requests if multiformat === false
+    if (rubiConf.multiformat === true && hasBannerMediaTypeOnly(bidRequest)) {
       return;
     }
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
-    if (rubiConf.multiformat !== MULTIFORMAT_PBS && imp.banner) {
+    if (rubiConf.multiformat === true && imp.banner) {
       delete imp.banner;
     }
     if (config.getConfig('s2sConfig.defaultTtl')) {
@@ -308,8 +304,10 @@ export const spec = {
     let filteredHttpRequest = [];
     let filteredRequests = bidRequests;
 
-    if (rubiConf.multiformat !== MULTIFORMAT_PBS) {
+    if (rubiConf.multiformat === true) {
       filteredRequests = bidRequests.filter(bidRequest => !hasBannerMediaTypeOnly(bidRequest));
+    } else {
+      filteredRequests = bidRequests.filter(bidRequest => bidType(bidRequest).some(mediaType => [VIDEO, NATIVE].includes(mediaType)) && bidRequest?.params?.video);
     }
 
     if (filteredRequests && filteredRequests.length) {
@@ -321,10 +319,6 @@ export const spec = {
         data,
         bidRequest: filteredRequests
       });
-    }
-
-    if (filteredHttpRequest.length && rubiConf.multiformat === MULTIFORMAT_PBS) {
-      return filteredHttpRequest;
     }
 
     const bannerBidRequests = bidRequests.filter(hasBannerMediaType);
