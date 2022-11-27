@@ -6,11 +6,34 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
 const BIDDER_CODE = 'ogury';
+const GVLID = 31;
 const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.2.10';
+const ADAPTER_VERSION = '1.4.0';
+
+function getClientWidth() {
+  const documentElementClientWidth = window.top.document.documentElement.clientWidth
+    ? window.top.document.documentElement.clientWidth
+    : 0
+  const innerWidth = window.top.innerWidth ? window.top.innerWidth : 0
+  const outerWidth = window.top.outerWidth ? window.top.outerWidth : 0
+  const screenWidth = window.top.screen.width ? window.top.screen.width : 0
+
+  return documentElementClientWidth || innerWidth || outerWidth || screenWidth
+}
+
+function getClientHeight() {
+  const documentElementClientHeight = window.top.document.documentElement.clientHeight
+    ? window.top.document.documentElement.clientHeight
+    : 0
+  const innerHeight = window.top.innerHeight ? window.top.innerHeight : 0
+  const outerHeight = window.top.outerHeight ? window.top.outerHeight : 0
+  const screenHeight = window.top.screen.height ? window.top.screen.height : 0
+
+  return documentElementClientHeight || innerHeight || outerHeight || screenHeight
+}
 
 function isBidRequestValid(bid) {
   const adUnitSizes = getAdUnitSizes(bid);
@@ -33,6 +56,10 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     {
       type: 'image',
       url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
+    },
+    {
+      type: 'image',
+      url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
     }
   ]
 }
@@ -60,6 +87,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     ext: {
       adapterversion: ADAPTER_VERSION,
       prebidversion: '$prebid.version$'
+    },
+    device: {
+      w: getClientWidth(),
+      h: getClientHeight()
     }
   };
 
@@ -74,15 +105,19 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (bidRequest.mediaTypes &&
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
+      const floor = getFloor(bidRequest);
 
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,
         tagid: bidRequest.params.adUnitId,
-        bidfloor: getFloor(bidRequest),
+        ...(floor && {bidfloor: floor}),
         banner: {
           format: sizes
         },
-        ext: bidRequest.params
+        ext: {
+          ...bidRequest.params,
+          timeSpentOnPage: document.timeline && document.timeline.currentTime ? document.timeline.currentTime : 0
+        }
       });
     }
   });
@@ -171,6 +206,7 @@ function onTimeout(timeoutData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   getUserSyncs,

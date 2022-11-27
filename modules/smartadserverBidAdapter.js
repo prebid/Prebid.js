@@ -133,6 +133,8 @@ export const spec = {
     // use bidderRequest.bids[] to get bidder-dependent request info
 
     const adServerCurrency = config.getConfig('currency.adServerCurrency');
+    const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
+    const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
@@ -148,12 +150,15 @@ export const spec = {
         appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
         ckid: bid.params.ckId || 0,
         tagId: bid.adUnitCode,
-        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : undefined,
+        // TODO: is 'page' the right value here?
+        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : undefined,
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',
-        schain: spec.serializeSupplyChain(bid.schain)
+        schain: spec.serializeSupplyChain(bid.schain),
+        sda: sellerDefinedAudience,
+        sdc: sellerDefinedContext
       };
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -208,7 +213,7 @@ export const spec = {
     const bidResponses = [];
     let response = serverResponse.body;
     try {
-      if (response && !response.isNoAd) {
+      if (response && !response.isNoAd && (response.ad || response.adUrl)) {
         const bidRequest = JSON.parse(bidRequestString.data);
 
         let bidResponse = {

@@ -61,9 +61,9 @@ export const spec = {
       imp: impressions,
       site: {
         id: siteId,
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
+        domain: bidderRequest.refererInfo?.domain,
+        page: bidderRequest.refererInfo?.page,
+        ref: bidderRequest.refererInfo?.ref
       },
     }
 
@@ -74,7 +74,7 @@ export const spec = {
       data: payloadString,
       options: {
         contentType: 'application/json',
-        withCredentials: false,
+        withCredentials: true,
         crossOrigin: true,
       },
     }
@@ -114,7 +114,7 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     const timeoutUrl = ENDPOINT_URL + '/timeout'
-    ajax(timeoutUrl, null, JSON.stringify(timeoutData))
+    spec.ajaxCall(timeoutUrl, null, JSON.stringify(timeoutData), {method: 'POST', withCredentials: true})
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
@@ -136,11 +136,15 @@ export const spec = {
       /\$\{AUCTION_ID\}/,
       bid.auctionId
     )
-    spec.ajaxCall(winUrl, null)
+    spec.ajaxCall(winUrl, null, null, {method: 'GET', withCredentials: true})
     return true
   },
-  ajaxCall: function(endpoint, data) {
-    ajax(endpoint, data)
+
+  ajaxCall: function(endpoint, callback, data, options = {}) {
+    if (data) {
+      options.contentType = 'application/json'
+    }
+    ajax(endpoint, callback, data, options)
   },
 
 }

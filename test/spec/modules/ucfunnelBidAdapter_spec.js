@@ -5,7 +5,11 @@ const URL = 'https://hb.aralego.com/header';
 const BIDDER_CODE = 'ucfunnel';
 
 const bidderRequest = {
-  uspConsent: '1YNN'
+  uspConsent: '1YNN',
+  refererInfo: {
+    domain: 'example.com',
+    page: 'http://example.com/index.html'
+  }
 };
 
 const userId = {
@@ -17,7 +21,6 @@ const userId = {
   'tdid': 'D6885E90-2A7A-4E0F-87CB-7734ED1B99A3',
   'haloId': {},
   'uid2': {'id': 'eb33b0cb-8d35-4722-b9c0-1a31d4064888'},
-  'flocId': {'id': '12144', 'version': 'chrome.1.1'},
   'connectid': '4567'
 }
 
@@ -29,6 +32,11 @@ const validBannerBidReq = {
   sizes: [[300, 250]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
+  ortb2Imp: {
+    ext: {
+      gpid: '/1111/homepage#div-leftnav'
+    }
+  },
   userId: userId,
   'schain': {
     'ver': '1.0',
@@ -152,6 +160,11 @@ describe('ucfunnel Adapter', function () {
       expect(request[0].bidRequest).to.equal(validBannerBidReq);
     });
 
+    it('should set gpid if configured', function () {
+      const data = request[0].data;
+      expect(data.gpid).to.equal('/1111/homepage#div-leftnav');
+    });
+
     it('should attach request data', function () {
       const data = request[0].data;
       const [ width, height ] = validBannerBidReq.sizes[0];
@@ -160,7 +173,6 @@ describe('ucfunnel Adapter', function () {
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
       expect(data.eids).to.equal('uid2,eb33b0cb-8d35-4722-b9c0-1a31d4064888!verizonMediaId,4567');
-      expect(data.cid).to.equal('12144');
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
@@ -168,7 +180,7 @@ describe('ucfunnel Adapter', function () {
       const width = 640;
       const height = 480;
       validBannerBidReq.sizes = [[ width, height ]];
-      const requests = spec.buildRequests([ validBannerBidReq ]);
+      const requests = spec.buildRequests([ validBannerBidReq ], bidderRequest);
       const data = requests[0].data;
       expect(data.w).to.equal(width);
       expect(data.h).to.equal(height);
@@ -182,7 +194,7 @@ describe('ucfunnel Adapter', function () {
           floor: 2.02
         }
       };
-      const requests = spec.buildRequests([ bid ]);
+      const requests = spec.buildRequests([ bid ], bidderRequest);
       const data = requests[0].data;
       expect(data.fp).to.equal(2.02);
     });
@@ -190,7 +202,7 @@ describe('ucfunnel Adapter', function () {
     it('should set bidfloor if configured', function() {
       let bid = Object.assign({}, validBannerBidReq);
       bid.params.bidfloor = 2.01;
-      const requests = spec.buildRequests([ bid ]);
+      const requests = spec.buildRequests([ bid ], bidderRequest);
       const data = requests[0].data;
       expect(data.fp).to.equal(2.01);
     });
@@ -204,7 +216,7 @@ describe('ucfunnel Adapter', function () {
         }
       };
       bid.params.bidfloor = 2.01;
-      const requests = spec.buildRequests([ bid ]);
+      const requests = spec.buildRequests([ bid ], bidderRequest);
       const data = requests[0].data;
       expect(data.fp).to.equal(2.01);
     });
@@ -212,7 +224,7 @@ describe('ucfunnel Adapter', function () {
 
   describe('interpretResponse', function () {
     describe('should support banner', function () {
-      const request = spec.buildRequests([ validBannerBidReq ]);
+      const request = spec.buildRequests([ validBannerBidReq ], bidderRequest);
       const result = spec.interpretResponse({body: validBannerBidRes}, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
@@ -231,7 +243,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     describe('handle banner no ad', function () {
-      const request = spec.buildRequests([ validBannerBidReq ]);
+      const request = spec.buildRequests([ validBannerBidReq ], bidderRequest);
       const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
@@ -249,7 +261,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     describe('handle banner cpm under bidfloor', function () {
-      const request = spec.buildRequests([ validBannerBidReq ]);
+      const request = spec.buildRequests([ validBannerBidReq ], bidderRequest);
       const result = spec.interpretResponse({body: invalidBannerBidRes}, request[0]);
       it('should build bid array for banner', function () {
         expect(result.length).to.equal(1);
@@ -267,7 +279,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     describe('should support video', function () {
-      const request = spec.buildRequests([ validVideoBidReq ]);
+      const request = spec.buildRequests([ validVideoBidReq ], bidderRequest);
       const result = spec.interpretResponse({body: validVideoBidRes}, request[0]);
       it('should build bid array', function () {
         expect(result.length).to.equal(1);
@@ -287,7 +299,7 @@ describe('ucfunnel Adapter', function () {
     });
 
     describe('should support native', function () {
-      const request = spec.buildRequests([ validNativeBidReq ]);
+      const request = spec.buildRequests([ validNativeBidReq ], bidderRequest);
       const result = spec.interpretResponse({body: validNativeBidRes}, request[0]);
       it('should build bid array', function () {
         expect(result.length).to.equal(1);

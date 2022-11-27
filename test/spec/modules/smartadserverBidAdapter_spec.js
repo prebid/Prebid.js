@@ -158,12 +158,44 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
+  var sellerDefinedAudience = [
+    {
+      'name': 'hearst.com',
+      'ext': { 'segtax': 1 },
+      'segment': [
+        { 'id': '1001' },
+        { 'id': '1002' }
+      ]
+    }
+  ];
+
+  var sellerDefinedContext = [
+    {
+      'name': 'cnn.com',
+      'ext': { 'segtax': 2 },
+      'segment': [
+        { 'id': '2002' }
+      ]
+    }
+  ];
+
   it('Verify build request', function () {
     config.setConfig({
       'currency': {
         'adServerCurrency': 'EUR'
+      },
+      ortb2: {
+        'user': {
+          'data': sellerDefinedAudience
+        },
+        'site': {
+          'content': {
+            'data': sellerDefinedContext
+          }
+        }
       }
     });
+
     const request = spec.buildRequests(DEFAULT_PARAMS);
     expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
     expect(request[0]).to.have.property('method').and.to.equal('POST');
@@ -186,6 +218,8 @@ describe('Smart bid adapter tests', function () {
     expect(requestContent).to.have.property('buid').and.to.equal('7569');
     expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
+    expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+    expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
   });
 
   it('Verify parse response with no ad', function () {
@@ -197,6 +231,27 @@ describe('Smart bid adapter tests', function () {
       spec.interpretResponse(BID_RESPONSE_IS_NO_AD, {
         data: 'invalid Json'
       })
+    }).to.not.throw();
+  });
+
+  it('Should not nest response if ad and adUrl empty', () => {
+    const BID_RESPONSE_EMPTY = {
+      body: {
+        ad: null,
+        adUrl: null,
+        cpm: 0.92,
+        isNoAd: false
+      }
+    };
+
+    const request = spec.buildRequests(DEFAULT_PARAMS);
+    const bids = spec.interpretResponse(BID_RESPONSE_EMPTY, request[0]);
+
+    expect(bids).to.have.lengthOf(0);
+    expect(() => {
+      spec.interpretResponse(BID_RESPONSE_EMPTY, {
+        data: 'invalid Json'
+      });
     }).to.not.throw();
   });
 
@@ -337,6 +392,7 @@ describe('Smart bid adapter tests', function () {
 
   describe('gdpr tests', function () {
     afterEach(function () {
+      config.setConfig({ ortb2: undefined });
       config.resetConfig();
       $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
@@ -468,6 +524,16 @@ describe('Smart bid adapter tests', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
+        },
+        ortb2: {
+          'user': {
+            'data': sellerDefinedAudience
+          },
+          'site': {
+            'content': {
+              'data': sellerDefinedContext
+            }
+          }
         }
       });
       const request = spec.buildRequests(INSTREAM_DEFAULT_PARAMS);
@@ -486,6 +552,8 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('buid').and.to.equal('7569');
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(42);
+      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
       expect(requestContent).to.have.property('isVideo').and.to.equal(true);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
@@ -727,6 +795,16 @@ describe('Smart bid adapter tests', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
+        },
+        ortb2: {
+          'user': {
+            'data': sellerDefinedAudience
+          },
+          'site': {
+            'content': {
+              'data': sellerDefinedContext
+            }
+          }
         }
       });
       const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
@@ -745,6 +823,8 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('buid').and.to.equal('7579');
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(43);
+      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
       expect(requestContent).to.have.property('isVideo').and.to.equal(false);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(7);

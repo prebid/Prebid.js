@@ -209,7 +209,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -221,7 +222,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -233,7 +235,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -245,7 +248,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -257,7 +261,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -269,7 +274,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -280,7 +286,8 @@ describe('SSPBC adapter', function () {
       bids: bids_test,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -395,6 +402,7 @@ describe('SSPBC adapter', function () {
             'ext': {
               'siteid': '8816',
               'slotid': '150',
+              'cache': 'https://video.tag.cache'
             },
           }],
           'seat': 'dsp1',
@@ -510,7 +518,7 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send page url from refererInfo', function () {
-      expect(payload.site.page).to.equal(bidRequest.refererInfo.referer);
+      expect(payload.site.page).to.equal(bidRequest.refererInfo.page);
     });
 
     it('should send gdpr data', function () {
@@ -631,6 +639,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.contain('window.mcad');
       expect(adcode).to.contain('window.gdpr');
       expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -639,11 +648,12 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       let videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml');
+      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
       expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
     });
 
     it('should create a correct native bid', function () {
@@ -668,8 +678,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.have.length(0); ;
-      expect(syncResultNone).to.have.length(0); ;
+      expect(syncResultImage).to.have.length(0);
+      expect(syncResultNone).to.have.length(0);
     });
   });
 
