@@ -252,7 +252,8 @@ describe('browsi Real time  data sub module', function () {
     })
     it('should send event if type is correct', function () {
       sendPageviewEvent('PAGEVIEW')
-
+      const pageViewEvent = new CustomEvent('browsi_pageview', {});
+      window.dispatchEvent(pageViewEvent);
       const expectedCall = {
         vendor: 'browsi',
         type: 'pageview',
