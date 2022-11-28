@@ -599,7 +599,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
 }
 
 // Native bid response might be in ortb2 format - adds legacy field for backward compatibility
-function addLegacyFieldsIfNeeded(bidResponse) {
+const addLegacyFieldsIfNeeded = (bidResponse) => {
   const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
   const nativeOrtbResponse = bidResponse.native?.ortb
 

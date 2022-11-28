@@ -23,7 +23,7 @@ export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
   key => CONSTANTS.NATIVE_KEYS[key]
 );
 
-const IMAGE = {
+export const IMAGE = {
   ortb: {
     ver: '1.2',
     assets: [
