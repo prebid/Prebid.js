@@ -50,7 +50,7 @@ export const spec = {
       }
     });
 
-    if (parseSizesInput(videoParams.playerSize).length == 0) {
+    if (parseSizesInput(videoParams.playerSize).length === 0) {
       logError('mediaTypes.video.playerSize must be set for video placement at the right format.');
       return false;
     }

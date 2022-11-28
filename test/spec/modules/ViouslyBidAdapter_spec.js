@@ -14,7 +14,7 @@ const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bidder.viously.com/bid';
 
 const VALID_BID_VIDEO = {
-  bidder: 'bricks',
+  bidder: 'viously',
   bidId: '5e6f7g8h',
   adUnitCode: 'id-5678',
   params: {
@@ -64,7 +64,7 @@ const VALID_GDPR = {
 };
 const US_PRIVACY = '1YNN';
 
-describe('BricksAdapter', function () {
+describe('ViouslyAdapter', function () {
   describe('isBidRequestValid', function () {
     describe('Check method return', function () {
       it('should return true', function () {
@@ -215,7 +215,7 @@ describe('BricksAdapter', function () {
       });
 
       it('should return the right formatted request with endpint test', function() {
-        let endpoint = 'https://bid-test.bricks-co.com/catch';
+        let endpoint = 'https://bid-test.viously.com/prebid';
 
         let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
           params: {
