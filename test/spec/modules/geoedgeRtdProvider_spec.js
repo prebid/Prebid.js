@@ -90,7 +90,7 @@ describe('Geoedge RTD module', function () {
         let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href === getClientUrl(key);
         expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
       });
-      it('should emit billable events for applicable winning bids', function () {
+      it('should emit billable events with applicable winning bids', function () {
         let applicableBid = mockBid('bidderA');
         let nonApplicableBid = mockBid('bidderB');
         let counter = 0;
