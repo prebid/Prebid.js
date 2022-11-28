@@ -1,5 +1,5 @@
 // see http://prebid.org/dev-docs/integrate-with-the-prebid-analytics-api.html
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adaptermanager.js';
 
