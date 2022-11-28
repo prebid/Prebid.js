@@ -35,15 +35,13 @@ function getRegs(bidderRequest) {
   if (bidderRequest.uspConsent) {
     utils.deepSetValue(regs, 'ext.us_privacy', bidderRequest.uspConsent);
   }
-  if (utils.deepAccess(bidderRequest, 'ortb2.regs.coppa') === 1 || config.getConfig('coppa') === true) {
+  if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
-  if (utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') && typeof utils.deepAccess(bidderRequest, 'ortb2.regs.gpp') === 'string') {
-    utils.deepSetValue(regs, 'gpp', utils.deepAccess(bidderRequest, 'ortb2.regs.gpp'));
-  }
-  if (utils.deepAccess(bidderRequest, 'ortb2.regs.gpp_sid') && Array.isArray(utils.deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'))) {
-    utils.deepSetValue(regs, 'gpp_sid', utils.deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'));
-  }
+  if(bidderRequest.ortb2.regs) {
+    regs = utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  };
+
   return regs;
 }
 
