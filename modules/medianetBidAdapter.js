@@ -47,6 +47,10 @@ mnData.urlData = {
   isTop: refererInfo.reachedTop
 };
 
+const aliases = [
+  { code: 'aax', gvlid: 720 },
+];
+
 $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
 
 function getTopWindowReferrer() {
@@ -418,7 +422,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   gvlid: 142,
-
+  aliases,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**

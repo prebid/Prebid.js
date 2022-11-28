@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/yahoosspBidAdapter.js';
+import {createEidsArray} from '../../../modules/userId/eids';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -334,6 +335,19 @@ describe('YahooSSP Bid Adapter:', () => {
   });
 
   describe('Schain module support:', () => {
+    it('should not include schain data when schain array is empty', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: []
+      };
+      bidRequest.schain = globalSchain;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain).to.be.undefined;
+    });
+
     it('should send Global or Bidder specific schain', function () {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const globalSchain = {
@@ -822,6 +836,50 @@ describe('YahooSSP Bid Adapter:', () => {
     });
   });
 
+  describe('User data', () => {
+    it('should set the allowed sources user eids', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        admixerId: 'admixerId_FROM_USER_ID_MODULE',
+        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE',
+        amxId: 'amxId_FROM_USER_ID_MODULE',
+        britepoolid: 'britepoolid_FROM_USER_ID_MODULE',
+        deepintentId: 'deepintentId_FROM_USER_ID_MODULE',
+        publinkId: 'publinkId_FROM_USER_ID_MODULE',
+        intentIqId: 'intentIqId_FROM_USER_ID_MODULE',
+        idl_env: 'idl_env_FROM_USER_ID_MODULE',
+        imuid: 'imuid_FROM_USER_ID_MODULE',
+        criteoId: 'criteoId_FROM_USER_ID_MODULE',
+        fabrickId: 'fabrickId_FROM_USER_ID_MODULE',
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'amxrtb.com', uids: [{id: 'amxId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'britepool.com', uids: [{id: 'britepoolid_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'deepintent.com', uids: [{id: 'deepintentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'epsilon.com', uids: [{id: 'publinkId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intentiq.com', uids: [{id: 'intentIqId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'liveramp.com', uids: [{id: 'idl_env_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intimatemerger.com', uids: [{id: 'imuid_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'criteo.com', uids: [{id: 'criteoId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
+      ]);
+    });
+
+    it('should not set not allowed user eids sources', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        justId: 'justId_FROM_USER_ID_MODULE'
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([]);
+    });
+  });
+
   describe('Request Payload oRTB bid validation:', () => {
     it('should generate a valid openRTB bid-request object in the data field', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
@@ -834,7 +892,9 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(data.device).to.deep.equal({
         dnt: 0,
         ua: navigator.userAgent,
-        ip: undefined
+        ip: undefined,
+        w: window.screen.width,
+        h: window.screen.height
       });
 
       expect(data.regs).to.deep.equal({

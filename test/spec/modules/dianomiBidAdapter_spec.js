@@ -159,14 +159,13 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          transactionId: 'transactionId',
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, auctionId: 'tid' }).data
       );
 
-      assert.equal(request.source.tid, validBidRequests[0].transactionId);
+      assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);
     });
 
@@ -198,7 +197,7 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          ortb2
+          ortb2,
         },
       ];
       let request = JSON.parse(
@@ -225,12 +224,12 @@ describe('Dianomi adapter', () => {
             name: "publisher's name",
           },
         },
-      }
+      };
       let validBidRequests = [
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          ortb2
+          ortb2,
         },
       ];
       let refererInfo = { page: 'page' };
@@ -342,7 +341,7 @@ describe('Dianomi adapter', () => {
           },
           {
             bidId: 'bidId2',
-            params: { smartadId: 1234 }
+            params: { smartadId: 1234 },
           },
         ];
         let request = JSON.parse(
@@ -1022,7 +1021,7 @@ describe('Dianomi adapter', () => {
               {
                 data: null,
                 id: 2,
-                img: { type: null, url: 'test.url.com/Files/58345/308185.jpg?bv=1', w: 30, h: 10 },
+                img: { type: null, url: 'test.url.com/Files/58345/308185.jpgbv=1', w: 30, h: 10 },
                 required: 0,
                 title: null,
                 video: null,
@@ -1032,7 +1031,7 @@ describe('Dianomi adapter', () => {
                 id: 3,
                 img: {
                   type: null,
-                  url: 'test.url.com/Files/58345/308200.jpg?bv=1',
+                  url: 'test.url.com/Files/58345/308200.jpgbv=1',
                   w: 100,
                   h: 100,
                 },
@@ -1217,6 +1216,326 @@ describe('Dianomi adapter', () => {
         bids = spec.interpretResponse(serverResponse, bidRequest);
         assert.ok(bids[0].renderer);
         assert.equal(bids[1].renderer, undefined);
+      });
+    });
+  });
+
+  describe('UserSyncs', () => {
+    let usersyncIframeUrl = 'https://www-prebid.dianomi.com/prebid/usersync/index.html?';
+    let usersyncRedirectUrl = 'https://data.dianomi.com/frontend/usync?';
+    it('should register the usersync iframe', function () {
+      let syncs = spec.getUserSyncs({
+        iframeEnabled: true,
+      });
+
+      expect(syncs).to.deep.equal({ type: 'iframe', url: usersyncIframeUrl });
+    });
+
+    it('should register the usersync redirect', function () {
+      let syncs = spec.getUserSyncs({
+        pixelEnabled: true,
+      });
+
+      expect(syncs).to.deep.equal({ type: 'image', url: usersyncRedirectUrl });
+    });
+
+    it('should pass gdpr params if consent is true', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr=1&gdpr_consent=foo`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr=1&gdpr_consent=foo`,
+      });
+    });
+
+    it('should pass gdpr params if consent is false', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            gdprApplies: false,
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr=0&gdpr_consent=foo`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            gdprApplies: false,
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr=0&gdpr_consent=foo`,
+      });
+    });
+
+    it('should pass gdpr param gdpr_consent only when gdprApplies is undefined', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr_consent=foo`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            consentString: 'foo',
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr_consent=foo`,
+      });
+    });
+
+    it('should pass no params if gdpr consentString is not defined', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {})).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}`,
+      });
+
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {})).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}`,
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a number', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            consentString: 0,
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            consentString: 0,
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}`,
+      });
+    });
+
+    it('should pass no params if gdpr consentString is null', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            consentString: null,
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            consentString: null,
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}`,
+      });
+    });
+
+    it('should pass no params if gdpr consentString is a object', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            consentString: {},
+          }
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            consentString: {},
+          }
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}`,
+      });
+    });
+
+    it('should pass no params if gdpr is not defined', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined)).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}`,
+      });
+
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined)).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}`,
+      });
+    });
+
+    it('should pass us_privacy if uspConsent is defined', function () {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}us_privacy=1NYN`,
+      });
+
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}us_privacy=1NYN`,
+      });
+    });
+
+    it('should pass us_privacy after gdpr if both are present', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            consentString: 'foo',
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr_consent=foo&us_privacy=1NYN`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            consentString: 'foo',
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr_consent=foo&us_privacy=1NYN`,
+      });
+    });
+
+    it('should pass gdprApplies', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr=1&us_privacy=1NYN`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr=1&us_privacy=1NYN`,
+      });
+    });
+
+    it('should pass all correctly', function () {
+      expect(
+        spec.getUserSyncs(
+          { iframeEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+            consentString: 'foo',
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'iframe',
+        url: `${usersyncIframeUrl}gdpr=1&gdpr_consent=foo&us_privacy=1NYN`,
+      });
+
+      expect(
+        spec.getUserSyncs(
+          { pixelEnabled: true },
+          {},
+          {
+            gdprApplies: true,
+            consentString: 'foo',
+          },
+          '1NYN'
+        )
+      ).to.deep.equal({
+        type: 'image',
+        url: `${usersyncRedirectUrl}gdpr=1&gdpr_consent=foo&us_privacy=1NYN`,
       });
     });
   });

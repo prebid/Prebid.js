@@ -129,6 +129,53 @@ const BIDDER_REQUEST_2 = {
   }
 };
 
+const BIDDER_REQUEST_VIDEO = {
+  bidderCode: 'consumable',
+  auctionId: 'a4713c32-3762-4798-b342-4ab810ca770d',
+  bidderRequestId: '109f2a181342a9',
+  bidRequest: [
+    {
+      bidder: 'consumable',
+      params: {
+        networkId: 9969,
+        siteId: 730181,
+        unitId: 123456,
+        unitName: 'cnsmbl-unit'
+      },
+      placementCode: 'div-gpt-ad-1487778092495-0',
+      mediaTypes: {
+        video: {
+          playerSize: [188, 106],
+          context: 'instream',
+          mimes: ['application/javascript', 'application/x-mpegurl', 'video/3gpp', 'video/mp4', 'video/mpeg', 'video/ogg', 'video/webm', 'video/x-m4v', 'video/x-ms-asf', 'video/x-ms-wmv', 'video/x-msvideo'],
+          minduration: 0,
+          maxduration: 120,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          api: [1, 2],
+          linearity: 1
+        }
+      },
+      bidId: '6202d555b2f94537',
+      bidderRequestId: '109f2a181342a9',
+      auctionId: 'a4713c32-3762-4798-b342-4ab810ca770d'
+    }
+  ],
+  gdprConsent: {
+    consentString: 'consent-test',
+    gdprApplies: true
+  },
+  refererInfo: {
+    referer: 'http://example.com/page.html',
+    reachedTop: true,
+    numIframes: 2,
+    stack: [
+      'http://example.com/page.html',
+      'http://example.com/iframe1.html',
+      'http://example.com/iframe2.html'
+    ]
+  }
+};
+
 const BIDDER_REQUEST_EMPTY = {
   bidderCode: 'consumable',
   auctionId: 'b06458ef-4fe5-4a0b-a61b-bccbcedb7b11',
@@ -259,12 +306,72 @@ const AD_SERVER_RESPONSE_2 = {
   }
 };
 
+const AD_SERVER_RESPONSE_VIDEO_1 = {
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'decisions': {
+      '6202d555b2f94537': {
+        'adId': 3866158402,
+        'creativeId': 'C1-somo-test-video',
+        'width': 640,
+        'height': 480,
+        'pricing': {
+          'clearPrice': 1.58
+        },
+        'vastUrl': 'https://x.serverbid.com/rtb/v?auc=217c051d06b011ed9cbc72b17f01ec03&sc=1.575&s=22&a=9dcab16d340d664310c2135a76989fe946a9d46e5d5f24ff5e2f17bffbb7704a43638bd3f600951e&n=9&r=0&t=1658158906595',
+        'uuid': 'f1e7287514ce11ed9c1de2b3ba87449a',
+        'bidderName': 'consumable',
+        'adomain': ['consumabletv.com'],
+        'cats': ['IAB3-1'],
+        'mediaType': 'video',
+        'networkId': 1
+      }
+    }
+  }
+};
+
+const AD_SERVER_RESPONSE_VIDEO_2 = {
+  'headers': null,
+  'body': {
+    'user': { 'key': 'ue1-2d33e91b71e74929b4aeecc23f4376f1' },
+    'pixels': [{ 'type': 'image', 'url': '//sync.serverbid.com/ss/' }],
+    'decisions': {
+      '6202d555b2f94537': {
+        'adId': 3866158402,
+        'creativeId': 'C1-somo-test-video',
+        'width': 640,
+        'height': 480,
+        'pricing': {
+          'clearPrice': 1.58
+        },
+        'vastXml': '<VAST version="3.0">',
+        'uuid': 'f1e7287514ce11ed9c1de2b3ba87449a',
+        'bidderName': 'consumable',
+        'adomain': ['consumabletv.com'],
+        'cats': ['IAB3-1'],
+        'mediaType': 'video',
+        'networkId': 1
+      }
+    }
+  }
+};
+
 const BUILD_REQUESTS_OUTPUT = {
   method: 'POST',
   url: 'https://e.serverbid.com/api/v2',
   data: '',
   bidRequest: BIDDER_REQUEST_2.bidRequest,
   bidderRequest: BIDDER_REQUEST_2
+};
+
+const BUILD_REQUESTS_VIDEO_OUTPUT = {
+  method: 'POST',
+  url: 'https://e.serverbid.com/api/v2',
+  data: '',
+  bidRequest: BIDDER_REQUEST_VIDEO.bidRequest,
+  bidderRequest: BIDDER_REQUEST_VIDEO
 };
 
 describe('Consumable BidAdapter', function () {
@@ -382,6 +489,32 @@ describe('Consumable BidAdapter', function () {
 
       expect(data.coppa).to.be.undefined;
     });
+
+    it('should contain video object for video requests', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_VIDEO.bidRequest, BIDDER_REQUEST_VIDEO);
+      let data = JSON.parse(request.data);
+
+      expect(data.placements[0].video).to.deep.equal(BIDDER_REQUEST_VIDEO.bidRequest[0].mediaTypes.video);
+    });
+
+    it('sets bidfloor param if present', function () {
+      let bidderRequest1 = deepClone(BIDDER_REQUEST_1);
+      let bidderRequest2 = deepClone(BIDDER_REQUEST_2);
+      bidderRequest1.bidRequest[0].params.bidFloor = 0.05;
+      bidderRequest2.bidRequest[0].getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 0.15
+        }
+      };
+      let request1 = spec.buildRequests(bidderRequest1.bidRequest, BIDDER_REQUEST_1);
+      let data1 = JSON.parse(request1.data);
+      let request2 = spec.buildRequests(bidderRequest2.bidRequest, BIDDER_REQUEST_2);
+      let data2 = JSON.parse(request2.data);
+
+      expect(data1.placements[0].bidfloor).to.equal(0.05);
+      expect(data2.placements[0].bidfloor).to.equal(0.15);
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
@@ -420,6 +553,31 @@ describe('Consumable BidAdapter', function () {
         expect(b.meta).to.have.property('mediaType');
       });
     });
+
+    it('registers video bids with vastUrl', function () {
+      let bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_1, BUILD_REQUESTS_VIDEO_OUTPUT);
+
+      bids.forEach(b => {
+        expect(b.mediaType).to.equal('video');
+        expect(b.meta).to.have.property('mediaType', 'video');
+        expect(b.vastUrl).to.equal('https://x.serverbid.com/rtb/v?auc=217c051d06b011ed9cbc72b17f01ec03&sc=1.575&s=22&a=9dcab16d340d664310c2135a76989fe946a9d46e5d5f24ff5e2f17bffbb7704a43638bd3f600951e&n=9&r=0&t=1658158906595');
+        expect(b.vastXml).to.be.undefined;
+        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
+      });
+    })
+
+    it('registers video bids with vastXml', function () {
+      let bids = spec.interpretResponse(AD_SERVER_RESPONSE_VIDEO_2, BUILD_REQUESTS_VIDEO_OUTPUT);
+
+      bids.forEach(b => {
+        expect(b.mediaType).to.equal('video');
+        expect(b.meta).to.have.property('mediaType', 'video');
+        expect(b.vastXml).to.equal('<VAST version="3.0">');
+        expect(b.vastUrl).to.be.undefined;
+        expect(b.ad).to.equal('<VAST version="3.0">');
+        expect(b.videoCacheKey).to.equal('f1e7287514ce11ed9c1de2b3ba87449a');
+      });
+    })
 
     it('handles nobid responses', function () {
       let EMPTY_RESP = Object.assign({}, AD_SERVER_RESPONSE, {'body': {'decisions': null}})

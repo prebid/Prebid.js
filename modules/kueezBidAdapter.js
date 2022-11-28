@@ -309,7 +309,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$'
-  }
+  };
 
   if (syncEnabled) {
     const allowedSyncMethod = getSyncMethod(filterSettings, bidderCode);
@@ -352,7 +352,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     params.userIds = JSON.stringify(userIds);
   }
 
-  return params
+  return params;
 }
 
 /**

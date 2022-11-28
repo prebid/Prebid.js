@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -95,6 +96,10 @@ describe('RTBHouseAdapter', () => {
           }
         }
       ];
+    });
+
+    afterEach(function () {
+      config.resetConfig();
     });
 
     it('should build test param into the request', () => {
@@ -261,6 +266,45 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.source).to.not.have.property('ext');
+    });
+
+    context('FLEDGE', function() {
+      afterEach(function () {
+        config.resetConfig();
+      });
+
+      it('sends bid request to FLEDGE ENDPOINT via POST', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+        config.setConfig({ fledgeConfig: true });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebidfledge/bids');
+        expect(request.method).to.equal('POST');
+      });
+
+      it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+        bidRequest[0].ortb2Imp = {
+          ext: { ae: 2 }
+        };
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: false });
+        let data = JSON.parse(request.data);
+        if (data.imp[0].ext) {
+          expect(data.imp[0].ext).to.not.have.property('ae');
+        }
+      });
+
+      it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+        bidRequest[0].ortb2Imp = {
+          ext: { ae: 2 }
+        };
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        let data = JSON.parse(request.data);
+        expect(data.imp[0].ext.ae).to.equal(2);
+      });
     });
 
     describe('native imp', () => {
@@ -460,6 +504,29 @@ describe('RTBHouseAdapter', () => {
       'h': 250
     }];
 
+    let fledgeResponse = {
+      'id': 'bid-identifier',
+      'ext': {
+        'igbid': [{
+          'impid': 'test-bid-id',
+          'igbuyer': [{
+            'igdomain': 'https://buyer-domain.com',
+            'buyersignal': {}
+          }]
+        }],
+        'sellerTimeout': 500,
+        'seller': 'https://seller-domain.com',
+        'decisionLogicUrl': 'https://seller-domain.com/decision-logic.js'
+      },
+      'bidid': 'bid-identifier',
+      'seatbid': [{
+        'bid': [{
+          'id': 'bid-response-id',
+          'impid': 'test-bid-id'
+        }]
+      }]
+    };
+
     it('should get correct bid response', function () {
       let expectedResponse = [
         {
@@ -486,6 +553,18 @@ describe('RTBHouseAdapter', () => {
       let bidderRequest;
       let result = spec.interpretResponse({body: response}, {bidderRequest});
       expect(result.length).to.equal(0);
+    });
+
+    context('when the response contains FLEDGE interest groups config', function () {
+      let bidderRequest;
+      let response = spec.interpretResponse({body: fledgeResponse}, {bidderRequest});
+
+      it('should return FLEDGE auction_configs alongside bids', function () {
+        expect(response).to.have.property('bids');
+        expect(response).to.have.property('fledgeAuctionConfigs');
+        expect(response.fledgeAuctionConfigs.length).to.equal(1);
+        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+      });
     });
 
     describe('native', () => {

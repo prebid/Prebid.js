@@ -66,7 +66,7 @@ export const spec = {
     this.loadConfiguredData(bid);
     logInfo('isBidRequestValid : ', config.getConfig(), bid);
     let adUnitCode = bid.adUnitCode; // adunit[n].code
-    let err1 = 'VALIDATION FAILED : missing {param} : siteId, placementId and publisherId are REQUIRED'
+    let err1 = 'VALIDATION FAILED : missing {param} : siteId, placementId and publisherId are REQUIRED';
     if (!(bid.params.hasOwnProperty('placementId'))) {
       logError(err1.replace('{param}', 'placementId'), adUnitCode);
       return false;

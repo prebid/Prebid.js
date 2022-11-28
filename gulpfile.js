@@ -246,7 +246,7 @@ function bundle(dev, moduleArr) {
   const dependencies = new Set();
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
     (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
-  })
+  });
 
   const entries = [coreFile].concat(Array.from(dependencies), moduleFiles);
 
@@ -449,7 +449,7 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
-gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}))
+gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
 gulp.task('test', gulp.series(clean, lint, gulp.series('test-all-features-disabled', 'test-only')));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
@@ -464,12 +464,12 @@ gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', wa
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
-gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)))
-gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)))
+gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
+gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
 
 gulp.task('default', gulp.series(clean, 'build-bundle-prod'));
 
-gulp.task('e2e-test-only', () => runWebdriver({file: argv.file}))
+gulp.task('e2e-test-only', () => runWebdriver({file: argv.file}));
 gulp.task('e2e-test', gulp.series(clean, 'build-bundle-prod', testTaskMaker({e2e: true})));
 // other tasks
 gulp.task(bundleToStdout);

@@ -202,7 +202,8 @@ describe('Sovrn Analytics Adapter', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, {});
       events.emit(constants.EVENTS.BID_WON, {});
 
-      sinon.assert.callCount(sovrnAnalyticsAdapter.track, 5);
+      // 5 SovrnAnalytics events + 1 Clean.io event
+      sinon.assert.callCount(sovrnAnalyticsAdapter.track, 6);
     });
 
     it('should catch no events if no affiliate id', function () {

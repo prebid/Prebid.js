@@ -1,6 +1,7 @@
 import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
@@ -177,7 +178,7 @@ function ttfb() {
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
 }
 
-export function getTimeoutUrl (data) {
+export function getTimeoutUrl(data) {
   let queryParams = '';
   if (
     isArray(data) && data[0] &&
@@ -235,9 +236,17 @@ export const spec = {
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
       payload['cd'] = bidderRequest.gdprConsent.consentString;
     }
-
     if (bidderRequest.uspConsent) {
       payload['uspConsent'] = bidderRequest.uspConsent
+    }
+
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
+
+    let coppa = config.getConfig('coppa')
+    if (coppa) {
+      payload.coppa = coppa
     }
 
     const payloadString = JSON.stringify(payload)
@@ -254,10 +263,10 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const serverBody = serverResponse.body;
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
-      return _map(serverBody.bids, function(bid) {
+      return _map(serverBody.bids, function (bid) {
         return buildBidResponse(bid);
       });
     } else {

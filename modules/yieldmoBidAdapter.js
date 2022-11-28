@@ -20,12 +20,15 @@ import {find, includes} from '../src/polyfill.js';
 import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
+const GVLID = 173;
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
-const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
 const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
+const BANNER_PATH = '/exchange/prebid';
+const VIDEO_PATH = '/exchange/prebidvideo';
+const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
+const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -40,7 +43,7 @@ const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
+  gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
    * @param {object} bid, bid to validate
@@ -59,6 +62,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const stage = isStage(bidderRequest);
+    const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
+    const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -122,8 +128,8 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
       // check if url exceeded max length
-      const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
-      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      const fullUrl = `${bannerUrl}?${parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = fullUrl.length - MAX_BANNER_REQUEST_URL_LENGTH;
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
           extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
@@ -136,7 +142,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'GET',
-        url: BANNER_SERVER_ENDPOINT,
+        url: bannerUrl,
         data: serverRequest
       });
     }
@@ -148,7 +154,7 @@ export const spec = {
       };
       serverRequests.push({
         method: 'POST',
-        url: VIDEO_SERVER_ENDPOINT,
+        url: videoUrl,
         data: serverRequest
       });
     }
@@ -241,6 +247,16 @@ function addPlacement(request) {
   }
   if (gpid) {
     placementInfo.gpid = gpid;
+  }
+
+  // get the transaction id for the banner bid.
+  const transactionId = deepAccess(request, 'ortb2Imp.ext.tid');
+
+  if (transactionId) {
+    placementInfo.tid = transactionId;
+  }
+  if (request.auctionId) {
+    placementInfo.auctionId = request.auctionId;
   }
   return JSON.stringify(placementInfo);
 }
@@ -382,6 +398,9 @@ function openRtbRequest(bidRequests, bidderRequest) {
     openRtbRequest.schain = schain;
   }
 
+  if (bidRequests[0].auctionId) {
+    openRtbRequest.auctionId = bidRequests[0].auctionId;
+  }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
   return openRtbRequest;
@@ -399,7 +418,8 @@ function openRtbImpression(bidRequest) {
     tagid: bidRequest.adUnitCode,
     bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
-      placement_id: bidRequest.params.placementId
+      placement_id: bidRequest.params.placementId,
+      tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid')
     },
     video: {
       w: size[0],
@@ -531,13 +551,13 @@ function validateVideoParams(bid) {
       error += ' when ' + conditionStr;
     }
     throw new Error(error);
-  }
+  };
 
   const paramInvalid = (paramStr, value, expectedStr) => {
     expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
     value = JSON.stringify(value);
     throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  }
+  };
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
@@ -563,7 +583,7 @@ function validateVideoParams(bid) {
       }
       return value;
     }
-  }
+  };
 
   try {
     validate('video.context', val => !isEmpty(val), paramRequired);
@@ -660,4 +680,13 @@ function canAccessTopWindow() {
   } catch (error) {
     return false;
   }
+}
+
+function isStage(bidderRequest) {
+  return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
+}
+
+function getAdserverUrl(path, stage) {
+  const domain = stage ? STAGE_DOMAIN : PROD_DOMAIN;
+  return `${domain}${path}`;
 }
