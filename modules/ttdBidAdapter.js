@@ -38,7 +38,7 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
-  if (bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.length) {
+  if (bidderRequest.ortb2.regs) {
     regs = utils.mergeDeep(regs, bidderRequest.ortb2.regs);
   }
 
