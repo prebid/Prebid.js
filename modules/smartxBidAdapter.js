@@ -245,7 +245,7 @@ export const spec = {
         options: {
           contentType: 'application/json',
           customHeaders: {
-            'x-openrtb-version': '2.3'
+            'x-openrtb-version': '2.5'
           }
         }
       };
