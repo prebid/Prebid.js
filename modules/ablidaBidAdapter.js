@@ -1,7 +1,8 @@
-import * as utils from '../src/utils.js';
+import { triggerPixel } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'ablida';
 const ENDPOINT_URL = 'https://bidder.ablida.net/prebid';
@@ -28,6 +29,9 @@ export const spec = {
    * @param bidderRequest
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests.length === 0) {
       return [];
     }
@@ -45,7 +49,8 @@ export const spec = {
         sizes: sizes,
         bidId: bidRequest.bidId,
         categories: bidRequest.params.categories,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: should referer be 'ref'?
+        referer: bidderRequest.refererInfo.page,
         jaySupported: jaySupported,
         device: device,
         adapterVersion: 5,
@@ -79,7 +84,7 @@ export const spec = {
   },
   onBidWon: function (bid) {
     if (!bid['nurl']) { return; }
-    utils.triggerPixel(bid['nurl']);
+    triggerPixel(bid['nurl']);
   }
 };
 

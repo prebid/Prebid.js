@@ -61,8 +61,8 @@ describe('microadBidAdapter', () => {
   describe('buildRequests', () => {
     const bidderRequest = {
       refererInfo: {
-        canonicalUrl: 'https://example.com/to',
-        referer: 'https://example.com/from'
+        page: 'https://example.com/to',
+        ref: 'https://example.com/from'
       }
     };
     const expectedResultTemplate = {
@@ -124,10 +124,10 @@ describe('microadBidAdapter', () => {
       ]);
     });
 
-    it('should use window.location.href if there is no canonicalUrl', () => {
+    it('should use window.location.href if there is no page', () => {
       const bidderRequestWithoutCanonicalUrl = {
         refererInfo: {
-          referer: 'https://example.com/from'
+          ref: 'https://example.com/from'
         }
       };
       const requests = spec.buildRequests([bidRequestTemplate], bidderRequestWithoutCanonicalUrl);
@@ -265,6 +265,119 @@ describe('microadBidAdapter', () => {
         expect(request.url.lastIndexOf('https', 0) === 0).to.be.true;
       });
     });
+
+    it('should not add Liveramp identity link and Audience ID if it is not available in request parameters', () => {
+      const bidRequestWithOutLiveramp = Object.assign({}, bidRequestTemplate, {
+        userId: {}
+      });
+      const requests = spec.buildRequests([bidRequestWithOutLiveramp], bidderRequest)
+      requests.forEach(request => {
+        expect(request.data).to.deep.equal(
+          Object.assign({}, expectedResultTemplate, {
+            cbt: request.data.cbt
+          })
+        );
+      })
+    });
+
+    Object.entries({
+      'IM-UID': {
+        userId: {imuid: 'imuid-sample'},
+        expected: {aids: JSON.stringify([{type: 6, id: 'imuid-sample'}])}
+      },
+      'ID5 ID': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        expected: {aids: JSON.stringify([{type: 8, id: 'id5id-sample'}])}
+      },
+      'Unified ID': {
+        userId: {tdid: 'unified-sample'},
+        expected: {aids: JSON.stringify([{type: 9, id: 'unified-sample'}])}
+      },
+      'Novatiq Snowflake ID': {
+        userId: {novatiq: {snowflake: 'novatiq-sample'}},
+        expected: {aids: JSON.stringify([{type: 10, id: 'novatiq-sample'}])}
+      },
+      'Parrable ID': {
+        userId: {parrableId: {eid: 'parrable-sample'}},
+        expected: {aids: JSON.stringify([{type: 11, id: 'parrable-sample'}])}
+      },
+      'AudienceOne User ID': {
+        userId: {dacId: {id: 'audience-one-sample'}},
+        expected: {aids: JSON.stringify([{type: 12, id: 'audience-one-sample'}])}
+      },
+      'Ramp ID and Liveramp identity': {
+        userId: {idl_env: 'idl-env-sample'},
+        expected: {idl_env: 'idl-env-sample', aids: JSON.stringify([{type: 13, id: 'idl-env-sample'}])}
+      },
+      'Criteo ID': {
+        userId: {criteoId: 'criteo-id-sample'},
+        expected: {aids: JSON.stringify([{type: 14, id: 'criteo-id-sample'}])}
+      },
+      'Shared ID': {
+        userId: {pubcid: 'shared-id-sample'},
+        expected: {aids: JSON.stringify([{type: 15, id: 'shared-id-sample'}])}
+      }
+    }).forEach(([test, arg]) => {
+      it(`should add ${test} if it is available in request parameters`, () => {
+        const bidRequestWithUserId = { ...bidRequestTemplate, userId: arg.userId }
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        requests.forEach((request) => {
+          expect(request.data).to.deep.equal({
+            ...expectedResultTemplate,
+            cbt: request.data.cbt,
+            ...arg.expected
+          })
+        })
+      })
+    })
+
+    Object.entries({
+      'ID5 ID': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        userIdAsEids: [
+          {
+            source: 'id5-sync.com',
+            uids: [{id: 'id5id-sample', aType: 1, ext: {linkType: 2, abTestingControlGroup: false}}]
+          }
+        ],
+        expected: {
+          aids: JSON.stringify([{type: 8, id: 'id5id-sample', ext: {linkType: 2, abTestingControlGroup: false}}])
+        }
+      },
+      'Unified ID': {
+        userId: {tdid: 'unified-sample'},
+        userIdAsEids: [
+          {
+            source: 'adserver.org',
+            uids: [{id: 'unified-sample', aType: 1, ext: {rtiPartner: 'TDID'}}]
+          }
+        ],
+        expected: {aids: JSON.stringify([{type: 9, id: 'unified-sample', ext: {rtiPartner: 'TDID'}}])}
+      },
+      'not add': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        userIdAsEids: [],
+        expected: {
+          aids: JSON.stringify([{type: 8, id: 'id5id-sample'}])
+        }
+      }
+    }).forEach(([test, arg]) => {
+      it(`should ${test} ext if it is available in request parameters`, () => {
+        const bidRequestWithUserId = {
+          ...bidRequestTemplate,
+          userId: arg.userId,
+          userIdAsEids: arg.userIdAsEids
+        }
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        requests.forEach((request) => {
+          expect(request.data).to.deep.equal({
+            ...expectedResultTemplate,
+            cbt: request.data.cbt,
+            ...arg.expected
+          })
+        })
+      });
+    })
   });
 
   describe('interpretResponse', () => {
@@ -278,7 +391,10 @@ describe('microadBidAdapter', () => {
         ttl: 10,
         creativeId: 'creative-id',
         netRevenue: true,
-        currency: 'JPY'
+        currency: 'JPY',
+        meta: {
+          advertiserDomains: ['foobar.com']
+        }
       }
     };
     const expectedBidResponseTemplate = {
@@ -290,7 +406,10 @@ describe('microadBidAdapter', () => {
       ttl: 10,
       creativeId: 'creative-id',
       netRevenue: true,
-      currency: 'JPY'
+      currency: 'JPY',
+      meta: {
+        advertiserDomains: ['foobar.com']
+      }
     };
 
     it('should return nothing if server response body does not contain cpm', () => {
@@ -323,6 +442,16 @@ describe('microadBidAdapter', () => {
       });
 
       expect(spec.interpretResponse(serverResponseWithDealId)).to.deep.equal([expectedBidResponse]);
+    });
+
+    it('should return a valid bidResponse without meta if serverResponse is valid, has a nonzero cpm and no deal id', () => {
+      const serverResponseWithoutMeta = Object.assign({}, utils.deepClone(serverResponseTemplate));
+      delete serverResponseWithoutMeta.body.meta;
+      const expectedBidResponse = Object.assign({}, expectedBidResponseTemplate, {
+        meta: { advertiserDomains: [] }
+      });
+
+      expect(spec.interpretResponse(serverResponseWithoutMeta)).to.deep.equal([expectedBidResponse]);
     });
   });
 

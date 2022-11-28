@@ -1,15 +1,25 @@
-import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  getBidRequest,
+  isArray,
+  isEmpty,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,6 +31,9 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const schain = bidRequests[0].schain;
     const payload = {
@@ -42,7 +55,8 @@ export const spec = {
     }
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: bidderRequest.refererInfo.referer,
+        // TODO: this collects everything it finds, except for the canonical URL
+        rd_ref: bidderRequest.refererInfo.topmostLocation,
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
       };
@@ -67,7 +81,7 @@ export const spec = {
         if (serverResponse.error) {
           errorMessage += `: ${serverResponse.error}`;
         }
-        utils.logError(errorMessage);
+        logError(errorMessage);
         return bids;
       }
       if (serverResponse.tags) {
@@ -89,17 +103,17 @@ export const spec = {
   },
 
   transformBidParams: function(params, isOpenRtb) {
-    params = utils.convertTypes({
+    params = convertTypes({
       'sitekey': 'string',
       'placementId': 'string',
-      'keywords': utils.transformBidderParamKeywords
+      'keywords': transformBidderParamKeywords
     }, params);
     if (isOpenRtb) {
       if (isPopulatedArray(params.keywords)) {
         params.keywords.forEach(deleteValues);
       }
       Object.keys(params).forEach(paramKey => {
-        let convertedKey = utils.convertCamelToUnderscore(paramKey);
+        let convertedKey = convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
           params[convertedKey] = params[paramKey];
           delete params[paramKey];
@@ -110,14 +124,15 @@ export const spec = {
   },
 
   onBidWon: function(bid) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', bid._prebidWon);
-    xhr.send();
+    ajax(bid._prebidWon, null, null, {
+      method: 'POST',
+      contentType: 'application/json'
+    });
   }
 };
 
 function isPopulatedArray(arr) {
-  return !!(utils.isArray(arr) && arr.length > 0);
+  return !!(isArray(arr) && arr.length > 0);
 }
 
 function deleteValues(keyPairObj) {
@@ -126,19 +141,9 @@ function deleteValues(keyPairObj) {
   }
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(utils.deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let options = {};
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     options = {
       withCredentials: false
     };
@@ -155,7 +160,7 @@ function formatRequest(payload, bidderRequest) {
 }
 
 function newBid(serverBid, rtbBid, bidderRequest) {
-  const bidRequest = utils.getBidRequest(serverBid.uuid, [bidderRequest]);
+  const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
   const bid = {
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
@@ -190,8 +195,8 @@ function bidToTag(bid) {
   tag.primary_size = tag.sizes[0];
   tag.ad_types = [];
   tag.uuid = bid.bidId;
-  if (!utils.isEmpty(bid.params.keywords)) {
-    let keywords = utils.transformBidderParamKeywords(bid.params.keywords);
+  if (!isEmpty(bid.params.keywords)) {
+    let keywords = transformBidderParamKeywords(bid.params.keywords);
     if (keywords.length > 0) {
       keywords.forEach(deleteValues);
     }

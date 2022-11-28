@@ -15,13 +15,16 @@
  * @property {function(): Object} createAuction - creates auction instance and stores it for future reference
  * @property {function(): Object} findBidByAdId - find bid received by adId. This function will be called by $$PREBID_GLOBAL$$.renderAd
  * @property {function(): Object} getStandardBidderAdServerTargeting - returns standard bidder targeting for all the adapters. Refer http://prebid.org/dev-docs/publisher-api-reference.html#module_pbjs.bidderSettings for more details
+ * @property {function(Object): void} addWinningBid - add a winning bid to an auction based on auctionId
+ * @property {function(): void} clearAllAuctions - clear all auctions for testing
  */
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import find from 'core-js-pure/features/array/find.js';
-
-const CONSTANTS = require('./constants.json');
+import {find} from './polyfill.js';
+import {AuctionIndex} from './auctionIndex.js';
+import CONSTANTS from './constants.json';
+import {useMetrics} from './utils/perfMetrics.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -34,6 +37,10 @@ export function newAuctionManager() {
   const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
+    const metrics = useMetrics(bid.metrics);
+    metrics.checkpoint('bidWon');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;
@@ -85,8 +92,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
+  auctionManager.createAuction = function(opts) {
+    const auction = newAuction(opts);
     _addAuction(auction);
     return auction;
   };
@@ -113,9 +120,15 @@ export function newAuctionManager() {
     return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
   };
 
+  auctionManager.clearAllAuctions = function() {
+    _auctions.length = 0;
+  }
+
   function _addAuction(auction) {
     _auctions.push(auction);
   }
+
+  auctionManager.index = new AuctionIndex(() => _auctions);
 
   return auctionManager;
 }

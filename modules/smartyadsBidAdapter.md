@@ -23,7 +23,9 @@ Module that connects to SmartyAds' demand sources
                         {
                             bidder: 'smartyads',
                             params: {
-                                placementId: 0,
+                                host: 'prebid',
+                                sourceid: '0',
+                                accountid: '0',
                                 traffic: 'native'
                             }
                         }
@@ -41,7 +43,9 @@ Module that connects to SmartyAds' demand sources
                         {
                             bidder: 'smartyads',
                             params: {
-                                placementId: 0,
+                              host: 'prebid',
+                                sourceid: '0',
+                                accountid: '0',
                                 traffic: 'banner'
                             }
                         }
@@ -60,7 +64,9 @@ Module that connects to SmartyAds' demand sources
                         {
                             bidder: 'smartyads',
                             params: {
-                                placementId: 0,
+                              host: 'prebid',
+                                sourceid: '0',
+                                accountid: '0',
                                 traffic: 'video'
                             }
                         }

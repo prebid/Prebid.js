@@ -1,17 +1,20 @@
+import { generateUUID, _each, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
-const storage = getStorageManager();
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
 const GVLID = 607;
+const CURRENCY = 'USD';
 const VIDEO_CONTEXT = {
   INSTREAM: 0,
   OUSTREAM: 2
 }
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -44,6 +47,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: function(bids, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bids = convertOrtbRequestToProprietaryNative(bids);
+
     return bids.map(bid => {
       return {
         method: 'GET',
@@ -210,12 +216,42 @@ function getSupplyChain(schain) {
   return supplyChain;
 }
 
+function getMediaType(mediaTypes) {
+  if (mediaTypes != null && mediaTypes.banner) {
+    return 'banner';
+  } else if (mediaTypes != null && mediaTypes.video) {
+    return 'video';
+  } else if (mediaTypes != null && mediaTypes.native) {
+    return 'native'
+  }
+  return 'banner';
+}
+
+function getFloor(bid, size, mediaTypes) {
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+  if (typeof bid.getFloor === 'function') {
+    var bidFloor = bid.getFloor({
+      currency: CURRENCY,
+      mediaType: getMediaType(mediaTypes),
+      size: (size) ? [ size[0], size[1] ] : '*',
+    });
+    if (bidFloor.currency === CURRENCY) {
+      return bidFloor.floor;
+    }
+  }
+  return undefined;
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
   const dnt = (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0;
   const userIdTdid = (bid.userId && bid.userId.tdid) ? bid.userId.tdid : '';
   const supplyChain = getSupplyChain(bid.schain);
+  const bidFloor = getFloor(bid, size, bid.mediaTypes);
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
   // general bid data
   let bidData = {
     ver: VER,
@@ -225,19 +261,21 @@ function getRequestData(bid, bidderRequest) {
     dnt: dnt,
     adid: bid.params.adid,
     tdid: userIdTdid,
-    schain: supplyChain,
-    fp: bid.params.bidfloor
+    schain: supplyChain
   };
-  addUserId(bidData, bid.userId);
-  try {
-    bidData.host = window.top.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || window.top.location.href;
-    bidData.xr = 0;
-  } catch (e) {
-    bidData.host = window.location.hostname;
-    bidData.u = config.getConfig('publisherDomain') || bidderRequest.refererInfo.referrer || document.referrer || window.location.href;
-    bidData.xr = 1;
+
+  if (bidFloor) {
+    bidData.fp = bidFloor;
   }
+
+  if (gpid) {
+    bidData.gpid = gpid;
+  }
+
+  addUserId(bidData, bid.userId);
+
+  bidData.u = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+  bidData.host = bidderRequest.refererInfo.domain;
 
   if (window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0) {
     bidData.ao = window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1];
@@ -249,7 +287,7 @@ function getRequestData(bid, bidderRequest) {
       ucfUid = storage.getCookie(COOKIE_NAME);
       bidData.ucfUid = ucfUid;
     } else {
-      ucfUid = utils.generateUUID();
+      ucfUid = generateUUID();
       bidData.ucfUid = ucfUid;
       storage.setCookie(COOKIE_NAME, ucfUid);
     }
@@ -279,17 +317,10 @@ function getRequestData(bid, bidderRequest) {
   }
 
   if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.apiVersion == 1) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        euconsent: bidderRequest.gdprConsent.consentString
-      });
-    } else if (bidderRequest.gdprConsent.apiVersion == 2) {
-      Object.assign(bidData, {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        'euconsent-v2': bidderRequest.gdprConsent.consentString
-      });
-    }
+    Object.assign(bidData, {
+      gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+      'euconsent-v2': bidderRequest.gdprConsent.consentString
+    });
   }
 
   if (config.getConfig('coppa')) {
@@ -300,19 +331,12 @@ function getRequestData(bid, bidderRequest) {
 }
 
 function addUserId(bidData, userId) {
-  utils._each(userId, (userIdObjectOrValue, userIdProviderKey) => {
+  bidData['eids'] = '';
+  _each(userId, (userIdObjectOrValue, userIdProviderKey) => {
     switch (userIdProviderKey) {
-      case 'sharedid':
-        if (userIdObjectOrValue.id) {
-          bidData[userIdProviderKey + '_id'] = userIdObjectOrValue.id;
-        }
-        if (userIdObjectOrValue.third) {
-          bidData[userIdProviderKey + '_third'] = userIdObjectOrValue.third;
-        }
-        break;
-      case 'haloId':
-        if (userIdObjectOrValue.haloId) {
-          bidData[userIdProviderKey + 'haloId'] = userIdObjectOrValue.haloId;
+      case 'hadronId':
+        if (userIdObjectOrValue.hadronId) {
+          bidData[userIdProviderKey + 'hadronId'] = userIdObjectOrValue.hadronId;
         }
         if (userIdObjectOrValue.auSeg) {
           bidData[userIdProviderKey + '_auSeg'] = userIdObjectOrValue.auSeg;
@@ -333,7 +357,16 @@ function addUserId(bidData, userId) {
         break;
       case 'uid2':
         if (userIdObjectOrValue.id) {
-          bidData['eids'] = userIdProviderKey + ',' + userIdObjectOrValue.id
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!' + userIdProviderKey + ',' + userIdObjectOrValue.id)
+            : (userIdProviderKey + ',' + userIdObjectOrValue.id);
+        }
+        break;
+      case 'connectid':
+        if (userIdObjectOrValue) {
+          bidData['eids'] = (bidData['eids'].length > 0)
+            ? (bidData['eids'] + '!verizonMediaId,' + userIdObjectOrValue)
+            : ('verizonMediaId,' + userIdObjectOrValue);
         }
         break;
       default:

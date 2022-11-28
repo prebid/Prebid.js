@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 
 const BIDDER_VERSION = '1.1.0';
-const BASE_URL = 'https://ortb.adpearl.io';
+const BASE_URL = 'https://auction.adpearl.io';
 
 export const spec = {
   code: 'pubgenius',
@@ -149,7 +149,22 @@ export const spec = {
 
 function buildVideoParams(videoMediaType, videoParams) {
   videoMediaType = videoMediaType || {};
-  const params = pick(videoMediaType, ['api', 'mimes', 'protocols', 'playbackmethod']);
+  const params = pick(videoMediaType, [
+    'mimes',
+    'minduration',
+    'maxduration',
+    'protocols',
+    'startdelay',
+    'placement',
+    'skip',
+    'skipafter',
+    'minbitrate',
+    'maxbitrate',
+    'delivery',
+    'playbackmethod',
+    'api',
+    'linearity',
+  ]);
 
   switch (videoMediaType.context) {
     case 'instream':
@@ -213,20 +228,15 @@ function buildSite(bidderRequest) {
   let site = null;
   const { refererInfo } = bidderRequest;
 
-  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
+  const pageUrl = refererInfo.page;
   if (pageUrl) {
     site = site || {};
     site.page = pageUrl;
   }
 
-  if (refererInfo.reachedTop) {
-    try {
-      const pageRef = window.top.document.referrer;
-      if (pageRef) {
-        site = site || {};
-        site.ref = pageRef;
-      }
-    } catch (e) {}
+  if (refererInfo.ref) {
+    site = site || {};
+    site.ref = refererInfo.ref;
   }
 
   return site;

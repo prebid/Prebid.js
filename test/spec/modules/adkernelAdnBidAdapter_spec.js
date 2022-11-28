@@ -107,7 +107,12 @@ describe('AdkernelAdn adapter', function () {
         bid: 5.0,
         tag: '<!-- tag goes here -->',
         w: 300,
-        h: 250
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        primaryCatId: 'IAB1-1',
       }, {
         id: 'ad-unit-2',
         impid: '31d798477126c4',
@@ -115,7 +120,12 @@ describe('AdkernelAdn adapter', function () {
         bid: 2.5,
         tag: '<!-- tag goes here -->',
         w: 300,
-        h: 250
+        h: 250,
+        advertiserId: 777,
+        advertiserName: 'advertiser',
+        agencyName: 'agency',
+        advertiserDomains: ['example.com'],
+        secondaryCatIds: ['IAB1-4', 'IAB8-16', 'IAB25-5']
       }, {
         id: 'video_wrapper',
         impid: '57d602ad1c9545',
@@ -134,7 +144,7 @@ describe('AdkernelAdn adapter', function () {
     auctionStart: 1545836987704,
     timeout: 3000,
     refererInfo: {
-      referer: 'https://example.com/index.html',
+      page: 'https://example.com/index.html',
       reachedTop: true,
       numIframes: 0,
       stack: ['https://example.com/index.html']
@@ -375,6 +385,11 @@ describe('AdkernelAdn adapter', function () {
       expect(resp).to.have.property('mediaType', 'banner');
       expect(resp).to.have.property('ad');
       expect(resp.ad).to.have.string('<!-- tag goes here -->');
+      expect(resp.meta.advertiserId).to.be.eql(777);
+      expect(resp.meta.advertiserName).to.be.eql('advertiser');
+      expect(resp.meta.agencyName).to.be.eql('agency');
+      expect(resp.meta.advertiserDomains).to.be.eql(['example.com']);
+      expect(resp.meta.primaryCatId).to.be.eql('IAB1-1');
     });
 
     it('should return fully-initialized video bid-response', function () {

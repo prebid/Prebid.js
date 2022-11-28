@@ -1,9 +1,9 @@
 'use strict';
 
-import { getAdUnitSizes, logWarn, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 
 const BID_SCHEME = 'https://';
@@ -14,6 +14,7 @@ const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
 ];
+const DEFAULT_MAX_TTL = 420; // 7 minutes
 export const spec = {
   code: 'synacormedia',
   supportedMediaTypes: [ BANNER, VIDEO ],
@@ -37,15 +38,23 @@ export const spec = {
     const openRtbBidRequest = {
       id: bidderRequest.auctionId,
       site: {
-        domain: config.getConfig('publisherDomain') || location.hostname,
-        page: refererInfo.referer,
-        ref: document.referrer
+        // TODO: does the fallback make sense here?
+        domain: refererInfo.domain || location.hostname,
+        page: refererInfo.page,
+        ref: refererInfo.ref
       },
       device: {
         ua: navigator.userAgent
       },
       imp: []
     };
+
+    const callbackTimeout = bidderRequest.timeout;
+    const globalTimeout = config.getConfig('bidderTimeout');
+    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
+    if (tmax) {
+      openRtbBidRequest.tmax = tmax;
+    }
 
     const schain = validBidReqs[0].schain;
     if (schain) {
@@ -61,12 +70,8 @@ export const spec = {
       } else {
         seatId = bid.params.seatId;
       }
-      const tagIdOrplacementId = bid.params.tagId || bid.params.placementId;
-      const bidFloor = bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
-      if (isNaN(bidFloor)) {
-        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
-      }
-      let pos = parseInt(bid.params.pos, 10);
+      const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
+      let pos = parseInt(bid.params.pos || deepAccess(bid.mediaTypes, 'video.pos'), 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
@@ -77,18 +82,35 @@ export const spec = {
 
       let imps = [];
       if (videoOrBannerKey === 'banner') {
-        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildBannerImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       } else if (videoOrBannerKey === 'video') {
-        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrplacementId, pos, bidFloor, videoOrBannerKey);
+        imps = this.buildVideoImpressions(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey);
       }
       if (imps.length > 0) {
-        imps.forEach(i => openRtbBidRequest.imp.push(i));
+        imps.forEach(i => {
+          // Deeply add ext section to all imp[] for GPID, prebid slot id, and anything else down the line
+          const extSection = deepAccess(bid, 'ortb2Imp.ext');
+          if (extSection) {
+            deepSetValue(i, 'ext', extSection);
+          }
+
+          // Add imp[] to request object
+          openRtbBidRequest.imp.push(i);
+        });
       }
     });
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // User ID
+    if (validBidReqs[0] && validBidReqs[0].userIdAsEids && Array.isArray(validBidReqs[0].userIdAsEids)) {
+      const eids = validBidReqs[0].userIdAsEids;
+      if (eids.length) {
+        deepSetValue(openRtbBidRequest, 'user.ext.eids', eids);
+      }
     }
 
     if (openRtbBidRequest.imp.length && seatId) {
@@ -104,7 +126,7 @@ export const spec = {
     }
   },
 
-  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
+  buildBannerImpressions: function (adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let format = [];
     let imps = [];
     adSizes.forEach((size, i) => {
@@ -127,6 +149,10 @@ export const spec = {
         },
         tagid: tagIdOrPlacementId,
       };
+      const bidFloor = getBidFloor(bid, 'banner', '*');
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -135,7 +161,7 @@ export const spec = {
     return imps;
   },
 
-  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, bidFloor, videoOrBannerKey) {
+  buildVideoImpressions: function(adSizes, bid, tagIdOrPlacementId, pos, videoOrBannerKey) {
     let imps = [];
     adSizes.forEach((size, i) => {
       if (!size || size.length != 2) {
@@ -147,6 +173,11 @@ export const spec = {
         id: `${videoOrBannerKey.substring(0, 1)}${bid.bidId}-${size0}x${size1}`,
         tagid: tagIdOrPlacementId
       };
+      const bidFloor = getBidFloor(bid, 'video', size);
+      if (isNaN(bidFloor)) {
+        logWarn(`Synacormedia: there is an invalid bid floor: ${bid.params.bidfloor}`);
+      }
+
       if (bidFloor !== null && !isNaN(bidFloor)) {
         imp.bidfloor = bidFloor;
       }
@@ -219,6 +250,19 @@ export const spec = {
               }
             });
           }
+
+          let maxTtl = DEFAULT_MAX_TTL;
+          if (bid.ext && bid.ext['imds.tv'] && bid.ext['imds.tv'].ttl) {
+            const bidTtlMax = parseInt(bid.ext['imds.tv'].ttl, 10);
+            maxTtl = !isNaN(bidTtlMax) && bidTtlMax > 0 ? bidTtlMax : DEFAULT_MAX_TTL;
+          }
+
+          let ttl = maxTtl;
+          if (bid.exp) {
+            const bidTtl = parseInt(bid.exp, 10);
+            ttl = !isNaN(bidTtl) && bidTtl > 0 ? Math.min(bidTtl, maxTtl) : maxTtl;
+          }
+
           const bidObj = {
             requestId: impid,
             cpm: parseFloat(bid.price),
@@ -229,7 +273,7 @@ export const spec = {
             netRevenue: true,
             mediaType: isVideo ? VIDEO : BANNER,
             ad: creative,
-            ttl: 60
+            ttl,
           };
 
           if (bid.adomain != undefined || bid.adomain != null) {
@@ -262,5 +306,21 @@ export const spec = {
     return syncs;
   }
 };
+
+function getBidFloor(bid, mediaType, size) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidfloor ? parseFloat(bid.params.bidfloor) : null;
+  }
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType,
+    size
+  });
+
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
 
 registerBidder(spec);

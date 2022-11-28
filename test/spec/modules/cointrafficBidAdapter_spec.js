@@ -3,7 +3,7 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
-const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -142,7 +142,9 @@ describe('cointrafficBidAdapter', function () {
           height: 250,
           creativeId: 'creativeId12345',
           ttl: 90,
-          ad: '<html><h3>I am an ad</h3></html> '
+          ad: '<html><h3>I am an ad</h3></html> ',
+          mediaType: 'banner',
+          adomain: ['test.com']
         }
       };
 
@@ -155,7 +157,13 @@ describe('cointrafficBidAdapter', function () {
         height: 250,
         creativeId: 'creativeId12345',
         ttl: 90,
-        ad: '<html><h3>I am an ad</h3></html>'
+        ad: '<html><h3>I am an ad</h3></html>',
+        meta: {
+          mediaType: 'banner',
+          advertiserDomains: [
+            'test.com',
+          ]
+        }
       }];
 
       let result = spec.interpretResponse(serverResponse, bidRequest[0]);
@@ -186,7 +194,9 @@ describe('cointrafficBidAdapter', function () {
           height: 250,
           creativeId: 'creativeId12345',
           ttl: 90,
-          ad: '<html><h3>I am an ad</h3></html> '
+          ad: '<html><h3>I am an ad</h3></html> ',
+          mediaType: 'banner',
+          adomain: ['test.com']
         }
       };
 
@@ -199,7 +209,13 @@ describe('cointrafficBidAdapter', function () {
         height: 250,
         creativeId: 'creativeId12345',
         ttl: 90,
-        ad: '<html><h3>I am an ad</h3></html>'
+        ad: '<html><h3>I am an ad</h3></html>',
+        meta: {
+          mediaType: 'banner',
+          advertiserDomains: [
+            'test.com',
+          ]
+        }
       }];
 
       const getConfigStub = sinon.stub(config, 'getConfig').returns('USD');

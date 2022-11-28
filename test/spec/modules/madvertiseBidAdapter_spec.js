@@ -1,57 +1,57 @@
 import {expect} from 'chai';
-import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
-import {spec} from 'modules/madvertiseBidAdapter.js';
+import {config} from 'src/config';
+import * as utils from 'src/utils';
+import {spec} from 'modules/madvertiseBidAdapter';
 
-describe('madvertise adapater', function () {
-  describe('Test validate req', function () {
-    it('should accept minimum valid bid', function () {
+describe('madvertise adapater', () => {
+  describe('Test validate req', () => {
+    it('should accept minimum valid bid', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
         params: {
-          s: 'test'
-        }
-      };
-      const isValid = spec.isBidRequestValid(bid);
-
-      expect(isValid).to.equal(true);
-    });
-    it('should reject no sizes', function () {
-      let bid = {
-        bidder: 'madvertise',
-        params: {
-          s: 'test'
+          zoneId: 'test'
         }
       };
       const isValid = spec.isBidRequestValid(bid);
 
       expect(isValid).to.equal(false);
     });
-    it('should reject empty sizes', function () {
+    it('should reject no sizes', () => {
+      let bid = {
+        bidder: 'madvertise',
+        params: {
+          zoneId: 'test'
+        }
+      };
+      const isValid = spec.isBidRequestValid(bid);
+
+      expect(isValid).to.equal(false);
+    });
+    it('should reject empty sizes', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [],
         params: {
-          s: 'test'
+          zoneId: 'test'
         }
       };
       const isValid = spec.isBidRequestValid(bid);
 
       expect(isValid).to.equal(false);
     });
-    it('should reject wrong format sizes', function () {
+    it('should reject wrong format sizes', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [['728x90']],
         params: {
-          s: 'test'
+          zoneId: 'test'
         }
       };
       const isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equal(false);
     });
-    it('should reject no params', function () {
+    it('should reject no params', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]]
@@ -60,7 +60,7 @@ describe('madvertise adapater', function () {
 
       expect(isValid).to.equal(false);
     });
-    it('should reject missing s', function () {
+    it('should reject missing s', () => {
       let bid = {
         bidder: 'madvertise',
         params: {}
@@ -71,7 +71,7 @@ describe('madvertise adapater', function () {
     });
   });
 
-  describe('Test build request', function () {
+  describe('Test build request', () => {
     beforeEach(function () {
       let mockConfig = {
         consentManagement: {
@@ -97,13 +97,13 @@ describe('madvertise adapater', function () {
       auctionId: '18fd8b8b0bd757',
       bidderRequestId: '418b37f85e772c',
       params: {
-        s: 'test',
+        zoneId: 'test',
       }
     }];
-    it('minimum request with gdpr consent', function () {
+    it('minimum request with gdpr consent', () => {
       let bidderRequest = {
         gdprConsent: {
-          consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          consentString: 'CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA',
           vendorData: {},
           gdprApplies: true
         }
@@ -114,15 +114,15 @@ describe('madvertise adapater', function () {
       expect(req[0]).to.have.property('method');
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
-      expect(req[0].url).to.contain('https://mobile.mng-ads.com/?rt=bid_request&v=1.0');
-      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain(`&zoneId=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).to.contain(`&gdpr=1`);
       expect(req[0].url).to.contain(`&consent[0][format]=IAB`);
-      expect(req[0].url).to.contain(`&consent[0][value]=BOJ/P2HOJ/P2HABABMAAAAAZ+A==`)
+      expect(req[0].url).to.contain(`&consent[0][value]=CO_5mtSPHOmEIAsAkBFRBOCsAP_AAH_AAAqIHQgB7SrERyNAYWB5gusAKYlfQAQCA2AABAYdASgJQQBAMJYEkGAIuAnAACAKAAAEIHQAAAAlCCmABAEAAIABBSGMAQgABZAAIiAEEAATAABACAABGYCSCAIQjIAAAAEAgEKEAAoAQGBAAAEgBABAAAogACADAgXmACIKkQBAkBAYAkAYQAogAhAAAAAIAAAAAAAKAABAAAghAAQQAAAAAAAAAgAAAAABAAAAAAAAQAAAAAAAAABAAgAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAQCAKCgBgEQALgAqkJADAIgAXABVIaACAAERABAACKgAgABA`)
     });
 
-    it('minimum request without gdpr consent', function () {
+    it('minimum request without gdpr consent', () => {
       let bidderRequest = {};
       const req = spec.buildRequests(bid, bidderRequest);
 
@@ -130,8 +130,8 @@ describe('madvertise adapater', function () {
       expect(req[0]).to.have.property('method');
       expect(req[0].method).to.equal('GET');
       expect(req[0]).to.have.property('url');
-      expect(req[0].url).to.contain('https://mobile.mng-ads.com/?rt=bid_request&v=1.0');
-      expect(req[0].url).to.contain(`&s=test`);
+      expect(req[0].url).to.contain('//mobile.mng-ads.com/?rt=bid_request&v=1.0');
+      expect(req[0].url).to.contain(`&zoneId=test`);
       expect(req[0].url).to.contain(`&sizes[0]=728x90`);
       expect(req[0].url).not.to.contain(`&gdpr=1`);
       expect(req[0].url).not.to.contain(`&consent[0][format]=`);
@@ -139,8 +139,8 @@ describe('madvertise adapater', function () {
     });
   });
 
-  describe('Test interpret response', function () {
-    it('General banner response', function () {
+  describe('Test interpret response', () => {
+    it('General banner response', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
@@ -150,7 +150,7 @@ describe('madvertise adapater', function () {
         auctionId: '18fd8b8b0bd757',
         bidderRequestId: '418b37f85e772c',
         params: {
-          s: 'test',
+          zoneId: 'test',
           connection_type: 'WIFI',
           age: 25,
         }
@@ -165,7 +165,8 @@ describe('madvertise adapater', function () {
         dealId: 'DEAL_ID',
         ttl: 180,
         currency: 'EUR',
-        netRevenue: true
+        netRevenue: true,
+        adomain: ['madvertise.com']
       }}, {bidId: bid.bidId});
 
       expect(resp).to.exist.and.to.be.a('array');
@@ -179,8 +180,9 @@ describe('madvertise adapater', function () {
       expect(resp[0]).to.have.property('netRevenue', true);
       expect(resp[0]).to.have.property('currency', 'EUR');
       expect(resp[0]).to.have.property('dealId', 'DEAL_ID');
+      // expect(resp[0].adomain).to.deep.equal(['madvertise.com']);
     });
-    it('No response', function () {
+    it('No response', () => {
       let bid = {
         bidder: 'madvertise',
         sizes: [[728, 90]],
@@ -190,7 +192,7 @@ describe('madvertise adapater', function () {
         auctionId: '18fd8b8b0bd757',
         bidderRequestId: '418b37f85e772c',
         params: {
-          s: 'test',
+          zoneId: 'test',
           connection_type: 'WIFI',
           age: 25,
         }

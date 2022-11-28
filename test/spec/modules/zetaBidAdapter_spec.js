@@ -10,7 +10,7 @@ describe('Zeta Bid Adapter', function() {
       }
     },
     refererInfo: {
-      referer: 'testprebid.com'
+      page: 'testprebid.com'
     },
     params: {
       placement: 12345,
@@ -24,7 +24,7 @@ describe('Zeta Bid Adapter', function() {
           country: 'USA'
         }
       },
-      definerId: '0',
+      definerId: '44253',
       test: 1
     }
   }];
