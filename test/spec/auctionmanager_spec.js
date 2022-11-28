@@ -1464,6 +1464,15 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 1);
     });
 
+    it('should convert cpm to number', () => {
+      auction.addBidReceived = sinon.spy();
+      const cbs = auctionCallbacks(doneSpy, auction);
+      const bid = {...bids[0], cpm: '1.23'}
+      bidRequests = [mockBidRequest(bid)];
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
+      sinon.assert.calledWith(auction.addBidReceived, sinon.match({cpm: 1.23}));
+    })
+
     describe('when addBidResponse hook returns promises', () => {
       let resolvers, callbacks, bids;
 
@@ -1605,6 +1614,7 @@ describe('auctionmanager.js', function () {
         ];
         cbs = auctionCallbacks(doneSpy, auction);
         expectedRejection = sinon.match(Object.assign({}, bid, {
+          cpm: parseFloat(bid.cpm),
           rejectionReason: REJECTION_REASON,
           adUnitCode: AU_CODE
         }));
