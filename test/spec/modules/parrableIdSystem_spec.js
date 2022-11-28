@@ -96,6 +96,12 @@ function decodeBase64UrlSafe(encBase64) {
 }
 
 describe('Parrable ID System', function() {
+  after(() => {
+    // reset ID system to avoid delayed callbacks in other tests
+    config.resetConfig();
+    init(config);
+  });
+
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -128,7 +134,7 @@ describe('Parrable ID System', function() {
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partners.split(','),
-          url: getRefererInfo().referer,
+          url: getRefererInfo().page,
           prebidVersion: '$prebid.version$',
           isIframe: true
         });
@@ -649,7 +655,6 @@ describe('Parrable ID System', function() {
       writeParrableCookie({ eid: P_COOKIE_EID, ibaOptout: true });
       init(config);
       setSubmoduleRegistry([parrableIdSubmodule]);
-      config.setConfig(getConfigMock());
     });
 
     afterEach(function() {
@@ -659,6 +664,7 @@ describe('Parrable ID System', function() {
     });
 
     it('when a stored Parrable ID exists it is added to bids', function(done) {
+      config.setConfig(getConfigMock());
       requestBidsHook(function() {
         adUnits.forEach(unit => {
           unit.bids.forEach(bid => {
@@ -685,6 +691,7 @@ describe('Parrable ID System', function() {
     it('supplies an optout reason when the EID is missing due to CCPA non-consent', function(done) {
       // the ID system itself will not write a cookie with an EID when CCPA=true
       writeParrableCookie({ ccpaOptout: true });
+      config.setConfig(getConfigMock());
 
       requestBidsHook(function() {
         adUnits.forEach(unit => {

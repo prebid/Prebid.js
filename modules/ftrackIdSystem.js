@@ -9,6 +9,7 @@ import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
@@ -17,7 +18,6 @@ const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const FTRACK_URL = 'https://d9.flashtalking.com/d9core';
 const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
 
 let consentInfo = {
@@ -48,9 +48,39 @@ export const ftrackIdSubmodule = {
    *   similar to the module name and ending in id or Id
    */
   decode (value, config) {
-    return {
-      ftrackId: value
+    if (!value) {
+      return;
     };
+
+    const DECODE_RESPONSE = {
+      ftrackId: {
+        uid: '',
+        ext: {}
+      }
+    }
+
+    // Loop over the value's properties:
+    // -- if string, assign value as is.
+    // -- if array, convert to string then assign value.
+    // -- If neither type, assign value as empty string
+    for (var key in value) {
+      let keyValue = value[key];
+      if (Array.isArray(keyValue)) {
+        keyValue = keyValue.join('|');
+      } else if (typeof value[key] !== 'string') {
+        // Unexpected value type, should be string or array
+        keyValue = '';
+      }
+
+      DECODE_RESPONSE.ftrackId.ext[key] = keyValue;
+    }
+
+    // If we have DeviceId value, assign it to the uid property
+    if (DECODE_RESPONSE.ftrackId.ext.hasOwnProperty('DeviceID')) {
+      DECODE_RESPONSE.ftrackId.uid = DECODE_RESPONSE.ftrackId.ext.DeviceID;
+    }
+
+    return DECODE_RESPONSE;
   },
 
   /**
@@ -60,13 +90,13 @@ export const ftrackIdSubmodule = {
    * @param {SubmoduleConfig} config
    * @param {ConsentData} consentData
    * @param {(Object|undefined)} cacheIdObj
-   * @returns {IdResponse|undefined}
+   * @returns {IdResponse|undefined} A response object that contains id and/or callback.
    */
   getId (config, consentData, cacheIdObj) {
     if (this.isConfigOk(config) === false || this.isThereConsent(consentData) === false) return undefined;
 
     return {
-      callback: function () {
+      callback: function (cb) {
         window.D9v = {
           UserID: '99999999999999',
           CampID: '3175',
@@ -81,6 +111,8 @@ export const ftrackIdSubmodule = {
               storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}_exp`, (new Date(Date.now() + (1000 * 60 * 60 * 24 * LOCAL_STORAGE_EXP_DAYS))).toUTCString());
               storage.setDataInLocalStorage(`${FTRACK_PRIVACY_STORAGE_NAME}`, JSON.stringify(consentInfo));
             };
+
+            if (typeof cb === 'function') cb(response);
 
             return response;
           }
@@ -102,11 +134,8 @@ export const ftrackIdSubmodule = {
           }
         }
 
-        if (config.params && config.params.url && config.params.url === FTRACK_URL) {
-          var ftrackScript = document.createElement('script');
-          ftrackScript.setAttribute('src', config.params.url);
-          window.document.body.appendChild(ftrackScript);
-        }
+        // Creates an async script element and appends it to the document
+        loadExternalScript(config.params.url, MODULE_NAME);
       }
     };
   },
@@ -146,8 +175,8 @@ export const ftrackIdSubmodule = {
       utils.logWarn(LOG_PREFIX + 'config.storage.name recommended to be "' + FTRACK_STORAGE_NAME + '".');
     }
 
-    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url') || config.params.url !== FTRACK_URL) {
-      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run. Url should be "' + FTRACK_URL + '".');
+    if (!config.hasOwnProperty('params') || !config.params.hasOwnProperty('url')) {
+      utils.logWarn(LOG_PREFIX + 'config.params.url is required for ftrack to run.');
       return false;
     }
 

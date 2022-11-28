@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
+import { deepAccess, isArray, isStr, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -38,9 +38,21 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
+    const kwdsFromRequest = firstSlot.kwds;
+    let keywords = [];
+    if (kwdsFromRequest) {
+      if (isArray(kwdsFromRequest)) {
+        keywords = kwdsFromRequest;
+      } else if (isStr(kwdsFromRequest)) {
+        if (kwdsFromRequest.indexOf(',') != -1) {
+          keywords = kwdsFromRequest.split(',').map((e) => { return e.trim() });
+        } else {
+          keywords.push(kwdsFromRequest);
+        }
+      }
+    }
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
@@ -48,12 +60,13 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
+      kwds: keywords,
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
     const payloadString = JSON.stringify(payloadObject);
     return {
       method: 'POST',
@@ -100,12 +113,12 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  const accountId = data.params.accountId;
+  let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
-    nid: data.params.networkId,
-    nptnid: data.params.networkPartnerId,
+    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    nid: params.networkId,
+    nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
     aid: data.auctionId,
@@ -130,6 +143,7 @@ function beOpRequestSlotsMaker(bid) {
     sizes: isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
     pid: getValue(bid.params, 'accountId'),
+    kwds: getValue(bid.params, 'keywords'),
     nid: getValue(bid.params, 'networkId'),
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),

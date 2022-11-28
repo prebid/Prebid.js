@@ -561,38 +561,33 @@ describe('mediakeysBidAdapter', function () {
       });
 
       it('should set properties at payload level from FPD', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            ortb2: {
-              site: {
-                domain: 'domain.example',
-                cat: ['IAB12'],
-                ext: {
-                  data: {
-                    category: 'sport',
-                  }
-                }
-              },
-              user: {
-                yob: 1985,
-                gender: 'm',
-                geo: {
-                  country: 'FR',
-                  city: 'Marseille'
-                },
-                ext: {
-                  data: {
-                    registered: true
-                  }
-                }
+        const ortb2 = {
+          site: {
+            domain: 'domain.example',
+            cat: ['IAB12'],
+            ext: {
+              data: {
+                category: 'sport',
               }
             }
-          };
-          return utils.deepAccess(config, key);
-        });
+          },
+          user: {
+            yob: 1985,
+            gender: 'm',
+            geo: {
+              country: 'FR',
+              city: 'Marseille'
+            },
+            ext: {
+              data: {
+                registered: true
+              }
+            }
+          }
+        };
 
         const bidRequests = [utils.deepClone(bid)];
-        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
         const data = request.data;
         expect(data.site.domain).to.equal('domain.example');
         expect(data.site.cat[0]).to.equal('IAB12');
@@ -813,8 +808,8 @@ describe('mediakeysBidAdapter', function () {
             ]
           },
           eventtrackers: [
-            { event: 1, method: 1, url: 'https://click.me' },
-            { event: 1, method: 2, url: 'https://click-script.me' }
+            { event: 1, method: 1, url: 'https://eventrack.me/impression' },
+            { event: 1, method: 2, url: 'https://eventrack-js.me/impression-1' }
           ]
         };
 
@@ -850,9 +845,11 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native.clickUrl).to.exist;
         expect(response[0].native.clickTrackers).to.exist;
         expect(response[0].native.clickTrackers.length).to.equal(1);
-        expect(response[0].native.javascriptTrackers).to.equal('<script src="https://click-script.me"></script>');
         expect(response[0].native.impressionTrackers).to.exist;
         expect(response[0].native.impressionTrackers.length).to.equal(1);
+        expect(response[0].native.impressionTrackers[0]).to.equal('https://eventrack.me/impression');
+        expect(response[0].native.javascriptTrackers).to.exist;
+        expect(response[0].native.javascriptTrackers).to.equal('<script async src="https://eventrack-js.me/impression-1"></script>');
       });
 
       it('should ignore eventtrackers with a unsupported type', function() {
@@ -864,6 +861,21 @@ describe('mediakeysBidAdapter', function () {
         expect(response[0].native.impressionTrackers).to.exist;
         expect(response[0].native.impressionTrackers.length).to.equal(0);
       })
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const rawServerResponseNativeCopy = utils.deepClone(rawServerResponseNative);
+        const nativeObjectCopy = utils.deepClone(nativeObject);
+        nativeObjectCopy.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack-js.me/impression-2'
+          },)
+        rawServerResponseNativeCopy.body.seatbid[0].bid[0].adm = JSON.stringify(nativeObjectCopy);
+        const response = spec.interpretResponse(rawServerResponseNativeCopy, request);
+        const expected = '<script async src=\"https://eventrack-js.me/impression-1\"></script>\n<script async src=\"https://eventrack-js.me/impression-2\"></script>';
+        expect(response[0].native.javascriptTrackers).to.equal(expected);
+      });
     });
   });
 

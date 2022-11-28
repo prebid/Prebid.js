@@ -1,5 +1,6 @@
 import {find} from './polyfill.js';
-import { isEmpty } from './utils.js';
+import { isEmpty, logWarn } from './utils.js';
+import { config } from './config.js';
 
 const _defaultPrecision = 2;
 const _lgPriceConfig = {
@@ -118,6 +119,11 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   const precision = typeof bucket.precision !== 'undefined' ? bucket.precision : _defaultPrecision;
   const increment = bucket.increment * granularityMultiplier;
   const bucketMin = bucket.min * granularityMultiplier;
+  let roundingFunction = Math.floor;
+  let customRoundingFunction = config.getConfig('cpmRoundingFunction');
+  if (typeof customRoundingFunction === 'function') {
+    roundingFunction = customRoundingFunction;
+  }
 
   // start increments at the bucket min and then add bucket min back to arrive at the correct rounding
   // note - we're padding the values to avoid using decimals in the math prior to flooring
@@ -125,10 +131,23 @@ function getCpmTarget(cpm, bucket, granularityMultiplier) {
   //   (eg 4.01 / 0.01 = 400.99999999999994)
   // min precison should be 2 to move decimal place over.
   let pow = Math.pow(10, precision + 2);
-  let cpmToFloor = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
-  let cpmTarget = ((Math.floor(cpmToFloor)) * increment) + bucketMin;
+  let cpmToRound = ((cpm * pow) - (bucketMin * pow)) / (increment * pow);
+  let cpmTarget;
+  let invalidRounding;
+  // It is likely that we will be passed {cpmRoundingFunction: roundingFunction()}
+  // rather than the expected {cpmRoundingFunction: roundingFunction}. Default back to floor in that case
+  try {
+    cpmTarget = (roundingFunction(cpmToRound) * increment) + bucketMin;
+  } catch (err) {
+    invalidRounding = true;
+  }
+  if (invalidRounding || typeof cpmTarget !== 'number') {
+    logWarn('Invalid rounding function passed in config');
+    cpmTarget = (Math.floor(cpmToRound) * increment) + bucketMin;
+  }
   // force to 10 decimal places to deal with imprecise decimal/binary conversions
   //    (for example 0.1 * 3 = 0.30000000000000004)
+
   cpmTarget = Number(cpmTarget.toFixed(10));
   return cpmTarget.toFixed(precision);
 }

@@ -1,6 +1,7 @@
 import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { VIDEO, BANNER } from '../src/mediaTypes.js'
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
@@ -147,7 +148,37 @@ function buildBidResponse(seedtagBid) {
   return bid;
 }
 
-export function getTimeoutUrl (data) {
+/**
+ *
+ * @returns Measure time to first byte implementation
+ * @see https://web.dev/ttfb/
+ *      https://developer.mozilla.org/en-US/docs/Web/API/Navigation_timing_API
+ */
+function ttfb() {
+  const ttfb = (() => {
+    // Timing API V2
+    try {
+      const entry = performance.getEntriesByType('navigation')[0];
+      return Math.round(entry.responseStart - entry.startTime);
+    } catch (e) {
+      // Timing API V1
+      try {
+        const entry = performance.timing;
+        return Math.round(entry.responseStart - entry.fetchStart);
+      } catch (e) {
+        // Timing API not available
+        return 0;
+      }
+    }
+  })();
+
+  // prevent negative or excessive value
+  // @see https://github.com/googleChrome/web-vitals/issues/162
+  //      https://github.com/googleChrome/web-vitals/issues/137
+  return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+}
+
+export function getTimeoutUrl(data) {
   let queryParams = '';
   if (
     isArray(data) && data[0] &&
@@ -189,19 +220,33 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       publisherToken: validBidRequests[0].params.publisherId,
       cmp: !!bidderRequest.gdprConsent,
       timeout: bidderRequest.timeout,
       version: '$prebid.version$',
       connectionType: getConnectionType(),
-      bidRequests: _map(validBidRequests, buildBidRequest)
+      auctionStart: bidderRequest.auctionStart || Date.now(),
+      ttfb: ttfb(),
+      bidRequests: _map(validBidRequests, buildBidRequest),
     };
 
     if (payload.cmp) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies;
       if (gdprApplies !== undefined) payload['ga'] = gdprApplies;
       payload['cd'] = bidderRequest.gdprConsent.consentString;
+    }
+    if (bidderRequest.uspConsent) {
+      payload['uspConsent'] = bidderRequest.uspConsent
+    }
+
+    if (validBidRequests[0].schain) {
+      payload.schain = validBidRequests[0].schain;
+    }
+
+    let coppa = config.getConfig('coppa')
+    if (coppa) {
+      payload.coppa = coppa
     }
 
     const payloadString = JSON.stringify(payload)
@@ -218,10 +263,10 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse) {
+  interpretResponse: function (serverResponse) {
     const serverBody = serverResponse.body;
     if (serverBody && serverBody.bids && isArray(serverBody.bids)) {
-      return _map(serverBody.bids, function(bid) {
+      return _map(serverBody.bids, function (bid) {
         return buildBidResponse(bid);
       });
     } else {
