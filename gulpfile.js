@@ -157,16 +157,16 @@ function makeWebpackPkg(extraConfig = {}) {
     const analyticsSources = helpers.getAnalyticsSources();
     const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(helpers.nameModules(externalModules))
+      .pipe(webpackStream(cloned, webpack))
     /* gu-mod-start */
     // Surface exceptions from webpack
-    .on('error', (err) => {
-      console.error(err);
-    })
+      .on('error', (err) => {
+        console.error(err);
+      })
     /* gu-mod-end */
-    .pipe(gulp.dest('build/dist'));
+      .pipe(gulp.dest('build/dist'));
   }
 }
 
