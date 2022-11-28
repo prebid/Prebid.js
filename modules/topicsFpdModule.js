@@ -1,22 +1,17 @@
-import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse} from '../src/utils.js';
+import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse, logInfo} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getCoreStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
 
-export const storage = getStorageManager();
-export const topicStorageName = 'prebid:topics';
-export const lastUpdated = 'lastUpdated';
-
-const iframeLoadedURL = [];
-const TAXONOMIES = {
-  // map from topic taxonomyVersion to IAB segment taxonomy
-  '1': 600
-}
-
+const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
+const TCF_REQUIRED_PURPOSES = ['1', '2', '3', '4'];
+let HAS_GDPR_CONSENT = true;
+let LOAD_TOPICS_INITIALISE = false;
 
 const bidderIframeList = {
   maxTopicCaller: 1,
@@ -24,6 +19,15 @@ const bidderIframeList = {
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
   }]
+}
+export const coreStorage = getCoreStorageManager(MODULE_NAME);
+export const topicStorageName = 'prebid:topics';
+export const lastUpdated = 'lastUpdated';
+
+const iframeLoadedURL = [];
+const TAXONOMIES = {
+  // map from topic taxonomyVersion to IAB segment taxonomy
+  '1': 600
 }
 
 function partitionBy(field, items) {
@@ -93,7 +97,10 @@ export function getTopics(doc = document) {
 const topicsData = getTopics().then((topics) => getTopicsData(getRefererInfo().domain, topics));
 
 export function processFpd(config, {global}, {data = topicsData} = {}) {
-  loadTopicsForBidders();
+  if (!LOAD_TOPICS_INITIALISE) {
+    loadTopicsForBidders();
+    LOAD_TOPICS_INITIALISE = true;
+  }
   return data.then((data) => {
     data = [].concat(data, getCachedTopics()); // Add cached data in FPD data.
     if (data.length) {
@@ -112,9 +119,12 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 function getCachedTopics() {
   let cachedTopicData = [];
+  if (!HAS_GDPR_CONSENT) {
+    return cachedTopicData;
+  }
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
   const bidderList = topics.bidders || [];
-  let storedSegments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+  let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
     let isBidderConfigured = bidderList.some(({bidder}) => cachedBidder == bidder)
@@ -126,7 +136,7 @@ function getCachedTopics() {
       } else {
         // delete the specific bidder map from the store and store the updated maps
         storedSegments.delete(cachedBidder);
-        storage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
+        coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
       }
     }
   });
@@ -155,7 +165,7 @@ Function to store Topics data recieved from iframe in storage(name: "prebid:topi
 * @param {Topics} topics
 */
 export function storeInLocalStorage(bidder, topics) {
-  const storedSegments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+  const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   if (storedSegments.has(bidder)) {
     storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
     storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
@@ -163,7 +173,7 @@ export function storeInLocalStorage(bidder, topics) {
   } else {
     storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
   }
-  storage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
+  coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
 function isCachedDataExpired(storedTime, cacheTime) {
@@ -187,10 +197,43 @@ function listenMessagesFromTopicIframe() {
   window.addEventListener('message', receiveMessage, false);
 }
 
+function checkTCFv2(vendorData, requiredPurposes = TCF_REQUIRED_PURPOSES) {
+  const {gdprApplies, purpose} = vendorData;
+  if (!gdprApplies) {
+    return true;
+  }
+  return requiredPurposes.map((purposeNo) => {
+    const purposeConsent = purpose.consents ? purpose.consents[purposeNo] : false;
+    if (purposeConsent) {
+      return true;
+    }
+    return false;
+  }).reduce((a, b) => a && b, true);
+}
+
+function hasGDPRConsent() {
+  // Check for GDPR consent for purpose 1,2,3,4 and return false if consent has not been given
+  const gdprConsent = gdprDataHandler.getConsentData();
+  const hasGdpr = (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) ? 1 : 0;
+  const gdprConsentString = hasGdpr ? gdprConsent.consentString : '';
+  if (hasGdpr) {
+    if ((!gdprConsentString || gdprConsentString === '') || !gdprConsent.vendorData) {
+      return false;
+    }
+    return checkTCFv2(gdprConsent.vendorData);
+  }
+  return true;
+}
+
 /**
  * function to load the iframes of the bidder to load the topics data
  */
 function loadTopicsForBidders() {
+  HAS_GDPR_CONSENT = hasGDPRConsent();
+  if (!HAS_GDPR_CONSENT) {
+    logInfo('Topics Module : Consent string is required to fetch the topics from third party domains.');
+    return;
+  }
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
   if (topics) {
     listenMessagesFromTopicIframe();
