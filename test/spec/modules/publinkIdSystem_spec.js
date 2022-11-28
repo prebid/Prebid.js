@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import {uspDataHandler} from '../../../src/adapterManager';
 import {parseUrl} from '../../../src/utils';
 
-export const storage = getStorageManager(24);
+export const storage = getStorageManager({gvlid: 24});
 const TEST_COOKIE_VALUE = 'cookievalue';
 describe('PublinkIdSystem', () => {
   describe('decode', () => {
@@ -47,12 +47,6 @@ describe('PublinkIdSystem', () => {
       expect(result.id).to.equal(LOCAL_VALUE.publink);
       storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
     });
-    it('ignore expired cookie', () => {
-      storage.setDataInLocalStorage(PUBLINK_COOKIE, JSON.stringify({publink: 'value', exp: Date.now() - 60 * 60 * 24 * 1000}));
-      const result = publinkIdSubmodule.getId();
-      expect(result.id).to.be.undefined;
-      storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
-    });
     it('priority goes to publink_srv cookie', () => {
       storage.setCookie(PUBLINK_SRV_COOKIE, JSON.stringify(COOKIE_VALUE), COOKIE_EXPIRATION);
       storage.setDataInLocalStorage(PUBLINK_COOKIE, JSON.stringify(LOCAL_VALUE));
@@ -60,6 +54,12 @@ describe('PublinkIdSystem', () => {
       expect(result.id).to.equal(COOKIE_VALUE.publink);
       storage.setCookie(PUBLINK_SRV_COOKIE, '', DELETE_COOKIE);
       storage.removeDataFromLocalStorage(PUBLINK_COOKIE);
+    });
+    it('publink non-json cookie', () => {
+      storage.setCookie(PUBLINK_COOKIE, COOKIE_VALUE.publink, COOKIE_EXPIRATION);
+      const result = publinkIdSubmodule.getId();
+      expect(result.id).to.equal(COOKIE_VALUE.publink);
+      storage.setCookie(PUBLINK_COOKIE, '', DELETE_COOKIE);
     });
   });
 

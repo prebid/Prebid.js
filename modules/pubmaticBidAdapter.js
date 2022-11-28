@@ -1,8 +1,10 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
+import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -17,6 +19,7 @@ const DEFAULT_HEIGHT = 0;
 const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html';
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
+const MSG_VIDEO_PLACEMENT_MISSING = 'Video.Placement param missing';
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -109,10 +112,6 @@ const dealChannelValues = {
   6: 'PMPG'
 };
 
-const FLOC_FORMAT = {
-  'EID': 1,
-  'SEGMENT': 2
-}
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -178,13 +177,15 @@ let publisherId = 0;
 let isInvalidNativeRequest = false;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
+let biddersList = ['pubmatic'];
+const allBiddersList = ['all'];
 
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
-function _getDomainFromURL(url) {
+export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
   anchor.href = url;
   return anchor.hostname;
@@ -271,8 +272,9 @@ function _parseAdSlot(bid) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    // TODO: do the fallbacks make sense here?
+    pageURL: refererInfo?.page || window.location.href,
+    refURL: refererInfo?.ref || window.document.referrer
   };
 }
 
@@ -390,37 +392,29 @@ function _createNativeRequest(params) {
             }
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS.IMAGE.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                  wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
-                  hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
-                  mimes: params[key].mimes,
-                  ext: params[key].ext,
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Image sizes is required for native ad: ' + JSON.stringify(params));
-            }
+            assetObj = {
+              id: NATIVE_ASSETS.IMAGE.ID,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+                wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
+                hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
+                mimes: params[key].mimes,
+                ext: params[key].ext,
+              }
+            };
             break;
           case NATIVE_ASSETS.ICON.KEY:
-            if (params[key].sizes && params[key].sizes.length > 0) {
-              assetObj = {
-                id: NATIVE_ASSETS.ICON.ID,
-                required: params[key].required ? 1 : 0,
-                img: {
-                  type: NATIVE_ASSET_IMAGE_TYPE.ICON,
-                  w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                  h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Icon sizes is required for native ad: ' + JSON.stringify(params));
+            assetObj = {
+              id: NATIVE_ASSETS.ICON.ID,
+              required: params[key].required ? 1 : 0,
+              img: {
+                type: NATIVE_ASSET_IMAGE_TYPE.ICON,
+                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
+                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
+              }
             };
             break;
           case NATIVE_ASSETS.VIDEO.KEY:
@@ -537,12 +531,20 @@ function _createBannerRequest(bid) {
   return bannerObj;
 }
 
+export function checkVideoPlacement(videoData, adUnitCode) {
+  // Check for video.placement property. If property is missing display log message.
+  if (!deepAccess(videoData, 'placement')) {
+    logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
+  };
+}
+
 function _createVideoRequest(bid) {
   var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
   if (videoData !== UNDEFINED) {
     videoObj = {};
+    checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
       if (videoData.hasOwnProperty(key)) {
         videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
@@ -598,7 +600,7 @@ function _addDealCustomTargetings(imp, bid) {
       if (dctr.substring(dctrLen, dctrLen - 1) === '|') {
         dctr = dctr.substring(0, dctrLen - 1);
       }
-      imp.ext['key_val'] = dctr.trim()
+      imp.ext['key_val'] = dctr.trim();
     } else {
       logWarn(LOG_WARN_PREFIX + 'Ignoring param : dctr with value : ' + dctr + ', expects string-value, found empty or non-string value');
     }
@@ -789,67 +791,8 @@ function _addFloorFromFloorModule(impObj, bid) {
   logInfo(LOG_WARN_PREFIX, 'new impObj.bidfloor value:', impObj.bidfloor);
 }
 
-function _getFlocId(validBidRequests, flocFormat) {
-  var flocIdObject = null;
-  var flocId = deepAccess(validBidRequests, '0.userId.flocId');
-  if (flocId && flocId.id) {
-    switch (flocFormat) {
-      case FLOC_FORMAT.SEGMENT:
-        flocIdObject = {
-          id: 'FLOC',
-          name: 'FLOC',
-          ext: {
-            ver: flocId.version
-          },
-          segment: [{
-            id: flocId.id,
-            name: 'chrome.com',
-            value: flocId.id.toString()
-          }]
-        }
-        break;
-      case FLOC_FORMAT.EID:
-      default:
-        flocIdObject = {
-          source: 'chrome.com',
-          uids: [
-            {
-              atype: 1,
-              id: flocId.id,
-              ext: {
-                ver: flocId.version
-              }
-            },
-          ]
-        }
-        break;
-    }
-  }
-  return flocIdObject;
-}
-
-function _handleFlocId(payload, validBidRequests) {
-  var flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.SEGMENT);
-  if (flocObject) {
-    if (!payload.user) {
-      payload.user = {};
-    }
-    if (!payload.user.data) {
-      payload.user.data = [];
-    }
-    payload.user.data.push(flocObject);
-  }
-}
-
 function _handleEids(payload, validBidRequests) {
   let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
-  let flocObject = _getFlocId(validBidRequests, FLOC_FORMAT.EID);
-  if (flocObject) {
-    if (!bidUserIdAsEids) {
-      bidUserIdAsEids = [];
-    }
-    bidUserIdAsEids.push(flocObject);
-  }
   if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
     deepSetValue(payload, 'user.eids', bidUserIdAsEids);
   }
@@ -857,10 +800,10 @@ function _handleEids(payload, validBidRequests) {
 
 function _checkMediaType(bid, newBid) {
   // Create a regex here to check the strings
-  if (bid.ext && bid.ext['BidType'] != undefined) {
-    newBid.mediaType = MEDIATYPE[bid.ext.BidType];
+  if (bid.ext && bid.ext['bidtype'] != undefined) {
+    newBid.mediaType = MEDIATYPE[bid.ext.bidtype];
   } else {
-    logInfo(LOG_WARN_PREFIX + 'bid.ext.BidType does not exist, checking alternatively for mediaType')
+    logInfo(LOG_WARN_PREFIX + 'bid.ext.bidtype does not exist, checking alternatively for mediaType');
     var adm = bid.adm;
     var admStr = '';
     var videoRegex = new RegExp(/VAST\s+version/);
@@ -966,6 +909,25 @@ function _blockedIabCategoriesValidation(payload, blockedIabCategories) {
   }
 }
 
+function _allowedIabCategoriesValidation(payload, allowedIabCategories) {
+  allowedIabCategories = allowedIabCategories
+    .filter(function(category) {
+      if (typeof category === 'string') { // returns only strings
+        return true;
+      } else {
+        logWarn(LOG_WARN_PREFIX + 'acat: Each category should be a string, ignoring category: ' + category);
+        return false;
+      }
+    })
+    .map(category => category.trim()) // trim all categories
+    .filter((category, index, arr) => arr.indexOf(category) === index); // return unique values only
+
+  if (allowedIabCategories.length > 0) {
+    logWarn(LOG_WARN_PREFIX + 'acat: Selected: ', allowedIabCategories);
+    payload.ext.acat = allowedIabCategories;
+  }
+}
+
 function _assignRenderer(newBid, request) {
   let bidParams, context, adUnitCode;
   if (request.bidderRequest && request.bidderRequest.bids) {
@@ -981,6 +943,29 @@ function _assignRenderer(newBid, request) {
       newBid.renderer = BB_RENDERER.newRenderer(newBid.rendererCode, adUnitCode);
     }
   }
+}
+
+/**
+ * In case of adpod video context, assign prebiddealpriority to the dealtier property of adpod-video bid,
+ * so that adpod module can set the hb_pb_cat_dur targetting key.
+ * @param {*} newBid
+ * @param {*} bid
+ * @param {*} request
+ * @returns
+ */
+export function assignDealTier(newBid, bid, request) {
+  if (!bid?.ext?.prebiddealpriority) return;
+  const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
+  const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
+  if (videoObj?.context != ADPOD) return;
+
+  const duration = bid?.ext?.video?.duration || videoObj?.maxduration;
+  // if (!duration) return;
+  newBid.video = {
+    context: ADPOD,
+    durationSeconds: duration,
+    dealTier: bid.ext.prebiddealpriority
+  };
 }
 
 function isNonEmptyArray(test) {
@@ -1054,6 +1039,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1064,12 +1051,13 @@ export const spec = {
     var dctrArr = [];
     var bid;
     var blockedIabCategories = [];
+    var allowedIabCategories = [];
 
     validBidRequests.forEach(originalBid => {
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
-      if (bid.params.hasOwnProperty('video')) {
+      if ((bid.mediaTypes && bid.mediaTypes.hasOwnProperty('video')) || bid.params.hasOwnProperty('video')) {
         // Nothing to do
       } else {
         // If we have a native mediaType configured alongside banner, its ok if the banner size is not set in width and height
@@ -1095,6 +1083,9 @@ export const spec = {
       if (bid.params.hasOwnProperty('bcat') && isArray(bid.params.bcat)) {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
+      if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
+        allowedIabCategories = allowedIabCategories.concat(bid.params.acat);
+      }
       var impObj = _createImpressionObject(bid, conf);
       if (impObj) {
         payload.imp.push(impObj);
@@ -1115,6 +1106,21 @@ export const spec = {
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
     payload.ext.wrapper.transactionId = conf.transactionId;
     payload.ext.wrapper.wp = 'pbjs';
+    const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
+    if (allowAlternateBidder !== undefined) {
+      payload.ext.marketplace = {};
+      if (bidderRequest && allowAlternateBidder == true) {
+        let allowedBiddersList = bidderSettings.get(bidderRequest.bidderCode, 'allowedAlternateBidderCodes');
+        if (isArray(allowedBiddersList)) {
+          allowedBiddersList = allowedBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques);
+          biddersList = allowedBiddersList.includes('*') ? allBiddersList : [...biddersList, ...allowedBiddersList];
+        } else {
+          biddersList = allBiddersList;
+        }
+      }
+      payload.ext.marketplace.allowedbidders = biddersList.filter(uniques);
+    }
+
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
@@ -1133,6 +1139,9 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
+
+    // update device.language to ISO-639-1-alpha-2 (2 character language)
+    payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
     // passing transactionId in source.tid
     deepSetValue(payload, 'source.tid', conf.transactionId);
@@ -1164,16 +1173,42 @@ export const spec = {
     }
 
     _handleEids(payload, validBidRequests);
-    _blockedIabCategoriesValidation(payload, blockedIabCategories);
-    _handleFlocId(payload, validBidRequests);
+
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
     if (commonFpd.site) {
+      const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: commonFpd.site});
+      payload.site.page = page;
+      payload.site.domain = domain;
+      payload.site.ref = ref;
     }
     if (commonFpd.user) {
       mergeDeep(payload, {user: commonFpd.user});
     }
+    if (commonFpd.bcat) {
+      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
+    }
+
+    if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
+      const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
+      _allowedIabCategoriesValidation(payload, acatParams);
+    } else if (allowedIabCategories.length) {
+      _allowedIabCategoriesValidation(payload, allowedIabCategories);
+    }
+    _blockedIabCategoriesValidation(payload, blockedIabCategories);
+
+    // Check if bidderRequest has timeout property if present send timeout as tmax value to translator request
+    // bidderRequest has timeout property if publisher sets during calling requestBids function from page
+    // if not bidderRequest contains global value set by Prebid
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+    } else {
+      payload.tmax = window?.PWT?.versionDetails?.timeout;
+    }
+
+    // Sending epoch timestamp in request.ext object
+    payload.ext.epoch = new Date().getTime();
 
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
@@ -1219,7 +1254,7 @@ export const spec = {
             seatbidder.bid.forEach(bid => {
               let newBid = {
                 requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
+                cpm: parseFloat((bid.price || 0).toFixed(2)),
                 width: bid.w,
                 height: bid.h,
                 creativeId: bid.crid || bid.id,
@@ -1245,6 +1280,7 @@ export const spec = {
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;
                         _assignRenderer(newBid, request);
+                        assignDealTier(newBid, bid, request);
                         break;
                       case NATIVE:
                         _parseNativeResponse(bid, newBid);
@@ -1274,6 +1310,12 @@ export const spec = {
                 newBid.adserverTargeting = {
                   'hb_buyid_pubmatic': seatbidder.ext.buyid
                 };
+              }
+
+              // if from the server-response the bid.ext.marketplace is set then
+              //    submit the bid to Prebid as marketplace name
+              if (bid.ext && !!bid.ext.marketplace) {
+                newBid.bidderCode = bid.ext.marketplace;
               }
 
               bidResponses.push(newBid);

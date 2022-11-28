@@ -1,8 +1,18 @@
-import { deepAccess, convertTypes, isArray, inIframe, _map, deepSetValue, _each, parseSizesInput, parseUrl } from '../src/utils.js';
+import {
+  _each,
+  _map,
+  convertTypes,
+  deepAccess,
+  deepSetValue,
+  inIframe,
+  isArray,
+  parseSizesInput,
+  parseUrl
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import includes from 'core-js-pure/features/array/includes.js'
+import {includes} from '../src/polyfill.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const VIDEO_TARGETING = ['startdelay', 'mimes', 'minduration', 'maxduration',
@@ -18,7 +28,7 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   britepoolid: 'britepoolid', // BritePool ID
   criteoId: 'criteoid', // CriteoID
   fabrickId: 'nuestarid', // Fabrick ID by Nuestar
-  haloId: 'audigentid', // Halo ID from Audigent
+  hadronId: 'audigentid', // Hadron ID from Audigent
   id5id: 'id5id', // ID5 ID
   idl_env: 'lre', // LiveRamp IdentityLink
   IDP: 'zeotapid', // zeotapIdPlus ID+
@@ -34,7 +44,6 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   tapadId: 'tapadid', // Tapad Id
   tdid: 'ttduuid', // The Trade Desk Unified ID
   uid2: 'uid2', // Unified ID 2.0
-  flocId: 'floc', // Chrome FLoC,
   admixerId: 'admixerid', // AdMixer ID
   deepintentId: 'deepintentid', // DeepIntent ID
   dmdId: 'dmdid', // DMD Marketing Corp ID
@@ -42,7 +51,12 @@ export const USER_ID_CODE_TO_QUERY_ARG = {
   novatiq: 'novatiqid', // Novatiq ID
   mwOpenLinkId: 'mwopenlinkid', // MediaWallah OpenLink ID
   dapId: 'dapid', // Akamai DAP ID
-  amxId: 'amxid' // AMX RTB ID
+  amxId: 'amxid', // AMX RTB ID
+  kpuid: 'kpuid', // Kinesso ID
+  publinkId: 'publinkid', // Publisher Link
+  naveggId: 'naveggid', // Navegg ID
+  imuid: 'imuid', // IM-UID by Intimate Merger
+  adtelligentId: 'adtelligentid' // Adtelligent ID
 };
 
 export const spec = {
@@ -199,13 +213,11 @@ function getViewportDimensions(isIfr) {
     } catch (e) {
       return;
     }
-    docEl = tDoc.documentElement;
     body = tDoc.body;
 
     width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
   } else {
-    docEl = tDoc.documentElement;
     width = tWin.innerWidth || docEl.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight;
   }
@@ -244,7 +256,7 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   let defaultParams;
 
   defaultParams = {
-    ju: config.getConfig('pageUrl') || bidderRequest.refererInfo.referer,
+    ju: bidderRequest.refererInfo.page,
     ch: document.charSet || document.characterSet,
     res: `${screen.width}x${screen.height}x${screen.colorDepth}`,
     ifr: isInIframe,
@@ -256,27 +268,14 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
-  const firstPartyData = config.getConfig('ortb2.user.data')
-  if (Array.isArray(firstPartyData) && firstPartyData.length > 0) {
-    // extract and merge valid segments by provider/taxonomy
-    const fpd = firstPartyData
-      .filter(
-        data => (Array.isArray(data.segment) &&
-                data.segment.length > 0 &&
-                data.name !== undefined &&
-                data.name.length > 0)
-      )
-      .reduce((acc, data) => {
-        const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
-        acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
-        return acc;
-      }, {})
-    const sm = Object.keys(fpd)
-      .map((name, _) => name + ':' + fpd[name].join('|'))
-      .join(',')
-    if (sm.length > 0) {
-      defaultParams.sm = encodeURIComponent(sm);
-    }
+  const userDataSegments = buildFpdQueryParams('user.data', bidderRequest.ortb2);
+  if (userDataSegments.length > 0) {
+    defaultParams.sm = userDataSegments;
+  }
+
+  const siteContentDataSegments = buildFpdQueryParams('site.content.data', bidderRequest.ortb2);
+  if (siteContentDataSegments.length > 0) {
+    defaultParams.scsm = siteContentDataSegments;
   }
 
   if (bids[0].params.platform) {
@@ -317,13 +316,35 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
   return defaultParams;
 }
 
+function buildFpdQueryParams(fpdPath, ortb2) {
+  const firstPartyData = deepAccess(ortb2, fpdPath);
+  if (!Array.isArray(firstPartyData) || !firstPartyData.length) {
+    return '';
+  }
+  const fpd = firstPartyData
+    .filter(
+      data => (Array.isArray(data.segment) &&
+            data.segment.length > 0 &&
+            data.name !== undefined &&
+            data.name.length > 0)
+    )
+    .reduce((acc, data) => {
+      const name = typeof data.ext === 'object' && data.ext.segtax ? `${data.name}/${data.ext.segtax}` : data.name;
+      acc[name] = (acc[name] || []).concat(data.segment.map(seg => seg.id));
+      return acc;
+    }, {})
+  return Object.keys(fpd)
+    .map((name, _) => name + ':' + fpd[name].join('|'))
+    .join(',')
+}
+
 function appendUserIdsToQueryParams(queryParams, userIds) {
   _each(userIds, (userIdObjectOrValue, userIdProviderKey) => {
     const key = USER_ID_CODE_TO_QUERY_ARG[userIdProviderKey];
 
     if (USER_ID_CODE_TO_QUERY_ARG.hasOwnProperty(userIdProviderKey)) {
       switch (userIdProviderKey) {
-        case 'flocId':
+        case 'merkleId':
           queryParams[key] = userIdObjectOrValue.id;
           break;
         case 'uid2':
@@ -332,8 +353,8 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
-            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
-            queryParams.sm = `${queryParams.sm ? queryParams.sm + encodeURIComponent(',') : ''}${encodeURIComponent(liveIntentSegments)}`;
+            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|');
+            queryParams.sm = `${queryParams.sm ? queryParams.sm + ',' : ''}${liveIntentSegments}`;
           }
           break;
         case 'parrableId':
@@ -481,7 +502,7 @@ function generateVideoParameters(bid, bidderRequest) {
         video: openRtbParams
       }
     ]
-  }
+  };
 
   queryParams['openrtb'] = JSON.stringify(openRtbReq);
 
@@ -504,7 +525,7 @@ function generateVideoParameters(bid, bidderRequest) {
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
-    queryParams.aucs = encodeURIComponent(gpid)
+    queryParams.aucs = encodeURIComponent(gpid);
   }
 
   // each video bid makes a separate request

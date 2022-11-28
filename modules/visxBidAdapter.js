@@ -1,4 +1,4 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError } from '../src/utils.js';
+import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -42,7 +42,7 @@ export const spec = {
         }
       }
     }
-    return !!bid.params.uid;
+    return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
@@ -94,8 +94,9 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.u = bidderRequest.refererInfo.referer;
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        payload.u = bidderRequest.refererInfo.page;
       }
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
@@ -168,16 +169,21 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent) {
-    if (syncOptions.pixelEnabled) {
-      var query = [];
-      if (gdprConsent) {
-        if (gdprConsent.consentString) {
-          query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
-        }
-        query.push('gdpr_applies=' + encodeURIComponent(
-          (typeof gdprConsent.gdprApplies === 'boolean')
-            ? Number(gdprConsent.gdprApplies) : 1));
+    var query = [];
+    if (gdprConsent) {
+      if (gdprConsent.consentString) {
+        query.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString));
       }
+      query.push('gdpr_applies=' + encodeURIComponent(
+        (typeof gdprConsent.gdprApplies === 'boolean')
+          ? Number(gdprConsent.gdprApplies) : 1));
+    }
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: buildUrl(ADAPTER_SYNC_PATH) + '?iframe=1' + (query.length ? '&' + query.join('&') : '')
+      }];
+    } else if (syncOptions.pixelEnabled) {
       return [{
         type: 'image',
         url: buildUrl(ADAPTER_SYNC_PATH) + (query.length ? '?' + query.join('&') : '')
@@ -198,7 +204,16 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
-    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '?data=' + JSON.stringify(timeoutData));
+    timeoutData.forEach(({ params }) => {
+      if (params) {
+        params.forEach((item) => {
+          if (item && item.uid) {
+            item.uid = parseInt(item.uid);
+          }
+        });
+      }
+    });
+    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
 
@@ -230,13 +245,13 @@ function makeVideo(videoParams = {}) {
       return result;
     }, { w: deepAccess(videoParams, 'playerSize.0.0'), h: deepAccess(videoParams, 'playerSize.0.1') });
 
-  if (video.w && video.h && video.mimes) {
+  if (video.w && video.h) {
     return video;
   }
 }
 
 function buildImpObject(bid) {
-  const { params: { uid }, bidId, mediaTypes, sizes } = bid;
+  const { params: { uid }, bidId, mediaTypes, sizes, adUnitCode } = bid;
   const video = mediaTypes && _isVideoBid(bid) && _isValidVideoBid(bid) && makeVideo(mediaTypes.video);
   const banner = makeBanner((mediaTypes && mediaTypes.banner) || (!video && { sizes }));
   const impObject = {
@@ -244,9 +259,13 @@ function buildImpObject(bid) {
     ...(banner && { banner }),
     ...(video && { video }),
     ext: {
-      bidder: { uid: Number(uid) },
+      bidder: { uid: parseInt(uid) },
     }
   };
+
+  if (impObject.banner) {
+    impObject.ext.bidder.adslotExists = _isAdSlotExists(adUnitCode);
+  }
 
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
@@ -347,19 +366,20 @@ function _isValidVideoBid(bid, logErrors = false) {
     }
     result = false;
   }
-  if (!videoMediaType.mimes) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'mimes');
-    }
-    result = false;
-  }
-  if (!videoMediaType.protocols) {
-    if (logErrors) {
-      logError(LOG_ERROR_MESS.videoMissing + 'protocols');
-    }
-    result = false;
-  }
   return result;
+}
+
+function _isAdSlotExists(adUnitCode) {
+  if (document.getElementById(adUnitCode)) {
+    return true;
+  }
+
+  const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
+  if (gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+    return true;
+  }
+
+  return false;
 }
 
 registerBidder(spec);

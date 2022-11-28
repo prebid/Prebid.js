@@ -16,7 +16,7 @@ const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
 const PUBLINK_S2S_COOKIE = '_publink_srv';
 
-export const storage = getStorageManager(GVLID);
+export const storage = getStorageManager({gvlid: GVLID});
 
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);
@@ -81,13 +81,18 @@ function getlocalValue() {
     }
 
     if (typeof value === 'string') {
-      try {
-        const obj = JSON.parse(value);
-        if (obj && obj.exp && obj.exp > Date.now()) {
-          return obj.publink;
+      // if it's a json object parse it and return the publink value, otherwise assume the value is the id
+      if (value.charAt(0) === '{') {
+        try {
+          const obj = JSON.parse(value);
+          if (obj) {
+            return obj.publink;
+          }
+        } catch (e) {
+          logError(e);
         }
-      } catch (e) {
-        logError(e);
+      } else {
+        return value;
       }
     }
   }

@@ -1,14 +1,15 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {getAdUnitSizes, parseSizesInput} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'between';
-const ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
+const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['btw'],
-  supportedMediaTypes: ['banner'],
+  supportedMediaTypes: ['banner', 'video'],
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -27,9 +28,11 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
-    const refInfo = getRefererInfo();
+    const refInfo = bidderRequest?.refererInfo;
 
     validBidRequests.forEach((i) => {
+      const video = i.mediaTypes && i.mediaTypes.video;
+
       let params = {
         eids: getUsersIds(i),
         sizes: parseSizesInput(getAdUnitSizes(i)),
@@ -38,18 +41,27 @@ export const spec = {
         tz: getTz(),
         fl: getFl(),
         rr: getRr(),
-        s: i.params.s,
+        s: i.params && i.params.s,
         bidid: i.bidId,
         transactionid: i.transactionId,
         auctionid: i.auctionId
       };
 
+      if (video) {
+        params.mediaType = 2;
+        params.maxd = video.maxd;
+        params.mind = video.mind;
+        params.pos = 'atf';
+        params.jst = 'pvc';
+        params.codeType = includes(CODE_TYPES, video.codeType) ? video.codeType : 'inpage';
+      }
+
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
-      if (i.params.cur !== undefined) {
-        params.cur = i.params.cur;
-      }
+
+      params.cur = i.params.cur || 'USD';
+
       if (i.params.subid !== undefined) {
         params.subid = i.params.subid;
       }
@@ -66,7 +78,8 @@ export const spec = {
         params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
       }
 
-      if (refInfo && refInfo.referer) params.ref = refInfo.referer;
+      // TODO: is 'page' the right value here?
+      if (refInfo && refInfo.page) params.ref = refInfo.page;
 
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
@@ -77,7 +90,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({data: params});
     })
     return {
       method: 'POST',
@@ -94,21 +107,25 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
+
     for (var i = 0; i < serverResponse.body.length; i++) {
       let bidResponse = {
         requestId: serverResponse.body[i].bidid,
         cpm: serverResponse.body[i].cpm || 0,
         width: serverResponse.body[i].w,
         height: serverResponse.body[i].h,
+        vastXml: serverResponse.body[i].vastXml,
+        mediaType: serverResponse.body[i].mediaType,
         ttl: serverResponse.body[i].ttl,
         creativeId: serverResponse.body[i].creativeid,
-        currency: serverResponse.body[i].currency || 'RUB',
+        currency: serverResponse.body[i].currency || 'USD',
         netRevenue: serverResponse.body[i].netRevenue || true,
         ad: serverResponse.body[i].ad,
         meta: {
           advertiserDomains: serverResponse.body[i].adomain ? serverResponse.body[i].adomain : []
         }
       };
+
       bidResponses.push(bidResponse);
     }
     return bidResponses;
@@ -141,10 +158,16 @@ export const spec = {
     //   type: 'iframe',
     //   url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
     // });
-    syncs.push({
-      type: 'iframe',
-      url: 'https://ads.betweendigital.com/sspmatch-iframe'
-    });
+    syncs.push(
+      {
+        type: 'iframe',
+        url: 'https://ads.betweendigital.com/sspmatch-iframe'
+      },
+      {
+        type: 'image',
+        url: 'https://ads.betweendigital.com/sspmatch'
+      }
+    );
     return syncs;
   }
 }

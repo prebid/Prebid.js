@@ -145,7 +145,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
     });
@@ -189,6 +189,14 @@ describe('The smartx adapter', function () {
         domain: '',
         publisher: {
           id: '__name__'
+        },
+        content: {
+          ext: {
+            prebid: {
+              name: 'pbjs',
+              version: '$prebid.version$'
+            }
+          }
         }
       });
     });
@@ -333,6 +341,38 @@ describe('The smartx adapter', function () {
 
       expect(request.data.imp[0].video.minduration).to.equal(3);
       expect(request.data.imp[0].video.maxduration).to.equal(15);
+    });
+
+    it('should pass schain param', function () {
+      var request;
+
+      bid.schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
+      })
     });
   });
 
@@ -506,7 +546,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -525,6 +565,7 @@ describe('The smartx adapter', function () {
       bidderRequestObj.bidRequest.bids[0].params.outstream_options.title = 'abc';
       bidderRequestObj.bidRequest.bids[0].params.outstream_options.skipOffset = 2;
       bidderRequestObj.bidRequest.bids[0].params.outstream_options.desiredBitrate = 123;
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.visibilityThreshold = 30;
 
       responses[0].renderer.render(responses[0]);
 
@@ -533,7 +574,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -551,7 +592,7 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -565,7 +606,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
       delete bid.params.bidfloor;

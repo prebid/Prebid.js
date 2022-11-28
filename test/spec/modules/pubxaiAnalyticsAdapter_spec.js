@@ -28,6 +28,7 @@ describe('pubxai analytics adapter', function() {
     };
 
     let location = utils.getWindowLocation();
+    let storage = window.top['sessionStorage'];
 
     let prebidEvent = {
       'auctionInit': {
@@ -514,6 +515,11 @@ describe('pubxai analytics adapter', function() {
         'path': location.pathname,
         'search': location.search
       },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
+      }
     };
 
     let expectedAfterBid = {
@@ -577,6 +583,11 @@ describe('pubxai analytics adapter', function() {
         'deviceOS': getOS(),
         'browser': getBrowser()
       },
+      'pmcDetail': {
+        'bidDensity': storage.getItem('pbx:dpbid'),
+        'maxBid': storage.getItem('pbx:mxbid'),
+        'auctionId': storage.getItem('pbx:aucid')
+      },
       'initOptions': initOptions
     };
 
@@ -613,6 +624,11 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'floorProvider': 'PubXFloorProvider',
+        'floorFetchStatus': 'success',
+        'floorLocation': 'fetch',
+        'floorModelVersion': 'test model 1.0',
+        'floorSkipRate': 0,
+        'isFloorSkipped': false,
         'isWinningBid': true,
         'mediaType': 'banner',
         'netRevenue': true,
@@ -624,6 +640,11 @@ describe('pubxai analytics adapter', function() {
         'status': 'rendered',
         'statusMessage': 'Bid available',
         'timeToRespond': 267
+      },
+      'pageDetail': {
+        'host': location.host,
+        'path': location.pathname,
+        'search': location.search
       },
       'deviceDetail': {
         'platform': navigator.platform,

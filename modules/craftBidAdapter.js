@@ -1,15 +1,25 @@
-import { logError, convertTypes, convertCamelToUnderscore, isArray, deepAccess, getBidRequest, isEmpty, transformBidderParamKeywords } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  convertCamelToUnderscore,
+  convertTypes,
+  getBidRequest,
+  isArray,
+  isEmpty,
+  logError,
+  transformBidderParamKeywords
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
 const TTL = 360;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -21,6 +31,9 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const schain = bidRequests[0].schain;
     const payload = {
@@ -42,7 +55,8 @@ export const spec = {
     }
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: bidderRequest.refererInfo.referer,
+        // TODO: this collects everything it finds, except for the canonical URL
+        rd_ref: bidderRequest.refererInfo.topmostLocation,
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
       };
@@ -110,9 +124,10 @@ export const spec = {
   },
 
   onBidWon: function(bid) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', bid._prebidWon);
-    xhr.send();
+    ajax(bid._prebidWon, null, null, {
+      method: 'POST',
+      contentType: 'application/json'
+    });
   }
 };
 
@@ -126,19 +141,9 @@ function deleteValues(keyPairObj) {
   }
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let options = {};
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     options = {
       withCredentials: false
     };

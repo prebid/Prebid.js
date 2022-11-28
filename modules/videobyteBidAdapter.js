@@ -27,7 +27,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO],
   VERSION: '1.0.0',
-  ENDPOINT: 'https://x.videobyte.com/ortb/',
+  ENDPOINT: 'https://x.videobyte.com/ortbhb',
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -53,13 +53,22 @@ export const spec = {
     return bidRequests.map(bidRequest => {
       const {params} = bidRequest;
       let pubId = params.pubId;
+      const placementId = params.placementId;
+      const nId = params.nid;
       if (bidRequest.params.video && bidRequest.params.video.e2etest) {
         logMessage('E2E test mode enabled');
         pubId = 'e2etest'
       }
+      let baseEndpoint = spec.ENDPOINT + '?pid=' + pubId;
+      if (placementId) {
+        baseEndpoint += '&placementId=' + placementId
+      }
+      if (nId) {
+        baseEndpoint += '&nid=' + nId
+      }
       return {
         method: 'POST',
-        url: spec.ENDPOINT + pubId,
+        url: baseEndpoint,
         data: JSON.stringify(buildRequestData(bidRequest, bidderRequest)),
       }
     });
@@ -97,8 +106,6 @@ export const spec = {
         };
         bidResponses.push(bidResponse)
       }
-    } else {
-      logError('invalid server response received');
     }
     return bidResponses;
   },
@@ -214,9 +221,9 @@ function buildRequestData(bidRequest, bidderRequest) {
       }
     ],
     site: {
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidRequest.refererInfo ? bidRequest.refererInfo.referer || null : null
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     ext: {
       hb: 1,
@@ -228,7 +235,7 @@ function buildRequestData(bidRequest, bidderRequest) {
   // content
   if (videoParams.content && isPlainObject(videoParams.content)) {
     openrtbRequest.site.content = {};
-    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
+    const contentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language', 'url'];
     const contentNumberkeys = ['episode', 'prodq', 'context', 'livestream', 'len'];
     const contentArrayKeys = ['cat'];
     const contentObjectKeys = ['ext'];
@@ -271,7 +278,7 @@ function validateVideo(bidRequest) {
   }
 
   if (!bidRequest.params.pubId) {
-    logError('failed validation: publisher id not declared');
+    logError('failed validation: pubId not declared');
     return false;
   }
 

@@ -1,18 +1,30 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, deepAccess, isEmpty, transformBidderParamKeywords, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import { find, includes } from '../src/polyfill.js';
+import {
+  convertCamelToUnderscore,
+  deepAccess,
+  isArray,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  transformBidderParamKeywords
+} from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
-import find from 'core-js-pure/features/array/find.js';
 
 const SOURCE = 'pbjs';
-const storageManager = getStorageManager();
+const storageManager = getStorageManager({bidderCode: 'pixfuture'});
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
+let pixID = '';
+const GVLID = 839;
+
 export const spec = {
   code: 'pixfuture',
-  hostname: 'https://prebid-js.pixfuture.com',
+  gvlid: GVLID,
+  hostname: 'https://gosrv.pixfuture.com',
 
   getHostname() {
     let ret = this.hostname;
@@ -32,9 +44,13 @@ export const spec = {
     const tags = validBidRequests.map(bidToTag);
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
+      if (bidRequest.params.pix_id) {
+        pixID = bidRequest.params.pix_id
+      }
+
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       const userObjBid = find(validBidRequests, hasUserInfo);
@@ -77,12 +93,13 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.uspConsent) {
-        payload.us_privacy = bidderRequest.uspConsent
+        payload.us_privacy = bidderRequest.uspConsent;
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
         let refererinfo = {
-          rd_ref: encodeURIComponent(bidderRequest.refererInfo.referer),
+          // TODO: this collects everything it finds, except for canonicalUrl
+          rd_ref: encodeURIComponent(bidderRequest.refererInfo.topmostLocation),
           rd_top: bidderRequest.refererInfo.reachedTop,
           rd_ifs: bidderRequest.refererInfo.numIframes,
           rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
@@ -93,7 +110,6 @@ export const spec = {
       if (validBidRequests[0].userId) {
         let eids = [];
 
-        addUserId(eids, deepAccess(validBidRequests[0], `userId.flocId.id`), 'chrome.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.criteoId`), 'criteo.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.unifiedId`), 'thetradedesk.com', null);
         addUserId(eids, deepAccess(validBidRequests[0], `userId.id5Id`), 'id5.io', null);
@@ -112,9 +128,9 @@ export const spec = {
       }
 
       const ret = {
-        url: `${hostname}/`,
+        url: `${hostname}/pixservices`,
         method: 'POST',
-        options: {withCredentials: false},
+        options: {withCredentials: true},
         data: {
           v: $$PREBID_GLOBAL$$.version,
           pageUrl: referer,
@@ -153,6 +169,40 @@ export const spec = {
 
     return bids;
   },
+  getUserSyncs: function (syncOptions, bid, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    let syncurl = 'pixid=' + pixID;
+    let gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
+    let consent = gdprConsent ? encodeURIComponent(gdprConsent.consentString || '') : '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    syncurl += '&gdprconcent=' + gdpr + '&adsync=' + consent;
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://gosrv.pixfuture.com/cookiesync?f=b&' + syncurl
+      });
+    } else {
+      syncs.push({
+        type: 'image',
+        url: 'https://gosrv.pixfuture.com/cookiesync?f=i&' + syncurl
+      });
+    }
+
+    return syncs;
+  }
 };
 
 function newBid(serverBid, rtbBid, placementId, uuid) {
@@ -192,7 +242,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);
@@ -201,6 +251,13 @@ function bidToTag(bid) {
   }
   if (bid.params.position) {
     tag.position = {'above': 1, 'below': 2}[bid.params.position] || 0;
+  } else {
+    let mediaTypePos = deepAccess(bid, `mediaTypes.banner.pos`) || deepAccess(bid, `mediaTypes.video.pos`);
+    // only support unknown, atf, and btf values for position at this time
+    if (mediaTypePos === 0 || mediaTypePos === 1 || mediaTypePos === 3) {
+      // ortb spec treats btf === 3, but our system interprets btf === 2; so converting the ortb value here for consistency
+      tag.position = (mediaTypePos === 3) ? 2 : mediaTypePos;
+    }
   }
   if (bid.params.trafficSourceCode) {
     tag.traffic_source_code = bid.params.trafficSourceCode;
