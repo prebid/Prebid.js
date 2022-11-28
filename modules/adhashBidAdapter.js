@@ -3,7 +3,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { includes } from '../src/polyfill.js';
 import { BANNER } from '../src/mediaTypes.js';
 
-const VERSION = '3.0';
+const VERSION = '3.2';
 const BAD_WORD_STEP = 0.1;
 const BAD_WORD_MIN = 0.2;
 const ADHASH_BIDDER_CODE = 'adhash';
