@@ -39,7 +39,7 @@ function getRegs(bidderRequest) {
     regs.coppa = 1;
   }
   if (bidderRequest.ortb2.regs) {
-    regs = utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
   }
 
   return regs;
