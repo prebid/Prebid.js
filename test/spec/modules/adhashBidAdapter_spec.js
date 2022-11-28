@@ -127,8 +127,8 @@ describe('adhashBidAdapter', function () {
         creatives: [{ costEUR: 1.234 }],
         advertiserDomains: 'adhash.com',
         badWords: [
-          ['onqjbeq1', 'full', 1],
-          ['onqjbeq2', 'partial', 1],
+          ['onqjbeq', 'full', 1],
+          ['onqjbeqo', 'partial', 1],
           ['tbbqjbeq', 'full', -1],
           ['fgnegf', 'starts', 1],
           ['raqf', 'ends', 1],
@@ -161,7 +161,7 @@ describe('adhashBidAdapter', function () {
 
     it('should return empty array when there are bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example badWord1 text' + ' word'.repeat(993);
+        return 'example text badword badword example badword text' + ' word'.repeat(993);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
@@ -175,7 +175,7 @@ describe('adhashBidAdapter', function () {
 
     it('should return empty array when there are bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 badword2 example BadWord2text' + ' word'.repeat(994);
+        return 'example text partialbadwordb badwordb example badwordbtext' + ' word'.repeat(994);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
@@ -217,28 +217,28 @@ describe('adhashBidAdapter', function () {
 
     it('should return non-empty array when there are not enough bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example text' + ' word'.repeat(994);
+        return 'example text badword badword example text' + ' word'.repeat(994);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are not enough bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 example' + ' word'.repeat(996);
+        return 'example text partialbadwordb example' + ' word'.repeat(996);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are no-bad word matches', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord1 example text' + ' word'.repeat(995);
+        return 'example text partialbadword example text' + ' word'.repeat(995);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are bad words and good words', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example badWord1 goodWord goodWord ' + ' word'.repeat(992);
+        return 'example text badword badword example badword goodWord goodWord ' + ' word'.repeat(992);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });

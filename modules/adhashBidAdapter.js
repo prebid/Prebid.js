@@ -72,8 +72,8 @@ function brandSafety(badWords, maxScore) {
       return { rule, occurances: wordsToMatch.filter(element => element.startsWith(decodedWord)).length };
     } else if (rule === 'ends' && wordsToMatch && wordsToMatch.some(word => word.endsWith(decodedWord))) {
       return { rule, occurances: wordsToMatch.filter(element => element.endsWith(decodedWord)).length };
-    } else if (rule === 'regexp' && wordsToMatch && wordsToMatch.includes(decodedWord)) {
-      return { rule, occurances: wordsToMatch.filter(element => element === decodedWord).length };
+    } else if (rule === 'regexp' && wordsToMatch && wordsToMatch.some(element => element.match(new RegExp(decodedWord, 'i')))) {
+      return { rule, occurances: wordsToMatch.filter(element => element.match(new RegExp(decodedWord, 'i'))).length };
     }
     return false;
   };
@@ -157,18 +157,18 @@ export const spec = {
     } catch (e) {
       referrer = window.location.href;
     }
-    var body = document.body;
-    var html = document.documentElement;
-    var pageHeight = Math.max(
+    const body = document.body;
+    const html = document.documentElement;
+    const pageHeight = Math.max(
       body.scrollHeight,
       body.offsetHeight,
       html.clientHeight,
       html.scrollHeight,
       html.offsetHeight
     );
-    var pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+    const pageWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
 
-    for (const i = 0; i < validBidRequests.length; i++) {
+    for (let i = 0; i < validBidRequests.length; i++) {
       const bidderURL = validBidRequests[i].params.bidderURL || 'https://bidder.adhash.com';
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
       const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
