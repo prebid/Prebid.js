@@ -133,6 +133,10 @@ const _public = (function () {
     return _handlers;
   };
 
+  _public.addEvents = function (events) {
+    allEvents = allEvents.concat(events);
+  }
+
   /**
    * This method can return a copy of all the events fired
    * @return {Array} array of events fired
@@ -152,4 +156,4 @@ const _public = (function () {
 
 utils._setEventEmitter(_public.emit.bind(_public));
 
-export const {on, off, get, getEvents, emit} = _public;
+export const {on, off, get, getEvents, emit, addEvents} = _public;

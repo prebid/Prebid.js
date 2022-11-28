@@ -294,6 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
   const timeout = config.getConfig('bidderTimeout');
+  const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
@@ -385,6 +386,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (uspConsent) {
       data.uspConsent = uspConsent;
+    }
+    if (coppa) {
+      data.coppa = coppa;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);

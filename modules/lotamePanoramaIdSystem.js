@@ -28,6 +28,7 @@ const DAYS_TO_CACHE = 7;
 const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
+const ID_HOST = 'id.crwdcntrl.net';
 
 export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 let cookieDomain;
@@ -57,12 +58,14 @@ function setProfileId(profileId) {
  * Get the Lotame profile id by checking cookies first and then local storage
  */
 function getProfileId() {
+  let profileId;
   if (storage.cookiesAreEnabled()) {
-    return storage.getCookie(KEY_PROFILE, undefined);
+    profileId = storage.getCookie(KEY_PROFILE, undefined);
   }
-  if (storage.hasLocalStorage()) {
-    return storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
+  if (!profileId && storage.hasLocalStorage()) {
+    profileId = storage.getDataFromLocalStorage(KEY_PROFILE, undefined);
   }
+  return profileId;
 }
 
 /**
@@ -78,10 +81,11 @@ function getFromStorage(key) {
     const storedValueExp = storage.getDataFromLocalStorage(
       `${key}_exp`, undefined
     );
-    if (storedValueExp === '') {
+
+    if (storedValueExp === '' || storedValueExp === null) {
       value = storage.getDataFromLocalStorage(key, undefined);
     } else if (storedValueExp) {
-      if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
+      if ((new Date(parseInt(storedValueExp, 10))).getTime() - Date.now() > 0) {
         value = storage.getDataFromLocalStorage(key, undefined);
       }
     }
@@ -284,7 +288,7 @@ export const lotamePanoramaIdSubmodule = {
 
       const url = buildUrl({
         protocol: 'https',
-        host: `id.crwdcntrl.net`,
+        host: ID_HOST,
         pathname: '/id',
         search: isEmpty(queryParams) ? undefined : queryParams,
       });

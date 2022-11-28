@@ -5,6 +5,7 @@
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {auctionManager} from '../src/auctionManager.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 const defaultCfg = {
   dealIdPattern: /^MASS/i
@@ -17,7 +18,6 @@ export let isEnabled = false;
 const matchedBids = {};
 let renderers;
 
-init();
 config.getConfig('mass', config => init(config.mass));
 
 /**
@@ -78,7 +78,7 @@ export function updateRenderers() {
 /**
  * Before hook for 'addBidResponse'.
  */
-export function addBidResponseHook(next, adUnitCode, bid, {index = auctionManager.index} = {}) {
+export const addBidResponseHook = timedBidResponseHook('mass', function addBidResponseHook(next, adUnitCode, bid, reject, {index = auctionManager.index} = {}) {
   let renderer;
   for (let i = 0; i < renderers.length; i++) {
     if (renderers[i].match(bid)) {
@@ -104,8 +104,8 @@ export function addBidResponseHook(next, adUnitCode, bid, {index = auctionManage
     addListenerOnce();
   }
 
-  next(adUnitCode, bid);
-}
+  next(adUnitCode, bid, reject);
+});
 
 /**
  * Add listener for the "message" event sent by the winning bid
@@ -180,3 +180,5 @@ export function useDefaultRender(renderUrl, namespace) {
     }
   };
 }
+
+init();
