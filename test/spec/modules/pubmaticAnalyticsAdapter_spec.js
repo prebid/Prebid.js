@@ -1544,6 +1544,54 @@ describe('pubmatic analytics adapter', function () {
       expect(data.en).to.equal('1.23');
       expect(data.piid).to.equal('partnerImpressionID-1');
     });
+
+    it('Logger: pass floors additional data points', function() {
+      this.timeout(5000)
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
+      });
+
+      config.setConfig({
+        testGroupId: 15
+      });
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      clock.tick(2000 + 1000);
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
+      let request = requests[2]; // logger is executed late, trackers execute first
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.pubid).to.equal('9999');
+      expect(data.pid).to.equal('1111');
+      expect(data.pdvid).to.equal('20');
+      expect(data.iid).to.equal('25c6d7f5-699a-4bfc-87c9-996f915341fa');
+      expect(data.to).to.equal('3000');
+      expect(data.purl).to.equal('http://www.test.com/page.html');
+      expect(data.orig).to.equal('www.test.com');
+      expect(data.tst).to.equal(1519767016);
+      expect(data.tgid).to.equal(15);
+      expect(data.tpv).to.be.not.null;
+      expect(data.tbs).to.be.not.null;
+      expect(data.trc).to.be.not.null;
+      expect(data.tis).to.be.not.null;
+      // slot 1
+      expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
+      expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
+      expect(data.s[0].bs).to.be.not.null;
+      expect(data.s[0].rc).to.be.not.null;
+      expect(data.s[0].is).to.be.not.null;
+      expect(data.s[0].fskp).to.equal(0);
+    });
   });
 
   describe('Get Metadata function', function () {

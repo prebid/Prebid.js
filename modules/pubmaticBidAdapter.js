@@ -598,6 +598,12 @@ function _addPMPDealsInImpression(impObj, bid) {
   }
 }
 
+function _addBidViewabilityData(impObj, bid) {
+  if (bid.bidViewability) {
+    impObj.ext.bidViewability = bid.bidViewability;
+  }
+}
+
 function _addDealCustomTargetings(imp, bid) {
   var dctr = '';
   var dctrLen;
@@ -668,6 +674,8 @@ function _createImpressionObject(bid, conf) {
   _addPMPDealsInImpression(impObj, bid);
   _addDealCustomTargetings(impObj, bid);
   _addJWPlayerSegmentData(impObj, bid);
+  _addBidViewabilityData(impObj, bid);
+
   if (bid.hasOwnProperty('mediaTypes')) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
