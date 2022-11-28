@@ -40,7 +40,7 @@ function getRegs(bidderRequest) {
   }
   if (bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.length) {
     regs = utils.mergeDeep(regs, bidderRequest.ortb2.regs);
-  };
+  }
 
   return regs;
 }
