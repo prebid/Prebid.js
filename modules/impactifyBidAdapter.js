@@ -3,7 +3,7 @@
 import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
@@ -76,6 +76,17 @@ const helpers = {
       context: 'outstream',
       mimes: ['video/mp4'],
     }
+  },
+  getFloor(bid) {
+    const floorInfo = bid.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: '*',
+      size: '*'
+    });
+    if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+      return parseFloat(floorInfo.floor);
+    }
+    return null;
   }
 }
 
@@ -168,9 +179,17 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
         ...helpers.createOrtbImpVideoObj(bid)
       }
     }
+
     if (bannerObj && typeof imp.ext.impactify.size == 'string') {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
+      }
+    }
+
+    if (typeof bid.getFloor === 'function') {
+      const floor = helpers.getFloor(bid);
+      if (floor) {
+        imp.bidfloor = floor;
       }
     }
 
