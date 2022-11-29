@@ -1,4 +1,4 @@
-import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse, logInfo} from '../src/utils.js';
+import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse, logInfo, hasDeviceAccess} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
@@ -12,6 +12,7 @@ const DEFAULT_EXPIRATION_DAYS = 21;
 const TCF_REQUIRED_PURPOSES = ['1', '2', '3', '4'];
 let HAS_GDPR_CONSENT = true;
 let LOAD_TOPICS_INITIALISE = false;
+const HAS_DEVICE_ACCESS = hasDeviceAccess();
 
 const bidderIframeList = {
   maxTopicCaller: 1,
@@ -119,7 +120,7 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 function getCachedTopics() {
   let cachedTopicData = [];
-  if (!HAS_GDPR_CONSENT) {
+  if (!HAS_GDPR_CONSENT && !HAS_DEVICE_ACCESS) {
     return cachedTopicData;
   }
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
@@ -230,7 +231,7 @@ function hasGDPRConsent() {
  */
 function loadTopicsForBidders() {
   HAS_GDPR_CONSENT = hasGDPRConsent();
-  if (!HAS_GDPR_CONSENT) {
+  if (!HAS_GDPR_CONSENT && !HAS_DEVICE_ACCESS) {
     logInfo('Topics Module : Consent string is required to fetch the topics from third party domains.');
     return;
   }
