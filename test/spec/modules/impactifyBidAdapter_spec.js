@@ -167,7 +167,7 @@ describe('ImpactifyAdapter', function () {
     };
 
     it('should pass bidfloor', function () {
-      videoBidRequests.getFloor = function() {
+      videoBidRequests[0].getFloor = function() {
         return {
           currency: 'USD',
           floor: 1.23,
