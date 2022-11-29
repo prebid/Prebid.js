@@ -58,8 +58,8 @@ const BIDDER_REQUEST = {
   },
   'ortb2': {
     'site': {
-      'cat': ["IAB2"],
-      'pagecat': ["IAB2-2"]
+      'cat': ['IAB2'],
+      'pagecat': ['IAB2-2']
     }
   },
 };
@@ -199,8 +199,8 @@ describe('VidazooBidAdapter', function () {
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
           gpid: '1234567890',
-          cat: ["IAB2"],
-          pagecat: ["IAB2-2"]
+          cat: ['IAB2'],
+          pagecat: ['IAB2-2']
         }
       });
     });
