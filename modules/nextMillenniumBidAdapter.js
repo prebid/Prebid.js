@@ -140,6 +140,7 @@ export const spec = {
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+      const params = bid.params;
 
       requests.push({
         method: 'POST',
@@ -151,6 +152,7 @@ export const spec = {
         },
 
         bidId,
+        params,
         auctionId,
       });
     });
@@ -165,6 +167,7 @@ export const spec = {
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidId;
+        const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
         addWurl({auctionId, requestId, wurl});
@@ -173,6 +176,7 @@ export const spec = {
 
         const bidResponse = {
           requestId,
+          params,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
@@ -221,6 +225,41 @@ export const spec = {
     }
 
     return pixels;
+  },
+
+  getUrlPixelMetric(eventName, bid) {
+    const bidder = bid.bidder || bid.bidderCode;
+    if (bidder != BIDDER_CODE) return;
+
+    let params;
+    if (bid.params) {
+      params = Array.isArray(bid.params) ? bid.params : [bid.params];
+    } else {
+      if (Array.isArray(bid.bids)) params = bid.bids.map(bidI => bidI.params);
+    };
+
+    if (!params.length) return;
+
+    const placementIdsArray = [];
+    const groupIdsArray = [];
+    params.forEach(paramsI => {
+      if (paramsI.group_id) {
+        groupIdsArray.push(paramsI.group_id);
+      } else {
+        if (paramsI.placement_id) placementIdsArray.push(paramsI.placement_id);
+      };
+    });
+
+    const placementIds = (placementIdsArray.length && `&placements=${placementIdsArray.join(';')}`) || '';
+    const groupIds = (groupIdsArray.length && `&groups=${groupIdsArray.join(';')}`) || '';
+
+    if (!(groupIds || placementIds)) {
+      return;
+    };
+
+    const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs${groupIds}${placementIds}`;
+
+    return url;
   },
 };
 
@@ -350,10 +389,9 @@ function eventHandler(eventName) {
 
 function getEventHandler(eventName) {
   return bid => {
-    const bidder = bid.bidder || bid.bidderCode;
-    if (bidder != BIDDER_CODE) return;
-
-    triggerPixel(`${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs`);
+    const url = spec.getUrlPixelMetric(eventName, bid);
+    if (!url) return;
+    triggerPixel(url);
   }
 }
 
