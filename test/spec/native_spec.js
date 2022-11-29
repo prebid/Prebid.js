@@ -5,6 +5,7 @@ import {
   nativeBidIsValid,
   getAssetMessage,
   getAllAssetsMessage,
+  toLegacyResponse,
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
@@ -37,6 +38,7 @@ const bid = {
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
     javascriptTrackers: '<script src="http://www.foobar.js"></script>',
+    privacyLink: 'https://privacy-link.example',
     ext: {
       foo: 'foo-value',
       baz: 'baz-value',
@@ -98,8 +100,17 @@ const ortbBid = {
       privacy: 'https://privacy-link.example',
       ver: '1.2'
     }
-  },
+  }
 };
+
+const completeNativeBid = {
+  adId: '123',
+  transactionId: 'au',
+  native: {
+    ...bid.native,
+    ...ortbBid.native
+  }
+}
 
 const ortbRequest = {
   assets: [
@@ -224,6 +235,14 @@ describe('native.js', function () {
     expect(targeting.hb_native_baz).to.equal('hb_native_baz:123');
   });
 
+  it('sends placeholdes targetings with ortb native response', function () {
+    const targeting = getNativeTargeting(completeNativeBid);
+
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal('Native Creative');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('Cool description great stuff');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('https://www.link.example');
+  });
+
   it('should only include native targeting keys with values', function () {
     const adUnit = {
       transactionId: 'au',
@@ -302,6 +321,10 @@ describe('native.js', function () {
           required: false,
           sendTargetingKeys: false,
         },
+        privacyLink: {
+          required: false,
+          sendTargetingKeys: false,
+        },
         ext: {
           foo: {
             required: false,
@@ -348,6 +371,7 @@ describe('native.js', function () {
       CONSTANTS.NATIVE_KEYS.icon,
       CONSTANTS.NATIVE_KEYS.sponsoredBy,
       CONSTANTS.NATIVE_KEYS.clickUrl,
+      CONSTANTS.NATIVE_KEYS.privacyLink,
       CONSTANTS.NATIVE_KEYS.rendererUrl,
     ]);
 
@@ -380,6 +404,7 @@ describe('native.js', function () {
       CONSTANTS.NATIVE_KEYS.icon,
       CONSTANTS.NATIVE_KEYS.sponsoredBy,
       CONSTANTS.NATIVE_KEYS.clickUrl,
+      CONSTANTS.NATIVE_KEYS.privacyLink,
     ]);
 
     expect(bid.native.adTemplate).to.deep.equal(
@@ -437,9 +462,9 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bid, {getNativeReq: () => null});
+    const message = getAllAssetsMessage(messageRequest, bid);
 
-    expect(message.assets.length).to.equal(9);
+    expect(message.assets.length).to.equal(10);
     expect(message.assets).to.deep.include({
       key: 'body',
       value: bid.native.body,
@@ -485,7 +510,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields, {getNativeReq: () => null});
+    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
 
     expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({
@@ -506,16 +531,16 @@ describe('native.js', function () {
     });
   });
 
-  it('creates native all asset message with OpenRTB format', function () {
+  it('creates native all asset message with complete format', function () {
     const messageRequest = {
       message: 'Prebid Native',
       action: 'allAssetRequest',
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, ortbBid, {getNativeReq: () => ortbRequest});
+    const message = getAllAssetsMessage(messageRequest, completeNativeBid);
 
-    expect(message.assets.length).to.equal(8);
+    expect(message.assets.length).to.equal(10);
     expect(message.assets).to.deep.include({
       key: 'body',
       value: bid.native.body,
@@ -548,6 +573,14 @@ describe('native.js', function () {
       key: 'privacyLink',
       value: ortbBid.native.ortb.privacy,
     });
+    expect(message.assets).to.deep.include({
+      key: 'foo',
+      value: bid.native.ext.foo,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'baz',
+      value: bid.native.ext.baz,
+    });
   });
 
   const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
@@ -555,60 +588,39 @@ describe('native.js', function () {
     body: 'vbody'
   });
   const SAMPLE_ORTB_RESPONSE = {
-    native: {
-      ortb: {
-        link: {
-          url: 'url'
-        },
-        assets: [
-          {
-            id: 0,
-            title: {
-              text: 'vtitle'
-            }
-          },
-          {
-            id: 1,
-            data: {
-              value: 'vbody'
-            }
-          }
-        ]
-      }
-    }
-  }
-  describe('getAllAssetsMessage', () => {
-    it('returns assets in legacy format for ortb responses', () => {
-      const actual = getAllAssetsMessage({}, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST});
-      expect(actual.assets).to.eql([
-        {
-          key: 'clickUrl',
-          value: 'url'
-        },
-        {
-          key: 'title',
-          value: 'vtitle'
-        },
-        {
-          key: 'body',
+    link: {
+      url: 'url'
+    },
+    assets: [
+      {
+        id: 0,
+        title: {
+          text: 'vtitle'
+        }
+      },
+      {
+        id: 1,
+        data: {
           value: 'vbody'
-        },
-      ])
+        }
+      }
+    ],
+    eventtrackers: [
+      { event: 1, method: 1, url: 'https://sampleurl.com' },
+      { event: 1, method: 2, url: 'https://sampleurljs.com' }
+    ]
+  }
+  describe('toLegacyResponse', () => {
+    it('returns assets in legacy format for ortb responses', () => {
+      const actual = toLegacyResponse(SAMPLE_ORTB_RESPONSE, SAMPLE_ORTB_REQUEST);
+      expect(actual.body).to.equal('vbody');
+      expect(actual.title).to.equal('vtitle');
+      expect(actual.clickUrl).to.equal('url');
+      expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
+      expect(actual.impressionTrackers.length).to.equal(1);
+      expect(actual.impressionTrackers[0]).to.equal('https://sampleurl.com');
     });
   });
-  describe('getAssetsMessage', () => {
-    Object.entries({
-      'hb_native_title': {key: 'title', value: 'vtitle'},
-      'hb_native_body': {key: 'body', value: 'vbody'}
-    }).forEach(([tkey, assetVal]) => {
-      it(`returns ${tkey} asset in legacy format for ortb responses`, () => {
-        const actual = getAssetMessage({
-          assets: [tkey]
-        }, SAMPLE_ORTB_RESPONSE, {getNativeReq: () => SAMPLE_ORTB_REQUEST})
-        expect(actual.assets).to.eql([assetVal])
-      })
-    })
-  })
 });
 
 describe('validate native openRTB', function () {
