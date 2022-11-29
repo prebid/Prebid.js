@@ -118,9 +118,9 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
 /**
  * function to fetch the cached topic data from storage for bidders and return it
  */
-function getCachedTopics() {
+export function getCachedTopics() {
   let cachedTopicData = [];
-  if (!HAS_GDPR_CONSENT && !HAS_DEVICE_ACCESS) {
+  if (!HAS_GDPR_CONSENT || !HAS_DEVICE_ACCESS) {
     return cachedTopicData;
   }
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
@@ -132,7 +132,7 @@ function getCachedTopics() {
     if (isBidderConfigured) {
       if (!isCachedDataExpired(value[lastUpdated], isBidderConfigured?.expiry || DEFAULT_EXPIRATION_DAYS)) {
         Object.keys(value).forEach((segData) => {
-          value != lastUpdated && cachedTopicData.push(value[segData]);
+          segData != lastUpdated && cachedTopicData.push(value[segData]);
         })
       } else {
         // delete the specific bidder map from the store and store the updated maps
@@ -148,7 +148,7 @@ function getCachedTopics() {
  * Recieve messages from iframe loaded for bidders to fetch topic
  * @param {MessageEvent} evt
  */
-function receiveMessage(evt) {
+export function receiveMessage(evt) {
   if (evt && evt.data) {
     try {
       let data = safeJSONParse(evt.data);
@@ -179,8 +179,8 @@ export function storeInLocalStorage(bidder, topics) {
 
 function isCachedDataExpired(storedTime, cacheTime) {
   const _MS_PER_DAY = 1000 * 60 * 60 * 24;
-  const now = new Date().getTime();
-  const daysDifference = Math.floor((storedTime - now) / _MS_PER_DAY);
+  const currentTime = new Date().getTime();
+  const daysDifference = Math.ceil((currentTime - storedTime) / _MS_PER_DAY);
   return daysDifference > cacheTime;
 }
 
@@ -212,7 +212,7 @@ function checkTCFv2(vendorData, requiredPurposes = TCF_REQUIRED_PURPOSES) {
   }).reduce((a, b) => a && b, true);
 }
 
-function hasGDPRConsent() {
+export function hasGDPRConsent() {
   // Check for GDPR consent for purpose 1,2,3,4 and return false if consent has not been given
   const gdprConsent = gdprDataHandler.getConsentData();
   const hasGdpr = (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) ? 1 : 0;
@@ -231,7 +231,7 @@ function hasGDPRConsent() {
  */
 function loadTopicsForBidders() {
   HAS_GDPR_CONSENT = hasGDPRConsent();
-  if (!HAS_GDPR_CONSENT && !HAS_DEVICE_ACCESS) {
+  if (!HAS_GDPR_CONSENT || !HAS_DEVICE_ACCESS) {
     logInfo('Topics Module : Consent string is required to fetch the topics from third party domains.');
     return;
   }
