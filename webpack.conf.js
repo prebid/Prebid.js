@@ -87,10 +87,8 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: [['@babel/preset-env', { targets: 'defaults' }]],
-            },
-          },
+            options: babelConfig
+          }
         ],
       },
       /* gu-mod-end */
@@ -123,6 +121,7 @@ module.exports = {
       new TerserPlugin({
         extractComments: false, // do not generate unhelpful LICENSE comment
         terserOptions: {
+          ecma: 2016,
           module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
         }
       })
