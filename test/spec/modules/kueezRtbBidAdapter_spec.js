@@ -11,7 +11,7 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from 'modules/kueezrtbBidAdapter.js';
+} from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
