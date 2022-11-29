@@ -147,6 +147,8 @@ export function newTargeting(auctionManager) {
   let latestAuctionForAdUnit = {};
 
   targeting.setLatestAuctionForAdUnit = function(adUnitCode, auctionId) {
+    // eslint-disable-next-line no-console
+    console.log('setLatestAuctionForAdUnit func invoked');
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   };
 

@@ -211,6 +211,8 @@ export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SB
 export const partitionBidders = hook('sync', _partitionBidders, 'partitionBidders');
 
 adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, auctionId, cbTimeout, labels, ortb2Fragments = {}, auctionMetrics) {
+  // eslint-disable-next-line no-console
+  console.log('adapterManager.makeBidRequests func invoked');
   auctionMetrics = useMetrics(auctionMetrics);
   /**
    * emit and pass adunits for external modification
@@ -218,6 +220,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
    */
   events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
   if (FEATURES.NATIVE) {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - FEATURES.NATIVE is true');
     decorateAdUnitsWithNativeParams(adUnits);
   }
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
@@ -225,6 +229,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
 
   if (config.getConfig('bidderSequence') === RANDOM) {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - config.getConfig("bidderSequence") === RANDOM');
     clientBidders = shuffle(clientBidders);
   }
   const refererInfo = getRefererInfo();
@@ -235,6 +241,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
   function addOrtb2(bidderRequest) {
+    // eslint-disable-next-line no-console
+    console.log('addOrtb2 func invoked');
     const fpd = Object.freeze(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode]));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids.forEach((bid) => bid.ortb2 = fpd);
@@ -242,12 +250,18 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   }
 
   _s2sConfigs.forEach(s2sConfig => {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - iterating over s2sConfigs');
     if (s2sConfig && s2sConfig.enabled) {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - s2sConfig && s2sConfig.enabled are true');
       let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function
       let uniquePbsTid = generateUUID();
       serverBidders.forEach(bidderCode => {
+        // eslint-disable-next-line no-console
+        console.log('adapterManager.makeBidRequests func - iterating over each serverBidder');
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
         const bidderRequest = addOrtb2({
@@ -263,6 +277,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           metrics,
         });
         if (bidderRequest.bids.length !== 0) {
+          // eslint-disable-next-line no-console
+          console.log('adapterManager.makeBidRequests func - bidderRequest.bids.length !== 0');
           bidRequests.push(bidderRequest);
         }
       });
@@ -270,6 +286,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       // update the s2sAdUnits object and remove all bids that didn't pass sizeConfig/label checks from getBids()
       // this is to keep consistency and only allow bids/adunits that passed the checks to go to pbs
       adUnitsS2SCopy.forEach((adUnitCopy) => {
+        // eslint-disable-next-line no-console
+        console.log('adapterManager.makeBidRequests func - iterating over adUnitsS2SCopy');
         let validBids = adUnitCopy.bids.filter((adUnitBid) =>
           find(bidRequests, request =>
             find(request.bids, (reqBid) => reqBid.bidId === adUnitBid.bid_id)));
@@ -277,7 +295,11 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       });
 
       bidRequests.forEach(request => {
+        // eslint-disable-next-line no-console
+        console.log('adapterManager.makeBidRequests func - iterating over bidRequests');
         if (request.adUnitsS2SCopy === undefined) {
+          // eslint-disable-next-line no-console
+          console.log('adapterManager.makeBidRequests func - request.adUnitsS2SCopy is undefined');
           request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
         }
       });
@@ -287,6 +309,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   // client adapters
   let adUnitsClientCopy = getAdUnitCopyForClientAdapters(adUnits);
   clientBidders.forEach(bidderCode => {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - iterating over clientBidders');
     const bidderRequestId = getUniqueIdentifierStr();
     const metrics = auctionMetrics.fork();
     const bidderRequest = addOrtb2({
@@ -301,28 +325,44 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     });
     const adapter = _bidderRegistry[bidderCode];
     if (!adapter) {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - adapter is false');
       logError(`Trying to make a request for bidder that does not exist: ${bidderCode}`);
     }
 
     if (adapter && bidderRequest.bids && bidderRequest.bids.length !== 0) {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - adapter is true && bidderRequest.bids are true && bidderRequest.bids.length are not equal to 0');
       bidRequests.push(bidderRequest);
     }
   });
 
   if (gdprDataHandler.getConsentData()) {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - gdprDataHandler.getConsentData() is true');
     bidRequests.forEach(bidRequest => {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - iterating over bidRequests');
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
     });
   }
 
   if (uspDataHandler.getConsentData()) {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - uspDataHandler.getConsentData() is true');
     bidRequests.forEach(bidRequest => {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - iterating over bidRequests');
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
     });
   }
 
   bidRequests.forEach(bidRequest => {
+    // eslint-disable-next-line no-console
+    console.log('adapterManager.makeBidRequests func - iterating over bidRequests');
     config.runWithBidder(bidRequest.bidderCode, () => {
+      // eslint-disable-next-line no-console
+      console.log('adapterManager.makeBidRequests func - checking if fledge is enabled or not');
       const fledgeEnabledFromConfig = config.getConfig('fledgeEnabled');
       bidRequest['fledgeEnabled'] = navigator.runAdAuction && fledgeEnabledFromConfig
     });
@@ -332,6 +372,8 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 }, 'makeBidRequests');
 
 adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, requestCallbacks, requestBidsTimeout, onTimelyResponse, ortb2Fragments = {}) => {
+  // eslint-disable-next-line no-console
+  console.log('adapterManager.callBids func invoked');
   if (!bidRequests.length) {
     logWarn('callBids executed with no bidRequests.  Were they filtered by labels or sizing?');
     return;

@@ -93,6 +93,8 @@ export function newAuctionManager() {
   };
 
   auctionManager.createAuction = function(opts) {
+    // eslint-disable-next-line no-console
+    console.log('createAuction func invoked');
     const auction = newAuction(opts);
     _addAuction(auction);
     return auction;
@@ -125,6 +127,8 @@ export function newAuctionManager() {
   }
 
   function _addAuction(auction) {
+    // eslint-disable-next-line no-console
+    console.log('_addAuction func invoked');
     _auctions.push(auction);
   }
 
