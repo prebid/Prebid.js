@@ -88,7 +88,7 @@ export const spec = {
       let parsedSizes = utils.parseSizesInput(sizesParams);
       let requestData = Object.assign({
         'scid': placementId,
-        'callback_uid': utils.getUniqueIdentifierStr(),
+        'callback_uid': utils.generateUUID(),
         'loc': location,
         'ref': referrer,
         'size': parsedSizes
@@ -97,7 +97,7 @@ export const spec = {
       serverRequests.push({
         method: 'POST',
         url: requestUrl,
-        data: JSON.stringify(requestData),
+        data: requestData,
         options: {withCredentials: false},
         bidRequest: bidRequest
       });
