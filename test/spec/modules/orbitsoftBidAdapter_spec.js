@@ -72,7 +72,7 @@ describe('Orbitsoft adapter', function () {
 
         let buildRequest = spec.buildRequests([validBid])[0];
         let requestUrl = buildRequest.url;
-        let requestUrlParams = buildRequest.data;
+        let requestUrlParams = JSON.parse(buildRequest.data);
         expect(requestUrl).to.equal(ENDPOINT_URL);
         expect(requestUrlParams).have.property('f1', 'Tahoma');
         expect(requestUrlParams).have.property('fs1', 'medium');
@@ -111,7 +111,7 @@ describe('Orbitsoft adapter', function () {
         expect(isValid).to.equal(true);
 
         let buildRequest = spec.buildRequests([validBid])[0];
-        let requestUrlCustomParams = buildRequest.data;
+        let requestUrlCustomParams = JSON.parse(buildRequest.data);
         expect(requestUrlCustomParams).have.property('c.cacheBuster', 'bf4d7c1');
         expect(requestUrlCustomParams).have.property('c.clickUrl', 'http://testclickurl.com');
       });
