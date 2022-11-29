@@ -154,10 +154,4 @@ module.exports = {
     }
   },
   plugins,
-  /* gu-mod-start */
-  // Force webpack to not resolve the dynamic import of this @guardian/libs peer dependency
-  externals: {
-    'web-vitals': 'web-vitals',
-  },
-  /* gu-mod-end */
 };
