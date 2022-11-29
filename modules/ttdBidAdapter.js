@@ -38,6 +38,10 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
