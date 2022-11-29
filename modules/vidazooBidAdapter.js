@@ -2,6 +2,7 @@ import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -69,6 +70,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
+  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -99,7 +101,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
     schain: schain,
-    ptrace: ptrace
+    ptrace: ptrace,
+    isStorageAllowed: isStorageAllowed
   };
 
   appendUserIdsToRequestPayload(data, userId);

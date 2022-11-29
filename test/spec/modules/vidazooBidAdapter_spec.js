@@ -187,6 +187,7 @@ describe('VidazooBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          isStorageAllowed: true
         }
       });
     });
