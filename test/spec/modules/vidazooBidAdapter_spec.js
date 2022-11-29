@@ -266,6 +266,7 @@ describe('VidazooBidAdapter', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       delete serverResponse.body.results[0].exp;
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      console.log(responses);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
     });

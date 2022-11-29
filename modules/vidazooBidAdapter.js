@@ -184,7 +184,7 @@ function interpretResponse(serverResponse, request) {
         return;
       }
 
-      output.push({
+      const response = {
         requestId: bidId,
         cpm: price,
         width: width,
@@ -196,18 +196,19 @@ function interpretResponse(serverResponse, request) {
         meta: {
           advertiserDomains: advertiserDomains || []
         }
-      });
+      };
 
       if (mediaType === BANNER) {
-        Object.assign(output, {
+        Object.assign(response, {
           ad: ad,
         });
       } else {
-        Object.assign(output, {
+        Object.assign(response, {
           vastXml: ad,
           mediaType: VIDEO
         });
       }
+      output.push(response);
     });
     return output;
   } catch (e) {
