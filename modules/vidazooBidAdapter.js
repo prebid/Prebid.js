@@ -70,6 +70,10 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
 
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
@@ -100,7 +104,10 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     res: `${screen.width}x${screen.height}`,
     schain: schain,
     mediaTypes: mediaTypes,
-    ptrace: ptrace
+    ptrace: ptrace,
+    gpid: gpid,
+    cat: cat,
+    pagecat: pagecat
   };
 
   appendUserIdsToRequestPayload(data, userId);
