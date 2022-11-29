@@ -126,8 +126,8 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     if (bid.params.container) {
       imp.ext.impactify.container = bid.params.container;
     }
-    if (typeof bid.getFloor === 'function') {
-      const floor = getFloor(bid);
+    if (typeof validBidRequests.getFloor === 'function') {
+      const floor = getFloor(validBidRequests);
       if (floor) {
         imp.bidfloor = floor;
       }
