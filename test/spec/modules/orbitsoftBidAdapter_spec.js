@@ -149,6 +149,7 @@ describe('Orbitsoft adapter', function () {
             width: 240,
             height: 240,
             content_url: 'https://orbitsoft.com/php/ads/hb.html',
+            adomain: ['test.adomain.tld']
           }
         };
 
@@ -163,13 +164,15 @@ describe('Orbitsoft adapter', function () {
         ];
         let bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
         expect(bids).to.be.lengthOf(1);
-        expect(bids[0].cpm).to.equal(0.5);
-        expect(bids[0].width).to.equal(240);
-        expect(bids[0].height).to.equal(240);
+        expect(bids[0].cpm).to.equal(serverResponse.body.cpm);
+        expect(bids[0].width).to.equal(serverResponse.body.width);
+        expect(bids[0].height).to.equal(serverResponse.body.height);
         expect(bids[0].currency).to.equal('USD');
         expect(bids[0].netRevenue).to.equal(true);
         expect(bids[0].adUrl).to.have.length.above(1);
         expect(bids[0].adUrl).to.have.string('https://orbitsoft.com/php/ads/hb.html');
+        expect(Object.keys(bids[0].meta)).to.include.members(['advertiserDomains']);
+        expect(bids[0].meta.advertiserDomains).to.deep.equal(serverResponse.body.adomain);
       });
 
       it('should return empty bid response', function () {

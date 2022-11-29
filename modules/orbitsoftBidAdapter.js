@@ -97,7 +97,7 @@ export const spec = {
       serverRequests.push({
         method: 'GET',
         url: requestUrl,
-        data: JSON.stringify(requestData),
+        data: requestData,
         options: {withCredentials: false},
         bidRequest: bidRequest
       });
@@ -136,7 +136,10 @@ export const spec = {
         referrer: REFERER,
         currency: 'USD',
         netRevenue: true,
-        adUrl: CREATIVE
+        adUrl: CREATIVE,
+        meta: {
+          advertiserDomains: serverBody.adomain ? serverBody.adomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }
