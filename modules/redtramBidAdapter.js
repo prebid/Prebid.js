@@ -8,7 +8,6 @@ import {
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'redtram';
 const AD_URL = 'https://prebid.redtram.com/pbjs';
@@ -54,8 +53,6 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-
     const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
