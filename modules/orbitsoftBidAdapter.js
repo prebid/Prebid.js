@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import {logError, getUniqueIdentifierStr, getBidIdParameter, getWindowLocation, parseSizesInput, getWindowTop} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 
@@ -29,13 +29,13 @@ export const spec = {
   isBidRequestValid: function (bid) {
     switch (true) {
       case !('params' in bid):
-        utils.logError(bid.bidder + ': No required params');
+        logError(bid.bidder + ': No required params');
         return false;
       case !(bid.params.placementId):
-        utils.logError(bid.bidder + ': No required param placementId');
+        logError(bid.bidder + ': No required param placementId');
         return false;
       case !(bid.params.requestUrl):
-        utils.logError(bid.bidder + ': No required param requestUrl');
+        logError(bid.bidder + ': No required param requestUrl');
         return false;
     }
     return true;
@@ -46,21 +46,20 @@ export const spec = {
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
       let bidRequestParams = bidRequest.params;
-      let callbackId = utils.getUniqueIdentifierStr();
-      let placementId = utils.getBidIdParameter('placementId', bidRequestParams);
-      let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
-      let referrer = utils.getBidIdParameter('ref', bidRequestParams);
-      let location = utils.getBidIdParameter('loc', bidRequestParams);
+      let placementId = getBidIdParameter('placementId', bidRequestParams);
+      let requestUrl = getBidIdParameter('requestUrl', bidRequestParams);
+      let referrer = getBidIdParameter('ref', bidRequestParams);
+      let location = getBidIdParameter('loc', bidRequestParams);
       // Append location & referrer
       if (location === '') {
-        location = utils.getWindowLocation();
+        location = getWindowLocation();
       }
       if (referrer === '' && bidRequest && bidRequest.refererInfo) {
         referrer = bidRequest.refererInfo.referer;
       }
 
       // Styles params
-      let stylesParams = utils.getBidIdParameter('style', bidRequestParams);
+      let stylesParams = getBidIdParameter('style', bidRequestParams);
       let stylesParamsArray = {};
       for (let currentValue in stylesParams) {
         if (stylesParams.hasOwnProperty(currentValue)) {
@@ -76,7 +75,7 @@ export const spec = {
         }
       }
       // Custom params
-      let customParams = utils.getBidIdParameter('customParams', bidRequestParams);
+      let customParams = getBidIdParameter('customParams', bidRequestParams);
       let customParamsArray = {};
       for (let customField in customParams) {
         if (customParams.hasOwnProperty(customField)) {
@@ -86,18 +85,19 @@ export const spec = {
 
       // Sizes params (not supports by server, for future features)
       let sizesParams = bidRequest.sizes;
-      let parsedSizes = utils.parseSizesInput(sizesParams);
+      let parsedSizes = parseSizesInput(sizesParams);
+      let requestData = Object.assign({
+        'scid': placementId,
+        'callback_uid': getUniqueIdentifierStr(),
+        'loc': location,
+        'ref': referrer,
+        'size': parsedSizes
+      }, stylesParamsArray, customParamsArray);
 
       serverRequests.push({
         method: 'GET',
         url: requestUrl,
-        data: Object.assign({
-          'scid': placementId,
-          'callback_uid': callbackId,
-          'loc': location,
-          'ref': referrer,
-          'size': parsedSizes
-        }, stylesParamsArray, customParamsArray),
+        data: JSON.stringify(requestData),
         options: {withCredentials: false},
         bidRequest: bidRequest
       });
@@ -107,13 +107,13 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     let bidResponses = [];
     if (!serverResponse || serverResponse.error) {
-      utils.logError(BIDDER_CODE + ': Server response error');
+      logError(BIDDER_CODE + ': Server response error');
       return bidResponses;
     }
 
     const serverBody = serverResponse.body;
     if (!serverBody) {
-      utils.logError(BIDDER_CODE + ': Empty bid response');
+      logError(BIDDER_CODE + ': Empty bid response');
       return bidResponses;
     }
 
@@ -123,7 +123,7 @@ export const spec = {
     const CREATIVE = serverBody.content_url;
     const CALLBACK_UID = serverBody.callback_uid;
     const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
-    const REFERER = utils.getWindowTop();
+    const REFERER = getWindowTop();
     let bidRequest = request.bidRequest;
     if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {
       let bidResponse = {
