@@ -1,4 +1,4 @@
-import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr, parseUrl, deepSetValue, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
+import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr, deepSetValue, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -19,7 +19,7 @@ function buildRequests(bidReqs, bidderRequest) {
   try {
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      referrer = bidderRequest.refererInfo.page;
     }
     const brightcomImps = [];
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
@@ -56,7 +56,7 @@ function buildRequests(bidReqs, bidderRequest) {
       id: getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: parseUrl(referrer).host,
+        domain: bidderRequest?.refererInfo?.domain || '',
         page: referrer,
         publisher: {
           id: publisherId
@@ -73,6 +73,26 @@ function buildRequests(bidReqs, bidderRequest) {
     if (bidderRequest && bidderRequest.gdprConsent) {
       deepSetValue(brightcomBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
       deepSetValue(brightcomBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      deepSetValue(brightcomBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      deepSetValue(brightcomBidReq, 'regs.coppa', 1);
+    }
+
+    if (bidReqs[0] && bidReqs[0].schain) {
+      deepSetValue(brightcomBidReq, 'source.ext.schain', bidReqs[0].schain)
+    }
+
+    if (bidReqs[0] && bidReqs[0].userIdAsEids) {
+      deepSetValue(brightcomBidReq, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
+    }
+
+    if (bidReqs[0] && bidReqs[0].userId) {
+      deepSetValue(brightcomBidReq, 'user.ext.ids', bidReqs[0].userId || [])
     }
 
     return {
@@ -103,7 +123,7 @@ function interpretResponse(serverResponse) {
     logWarn('Brightcom server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
-  const { body: {id, seatbid} } = serverResponse;
+  const {body: {id, seatbid}} = serverResponse;
   try {
     const brightcomBidResponses = [];
     if (id &&
@@ -164,9 +184,9 @@ function _isViewabilityMeasurable(element) {
   return !_isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, { w, h } = {}) {
+function _getViewability(element, topWin, {w, h} = {}) {
   return getWindowTop().document.visibilityState === 'visible'
-    ? _getPercentInView(element, topWin, { w, h })
+    ? _getPercentInView(element, topWin, {w, h})
     : 0;
 }
 
@@ -182,8 +202,8 @@ function _getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
-function _getBoundingBox(element, { w, h } = {}) {
-  let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
+function _getBoundingBox(element, {w, h} = {}) {
+  let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -192,7 +212,7 @@ function _getBoundingBox(element, { w, h } = {}) {
     bottom = top + h;
   }
 
-  return { width, height, left, top, right, bottom };
+  return {width, height, left, top, right, bottom};
 }
 
 function _getIntersectionOfRects(rects) {
@@ -225,16 +245,16 @@ function _getIntersectionOfRects(rects) {
   return bbox;
 }
 
-function _getPercentInView(element, topWin, { w, h } = {}) {
-  const elementBoundingBox = _getBoundingBox(element, { w, h });
+function _getPercentInView(element, topWin, {w, h} = {}) {
+  const elementBoundingBox = _getBoundingBox(element, {w, h});
 
   // Obtain the intersection of the element and the viewport
-  const elementInViewBoundingBox = _getIntersectionOfRects([ {
+  const elementInViewBoundingBox = _getIntersectionOfRects([{
     left: 0,
     top: 0,
     right: topWin.innerWidth,
     bottom: topWin.innerHeight
-  }, elementBoundingBox ]);
+  }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;
 

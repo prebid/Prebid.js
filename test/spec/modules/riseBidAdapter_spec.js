@@ -7,6 +7,9 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://hb.yellowblue.io/hb-multi';
 const TEST_ENDPOINT = 'https://hb.yellowblue.io/hb-multi-test';
+const RTB_DOMAIN_TEST = 'testseller.com';
+const RTB_DOMAIN_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi`;
+const RTB_DOMAIN_TEST_ENDPOINT = `https://${RTB_DOMAIN_TEST}/hb-multi-test`;
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 
@@ -53,6 +56,7 @@ describe('riseAdapter', function () {
           'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 1,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
         'mediaTypes': {
@@ -71,6 +75,7 @@ describe('riseAdapter', function () {
           'org': 'jdye8weeyirk00000001'
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 1,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
         'mediaTypes': {
@@ -91,6 +96,7 @@ describe('riseAdapter', function () {
           'testMode': true
         },
         'bidId': '299ffc8cca0b87',
+        'loop': 2,
         'bidderRequestId': '1144f487e563f9',
         'auctionId': 'bfc420c3-8577-4568-9766-a8a935fb620d',
       }
@@ -100,6 +106,9 @@ describe('riseAdapter', function () {
       bidderCode: 'rise',
     }
     const placementId = '12345678';
+    const api = [1, 2];
+    const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
+    const protocols = [2, 3, 5, 6];
 
     it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
@@ -119,9 +128,44 @@ describe('riseAdapter', function () {
       expect(request.method).to.equal('POST');
     });
 
+    it('sends bid request to rtbDomain ENDPOINT via POST', function () {
+      bidRequests[0].params.rtbDomain = RTB_DOMAIN_TEST;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).to.equal(RTB_DOMAIN_ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+
+    it('sends bid request to rtbDomain TEST ENDPOINT via POST', function () {
+      testModeBidRequests[0].params.rtbDomain = RTB_DOMAIN_TEST;
+      const request = spec.buildRequests(testModeBidRequests, bidderRequest);
+      expect(request.url).to.equal(RTB_DOMAIN_TEST_ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+
     it('should send the correct bid Id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].bidId).to.equal('299ffc8cca0b87');
+    });
+
+    it('should send the correct supported api array', function () {
+      bidRequests[0].mediaTypes.video.api = api;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].api).to.be.an('array');
+      expect(request.data.bids[0].api).to.eql([1, 2]);
+    });
+
+    it('should send the correct mimes array', function () {
+      bidRequests[1].mediaTypes.banner.mimes = mimes;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[1].mimes).to.be.an('array');
+      expect(request.data.bids[1].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
+    });
+
+    it('should send the correct protocols array', function () {
+      bidRequests[0].mediaTypes.video.protocols = protocols;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].protocols).to.be.an('array');
+      expect(request.data.bids[0].protocols).to.eql([2, 3, 5, 6]);
     });
 
     it('should send the correct sizes array', function () {

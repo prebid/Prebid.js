@@ -1,31 +1,57 @@
 /** @module pbjs */
 
-import { getGlobal } from './prebidGlobal.js';
+import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter, flatten, getHighestCpm, isArrayOfNums, isGptPubadsDefined, uniques, logInfo,
-  contains, logError, isArray, deepClone, deepAccess, isNumber, logWarn, logMessage, isFn,
-  transformAdServerTargetingObj, bind, replaceAuctionPrice, replaceClickThrough, insertElement,
-  inIframe, callBurl, createInvisibleIframe, generateUUID, unsupportedBidderMessage, isEmpty
+  adUnitsFilter,
+  bind,
+  callBurl,
+  contains,
+  createInvisibleIframe,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  flatten,
+  generateUUID,
+  getHighestCpm,
+  inIframe,
+  insertElement,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn,
+  mergeDeep,
+  replaceAuctionPrice,
+  replaceClickThrough,
+  transformAdServerTargetingObj,
+  uniques,
+  unsupportedBidderMessage
 } from './utils.js';
-import { listenMessagesFromCreative } from './secureCreatives.js';
-import { userSync } from './userSync.js';
-import { config } from './config.js';
-import { auctionManager } from './auctionManager.js';
-import { filters, targeting } from './targeting.js';
-import { hook } from './hook.js';
-import { sessionLoader } from './debugging.js';
+import {listenMessagesFromCreative} from './secureCreatives.js';
+import {userSync} from './userSync.js';
+import {config} from './config.js';
+import {auctionManager} from './auctionManager.js';
+import {isBidUsable, targeting} from './targeting.js';
+import {hook, wrapHook} from './hook.js';
+import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import { adunitCounter } from './adUnits.js';
-import { executeRenderer, isRendererRequired } from './Renderer.js';
-import { createBid } from './bidfactory.js';
-import { storageCallbacks } from './storageManager.js';
-import { emitAdRenderSucceeded, emitAdRenderFail } from './adRendering.js';
-import { gdprDataHandler, uspDataHandler } from './adapterManager.js'
+import {adunitCounter} from './adUnits.js';
+import {executeRenderer, isRendererRequired} from './Renderer.js';
+import {createBid} from './bidfactory.js';
+import {storageCallbacks} from './storageManager.js';
+import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
+import CONSTANTS from './constants.json';
+import * as events from './events.js';
+import {newMetrics, useMetrics} from './utils/perfMetrics.js';
+import {defer} from './utils/promise.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
-const CONSTANTS = require('./constants.json');
-const adapterManager = require('./adapterManager.js').default;
-const events = require('./events.js');
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -37,7 +63,7 @@ const eventValidators = {
 };
 
 // initialize existing debugging sessions if present
-sessionLoader();
+loadSession();
 
 /* Public vars */
 $$PREBID_GLOBAL$$.bidderSettings = $$PREBID_GLOBAL$$.bidderSettings || {};
@@ -130,6 +156,16 @@ function validateVideoMediaType(adUnit) {
 function validateNativeMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
+  // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
+  if (native.ortb) {
+    const legacyNativeKeys = Object.keys(CONSTANTS.NATIVE_KEYS).filter(key => CONSTANTS.NATIVE_KEYS[key].includes('hb_native_'));
+    const nativeKeys = Object.keys(native);
+    const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
+    if (intersection.length > 0) {
+      logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
+      intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
+    }
+  }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
     delete validatedAdUnit.mediaTypes.native.image.sizes;
@@ -189,9 +225,12 @@ export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
   validateVideoMediaType,
-  validateNativeMediaType,
   validateSizes
 };
+
+if (FEATURES.NATIVE) {
+  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
   const validatedAdUnits = [];
@@ -213,7 +252,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
 
-    if (mediaTypes.native) {
+    if (FEATURES.NATIVE && mediaTypes.native) {
       validatedNative = validatedVideo ? validateNativeMediaType(validatedVideo) : validatedBanner ? validateNativeMediaType(validatedBanner) : validateNativeMediaType(adUnit);
     }
 
@@ -258,8 +297,7 @@ $$PREBID_GLOBAL$$.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode = function (adunitCode) {
   if (adunitCode) {
     const bid = auctionManager.getAllBidsForAdUnitCode(adunitCode)
-      .filter(filters.isUnusedBid)
-      .filter(filters.isBidNotExpired)
+      .filter(isBidUsable)
 
     return bid.length ? bid.reduce(getHighestCpm) : {}
   } else {
@@ -448,86 +486,99 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
   logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   logMessage('Calling renderAd with adId :' + id);
 
-  if (doc && id) {
-    try {
-      // lookup ad by ad Id
-      const bid = auctionManager.findBidByAdId(id);
-
-      if (bid) {
-        let shouldRender = true;
-        if (bid && bid.status === CONSTANTS.BID_STATUS.RENDERED) {
-          logWarn(`Ad id ${bid.adId} has been rendered before`);
-          events.emit(STALE_RENDER, bid);
-          if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-            shouldRender = false;
-          }
-        }
-
-        if (shouldRender) {
-          // replace macros according to openRTB with price paid = bid.cpm
-          bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
-          bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
-          // replacing clickthrough if submitted
-          if (options && options.clickThrough) {
-            const {clickThrough} = options;
-            bid.ad = replaceClickThrough(bid.ad, clickThrough);
-            bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
-          }
-
-          // save winning bids
-          auctionManager.addWinningBid(bid);
-
-          // emit 'bid won' event here
-          events.emit(BID_WON, bid);
-
-          const {height, width, ad, mediaType, adUrl, renderer} = bid;
-
-          const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-          insertElement(creativeComment, doc, 'html');
-
-          if (isRendererRequired(renderer)) {
-            executeRenderer(renderer, bid, doc);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if ((doc === document && !inIframe()) || mediaType === 'video') {
-            const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-            emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
-          } else if (ad) {
-            doc.write(ad);
-            doc.close();
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else if (adUrl) {
-            const iframe = createInvisibleIframe();
-            iframe.height = height;
-            iframe.width = width;
-            iframe.style.display = 'inline';
-            iframe.style.overflow = 'hidden';
-            iframe.src = adUrl;
-
-            insertElement(iframe, doc, 'body');
-            setRenderSize(doc, width, height);
-            reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            callBurl(bid);
-            emitAdRenderSucceeded({ doc, bid, id });
-          } else {
-            const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-            emitAdRenderFail({reason: NO_AD, message, bid, id});
-          }
-        }
-      } else {
-        const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-        emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
-      }
-    } catch (e) {
-      const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-      emitAdRenderFail({ reason: EXCEPTION, message, id });
-    }
-  } else {
-    const message = `Error trying to write ad Id :${id} to the page. Missing document or adId`;
+  if (!id) {
+    const message = `Error trying to write ad Id :${id} to the page. Missing adId`;
     emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
+    return;
+  }
+
+  try {
+    // lookup ad by ad Id
+    const bid = auctionManager.findBidByAdId(id);
+    if (!bid) {
+      const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
+      emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
+      return;
+    }
+
+    if (bid.status === CONSTANTS.BID_STATUS.RENDERED) {
+      logWarn(`Ad id ${bid.adId} has been rendered before`);
+      events.emit(STALE_RENDER, bid);
+      if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
+        return;
+      }
+    }
+
+    // replace macros according to openRTB with price paid = bid.cpm
+    bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
+    bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
+    // replacing clickthrough if submitted
+    if (options && options.clickThrough) {
+      const {clickThrough} = options;
+      bid.ad = replaceClickThrough(bid.ad, clickThrough);
+      bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
+    }
+
+    // save winning bids
+    auctionManager.addWinningBid(bid);
+
+    // emit 'bid won' event here
+    events.emit(BID_WON, bid);
+
+    const {height, width, ad, mediaType, adUrl, renderer} = bid;
+
+    // video module
+    const adUnitCode = bid.adUnitCode;
+    const adUnit = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnit.code === adUnitCode);
+    const videoModule = $$PREBID_GLOBAL$$.videoModule;
+    if (adUnit.video && videoModule) {
+      videoModule.renderBid(adUnit.video.divId, bid);
+      return;
+    }
+
+    if (!doc) {
+      const message = `Error trying to write ad Id :${id} to the page. Missing document`;
+      emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
+      return;
+    }
+
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
+
+    if (isRendererRequired(renderer)) {
+      executeRenderer(renderer, bid, doc);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if ((doc === document && !inIframe()) || mediaType === 'video') {
+      const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
+      emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
+    } else if (ad) {
+      doc.write(ad);
+      doc.close();
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else if (adUrl) {
+      const iframe = createInvisibleIframe();
+      iframe.height = height;
+      iframe.width = width;
+      iframe.style.display = 'inline';
+      iframe.style.overflow = 'hidden';
+      iframe.src = adUrl;
+
+      insertElement(iframe, doc, 'body');
+      setRenderSize(doc, width, height);
+      reinjectNodeIfRemoved(creativeComment, doc, 'html');
+      callBurl(bid);
+      emitAdRenderSucceeded({ doc, bid, id });
+    } else {
+      const message = `Error trying to write ad. No ad for bid response id: ${id}`;
+      emitAdRenderFail({reason: NO_AD, message, bid, id});
+    }
+  } catch (e) {
+    const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
+    emitAdRenderFail({ reason: EXCEPTION, message, id });
   }
 });
 
@@ -571,26 +622,39 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @param {String} requestOptions.auctionId
  * @alias module:pbjs.requestBids
  */
-$$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId } = {}) {
-  events.emit(REQUEST_BIDS);
-  const cbTimeout = timeout || config.getConfig('bidderTimeout');
-  adUnits = (adUnits && config.convertAdUnitFpd(isArray(adUnits) ? adUnits : [adUnits])) || $$PREBID_GLOBAL$$.adUnits;
-
-  logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
-
-  let _s2sConfigs = [];
-  const s2sBidders = [];
-  config.getConfig('s2sConfig', config => {
-    if (config && config.s2sConfig) {
-      _s2sConfigs = Array.isArray(config.s2sConfig) ? config.s2sConfig : [config.s2sConfig];
+$$PREBID_GLOBAL$$.requestBids = (function() {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
+    events.emit(REQUEST_BIDS);
+    const cbTimeout = timeout || config.getConfig('bidderTimeout');
+    logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    const ortb2Fragments = {
+      global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
+      bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-  });
+    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+  }, 'requestBids');
 
-  _s2sConfigs.forEach(s2sConfig => {
-    s2sBidders.push(...s2sConfig.bidders);
-  });
+  return wrapHook(delegate, function requestBids(req = {}) {
+    // unlike the main body of `delegate`, this runs before any other hook has a chance to;
+    // it's also not restricted in its return value in the way `async` hooks are.
 
-  adUnits = checkAdUnitSetup(adUnits);
+    // if the request does not specify adUnits, clone the global adUnit array;
+    // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
+    // in any hook might see their effects.
+    let adUnits = req.adUnits || $$PREBID_GLOBAL$$.adUnits;
+    req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
+
+    req.metrics = newMetrics();
+    req.metrics.checkpoint('requestBids');
+    req.defer = defer({promiseFactory: (r) => new Promise(r)})
+    delegate.call(this, req);
+    return req.defer.promise;
+  });
+})();
+
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
+  const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
+  adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   if (adUnitCodes && adUnitCodes.length) {
     // if specific adUnitCodes supplied filter adUnits for those codes
@@ -598,6 +662,17 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
   } else {
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+  }
+
+  function auctionDone(bids, timedOut, auctionId) {
+    if (typeof bidsBackHandler === 'function') {
+      try {
+        bidsBackHandler(bids, timedOut, auctionId);
+      } catch (e) {
+        logError('Error executing bidsBackHandler', null, e);
+      }
+    }
+    defer.resolve({bids, timedOut, auctionId})
   }
 
   /*
@@ -614,9 +689,15 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
     const allBidders = adUnit.bids.map(bid => bid.bidder);
     const bidderRegistry = adapterManager.bidderRegistry;
 
-    const bidders = (s2sBidders) ? allBidders.filter(bidder => !includes(s2sBidders, bidder)) : allBidders;
+    const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
 
-    adUnit.transactionId = generateUUID();
+    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
+    adUnit.transactionId = tid;
+    if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {
+      adUnit.ttlBuffer = ttlBuffer;
+    }
+    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
+    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
@@ -639,27 +720,28 @@ $$PREBID_GLOBAL$$.requestBids = hook('async', function ({ bidsBackHandler, timeo
 
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
-    if (typeof bidsBackHandler === 'function') {
-      // executeCallback, this will only be called in case of first request
-      try {
-        bidsBackHandler();
-      } catch (e) {
-        logError('Error executing bidsBackHandler', null, e);
-      }
+    auctionDone();
+  } else {
+    const auction = auctionManager.createAuction({
+      adUnits,
+      adUnitCodes,
+      callback: auctionDone,
+      cbTimeout,
+      labels,
+      auctionId,
+      ortb2Fragments,
+      metrics,
+    });
+
+    let adUnitsLen = adUnits.length;
+    if (adUnitsLen > 15) {
+      logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
-    return;
+
+    adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
+    auction.callBids();
   }
-
-  const auction = auctionManager.createAuction({ adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout, labels, auctionId });
-
-  let adUnitsLen = adUnits.length;
-  if (adUnitsLen > 15) {
-    logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
-  }
-
-  adUnitCodes.forEach(code => targeting.setLatestAuctionForAdUnit(code, auction.getAuctionId()));
-  auction.callBids();
-});
+}, 'startAuction');
 
 export function executeCallbacks(fn, reqBidsConfigObj) {
   runAll(storageCallbacks);
@@ -685,7 +767,7 @@ $$PREBID_GLOBAL$$.requestBids.before(executeCallbacks, 49);
  */
 $$PREBID_GLOBAL$$.addAdUnits = function (adUnitArr) {
   logInfo('Invoking $$PREBID_GLOBAL$$.addAdUnits', arguments);
-  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, config.convertAdUnitFpd(isArray(adUnitArr) ? adUnitArr : [adUnitArr]));
+  $$PREBID_GLOBAL$$.adUnits.push.apply($$PREBID_GLOBAL$$.adUnits, isArray(adUnitArr) ? adUnitArr : [adUnitArr]);
   // emit event
   events.emit(ADD_AD_UNITS);
 };
@@ -924,56 +1006,16 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
  * @param {Object} options
  * @alias module:pbjs.getConfig
  */
-$$PREBID_GLOBAL$$.getConfig = config.getConfig;
-$$PREBID_GLOBAL$$.readConfig = config.readConfig;
+$$PREBID_GLOBAL$$.getConfig = config.getAnyConfig;
+$$PREBID_GLOBAL$$.readConfig = config.readAnyConfig;
 $$PREBID_GLOBAL$$.mergeConfig = config.mergeConfig;
 $$PREBID_GLOBAL$$.mergeBidderConfig = config.mergeBidderConfig;
 
 /**
  * Set Prebid config options.
- * (Added in version 0.27.0).
- *
- * `setConfig` is designed to allow for advanced configuration while
- * reducing the surface area of the public API.  For more information
- * about the move to `setConfig` (and the resulting deprecations of
- * some other public methods), see [the Prebid 1.0 public API
- * proposal](https://gist.github.com/mkendall07/51ee5f6b9f2df01a89162cf6de7fe5b6).
- *
- * #### Troubleshooting your configuration
- *
- * If you call `pbjs.setConfig` without an object, e.g.,
- *
- * `pbjs.setConfig('debug', 'true'))`
- *
- * then Prebid.js will print an error to the console that says:
- *
- * ```
- * ERROR: setConfig options must be an object
- * ```
- *
- * If you don't see that message, you can assume the config object is valid.
+ * See https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html
  *
  * @param {Object} options Global Prebid configuration object. Must be JSON - no JavaScript functions are allowed.
- * @param {string} options.bidderSequence The order in which bidders are called.  Example: `pbjs.setConfig({ bidderSequence: "fixed" })`.  Allowed values: `"fixed"` (order defined in `adUnit.bids` array on page), `"random"`.
- * @param {boolean} options.debug Turn debug logging on/off. Example: `pbjs.setConfig({ debug: true })`.
- * @param {string} options.priceGranularity The bid price granularity to use.  Example: `pbjs.setConfig({ priceGranularity: "medium" })`. Allowed values: `"low"` ($0.50), `"medium"` ($0.10), `"high"` ($0.01), `"auto"` (sliding scale), `"dense"` (like `"auto"`, with smaller increments at lower CPMs), or a custom price bucket object, e.g., `{ "buckets" : [{"min" : 0,"max" : 20,"increment" : 0.1,"cap" : true}]}`.
- * @param {boolean} options.enableSendAllBids Turn "send all bids" mode on/off.  Example: `pbjs.setConfig({ enableSendAllBids: true })`.
- * @param {number} options.bidderTimeout Set a global bidder timeout, in milliseconds.  Example: `pbjs.setConfig({ bidderTimeout: 3000 })`.  Note that it's still possible for a bid to get into the auction that responds after this timeout. This is due to how [`setTimeout`](https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout) works in JS: it queues the callback in the event loop in an approximate location that should execute after this time but it is not guaranteed.  For more information about the asynchronous event loop and `setTimeout`, see [How JavaScript Timers Work](https://johnresig.com/blog/how-javascript-timers-work/).
- * @param {string} options.publisherDomain The publisher's domain where Prebid is running, for cross-domain iFrame communication.  Example: `pbjs.setConfig({ publisherDomain: "https://www.theverge.com" })`.
- * @param {Object} options.s2sConfig The configuration object for [server-to-server header bidding](http://prebid.org/dev-docs/get-started-with-prebid-server.html).  Example:
- * @alias module:pbjs.setConfig
- * ```
- * pbjs.setConfig({
- *     s2sConfig: {
- *         accountId: '1',
- *         enabled: true,
- *         bidders: ['appnexus', 'pubmatic'],
- *         timeout: 1000,
- *         adapter: 'prebidServer',
- *         endpoint: 'https://prebid.adnxs.com/pbs/v1/auction'
- *     }
- * })
- * ```
  */
 $$PREBID_GLOBAL$$.setConfig = config.setConfig;
 $$PREBID_GLOBAL$$.setBidderConfig = config.setBidderConfig;

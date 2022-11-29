@@ -119,26 +119,30 @@ describe('OguryBidAdapter', function () {
       };
     });
 
-    it('should return syncs array with two elements of type image', () => {
+    it('should return syncs array with three elements of type image', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
 
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.contain('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch');
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.contain('https://ms-cookie-sync.presage.io/ttd/init-sync');
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.contain('https://ms-cookie-sync.presage.io/xandr/init-sync');
     });
 
     it('should set the source as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain('source=prebid');
       expect(userSyncs[1].url).to.contain('source=prebid');
+      expect(userSyncs[2].url).to.contain('source=prebid');
     });
 
     it('should set the tcString as query param', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
       expect(userSyncs[0].url).to.contain(`iab_string=${gdprConsent.consentString}`);
       expect(userSyncs[1].url).to.contain(`iab_string=${gdprConsent.consentString}`);
+      expect(userSyncs[2].url).to.contain(`iab_string=${gdprConsent.consentString}`);
     });
 
     it('should return an empty array when pixel is disable', () => {
@@ -146,86 +150,111 @@ describe('OguryBidAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, [], gdprConsent)).to.have.lengthOf(0);
     });
 
-    it('should return syncs array with two elements of type image when consentString is undefined', () => {
+    it('should return syncs array with three elements of type image when consentString is undefined', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: undefined
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when consentString is null', () => {
+    it('should return syncs array with three elements of type image when consentString is null', () => {
       gdprConsent = {
         gdprApplies: true,
         consentString: null
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is undefined', () => {
+    it('should return syncs array with three elements of type image when gdprConsent is undefined', () => {
       gdprConsent = undefined;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is null', () => {
+    it('should return syncs array with three elements of type image when gdprConsent is null', () => {
       gdprConsent = null;
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is null and gdprApplies is false', () => {
+    it('should return syncs array with three elements of type image when gdprConsent is null and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: null
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
 
-    it('should return syncs array with two elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
+    it('should return syncs array with three elements of type image when gdprConsent is empty string and gdprApplies is false', () => {
       gdprConsent = {
         gdprApplies: false,
         consentString: ''
       };
 
       const userSyncs = spec.getUserSyncs(syncOptions, [], gdprConsent);
-      expect(userSyncs).to.have.lengthOf(2);
+      expect(userSyncs).to.have.lengthOf(3);
       expect(userSyncs[0].type).to.equal('image');
       expect(userSyncs[0].url).to.equal('https://ms-cookie-sync.presage.io/v1/init-sync/bid-switch?iab_string=&source=prebid')
       expect(userSyncs[1].type).to.equal('image');
       expect(userSyncs[1].url).to.equal('https://ms-cookie-sync.presage.io/ttd/init-sync?iab_string=&source=prebid')
+      expect(userSyncs[2].type).to.equal('image');
+      expect(userSyncs[2].url).to.equal('https://ms-cookie-sync.presage.io/xandr/init-sync?iab_string=&source=prebid')
     });
   });
 
   describe('buildRequests', function () {
+    const stubbedWidth = 200
+    const stubbedHeight = 600
+    const stubbedCurrentTime = 1234567890
+    const stubbedWidthMethod = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+      return stubbedWidth;
+    });
+    const stubbedHeightMethod = sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+      return stubbedHeight;
+    });
+    const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
+      return stubbedCurrentTime;
+    });
+
     const defaultTimeout = 1000;
     const expectedRequestObject = {
       id: bidRequests[0].auctionId,
@@ -241,18 +270,23 @@ describe('OguryBidAdapter', function () {
             h: 250
           }]
         },
-        ext: bidRequests[0].params
+        ext: {
+          ...bidRequests[0].params,
+          timeSpentOnPage: stubbedCurrentTime
+        }
       }, {
         id: bidRequests[1].bidId,
         tagid: bidRequests[1].params.adUnitId,
-        bidfloor: 0,
         banner: {
           format: [{
             w: 600,
             h: 500
           }]
         },
-        ext: bidRequests[1].params
+        ext: {
+          ...bidRequests[1].params,
+          timeSpentOnPage: stubbedCurrentTime
+        }
       }],
       regs: {
         ext: {
@@ -271,9 +305,19 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.2.10'
+        adapterversion: '1.4.0'
+      },
+      device: {
+        w: stubbedWidth,
+        h: stubbedHeight
       }
     };
+
+    after(function() {
+      stubbedWidthMethod.restore();
+      stubbedHeightMethod.restore();
+      stubbedCurrentTimeMethod.restore();
+    });
 
     it('sends bid request to ENDPOINT via POST', function () {
       const validBidRequests = utils.deepClone(bidRequests)
@@ -283,12 +327,183 @@ describe('OguryBidAdapter', function () {
       expect(request.method).to.equal('POST');
     });
 
+    it('timeSpentOnpage should be 0 if timeline is undefined', function () {
+      const stubbedTimelineMethod = sinon.stub(document, 'timeline').get(function() {
+        return undefined;
+      });
+      const validBidRequests = utils.deepClone(bidRequests)
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data.imp[0].ext.timeSpentOnPage).to.equal(0);
+      stubbedTimelineMethod.restore();
+    });
+
     it('bid request object should be conform', function () {
       const validBidRequests = utils.deepClone(bidRequests)
 
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       expect(request.data).to.deep.equal(expectedRequestObject);
       expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    describe('getClientWidth', () => {
+      function testGetClientWidth(testGetClientSizeParams) {
+        const stubbedClientWidth = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
+          return testGetClientSizeParams.docClientSize
+        })
+
+        const stubbedInnerWidth = sinon.stub(window.top, 'innerWidth').get(function() {
+          return testGetClientSizeParams.innerSize
+        })
+
+        const stubbedOuterWidth = sinon.stub(window.top, 'outerWidth').get(function() {
+          return testGetClientSizeParams.outerSize
+        })
+
+        const stubbedWidth = sinon.stub(window.top.screen, 'width').get(function() {
+          return testGetClientSizeParams.screenSize
+        })
+
+        const validBidRequests = utils.deepClone(bidRequests)
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        expect(request.data.device.w).to.equal(testGetClientSizeParams.expectedSize);
+
+        stubbedClientWidth.restore();
+        stubbedInnerWidth.restore();
+        stubbedOuterWidth.restore();
+        stubbedWidth.restore();
+      }
+
+      it('should get documentElementClientWidth by default', () => {
+        testGetClientWidth({
+          docClientSize: 22,
+          innerSize: 50,
+          outerSize: 45,
+          screenSize: 10,
+          expectedSize: 22,
+        })
+      })
+
+      it('should get innerWidth as first fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: 700,
+          outerSize: 650,
+          screenSize: 10,
+          expectedSize: 700,
+        })
+      })
+
+      it('should get outerWidth as second fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: 650,
+          screenSize: 10,
+          expectedSize: 650,
+        })
+      })
+
+      it('should get screenWidth as last fallback', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: 10,
+          expectedSize: 10,
+        });
+      });
+
+      it('should return 0 if all window width values are undefined', () => {
+        testGetClientWidth({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: undefined,
+          expectedSize: 0,
+        });
+      });
+    });
+
+    describe('getClientHeight', () => {
+      function testGetClientHeight(testGetClientSizeParams) {
+        const stubbedClientHeight = sinon.stub(window.top.document.documentElement, 'clientHeight').get(function() {
+          return testGetClientSizeParams.docClientSize
+        })
+
+        const stubbedInnerHeight = sinon.stub(window.top, 'innerHeight').get(function() {
+          return testGetClientSizeParams.innerSize
+        })
+
+        const stubbedOuterHeight = sinon.stub(window.top, 'outerHeight').get(function() {
+          return testGetClientSizeParams.outerSize
+        })
+
+        const stubbedHeight = sinon.stub(window.top.screen, 'height').get(function() {
+          return testGetClientSizeParams.screenSize
+        })
+
+        const validBidRequests = utils.deepClone(bidRequests)
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        expect(request.data.device.h).to.equal(testGetClientSizeParams.expectedSize);
+
+        stubbedClientHeight.restore();
+        stubbedInnerHeight.restore();
+        stubbedOuterHeight.restore();
+        stubbedHeight.restore();
+      }
+
+      it('should get documentElementClientHeight by default', () => {
+        testGetClientHeight({
+          docClientSize: 420,
+          innerSize: 500,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 420,
+        });
+      });
+
+      it('should get innerHeight as first fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: 500,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 500,
+        });
+      });
+
+      it('should get outerHeight as second fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: 480,
+          screenSize: 230,
+          expectedSize: 480,
+        });
+      });
+
+      it('should get screenHeight as last fallback', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: 230,
+          expectedSize: 230,
+        });
+      });
+
+      it('should return 0 if all window height values are undefined', () => {
+        testGetClientHeight({
+          docClientSize: undefined,
+          innerSize: undefined,
+          outerSize: undefined,
+          screenSize: undefined,
+          expectedSize: 0,
+        });
+      });
     });
 
     it('should not add gdpr infos if not present', () => {
@@ -401,7 +616,7 @@ describe('OguryBidAdapter', function () {
 
     it('should handle bidFloor when currency is not USD', () => {
       const expectedRequestWithUnsupportedFloorCurrency = utils.deepClone(expectedRequestObject)
-      expectedRequestWithUnsupportedFloorCurrency.imp[0].bidfloor = 0;
+      delete expectedRequestWithUnsupportedFloorCurrency.imp[0].bidfloor;
       let validBidRequests = utils.deepClone(bidRequests);
       validBidRequests[0] = {
         ...validBidRequests[0],
@@ -482,7 +697,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.2.10',
+        adapterVersion: '1.4.0',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -499,7 +714,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.2.10',
+        adapterVersion: '1.4.0',
         prebidVersion: '$prebid.version$'
       }]
 

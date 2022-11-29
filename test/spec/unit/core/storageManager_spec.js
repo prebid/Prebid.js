@@ -3,11 +3,12 @@ import {
   getCoreStorageManager,
   storageCallbacks,
   getStorageManager,
-  newStorageManager
+  newStorageManager, validateStorageEnforcement
 } from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
+import {VENDORLESS_GVLID} from '../../../../src/consentHandler.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -54,6 +55,33 @@ describe('storage manager', function() {
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
   });
+
+  describe(`core storage`, () => {
+    let storage, validateHook;
+
+    beforeEach(() => {
+      storage = getCoreStorageManager();
+      validateHook = sinon.stub().callsFake(function (next, ...args) {
+        next.apply(this, args);
+      });
+      validateStorageEnforcement.before(validateHook, 99);
+    });
+
+    afterEach(() => {
+      validateStorageEnforcement.getHooks({hook: validateHook}).remove();
+      config.resetConfig();
+    })
+
+    it('should respect (vendorless) consent enforcement', () => {
+      storage.localStorageIsEnabled();
+      expect(validateHook.args[0][1]).to.equal(VENDORLESS_GVLID); // gvlid should be set to VENDORLESS_GVLID
+    });
+
+    it('should respect the deviceAccess flag', () => {
+      config.setConfig({deviceAccess: false});
+      expect(storage.localStorageIsEnabled()).to.be.false
+    })
+  })
 
   describe('localstorage forbidden access in 3rd-party context', function() {
     let errorLogSpy;
@@ -108,8 +136,8 @@ describe('storage manager', function() {
   });
 
   describe('when bidderSettings.allowStorage is defined', () => {
-    const DENIED_BIDDER = 'denied-bidder';
-    const DENY_KEY = 'storageAllowed';
+    const ALLOWED_BIDDER = 'allowed-bidder';
+    const ALLOW_KEY = 'storageAllowed';
 
     const COOKIE = 'test-cookie';
     const LS_KEY = 'test-localstorage';
@@ -117,8 +145,8 @@ describe('storage manager', function() {
     function mockBidderSettings() {
       return {
         get(bidder, key) {
-          if (bidder === DENIED_BIDDER && key === DENY_KEY) {
-            return false;
+          if (bidder === ALLOWED_BIDDER && key === ALLOW_KEY) {
+            return true;
           } else {
             return undefined;
           }
@@ -127,8 +155,8 @@ describe('storage manager', function() {
     }
 
     Object.entries({
-      disallowed: [DENIED_BIDDER, false],
-      allowed: ['allowed-bidder', true]
+      disallowed: ['denied_bidder', false],
+      allowed: [ALLOWED_BIDDER, true]
     }).forEach(([test, [bidderCode, shouldWork]]) => {
       describe(`for ${test} bidders`, () => {
         let mgr;

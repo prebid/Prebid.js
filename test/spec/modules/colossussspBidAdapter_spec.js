@@ -101,7 +101,7 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
@@ -110,6 +110,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -118,7 +119,6 @@ describe('ColossussspAdapter', function () {
         ...bid,
         params: {
           placement_id: 0,
-          traffic: 'video',
         },
         mediaTypes: {
           video: {
@@ -144,7 +144,7 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
         );
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
@@ -156,6 +156,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.playerSize).to.be.an('array');
         expect(placement.minduration).to.be.an('number');
         expect(placement.maxduration).to.be.an('number');
+        expect(placement.tid).to.be.an('string');
       }
     });
 

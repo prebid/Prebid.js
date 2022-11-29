@@ -128,6 +128,10 @@ Follow steps above for general review process. In addition:
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
 - Make sure there's a docs pull request
 
+### Reviewing changes to the `debugging` module
+
+The debugging module cannot import from core in the same way that other modules can. See this [warning](https://github.com/prebid/Prebid.js/blob/master/modules/debugging/WARNING.md) for more details.
+
 ## Ticket Coordinator
 
 Each week, Prebid Org assigns one person to keep an eye on incoming issues and PRs. Every Monday morning a reminder is sent to the prebid-js slack channel with a link to the spreadsheet. If you're on rotation, please check that list each Monday to see if you're on-duty.

@@ -39,7 +39,8 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value here?
+    const referer = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = Object();
@@ -61,6 +62,11 @@ export const spec = {
       });
 
       data.params = request.params;
+
+      if (request.schain) {
+        data.schain = request.schain;
+      }
+
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
         tagId: request.params.tagId,
