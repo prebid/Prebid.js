@@ -38,7 +38,8 @@ const LOG_PREFIX = 'Adagio:';
 const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
+const ADAGIO_TAG_URL = 'https://script.4dex.io/adagio.js';
+const ADAGIO_CACHE_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
 export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
@@ -177,7 +178,7 @@ export function getAdagioScript() {
 
   storage.localStorageIsEnabled(isValid => {
     if (isValid) {
-      loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
+      loadExternalScript(ADAGIO_CACHE_TAG_URL, BIDDER_CODE);
     } else {
       // Try-catch to avoid error when 3rd party cookies is disabled (e.g. in privacy mode)
       try {
@@ -191,6 +192,8 @@ export function getAdagioScript() {
       } catch (e) {
         logInfo(`${LOG_PREFIX} unable to clear Adagio scripts from localstorage.`);
       }
+
+      loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
     }
   });
 }

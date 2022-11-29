@@ -1521,6 +1521,8 @@ describe('Adagio bid adapter', () => {
     const VALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){};(_ADAGIO)();\n';
     const INVALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){//corrupted};(_ADAGIO)();\n';
     const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+    const ADAGIO_TAG_URL = 'https://script.4dex.io/adagio.js';
+    const ADAGIO_CACHE_TAG_URL = 'https://script.4dex.io/localstore.js';
 
     beforeEach(function() {
       localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
@@ -1538,18 +1540,20 @@ describe('Adagio bid adapter', () => {
         sinon.assert.callCount(adagio.adagioScriptFromLocalStorageCb, 1);
       });
 
-      it('should load external script if the user consent', function() {
+      it('should load localstore.js external script if the user consent', function() {
         sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true);
         getAdagioScript();
 
         expect(loadExternalScript.called).to.be.true;
+        sinon.assert.calledWith(loadExternalScript, ADAGIO_CACHE_TAG_URL);
       });
 
-      it('should not load external script if the user does not consent', function() {
+      it('should load adagio.js external script if the user does not consent', function() {
         sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false);
         getAdagioScript();
 
-        expect(loadExternalScript.called).to.be.false;
+        expect(loadExternalScript.called).to.be.true;
+        sinon.assert.calledWith(loadExternalScript, ADAGIO_TAG_URL);
       });
 
       it('should remove the localStorage key if exists and the user does not consent', function() {
@@ -1558,7 +1562,6 @@ describe('Adagio bid adapter', () => {
 
         getAdagioScript();
 
-        expect(loadExternalScript.called).to.be.false;
         expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
       });
     });
