@@ -290,6 +290,7 @@ function getParam(validBidRequests, bidderRequest) {
   if (items && items.length) {
     let c = {
       id: 'pp_hbjs_' + auctionId,
+      test: +validBidRequests[0].params.test || 0,
       at: 1,
       bcat: globals['bcat'],
       badv: globals['adv'],
