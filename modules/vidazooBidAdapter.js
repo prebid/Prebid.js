@@ -1,4 +1,4 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques} from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -59,7 +59,8 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { params, bidId, userId, adUnitCode, schain } = bid;
-  const { bidFloor, ext } = params;
+  const { ext } = params;
+  let { bidFloor } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
@@ -68,6 +69,22 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+
+  if (isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (floorInfo.currency === 'USD') {
+      bidFloor = floorInfo.floor;
+    }
+  }
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -86,7 +103,10 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
     schain: schain,
-    ptrace: ptrace
+    ptrace: ptrace,
+    gpid: gpid,
+    cat: cat,
+    pagecat: pagecat
   };
 
   appendUserIdsToRequestPayload(data, userId);
