@@ -29,7 +29,7 @@ export const tripleliftAdapterSpec = {
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest.refererInfo.page;
+      let referrer = bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page;
       tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
