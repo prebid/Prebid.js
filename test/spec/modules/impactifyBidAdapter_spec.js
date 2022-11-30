@@ -158,6 +158,19 @@ describe('ImpactifyAdapter', function () {
       bid.params.style = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should pass bidfloor', function () {
+      videoBidRequests[0].getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 1.23,
+        }
+      }
+
+      const res = spec.buildRequests(videoBidRequests, videoBidderRequest)
+      const resData = JSON.parse(res.data)
+      expect(resData.imp[0].bidfloor).to.equal(1.23)
+    });
   });
   describe('buildRequests', function () {
     let videoBidRequests = [
