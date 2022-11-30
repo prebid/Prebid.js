@@ -2,6 +2,8 @@ import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import { beforeInit, geoedgeSubmodule, setWrapper, wrapper, htmlPlaceholder, WRAPPER_URL, getClientUrl } from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
+import * as events from '../../../src/events.js';
+import CONSTANTS from '../../../src/constants.json';
 
 let key = '123123123';
 function makeConfig() {
@@ -87,6 +89,19 @@ describe('Geoedge RTD module', function () {
       it('should preload the client', function () {
         let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href === getClientUrl(key);
         expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
+      });
+      it('should emit billable events with applicable winning bids', function () {
+        let applicableBid = mockBid('bidderA');
+        let nonApplicableBid = mockBid('bidderB');
+        let counter = 0;
+        events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, function (event) {
+          if (event.vendor === 'geoedge' && event.type === 'impression') {
+            counter += 1;
+          }
+        });
+        events.emit(CONSTANTS.EVENTS.BID_WON, applicableBid);
+        events.emit(CONSTANTS.EVENTS.BID_WON, nonApplicableBid);
+        expect(counter).to.equal(1);
       });
     });
     describe('onBidResponseEvent', function () {
