@@ -310,7 +310,7 @@ function getParam(validBidRequests, bidderRequest) {
   if (items && items.length) {
     let c = {
       id: 'mgprebidjs_' + auctionId,
-      test: +validBidRequests[0].params.test || 0,
+      test: Number(validBidRequests[0].params.test) || 0,
       at: 1,
       cur: ['USD'],
       device: {
