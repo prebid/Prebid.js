@@ -121,6 +121,8 @@ describe('Taboola Adapter', function () {
             ]
           },
           'tagid': commonBidRequest.params.tagId,
+          'bidfloor': null,
+          'bidfloorcur': 'USD'
         }],
         'site': {
           'id': commonBidRequest.params.publisherId,
@@ -146,6 +148,23 @@ describe('Taboola Adapter', function () {
 
       expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
       expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+    });
+
+    it('should pass optional parameters in request', function () {
+      const optionalParams = {
+        bidfloor: 0.25,
+        bidfloorcur: 'EUR'
+      };
+
+      const bidRequest = {
+        ...defaultBidRequest,
+        params: {...commonBidRequest.params, ...optionalParams}
+      };
+
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
+      expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
 
     it('should pass bidder timeout', function () {

@@ -186,6 +186,10 @@ function getImps(validBidRequests) {
         imp.bidfloor = parseFloat(floorInfo.floor);
         imp.bidfloorcur = CURRENCY;
       }
+    } else {
+      const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+      imp.bidfloor = bidfloor;
+      imp.bidfloorcur = bidfloorcur;
     }
     return imp;
   });
