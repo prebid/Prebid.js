@@ -198,6 +198,7 @@ describe('VidazooBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          isStorageAllowed: true,
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2']
