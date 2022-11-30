@@ -1,7 +1,7 @@
 import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
@@ -26,6 +26,18 @@ const getDeviceType = () => {
   }
   return 2;
 };
+
+const getFloor = (bid) => {
+  const floorInfo = bid.getFloor({
+    currency: DEFAULT_CURRENCY,
+    mediaType: '*',
+    size: '*'
+  });
+  if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    return parseFloat(floorInfo.floor);
+  }
+  return null;
+}
 
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
@@ -113,6 +125,12 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     };
     if (bid.params.container) {
       imp.ext.impactify.container = bid.params.container;
+    }
+    if (typeof bid.getFloor === 'function') {
+      const floor = getFloor(bid);
+      if (floor) {
+        imp.bidfloor = floor;
+      }
     }
     request.imp.push(imp);
   });

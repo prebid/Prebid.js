@@ -310,6 +310,19 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
     });
 
+    it('merges first party site data', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const requestBody = testBuildRequests(baseBannerBidRequests, {...baseBidderRequest, ortb2}).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher).to.deep.equal({domain: 'https://foo.bar', id: '13144370'});
+    });
+
     it('sets keywords properly if sent', function () {
       const ortb2 = {
         site: {
@@ -385,6 +398,20 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       config.resetConfig();
       expect(requestBody.regs.coppa).to.equal(1);
+    });
+
+    it('adds gpp consent info to the request', function () {
+      const ortb2 = {
+        regs: {
+          gpp: 'somegppstring',
+          gpp_sid: [6, 7]
+        }
+      };
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.regs.gpp).to.equal('somegppstring');
+      expect(requestBody.regs.gpp_sid).to.eql([6, 7]);
     });
 
     it('adds schain info to the request', function () {
