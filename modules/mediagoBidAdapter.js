@@ -19,7 +19,6 @@ const storage = getStorageManager();
 let globals = {};
 let itemMaps = {};
 
-
 /**
  * 获取随机id
  * @param  {number} a random number from 0 to 15
