@@ -20,8 +20,7 @@ module.exports = function (options = {}) {
           // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
           'modules': options.test ? 'commonjs' : 'auto',
         }
-      ],
-      "es2015"
+      ]
     ],
     'plugins': (() => {
       const plugins = [
