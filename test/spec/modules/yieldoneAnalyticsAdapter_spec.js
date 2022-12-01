@@ -46,7 +46,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_1',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -71,7 +71,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_2',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -87,7 +87,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_3',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -269,7 +269,11 @@ describe('Yieldone Prebid Analytic', function () {
       setTimeout(function() {
         events.emit(constants.EVENTS.BID_WON, winner);
 
-        sinon.assert.callCount(sendStatStub, 2);
+        sinon.assert.callCount(sendStatStub, 2)
+        const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === constants.EVENTS.BILLABLE_EVENT);
+        if (billableEventIndex > -1) {
+          yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
+        }
         expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
         delete yieldoneAnalytics.eventsStorage[auctionId];

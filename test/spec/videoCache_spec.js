@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
+import { batchingCache } from '../../src/auction.js';
 
 const should = chai.should();
 
@@ -29,8 +30,7 @@ function getMockBid(bidder, auctionId, bidderRequestId) {
     'sizes': [300, 250],
     'bidId': '123',
     'bidderRequestId': bidderRequestId,
-    'auctionId': auctionId,
-    'storedAuctionResponse': 11111
+    'auctionId': auctionId
   };
 }
 
@@ -156,12 +156,12 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2
         }]
       };
@@ -206,7 +206,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1,
           bidid: '12345abc',
           aid: '1234-56789-abcde',
@@ -214,7 +214,7 @@ describe('The video cache', function () {
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2,
           bidid: 'cba54321',
           aid: '1234-56789-abcde',
@@ -277,7 +277,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: vastXml1,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey1,
           bidid: '12345abc',
           bidder: 'appnexus',
@@ -286,7 +286,7 @@ describe('The video cache', function () {
         }, {
           type: 'xml',
           value: vastXml2,
-          ttlseconds: 25,
+          ttlseconds: 40,
           key: customKey2,
           bidid: 'cba54321',
           bidder: 'rubicon',
@@ -296,6 +296,35 @@ describe('The video cache', function () {
       };
 
       JSON.parse(request.requestBody).should.deep.equal(payload);
+    });
+
+    it('should wait the duration of the batchTimeout and pass the correct batchSize if batched requests are enabled in the config', () => {
+      const mockAfterBidAdded = function() {};
+      let callback = null;
+      let mockTimeout = sinon.stub().callsFake((cb) => { callback = cb });
+
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          batchSize: 3,
+          batchTimeout: 20
+        }
+      });
+
+      let stubCache = sinon.stub();
+      const batchAndStore = batchingCache(mockTimeout, stubCache);
+      for (let i = 0; i < 3; i++) {
+        batchAndStore({}, {}, mockAfterBidAdded);
+      }
+
+      sinon.assert.calledOnce(mockTimeout);
+      sinon.assert.calledWith(mockTimeout, sinon.match.any, 20);
+
+      const expectedBatch = [{ afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }, { afterBidAdded: mockAfterBidAdded, auctionInstance: { }, bidResponse: { } }];
+
+      callback();
+
+      sinon.assert.calledWith(stubCache, expectedBatch);
     });
 
     function assertRequestMade(bid, expectedValue) {
@@ -310,7 +339,7 @@ describe('The video cache', function () {
         puts: [{
           type: 'xml',
           value: expectedValue,
-          ttlseconds: 25
+          ttlseconds: 40
         }],
       });
     }

@@ -1,5 +1,6 @@
 // jscs:disable
 import CONSTANTS from 'src/constants.json';
+import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
@@ -1271,7 +1272,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   if (typeof status !== 'undefined') {
     bid.status = status;
   }
-  return bid;
+  return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bid);
 }
 
 export function getServerTestingsAds() {

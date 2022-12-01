@@ -199,16 +199,16 @@ describe('jixie Adapter', function () {
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
-        .withArgs('_jx')
+        .withArgs('_jxx')
         .returns(clientIdTest1_);
       getCookieStub
-        .withArgs('_jxs')
+        .withArgs('_jxxs')
         .returns(sessionIdTest1_);
       getLocalStorageStub
-        .withArgs('_jx')
+        .withArgs('_jxx')
         .returns(clientIdTest1_);
       getLocalStorageStub
-        .withArgs('_jxs')
+        .withArgs('_jxxs')
         .returns(sessionIdTest1_
         );
       let miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
@@ -528,10 +528,10 @@ describe('jixie Adapter', function () {
       let setCookieSpy = sinon.spy(storage, 'setCookie');
       let setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
       const result = spec.interpretResponse({body: responseBody_}, requestObj_)
-      expect(setLocalStorageSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setLocalStorageSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setCookieSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setCookieSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setCookieSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
 
       // video ad with vastUrl returned by adserver
       expect(result[0].requestId).to.equal('62847e4c696edcb')

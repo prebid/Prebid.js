@@ -1,7 +1,6 @@
 import {
   convertCamelToUnderscore,
   convertTypes,
-  deepAccess,
   getBidRequest,
   isArray,
   isEmpty,
@@ -14,6 +13,8 @@ import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -30,6 +31,9 @@ export const spec = {
   },
 
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const schain = bidRequests[0].schain;
     const payload = {
@@ -51,7 +55,8 @@ export const spec = {
     }
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
-        rd_ref: bidderRequest.refererInfo.referer,
+        // TODO: this collects everything it finds, except for the canonical URL
+        rd_ref: bidderRequest.refererInfo.topmostLocation,
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
       };
@@ -136,19 +141,9 @@ function deleteValues(keyPairObj) {
   }
 }
 
-function hasPurpose1Consent(bidderRequest) {
-  let result = true;
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      result = !!(deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true);
-    }
-  }
-  return result;
-}
-
 function formatRequest(payload, bidderRequest) {
   let options = {};
-  if (!hasPurpose1Consent(bidderRequest)) {
+  if (!hasPurpose1Consent(bidderRequest?.gdprConsent)) {
     options = {
       withCredentials: false
     };

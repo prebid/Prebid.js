@@ -1,12 +1,34 @@
+const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
+const fs = require('fs');
+const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase});
+const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
-  new webpack.EnvironmentPlugin({'LiveConnectMode': null})
+  new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
+  new WebpackManifestPlugin({
+    fileName: 'dependencies.json',
+    generate: (seed, files) => {
+      const entries = new Set();
+      const addEntry = entries.add.bind(entries);
+
+      files.forEach(file => file.chunk && file.chunk._groups && file.chunk._groups.forEach(addEntry));
+
+      return Array.from(entries).reduce((acc, entry) => {
+        const name = (entry.options || {}).name || (entry.runtimeChunk || {}).name
+        const files = (entry.chunks || [])
+          .filter(chunk => chunk.name !== name)
+          .flatMap(chunk => [...chunk.files])
+          .filter(Boolean);
+        return name && files.length ? {...acc, [`${name}.js`]: files} : acc
+      }, seed)
+    }
+  })
 ];
 
 if (argv.analyze) {
@@ -28,15 +50,21 @@ module.exports = {
     const entry = {
       'prebid-core': {
         import: './src/prebid.js'
+      },
+      'debugging-standalone': {
+        import: './modules/debugging/standalone.js'
       }
     };
     const selectedModules = new Set(helpers.getArgModules());
+
     Object.entries(helpers.getModules()).forEach(([fn, mod]) => {
       if (selectedModules.size === 0 || selectedModules.has(mod)) {
-        entry[mod] = {
+        const moduleEntry = {
           import: fn,
           dependOn: 'prebid-core'
-        }
+        };
+
+        entry[mod] = moduleEntry;
       }
     });
     return entry;
@@ -59,10 +87,8 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: {
-              presets: [['@babel/preset-env', { targets: 'defaults' }]],
-            },
-          },
+            options: babelConfig
+          }
         ],
       },
       /* gu-mod-end */
@@ -72,7 +98,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
-            options: helpers.getAnalyticsOptions(),
+            options: Object.assign({}, babelConfig, helpers.getAnalyticsOptions()),
           }
         ]
       },
@@ -82,6 +108,7 @@ module.exports = {
         use: [
           {
             loader: 'babel-loader',
+            options: babelConfig
           }
         ],
       }
@@ -90,12 +117,41 @@ module.exports = {
   optimization: {
     usedExports: true,
     sideEffects: true,
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false, // do not generate unhelpful LICENSE comment
+        terserOptions: {
+          ecma: 2016,
+          module: true, // do not prepend every module with 'use strict'; allow mangling of top-level locals
+        }
+      })
+    ],
+    splitChunks: {
+      chunks: 'initial',
+      minChunks: 1,
+      minSize: 0,
+      cacheGroups: (() => {
+        const libRoot = path.resolve(__dirname, 'libraries');
+        const libraries = Object.fromEntries(
+          fs.readdirSync(libRoot)
+            .filter((f) => fs.lstatSync(path.resolve(libRoot, f)).isDirectory())
+            .map(lib => {
+              const dir = path.resolve(libRoot, lib)
+              const def = {
+                name: lib,
+                test: (module) => {
+                  return module.resource && module.resource.startsWith(dir)
+                }
+              }
+              return [lib, def];
+            })
+        );
+        return Object.assign(libraries, {
+          default: false,
+          defaultVendors: false
+        })
+      })()
+    }
   },
   plugins,
-  /* gu-mod-start */
-  // Force webpack to not resolve the dynamic import of this @guardian/libs peer dependency
-  externals: {
-    'web-vitals': 'web-vitals',
-  },
-  /* gu-mod-end */
 };

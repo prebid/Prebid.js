@@ -243,7 +243,7 @@ export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAd
     let brandCategoryExclusion = config.getConfig('adpod.brandCategoryExclusion');
     let adServerCatId = deepAccess(bidResponse, 'meta.adServerCatId');
     if (!adServerCatId && brandCategoryExclusion) {
-      logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse)
+      logWarn('Detected a bid without meta.adServerCatId while setConfig({adpod.brandCategoryExclusion}) was enabled.  This bid has been rejected:', bidResponse);
       afterBidAdded();
     } else {
       if (config.getConfig('adpod.deferCaching') === false) {
