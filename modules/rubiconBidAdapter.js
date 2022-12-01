@@ -217,12 +217,12 @@ export const converter = ortbConverter({
     return data;
   },
   imp(buildImp, bidRequest, context) {
-    // skip banner-only requests if multiformat === false
-    if (rubiConf.multiformat === true && hasBannerMediaTypeOnly(bidRequest)) {
-      return;
-    }
+    // skip banner-only requests
+    if (hasBannerMediaTypeOnly(bidRequest)) return;
+
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
+
     if (rubiConf.multiformat === true && imp.banner) {
       delete imp.banner;
     }
@@ -302,7 +302,7 @@ export const spec = {
     // separate video bids because the requests are structured differently
     let requests = [];
     let filteredHttpRequest = [];
-    let filteredRequests = bidRequests;
+    let filteredRequests;
 
     if (rubiConf.multiformat === true) {
       filteredRequests = bidRequests.filter(bidRequest => !hasBannerMediaTypeOnly(bidRequest));
