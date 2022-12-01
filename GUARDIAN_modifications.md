@@ -51,7 +51,7 @@ gulp build
     ```sh
     delete package-lock.json
     rm -rf ./node_modules
-    npm ci
+    npm install
     ```
 8. Create new build
     > npm run build
