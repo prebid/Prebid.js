@@ -48,9 +48,11 @@ gulp build
     > git merge 6.26.0 
 6. Resolve any conflicts
 7. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
-    > delete package-lock.json
-rm -rf ./node_modules
-npm ci
+    ```sh
+    delete package-lock.json
+    rm -rf ./node_modules
+    npm install
+    ```
 8. Create new build
     > npm run build
 9. Check in the new `build/dist` output
