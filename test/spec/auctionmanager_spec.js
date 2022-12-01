@@ -468,6 +468,24 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
+    it('Should set targeting as expecting when pbs is enabled', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1',
+          enabled: true,
+          defaultVendor: 'appnexus',
+          bidders: ['appnexus'],
+          timeout: 1000,
+          adapter: 'prebidServer'
+        }
+      });
+
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
       {
