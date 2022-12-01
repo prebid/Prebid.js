@@ -15,7 +15,8 @@ const _approvedLoadExternalJSList = [
   'ftrackId',
   'inskin',
   'hadron',
-  'medianet'
+  'medianet',
+  'pbjs-debug-ui'
 ]
 
 /**

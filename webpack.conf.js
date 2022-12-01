@@ -27,7 +27,7 @@ module.exports = {
   entry: (() => {
     const entry = {
       'prebid-core': {
-        import: './src/prebid.js'
+        import: './src/prebid.js',
       }
     };
     const selectedModules = new Set(helpers.getArgModules());
