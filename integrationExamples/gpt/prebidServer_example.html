@@ -40,17 +40,10 @@
               } 
             },
             bids: [
-              // {
-              //   bidder: 'appnexus',
-              //   params: {
-              //      placementId: 13144370
-              //   }
-              // }
               {
-                bidder: 'pubmatic',
+                bidder: 'appnexus',
                 params: {
-                  publisherId: '156276',
-                  adSlot: 'pubmatic_test'
+                   placementId: 13144370
                 }
               }
             ]
@@ -62,15 +55,9 @@
             accountId : '1',
             enabled : true, //default value set to false
             defaultVendor: 'appnexus',
-            bidders : ['appnexus', 'pubmatic'],
+            bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
-          },
-          debugging: {
-            enabled: true
-          },
-          targetingControls: {
-            allowTargetingKeys: ['ADOMAIN', 'ACAT']
           }
         });
 

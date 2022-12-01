@@ -151,21 +151,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _timer;
   let _auctionStatus;
 
-  function addBidRequests(bidderRequests) {
-    _bidderRequests = _bidderRequests.concat(bidderRequests);
-  }
-
-  function addBidReceived(bidsReceived) {
-    _bidsReceived = _bidsReceived.concat(bidsReceived);
-  }
-
-  function addBidRejected(bidsRejected) {
-    _bidsRejected = _bidsRejected.concat(bidsRejected);
-  }
-
-  function addNoBid(noBid) {
-    _noBids = _noBids.concat(noBid);
-  }
+  function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
+  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
+  function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
 
   function getProperties() {
     return {
