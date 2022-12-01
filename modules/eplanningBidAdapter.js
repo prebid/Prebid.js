@@ -128,9 +128,9 @@ export const spec = {
                 advertiserDomains: ad.adom
               };
             }
-            if (isVastResponse(ad)) {
+            if (request && request.data && request.data.vv) {
               bidResponse.vastXml = ad.adm;
-              bidResponse.mediaTypes = VIDEO;
+              bidResponse.mediaType = VIDEO;
             } else {
               bidResponse.ad = ad.adm;
             }
@@ -502,10 +502,6 @@ function registerAuction(storageID) {
   }
 
   return true;
-}
-
-function isVastResponse(bid) {
-  return bid.adm.match(/^(<VAST)|(<VideoAdServingTemplate)/gmi);
 }
 
 registerBidder(spec);

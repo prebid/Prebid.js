@@ -53,8 +53,6 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
-import {gdprDataHandler} from '../../../src/adapterManager.js';
-import {GreedyPromise} from '../../../src/utils/promise.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -151,8 +149,6 @@ describe('User ID', function () {
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
   });
 
-  let restoreGdprConsent;
-
   beforeEach(function () {
     // TODO: this whole suite needs to be redesigned; it is passing by accident
     // some tests do not pass if consent data is available
@@ -161,7 +157,7 @@ describe('User ID', function () {
     resetConsentData();
     sandbox = sinon.sandbox.create();
     consentData = null;
-    restoreGdprConsent = mockGdprConsent(sandbox, () => consentData);
+    mockGdprConsent(sandbox, () => consentData);
     coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
   });
 
@@ -989,7 +985,6 @@ describe('User ID', function () {
       let adUnits;
       let mockIdCallback;
       let auctionSpy;
-      let mockIdSystem;
 
       beforeEach(function () {
         sandbox = sinon.createSandbox();
@@ -1003,7 +998,7 @@ describe('User ID', function () {
 
         auctionSpy = sandbox.spy();
         mockIdCallback = sandbox.stub();
-        mockIdSystem = {
+        const mockIdSystem = {
           name: 'mockId',
           decode: function (value) {
             return {
@@ -1027,30 +1022,6 @@ describe('User ID', function () {
         config.resetConfig();
         sandbox.restore();
       });
-
-      it('waits for GDPR if it was enabled after userId', () => {
-        restoreGdprConsent();
-        mockIdSystem.getId = function (_, consent) {
-          if (consent?.given) {
-            return {id: {MOCKID: 'valid'}};
-          } else {
-            return {id: {MOCKID: 'invalid'}};
-          }
-        }
-        config.setConfig({
-          userSync: {
-            auctionDelay: 0,
-            userIds: [{
-              name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
-            }]
-          }
-        });
-        const consent = {given: true};
-        gdprDataHandler.setConsentData(consent);
-        return expectImmediateBidHook(auctionSpy, {adUnits}).then(() => {
-          expect(adUnits[0].bids[0].userId.mid).to.eql('valid');
-        })
-      })
 
       it('delays auction if auctionDelay is set, timing out at auction delay', function () {
         config.setConfig({
