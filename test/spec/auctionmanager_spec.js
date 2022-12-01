@@ -185,7 +185,8 @@ describe('auctionmanager.js', function () {
       source: 'client',
       mediaType: 'banner',
       meta: {
-        advertiserDomains: ['adomain']
+        advertiserDomains: ['adomain'],
+        primaryCatId: 'IAB-test'
       }
     };
 
@@ -199,6 +200,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
+      expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -220,30 +222,30 @@ describe('auctionmanager.js', function () {
       bid = Object.assign({}, DEFAULT_BID);
     });
 
-    // it('No bidder level configuration defined - default', function () {
-    //   $$PREBID_GLOBAL$$.bidderSettings = {};
-    //   let expected = getDefaultExpected(bid);
-    //   // remove hb_cache_host from expected
-    //   delete expected.hb_cache_host;
-    //   let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-    //   assert.deepEqual(response, expected);
-    // });
+    it('No bidder level configuration defined - default', function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      // remove hb_cache_host from expected
+      delete expected.hb_cache_host;
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
 
-    // it('No bidder level configuration defined - default for video', function () {
-    //   config.setConfig({
-    //     cache: {
-    //       url: 'https://prebid.adnxs.com/pbc/v1/cache'
-    //     }
-    //   });
-    //   $$PREBID_GLOBAL$$.bidderSettings = {};
-    //   let videoBid = utils.deepClone(bid);
-    //   videoBid.mediaType = 'video';
-    //   videoBid.videoCacheKey = 'abc123def';
+    it('No bidder level configuration defined - default for video', function () {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache'
+        }
+      });
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let videoBid = utils.deepClone(bid);
+      videoBid.mediaType = 'video';
+      videoBid.videoCacheKey = 'abc123def';
 
-    //   let expected = getDefaultExpected(videoBid);
-    //   let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
-    //   assert.deepEqual(response, expected);
-    // });
+      let expected = getDefaultExpected(videoBid);
+      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+      assert.deepEqual(response, expected);
+    });
 
     it('Custom configuration for all bidders', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
@@ -288,6 +290,12 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
               }
             }
           ]
@@ -366,6 +374,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
               }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
+              }
             }
           ]
 
@@ -378,81 +392,81 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    // it('Custom configuration for one bidder', function () {
-    //   $$PREBID_GLOBAL$$.bidderSettings =
-    //   {
-    //     appnexus: {
-    //       adserverTargeting: [
-    //         {
-    //           key: CONSTANTS.TARGETING_KEYS.BIDDER,
-    //           val: function (bidResponse) {
-    //             return bidResponse.bidderCode;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.AD_ID,
-    //           val: function (bidResponse) {
-    //             return bidResponse.adId;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
-    //           val: function (bidResponse) {
-    //             // change default here
-    //             return bidResponse.pbHg;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.SIZE,
-    //           val: function (bidResponse) {
-    //             return bidResponse.size;
-    //           }
-    //         }
-    //       ]
+    it('Custom configuration for one bidder', function () {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus: {
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                // change default here
+                return bidResponse.pbHg;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
+              val: function (bidResponse) {
+                return bidResponse.size;
+              }
+            }
+          ]
 
-    //     }
-    //   };
+        }
+      };
 
-    //   var expected = getDefaultExpected(bid);
-    //   expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
+      var expected = getDefaultExpected(bid);
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = bid.pbHg;
 
-    //   var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-    //   assert.deepEqual(response, expected);
-    // });
+      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
 
-    // it('Custom configuration for one bidder - not matched', function () {
-    //   $$PREBID_GLOBAL$$.bidderSettings =
-    //   {
-    //     nonExistentBidder: {
-    //       adserverTargeting: [
-    //         {
-    //           key: CONSTANTS.TARGETING_KEYS.BIDDER,
-    //           val: function (bidResponse) {
-    //             return bidResponse.bidderCode;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.AD_ID,
-    //           val: function (bidResponse) {
-    //             return bidResponse.adId;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
-    //           val: function (bidResponse) {
-    //             // change default here
-    //             return bidResponse.pbHg;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.SIZE,
-    //           val: function (bidResponse) {
-    //             return bidResponse.size;
-    //           }
-    //         }
-    //       ]
+    it('Custom configuration for one bidder - not matched', function () {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        nonExistentBidder: {
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                // change default here
+                return bidResponse.pbHg;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.SIZE,
+              val: function (bidResponse) {
+                return bidResponse.size;
+              }
+            }
+          ]
 
-    //     }
-    //   };
-    //   var expected = getDefaultExpected(bid);
+        }
+      };
+      var expected = getDefaultExpected(bid);
 
-    //   var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-    //   assert.deepEqual(response, expected);
-    // });
+      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
 
     it('Custom bidCpmAdjustment for one bidder and inherit standard but doesn\'t use standard bidCpmAdjustment', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
@@ -579,38 +593,38 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    // it('sendStandardTargeting=false, and inherit custom', function () {
-    //   $$PREBID_GLOBAL$$.bidderSettings =
-    //   {
-    //     appnexus: {
-    //       sendStandardTargeting: false,
-    //       adserverTargeting: [
-    //         {
-    //           key: CONSTANTS.TARGETING_KEYS.BIDDER,
-    //           val: function (bidResponse) {
-    //             return bidResponse.bidderCode;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.AD_ID,
-    //           val: function (bidResponse) {
-    //             return bidResponse.adId;
-    //           }
-    //         }, {
-    //           key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
-    //           val: function (bidResponse) {
-    //             return bidResponse.pbHg;
-    //           }
-    //         }
-    //       ]
-    //     }
-    //   };
-    //   var expected = getDefaultExpected(bid);
-    //   expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 5.57;
+    it('sendStandardTargeting=false, and inherit custom', function () {
+      $$PREBID_GLOBAL$$.bidderSettings =
+      {
+        appnexus: {
+          sendStandardTargeting: false,
+          adserverTargeting: [
+            {
+              key: CONSTANTS.TARGETING_KEYS.BIDDER,
+              val: function (bidResponse) {
+                return bidResponse.bidderCode;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.AD_ID,
+              val: function (bidResponse) {
+                return bidResponse.adId;
+              }
+            }, {
+              key: CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+              val: function (bidResponse) {
+                return bidResponse.pbHg;
+              }
+            }
+          ]
+        }
+      };
+      var expected = getDefaultExpected(bid);
+      expected[CONSTANTS.TARGETING_KEYS.PRICE_BUCKET] = 5.57;
 
-    //   var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
-    //   assert.deepEqual(response, expected);
-    //   assert.equal(bid.sendStandardTargeting, false);
-    // });
+      var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+      assert.equal(bid.sendStandardTargeting, false);
+    });
 
     it('suppressEmptyKeys=true', function() {
       $$PREBID_GLOBAL$$.bidderSettings =

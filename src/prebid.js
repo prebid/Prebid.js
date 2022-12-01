@@ -623,11 +623,7 @@ $$PREBID_GLOBAL$$.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 $$PREBID_GLOBAL$$.requestBids = (function() {
-  // eslint-disable-next-line no-console
-  console.log('requestBids func invoked');
   const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
-    // eslint-disable-next-line no-console
-    console.log('requestBids func - delegate func invoked');
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -639,8 +635,6 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
-    // eslint-disable-next-line no-console
-    console.log('requestBids func - wrapHook func invoked');
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -659,36 +653,22 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
 })();
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
-  // eslint-disable-next-line no-console
-  console.log('startAuction func invoked');
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   if (adUnitCodes && adUnitCodes.length) {
-    // eslint-disable-next-line no-console
-    console.log('startAuction func - adUnitCodes && adUnitCodes.length are true');
     // if specific adUnitCodes supplied filter adUnits for those codes
     adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
   } else {
-    // eslint-disable-next-line no-console
-    console.log('startAuction func - deriving adUnitCodes from adUnits');
     // otherwise derive adUnitCodes from adUnits
     adUnitCodes = adUnits && adUnits.map(unit => unit.code);
   }
 
   function auctionDone(bids, timedOut, auctionId) {
-    // eslint-disable-next-line no-console
-    console.log('auctionDone func invoked');
     if (typeof bidsBackHandler === 'function') {
-      // eslint-disable-next-line no-console
-      console.log('auctionDone func - typeof bidsBackHandler === "function"');
       try {
-        // eslint-disable-next-line no-console
-        console.log('auctionDone func - entered try block to invoke the bidsBackHandler func');
         bidsBackHandler(bids, timedOut, auctionId);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.log('auctionDone func - error when trying to invoke the bidsBackHandler func');
         logError('Error executing bidsBackHandler', null, e);
       }
     }
@@ -702,8 +682,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
    * if it supports at least one of the mediaTypes on the adunit
    */
   adUnits.forEach(adUnit => {
-    // eslint-disable-next-line no-console
-    console.log('startAuction func - iterating over ad units');
     // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
     const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
 
@@ -716,16 +694,12 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
     adUnit.transactionId = tid;
     if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {
-      // eslint-disable-next-line no-console
-      console.log('startAuction func - ttl buffer is not null && !adUnit.hasOwnProperty("ttlBuffer")');
       adUnit.ttlBuffer = ttlBuffer;
     }
     // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
     deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
 
     bidders.forEach(bidder => {
-      // eslint-disable-next-line no-console
-      console.log('startAuction func - iterating over each bidder');
       const adapter = bidderRegistry[bidder];
       const spec = adapter && adapter.getSpec && adapter.getSpec();
       // banner is default if not specified in spec
@@ -734,14 +708,10 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       // check if the bidder's mediaTypes are not in the adUnit's mediaTypes
       const bidderEligible = adUnitMediaTypes.some(type => includes(bidderMediaTypes, type));
       if (!bidderEligible) {
-        // eslint-disable-next-line no-console
-        console.log('startAuction func - bidderEligible is false');
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
       } else {
-        // eslint-disable-next-line no-console
-        console.log('startAuction func - bidderEligible is true');
         adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
       }
     });
@@ -749,13 +719,9 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   });
 
   if (!adUnits || adUnits.length === 0) {
-    // eslint-disable-next-line no-console
-    console.log('startAuction func - adUnits are false || adUnits.length === 0');
     logMessage('No adUnits configured. No bids requested.');
     auctionDone();
   } else {
-    // eslint-disable-next-line no-console
-    console.log('startAuction func - ad units exist');
     const auction = auctionManager.createAuction({
       adUnits,
       adUnitCodes,
@@ -769,8 +735,6 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
 
     let adUnitsLen = adUnits.length;
     if (adUnitsLen > 15) {
-      // eslint-disable-next-line no-console
-      console.log('startAuction func - adUnitsLen > 15');
       logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
 

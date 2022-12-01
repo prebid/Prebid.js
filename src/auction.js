@@ -133,8 +133,6 @@ export function resetAuctionState() {
   * @returns {Auction} auction instance
   */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
-  // eslint-disable-next-line no-console
-  console.log('newAuction func invoked');
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
   const _labels = labels;
@@ -154,32 +152,22 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _auctionStatus;
 
   function addBidRequests(bidderRequests) {
-    // eslint-disable-next-line no-console
-    console.log('addBidRequests func invoked');
     _bidderRequests = _bidderRequests.concat(bidderRequests);
   }
 
   function addBidReceived(bidsReceived) {
-    // eslint-disable-next-line no-console
-    console.log('addBidReceived func invoked');
     _bidsReceived = _bidsReceived.concat(bidsReceived);
   }
 
   function addBidRejected(bidsRejected) {
-    // eslint-disable-next-line no-console
-    console.log('addBidRejected func invoked');
     _bidsRejected = _bidsRejected.concat(bidsRejected);
   }
 
   function addNoBid(noBid) {
-    // eslint-disable-next-line no-console
-    console.log('addNoBid func invoked');
     _noBids = _noBids.concat(noBid);
   }
 
   function getProperties() {
-    // eslint-disable-next-line no-console
-    console.log('getProperties func invoked');
     return {
       auctionId: _auctionId,
       timestamp: _auctionStart,
@@ -199,8 +187,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function startAuctionTimer() {
-    // eslint-disable-next-line no-console
-    console.log('startAuctionTimer func invoked');
     const timedOut = true;
     const timeoutCallback = executeCallback.bind(null, timedOut);
     let timer = setTimeout(timeoutCallback, _timeout);
@@ -208,27 +194,17 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function executeCallback(timedOut, cleartimer) {
-    // eslint-disable-next-line no-console
-    console.log('executeCallback func invoked');
     // clear timer when done calls executeCallback
     if (cleartimer) {
-      // eslint-disable-next-line no-console
-      console.log('executeCallback func - cleartimer is true');
       clearTimeout(_timer);
     }
 
     if (_auctionEnd === undefined) {
-      // eslint-disable-next-line no-console
-      console.log('executeCallback func - _auctionEnd === undefined');
       let timedOutBidders = [];
       if (timedOut) {
-        // eslint-disable-next-line no-console
-        console.log('executeCallback func - timedOut is true');
         logMessage(`Auction ${_auctionId} timedOut`);
         timedOutBidders = getTimedOutBids(_bidderRequests, _timelyBidders);
         if (timedOutBidders.length) {
-          // eslint-disable-next-line no-console
-          console.log('executeCallback func - timedOut bidders.length is true');
           events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
         }
       }
@@ -241,14 +217,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       bidsBackCallback(_adUnits, function () {
-        // eslint-disable-next-line no-console
-        console.log('bidsBackCallback func invoked');
         try {
-          // eslint-disable-next-line no-console
-          console.log('bidsBackCallback func - entered try block');
           if (_callback != null) {
-            // eslint-disable-next-line no-console
-            console.log('bidsBackCallback func - _callback != null');
             const adUnitCodes = _adUnitCodes;
             const bids = _bidsReceived
               .filter(bind.call(adUnitsFilter, this, adUnitCodes))
@@ -257,23 +227,15 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             _callback = null;
           }
         } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log('bidsBackCallback func - error when attempting to invoke _callback');
           logError('Error executing bidsBackHandler', null, e);
         } finally {
-          // eslint-disable-next-line no-console
-          console.log('bidsBackCallback func - entered finally block');
           // Calling timed out bidders
           if (timedOutBidders.length) {
-            // eslint-disable-next-line no-console
-            console.log('bidsBackCallback func - timedOutBidders.length is true');
             adapterManager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           let userSyncConfig = config.getConfig('userSync') || {};
           if (!userSyncConfig.enableOverride) {
-            // eslint-disable-next-line no-console
-            console.log('bidsBackCallback func - !userSyncConfig.enableOverride');
             // Delay the auto sync by the config delay
             syncUsers(userSyncConfig.syncDelay);
           }
@@ -283,8 +245,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function auctionDone() {
-    // eslint-disable-next-line no-console
-    console.log('auctionDone func invoked');
     config.resetBidder();
     // when all bidders have called done callback atleast once it means auction is complete
     logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
@@ -293,14 +253,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function onTimelyResponse(bidderCode) {
-    // eslint-disable-next-line no-console
-    console.log('onTimelyResponse func invoked');
     _timelyBidders.add(bidderCode);
   }
 
   function callBids() {
-    // eslint-disable-next-line no-console
-    console.log('callBids func invoked');
     _auctionStatus = AUCTION_STARTED;
     _auctionStart = Date.now();
 
@@ -311,13 +267,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     metrics.checkpoint('callBids')
 
     if (bidRequests.length < 1) {
-      // eslint-disable-next-line no-console
-      console.log('callBids func - bidRequests.length < 1');
       logWarn('No valid bid requests returned for auction');
       auctionDone();
     } else {
-      // eslint-disable-next-line no-console
-      console.log('callBids func - at least 1 bidRequest exists');
       addBidderRequests.call({
         dispatch: addBidderRequestsCallback,
         context: this
@@ -330,11 +282,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
    * @param {BidRequest[]} bidRequests
    */
   function addBidderRequestsCallback(bidRequests) {
-    // eslint-disable-next-line no-console
-    console.log('addBidderRequestsCallback func invoked');
     bidRequests.forEach(bidRequest => {
-      // eslint-disable-next-line no-console
-      console.log('addBidderRequestsCallback func - iterating over bidRequests');
       addBidRequests(bidRequest);
     });
 
@@ -342,8 +290,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     let call = {
       bidRequests,
       run: () => {
-        // eslint-disable-next-line no-console
-        console.log('call.run func invoked');
         startAuctionTimer();
 
         _auctionStatus = AUCTION_IN_PROGRESS;
@@ -353,35 +299,23 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
         let callbacks = auctionCallbacks(auctionDone, this);
         adapterManager.callBids(_adUnits, bidRequests, callbacks.addBidResponse, callbacks.adapterDone, {
           request(source, origin) {
-            // eslint-disable-next-line no-console
-            console.log('request func invoked');
             increment(outstandingRequests, origin);
             increment(requests, source);
 
             if (!sourceInfo[source]) {
-              // eslint-disable-next-line no-console
-              console.log('request func - !sourceInfo[source]');
               sourceInfo[source] = {
                 SRA: true,
                 origin
               };
             }
             if (requests[source] > 1) {
-              // eslint-disable-next-line no-console
-              console.log('request func - requests[source] > 1');
               sourceInfo[source].SRA = false;
             }
           },
           done(origin) {
-            // eslint-disable-next-line no-console
-            console.log('done func invoked');
             outstandingRequests[origin]--;
             if (queuedCalls[0]) {
-              // eslint-disable-next-line no-console
-              console.log('done func - queuedCalls[0] is true');
               if (runIfOriginHasCapacity(queuedCalls[0])) {
-                // eslint-disable-next-line no-console
-                console.log('done func - runIfOriginHasCapacity(queuedCalls[0]) is true');
                 queuedCalls.shift();
               }
             }
@@ -391,40 +325,28 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     };
 
     if (!runIfOriginHasCapacity(call)) {
-      // eslint-disable-next-line no-console
-      console.log('runIfOriginHasCapacity(call) is false');
       logWarn('queueing auction due to limited endpoint capacity');
       queuedCalls.push(call);
     }
 
     function runIfOriginHasCapacity(call) {
-      // eslint-disable-next-line no-console
-      console.log('runIfOriginHasCapacity func invoked');
       let hasCapacity = true;
 
       let maxRequests = config.getConfig('maxRequestsPerOrigin') || MAX_REQUESTS_PER_ORIGIN;
 
       call.bidRequests.some(bidRequest => {
-        // eslint-disable-next-line no-console
-        console.log('runIfOriginHasCapacity func - calling bidRequests');
         let requests = 1;
         let source = (typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC) ? 's2s'
           : bidRequest.bidderCode;
         // if we have no previous info on this source just let them through
         if (sourceInfo[source]) {
-          // eslint-disable-next-line no-console
-          console.log('runIfOriginHasCapacity func - sourceInfo[source] is true');
           if (sourceInfo[source].SRA === false) {
-            // eslint-disable-next-line no-console
-            console.log('runIfOriginHasCapacity func - sourceInfo[source].SRA === false');
             // some bidders might use more than the MAX_REQUESTS_PER_ORIGIN in a single auction.  In those cases
             // set their request count to MAX_REQUESTS_PER_ORIGIN so the auction isn't permanently queued waiting
             // for capacity for that bidder
             requests = Math.min(bidRequest.bids.length, maxRequests);
           }
           if (outstandingRequests[sourceInfo[source].origin] + requests > maxRequests) {
-            // eslint-disable-next-line no-console
-            console.log('runIfOriginHasCapacity func - outstandingRequests[sourceInfo[source].origin] + requests > maxRequests');
             hasCapacity = false;
           }
         }
@@ -433,8 +355,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       });
 
       if (hasCapacity) {
-        // eslint-disable-next-line no-console
-        console.log('runIfOriginHasCapacity func - hasCapacity is true');
         call.run();
       }
 
@@ -442,30 +362,20 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     }
 
     function increment(obj, prop) {
-      // eslint-disable-next-line no-console
-      console.log('increment func invoked');
       if (typeof obj[prop] === 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log('increment func - typeof obj[prop] === "undefined"');
         obj[prop] = 1
       } else {
-        // eslint-disable-next-line no-console
-        console.log('increment func - typeof obj[prop] not equal to "undefined"');
         obj[prop]++;
       }
     }
   }
 
   function addWinningBid(winningBid) {
-    // eslint-disable-next-line no-console
-    console.log('addWinningBid func invoked');
     _winningBids = _winningBids.concat(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
   }
 
   function setBidTargeting(bid) {
-    // eslint-disable-next-line no-console
-    console.log('setBidTargeting func invoked');
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
@@ -560,18 +470,12 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 
   function acceptBidResponse(adUnitCode, bid) {
-    // eslint-disable-next-line no-console
-    console.log('acceptBidResponse func invoked');
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
       if (bidResponse.mediaType === 'video') {
-        // eslint-disable-next-line no-console
-        console.log('acceptBidResponse func - bidResponse.mediaType === "video"');
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
-        // eslint-disable-next-line no-console
-        console.log('acceptBidResponse func - bidResponse.mediaType is not equal to "video"');
         addBidToAuction(auctionInstance, bidResponse);
         done();
       }
@@ -664,8 +568,6 @@ export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
 
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
-  // eslint-disable-next-line no-console
-  console.log('addBidToAuction func invoked');
   setupBidTargeting(bidResponse);
 
   useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
@@ -677,8 +579,6 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
-  // eslint-disable-next-line no-console
-  console.log('tryAddVideoBid func invoked');
   let addBid = true;
 
   const videoMediaType = deepAccess(
@@ -690,11 +590,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
 
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-    // eslint-disable-next-line no-console
-    console.log('tryAddVideoBid func - config.getConfig("cache.url") && (useCacheKey || context !== OUTSTREAM)');
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
-      // eslint-disable-next-line no-console
-      console.log('tryAddVideoBid func - !bidResponse.videoCacheKey || config.getConfig("cache.ignoreBidderCacheKey")');
       addBid = false;
       callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
     } else if (!bidResponse.vastUrl) {
@@ -703,46 +599,28 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
     }
   }
   if (addBid) {
-    // eslint-disable-next-line no-console
-    console.log('tryAddVideoBid func - addBid is true');
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
   }
 }
 
 const storeInCache = (batch) => {
-  // eslint-disable-next-line no-console
-  console.log('storeInCache func invoked');
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
-    // eslint-disable-next-line no-console
-    console.log('storeInCache func - iterating over batches');
     cacheIds.forEach((cacheId, i) => {
-      // eslint-disable-next-line no-console
-      console.log('storeInCache func - iterating over cacheIds');
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
       if (error) {
-        // eslint-disable-next-line no-console
-        console.log('storeInCache func - error is true');
         logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
 
         doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
-        // eslint-disable-next-line no-console
-        console.log('storeInCache func - no error');
         if (cacheId.uuid === '') {
-          // eslint-disable-next-line no-console
-          console.log('storeInCache func - cacheId.uuid === ""');
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
 
           doCallbacksIfTimedout(auctionInstance, bidResponse);
         } else {
-          // eslint-disable-next-line no-console
-          console.log('storeInCache func - cacheId.uuid not equal to an ""');
           bidResponse.videoCacheKey = cacheId.uuid;
 
           if (!bidResponse.vastUrl) {
-            // eslint-disable-next-line no-console
-            console.log('storeInCache func - !bidResponse.vastUrl');
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
           addBidToAuction(auctionInstance, bidResponse);
@@ -870,13 +748,9 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
 }
 
 function setupBidTargeting(bidObject) {
-  // eslint-disable-next-line no-console
-  console.log('setupBidTargeting func invoked');
   let keyValues;
   const cpmCheck = (bidderSettings.get(bidObject.bidderCode, 'allowZeroCpmBids') === true) ? bidObject.cpm >= 0 : bidObject.cpm > 0;
   if (bidObject.bidderCode && (cpmCheck || bidObject.dealId)) {
-    // eslint-disable-next-line no-console
-    console.log('setupBidTargeting func - bidObject.bidderCode && (cpmCheck || bidObject.dealId)');
     keyValues = getKeyValueTargetingPairs(bidObject.bidderCode, bidObject);
   }
 
@@ -954,8 +828,6 @@ export const getAdvertiserDomain = () => {
  * @returns {function}
  */
 export const getPrimaryCatId = () => {
-  // eslint-disable-next-line no-console
-  console.log('getPrimaryCatId func invoked');
   return (bid) => {
     return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
   }
@@ -963,8 +835,6 @@ export const getPrimaryCatId = () => {
 
 // factory for key value objs
 function createKeyVal(key, value) {
-  // eslint-disable-next-line no-console
-  console.log('createKeyVal func invoked');
   return {
     key,
     val: (typeof value === 'function')
@@ -978,8 +848,6 @@ function createKeyVal(key, value) {
 }
 
 function defaultAdserverTargeting() {
-  // eslint-disable-next-line no-console
-  console.log('defaultAdserverTargeting func invoked');
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   return [
     createKeyVal(TARGETING_KEYS.BIDDER, 'bidderCode'),
@@ -1001,42 +869,28 @@ function defaultAdserverTargeting() {
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {
-  // eslint-disable-next-line no-console
-  console.log('getStandardBidderSettings func invoked');
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
   if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
-    // eslint-disable-next-line no-console
-    console.log('getStandardBidderSettings func - standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] is false');
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
   if (mediaType === 'video') {
-    // eslint-disable-next-line no-console
-    console.log('getStandardBidderSettings func - mediaType === "video"');
     const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].slice();
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = adserverTargeting;
 
     // Adding hb_uuid + hb_cache_id
     [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID].forEach(targetingKeyVal => {
-      // eslint-disable-next-line no-console
-      console.log('getStandardBidderSettings func - iterating over [TARGETING_KEYS.UUID, TARGETING_KEYS.CACHE_ID]');
       if (typeof find(adserverTargeting, kvPair => kvPair.key === targetingKeyVal) === 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log('getStandardBidderSettings func - typeof find(adserverTargeting, kvPair => kvPair.key === targetingKeyVal) === "undefined"');
         adserverTargeting.push(createKeyVal(targetingKeyVal, 'videoCacheKey'));
       }
     });
 
     // Adding hb_cache_host
     if (config.getConfig('cache.url') && (!bidderCode || bidderSettings.get(bidderCode, 'sendStandardTargeting') !== false)) {
-      // eslint-disable-next-line no-console
-      console.log('getStandardBidderSettings func - config.getConfig("cache.url") && (!bidderCode || bidderSettings.get(bidderCode, "sendStandardTargeting") !== false)');
       const urlInfo = parseUrl(config.getConfig('cache.url'));
 
       if (typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log('getStandardBidderSettings func - typeof find(adserverTargeting, targetingKeyVal => targetingKeyVal.key === TARGETING_KEYS.CACHE_HOST) === "undefined"');
         adserverTargeting.push(createKeyVal(TARGETING_KEYS.CACHE_HOST, function(bidResponse) {
           return deepAccess(bidResponse, `adserverTargeting.${TARGETING_KEYS.CACHE_HOST}`)
             ? bidResponse.adserverTargeting[TARGETING_KEYS.CACHE_HOST] : urlInfo.hostname;
@@ -1048,11 +902,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
 }
 
 export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = auctionManager.index} = {}) {
-  // eslint-disable-next-line no-console
-  console.log('getKeyValueTargetingPairs func invoked');
   if (!custBidObj) {
-    // eslint-disable-next-line no-console
-    console.log('getKeyValueTargetingPairs func - custBidObj is false');
     return {};
   }
   const bidRequest = index.getBidRequest(custBidObj);
@@ -1065,16 +915,12 @@ export function getKeyValueTargetingPairs(bidderCode, custBidObj, {index = aucti
 
   // 2) set keys from specific bidder setting override if they exist
   if (bidderCode && bidderSettings.getOwn(bidderCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)) {
-    // eslint-disable-next-line no-console
-    console.log('getKeyValueTargetingPairs func - bidderCode && bidderSettings.getOwn(bidderCode, CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING)');
     setKeys(keyValues, bidderSettings.ownSettingsFor(bidderCode), custBidObj, bidRequest);
     custBidObj.sendStandardTargeting = bidderSettings.get(bidderCode, 'sendStandardTargeting');
   }
 
   // set native key value targeting
   if (FEATURES.NATIVE && custBidObj['native']) {
-    // eslint-disable-next-line no-console
-    console.log('getKeyValueTargetingPairs func - FEATURES.NATIVE && custBidObj["native"]');
     keyValues = Object.assign({}, keyValues, getNativeTargeting(custBidObj));
   }
 

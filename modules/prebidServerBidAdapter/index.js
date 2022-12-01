@@ -423,14 +423,10 @@ function getConsentData(bidRequests) {
  * Bidder adapter for Prebid Server
  */
 export function PrebidServer() {
-  // eslint-disable-next-line no-console
-  console.log('PrebidServer func invoked');
   const baseAdapter = new Adapter('prebidServer');
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    // eslint-disable-next-line no-console
-    console.log('PrebidServer - baseAdapter.callBids - func invoked');
     const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
@@ -440,11 +436,7 @@ export function PrebidServer() {
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
-      // eslint-disable-next-line no-console
-      console.log('PrebidServer - baseAdapter.callBids func - _s2sConfigs are an array');
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
-        // eslint-disable-next-line no-console
-        console.log('PrebidServer - baseAdapter.callBids func - s2sBidRequest.s2sConfig is true && s2sBidRequest.s2sConfig.syncEndpoint is true && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent) is true');
         let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
@@ -454,11 +446,7 @@ export function PrebidServer() {
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
         onResponse: function (isValid, requestedBidders) {
-          // eslint-disable-next-line no-console
-          console.log('onResponse func invoked');
           if (isValid) {
-            // eslint-disable-next-line no-console
-            console.log('onResponse func - isValid is true');
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           done();
@@ -466,28 +454,18 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          // eslint-disable-next-line no-console
-          console.log('onBid func invoked');
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
-            // eslint-disable-next-line no-console
-            console.log('onBid func - (bid.requestId == null is true || bid.requestBidder == null is true) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes is false');
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
             addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
-              // eslint-disable-next-line no-console
-              console.log('onBid func - metrics.measureTime("addBidResponse.validate", () => isValid(adUnit, bid)) is true');
               addBidResponse(adUnit, bid);
               if (bid.pbsWurl) {
-                // eslint-disable-next-line no-console
-                console.log('onBid func - bid.pbsWurl is true');
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
               }
             } else {
-              // eslint-disable-next-line no-console
-              console.log('onBid func - metrics.measureTime("addBidResponse.validate", () => isValid(adUnit, bid)) is false');
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
