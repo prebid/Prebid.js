@@ -1130,8 +1130,8 @@ function getConsentData(bidRequests) {
  */
 function getStoredRequestIds(bidRequests, s2sBidRequest) {
   let topLevelStoredRequestId = '';
-  if (typeof config.getConfig('ortb2') === 'object') {
-    topLevelStoredRequestId = deepAccess(config.getConfig('ortb2'), 'ext.prebid.storedrequest.id');
+  if (typeof config.getAnyConfig('ortb2') === 'object') {
+    topLevelStoredRequestId = deepAccess(config.getAnyConfig('ortb2'), 'ext.prebid.storedrequest.id');
   }
   const placementStoredRequestIds = s2sBidRequest.ad_units
     .map(adUnit => deepAccess(adUnit, 'ortb2Imp.ext.prebid.storedrequest.id'))
