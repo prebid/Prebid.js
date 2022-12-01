@@ -255,6 +255,7 @@ function getItems(validBidRequests, bidderRequest) {
     //   utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
     //   utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
     //   utils.deepAccess(req, 'params.placementId', 0);
+    // console.log("wjh getItems:", req, bidFloor, gpid);
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -296,6 +297,7 @@ function getParam(validBidRequests, bidderRequest) {
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
     utils.deepAccess(validBidRequests[0], 'userId.pubcid');
   let isMobile = isMobileAndTablet() ? 1 : 0;
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
@@ -310,7 +312,7 @@ function getParam(validBidRequests, bidderRequest) {
   if (items && items.length) {
     let c = {
       id: 'mgprebidjs_' + auctionId,
-      test: validBidRequests[0].params.test || 0,
+      test: +isTest,
       at: 1,
       cur: ['USD'],
       device: {

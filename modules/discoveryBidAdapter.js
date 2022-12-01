@@ -277,6 +277,7 @@ function getItems(validBidRequests, bidderRequest) {
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
   let isMobile = getDevice() ? 1 : 0;
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getKv(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
@@ -290,7 +291,7 @@ function getParam(validBidRequests, bidderRequest) {
   if (items && items.length) {
     let c = {
       id: 'pp_hbjs_' + auctionId,
-      test: validBidRequests[0].params.test || 0,
+      test: +isTest,
       at: 1,
       bcat: globals['bcat'],
       badv: globals['adv'],
