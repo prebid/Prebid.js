@@ -10,11 +10,11 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
-import {config} from '../src/config.js';
 
 const MODULE_NAME = 'permutive'
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
 
@@ -133,7 +133,7 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
     if (isAcBidder) cohorts = segmentData.ac
     if (isSspBidder) cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
 
-    const nextConfig = updateOrtbConfig(currConfig, cohorts, transformationConfigs)
+    const nextConfig = updateOrtbConfig(currConfig, cohorts, sspCohorts, transformationConfigs)
     bidderOrtb2[bidder] = nextConfig.ortb2;
   })
 }
@@ -144,9 +144,10 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
+ * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
+function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformationConfigs) {
   const name = 'permutive.com'
 
   const permutiveUserData = {
@@ -167,6 +168,12 @@ function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
 
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
+  // As of writing this, only used for AppNexus/Xandr in place of appnexusAuctionKeywords in config
+  const currentUserKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords') || ""
+  const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
+  const updatedUserKeywords =  (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
+  deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
+
   return ortbConfig
 }
 
@@ -186,8 +193,6 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
   if (!adUnits) {
     return
   }
-
-  passCohortsToAppnexusAuctionKeywords(segmentData.ssp)
 
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
@@ -371,21 +376,6 @@ const ortb2UserDataTransformations = {
  */
 function iabSegmentId(permutiveSegmentId, iabIds) {
   return iabIds[permutiveSegmentId] || unknownIabSegmentId
-}
-
-/**
- * Passes Permutive's standard cohorts to Appnexus/Xandr via auction level keywords
- * @param {Object} sspData -- {ssp?: string[], cohorts?: string[]}
- */
-function passCohortsToAppnexusAuctionKeywords(sspData) {
-  const shouldSetConfig = sspData?.ssps?.includes('appnexus') && sspData?.cohorts
-  if (shouldSetConfig) {
-    config.setConfig({
-      appnexusAuctionKeywords: {
-        'p_standard_aud': sspData.cohorts
-      }
-    })
-  }
 }
 
 /** @type {RtdSubmodule} */

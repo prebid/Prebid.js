@@ -249,6 +249,42 @@ describe('permutiveRtdProvider', function () {
           name: 'example'
         },
         user: {
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: { taxonomyname: 'iab_audience_taxonomy' },
+              segment: [{ id: '687' }, { id: '123' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      const transformedUserData = {
+        name: 'transformation',
+        ext: { test: true },
+        segment: [1, 2, 3]
+      }
+
+      setBidderRtb(bidderConfig, moduleConfig, {
+        // TODO: this argument is unused, is the test still valid / needed?
+        testTransformation: userData => transformedUserData
+      })
+
+      acBidders.forEach(bidder => {
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+      })
+    })
+    it('should update user.keywords and not override existing values', function () {
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const sampleOrtbConfig = {
+        site: {
+          name: 'example'
+        },
+        user: {
           keywords: 'a,b',
           data: [
             {
@@ -275,8 +311,8 @@ describe('permutiveRtdProvider', function () {
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
-        expect(bidderConfig[bidder].user.keywords).to.equal(sampleOrtbConfig.user.keywords)
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal('a,b,p_standard_aud=123,p_standard_aud=abc')
       })
     })
     it('should merge ortb2 correctly for ac and ssps', function () {
