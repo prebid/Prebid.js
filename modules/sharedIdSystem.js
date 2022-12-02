@@ -9,8 +9,9 @@ import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUI
 import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
-export const storage = getStorageManager({moduleName: 'pubCommonId'});
+export const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -73,6 +74,7 @@ export const sharedIdSystemSubmodule = {
    */
   name: 'sharedId',
   aliasName: 'pubCommonId',
+  gvlid: VENDORLESS_GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
