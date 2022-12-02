@@ -128,9 +128,9 @@ export function getCachedTopics() {
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
-    let isBidderConfigured = bidderList.some(({bidder}) => cachedBidder == bidder)
-    if (isBidderConfigured) {
-      if (!isCachedDataExpired(value[lastUpdated], isBidderConfigured?.expiry || DEFAULT_EXPIRATION_DAYS)) {
+    let bidderConfigObj = bidderList.find(({bidder}) => cachedBidder == bidder)
+    if (bidderConfigObj) {
+      if (!isCachedDataExpired(value[lastUpdated], bidderConfigObj?.expiry || DEFAULT_EXPIRATION_DAYS)) {
         Object.keys(value).forEach((segData) => {
           segData != lastUpdated && cachedTopicData.push(value[segData]);
         })
