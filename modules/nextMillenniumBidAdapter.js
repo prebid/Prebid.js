@@ -20,7 +20,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'nextMillennium';
-const ENDPOINT = 'http://127.0.0.1:8000/openrtb2/auction';
+const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
