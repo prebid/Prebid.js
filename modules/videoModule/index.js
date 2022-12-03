@@ -15,12 +15,12 @@ import {
   AUCTION_AD_LOAD_QUEUED
 } from '../../libraries/video/constants/events.js'
 import { PLACEMENT } from '../../libraries/video/constants/ortb.js';
+import { videoKey } from '../../libraries/video/constants/constants.js'
 import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { AdQueueCoordinator } from './adQueue.js';
-
-const videoKey = 'video';
+import { getExternalVideoEventName } from '../../libraries/video/shared/helpers.js'
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -210,16 +210,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
   // options: adXml, winner, adUnitCode,
   function loadAdTag(adTagUrl, divId, options) {
-    const payload = Object.assign({ adTagUrl }, options);
-
-    if (adQueueCoordinator.requiresQueueing(divId)) {
-      adQueueCoordinator.queueAd(adTagUrl, divId, options);
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_QUEUED), payload);
-      return;
-    }
-
-    pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ATTEMPT), payload);
-    videoCore.setAdTagUrl(adTagUrl, divId, options);
+    adQueueCoordinator.queueAd(adTagUrl, divId, options);
   }
 
   function triggerVideoBidEvent(eventName, adEventPayload) {
@@ -248,16 +239,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
 export function pbVideoFactory() {
   const videoCore = videoCoreFactory();
-  const adQueueCoordinator = AdQueueCoordinator(videoCore);
+  const adQueueCoordinator = AdQueueCoordinator(videoCore, events);
   const pbGlobal = getGlobal();
   const pbVideo = PbVideo(videoCore, config.getConfig, pbGlobal, events, allVideoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator);
   pbVideo.init();
   pbGlobal.videoModule = pbVideo;
   return pbVideo;
-}
-
-function getExternalVideoEventName(eventName) {
-  return videoKey + eventName.replace(/^./, eventName[0].toUpperCase());
 }
 
 pbVideoFactory();
