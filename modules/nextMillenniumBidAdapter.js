@@ -399,20 +399,20 @@ function cleanWurl() {
 
 function initSendingDataStatistic() {
   class SendingDataStatistic {
-    #eventNames = [
+    eventNames = [
       CONSTANTS.EVENTS.BID_TIMEOUT,
       CONSTANTS.EVENTS.BID_RESPONSE,
       CONSTANTS.EVENTS.BID_REQUESTED,
       CONSTANTS.EVENTS.NO_BID,
     ];
 
-    #disabledSending = false;
-    #enabledSending = false;
-    #eventHendlers = {};
+    disabledSending = false;
+    enabledSending = false;
+    eventHendlers = {};
 
     initEvents() {
-      this.#disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
-      if (this.#disabledSending) {
+      this.disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
+      if (this.disabledSending) {
         this.removeEvents();
       } else {
         this.createEvents();
@@ -420,26 +420,26 @@ function initSendingDataStatistic() {
     }
 
     createEvents() {
-      if (this.#enabledSending) return;
+      if (this.enabledSending) return;
 
-      this.#enabledSending = true;
-      for (let eventName of this.#eventNames) {
-        if (!this.#eventHendlers[eventName]) {
-          this.#eventHendlers[eventName] = this.eventHandler(eventName);
+      this.enabledSending = true;
+      for (let eventName of this.eventNames) {
+        if (!this.eventHendlers[eventName]) {
+          this.eventHendlers[eventName] = this.eventHandler(eventName);
         };
 
-        events.on(eventName, this.#eventHendlers[eventName]);
+        events.on(eventName, this.eventHendlers[eventName]);
       };
     }
 
     removeEvents() {
-      if (!this.#enabledSending) return;
+      if (!this.enabledSending) return;
 
-      this.#enabledSending = false;
-      for (let eventName of this.#eventNames) {
-        if (!this.#eventHendlers[eventName]) continue;
+      this.enabledSending = false;
+      for (let eventName of this.eventNames) {
+        if (!this.eventHendlers[eventName]) continue;
 
-        events.off(eventName, this.#eventHendlers[eventName]);
+        events.off(eventName, this.eventHendlers[eventName]);
       };
     }
 
@@ -447,7 +447,7 @@ function initSendingDataStatistic() {
       const eventHandlerFunc = this.getEventHandler(eventName);
       if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
         return bids => {
-          if (this.#disabledSending || !Array.isArray(bids)) return;
+          if (this.disabledSending || !Array.isArray(bids)) return;
 
           for (let bid of bids) {
             eventHandlerFunc(bid);
@@ -460,7 +460,7 @@ function initSendingDataStatistic() {
 
     getEventHandler(eventName) {
       return bid => {
-        if (this.#disabledSending) return;
+        if (this.disabledSending) return;
 
         const url = spec.getUrlPixelMetric(eventName, bid);
         if (!url) return;
