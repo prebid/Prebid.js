@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   SUPPORTED_ID_SYSTEMS,
@@ -15,8 +15,8 @@ import {
   getVidazooSessionId,
 } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -38,7 +38,12 @@ const BID = {
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
-  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '1234567890'
+    }
+  }
 };
 
 const BIDDER_REQUEST = {
@@ -50,7 +55,13 @@ const BIDDER_REQUEST = {
   'refererInfo': {
     'page': 'https://www.greatsite.com',
     'ref': 'https://www.somereferrer.com'
-  }
+  },
+  'ortb2': {
+    'site': {
+      'cat': ['IAB2'],
+      'pagecat': ['IAB2-2']
+    }
+  },
 };
 
 const SERVER_RESPONSE = {
@@ -85,7 +96,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -150,7 +161,7 @@ describe('VidazooBidAdapter', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         vidazoo: {
-          storageAllowed: true
+          storageAllowed: true,
         }
       };
       sandbox = sinon.sandbox.create();
@@ -187,6 +198,10 @@ describe('VidazooBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          isStorageAllowed: true,
+          gpid: '1234567890',
+          cat: ['IAB2'],
+          pagecat: ['IAB2-2']
         }
       });
     });
@@ -198,7 +213,7 @@ describe('VidazooBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -207,7 +222,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.cootlogix.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
@@ -215,7 +230,7 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.cootlogix.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
@@ -231,12 +246,12 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
@@ -276,11 +291,11 @@ describe('VidazooBidAdapter', function () {
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return {lipbid: id};
+            return { lipbid: id };
           case 'parrableId':
-            return {eid: id};
+            return { eid: id };
           case 'id5id':
-            return {uid: id};
+            return { uid: id };
           default:
             return id;
         }
@@ -299,18 +314,18 @@ describe('VidazooBidAdapter', function () {
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -423,7 +438,7 @@ describe('VidazooBidAdapter', function () {
         now
       });
       setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      const { value, created } = getStorageItem('myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -439,8 +454,8 @@ describe('VidazooBidAdapter', function () {
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 

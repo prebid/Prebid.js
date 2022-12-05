@@ -672,18 +672,18 @@ function enrichSlotWithFloors(slot, bidRequest) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = getFloor({ size: bannerSize, mediaType: BANNER }));
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = getFloor({ size: videoSize, mediaType: VIDEO }));
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
       }
 
       if (bidRequest.mediaTypes?.native) {
         slotFloors.native = {};
-        slotFloors.native['*'] = getFloor({ size: '*', mediaType: NATIVE });
+        slotFloors.native['*'] = getFloor.call(bidRequest, { size: '*', mediaType: NATIVE });
       }
 
       if (Object.keys(slotFloors).length > 0) {

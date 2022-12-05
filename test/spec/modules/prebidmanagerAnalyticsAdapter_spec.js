@@ -1,9 +1,8 @@
-import prebidmanagerAnalytics, {
-  storage
-} from 'modules/prebidmanagerAnalyticsAdapter.js';
+import prebidmanagerAnalytics, {storage} from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
+import {expectEvents} from '../../helpers/analytics.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -95,15 +94,7 @@ describe('Prebid Manager Analytics Adapter', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
-
-      // 6 Prebid Manager events + 1 Clean.io event
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 7);
+      expectEvents().to.beTrackedBy(prebidmanagerAnalytics.track);
     });
   });
 
