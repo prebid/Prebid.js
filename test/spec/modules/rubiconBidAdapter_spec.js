@@ -108,6 +108,9 @@ describe('the rubicon adapter', function () {
             referrer: 'localhost',
             latLong: [40.7607823, '111.8910325']
           },
+          mediaTypes: {
+            banner: [[300, 250]]
+          },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',
           sizes: [[300, 250], [320, 50]],
@@ -328,6 +331,9 @@ describe('the rubicon adapter', function () {
             position: 'atf',
             referrer: 'localhost',
             latLong: [40.7607823, '111.8910325']
+          },
+          mediaTypes: {
+            banner: [[300, 250]]
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',

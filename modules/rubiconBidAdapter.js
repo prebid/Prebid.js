@@ -1024,20 +1024,22 @@ function bidType(bid, log = false) {
     bidTypes.push(NATIVE);
   }
 
-  // we require banner sizes to come from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order
-  // if we cannot determine them, we reject it!
-  if (parseSizes(bid, BANNER).length === 0) {
-    if (log) {
-      logError('Rubicon: could not determine the sizes for banner request');
+  if (typeof deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
+    // we require banner sizes to come from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order
+    // if we cannot determine them, we reject it!
+    if (parseSizes(bid, BANNER).length === 0) {
+      if (log) {
+        logError('Rubicon: could not determine the sizes for banner request');
+      }
+      return bidTypes;
     }
-    return bidTypes;
-  }
 
-  // everything looks good for banner so lets do it
-  if (log) {
-    logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
+    // everything looks good for banner so lets do it
+    if (log) {
+      logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
+    }
+    bidTypes.push(BANNER);
   }
-  bidTypes.push(BANNER);
   return bidTypes;
 }
 
