@@ -14,6 +14,7 @@ import {
 
 import CONSTANTS from '../src/constants.json';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -30,14 +31,13 @@ const VIDEO_PARAMS = [
   'playbackmethod', 'protocols', 'startdelay'
 ];
 
+const sendingDataStatistic = initSendingDataStatistic();
+events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
+
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
 cleanWurl();
 
-events.on(CONSTANTS.EVENTS.BID_TIMEOUT, eventHandler(CONSTANTS.EVENTS.BID_TIMEOUT));
-events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler(CONSTANTS.EVENTS.BID_RESPONSE));
-events.on(CONSTANTS.EVENTS.BID_REQUESTED, eventHandler(CONSTANTS.EVENTS.BID_REQUESTED));
-events.on(CONSTANTS.EVENTS.NO_BID, eventHandler(CONSTANTS.EVENTS.NO_BID));
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
 export const spec = {
@@ -372,29 +372,6 @@ function getWurl({auctionId, requestId}) {
   return wurlMap[key] && wurlMap[key].wurl;
 }
 
-function eventHandler(eventName) {
-  const _eventHandler = getEventHandler(eventName);
-  if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
-    return bids => {
-      if (!Array.isArray(bids)) return
-
-      for (let bid of bids) {
-        _eventHandler(bid);
-      };
-    }
-  };
-
-  return _eventHandler;
-}
-
-function getEventHandler(eventName) {
-  return bid => {
-    const url = spec.getUrlPixelMetric(eventName, bid);
-    if (!url) return;
-    triggerPixel(url);
-  }
-}
-
 function bidWonHandler(bid) {
   const {auctionId, requestId} = bid;
   const wurl = getWurl({auctionId, requestId});
@@ -403,6 +380,10 @@ function bidWonHandler(bid) {
     triggerPixel(wurl);
     removeWurl({auctionId, requestId});
   };
+}
+
+function auctionInitHandler() {
+  sendingDataStatistic.initEvents();
 }
 
 function cleanWurl() {
@@ -414,6 +395,81 @@ function cleanWurl() {
   });
 
   setTimeout(cleanWurl, 60000);
+}
+
+function initSendingDataStatistic() {
+  class SendingDataStatistic {
+    #eventNames = [
+      CONSTANTS.EVENTS.BID_TIMEOUT,
+      CONSTANTS.EVENTS.BID_RESPONSE,
+      CONSTANTS.EVENTS.BID_REQUESTED,
+      CONSTANTS.EVENTS.NO_BID,
+    ];
+
+    #disabledSending = false;
+    #enabledSending = false;
+    #eventHendlers = {};
+
+    initEvents() {
+      this.#disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
+      if (this.#disabledSending) {
+        this.removeEvents();
+      } else {
+        this.createEvents();
+      };
+    }
+
+    createEvents() {
+      if (this.#enabledSending) return;
+
+      this.#enabledSending = true;
+      for (let eventName of this.#eventNames) {
+        if (!this.#eventHendlers[eventName]) {
+          this.#eventHendlers[eventName] = this.eventHandler(eventName);
+        };
+
+        events.on(eventName, this.#eventHendlers[eventName]);
+      };
+    }
+
+    removeEvents() {
+      if (!this.#enabledSending) return;
+
+      this.#enabledSending = false;
+      for (let eventName of this.#eventNames) {
+        if (!this.#eventHendlers[eventName]) continue;
+
+        events.off(eventName, this.#eventHendlers[eventName]);
+      };
+    }
+
+    eventHandler(eventName) {
+      const eventHandlerFunc = this.getEventHandler(eventName);
+      if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
+        return bids => {
+          if (this.#disabledSending || !Array.isArray(bids)) return;
+
+          for (let bid of bids) {
+            eventHandlerFunc(bid);
+          };
+        }
+      };
+
+      return eventHandlerFunc;
+    }
+
+    getEventHandler(eventName) {
+      return bid => {
+        if (this.#disabledSending) return;
+
+        const url = spec.getUrlPixelMetric(eventName, bid);
+        if (!url) return;
+        triggerPixel(url);
+      };
+    }
+  };
+
+  return new SendingDataStatistic();
 }
 
 registerBidder(spec);
