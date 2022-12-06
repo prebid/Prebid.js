@@ -10,6 +10,7 @@ import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js/esm/initializer.js';
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
@@ -139,7 +140,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
+    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
   },
 
   /**
