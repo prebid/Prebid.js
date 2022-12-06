@@ -255,6 +255,7 @@ describe('VidazooBidAdapter', function () {
           sizes: ['545x307'],
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
+          isStorageAllowed: true,
           mediaTypes: {
             video: {
               api: [2],
