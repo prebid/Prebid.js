@@ -169,9 +169,9 @@ function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformation
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
   // As of writing this, only used for AppNexus/Xandr in place of appnexusAuctionKeywords in config
-  const currentUserKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords') || ""
+  const currentUserKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords') || ''
   const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
-  const updatedUserKeywords =  (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
+  const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
   deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
 
   return ortbConfig
