@@ -5,7 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kargo';
-const HOST = 'https://krk.kargo.com';
+const HOST = 'https://krk2.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
 const SYNC_COUNT = 5;
 const GVLID = 972;
@@ -31,10 +31,28 @@ export const spec = {
     const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
     const bidIDs = {};
     const bidSizes = {};
+    const impressions = [];
 
     _each(validBidRequests, bid => {
       bidIDs[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
+      impressions.push({
+        id: bid.bidId,
+        tid: bid.transactionId,
+        pid: bid.params.placementId,
+        code: bid.adUnitCode,
+        floor: bid.floor,
+        banner: bid.mediaTypes.banner,
+        video: bid.mediaTypes.video,
+        fpd: { 
+          gpid: bid.ortb2Imp.gpid
+        },
+        bidRequestCount: bid.bidRequestsCount > 0 ? bid.bidRequestsCount : null,
+        bidderRequestCount: bid.bidderRequestsCount > 0 ? bid.bidderRequestsCount : null,
+        bidderWinCount: bid.bidderWinsCount > 0 ? bid.bidderWinsCount : null,
+      }
+
+      ) 
     });
 
     const firstBidRequest = validBidRequests[0];
@@ -42,24 +60,28 @@ export const spec = {
     const tdid = deepAccess(firstBidRequest, 'userId.tdid')
 
     const transformedParams = Object.assign({}, {
-      sessionId: spec._getSessionId(),
+      pbv: '$prebid.version$',
+      aid: firstBidRequest.auctionId,
+      sid: spec._getSessionId(),
+      url: spec._getAllMetadata(bidderRequest, tdid).pageURL,
       requestCount: spec._getRequestCount(),
-      timeout: bidderRequest.timeout,
-      currency,
-      cpmGranularity: 1,
-      timestamp: (new Date()).getTime(),
-      cpmRange: {
-        floor: 0,
-        ceil: 20
-      },
-      bidIDs,
-      bidSizes,
+      to: bidderRequest.timeout,
+      ts: new Date().getTime(),
+      cur: currency,
       device: {
         width: window.screen.width,
         height: window.screen.height
       },
-      prebidRawBidRequests: validBidRequests
-    }, spec._getAllMetadata(bidderRequest, tdid));
+      imp: impressions, 
+      socan: socialCanvas,
+      page: {
+        id: spec._getLocalStorageSafely['pageViewId'],
+        timestamp: spec._getLocalStorageSafely['pageViewTimestamp'],
+        url: spec._getLocalStorageSafely['pageViewUrl']
+      },
+      user: spec._getUserIds(),
+      eids: firstBidRequest.userIdAsEids
+    });
 
     // User Agent Client Hints / SUA
     const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
@@ -76,8 +98,8 @@ export const spec = {
 
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
-      method: 'GET',
-      url: `${HOST}/api/v2/bid`,
+      method: 'POST',
+      url: `${HOST}/api/v1/prebid`,
       data: `json=${encodedParams}`,
       currency: currency
     });
@@ -286,4 +308,5 @@ export const spec = {
     } catch (e) {}
   }
 };
+
 registerBidder(spec);
