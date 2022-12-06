@@ -856,7 +856,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     currentRequestSize += currentImpressionSize;
 
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
-
     if (!isEmpty(fpd) && !isFpdAdded) {
       r.ext.ixdiag.fpd = true;
 
@@ -875,6 +874,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
           delete user[key];
         }
       });
+
+      if (fpd.hasOwnProperty('regs')) {
+        if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+          deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
+        }
+
+        if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
+          deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+        }
+      }
 
       const clonedRObject = deepClone(r);
 

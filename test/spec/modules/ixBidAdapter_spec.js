@@ -1686,6 +1686,26 @@ describe('IndexexchangeAdapter', function () {
       expect(r.site.keywords).to.be.undefined;
       expect(r.user).to.be.undefined;
     });
+    it('should set gpp and gpp_sid field when defined', function () {
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 'gpp', gpp_sid: [1]}} })[0];
+      const r = extractPayload(request);
+
+      expect(r.regs.gpp).to.equal('gpp');
+      expect(r.regs.gpp_sid).to.be.an('array');
+      expect(r.regs.gpp_sid).to.include(1);
+    });
+    it('should not set gpp and gpp_sid field when not defined', function () {
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {}} })[0];
+      const r = extractPayload(request);
+
+      expect(r.regs).to.be.undefined;
+    });
+    it('should not set gpp and gpp_sid field when fields arent strings or array defined', function () {
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 1, gpp_sid: 'string'}} })[0];
+      const r = extractPayload(request);
+
+      expect(r.regs).to.be.undefined;
+    });
   });
 
   describe('buildRequests', function () {
