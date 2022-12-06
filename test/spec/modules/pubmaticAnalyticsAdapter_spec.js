@@ -398,6 +398,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.purl).to.equal('http://www.test.com/page.html');
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
@@ -522,6 +523,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(0);
       // slot 1
       expect(data.s[0].sn).to.equal('/19968336/header-bid-tag-0');
@@ -595,6 +597,7 @@ describe('pubmatic analytics adapter', function () {
       let data = getLoggerJsonFromRequest(request.requestBody);
       expect(data.pubid).to.equal('9999');
       expect(data.pid).to.equal('1111');
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(0);// test group id should be between 0-15 else set to 0
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -645,6 +648,7 @@ describe('pubmatic analytics adapter', function () {
       expect(requests.length).to.equal(2); // 1 logger and 1 win-tracker
       let request = requests[1]; // logger is executed late, trackers execute first
       let data = getLoggerJsonFromRequest(request.requestBody);
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(0);// test group id should be an INT between 0-15 else set to 0
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].au).to.equal('/19968336/header-bid-tag-1');
@@ -1356,6 +1360,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.purl).to.equal('http://www.test.com/page.html');
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
@@ -1484,6 +1489,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.purl).to.equal('http://www.test.com/page.html');
       expect(data.orig).to.equal('www.test.com');
       expect(data.tst).to.equal(1519767016);
+	  expect(data.bm).not.to.be.null;
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
