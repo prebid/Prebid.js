@@ -1,4 +1,4 @@
-import { logWarn, logMessage, debugTurnedOn, generateUUID } from '../src/utils.js';
+import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
@@ -178,7 +178,7 @@ export const spec = {
 
 registerBidder(spec);
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Check or generate a UID for the current user.
@@ -188,9 +188,23 @@ function getUid(bidderRequest) {
     return false;
   }
 
-  const CONCERT_UID_KEY = 'c_uid';
+  const sharedId = deepAccess(bidderRequest, 'userId._sharedid.id');
 
+  if (sharedId) {
+    return sharedId;
+  }
+
+  const LEGACY_CONCERT_UID_KEY = 'c_uid';
+  const CONCERT_UID_KEY = 'vmconcert_uid';
+
+  const legacyUid = storage.getDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
   let uid = storage.getDataFromLocalStorage(CONCERT_UID_KEY);
+
+  if (legacyUid) {
+    uid = legacyUid;
+    storage.setDataInLocalStorage(CONCERT_UID_KEY, uid);
+    storage.removeDataFromLocalStorage(LEGACY_CONCERT_UID_KEY);
+  }
 
   if (!uid) {
     uid = generateUUID();

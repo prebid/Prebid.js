@@ -240,7 +240,7 @@ export function setStoredValue(submodule, value) {
     const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
     if (storage.type === COOKIE) {
       const setCookie = cookieSetter(submodule);
-      setCookie(null, value, expiresStr);
+      setCookie(null, valueStr, expiresStr);
       if (typeof storage.refreshInSeconds === 'number') {
         setCookie('_last', new Date().toUTCString(), expiresStr);
       }

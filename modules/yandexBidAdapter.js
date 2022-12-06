@@ -1,5 +1,6 @@
-import { formatQS, deepAccess, triggerPixel } from '../src/utils.js';
+import { formatQS, deepAccess, triggerPixel, isArray, isNumber } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
 
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://bs.yandex.ru/metadsp';
@@ -10,9 +11,19 @@ const SSP_ID = 10500;
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code
+  supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.pageId && bid.params.impId);
+    const { params } = bid;
+    if (!params) {
+      return false;
+    }
+    const { pageId, impId } = extractPlacementIds(params);
+    if (!(pageId && impId)) {
+      return false;
+    }
+    const sizes = bid.mediaTypes?.banner?.sizes;
+    return isArray(sizes) && isArray(sizes[0]) && isNumber(sizes[0][0]) && isNumber(sizes[0][1]);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -29,9 +40,19 @@ export const spec = {
       page = bidderRequest.refererInfo.page;
     }
 
+    let timeout = null;
+    if (bidderRequest) {
+      timeout = bidderRequest.timeout;
+    }
+
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { pageId, impId, targetRef, withCredentials = true } = params;
+      const { targetRef, withCredentials = true } = params;
+      const sizes = bidRequest.mediaTypes.banner.sizes;
+      const size = sizes[0];
+      const [ w, h ] = size;
+
+      const { pageId, impId } = extractPlacementIds(params);
 
       const queryParams = {
         'imp-id': impId,
@@ -43,24 +64,23 @@ export const spec = {
         queryParams['tcf-consent'] = consentString;
       }
 
-      const floorInfo = bidRequest.getFloor ? bidRequest.getFloor({
-        currency: DEFAULT_CURRENCY
-      }) : {};
-      const bidfloor = floorInfo.floor;
-      const bidfloorcur = floorInfo.currency;
-
       const imp = {
         id: impId,
-        bidfloor,
-        bidfloorcur,
-      };
-      const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
-      if (bannerParams) {
-        const [ w, h ] = bannerParams.sizes[0];
-        imp.banner = {
+        banner: {
+          format: sizes,
           w,
           h,
-        };
+        }
+      };
+
+      if (bidRequest.getFloor) {
+        const floorInfo = bidRequest.getFloor({
+          currency: DEFAULT_CURRENCY,
+          size
+        });
+
+        imp.bidfloor = floorInfo.floor;
+        imp.bidfloorcur = floorInfo.currency;
       }
 
       const queryParamsString = formatQS(queryParams);
@@ -74,6 +94,7 @@ export const spec = {
             ref_url: referrer,
             page_url: page,
           },
+          tmax: timeout,
         },
         options: {
           withCredentials,
@@ -102,6 +123,7 @@ export const spec = {
         width: rtbBid.w,
         height: rtbBid.h,
         creativeId: rtbBid.adid,
+        nurl: rtbBid.nurl,
 
         netRevenue: true,
         ttl: DEFAULT_TTL,
@@ -118,13 +140,57 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    const nurl = bid['nurl'];
-
+    let nurl = bid['nurl'];
     if (!nurl) {
       return;
     }
+
+    const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+    const curr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm'))
+      ? bid.originalCurrency
+      : bid.currency;
+
+    nurl = nurl
+      .replace(/\${AUCTION_PRICE}/, cpm)
+      .replace(/\${AUCTION_CURRENCY}/, curr)
+    ;
+
     triggerPixel(nurl);
   }
+}
+
+function extractPlacementIds(bidRequestParams) {
+  const { placementId } = bidRequestParams;
+  const result = { pageId: null, impId: null };
+
+  let pageId, impId;
+  if (placementId) {
+    /*
+     * Possible formats
+     * R-I-123456-2
+     * R-123456-1
+     * 123456-789
+     */
+    const num = placementId.lastIndexOf('-');
+    if (num === -1) {
+      return result;
+    }
+    const num2 = placementId.lastIndexOf('-', num - 1);
+    pageId = placementId.slice(num2 + 1, num);
+    impId = placementId.slice(num + 1);
+  } else {
+    pageId = bidRequestParams.pageId;
+    impId = bidRequestParams.impId;
+  }
+
+  if (!parseInt(pageId, 10) || !parseInt(impId, 10)) {
+    return result;
+  }
+
+  result.pageId = pageId;
+  result.impId = impId;
+
+  return result;
 }
 
 registerBidder(spec);
