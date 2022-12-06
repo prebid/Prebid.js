@@ -14,7 +14,7 @@ import {
   SETUP_COMPLETE, SETUP_FAILED, PLAY, AD_IMPRESSION, videoEvents
 } from 'libraries/video/constants/events.js';
 
-import { PLAYBACK_MODE } from 'libraries/video/constants/enums.js';
+import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
 
 function getPlayerMock() {
   return makePlayerFactoryMock({

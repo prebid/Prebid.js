@@ -59,7 +59,6 @@ function resetTestVars() {
 
   adQueueCoordinatorMock = {
     registerProvider: sinon.spy(),
-    requiresQueueing: sinon.spy(),
     queueAd: sinon.spy()
   };
 
@@ -262,10 +261,10 @@ describe('Prebid Video', function () {
       pbVideoFactory(null, getConfig, pbGlobal, pbEvents, null, gamSubmoduleFactory);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
-      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);
-      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedAdTag);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
     });
 
     it('should load ad tag from highest bid when ad server is not configured', function () {
@@ -287,72 +286,11 @@ describe('Prebid Video', function () {
       pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEvents);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
-      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedVastUrl);
-      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adXml', expectedVastXml);
-    });
-
-    it('should queue ad when required', function () {
-      const expectedVastUrl = 'expectedVastUrl';
-      const expectedVastXml = 'expectedVastXml';
-      const pbGlobal = Object.assign({}, pbGlobalMock, {
-        requestBids,
-        getHighestCpmBids: () => [{
-          vastUrl: expectedVastUrl,
-          vastXml: expectedVastXml
-        }, {}, {}, {}]
-      });
-      const expectedAdUnit = {
-        code: expectedAdUnitCode,
-        video: { divId: expectedDivId }
-      };
-      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
-
-      const adQueueCoordinator = Object.assign({}, adQueueCoordinatorMock, { requiresQueueing: () => true });
-      const pbEventsSpy = Object.assign({}, pbEvents, { emit: sinon.spy() });
-
-      pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEventsSpy, null, null, null, adQueueCoordinator);
-      beforeBidRequestCallback(() => {}, {});
-      auctionEndCallback(auctionResults);
-
-      expect(videoCoreMock.setAdTagUrl.called).to.be.false;
-
-      expect(adQueueCoordinator.queueAd.called).to.be.true;
-      const queueAdArgs = adQueueCoordinator.queueAd.firstCall.args;
-      expect(queueAdArgs[0]).to.be.equal(expectedVastUrl);
-      expect(queueAdArgs[1]).to.be.equal(expectedDivId);
-
-      expect(pbEventsSpy.emit.calledOnce).to.be.true;
-      expect(pbEventsSpy.emit.firstCall.args[0]).to.be.equal('videoAuctionAdLoadQueued');
-    });
-
-    it('should load tag when queueing not required', function () {
-      const expectedVastUrl = 'expectedVastUrl';
-      const expectedVastXml = 'expectedVastXml';
-      const pbGlobal = Object.assign({}, pbGlobalMock, {
-        requestBids,
-        getHighestCpmBids: () => [{
-          vastUrl: expectedVastUrl,
-          vastXml: expectedVastXml
-        }, {}, {}, {}]
-      });
-      const expectedAdUnit = {
-        code: expectedAdUnitCode,
-        video: { divId: expectedDivId }
-      };
-      const auctionResults = { adUnits: [ expectedAdUnit, {} ] };
-      const pbEventsSpy = Object.assign({}, pbEvents, { emit: sinon.spy() });
-
-      pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEventsSpy);
-      beforeBidRequestCallback(() => {}, {});
-      auctionEndCallback(auctionResults);
-
-      expect(adQueueCoordinatorMock.queueAd.called).to.be.false;
-      expect(videoCoreMock.setAdTagUrl.called).to.be.true;
-      expect(pbEventsSpy.emit.calledOnce).to.be.true;
-      expect(pbEventsSpy.emit.firstCall.args[0]).to.be.equal('videoAuctionAdLoadAttempt');
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedVastUrl);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adXml', expectedVastXml);
     });
   });
 

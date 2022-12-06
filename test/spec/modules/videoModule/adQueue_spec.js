@@ -12,124 +12,161 @@ describe('Ad Queue Coordinator', function () {
     }
   };
 
-  describe('Requires Queuing', function () {
-    it('should be true when provider is not setup', function() {
-      const coordinator = AdQueueCoordinator(mockVideoCoreFactory());
-      coordinator.registerProvider(testId);
-      expect(coordinator.requiresQueueing(testId)).to.be.true;
-    });
+  const mockEventsFactory = function () {
+    return {
+      emit: sinon.spy()
+    };
+  };
 
-    it('should be false when provider is setup', function() {
+  describe('Before Provider Setup Complete', function () {
+    it('should push ad to queue', function () {
       const mockVideoCore = mockVideoCoreFactory();
-      let setupComplete;
-      mockVideoCore.onEvents = function(events, callback, id) {
-        if (events[0] === SETUP_COMPLETE && id === testId) {
-          setupComplete = callback;
-        }
-      };
-      const coordinator = AdQueueCoordinator(mockVideoCore);
+      const mockEvents = mockEventsFactory();
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
       coordinator.registerProvider(testId);
-      setupComplete('', { divId: testId });
+      coordinator.queueAd('testAdTag', testId, { param: {} });
 
-      expect(coordinator.requiresQueueing(testId)).to.be.false;
-      expect(mockVideoCore.offEvents.calledTwice).to.be.true;
-      const offSetupCompleteArgs = mockVideoCore.offEvents.firstCall.args;
-      expect(offSetupCompleteArgs[0]).to.deep.equal([SETUP_COMPLETE]);
-      expect(offSetupCompleteArgs[2]).to.equal(testId);
+      expect(mockEvents.emit.calledOnce).to.be.true;
+      let emitArgs = mockEvents.emit.firstCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadQueued');
+      expect(mockVideoCore.setAdTagUrl.called).to.be.false;
     });
   });
 
-  describe('Queue Ad', function () {
-    it('should push ad to queue', function () {
+  describe('After Provider Setup Complete', function () {
+    it('should load from ad queue', function () {
       const mockVideoCore = mockVideoCoreFactory();
+      const mockEvents = mockEventsFactory();
       let setupComplete;
       mockVideoCore.onEvents = function(events, callback, id) {
         if (events[0] === SETUP_COMPLETE && id === testId) {
           setupComplete = callback;
         }
       };
-      const coordinator = AdQueueCoordinator(mockVideoCore);
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
       coordinator.registerProvider(testId);
       coordinator.queueAd('testAdTag', testId, { param: {} });
+
+      expect(mockEvents.emit.calledOnce).to.be.true;
+      let emitArgs = mockEvents.emit.firstCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadQueued');
+
       setupComplete('', { divId: testId });
+      expect(mockEvents.emit.calledTwice).to.be.true;
+      emitArgs = mockEvents.emit.secondCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
+      expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
+    });
+
+    it('should load ads without queueing', function () {
+      const mockVideoCore = mockVideoCoreFactory();
+      const mockEvents = mockEventsFactory();
+      let setupComplete;
+      mockVideoCore.onEvents = function(events, callback, id) {
+        if (events[0] === SETUP_COMPLETE && id === testId) {
+          setupComplete = callback;
+        }
+      };
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
+      coordinator.registerProvider(testId);
+
+      setupComplete('', { divId: testId });
+
+      coordinator.queueAd('testAdTag', testId, { param: {} });
+      expect(mockEvents.emit.calledOnce).to.be.true;
+      let emitArgs = mockEvents.emit.firstCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
       expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
     });
   });
 
-  it('should load from queue on Ad Break End', function () {
-    const mockVideoCore = mockVideoCoreFactory();
-    let setupComplete;
-    let adBreakEnd;
+  describe('On Ad Break End', function () {
+    it('should load from queue', function () {
+      const mockVideoCore = mockVideoCoreFactory();
+      const mockEvents = mockEventsFactory();
+      let setupComplete;
+      let adBreakEnd;
 
-    mockVideoCore.onEvents = function(events, callback, id) {
-      if (events[0] === SETUP_COMPLETE && id === testId) {
-        setupComplete = callback;
-      }
+      mockVideoCore.onEvents = function(events, callback, id) {
+        if (events[0] === SETUP_COMPLETE && id === testId) {
+          setupComplete = callback;
+        }
 
-      if (events[0] === AD_BREAK_END && id === testId) {
-        adBreakEnd = callback;
-      }
-    };
+        if (events[0] === AD_BREAK_END && id === testId) {
+          adBreakEnd = callback;
+        }
+      };
 
-    const coordinator = AdQueueCoordinator(mockVideoCore);
-    coordinator.registerProvider(testId);
-    coordinator.queueAd('testAdTag', testId);
-    coordinator.queueAd('testAdTag2', testId);
-    coordinator.queueAd('testAdTag3', testId);
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEvents);
+      coordinator.registerProvider(testId);
+      coordinator.queueAd('testAdTag', testId);
+      coordinator.queueAd('testAdTag2', testId);
+      coordinator.queueAd('testAdTag3', testId);
 
-    setupComplete('', { divId: testId });
+      mockEvents.emit.resetHistory();
 
-    expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
-    let setAdTagArgs = mockVideoCore.setAdTagUrl.firstCall.args;
-    expect(setAdTagArgs[0]).to.be.equal('testAdTag');
+      setupComplete('', { divId: testId });
 
-    adBreakEnd('', { divId: testId });
+      expect(mockEvents.emit.calledOnce).to.be.true;
+      let emitArgs = mockEvents.emit.firstCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
+      expect(mockVideoCore.setAdTagUrl.calledOnce).to.be.true;
+      let setAdTagArgs = mockVideoCore.setAdTagUrl.firstCall.args;
+      expect(setAdTagArgs[0]).to.be.equal('testAdTag');
 
-    expect(mockVideoCore.setAdTagUrl.calledTwice).to.be.true;
-    setAdTagArgs = mockVideoCore.setAdTagUrl.secondCall.args;
-    expect(setAdTagArgs[0]).to.be.equal('testAdTag2');
+      adBreakEnd('', { divId: testId });
 
-    adBreakEnd('', { divId: testId });
+      expect(mockEvents.emit.calledTwice).to.be.true;
+      emitArgs = mockEvents.emit.secondCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
+      expect(mockVideoCore.setAdTagUrl.calledTwice).to.be.true;
+      setAdTagArgs = mockVideoCore.setAdTagUrl.secondCall.args;
+      expect(setAdTagArgs[0]).to.be.equal('testAdTag2');
 
-    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
-    setAdTagArgs = mockVideoCore.setAdTagUrl.thirdCall.args;
-    expect(setAdTagArgs[0]).to.be.equal('testAdTag3');
+      adBreakEnd('', { divId: testId });
 
-    adBreakEnd('', { divId: testId });
-    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
-  });
+      expect(mockEvents.emit.calledThrice).to.be.true;
+      emitArgs = mockEvents.emit.thirdCall.args;
+      expect(emitArgs[0]).to.be.equal('videoAuctionAdLoadAttempt');
+      expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+      setAdTagArgs = mockVideoCore.setAdTagUrl.thirdCall.args;
+      expect(setAdTagArgs[0]).to.be.equal('testAdTag3');
 
-  it('should empty queue as adBreaks end', function () {
-    const mockVideoCore = mockVideoCoreFactory();
-    let setupComplete;
-    let adBreakEnd;
+      adBreakEnd('', { divId: testId });
 
-    mockVideoCore.onEvents = function(events, callback, id) {
-      if (events[0] === SETUP_COMPLETE && id === testId) {
-        setupComplete = callback;
-      }
+      expect(mockEvents.emit.calledThrice).to.be.true;
+      expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+    });
 
-      if (events[0] === AD_BREAK_END && id === testId) {
-        adBreakEnd = callback;
-      }
-    };
+    it('should stop responding to AdBreakEnd when queue is empty', function () {
+      const mockVideoCore = mockVideoCoreFactory();
+      let setupComplete;
+      let adBreakEnd;
 
-    const coordinator = AdQueueCoordinator(mockVideoCore);
-    coordinator.registerProvider(testId);
-    coordinator.queueAd('testAdTag', testId);
-    coordinator.queueAd('testAdTag2', testId);
-    coordinator.queueAd('testAdTag3', testId);
+      mockVideoCore.onEvents = function(events, callback, id) {
+        if (events[0] === SETUP_COMPLETE && id === testId) {
+          setupComplete = callback;
+        }
 
-    setupComplete('', { divId: testId });
-    adBreakEnd('', { divId: testId });
-    adBreakEnd('', { divId: testId });
-    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
-    expect(coordinator.requiresQueueing(testId)).to.be.true;
-    adBreakEnd('', { divId: testId });
-    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
-    expect(coordinator.requiresQueueing(testId)).to.be.false;
-    adBreakEnd('', { divId: testId });
-    expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
-    expect(coordinator.requiresQueueing(testId)).to.be.false;
+        if (events[0] === AD_BREAK_END && id === testId) {
+          adBreakEnd = callback;
+        }
+      };
+
+      const coordinator = AdQueueCoordinator(mockVideoCore, mockEventsFactory());
+      coordinator.registerProvider(testId);
+      coordinator.queueAd('testAdTag', testId);
+      coordinator.queueAd('testAdTag2', testId);
+      coordinator.queueAd('testAdTag3', testId);
+
+      setupComplete('', { divId: testId });
+      adBreakEnd('', { divId: testId });
+      adBreakEnd('', { divId: testId });
+      expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+      adBreakEnd('', { divId: testId });
+      expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+      adBreakEnd('', { divId: testId });
+      expect(mockVideoCore.setAdTagUrl.calledThrice).to.be.true;
+    });
   });
 });
