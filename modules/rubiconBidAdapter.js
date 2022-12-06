@@ -27,9 +27,7 @@ const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {
-  multiformat: false
-};
+let rubiConf = {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -167,7 +165,6 @@ export const converter = ortbConverter({
     deepSetValue(data, 'ext.prebid.bidders', {
       rubicon: {
         integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION,
-        multiformat: rubiConf.multiformat
       }
     });
 
@@ -223,7 +220,7 @@ export const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
 
-    if (rubiConf.multiformat === true && imp.banner) {
+    if (bidRequest.params?.multiformat === true && imp.banner) {
       delete imp.banner;
     }
     if (config.getConfig('s2sConfig.defaultTtl')) {
@@ -304,11 +301,17 @@ export const spec = {
     let filteredHttpRequest = [];
     let filteredRequests;
 
-    if (rubiConf.multiformat === true) {
-      filteredRequests = bidRequests.filter(bidRequest => !hasBannerMediaTypeOnly(bidRequest));
-    } else {
-      filteredRequests = bidRequests.filter(bidRequest => bidType(bidRequest).some(mediaType => [VIDEO, NATIVE].includes(mediaType)) && bidRequest?.params?.video);
-    }
+    filteredRequests = bidRequests.filter(req => {
+      const mediaTypes = bidType(req);
+      return (
+        // if there's no banner in volved, add to PBS
+        !mediaTypes.includes(BANNER) ||
+        // if multiformat is true, and it doesn't contain only banner, add to PBS
+        (Boolean(req?.params?.multiformat) && !hasBannerMediaTypeOnly(req)) ||
+        // if multiformat is false, there's params.video, and there's not banner only, send to PBS
+        (!req?.params?.multiformat && req?.params?.video && !hasBannerMediaTypeOnly(req))
+      );
+    });
 
     if (filteredRequests && filteredRequests.length) {
       const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
@@ -321,7 +324,13 @@ export const spec = {
       });
     }
 
-    const bannerBidRequests = bidRequests.filter(hasBannerMediaType);
+    const bannerBidRequests = bidRequests.filter((req) => {
+      return (
+        hasBannerMediaTypeOnly(req) ||
+        (!req.params?.multiformat && !req.params?.video && hasBannerMediaType(req)) ||
+        (req.params?.multiformat && hasBannerMediaType(req))
+      );
+    });
     if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {

@@ -2430,11 +2430,7 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              config.setConfig({
-                rubicon: {
-                  multiformat: true
-                }
-              });
+              bidReq.bids[0].params.multiformat = true;
               let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
               expect(pbsRequest.method).to.equal('POST');
               expect(pbsRequest.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
@@ -2452,17 +2448,13 @@ describe('the rubicon adapter', function () {
                   sizes: [[300, 250]]
                 }
               };
-              config.setConfig({
-                rubicon: {
-                  // when missing, multiformat is false by default
-                }
-              });
+
               let [fastlanteRequest, ...others] = spec.buildRequests(bidReq.bids, bidReq);
               expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
               expect(others).to.be.empty;
             });
 
-            it('should send both banner and video because there\'s param.video', () => {
+            it('should send only video because there\'s param.video', () => {
               const bidReq = addNativeToBidRequest(bidderRequest);
               // add second mediaType
               bidReq.bids[0].mediaTypes = {
@@ -2475,16 +2467,11 @@ describe('the rubicon adapter', function () {
               bidReq.bids[0].params = {
                 video: {}
               }
-              config.setConfig({
-                rubicon: {
-                  // when missing, multiformat is false by default
-                }
-              });
-              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              let [pbsRequest, ...other] = spec.buildRequests(bidReq.bids, bidReq);
               expect(pbsRequest.method).to.equal('POST');
               expect(pbsRequest.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
               expect(pbsRequest.data.imp).to.have.nested.property('[0].native');
-              expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(other[0]).to.be.null;
             });
           });
         });
