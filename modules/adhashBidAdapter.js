@@ -134,13 +134,14 @@ export const spec = {
 
   isBidRequestValid: (bid) => {
     try {
-      const { publisherId, platformURL } = bid.params;
+      const { publisherId, platformURL, bidderURL } = bid.params;
       return (
         includes(Object.keys(bid.mediaTypes), BANNER) &&
         typeof publisherId === 'string' &&
         publisherId.length === 42 &&
         typeof platformURL === 'string' &&
-        platformURL.length >= 13
+        platformURL.length >= 13 &&
+        (!bidderURL || bidderURL.indexOf('https://') === 0)
       );
     } catch (error) {
       return false;
@@ -151,12 +152,6 @@ export const spec = {
     const storage = getStorageManager({ bidderCode: ADHASH_BIDDER_CODE });
     const { gdprConsent } = bidderRequest;
     const bidRequests = [];
-    let referrer = '';
-    try {
-      referrer = window.top.location.href;
-    } catch (e) {
-      referrer = window.location.href;
-    }
     const body = document.body;
     const html = document.documentElement;
     const pageHeight = Math.max(
@@ -198,7 +193,7 @@ export const spec = {
         bidRequest: validBidRequests[i],
         data: {
           timezone: new Date().getTimezoneOffset() / 60,
-          location: referrer,
+          location: bidderRequest.refererInfo ? bidderRequest.refererInfo.topmostLocation : '',
           publisherId: validBidRequests[i].params.publisherId,
           size: {
             screenWidth: window.screen.width,

@@ -60,6 +60,12 @@ describe('adhashBidAdapter', function () {
       bid.params.platformURL = 'https://';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false when bidderURL is present but not https://', function () {
+      const bid = { ...validBid };
+      bid.params.bidderURL = 'http://example.com/';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -73,7 +79,7 @@ describe('adhashBidAdapter', function () {
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { referer: 'http://example.com/' } }
+        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { topmostLocation: 'https://example.com/path.html' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
