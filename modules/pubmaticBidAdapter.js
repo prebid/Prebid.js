@@ -1,4 +1,4 @@
-import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes } from '../src/utils.js';
+import { logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, parseQueryStringParameters } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -7,7 +7,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=ow-client';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator';
 const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=';
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
@@ -1077,6 +1077,17 @@ export function prepareMetaObject(br, bid, seat) {
   }
 }
 
+/**
+ * returns, boolean value according to translator get request is enabled
+ * and random value should be less than or equal to testGroupPercentage
+ * @returns boolean
+ */
+function hasGetRequestEnabled() {
+  if (!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
+  const randomValue100 = Math.ceil(Math.random() * 100);
+  const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
+  return randomValue100 <= testGroupPercentage;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -1316,12 +1327,30 @@ export const spec = {
       delete payload.site;
     }
 
-    return {
+    let serverRequest = {
       method: 'POST',
-      url: ENDPOINT,
+      url: ENDPOINT + '?source=ow-client',
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
+
+    // Allow translator request to execute it as GET Methoid if flag is set.
+    if (hasGetRequestEnabled()) {
+      const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
+      const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
+      const urlEncodedPayloadStr = parseQueryStringParameters({ 'source': 'ow-client', 'payload': JSON.stringify(payload) });
+      if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
+        serverRequest = {
+          method: 'GET',
+          url: configuredEndPoint,
+          data: urlEncodedPayloadStr,
+          bidderRequest: bidderRequest,
+          payloadStr: JSON.stringify(payload)
+        };
+      }
+    }
+
+    return serverRequest;
   },
 
   /**
@@ -1333,6 +1362,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
+    // In case of Translator GET request, will copy the actual json data from payloadStr to data.
+    if(request?.payloadStr) request.data = request.payloadStr;
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
