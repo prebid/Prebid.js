@@ -214,7 +214,7 @@ export function newBidder(spec) {
         done();
         config.runWithBidder(spec.code, () => {
           events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
         });
       }
 
@@ -295,8 +295,8 @@ export function newBidder(spec) {
     return false;
   }
 
-  function registerSyncs(responses, gdprConsent, uspConsent) {
-    registerSyncInner(spec, responses, gdprConsent, uspConsent);
+  function registerSyncs(responses, gdprConsent, uspConsent, gppConsent) {
+    registerSyncInner(spec, responses, gdprConsent, uspConsent, gppConsent);
   }
 
   function filterAndWarn(bid) {
@@ -448,14 +448,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   })
 }, 'processBidderRequests')
 
-export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
       iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
       pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-    }, responses, gdprConsent, uspConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];

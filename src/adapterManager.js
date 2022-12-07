@@ -31,7 +31,7 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
+import {GdprConsentHandler, UspConsentHandler, GppConsentHandler} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
@@ -161,6 +161,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 export let gdprDataHandler = new GdprConsentHandler();
 export let uspDataHandler = new UspConsentHandler();
+export let gppDataHandler = new GppConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {
@@ -318,6 +319,12 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (uspDataHandler.getConsentData()) {
     bidRequests.forEach(bidRequest => {
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    });
+  }
+
+  if (gppDataHandler.getConsentData()) {
+    bidRequests.forEach(bidRequest => {
+      bidRequest['gppConsent'] = gppDataHandler.getConsentData();
     });
   }
 

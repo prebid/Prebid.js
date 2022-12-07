@@ -216,7 +216,7 @@ export function resetSyncedStatus() {
 /**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
+function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) {
   if (_s2sConfigs.length === _syncCount) {
     return;
   }
@@ -244,6 +244,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
+  }
+
+  if (gppConsent) {
+    // TODO - need feedback on how to pass gpp values to payload for PBS usersync endpoints...
   }
 
   if (typeof s2sConfig.coopSync === 'boolean') {
@@ -330,7 +334,7 @@ function doBidderSync(type, url, bidder, done, timeout) {
  *
  * @param {Array} bidders a list of bidder names
  */
-function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
+function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   bidders.forEach(bidder => {
     let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
@@ -341,7 +345,8 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
           clientAdapter,
           [],
           gdprConsent,
-          uspConsent
+          uspConsent,
+          gppConsent
         )
       );
     }
@@ -411,12 +416,13 @@ function getMatchingConsentUrl(urlProp, gdprConsent) {
 }
 
 function getConsentData(bidRequests) {
-  let gdprConsent, uspConsent;
+  let gdprConsent, uspConsent, gppConsent;
   if (Array.isArray(bidRequests) && bidRequests.length > 0) {
     gdprConsent = bidRequests[0].gdprConsent;
     uspConsent = bidRequests[0].uspConsent;
+    gppConsent = bidRequests[0].gppConsent;
   }
-  return { gdprConsent, uspConsent };
+  return { gdprConsent, uspConsent, gppConsent };
 }
 
 /**
@@ -433,7 +439,7 @@ export function PrebidServer() {
     done = adapterMetrics.startTiming('total').stopBefore(done);
     bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
 
-    let { gdprConsent, uspConsent } = getConsentData(bidRequests);
+    let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
@@ -441,7 +447,7 @@ export function PrebidServer() {
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
-        queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig);
+        queueSync(syncBidders, gdprConsent, uspConsent, gppConsent, s2sBidRequest.s2sConfig);
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
@@ -450,7 +456,7 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           done();
-          doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
+          doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
