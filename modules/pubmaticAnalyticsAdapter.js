@@ -35,6 +35,7 @@ const MEDIATYPE = {
   VIDEO: 1,
   NATIVE: 2
 }
+const PREFIX = 'PROFILE_AUCTION_INFO_'
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
@@ -355,6 +356,9 @@ function getPSL(auctionId) {
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
+  const HOSTNAME = window.location.host;
+  const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
+  const frequencyDepth = storedObject !== null ? JSON.parse(storedObject) : {};
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
@@ -391,6 +395,12 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     return 0;
   })();
 
+  outputObj['tpv'] = frequencyDepth?.pageView;
+  outputObj['trc'] = frequencyDepth?.slotCnt;
+  outputObj['tbs'] = frequencyDepth?.bidServed;
+  outputObj['tis'] = frequencyDepth?.impressionServed;
+  outputObj['lip'] = frequencyDepth?.lip;
+
   if (floorData) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
     outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
@@ -405,7 +415,11 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId))
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
+      'bs': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.bidServed,
+      'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
+      'rc': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.slotCnt,
+	  'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
     };
     slotsArray.push(slotObject);
     return slotsArray;
