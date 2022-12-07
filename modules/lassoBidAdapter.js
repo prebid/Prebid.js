@@ -54,7 +54,7 @@ export const spec = {
 
       return {
         method: 'GET',
-        url: getBidRequestUrl(aimXR),
+        url: getBidRequestUrl(aimXR, bidRequest.params),
         data: payload,
         options: {
           withCredentials: true
@@ -113,11 +113,15 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-function getBidRequestUrl(aimXR) {
-  if (!aimXR) {
-    return GET_IUD_URL + ENDPOINT_URL + '/request';
+function getBidRequestUrl(aimXR, params) {
+  let path = '/request';
+  if (params && params.dtc) {
+    path = '/dtc-request';
   }
-  return ENDPOINT_URL + '/request'
+  if (!aimXR) {
+    return GET_IUD_URL + ENDPOINT_URL + path;
+  }
+  return ENDPOINT_URL + path;
 }
 
 function getDeviceData() {
