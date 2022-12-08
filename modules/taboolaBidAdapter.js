@@ -167,7 +167,7 @@ export const spec = {
       return [];
     }
 
-    return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
+    return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
   },
 };
 
@@ -224,7 +224,7 @@ function getBidResponses({body}) {
 
   const {seatbid, cur} = body;
 
-  if (!seatbid.length || !seatbid[0].bid) {
+  if (!seatbid.length || !seatbid[0].bid || !seatbid[0].bid.length) {
     return [];
   }
 
@@ -234,7 +234,7 @@ function getBidResponses({body}) {
   };
 }
 
-function getBid(requestId, currency, bidResponse) {
+function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
@@ -243,6 +243,7 @@ function getBid(requestId, currency, bidResponse) {
     price: cpm, crid: creativeId, adm: ad, w: width, h: height, adomain: advertiserDomains, meta = {}
   } = bidResponse;
 
+  let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
