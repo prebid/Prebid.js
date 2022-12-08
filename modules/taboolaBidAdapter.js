@@ -9,7 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
+export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -80,7 +80,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
-    const {publisherId, endpointUrl} = bidRequest.params;
+    const {publisherId} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
@@ -124,7 +124,7 @@ export const spec = {
       regs
     };
 
-    const url = [endpointUrl || END_POINT_URL, publisherId].join('/');
+    const url = [END_POINT_URL, publisherId].join('/');
 
     return {
       url,
@@ -147,7 +147,7 @@ export const spec = {
       return [];
     }
 
-    return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
+    return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
   },
 };
 
@@ -204,7 +204,7 @@ function getBidResponses({body}) {
 
   const {seatbid, cur} = body;
 
-  if (!seatbid.length || !seatbid[0].bid) {
+  if (!seatbid.length || !seatbid[0].bid || !seatbid[0].bid.length) {
     return [];
   }
 
@@ -214,14 +214,14 @@ function getBidResponses({body}) {
   };
 }
 
-function getBid(requestId, currency, bidResponse) {
+function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
   const {
     price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
-
+  let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
@@ -237,7 +237,7 @@ function getBid(requestId, currency, bidResponse) {
     width,
     height,
     meta,
-    netRevenue: false
+    netRevenue: true
   };
 }
 
