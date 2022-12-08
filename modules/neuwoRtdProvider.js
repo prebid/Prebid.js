@@ -1,4 +1,4 @@
-import { deepAccess, deepSetValue, logError, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, logError, logInfo, mergeDeep } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
@@ -20,6 +20,7 @@ function init(config = {}, userConsent = '') {
 
 export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   config.params = config.params || {};
+  logInfo('NeuwoRTDModule', 'starting getBidRequestData')
 
   const wrappedArgUrl = encodeURIComponent(config.params.argUrl || getRefererInfo().page);
   const url = 'https://m1apidev.neuwo.ai/edge/GetAiTopics?' + [
@@ -28,14 +29,23 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     'url=' + wrappedArgUrl
   ].join('&')
 
-  ajax(url, (responseContent) => {
+  const success = (responseContent) => {
+    logInfo('NeuwoRTDModule', 'GetAiTopics: response', responseContent)
     try {
       var jsonContent = JSON.parse(responseContent);
       injectTopics(jsonContent, reqBidsConfigObj, callback)
     } catch (ex) {
-      logError('json parsery error', 'neuwoRTDModule', ex)
+      logError('NeuwoRTDModule', 'Response to JSON parse error', ex)
+      callback()
     }
-  }, null, {
+  }
+
+  const error = (err) => {
+    logError('xhr error', null, err);
+    callback()
+  }
+
+  ajax(url, {success, error}, null, {
     // could assume Origin header is set, or
     // customHeaders: { 'Origin': 'Origin' }
   })
@@ -81,6 +91,8 @@ export function injectTopics(topics, bidsConfig, callback) {
   }
 
   addFragment(bidsConfig.ortb2Fragments.global, 'site.content.data', [IABSegments])
+  logInfo('NeuwoRTDModule', 'injectTopics: post-injection bidsConfig', bidsConfig)
+
   callback()
 }
 

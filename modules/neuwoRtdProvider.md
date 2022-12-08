@@ -24,7 +24,16 @@ pbjs.setConfig({realTimeData: { dataProviders: [ neuwoDataProvider ]}})
 
 # Testing
 
-`gulp serve --modules=neuwoRtdProvider,appnexusBidAdapter`
+## Add development tools if necessary
+
+- Install node for npm
+- run in prebid.js source folder:
+`npm ci`
+`npm i -g gulp-cli`
+
+## Serve
+
+`gulp serve --modules=rtdModule,neuwoRtdProvider,appnexusBidAdapter`
 
 - in your browser, navigate to:
 
