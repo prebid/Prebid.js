@@ -15,10 +15,19 @@ const PCID_EXPIRY = 365;
 const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
 export var FIRST_PARTY_DATA_KEY = '_iiq_fdata';
+export var GROUP_LS_KEY = '_iiq_group';
+export var WITH_IIQ = 'A';
+export var WITHOUT_IIQ = 'B';
+export var PRECENT_LS_KEY = '_iiq_precent';
+export var DEFAULT_PERCENTAGE = 100;
 
 export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
 
 const INVALID_ID = 'INVALID_ID';
+
+function getRandom(start, end) {
+  return Math.floor(Math.random() * (end - start + 1) + start);
+}
 
 /**
  * Generate standard UUID string
@@ -44,6 +53,9 @@ export function readData(key) {
     if (storage.hasLocalStorage()) {
       return storage.getDataFromLocalStorage(key);
     }
+    if (localStorage) {
+      return localStorage.getItem(key)
+    }
     if (storage.cookiesAreEnabled()) {
       return storage.getCookie(key);
     }
@@ -65,6 +77,9 @@ function storeData(key, value) {
     if (value) {
       if (storage.hasLocalStorage()) {
         storage.setDataInLocalStorage(key, value);
+      } else
+      if (localStorage) {
+        localStorage.setItem(key, value)
       }
       const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
       if (storage.cookiesAreEnabled()) {
@@ -103,8 +118,16 @@ export const intentIqIdSubmodule = {
    * @param {{string}} value
    * @returns {{intentIqId: {string}}|undefined}
    */
-  decode(value) {
-    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
+  decode(value, config) {
+    const configParams = (config && config.params) || {};
+    if (!configParams || typeof configParams.partner !== 'number') {
+      logError('User ID - intentIqId submodule requires a valid partner to be defined');
+      return undefined;
+    }
+    if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
+    let partnerData = tryParse(readData(FIRST_PARTY_DATA_KEY));
+
+    return partnerData && partnerData.data && INVALID_ID != partnerData.data ? { 'intentIqId': partnerData.data } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -118,6 +141,32 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
+
+    if (isNaN(configParams.percentage)) {
+      logInfo(MODULE_NAME + ' AB Testing percentage is not defined. Setting default value = ' + DEFAULT_PERCENTAGE);
+      configParams.percentage = DEFAULT_PERCENTAGE;
+    }
+
+    if (isNaN(configParams.percentage) || configParams.percentage < 0 || configParams.percentage > 100) {
+      logError(MODULE_NAME + 'Percentage - intentIqId submodule requires a valid percentage value');
+      return false;
+    }
+
+    configParams.group = readData(GROUP_LS_KEY + '_' + configParams.partner);
+    let percentage = readData(PRECENT_LS_KEY + '_' + configParams.partner);
+
+    if (!configParams.group || !percentage || isNaN(percentage) || percentage != configParams.percentage) {
+      logInfo(MODULE_NAME + 'Generating new Group. Current test group: ' + configParams.group + ', current percentage: ' + percentage + ' , configured percentage: ' + configParams.percentage);
+      if (configParams.percentage > getRandom(1, 100)) { configParams.group = WITH_IIQ; } else configParams.group = WITHOUT_IIQ;
+      storeData(GROUP_LS_KEY + '_' + configParams.partner, configParams.group)
+      storeData(PRECENT_LS_KEY + '_' + configParams.partner, configParams.percentage + '')
+      logInfo(MODULE_NAME + 'New group: ' + configParams.group)
+    }
+    if (configParams.group == WITHOUT_IIQ) {
+      logInfo(MODULE_NAME + 'Group "B". Passive Mode ON.');
+      return true;
+    }
+
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
@@ -157,6 +206,11 @@ export const intentIqIdSubmodule = {
               partnerData.cttl = respJson.cttl;
               shouldUpdateLs = true;
             }
+
+            if ('eidl' in respJson) {
+              partnerData.eidl = respJson.eidl;
+            }
+
             // If should save and data is empty, means we should save as INVALID_ID
             if (respJson.data == '') {
               respJson.data = INVALID_ID;

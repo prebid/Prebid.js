@@ -7,12 +7,12 @@ export const USER_IDS_CONFIG = {
 
   // GrowthCode
   'growthCodeId': {
-    getValue: function(data) {
+    getValue: function (data) {
       return data.gc_id
     },
     source: 'growthcode.io',
     atype: 1,
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       const extendedData = pick(data, [
         'h1',
         'h2',
@@ -36,7 +36,13 @@ export const USER_IDS_CONFIG = {
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
-    atype: 1
+    atype: 1,
+    getValue: function (data) {
+      if (data && data.uids && data.uids[0].id) { return data.uids[0].id; }
+    },
+    getSource: function (data) {
+      if (data && data.source) { return data.source; }
+    },
   },
 
   // naveggId
@@ -61,7 +67,7 @@ export const USER_IDS_CONFIG = {
   'tdid': {
     source: 'adserver.org',
     atype: 1,
-    getUidExt: function() {
+    getUidExt: function () {
       return {
         rtiPartner: 'TDID'
       };
@@ -70,12 +76,12 @@ export const USER_IDS_CONFIG = {
 
   // id5Id
   'id5id': {
-    getValue: function(data) {
+    getValue: function (data) {
       return data.uid
     },
     source: 'id5-sync.com',
     atype: 1,
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.ext) {
         return data.ext;
       }
@@ -86,14 +92,14 @@ export const USER_IDS_CONFIG = {
   'ftrackId': {
     source: 'flashtalking.com',
     atype: 1,
-    getValue: function(data) {
+    getValue: function (data) {
       let value = '';
       if (data && data.ext && data.ext.DeviceID) {
         value = data.ext.DeviceID;
       }
       return value;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       return data && data.ext;
     }
   },
@@ -102,7 +108,7 @@ export const USER_IDS_CONFIG = {
   'parrableId': {
     source: 'parrable.com',
     atype: 1,
-    getValue: function(parrableId) {
+    getValue: function (parrableId) {
       if (parrableId.eid) {
         return parrableId.eid;
       }
@@ -113,7 +119,7 @@ export const USER_IDS_CONFIG = {
       }
       return null;
     },
-    getUidExt: function(parrableId) {
+    getUidExt: function (parrableId) {
       const extendedData = pick(parrableId, [
         'ibaOptout',
         'ccpaOptout'
@@ -132,12 +138,12 @@ export const USER_IDS_CONFIG = {
 
   // liveIntentId
   'lipb': {
-    getValue: function(data) {
+    getValue: function (data) {
       return data.lipbid;
     },
     source: 'liveintent.com',
     atype: 3,
-    getEidExt: function(data) {
+    getEidExt: function (data) {
       if (Array.isArray(data.segments) && data.segments.length) {
         return {
           segments: data.segments
@@ -173,16 +179,16 @@ export const USER_IDS_CONFIG = {
   // merkleId
   'merkleId': {
     atype: 3,
-    getSource: function(data) {
+    getSource: function (data) {
       if (data?.ext?.ssp) {
         return `${data.ext.ssp}.merkleinc.com`
       }
       return 'merkleinc.com'
     },
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data.keyID) {
         return {
           keyID: data.keyID
@@ -249,7 +255,7 @@ export const USER_IDS_CONFIG = {
 
   // Novatiq Snowflake
   'novatiq': {
-    getValue: function(data) {
+    getValue: function (data) {
       return data.snowflake
     },
     source: 'novatiq.com',
@@ -259,7 +265,7 @@ export const USER_IDS_CONFIG = {
   'uid2': {
     source: 'uidapi.com',
     atype: 3,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.id;
     }
   },
@@ -328,7 +334,7 @@ export const USER_IDS_CONFIG = {
   '33acrossId': {
     source: '33across.com',
     atype: 1,
-    getValue: function(data) {
+    getValue: function (data) {
       return data.envelope;
     }
   },
@@ -353,19 +359,19 @@ export const USER_IDS_CONFIG = {
 
   // OneKey Data
   'oneKeyData': {
-    getValue: function(data) {
+    getValue: function (data) {
       if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
         return data.identifiers[0].value;
       }
     },
     source: 'paf',
     atype: 1,
-    getEidExt: function(data) {
+    getEidExt: function (data) {
       if (data && data.preferences) {
-        return {preferences: data.preferences};
+        return { preferences: data.preferences };
       }
     },
-    getUidExt: function(data) {
+    getUidExt: function (data) {
       if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
         const id = data.identifiers[0];
         return {
