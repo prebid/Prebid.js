@@ -309,6 +309,11 @@ export const spec = {
         gpp: bidderRequest.gppConsent.gppString,
         gpp_sid: bidderRequest.gppConsent.applicableSections
       }
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      payload.privacy = {
+        gpp: bidderRequest.ortb2.regs.gpp,
+        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
+      }
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {

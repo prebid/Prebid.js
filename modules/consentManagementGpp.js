@@ -30,6 +30,30 @@ const cmpCallMap = {
 };
 
 /**
+ * This function checks the state of the IAB gppData's applicableSection field (to ensure it's populated and has a valid value).
+ * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
+ *
+ * TODO --- The initial version of the GPP CMP API spec used this naming convention, but it was later changed as an update to the spec.
+ * CMPs should adjust their logic to use the new format (applicableSecctions), but that may not be the case with the initial release.
+ * Added support just in case for this transition period, can likely be removed at a later date...
+ * @param gppData represents the IAB gppData object
+ * @returns true|false
+ */
+function checkApplicableSectionIsReady(gppData) {
+  return gppData && Array.isArray(gppData.applicableSection) && gppData.applicableSection.length > 0 && gppData.applicableSection[0] !== 0;
+}
+
+/**
+ * This function checks the state of the IAB gppData's applicableSections field (to ensure it's populated and has a valid value).
+ * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
+ * @param gppData represents the IAB gppData object
+ * @returns true|false
+ */
+function checkApplicableSectionsIsReady(gppData) {
+  return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0;
+}
+
+/**
  * This function reads the consent string from the config to obtain the consent information of the user.
  * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
@@ -77,15 +101,6 @@ function lookupIabConsent({onSuccess, onError}) {
       cmpFrame,
       cmpDirectAccess
     };
-  }
-
-  // remove me later when revised v1 is fully adapted by all GPP CMPs
-  function checkApplicableSectionIsReady(gppData) {
-    return gppData && Array.isArray(gppData.applicableSection) && gppData.applicableSection.length > 0 && gppData.applicableSection[0] !== 0;
-  }
-
-  function checkApplicableSectionsIsReady(gppData) {
-    return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0;
   }
 
   const cmpCallbacks = {};
@@ -328,8 +343,8 @@ export const requestBidsHook = timedAuctionHook('gpp', function requestBidsHook(
 function processCmpData(consentObject, {onSuccess, onError}) {
   function checkData() {
     const gppString = consentObject && consentObject.gppString;
-    const gppSection = (consentObject && consentObject.applicableSections) ? consentObject.applicableSections
-      : (consentObject && consentObject.applicableSection) ? consentObject.applicableSection
+    const gppSection = (checkApplicableSectionsIsReady(consentObject)) ? consentObject.applicableSections
+      : (checkApplicableSectionIsReady(consentObject)) ? consentObject.applicableSection
         : (provisionalConsent && provisionalConsent.applicableSections) ? provisionalConsent.applicableSections : [];
 
     return !!(
@@ -351,12 +366,13 @@ function processCmpData(consentObject, {onSuccess, onError}) {
  */
 function storeConsentData(cmpConsentObject) {
   consentData = {
-    gppString: (cmpConsentObject) ? cmpConsentObject.gppString : undefined,
+    gppString: (cmpConsentObject) ? cmpConsentObject.gppString
+      : (provisionalConsent && isStr(provisionalConsent.gppString) && provisionalConsent.gppString !== '') ? provisionalConsent.gppString : undefined,
     fullGppData: (cmpConsentObject) || undefined,
   };
-  consentData.applicableSections = (cmpConsentObject && cmpConsentObject.applicableSections) ? cmpConsentObject.applicableSections
-    : (cmpConsentObject && cmpConsentObject.applicableSection) ? cmpConsentObject.applicableSection
-      : (provisionalConsent && provisionalConsent.applicableSections) ? provisionalConsent.applicableSections : [];
+  consentData.applicableSections = (checkApplicableSectionsIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSections
+    : (checkApplicableSectionIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSection
+      : (provisionalConsent?.applicableSections) ? provisionalConsent.applicableSections : [];
   consentData.apiVersion = CMP_VERSION;
   return consentData;
 }

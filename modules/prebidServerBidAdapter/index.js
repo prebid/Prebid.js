@@ -247,7 +247,13 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
 
   if (gppConsent) {
-    // TODO - need feedback on how to pass gpp values to payload for PBS usersync endpoints...
+    // proposing the following formatting, can adjust if needed...
+
+    // transform array of numbers to comma separated string
+    payload.gpp_sid = gppConsent.applicableSections.join();
+    // should we add check if applicableSections was not equal to -1 (where user was out of scope)?
+    //   this would be similar to what was done above for TCF
+    payload.gpp = gppConsent.gppString;
   }
 
   if (typeof s2sConfig.coopSync === 'boolean') {

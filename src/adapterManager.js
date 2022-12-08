@@ -310,23 +310,17 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     }
   });
 
-  if (gdprDataHandler.getConsentData()) {
-    bidRequests.forEach(bidRequest => {
+  bidRequests.forEach(bidRequest => {
+    if (gdprDataHandler.getConsentData()) {
       bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
-    });
-  }
-
-  if (uspDataHandler.getConsentData()) {
-    bidRequests.forEach(bidRequest => {
+    }
+    if (uspDataHandler.getConsentData()) {
       bidRequest['uspConsent'] = uspDataHandler.getConsentData();
-    });
-  }
-
-  if (gppDataHandler.getConsentData()) {
-    bidRequests.forEach(bidRequest => {
+    }
+    if (gppDataHandler.getConsentData()) {
       bidRequest['gppConsent'] = gppDataHandler.getConsentData();
-    });
-  }
+    }
+  });
 
   bidRequests.forEach(bidRequest => {
     config.runWithBidder(bidRequest.bidderCode, () => {
