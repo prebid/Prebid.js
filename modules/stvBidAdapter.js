@@ -63,8 +63,10 @@ export const spec = {
         };
       }
 
-      payload.pfilter = params;
+      payload.pfilter = {...params};
       delete payload.pfilter.placement;
+      if(params.bcat)
+      	delete payload.pfilter.bcat;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
