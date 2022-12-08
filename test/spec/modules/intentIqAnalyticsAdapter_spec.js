@@ -83,11 +83,6 @@ adapterManager.registerAnalyticsAdapter({
   adapter: iiqAnalyticsAnalyticsAdapter
 });
 
-let sandbox;
-sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(
-  USERID_CONFIG
-);
-
 beforeEach(function () {
   adapterManager.enableAnalytics({
     provider: 'iiqAnalytics',
@@ -95,10 +90,18 @@ beforeEach(function () {
   });
 });
 
-afterEach(function () {
-});
-
 describe('IntentIQ tests', function () {
+  var mockObj;
+  before(function () {
+    mockObj = sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(
+      USERID_CONFIG
+    );
+  });
+
+  after(function () {
+    config.getConfig.restore();
+  });
+
   it('IIQ Analytical Adapter biw win report', function () {
     localStorage.setItem(PRECENT_LS_KEY + '_' + partner, '95')
     localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A')
