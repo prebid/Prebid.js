@@ -1329,7 +1329,7 @@ export const spec = {
 
     let serverRequest = {
       method: 'POST',
-      url: ENDPOINT + '?source=ow-client',
+      url: ENDPOINT + '?source=ow-client&uniqueReqId=' + Math.floor(Math.random() * 1000) + 1,
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -1338,7 +1338,8 @@ export const spec = {
     if (hasGetRequestEnabled()) {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
-      const urlEncodedPayloadStr = parseQueryStringParameters({ 'source': 'ow-client', 'payload': JSON.stringify(payload) });
+      const urlEncodedPayloadStr = parseQueryStringParameters({ 
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'uniqueReqId': Math.floor(Math.random() * 1000) + 1});
       if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
@@ -1435,6 +1436,15 @@ export const spec = {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
                   prepareMetaObject(br, bid, seatbidder.seat);
+
+                  // START of Experimental change
+                  if (response.body.ext || response.body.ext.timelines) {
+                    br.meta = br.meta || {};
+                    br.meta.uniqueReqId = response.body.ext.uniqueReqId;
+                    br.meta.timelines = response.body.ext.timelines;
+                  } 
+                  // END of Experimental change
+                  
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
