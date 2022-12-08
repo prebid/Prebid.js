@@ -240,7 +240,7 @@ function getBid(bids, currency, bidResponse) {
   }
 
   const {
-    price: cpm, crid: creativeId, adm: ad, w: width, h: height, adomain: advertiserDomains, meta = {}
+    price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
 
   let requestId = bids[bidResponse.impid - 1].bidId;
@@ -250,7 +250,7 @@ function getBid(bids, currency, bidResponse) {
 
   return {
     requestId,
-    ttl: 360,
+    ttl,
     mediaType: BANNER,
     cpm,
     creativeId,
@@ -259,7 +259,7 @@ function getBid(bids, currency, bidResponse) {
     width,
     height,
     meta,
-    netRevenue: false
+    netRevenue: true
   };
 }
 

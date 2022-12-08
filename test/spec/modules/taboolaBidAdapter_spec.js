@@ -311,6 +311,7 @@ describe('Taboola Adapter', function () {
                 'crid': '278195503434041083381',
                 'w': 300,
                 'h': 250,
+                'exp': 60,
                 'lurl': 'http://us-trc.taboola.com/sample'
               }
             ],
@@ -469,8 +470,8 @@ describe('Taboola Adapter', function () {
           requestId: request.bids[0].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
-          ttl: 360,
-          netRevenue: false,
+          ttl: 60,
+          netRevenue: true,
           currency: serverResponse.body.cur,
           mediaType: 'banner',
           ad: bid.adm,
@@ -484,6 +485,31 @@ describe('Taboola Adapter', function () {
 
       const res = spec.interpretResponse(serverResponse, request)
       expect(res).to.deep.equal(expectedRes)
+    });
+
+    it('should set the correct ttl form the response', function () {
+      // set exp-ttl to be 125
+      const [bid] = serverResponse.body.seatbid[0].bid;
+      serverResponse.body.seatbid[0].bid[0].exp = 125;
+      const expectedRes = [
+        {
+          requestId: request.bids[0].bidId,
+          cpm: bid.price,
+          creativeId: bid.crid,
+          ttl: 125,
+          netRevenue: true,
+          currency: serverResponse.body.cur,
+          mediaType: 'banner',
+          ad: bid.adm,
+          width: bid.w,
+          height: bid.h,
+          meta: {
+            'advertiserDomains': bid.adomain
+          },
+        }
+      ];
+      const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
     });
   })
 
