@@ -28,19 +28,8 @@ DSPx adapter for Prebid.
                     bidder: "dspx",
                     params: {
                         placement: '101',   // [required] info available from your contact with DSPx team
-                        /*
+                        /* // [optional params]
                             bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated 
-                        */
-                        /*
-                            pfilter: { // [optional]
-                                // [optional] only required if a deal is negotiated
-                                deals: [ // [optional]
-                                    "123-4567-d58a7f9a-..."// DEAL_ID from DSPx contact
-                                ],
-                                private_auction: 1 // [optional]  0  - no, 1 - yes
-                                // usually managed on DSPx side
-                                floorprice: 1000000 // input min_cpm_micros, CPM in EUR * 1000000
-                            },
                         */
                     }
                 }
@@ -58,7 +47,14 @@ DSPx adapter for Prebid.
                 bidder: 'dspx',
                 params: {
                     placement: '106',
-                    vastFormat: 'vast2|vast4' // set vast format
+                    /* // [optional params]
+                        bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated 
+                        floorprice: 1000000, // input min_cpm_micros, CPM in EUR * 1000000
+                        max_duration: 60,    // in seconds
+                        min_duration: 5,     // in seconds
+                        max_bitrate: 600,   
+                        api: [1,2],          // https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/master/AdCOM%20v1.0%20FINAL.md#list--api-frameworks-
+                    */
                 }
             }]
         }
