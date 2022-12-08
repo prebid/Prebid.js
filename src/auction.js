@@ -76,7 +76,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting} from './native.js';
+import {getNativeTargeting, toLegacyResponse} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -462,9 +462,14 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === 'video') {
+      if (bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
+        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
+          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
+          // to treat banner responses as native
+          addLegacyFieldsIfNeeded(bidResponse);
+        }
         addBidToAuction(auctionInstance, bidResponse);
         done();
       }
@@ -475,7 +480,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     return handleBidResponse(adUnitCode, bid, (done) => {
       // return a "NO_BID" replacement that the caller can decide to continue with
       // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
-      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers());
+      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers?.());
       Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => !noBid.hasOwnProperty(k) && ![
         'ad',
         'adUrl',
@@ -593,6 +598,17 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
+// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
+const addLegacyFieldsIfNeeded = (bidResponse) => {
+  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
+  const nativeOrtbResponse = bidResponse.native?.ortb
+
+  if (nativeOrtbRequest && nativeOrtbResponse) {
+    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
+    Object.assign(bidResponse.native, legacyResponse);
+  }
+}
+
 const storeInCache = (batch) => {
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
@@ -666,15 +682,20 @@ export const callPrebidCache = hook('async', function(auctionInstance, bidRespon
  */
 function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionManager.index} = {}) {
   const bidderRequest = index.getBidderRequest(bidResponse);
+  const adUnit = index.getAdUnit(bidResponse);
   const start = (bidderRequest && bidderRequest.start) || bidResponse.requestTimestamp;
 
   Object.assign(bidResponse, {
     responseTimestamp: bidResponse.responseTimestamp || timestamp(),
     requestTimestamp: bidResponse.requestTimestamp || start,
-    cpm: bidResponse.cpm || parseFloat(bidResponse.cpm) || 0,
+    cpm: parseFloat(bidResponse.cpm) || 0,
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
   });
+
+  if (adUnit?.ttlBuffer != null) {
+    bidResponse.ttlBuffer = adUnit.ttlBuffer;
+  }
 
   bidResponse.timeToRespond = bidResponse.responseTimestamp - bidResponse.requestTimestamp;
 }
@@ -690,7 +711,7 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, bid);
 
   // a publisher-defined renderer can be used to render bids
-  const adUnitRenderer = index.getAdUnit(bid).renderer;
+  const bidRenderer = index.getBidRequest(bid)?.renderer || index.getAdUnit(bid).renderer;
 
   // a publisher can also define a renderer for a mediaType
   const bidObjectMediaType = bid.mediaType;
@@ -704,8 +725,8 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
   // the renderer for the mediaType takes precendence
   if (mediaTypeRenderer && mediaTypeRenderer.url && mediaTypeRenderer.render && !(mediaTypeRenderer.backupOnly === true && bid.renderer)) {
     renderer = mediaTypeRenderer;
-  } else if (adUnitRenderer && adUnitRenderer.url && adUnitRenderer.render && !(adUnitRenderer.backupOnly === true && bid.renderer)) {
-    renderer = adUnitRenderer;
+  } else if (bidRenderer && bidRenderer.url && bidRenderer.render && !(bidRenderer.backupOnly === true && bid.renderer)) {
+    renderer = bidRenderer;
   }
 
   if (renderer) {

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import {config} from 'src/config.js';
 import { getRefererInfo } from 'src/refererDetection.js';
 import {processFpd, coreStorage, resetEnrichments} from 'modules/enrichmentFpdModule.js';
 import * as enrichmentModule from 'modules/enrichmentFpdModule.js';
@@ -77,10 +78,10 @@ describe('the first party data enrichment module', function() {
     expect(validated.site.keywords).to.be.undefined;
   });
 
-  it('adds page domain values if canonical url exists', function() {
+  it('adds page domain values if pageUrl url exists', function() {
+    config.setConfig({'pageUrl': 'https://www.subdomain.domain.co.uk/path?query=12345'});
     width = 800;
     height = 500;
-    canonical.href = 'https://www.subdomain.domain.co.uk/path?query=12345';
 
     let validated = syncProcessFpd({}, {}).global;
 
