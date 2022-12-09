@@ -28,42 +28,31 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const currencyObj = config.getConfig('currency');
-    const currency = (currencyObj && currencyObj.adServerCurrency) || 'USD';
-    const bidIDs = {};
-    const bidSizes = {};
+    const currency = (currencyObj && currencyObj.adServerCurrency);
     const impressions = [];
 
     _each(validBidRequests, bid => {
       bidIDs[bid.bidId] = bid.params.placementId;
       bidSizes[bid.bidId] = bid.sizes;
-      impressions.push({
-        id: bid.bidId,
-        tid: bid.transactionId,
-        pid: bid.params.placementId,
-        code: bid.adUnitCode,
-        floor: bid.floor,
-        banner: bid.mediaTypes.banner,
-        video: bid.mediaTypes.video,
-        fpd: { 
-          gpid: bid.ortb2Imp.gpid
-        },
-        bidRequestCount: bid.bidRequestsCount > 0 ? bid.bidRequestsCount : null,
-        bidderRequestCount: bid.bidderRequestsCount > 0 ? bid.bidderRequestsCount : null,
-        bidderWinCount: bid.bidderWinsCount > 0 ? bid.bidderWinsCount : null,
-      }
-
-      ) 
+      impressions.push(spec.getImpression(bid)) 
     });
 
     const firstBidRequest = validBidRequests[0];
 
     const tdid = deepAccess(firstBidRequest, 'userId.tdid')
 
+    // Pull Social Canvas segments and embed URL
+    const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
+    if (socialCanvas) {
+      transformedParams.socialCanvasSegments = socialCanvas.segments;
+      transformedParams.socialEmbedURL = socialCanvas.embedURL;
+    }
+
     const transformedParams = Object.assign({}, {
       pbv: '$prebid.version$',
       aid: firstBidRequest.auctionId,
       sid: spec._getSessionId(),
-      url: spec._getAllMetadata(bidderRequest, tdid).pageURL,
+      url: spec._getAllMetadata(bidderRequest).pageURL,
       requestCount: spec._getRequestCount(),
       to: bidderRequest.timeout,
       ts: new Date().getTime(),
@@ -79,7 +68,7 @@ export const spec = {
         timestamp: spec._getLocalStorageSafely['pageViewTimestamp'],
         url: spec._getLocalStorageSafely['pageViewUrl']
       },
-      user: spec._getUserIds(),
+      user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
       eids: firstBidRequest.userIdAsEids
     });
 
@@ -89,18 +78,10 @@ export const spec = {
       transformedParams.device.sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
     }
 
-    // Pull Social Canvas segments and embed URL
-    const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
-    if (socialCanvas) {
-      transformedParams.socialCanvasSegments = socialCanvas.segments;
-      transformedParams.socialEmbedURL = socialCanvas.embedURL;
-    }
-
-    const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'POST',
       url: `${HOST}/api/v1/prebid`,
-      data: `json=${encodedParams}`,
+      data: transformedParams,
       currency: currency
     });
   },
@@ -250,9 +231,8 @@ export const spec = {
     return crb.clientId;
   },
 
-  _getAllMetadata(bidderRequest, tdid) {
+  _getAllMetadata(bidderRequest) {
     return {
-      userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
       pageURL: bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
@@ -306,7 +286,36 @@ export const spec = {
 
       triggerPixel(timeoutRequestUrl);
     } catch (e) {}
+  },
+
+  getImpression(bid) {
+   let imp = {
+      id: bid.bidId,
+      tid: bid.transactionId,
+      pid: bid.params.placementId,
+      code: bid.adUnitCode,
+      floor: bid.floor,
+      banner: bid.mediaTypes.banner,
+      video: bid.mediaTypes.video,
+      fpd: { 
+        gpid: bid.ortb2Imp.gpid
+      },
+    }
+    
+    if(bid.bidRequestsCount > 0) {
+      imp.bidRequestCount = bid.bidRequestsCount
+    }  
+    
+    if(bid.bidderRequestsCount > 0) {
+      imp.bidderRequestCount = bid.bidderRequestsCount
+    }
+
+    if(bid.bidderWinsCount > 0) {
+      imp.bidderWinCount = bid.bidderWinsCount
+    }
+    return imp
   }
+
 };
 
 registerBidder(spec);
