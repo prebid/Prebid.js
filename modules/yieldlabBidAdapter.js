@@ -41,6 +41,7 @@ export const spec = {
 
     const adslotIds = []
     const adslotSizes = [];
+    const adslotFloors = [];
     const timestamp = Date.now()
     const query = {
       ts: timestamp,
@@ -77,7 +78,7 @@ export const spec = {
       }
       const floor = getBidFloor(bid, sizes)
       if (floor) {
-        query.floor = floor;
+        adslotFloors.push(bid.params.adslotId + ':' + floor);
       }
     })
 
@@ -99,6 +100,11 @@ export const spec = {
     if (adslotSizes.length > 0) {
       query.sizes = adslotSizes.join(',')
     }
+
+    if (adslotFloors.length > 0) {
+      query.floor = adslotFloors.join(',')
+    }
+
     const queryString = createQueryString(query)
 
     return {
@@ -370,21 +376,32 @@ function getContentObject(bid) {
 }
 
 /**
- * Creates a string for iab_content object
+ * Creates a string for iab_content object by
+ * 1. flatten the iab content object
+ * 2. encoding the values
+ * 3. joining array of defined keys ('keyword', 'cat') into one value seperated with '|'
+ * 4. encoding the whole string
  * @param {Object} iabContent
  * @returns {String}
  */
 function createIabContentString(iabContent) {
   const arrKeys = ['keywords', 'cat']
   const str = []
-  for (const key in iabContent) {
-    if (iabContent.hasOwnProperty(key)) {
-      const value = (arrKeys.indexOf(key) !== -1 && Array.isArray(iabContent[key]))
-        ? iabContent[key].map(node => encodeURIComponent(node)).join('|') : encodeURIComponent(iabContent[key])
-      str.push(''.concat(key, ':', value))
+  const transformObjToParam = (obj = {}, extraKey = '') => {
+    for (const key in obj) {
+      if ((arrKeys.indexOf(key) !== -1 && Array.isArray(obj[key]))) {
+        // Array of defined keyword which have to be joined into one value from "key: [value1, value2, value3]" to "key:value1|value2|value3"
+        str.push(''.concat(key, ':', obj[key].map(node => encodeURIComponent(node)).join('|')))
+      } else if (typeof obj[key] !== 'object') {
+        str.push(''.concat(extraKey + key, ':', encodeURIComponent(obj[key])))
+      } else {
+        // Object has to be further flattened
+        transformObjToParam(obj[key], ''.concat(extraKey, key, '.'));
+      }
     }
-  }
-  return encodeURIComponent(str.join(','))
+    return str.join(',');
+  };
+  return encodeURIComponent(transformObjToParam(iabContent))
 }
 
 /**
@@ -452,7 +469,7 @@ function extractSizes(bid) {
  *
  * @param {Object} bid
  * @param {string[]} sizes
- * @returns The floor CPM of a matched rule based on the rule selection process (mediaType, size and currency),
+ * @returns The floor CPM in cents of a matched rule based on the rule selection process (mediaType, size and currency),
  *          using the getFloor() inputs. Multi sizes and unsupported media types will default to '*'
  */
 function getBidFloor(bid, sizes) {
@@ -464,10 +481,10 @@ function getBidFloor(bid, sizes) {
   const floor = bid.getFloor({
     currency: CURRENCY_CODE,
     mediaType: mediaType !== undefined && spec.supportedMediaTypes.includes(mediaType) ? mediaType : '*',
-    size: sizes.length !== 1 ? '*' : extractSizes(sizes)
+    size: sizes.length !== 1 ? '*' : sizes[0].split(DIMENSION_SIGN)
   });
   if (floor.currency === CURRENCY_CODE) {
-    return floor.floor;
+    return (floor.floor * 100).toFixed(0);
   }
   return undefined;
 }

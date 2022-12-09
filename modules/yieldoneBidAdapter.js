@@ -4,6 +4,17 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
+ * @typedef {import('../src/auction').BidderRequest} BidderRequest
+ */
+
 const BIDDER_CODE = 'yieldone';
 const ENDPOINT_URL = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -13,13 +24,25 @@ const VIEWABLE_PERCENTAGE_URL = 'https://img.ak.impact-ad.jp/ic/pone/ivt/firstvi
 
 const DEFAULT_VIDEO_SIZE = {w: 640, h: 360};
 
+/** @type BidderSpec */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['y1'],
   supportedMediaTypes: [BANNER, VIDEO],
+  /**
+   * Determines whether or not the given bid request is valid.
+   * @param {BidRequest} bid The bid params to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.placementId);
   },
+  /**
+   * Make a server request from the list of BidRequests.
+   * @param {Bid[]} validBidRequests - An array of bids.
+   * @param {BidderRequest} bidderRequest - bidder request object.
+   * @returns {ServerRequest|ServerRequest[]} ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
@@ -74,10 +97,13 @@ export const spec = {
       }
 
       // DACID
-      const dacId = deepAccess(bidRequest, 'userId.dacId.id');
-      if (isStr(dacId) && !isEmpty(dacId)) {
-        payload.dac_id = dacId;
-        payload.fuuid = dacId;
+      const fuuid = deepAccess(bidRequest, 'userId.dacId.fuuid');
+      const dacid = deepAccess(bidRequest, 'userId.dacId.id');
+      if (isStr(fuuid) && !isEmpty(fuuid)) {
+        payload.fuuid = fuuid;
+      }
+      if (isStr(dacid) && !isEmpty(dacid)) {
+        payload.dac_id = dacid;
       }
 
       // ID5
@@ -93,6 +119,12 @@ export const spec = {
       };
     });
   },
+  /**
+   * Unpack the response from the server into a list of bids.
+   * @param {ServerResponse} serverResponse - A successful response from the server.
+   * @param {BidRequest} bidRequests
+   * @returns {Bid[]} - An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
@@ -185,6 +217,11 @@ export const spec = {
     }
     return bidResponses;
   },
+  /**
+   * Register the user sync pixels which should be dropped after the auction.
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @returns {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions) {
     if (syncOptions.iframeEnabled) {
       return [{
@@ -199,7 +236,7 @@ export const spec = {
  * NOTE: server side does not yet support multiple formats.
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @return {string|null} - `"banner"` or `"video"` or `null`.
+ * @returns {string|null} - `"banner"` or `"video"` or `null`.
  */
 function getMediaType(bidRequest, enabledOldFormat = true) {
   let hasBannerType = Boolean(deepAccess(bidRequest, 'mediaTypes.banner'));
@@ -236,7 +273,7 @@ function getMediaType(bidRequest, enabledOldFormat = true) {
  * @param  {Object} bidRequest.banner -
  * @param  {Array<string>} bidRequest.banner.sizes -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @return {string} - strings like `"300x250"` or `"300x250,728x90"`.
+ * @returns {string} - strings like `"300x250"` or `"300x250,728x90"`.
  */
 function getBannerSizes(bidRequest, enabledOldFormat = true) {
   let sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
@@ -251,10 +288,10 @@ function getBannerSizes(bidRequest, enabledOldFormat = true) {
 /**
  * @param  {Object} bidRequest -
  * @param  {boolean} [enabledOldFormat = true] - default: `true`.
- * @param  {boolean} [enabledFlux = true] - default: `true`.
- * @return {{w: number, h: number}} -
+ * @param  {boolean} [enabled1x1 = true] - default: `true`.
+ * @returns {{w: number, h: number}} -
  */
-function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
+function getVideoSize(bidRequest, enabledOldFormat = true, enabled1x1 = true) {
   /**
    * @param  {Array<number, number> | Array<Array<number, number>>} sizes -
    * @return {{w: number, h: number} | null} -
@@ -284,10 +321,10 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
     playerSize = playerSize || _getPlayerSize(bidRequest.sizes);
   }
 
-  if (enabledFlux) {
-    // NOTE: `video.playerSize` in Flux is always [1,1].
+  if (enabled1x1) {
+    // NOTE: `video.playerSize` in 1x1 is always [1,1].
     if (playerSize && (playerSize.w === 1 && playerSize.h === 1)) {
-      // NOTE: `params.playerSize` is a specific object to support `FLUX`.
+      // NOTE: `params.playerSize` is a specific object to support `1x1`.
       playerSize = _getPlayerSize(deepAccess(bidRequest, 'params.playerSize'));
     }
   }
@@ -295,6 +332,11 @@ function getVideoSize(bidRequest, enabledOldFormat = true, enabledFlux = true) {
   return playerSize || DEFAULT_VIDEO_SIZE;
 }
 
+/**
+ * Create render for outstream video.
+ * @param {Object} serverResponse.body -
+ * @returns {Renderer} - Prebid Renderer object
+ */
 function newRenderer(response) {
   const renderer = Renderer.install({
     id: response.uid,
@@ -311,12 +353,21 @@ function newRenderer(response) {
   return renderer;
 }
 
+/**
+ * Handles an outstream response after the library is loaded
+ * @param {Object} bid
+ */
 function outstreamRender(bid) {
   bid.renderer.push(() => {
     window.DACIVTPREBID.renderPrebid(bid);
   });
 }
 
+/**
+ * Create render for cmer outstream video.
+ * @param {Object} serverResponse.body -
+ * @returns {Renderer} - Prebid Renderer object
+ */
 function newCmerRenderer(response) {
   const renderer = Renderer.install({
     id: response.uid,
@@ -333,6 +384,10 @@ function newCmerRenderer(response) {
   return renderer;
 }
 
+/**
+ * Handles an outstream response after the library is loaded
+ * @param {Object} bid
+ */
 function cmerRender(bid) {
   bid.renderer.push(() => {
     window.CMERYONEPREBID.renderPrebid(bid);

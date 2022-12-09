@@ -979,6 +979,13 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should use refererInfo.page for referrer', function () {
+      bidderRequest.refererInfo.page = 'https://topmostlocation.com?foo=bar'
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)referrer=https%3A%2F%2Ftopmostlocation.com%3Ffoo%3Dbar/);
+      delete bidderRequest.refererInfo.page
+    });
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
