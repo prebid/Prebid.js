@@ -7,6 +7,13 @@ const BIDDER_CODE = 'stv';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
 const ENDPOINT_URL_DEV = 'https://ads.smartstream.tv/r/';
 const GVLID = 134;
+const VIDEO_ORTB_PARAMS = {
+	'minduration' : 'min_duration', 
+	'maxduration' : 'max_duration', 
+  	'maxbitrate' : 'max_bitrate', 
+  	'api' : 'api', 
+};
+
 
 export const spec = {
   code: BIDDER_CODE,
@@ -66,6 +73,13 @@ export const spec = {
       payload.pfilter = { ...params };
       delete payload.pfilter.placement;
       if (params.bcat !== undefined) { delete payload.pfilter.bcat; }
+      
+      if (mediaTypesInfo[VIDEO] !== undefined) {
+        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        Object.keys(videoParams)
+          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key))
+          .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
+      }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -113,7 +127,6 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        type: response.type,
         ttl: config.getConfig('_bidderTimeout'),
         meta: {
           advertiserDomains: response.adomain || []
