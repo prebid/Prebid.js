@@ -25,7 +25,7 @@ DSPx adapter for Prebid.
             },
             bids: [
                 {
-                    bidder: "dspx",
+                    bidder: "stv",
                     params: {
                         placement: '101',   // [required] info available from your contact with DSPx team
                         /* // [optional params]
@@ -44,7 +44,7 @@ DSPx adapter for Prebid.
                 }
             },
             bids: [{
-                bidder: 'dspx',
+                bidder: 'stv',
                 params: {
                     placement: '106',
                     /* // [optional params]
