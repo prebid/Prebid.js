@@ -52,6 +52,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         const divId = provider.divId;
         videoCore.registerProvider(provider);
         adQueueCoordinator.registerProvider(divId);
+        videoCore.initProvider(divId);
         videoCore.onEvents(videoEvents, (type, payload) => {
           pbEvents.emit(getExternalVideoEventName(type), payload);
         }, divId);
