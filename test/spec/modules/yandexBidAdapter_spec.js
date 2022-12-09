@@ -1,15 +1,14 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/yandexBidAdapter.js';
-import {parseUrl} from 'src/utils.js';
-import {BANNER} from '../../../src/mediaTypes';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/yandexBidAdapter.js';
+import { parseUrl } from 'src/utils.js';
+import { BANNER } from '../../../src/mediaTypes';
 
 describe('Yandex adapter', function () {
   function getBidConfig() {
     return {
       bidder: 'yandex',
       params: {
-        pageId: 123,
-        impId: 1,
+        placementId: '123-1',
       },
     };
   }
@@ -32,7 +31,7 @@ describe('Yandex adapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      const bid = getBidConfig();
+      const bid = getBidRequest();
       assert(spec.isBidRequestValid(bid));
     });
 
@@ -40,18 +39,28 @@ describe('Yandex adapter', function () {
       expect(spec.isBidRequestValid({})).to.be.false;
     });
 
-    it('should return false when required params.pageId are not passed', function () {
+    it('should return false when required params.placementId are not passed', function () {
       const bid = getBidConfig();
-      delete bid.params.pageId;
+      delete bid.params.placementId;
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return false when required params.impId are not passed', function () {
+    it('should return false when required params.placementId are not valid', function () {
       const bid = getBidConfig();
-      delete bid.params.impId;
+      bid.params.placementId = '123';
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return true when passed deprecated placement config', function () {
+      const bid = getBidConfig();
+      delete bid.params.placementId;
+
+      bid.params.pageId = 123;
+      bid.params.impId = 1;
+
+      expect(spec.isBidRequestValid(bid));
     });
   });
 

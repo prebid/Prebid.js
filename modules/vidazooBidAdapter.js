@@ -1,7 +1,8 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques} from '../src/utils.js';
+import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -12,6 +13,7 @@ const TTL_SECONDS = 60 * 5;
 const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
+const OPT_CACHE_KEY = 'vdzwopt';
 export const SUPPORTED_ID_SYSTEMS = {
   'britepoolid': 1,
   'criteoId': 1,
@@ -58,7 +60,8 @@ function isBidRequestValid(bid) {
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const { params, bidId, userId, adUnitCode, schain } = bid;
-  const { bidFloor, ext } = params;
+  const { ext } = params;
+  let { bidFloor } = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
@@ -66,6 +69,24 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const cId = extractCID(params);
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
+  const ptrace = getCacheOpt();
+  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+
+  if (isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (floorInfo.currency === 'USD') {
+      bidFloor = floorInfo.floor;
+    }
+  }
 
   let data = {
     url: encodeURIComponent(topWindowUrl),
@@ -83,7 +104,12 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
-    schain: schain
+    schain: schain,
+    ptrace: ptrace,
+    isStorageAllowed: isStorageAllowed,
+    gpid: gpid,
+    cat: cat,
+    pagecat: pagecat
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -256,6 +282,16 @@ export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
 
 export function getVidazooSessionId() {
   return getStorageItem(SESSION_ID_KEY) || '';
+}
+
+export function getCacheOpt() {
+  let data = storage.getDataFromLocalStorage(OPT_CACHE_KEY);
+  if (!data) {
+    data = String(Date.now());
+    storage.setDataInLocalStorage(OPT_CACHE_KEY, data);
+  }
+
+  return data;
 }
 
 export function getStorageItem(key) {
