@@ -17,7 +17,7 @@
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray } from '../src/utils.js';
+import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotMatchingAdUnitCode } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { find } from '../src/polyfill.js';
 // import find from 'core-js-pure/features/array/find.js';
@@ -96,20 +96,26 @@ let openWrapSetup = {
       PWT.removeKeyValuePairsFromGPTSlots([gptSlot]);
     }
 
-    if (isFn(PWT.requestBids) == true) {
-      PWT.requestBids(
-        PWT.generateConfForGPT([gptSlot]),
-        function(adUnitsArray) {
-          PWT.addKeyValuePairsToGPTSlots(adUnitsArray);
-          sendAdserverRequest();
-        }
-      );
-    } else {
-      sendAdserverRequest();
+    let isGptSlotPresent = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(gptSlot.getAdUnitPath()));
+    if(!!isGptSlotPresent){
+      if (isFn(PWT.requestBids) == true) {
+        PWT.requestBids(
+          PWT.generateConfForGPT([gptSlot]),
+          function(adUnitsArray) {
+            PWT.addKeyValuePairsToGPTSlots(adUnitsArray);
+            sendAdserverRequest();
+          }
+        );
+      } else {
+        sendAdserverRequest();
+      }
+    }else{
+      logMessage(MODULE_NAME, 'Slot not found for', gptSlotName);
     }
 
     // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
     setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100)
+
   },
 
   gptSlotToPbjsAdUnitMapFunction: function(gptSlotName, gptSlot, pbjsAU) {
