@@ -65,7 +65,7 @@ export const spec = {
 
       payload.pfilter = {...params};
       delete payload.pfilter.placement;
-      if(params.bcat)
+      if(params.bcat !== undefined)
       	delete payload.pfilter.bcat;
 
       if (bidderRequest && bidderRequest.gdprConsent) {
