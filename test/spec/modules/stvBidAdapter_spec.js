@@ -5,10 +5,10 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
 const ENDPOINT_URL_DEV = 'https://ads.smartstream.tv/r/';
 
-describe('stvAdapter', function () {
+describe('stvAdapter', function() {
   const adapter = newBidder(spec);
 
-  describe('isBidRequestValid', function () {
+  describe('isBidRequestValid', function() {
     let bid = {
       'bidder': 'stv',
       'params': {
@@ -25,11 +25,11 @@ describe('stvAdapter', function () {
       'auctionId': '1d1a030790a475'
     };
 
-    it('should return true when required params found', function () {
+    it('should return true when required params found', function() {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function () {
+    it('should return false when required params are not passed', function() {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
@@ -39,13 +39,12 @@ describe('stvAdapter', function () {
     });
   });
 
-  describe('buildRequests', function () {
+  describe('buildRequests', function() {
     let bidRequests = [{
       'bidder': 'stv',
       'params': {
         'placement': '6682',
         'floorprice': 1000000,
-        'private_auction': 0,
         'geo': {
           'country': 'DE'
         },
@@ -102,11 +101,11 @@ describe('stvAdapter', function () {
           'playerSize': [640, 480],
           'context': 'instream'
         },
-        /*'banner': {
-          'sizes': [
-            [300, 250]
-          ]
-        }*/
+        /* 'banner': {
+						  'sizes': [
+							[300, 250]
+						  ]
+						} */
       },
 
       'bidId': '30b31c1838de1e4',
@@ -141,13 +140,13 @@ describe('stvAdapter', function () {
       },
       gdprConsent: {
         consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
-        vendorData: {someData: 'value'},
+        vendorData: { someData: 'value' },
         gdprApplies: true
       }
     };
 
     var request1 = spec.buildRequests([bidRequests[0]], bidderRequest)[0];
-    it('sends bid request to our endpoint via GET', function () {
+    it('sends bid request to our endpoint via GET', function() {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
@@ -155,7 +154,7 @@ describe('stvAdapter', function () {
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
-    it('sends bid request to our DEV endpoint via GET', function () {
+    it('sends bid request to our DEV endpoint via GET', function() {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL_DEV);
       let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
@@ -169,15 +168,15 @@ describe('stvAdapter', function () {
       }
     };
     var request3 = spec.buildRequests([bidRequests[2]], bidderRequestWithoutGdpr)[0];
-    it('sends bid request without gdprConsent to our endpoint via GET', function () {
+    it('sends bid request without gdprConsent to our endpoint via GET', function() {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
       let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&w=300&h=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&w=300&h=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
     var request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
-    it('sends bid request without gdprConsent  to our DEV endpoint via GET', function () {
+    it('sends bid request without gdprConsent  to our DEV endpoint via GET', function() {
       expect(request4.method).to.equal('GET');
       expect(request4.url).to.equal(ENDPOINT_URL_DEV);
       let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
@@ -185,14 +184,14 @@ describe('stvAdapter', function () {
     });
 
     var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
-    it('sends bid video request to our endpoint via GET', function () {
+    it('sends bid video request to our endpoint via GET', function() {
       expect(request5.method).to.equal('GET');
       let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
       expect(data).to.equal('_f=vast2&alternative=prebid_js&_ps=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv4&media_types%5Bvideo%5D=640x480');
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('interpretResponse', function() {
     let serverResponse = {
       'body': {
         'cpm': 5000000,
@@ -237,7 +236,7 @@ describe('stvAdapter', function () {
       ttl: 300,
       type: 'sspHTML',
       ad: '<!-- test creative -->',
-      meta: {advertiserDomains: ['bdomain']}
+      meta: { advertiserDomains: ['bdomain'] }
     }, {
       requestId: '23beaa6af6cdde',
       cpm: 0.5,
@@ -251,10 +250,10 @@ describe('stvAdapter', function () {
       type: 'vast2',
       vastXml: '{"reason":7001,"status":"accepted"}',
       mediaType: 'video',
-      meta: {advertiserDomains: []}
+      meta: { advertiserDomains: [] }
     }];
 
-    it('should get the correct bid response by display ad', function () {
+    it('should get the correct bid response by display ad', function() {
       let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,
@@ -268,7 +267,7 @@ describe('stvAdapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
-    it('should get the correct dspx video bid response by display ad', function () {
+    it('should get the correct dspx video bid response by display ad', function() {
       let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,
@@ -287,7 +286,7 @@ describe('stvAdapter', function () {
       expect(result[0].meta.advertiserDomains.length).to.equal(0);
     });
 
-    it('handles empty bid response', function () {
+    it('handles empty bid response', function() {
       let response = {
         body: {}
       };
@@ -296,10 +295,10 @@ describe('stvAdapter', function () {
     });
   });
 
-  describe(`getUserSyncs test usage`, function () {
+  describe(`getUserSyncs test usage`, function() {
     let serverResponses;
 
-    beforeEach(function () {
+    beforeEach(function() {
       serverResponses = [{
         body: {
           requestId: '23beaa6af6cdde',
@@ -321,27 +320,27 @@ describe('stvAdapter', function () {
       }];
     });
 
-    it(`return value should be an array`, function () {
+    it(`return value should be an array`, function() {
       expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
     });
-    it(`array should have only one object and it should have a property type = 'iframe'`, function () {
+    it(`array should have only one object and it should have a property type = 'iframe'`, function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(1);
       let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses);
       expect(userSync).to.have.property('type');
       expect(userSync.type).to.be.equal('iframe');
     });
-    it(`we have valid sync url for iframe`, function () {
-      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, {consentString: 'anyString'});
+    it(`we have valid sync url for iframe`, function() {
+      let [userSync] = spec.getUserSyncs({ iframeEnabled: true }, serverResponses, { consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyIframeUrl?a=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('iframe');
     });
-    it(`we have valid sync url for image`, function () {
-      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+    it(`we have valid sync url for image`, function() {
+      let [userSync] = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.url).to.be.equal('anyImageUrl?gdpr=1&gdpr_consent=anyString')
       expect(userSync.type).to.be.equal('image');
     });
-    it(`we have valid sync url for image and iframe`, function () {
-      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, {gdprApplies: true, consentString: 'anyString'});
+    it(`we have valid sync url for image and iframe`, function() {
+      let userSync = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, serverResponses, { gdprApplies: true, consentString: 'anyString' });
       expect(userSync.length).to.be.equal(3);
       expect(userSync[0].url).to.be.equal('anyIframeUrl?a=1&gdpr=1&gdpr_consent=anyString')
       expect(userSync[0].type).to.be.equal('iframe');
@@ -352,10 +351,10 @@ describe('stvAdapter', function () {
     });
   });
 
-  describe(`getUserSyncs test usage in passback response`, function () {
+  describe(`getUserSyncs test usage in passback response`, function() {
     let serverResponses;
 
-    beforeEach(function () {
+    beforeEach(function() {
       serverResponses = [{
         body: {
           reason: 8002,
@@ -365,11 +364,11 @@ describe('stvAdapter', function () {
       }];
     });
 
-    it(`check for zero array when iframeEnabled`, function () {
+    it(`check for zero array when iframeEnabled`, function() {
       expect(spec.getUserSyncs({ iframeEnabled: true })).to.be.an('array');
       expect(spec.getUserSyncs({ iframeEnabled: true }, serverResponses).length).to.be.equal(0);
     });
-    it(`check for zero array when iframeEnabled`, function () {
+    it(`check for zero array when iframeEnabled`, function() {
       expect(spec.getUserSyncs({ pixelEnabled: true })).to.be.an('array');
       expect(spec.getUserSyncs({ pixelEnabled: true }, serverResponses).length).to.be.equal(0);
     });

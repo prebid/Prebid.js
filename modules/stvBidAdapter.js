@@ -1,6 +1,6 @@
 import { deepAccess } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'stv';
@@ -26,7 +26,7 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id
-      //const auctionId = bidRequest.auctionId || false;
+      // const auctionId = bidRequest.auctionId || false;
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
@@ -36,18 +36,18 @@ export const spec = {
 
       let payload = {};
       if (isVideoRequest(bidRequest)) {
-	    payload = {
-	      _f: 'vast2',
-	      alternative: 'prebid_js',
-	      _ps: placementId,
-	      srw: sizes ? sizes[0].width : 0,
-	      srh: sizes ? sizes[0].height : 0,
-	      idt: 100,
-	      rnd: rnd,
-	      ref: referrer,
-	      bid_id: bidId,
-	      pbver: '$prebid.version$',
-	    };
+        payload = {
+          _f: 'vast2',
+          alternative: 'prebid_js',
+          _ps: placementId,
+          srw: sizes ? sizes[0].width : 0,
+          srh: sizes ? sizes[0].height : 0,
+          idt: 100,
+          rnd: rnd,
+          ref: referrer,
+          bid_id: bidId,
+          pbver: '$prebid.version$',
+        };
       } else {
         payload = {
           _f: 'html',
@@ -63,14 +63,13 @@ export const spec = {
         };
       }
 
-      payload.pfilter = {...params};
+      payload.pfilter = { ...params };
       delete payload.pfilter.placement;
-      if(params.bcat !== undefined)
-      	delete payload.pfilter.bcat;
+      if (params.bcat !== undefined) { delete payload.pfilter.bcat; }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-          payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
+        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        payload.gdpr = bidderRequest.gdprConsent.gdprApplies;
       }
 
       if (params.bcat !== undefined) {
