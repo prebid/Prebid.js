@@ -22,6 +22,7 @@ function resetTestVars() {
   ortbContentMock = {};
   videoCoreMock = {
     registerProvider: sinon.spy(),
+    initProvider: sinon.spy(),
     onEvents: sinon.spy(),
     getOrtbVideo: () => ortbVideoMock,
     getOrtbContent: () => ortbContentMock,
