@@ -2,18 +2,18 @@ import { deepAccess } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'stv';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
 const ENDPOINT_URL_DEV = 'https://ads.smartstream.tv/r/';
 const GVLID = 134;
 const VIDEO_ORTB_PARAMS = {
-	'minduration' : 'min_duration', 
-	'maxduration' : 'max_duration', 
-  	'maxbitrate' : 'max_bitrate', 
-  	'api' : 'api', 
+  'minduration': 'min_duration',
+  'maxduration': 'max_duration',
+  'maxbitrate': 'max_bitrate',
+  'api': 'api',
 };
-
 
 export const spec = {
   code: BIDDER_CODE,
@@ -73,13 +73,16 @@ export const spec = {
       payload.pfilter = { ...params };
       delete payload.pfilter.placement;
       if (params.bcat !== undefined) { delete payload.pfilter.bcat; }
-      
+      if (params.dvt !== undefined) { delete payload.pfilter.dvt; }
+      if (params.devMode !== undefined) { delete payload.pfilter.devMode; }
+
       if (mediaTypesInfo[VIDEO] !== undefined) {
         let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
         Object.keys(videoParams)
-          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key))
+          .filter(key => includes(Object.keys(VIDEO_ORTB_PARAMS), key) && params[VIDEO_ORTB_PARAMS[key]] === undefined)
           .forEach(key => payload.pfilter[VIDEO_ORTB_PARAMS[key]] = videoParams[key]);
       }
+      if (Object.keys(payload.pfilter).length == 0) { delete payload.pfilter }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
