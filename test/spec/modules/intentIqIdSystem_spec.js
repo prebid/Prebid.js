@@ -263,16 +263,4 @@ describe('IntentIQ tests', function () {
     expect(ls_percent_data).to.be.equal(userPercentage + '');
     expect(server.requests.length).to.be.equal(0);
   });
-
-  it('Decode failed - partner config', function () {
-    let submodule = intentIqIdSubmodule.decode({ params: {} });
-    expect(logErrorStub.calledOnce).to.be.true;
-    expect(submodule).to.be.undefined;
-  });
-
-  it('Decode successfull ', function () {
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, JSON.stringify(testData))
-    let submodule = intentIqIdSubmodule.decode(null, percentageConfigParams);
-    expect(submodule.intentIqId).to.be.equal(testData.data)
-  });
 });

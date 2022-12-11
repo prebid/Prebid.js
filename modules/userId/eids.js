@@ -36,13 +36,7 @@ export const USER_IDS_CONFIG = {
   // intentIqId
   'intentIqId': {
     source: 'intentiq.com',
-    atype: 1,
-    getValue: function (data) {
-      if (data && data.uids && data.uids[0].id) { return data.uids[0].id; }
-    },
-    getSource: function (data) {
-      if (data && data.source) { return data.source; }
-    },
+    atype: 1
   },
 
   // naveggId

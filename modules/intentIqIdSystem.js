@@ -119,15 +119,7 @@ export const intentIqIdSubmodule = {
    * @returns {{intentIqId: {string}}|undefined}
    */
   decode(value, config) {
-    const configParams = (config && config.params) || {};
-    if (!configParams || typeof configParams.partner !== 'number') {
-      logError('User ID - intentIqId submodule requires a valid partner to be defined');
-      return undefined;
-    }
-    if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
-    let partnerData = tryParse(readData(FIRST_PARTY_DATA_KEY));
-
-    return partnerData && partnerData.data && INVALID_ID != partnerData.data ? { 'intentIqId': partnerData.data } : undefined;
+    return value && value != '' && INVALID_ID != value ? { 'intentIqId': value } : undefined;
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument

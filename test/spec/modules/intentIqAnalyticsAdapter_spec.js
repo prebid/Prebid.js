@@ -1,9 +1,11 @@
 import { expect } from 'chai';
-import { iiqAnalyticsAnalyticsAdapter } from 'modules/intentIqAnalyticsAdapter.js';
-import * as utils from 'src/utils.js';
-import { server } from 'test/mocks/xhr.js';
-import adapterManager from 'src/adapterManager.js';
+import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js'
+// import * as utils from 'src/utils.js';
+// import { server } from 'test/mocks/xhr.js';
+// import adapterManager from 'src/adapterManager.js';
 import { config } from 'src/config.js';
+let events = require('src/events');
+let constants = require('src/constants.json');
 
 const partner = 10;
 const pai = '11';
@@ -42,8 +44,6 @@ const USERID_CONFIG = [
   }
 ]
 
-let events = require('src/events');
-let constants = require('src/constants.json');
 let wonRequest = {
   'bidderCode': 'pubmatic',
   'width': 728,
@@ -78,49 +78,52 @@ let wonRequest = {
 
 };
 
-adapterManager.registerAnalyticsAdapter({
-  code: 'iiqAnalytics',
-  adapter: iiqAnalyticsAnalyticsAdapter
-});
+// adapterManager.registerAnalyticsAdapter({
+//   code: 'iiqAnalytics',
+//   adapter: iiqAnalyticsAnalyticsAdapter
+// });
 
-beforeEach(function () {
-  adapterManager.enableAnalytics({
-    provider: 'iiqAnalytics',
-    options: {}
-  });
-});
+describe('IntentIQ tests all', function () {
+  let ixhr;
+  let requests = [];
 
-describe('IntentIQ tests', function () {
-  var mockObj;
-  before(function () {
-    mockObj = sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(
+  beforeEach(function () {
+    sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(
       USERID_CONFIG
     );
+    ixhr = sinon.useFakeXMLHttpRequest();
+    requests = [];
+    ixhr.onCreate = (a) => {
+      requests.push(a);
+    };
+    sinon.stub(events, 'getEvents').returns([]);
+    iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+      provider: 'iiqAnalytics',
+    });
+    sinon.spy(iiqAnalyticsAnalyticsAdapter, 'track');
   });
-
-  after(function () {
+  afterEach(function () {
     config.getConfig.restore();
+    events.getEvents.restore();
+    requests = [];
+    ixhr.restore();
+    iiqAnalyticsAnalyticsAdapter.disableAnalytics();
+    iiqAnalyticsAnalyticsAdapter.track.restore();
   });
 
-  it('IIQ Analytical Adapter biw win report', function () {
-    localStorage.setItem(PRECENT_LS_KEY + '_' + partner, '95')
-    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A')
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344"}')
+  describe('IntentIQ tests', function () {
+    it('IIQ Analytical Adapter bid win report', function () {
+      iiqAnalyticsAnalyticsAdapter.enableAnalytics({
+        provider: 'iiqAnalytics'
+      });
 
-    events.emit(constants.EVENTS.BID_WON, wonRequest);
-    let request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=')
-    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=')
-  });
+      localStorage.setItem(PRECENT_LS_KEY + '_' + partner, '95')
+      localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A')
+      localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344"}')
 
-  it('IIQ Analytical Adapter biw win report', function () {
-    localStorage.setItem(PRECENT_LS_KEY + '_' + partner, '95')
-    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A')
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344"}')
-
-    events.emit(constants.EVENTS.BID_WON, wonRequest);
-    let request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=')
-    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=')
+      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      expect(requests[0].url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=')
+      expect(requests[0].url).to.contain('&jsver=5.3&source=pbjs&payload=')
+    });
   });
 });

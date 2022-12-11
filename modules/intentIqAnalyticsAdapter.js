@@ -124,10 +124,11 @@ function initReadLsIds() {
   try {
     initOptions.dataInLs = null;
     let iData = readData(FIRST_PARTY_DATA_KEY + '_' + initOptions.partner)
-    if (iData != null) {
+    if (iData) {
       initOptions.lsIdsInitialized = true;
-      initOptions.dataInLs = JSON.parse(iData).data;
-      initOptions.eidl = JSON.parse(iData).eidl || -1;
+      let pData = JSON.parse(iData);
+      initOptions.dataInLs = pData.data;
+      initOptions.eidl = pData.eidl || -1;
     }
   } catch (e) {
     logError(e)
