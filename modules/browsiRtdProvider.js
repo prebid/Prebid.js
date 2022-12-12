@@ -59,10 +59,12 @@ export function addBrowsiTag(data) {
 
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
-      vendor: 'browsi',
-      type: 'pageview',
-      billingId: generateUUID()
+    window.addEventListener('browsi_pageview', () => {
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'pageview',
+        billingId: generateUUID()
+      })
     })
   }
 }
