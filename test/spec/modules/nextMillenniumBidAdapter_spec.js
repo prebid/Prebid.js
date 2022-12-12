@@ -49,7 +49,8 @@ describe('nextMillenniumBidAdapterTests', function() {
       cur: 'USD',
       ext: {
         sync: {
-          image: ['urlA']
+          image: ['urlA'],
+          iframe: ['urlB'],
         }
       }
     }
@@ -128,10 +129,17 @@ describe('nextMillenniumBidAdapterTests', function() {
       'iframeEnabled': false,
       'pixelEnabled': true
     }
-    const userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    let userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
     expect(userSync).to.be.an('array').with.lengthOf(1);
-    expect(userSync[0].type).to.exist;
-    expect(userSync[0].url).to.exist;
+    expect(userSync[0].type).to.equal('image');
+    expect(userSync[0].url).to.equal('urlA');
+
+    syncOptions.iframeEnabled = true;
+    syncOptions.pixelEnabled = false;
+    userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.equal('iframe');
+    expect(userSync[0].url).to.equal('urlB');
   });
 
   it('Request params check without GDPR Consent', function () {

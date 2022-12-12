@@ -1,4 +1,5 @@
 import {
+  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
@@ -199,15 +200,15 @@ export const spec = {
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const pixels = [];
 
-    if (responses instanceof Array) {
+    if (isArray(responses)) {
       responses.forEach(response => {
         if (
           response.body &&
           response.body.ext &&
           response.body.ext.sync
         ) {
-          const sync = response.body.ext.sync
-          if (sync.image instanceof Array) {
+          const sync = deepAccess(response, 'body.ext.sync', {})
+          if (syncOptions.pixelEnabled && isArray(sync.image)) {
             sync.image.forEach(imgUrl => {
               pixels.push({
                 type: 'image',
@@ -216,7 +217,7 @@ export const spec = {
             })
           }
 
-          if (sync.iframe instanceof Array) {
+          if (syncOptions.iframeEnabled && isArray(sync.iframe)) {
             sync.iframe.forEach(iframeUrl => {
               pixels.push({
                 type: 'iframe',
