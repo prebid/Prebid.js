@@ -1706,6 +1706,20 @@ describe('IndexexchangeAdapter', function () {
 
       expect(r.regs).to.be.undefined;
     });
+    it('should set gpp info from module when it exists', function () {
+      const options = {
+        gppConsent: {
+          gppString: 'gpp',
+          applicableSections: [1]
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
+      const r = extractPayload(request[0]);
+
+      expect(r.regs.gpp).to.equal('gpp');
+      expect(r.regs.gpp_sid).to.be.an('array');
+      expect(r.regs.gpp_sid).to.include(1);
+    });
   });
 
   describe('buildRequests', function () {

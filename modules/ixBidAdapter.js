@@ -720,6 +720,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (pageUrl) {
       r.site.page = pageUrl;
     }
+
+    if (bidderRequest.gppConsent) {
+      deepSetValue(r, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(r, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    }
   }
 
   if (config.getConfig('coppa')) {
@@ -875,7 +880,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         }
       });
 
-      if (fpd.hasOwnProperty('regs')) {
+      if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
         if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
           deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
         }
