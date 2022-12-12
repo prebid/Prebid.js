@@ -1438,10 +1438,8 @@ export const spec = {
                   prepareMetaObject(br, bid, seatbidder.seat);
 
                   // START of Experimental change
-                  if (response.body.ext || response.body.ext.timelines) {
-                    br.meta = br.meta || {};
-                    br.meta.uniqueReqId = response.body.ext.uniqueReqId;
-                    br.meta.timelines = response.body.ext.timelines;
+                  if (response.body.ext) {            
+                    br.ext = response.body.ext;                  
                   } 
                   // END of Experimental change
                   
