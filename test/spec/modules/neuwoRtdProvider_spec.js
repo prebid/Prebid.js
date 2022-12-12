@@ -12,10 +12,12 @@ const apiReturns = () => ({
   somethingExtra: { object: true },
   marketing_categories: {
     iab_tier_1: [
-      { ID: '15', label: 'Pickup Trucks', relevance: '0.45699' }
+      { ID: 'IAB21', label: 'Real Estate', relevance: '0.45699' }
     ]
   }
 })
+
+const TAX_ID = '441'
 
 /**
  * Object generator, like above, written using alternative techniques
@@ -43,9 +45,9 @@ describe('neuwoRtdProvider', function () {
         expect(neuwo.pickSegments({ bad_object: 'bad' })).to.be.an('array').that.is.empty;
       })
       it('handles malformations', function () {
-        let result = neuwo.pickSegments([{something_wrong: true}, null, { ID: '123' }, { id: 'dominant', ID: 'submissive' }])
-        expect(result[0].id).to.equal('123')
-        expect(result[1].id).to.equal('dominant')
+        let result = neuwo.pickSegments([{something_wrong: true}, null, { ID: 'IAB19-20' }, { id: 'IAB3-1', ID: 'IAB9-20' }])
+        expect(result[0].id).to.equal('631')
+        expect(result[1].id).to.equal('58')
         expect(result.length).to.equal(2)
       })
     })
@@ -56,7 +58,7 @@ describe('neuwoRtdProvider', function () {
         let bidsConfig = bidsConfiglike()
         neuwo.injectTopics(topics, bidsConfig, () => { })
         expect(bidsConfig.ortb2Fragments.global.site.content.data[0].name, 'name of first content data object').to.equal(neuwo.DATA_PROVIDER)
-        expect(bidsConfig.ortb2Fragments.global.site.content.data[0].segment[0].id, 'id of first segment in content.data').to.equal(apiReturns().marketing_categories.iab_tier_1[0].ID)
+        expect(bidsConfig.ortb2Fragments.global.site.content.data[0].segment[0].id, 'id of first segment in content.data').to.equal(TAX_ID)
       })
     })
 
@@ -83,13 +85,16 @@ describe('neuwoRtdProvider', function () {
         request.respond(200, { 'Content-Type': 'application/json; encoding=UTF-8' }, JSON.stringify(apiReturns()));
 
         expect(bids.ortb2Fragments.global.site.content.data[0].name, 'name of first content data object').to.equal(neuwo.DATA_PROVIDER)
-        expect(bids.ortb2Fragments.global.site.content.data[0].segment[0].id, 'id of first segment in content.data').to.equal(apiReturns().marketing_categories.iab_tier_1[0].ID)
+        expect(bids.ortb2Fragments.global.site.content.data[0].segment[0].id, 'id of first segment in content.data').to.equal(TAX_ID)
       })
 
       it('accepts detail not available result', function () {
-        neuwo.getBidRequestData(bidsConfiglike(), () => { }, config(), 'consensually')
+        let bidsConfig = bidsConfiglike()
+        let comparison = bidsConfiglike()
+        neuwo.getBidRequestData(bidsConfig, () => { }, config(), 'consensually')
         let request = server.requests[0];
-        request.respond(200, { 'Content-Type': 'application/json; encoding=UTF-8' }, JSON.stringify(apiReturns()));
+        request.respond(404, { 'Content-Type': 'application/json; encoding=UTF-8' }, JSON.stringify({ detail: 'Basically first time seeing this' }));
+        expect(bidsConfig).to.deep.equal(comparison)
       })
     })
   })
