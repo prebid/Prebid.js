@@ -32,8 +32,6 @@ export const spec = {
     const impressions = [];
 
     _each(validBidRequests, bid => {
-      bidIDs[bid.bidId] = bid.params.placementId;
-      bidSizes[bid.bidId] = bid.sizes;
       impressions.push(spec.getImpression(bid)) 
     });
 
@@ -43,11 +41,7 @@ export const spec = {
 
     // Pull Social Canvas segments and embed URL
     const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
-    if (socialCanvas) {
-      transformedParams.socialCanvasSegments = socialCanvas.segments;
-      transformedParams.socialEmbedURL = socialCanvas.embedURL;
-    }
-
+ 
     const transformedParams = Object.assign({}, {
       pbv: '$prebid.version$',
       aid: firstBidRequest.auctionId,
@@ -56,7 +50,6 @@ export const spec = {
       requestCount: spec._getRequestCount(),
       to: bidderRequest.timeout,
       ts: new Date().getTime(),
-      cur: currency,
       device: {
         width: window.screen.width,
         height: window.screen.height
@@ -71,6 +64,10 @@ export const spec = {
       user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
       eids: firstBidRequest.userIdAsEids
     });
+
+    if(currency != null && currency != "USD") {
+      transformedParams.cur = currency
+    }
 
     // User Agent Client Hints / SUA
     const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
@@ -289,7 +286,7 @@ export const spec = {
   },
 
   getImpression(bid) {
-   let imp = {
+   const imp = {
       id: bid.bidId,
       tid: bid.transactionId,
       pid: bid.params.placementId,
@@ -298,7 +295,7 @@ export const spec = {
       banner: bid.mediaTypes.banner,
       video: bid.mediaTypes.video,
       fpd: { 
-        gpid: bid.ortb2Imp.gpid
+        gpid: getGPID(bid)
       },
     }
     
@@ -314,6 +311,30 @@ export const spec = {
       imp.bidderWinCount = bid.bidderWinsCount
     }
     return imp
+  },
+
+  getGPID(bid) {
+    if(bid.ortb2Imp.gpid != null & bid.ortb2Imp.gpid != "") {
+      return bid.ortb2Imp.gpid 
+    }
+
+    if (bid.ortb2Imp.Extensions.Data.PBadSlot != null && bid.ortb2Imp.Extensions.Data.PBadSlot != "") {
+      return bid.ortb2Imp.Extensions.Data.PBadSlot
+    }
+
+    if (bid.ortb2Imp.Extensions.Data.PbAdSlot != null && bid.ortb2Imp.Extensions.Data.PbAdSlot != "") {
+      return bid.ortb2Imp.Extensions.Data.PbAdSlot
+    }
+  
+    if (bid.ortb2Imp.Extensions.Data.AdServer.AdSlot != null && bid.ortb2Imp.Extensions.Data.AdServer.AdSlot != "") {
+      return bid.ortb2Imp.Extensions.Data.AdServer.AdSlot
+    }
+  
+    if (bid.AdUnitCode != null && bid.AdUnitCode != "") {
+      return prebidRequest.AdUnitCode
+    }
+  
+    return ""
   }
 
 };
