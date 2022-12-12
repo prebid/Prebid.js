@@ -276,4 +276,137 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
   });
+
+  it('Check function of getting URL for sending statistics data', function() {
+    const dataForTests = [
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'appnexus',
+          bids: [{bidder: 'appnexus', params: {}}],
+        },
+
+        expected: undefined,
+      },
+
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'appnexus',
+          bids: [{bidder: 'appnexus', params: {placement_id: '807'}}],
+        },
+
+        expected: undefined,
+      },
+
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'nextMillennium',
+          bids: [{bidder: 'nextMillennium', params: {placement_id: '807'}}],
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807',
+      },
+
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'nextMillennium',
+          bids: [
+            {bidder: 'nextMillennium', params: {placement_id: '807'}},
+            {bidder: 'nextMillennium', params: {placement_id: '111'}},
+          ],
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&placements=807;111',
+      },
+
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'nextMillennium',
+          bids: [{bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}}],
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123',
+      },
+
+      {
+        eventName: 'bidRequested',
+        bid: {
+          bidderCode: 'nextMillennium',
+          bids: [
+            {bidder: 'nextMillennium', params: {placement_id: '807', group_id: '123'}},
+            {bidder: 'nextMillennium', params: {group_id: '456'}},
+            {bidder: 'nextMillennium', params: {placement_id: '222'}},
+          ],
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidRequested&bidder=nextMillennium&source=pbjs&groups=123;456&placements=222',
+      },
+
+      {
+        eventName: 'bidResponse',
+        bid: {
+          bidderCode: 'appnexus',
+        },
+
+        expected: undefined,
+      },
+
+      {
+        eventName: 'bidResponse',
+        bid: {
+          bidderCode: 'nextMillennium',
+          params: {placement_id: '807'},
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidResponse&bidder=nextMillennium&source=pbjs&placements=807',
+      },
+
+      {
+        eventName: 'noBid',
+        bid: {
+          bidder: 'appnexus',
+        },
+
+        expected: undefined,
+      },
+
+      {
+        eventName: 'noBid',
+        bid: {
+          bidder: 'nextMillennium',
+          params: {placement_id: '807'},
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=noBid&bidder=nextMillennium&source=pbjs&placements=807',
+      },
+
+      {
+        eventName: 'bidTimeout',
+        bid: {
+          bidder: 'appnexus',
+        },
+
+        expected: undefined,
+      },
+
+      {
+        eventName: 'bidTimeout',
+        bid: {
+          bidder: 'nextMillennium',
+          params: {placement_id: '807'},
+        },
+
+        expected: 'https://report2.hb.brainlyads.com/statistics/metric?event=bidTimeout&bidder=nextMillennium&source=pbjs&placements=807',
+      },
+    ];
+
+    for (let {eventName, bid, expected} of dataForTests) {
+      const url = spec.getUrlPixelMetric(eventName, bid);
+      expect(url).to.equal(expected);
+    };
+  })
 });
