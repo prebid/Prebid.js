@@ -58,7 +58,11 @@ describe('rasBidAdapter', function () {
         slot: 'test',
         area: 'areatest',
         site: 'test',
-        network: '4178463'
+        slotSequence: '0',
+        network: '4178463',
+        customParams: {
+          test: 'name=value'
+        }
       }
     };
     const bid2 = {
@@ -97,6 +101,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('euconsent=some-consent-string');
       expect(requests[0].url).to.have.string('du=https%3A%2F%2Fexample.com%2F');
       expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
+      expect(requests[0].url).to.have.string('test=name%3Dvalue');
     });
 
     it('should return empty consent string when undefined', function () {
@@ -140,6 +145,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('DV=test%2Fareatest');
       expect(requests[0].url).to.have.string('kwrd=val1%2Bval2');
       expect(requests[0].url).to.have.string('kvadunit=test%2Fareatest');
+      expect(requests[0].url).to.have.string('pos0=0');
     });
   });
 

@@ -1,15 +1,14 @@
-import {assert, expect} from 'chai';
-import {spec} from 'modules/yandexBidAdapter.js';
-import {parseUrl} from 'src/utils.js';
-import {BANNER} from '../../../src/mediaTypes';
+import { assert, expect } from 'chai';
+import { spec } from 'modules/yandexBidAdapter.js';
+import { parseUrl } from 'src/utils.js';
+import { BANNER } from '../../../src/mediaTypes';
 
 describe('Yandex adapter', function () {
   function getBidConfig() {
     return {
       bidder: 'yandex',
       params: {
-        pageId: 123,
-        impId: 1,
+        placementId: '123-1',
       },
     };
   }
@@ -32,7 +31,7 @@ describe('Yandex adapter', function () {
 
   describe('isBidRequestValid', function () {
     it('should return true when required params found', function () {
-      const bid = getBidConfig();
+      const bid = getBidRequest();
       assert(spec.isBidRequestValid(bid));
     });
 
@@ -40,18 +39,28 @@ describe('Yandex adapter', function () {
       expect(spec.isBidRequestValid({})).to.be.false;
     });
 
-    it('should return false when required params.pageId are not passed', function () {
+    it('should return false when required params.placementId are not passed', function () {
       const bid = getBidConfig();
-      delete bid.params.pageId;
+      delete bid.params.placementId;
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
-    it('should return false when required params.impId are not passed', function () {
+    it('should return false when required params.placementId are not valid', function () {
       const bid = getBidConfig();
-      delete bid.params.impId;
+      bid.params.placementId = '123';
 
-      expect(spec.isBidRequestValid(bid)).to.be.false
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return true when passed deprecated placement config', function () {
+      const bid = getBidConfig();
+      delete bid.params.placementId;
+
+      bid.params.pageId = 123;
+      bid.params.impId = 1;
+
+      expect(spec.isBidRequestValid(bid));
     });
   });
 
@@ -64,7 +73,9 @@ describe('Yandex adapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        domain: 'yandex.ru'
+        domain: 'ya.ru',
+        ref: 'https://ya.ru/',
+        page: 'https://ya.ru/',
       },
       gdprConsent
     };
@@ -72,7 +83,7 @@ describe('Yandex adapter', function () {
     it('creates a valid banner request', function () {
       const bannerRequest = getBidRequest();
       bannerRequest.getFloor = () => ({
-        currency: 'USD',
+        currency: 'EUR',
         // floor: 0.5
       });
 
@@ -89,11 +100,11 @@ describe('Yandex adapter', function () {
       const parsedRequestUrl = parseUrl(url);
       const { search: query } = parsedRequestUrl
 
-      expect(parsedRequestUrl.hostname).to.equal('bs-metadsp.yandex.ru');
+      expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
       expect(parsedRequestUrl.pathname).to.equal('/metadsp/123');
 
       expect(query['imp-id']).to.equal('1');
-      expect(query['target-ref']).to.equal('yandex.ru');
+      expect(query['target-ref']).to.equal('ya.ru');
       expect(query['ssp-id']).to.equal('10500');
 
       expect(query['gdpr']).to.equal('1');
@@ -101,7 +112,8 @@ describe('Yandex adapter', function () {
 
       expect(request.data).to.exist;
       expect(data.site).to.not.equal(null);
-      expect(data.site.page).to.equal('yandex.ru');
+      expect(data.site.page_url).to.equal('https://ya.ru/');
+      expect(data.site.ref_url).to.equal('https://ya.ru/');
 
       // expect(data.device).to.not.equal(null);
       // expect(data.device.w).to.equal(window.innerWidth);

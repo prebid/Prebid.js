@@ -795,4 +795,127 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[0].video.minbitrate).to.equal(200);
     expect(ortbRequest.imp[0].video.protocols).to.eql([1, 2, 4]);
   });
+  it('Verify user level first party data', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      },
+      gdprConsent: {
+        gdprApplies: true,
+        consentString: 'serialized_gpdr_data'
+      },
+      ortb2: {
+        user: {
+          yob: 1985,
+          gender: 'm',
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      }
+    };
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.user).to.not.equal(null);
+    expect(ortbRequest.user).to.deep.equal({
+      yob: 1985,
+      gender: 'm',
+      ext: {
+        data: {
+          registered: true,
+          interests: ['cars']
+        },
+        consent: 'serialized_gpdr_data'
+      }
+    });
+  });
+  it('Verify site level first party data', function () {
+    const bidderRequest = {
+      refererInfo: {
+        page: 'https://publisher.com/home',
+        ref: 'https://referrer'
+      },
+      ortb2: {
+        site: {
+          content: {
+            data: [{
+              name: 'www.iris.com',
+              ext: {
+                segtax: 500,
+                cids: ['iris_c73g5jq96mwso4d8']
+              }
+            }]
+          },
+          page: 'http://pub.com/news',
+          ref: 'http://google.com'
+        }
+      }
+    };
+    let request = spec.buildRequests(slotConfigs, bidderRequest);
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.site).to.not.equal(null);
+    expect(ortbRequest.site).to.deep.equal({
+      content: {
+        data: [{
+          name: 'www.iris.com',
+          ext: {
+            segtax: 500,
+            cids: ['iris_c73g5jq96mwso4d8']
+          }
+        }]
+      },
+      page: 'https://publisher.com/home',
+      ref: 'https://referrer',
+      publisher: {
+        id: 'p10000'
+      }
+    });
+  });
+  it('Verify impression/slot level first party data', function () {
+    const bidderRequests = [{
+      placementCode: '/DfpAccount1/slot1',
+      mediaTypes: {
+        banner: {
+          sizes: [[1, 1]]
+        }
+      },
+      bidId: 'bid12345',
+      params: {
+        cp: 'p10000',
+        ct: 't10000',
+        extra_key1: 'extra_val1',
+        extra_key2: 12345
+      },
+      ortb2Imp: {
+        ext: {
+          data: {
+            pbadslot: 'homepage-top-rect',
+            adUnitSpecificAttribute: '123'
+          }
+        }
+      }
+    }];
+    let request = spec.buildRequests(bidderRequests, bidderRequest);
+    let ortbRequest = request.data;
+    expect(ortbRequest).to.not.equal(null);
+    expect(ortbRequest.imp).to.not.equal(null);
+    expect(ortbRequest.imp).to.have.lengthOf(1);
+    expect(ortbRequest.imp[0].ext).to.not.equal(null);
+    expect(ortbRequest.imp[0].ext).to.deep.equal({
+      prebid: {
+        extra_key1: 'extra_val1',
+        extra_key2: 12345
+      },
+      data: {
+        pbadslot: 'homepage-top-rect',
+        adUnitSpecificAttribute: '123'
+      }
+    });
+  });
 });

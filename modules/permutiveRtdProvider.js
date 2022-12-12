@@ -8,14 +8,18 @@
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {deepAccess, deepSetValue, isFn, logError, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
 
+export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
 
-function init (moduleConfig, userConsent) {
+function init(moduleConfig, userConsent) {
+  readPermutiveModuleConfigFromCache()
+
   return true
 }
 
@@ -43,20 +47,63 @@ export function initSegments (reqBidsConfigObj, callback, customModuleConfig) {
   }
 }
 
+function liftIntoParams(params) {
+  return isPlainObject(params) ? { params } : {}
+}
+
+let cachedPermutiveModuleConfig = {}
+
 /**
- * Merges segments into existing bidder config
- * @param {Object} customModuleConfig - Publisher config for module
- * @return {Object} Merged defatul and custom config
+ * Access the submodules RTD params that are cached to LocalStorage by the Permutive SDK. This lets the RTD submodule
+ * apply publisher defined params set in the Permutive platform, so they may still be applied if the Permutive SDK has
+ * not initialised before this submodule is initialised.
  */
-function getModuleConfig (customModuleConfig) {
+function readPermutiveModuleConfigFromCache() {
+  const params = safeJSONParse(storage.getDataFromLocalStorage(PERMUTIVE_SUBMODULE_CONFIG_KEY))
+  return cachedPermutiveModuleConfig = liftIntoParams(params)
+}
+
+/**
+ * Access the submodules RTD params attached to the Permutive SDK.
+ *
+ * @return The Permutive config available by the Permutive SDK or null if the operation errors.
+ */
+function getParamsFromPermutive() {
+  try {
+    return liftIntoParams(window.permutive.addons.prebid.getPermutiveRtdConfig())
+  } catch (e) {
+    return null
+  }
+}
+
+/**
+ * Merges segments into existing bidder config in reverse priority order. The highest priority is 1.
+ *
+ *   1. customModuleConfig <- set by publisher with pbjs.setConfig
+ *   2. permutiveRtdConfig <- set by the publisher using the Permutive platform
+ *   3. defaultConfig
+ *
+ * As items with a higher priority will be deeply merged into the previous config, deep merges are performed by
+ * reversing the priority order.
+ *
+ * @param {Object} customModuleConfig - Publisher config for module
+ * @return {Object} Deep merges of the default, Permutive and custom config.
+ */
+export function getModuleConfig(customModuleConfig) {
+  // Use the params from Permutive if available, otherwise fallback to the cached value set by Permutive.
+  const permutiveModuleConfig = getParamsFromPermutive() || cachedPermutiveModuleConfig
+
   return mergeDeep({
     waitForIt: false,
     params: {
       maxSegs: 500,
       acBidders: [],
-      overwrites: {}
-    }
-  }, customModuleConfig)
+      overwrites: {},
+    },
+  },
+  permutiveModuleConfig,
+  customModuleConfig,
+  )
 }
 
 /**
@@ -191,7 +238,8 @@ function getDefaultBidderFn (bidder) {
         deepSetValue(bid, 'params.visitor.p_standard', data.ac)
       }
       if (data.rubicon && data.rubicon.length) {
-        deepSetValue(bid, 'params.visitor.permutive', data.rubicon)
+        const rubiconCohorts = deepAccess(bid, 'params.video') ? data.rubicon.map(String) : data.rubicon
+        deepSetValue(bid, 'params.visitor.permutive', rubiconCohorts)
       }
 
       return bid

@@ -78,6 +78,39 @@ function getPricing(xmlNode) {
   return princingData;
 }
 
+/*
+* Read the StickyBrand extension with this format:
+* <Extension type='StickyBrand'>
+*   <Domain><![CDATA[minotaur.com]]></Domain>
+*   <Sector><![CDATA[BEAUTY & HYGIENE]]></Sector>
+*   <Advertiser><![CDATA[James Bond Trademarks]]></Advertiser>
+*   <Brand><![CDATA[007 Seven]]></Brand>
+* </Extension>
+* @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
+*/
+function getAdvertiserDomain(xmlNode) {
+  var domain = [];
+  var brandExtNode;
+  var extensions = xmlNode.querySelectorAll('Extension');
+  // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+  Array.prototype.forEach.call(extensions, function(node) {
+    if (node.getAttribute('type') === 'StickyBrand') {
+      brandExtNode = node;
+    }
+  });
+
+  // Currently we only return one Domain
+  if (brandExtNode) {
+    var domainNode = brandExtNode.querySelector('Domain');
+    domain.push(domainNode.textContent || domainNode.innerText);
+  } else {
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
+  }
+
+  return domain;
+}
+
 function hashcode(inputString) {
   var hash = 0;
   var char;
@@ -189,7 +222,7 @@ function formatAdHTML(bid, size) {
   var libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
-    script = getOutstreamScript(bid, size);
+    script = getOutstreamScript(bid);
   } else {
     libUrl = MUSTANG_URL;
     script = getInBannerScript(bid, size);
@@ -260,7 +293,7 @@ var getOutstreamScript = function(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv'], //  former name for freewheel-ssp
+  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -326,7 +359,7 @@ export const spec = {
           }
         }
       }
-      // TODO: is 'page' the right value here?
+
       var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
@@ -409,6 +442,8 @@ export const spec = {
     const campaignId = getCampaignId(xmlDoc);
     const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
+    const advertiserDomains = getAdvertiserDomain(xmlDoc);
+
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
     }
@@ -426,7 +461,7 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        meta: { advertiserDomains: princingData.adomain && isArray(princingData.adomain) ? princingData.adomain : [] },
+        meta: { advertiserDomains: advertiserDomains },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId
@@ -454,14 +489,20 @@ export const spec = {
       }
     }
 
+    const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
-      return [{
+      syncs.push({
         type: 'image',
         url: USER_SYNC_URL + gdprParams
-      }];
-    } else {
-      return [];
+      });
+    } else if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: USER_SYNC_URL + gdprParams
+      });
     }
+
+    return syncs;
   },
 };
 
