@@ -130,7 +130,7 @@ describe('the first party data module', function () {
         }
       };
 
-      canonical.href = 'https://www.domain.com/path?query=12345';
+      config.setConfig({'pageUrl': 'https://www.domain.com/path?query=12345'});
       width = 1120;
       height = 750;
 

@@ -43,7 +43,10 @@ describe('33acrossIdSystem', () => {
 
       expect(request.method).to.equal('GET');
       expect(request.withCredentials).to.be.true;
-      expect(request.url).to.contain('https://lexicon.33across.com/v1/envelope?pid=12345');
+
+      const regExp = new RegExp('https://lexicon.33across.com/v1/envelope\\?pid=12345&gdpr=\\d&src=pbjs&ver=$prebid.version$');
+
+      expect(request.url).to.match(regExp);
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
     });
 

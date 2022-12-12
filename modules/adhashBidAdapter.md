@@ -3,7 +3,7 @@
 ```
 Module Name: AdHash Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: damyan@adhash.org
+Maintainer: damyan@adhash.com
 ```
 
 # Description
@@ -14,8 +14,6 @@ Here is what you need for Prebid integration with AdHash:
 3. Use the Publisher ID and Platform URL as parameters in params.
 
 Please note that a number of AdHash functionalities are not supported in the Prebid.js integration:
-* Cookie-less frequency and recency capping;
-* Audience segments;
 * Price floors and passback tags, as they are not needed in the Prebid.js setup;
 * Reservation for direct deals only, as bids are evaluated based on their price.
 
