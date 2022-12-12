@@ -21,7 +21,6 @@ export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
-let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -70,6 +69,7 @@ function lookupStaticConsentData({onSuccess, onError}) {
  */
 function lookupIabConsent({onSuccess, onError}) {
   const cmpApiName = '__gpp';
+  const cmpCallbacks = {};
   let registeredPostMessageResponseListener = false;
 
   function findCMP() {
@@ -103,88 +103,44 @@ function lookupIabConsent({onSuccess, onError}) {
     };
   }
 
-  const cmpCallbacks = {};
-
   const {cmpFrame, cmpDirectAccess} = findCMP();
 
   if (!cmpFrame) {
     return onError('GPP CMP not found.');
   }
 
-  // use cmpDirectAccess to avoid an error checking on a cross-frame window to see if CMP function exists
-  if (cmpDirectAccess && typeof cmpFrame[cmpApiName] === 'function') {
-    logInfo('Detected GPP CMP API is directly accessible, calling it now...');
-    cmpFrame[cmpApiName]('addEventListener', cmpDirectResponseCallback);
-  } else {
-    logInfo('Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...');
-    callCmpWhileInIframe('addEventListener', cmpFrame, cmpPostResponseEventCallback);
-  }
+  const invokeCMP = (cmpDirectAccess) ? invokeCMPDirect : invokeCMPFrame;
 
-  function cmpDirectResponseCallback(evt) {
-    if (evt) {
-      logInfo('Received a response from GPP CMP for event', evt);
-      if (
-        evt.eventName === 'sectionChange' || // should be new consent data
-        (
-          // cmp is loaded and not/no longer visible, a gpp string should be available
-          evt.pingData.cmpStatus === 'loaded' &&
-          evt.pingData.cmpDisplayStatus !== 'visible'
-        )
-      ) {
-        let gppData = cmpFrame[cmpApiName]('getGPPData');
-
-        logInfo('Received a response from GPP CMP for getGPPData', gppData);
-        processCmpData(gppData, {onSuccess, onError});
-      } else if (evt.pingData.cmpStatus === 'error') {
-        onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
-      } else if (!provisionalConsent) {
-        const provGppData = cmpFrame[cmpApiName]('getGPPData');
-        logInfo('Called GPP CMP early to determine the value of applicableSections; value returned from CMP: ', provGppData);
-        if (checkApplicableSectionsIsReady(provGppData)) {
-          provisionalConsent = provGppData;
-        } else if (checkApplicableSectionIsReady(provGppData)) {
-          provisionalConsent = provGppData;
-          // conform naming convention from old version of the spec to new version
-          provisionalConsent.applicableSections = provGppData.applicableSection;
-          delete provisionalConsent.applicableSection;
-        }
-      }
+  function invokeCMPDirect({command, callback, parameter, version = CMP_VERSION}, resultCb) {
+    if (resultCb != null) {
+      resultCb(cmpFrame[cmpApiName](command, callback, parameter, version));
+    } else {
+      cmpFrame[cmpApiName](command, callback, parameter, version);
     }
   }
 
-  function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback, cmpCallParam) {
-    // changing the name away from the standard, to properly handle multiple calls to CMP,
-    // otherwise follow-up calls made to fetch getGPPData routed here will complain later that there's no callback
-    const cmpApiPMName = '__gpp-pm';
+  function invokeCMPFrame({command, callback, parameter, version = CMP_VERSION}, resultCb) {
     const callName = `${cmpApiName}Call`;
-
-    /* Setup up a __cmp function to do the postMessage and stash the callback.
-    This function behaves (from the caller's perspective identically to the in-frame __gpp call */
-    window[cmpApiPMName] = function (cmd, callback, param) {
-      const callId = Math.random().toString();
-      const msg = {
-        [callName]: {
-          command: cmd,
-          parameter: param,
-          version: 1,
-          callId: callId
-        }
-      };
-
-      // TODO? - add logic to check if random was already used in the same session, and roll another if so?
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
-    }
-
-    // when we get the return message, call the stashed callback;
-    // register the listener only once per session
     if (!registeredPostMessageResponseListener) {
+      // when we get the return message, call the stashed callback;
       window.addEventListener('message', readPostMessageResponse, false);
       registeredPostMessageResponseListener = true;
     }
 
-    // call CMP
-    window[cmpApiPMName](commandName, moduleCallback, cmpCallParam);
+    // call CMP via postMessage
+    const callId = Math.random().toString();
+    const msg = {
+      [callName]: {
+        command: command,
+        parameter,
+        version,
+        callId: callId
+      }
+    };
+
+    // TODO? - add logic to check if random was already used in the same session, and roll another if so?
+    cmpCallbacks[callId] = (callback != null) ? callback : resultCb;
+    cmpFrame.postMessage(msg, '*');
 
     function readPostMessageResponse(event) {
       const cmpDataPkgName = `${cmpApiName}Return`;
@@ -199,42 +155,26 @@ function lookupIabConsent({onSuccess, onError}) {
     }
   }
 
-  function cmpPostResponseEventCallback(evt) {
-    if (evt) {
-      logInfo('Received a postmsg response from GPP CMP for event', evt);
-      if (
-        evt.eventName === 'sectionChange' || // should be new consent data
-        (
-          // cmp is loaded and not/no longer visible, a gpp string should be available
-          evt.pingData.cmpStatus === 'loaded' &&
-          evt.pingData.cmpDisplayStatus !== 'visible'
-        )
-      ) {
-        callCmpWhileInIframe('getGPPData', cmpFrame, cmpPostResponseGetGPPCallback);
-      } else if (evt.pingData.cmpStatus === 'error') {
-        onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
-      } else if (!provisionalConsent) {
-        callCmpWhileInIframe('getGPPData', cmpFrame, cmpPostResponseProvGetGPPCallback);
+  const startupMsg = (cmpDirectAccess) ? 'Detected GPP CMP API is directly accessible, calling it now...'
+    : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
+  logInfo(startupMsg);
+
+  invokeCMP({
+    command: 'addEventListener',
+    callback: function (evt) {
+      if (evt) {
+        logInfo(`Received a ${(cmpDirectAccess ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
+        if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
+          invokeCMP({command: 'getGPPData'}, function (gppData) {
+            logInfo(`Received a ${cmpDirectAccess ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
+            processCmpData(gppData, {onSuccess, onError});
+          });
+        } else if (evt.pingData.cmpStatus === 'error') {
+          onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
+        }
       }
     }
-  }
-
-  function cmpPostResponseGetGPPCallback(gppData) {
-    logInfo('Received a postmsg response from GPP CMP for getGPPData', gppData);
-    processCmpData(gppData, {onSuccess, onError});
-  }
-
-  function cmpPostResponseProvGetGPPCallback(provGppData) {
-    logInfo('Called GPP CMP early to determine the value of applicableSections; postmsg response returned from CMP: ', provGppData);
-    if (checkApplicableSectionsIsReady(provGppData)) {
-      provisionalConsent = provGppData;
-    } else if (checkApplicableSectionIsReady(provGppData)) {
-      provisionalConsent = provGppData;
-      // conform naming convention from old version of the spec to new version
-      provisionalConsent.applicableSections = provGppData.applicableSection;
-      delete provisionalConsent.applicableSection;
-    }
-  }
+  });
 }
 
 /**
@@ -276,7 +216,7 @@ function loadConsentData(cb) {
       const continueToAuction = (data) => {
         done(data, false, 'GPP CMP did not load, continuing auction...');
       }
-      processCmpData(provisionalConsent, {
+      processCmpData(consentData, {
         onSuccess: continueToAuction,
         onError: () => continueToAuction(storeConsentData(undefined))
       })
@@ -344,8 +284,7 @@ function processCmpData(consentObject, {onSuccess, onError}) {
   function checkData() {
     const gppString = consentObject && consentObject.gppString;
     const gppSection = (checkApplicableSectionsIsReady(consentObject)) ? consentObject.applicableSections
-      : (checkApplicableSectionIsReady(consentObject)) ? consentObject.applicableSection
-        : (provisionalConsent && provisionalConsent.applicableSections) ? provisionalConsent.applicableSections : [];
+      : (checkApplicableSectionIsReady(consentObject)) ? consentObject.applicableSection : [];
 
     return !!(
       (!Array.isArray(gppSection)) ||
@@ -366,13 +305,12 @@ function processCmpData(consentObject, {onSuccess, onError}) {
  */
 function storeConsentData(cmpConsentObject) {
   consentData = {
-    gppString: (cmpConsentObject) ? cmpConsentObject.gppString
-      : (provisionalConsent && isStr(provisionalConsent.gppString) && provisionalConsent.gppString !== '') ? provisionalConsent.gppString : undefined,
+    gppString: (cmpConsentObject) ? cmpConsentObject.gppString : undefined,
+
     fullGppData: (cmpConsentObject) || undefined,
   };
   consentData.applicableSections = (checkApplicableSectionsIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSections
-    : (checkApplicableSectionIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSection
-      : (provisionalConsent?.applicableSections) ? provisionalConsent.applicableSections : [];
+    : (checkApplicableSectionIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSection : [];
   consentData.apiVersion = CMP_VERSION;
   return consentData;
 }

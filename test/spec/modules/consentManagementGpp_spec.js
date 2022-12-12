@@ -534,8 +534,7 @@ describe('consentManagementGpp', function () {
                 // eslint-disable-next-line standard/no-callback-literal
                 cb({
                   pingData: {
-                    cmpStatus: 'loaded',
-                    cmpDisplayStatus: 'hidden'
+                    cmpStatus: 'loaded'
                   }
                 }, true);
               }
@@ -562,7 +561,7 @@ describe('consentManagementGpp', function () {
             });
           });
 
-          it('should use consent provided by events other than tcloaded', () => {
+          it('should use consent provided by events other than sectionChange', () => {
             mockGppCmp({
               gppString: 'mock-consent-string',
               applicableSections: [7]
