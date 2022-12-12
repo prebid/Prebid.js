@@ -35,28 +35,29 @@ function createLogInfo(prefix) {
 export const storage = getStorage();
 const _logInfo = createLogInfo(LOG_PRE_FIX);
 
-function readCookie() {
-  const cookie = storage.cookiesAreEnabled() ? storage.getCookie(ADVERTISING_COOKIE) : null;
-  if (!cookie) return null;
-  if (cookie.includes('{')) {
-    const parsed = JSON.parse(cookie);
-    return parsed;
-  }
-  return cookie;
-}
-
 function readFromLocalStorage() {
   return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ADVERTISING_COOKIE) : null;
 }
 
-function readServerProvidedCookie(cookieName) {
-  const cookie = storage.getCookie(cookieName);
+function readModuleCookie() {
+  const cookie = readCookie(ADVERTISING_COOKIE);
+  if (cookie && cookie.includes('{')) {
+    return JSON.parse(cookie);
+  }
+  return cookie;
+}
+
+function readJsonCookie(cookieName) {
+  return JSON.parse(readCookie(cookieName));
+}
+function readCookie(cookieName) {
+  const cookie = storage.cookiesAreEnabled() ? storage.getCookie(cookieName) : null;
   if (!cookie) {
-    _logInfo(`Attempted to read UID2 from server-provided cookie but it was empty`);
+    _logInfo(`Attempted to read UID2 from cookie '${cookieName}' but it was empty`);
     return null;
   };
-  _logInfo(`Read UID2 from server-provided cookie`);
-  return JSON.parse(cookie);
+  _logInfo(`Read UID2 from cookie '${cookieName}'`);
+  return cookie;
 }
 
 function storeValue(value) {
@@ -220,11 +221,11 @@ function getIdImpl(config, consentData) {
       suppliedToken = config.params.uid2Token;
       _logInfo('Read token from params', suppliedToken);
     } else if (config.params.uid2ServerCookie) {
-      suppliedToken = readServerProvidedCookie(config.params.uid2ServerCookie);
+      suppliedToken = readJsonCookie(config.params.uid2ServerCookie);
       _logInfo('Read token from server-supplied cookie', suppliedToken);
     }
   }
-  let storedTokens = readCookie() || readFromLocalStorage();
+  let storedTokens = readModuleCookie() || readFromLocalStorage();
   _logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {

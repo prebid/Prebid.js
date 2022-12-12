@@ -161,6 +161,15 @@ describe(`UID2 module`, function () {
     });
   });
 
+  it('When a legacy value is provided directly in configuration, it is passed on', async function() {
+    const valueConfig = makePrebidConfig();
+    valueConfig.userSync.userIds[0].value = {uid2: {id: legacyToken}}
+    config.setConfig(valueConfig);
+    const bid = await runAuction();
+
+    expectLegacyToken(bid);
+  });
+
   // These tests cover 'legacy' cookies - i.e. cookies set with just the uid2 advertising token, which was how some previous integrations worked.
   // Some users might still have this cookie, and the module should use that token if a newer one isn't provided.
   // This should cover older integrations where the server is setting this legacy cookie and expecting the module to pass it on.
