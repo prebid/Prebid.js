@@ -13,6 +13,7 @@ import { uspDataHandler } from '../src/adapterManager.js';
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
+const CALLER_NAME = 'pbjs';
 
 function getEnvelope(response) {
   if (!response.succeeded) {
@@ -36,6 +37,8 @@ function calculateQueryStringParams(pid, gdprConsentData) {
   const params = {
     pid,
     gdpr: Number(gdprApplies),
+    src: CALLER_NAME,
+    ver: '$prebid.version$'
   };
 
   if (uspString) {
