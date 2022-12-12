@@ -1089,6 +1089,10 @@ function hasGetRequestEnabled() {
   return randomValue100 <= testGroupPercentage;
 }
 
+function getUniqueNumber(rangeEnd) {
+  return Math.floor(Math.random() * rangeEnd) + 1;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1329,7 +1333,7 @@ export const spec = {
 
     let serverRequest = {
       method: 'POST',
-      url: ENDPOINT + '?source=ow-client&uniqueReqId=' + Math.floor(Math.random() * 1000) + 1,
+      url: ENDPOINT + '?source=ow-client&uniqueReqId=' + getUniqueNumber(1000),
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -1338,8 +1342,8 @@ export const spec = {
     if (hasGetRequestEnabled()) {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
-      const urlEncodedPayloadStr = parseQueryStringParameters({ 
-        'source': 'ow-client', 'payload': JSON.stringify(payload), 'uniqueReqId': Math.floor(Math.random() * 1000) + 1});
+      const urlEncodedPayloadStr = parseQueryStringParameters({
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'uniqueReqId': getUniqueNumber(1000)});
       if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
@@ -1364,7 +1368,7 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     // In case of Translator GET request, will copy the actual json data from payloadStr to data.
-    if(request?.payloadStr) request.data = request.payloadStr;
+    if (request?.payloadStr) request.data = request.payloadStr;
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
@@ -1438,11 +1442,11 @@ export const spec = {
                   prepareMetaObject(br, bid, seatbidder.seat);
 
                   // START of Experimental change
-                  if (response.body.ext) {            
-                    br.ext = response.body.ext;                  
-                  } 
+                  if (response.body.ext) {
+                    br.ext = response.body.ext;
+                  }
                   // END of Experimental change
-                  
+
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
