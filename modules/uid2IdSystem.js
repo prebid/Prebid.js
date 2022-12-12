@@ -50,6 +50,7 @@ function readModuleCookie() {
 function readJsonCookie(cookieName) {
   return JSON.parse(readCookie(cookieName));
 }
+
 function readCookie(cookieName) {
   const cookie = storage.cookiesAreEnabled() ? storage.getCookie(cookieName) : null;
   if (!cookie) {
@@ -182,7 +183,7 @@ export const uid2IdSubmodule = {
    */
   getId(config, consentData) {
     const result = getIdImpl(config, consentData);
-    logInfo(`UID2 getId returned`, result);
+    _logInfo(`UID2 getId returned`, result);
     return result;
   },
 };
