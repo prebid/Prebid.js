@@ -230,7 +230,8 @@ export const spec = {
 
   _getAllMetadata(bidderRequest) {
     return {
-      pageURL: bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page,
+      userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
+      pageURL: bidderRequest?.refererInfo?.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
