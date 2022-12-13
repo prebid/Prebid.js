@@ -423,14 +423,10 @@ function getConsentData(bidRequests) {
  * Bidder adapter for Prebid Server
  */
 export function PrebidServer() {
-  // eslint-disable-next-line no-console
-  console.log('PrebidServer func invoked');
   const baseAdapter = new Adapter('prebidServer');
 
   /* Prebid executes this function when the page asks to send out bid requests */
   baseAdapter.callBids = function(s2sBidRequest, bidRequests, addBidResponse, done, ajax) {
-    // eslint-disable-next-line no-console
-    console.log('baseAdapter.callBids func invoked');
     const adapterMetrics = s2sBidRequest.metrics = useMetrics(deepAccess(bidRequests, '0.metrics'))
       .newMetrics()
       .renameWith((n) => [`adapter.s2s.${n}`, `adapters.s2s.${s2sBidRequest.s2sConfig.defaultVendor}.${n}`])
@@ -440,11 +436,7 @@ export function PrebidServer() {
     let { gdprConsent, uspConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
-      // eslint-disable-next-line no-console
-      console.log('_s2sConfigs is an array');
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
-        // eslint-disable-next-line no-console
-        console.log('all is true: s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)');
         let syncBidders = s2sBidRequest.s2sConfig.bidders
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
@@ -454,11 +446,7 @@ export function PrebidServer() {
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
         onResponse: function (isValid, requestedBidders) {
-          // eslint-disable-next-line no-console
-          console.log('onResponse func invoked');
           if (isValid) {
-            // eslint-disable-next-line no-console
-            console.log('isValid is true');
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           done();
@@ -466,30 +454,18 @@ export function PrebidServer() {
         },
         onError: done,
         onBid: function ({adUnit, bid}) {
-          // eslint-disable-next-line no-console
-          console.log('onBid func invoked');
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
-            // eslint-disable-next-line no-console
-            console.log('this criteria was met: (bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes');
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
             addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
           } else {
-            // eslint-disable-next-line no-console
-            console.log('this criteria was NOT met: (bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes');
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
-              // eslint-disable-next-line no-console
-              console.log("this criteria was met: metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))");
               addBidResponse(adUnit, bid);
               if (bid.pbsWurl) {
-                // eslint-disable-next-line no-console
-                console.log('this criteria was met: bid.pbsWurl');
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
               }
             } else {
-              // eslint-disable-next-line no-console
-              console.log("this criteria was NOT met: metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))");
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
@@ -519,8 +495,6 @@ export function PrebidServer() {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
 export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid}) {
-  // eslint-disable-next-line no-console
-  console.log('processPBSRequest func invoked');
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
