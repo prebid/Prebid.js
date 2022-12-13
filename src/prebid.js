@@ -49,7 +49,8 @@ import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHand
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {defer} from './utils/promise.js';
+import {defer, GreedyPromise} from './utils/promise.js';
+import {enrichFPD} from './fpd/enrichment.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -631,7 +632,10 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+    return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
+      ortb2Fragments.global = global;
+      return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+    })
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
