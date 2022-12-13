@@ -167,6 +167,45 @@ describe('Taboola Adapter', function () {
       expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
 
+    it('should pass bid floor', function () {
+      const bidRequest = {
+        ...defaultBidRequest,
+        params: {...commonBidRequest.params},
+        getFloor: function() {
+          return {
+            currency: 'USD',
+            floor: 2.7,
+          }
+        }
+      };
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.deep.equal(2.7);
+      expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should pass bid floor even if they is a bid floor param', function () {
+      const optionalParams = {
+        bidfloor: 0.25,
+        bidfloorcur: 'EUR'
+      };
+
+      const bidRequest = {
+        ...defaultBidRequest,
+        params: {...commonBidRequest.params, ...optionalParams},
+        getFloor: function() {
+          return {
+            currency: 'USD',
+            floor: 2.7,
+          }
+        }
+      };
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].bidfloor).to.deep.equal(2.7);
+      expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
+    });
+
     it('should pass bidder timeout', function () {
       const bidderRequest = {
         ...commonBidderRequest,

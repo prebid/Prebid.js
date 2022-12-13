@@ -299,8 +299,8 @@ describe('ColossussspAdapter', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('hms.gif');
-      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/hms.gif?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/image?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
     });
   });
 });
