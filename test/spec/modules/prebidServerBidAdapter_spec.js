@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
   resetSyncedStatus,
@@ -7,31 +7,30 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { ajax } from 'src/ajax.js';
-import { config } from 'src/config.js';
+import {deepAccess, deepClone} from 'src/utils.js';
+import {ajax} from 'src/ajax.js';
+import {config} from 'src/config.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
-import { server } from 'test/mocks/xhr.js';
-import { createEidsArray } from 'modules/userId/eids.js';
-import { deepAccess, deepClone } from 'src/utils.js';
-import 'modules/appnexusBidAdapter.js' // appnexus alias test
-import 'modules/rubiconBidAdapter.js' // rubicon alias test
-import 'src/prebid.js' // $$PREBID_GLOBAL$$.aliasBidder test
-import 'modules/currency.js' // adServerCurrency test
-// also load modules that register ORTB processors
-import 'modules/currency.js';
+import {server} from 'test/mocks/xhr.js';
+import {createEidsArray} from 'modules/userId/eids.js';
+import 'modules/appnexusBidAdapter.js'; // appnexus alias test
+import 'modules/rubiconBidAdapter.js'; // rubicon alias test
+import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
+import 'modules/currency.js'; // adServerCurrency test
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import { hook } from '../../../src/hook.js';
-import { decorateAdUnitsWithNativeParams } from '../../../src/native.js';
-import { auctionManager } from '../../../src/auctionManager.js';
-import { stubAuctionIndex } from '../../helpers/indexStub.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
+import {hook} from '../../../src/hook.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
+import {auctionManager} from '../../../src/auctionManager.js';
+import {stubAuctionIndex} from '../../helpers/indexStub.js';
+import {registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
+import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 
 let CONFIG = {
   accountId: '1',
@@ -544,6 +543,16 @@ const RESPONSE_OPENRTB_NATIVE = {
   ]
 };
 
+function addFpdEnrichmentsToS2SRequest(s2sReq, bidderRequests) {
+  return {
+    ...s2sReq,
+    ortb2Fragments: {
+      ...(s2sReq.ortb2Fragments || {}),
+      global: syncAddFPDToBidderRequest({...(bidderRequests?.[0] || {}), ortb2: s2sReq.ortb2Fragments?.global || {}}).ortb2
+    }
+  }
+}
+
 describe('S2S Adapter', function () {
   let adapter,
     addBidResponse = sinon.spy(),
@@ -766,7 +775,7 @@ describe('S2S Adapter', function () {
         let gdprBidRequest = utils.deepClone(BID_REQUESTS);
         gdprBidRequest[0].gdprConsent = mockConsent();
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
@@ -775,7 +784,7 @@ describe('S2S Adapter', function () {
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
 
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
         expect(requestBid.regs).to.not.exist;
@@ -791,7 +800,7 @@ describe('S2S Adapter', function () {
           addtlConsent: 'superduperconsent',
         });
 
-        adapter.callBids(REQUEST, gdprBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, gdprBidRequest), gdprBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.gdpr).is.equal(1);
@@ -877,13 +886,13 @@ describe('S2S Adapter', function () {
         $$PREBID_GLOBAL$$.requestBids.removeAll();
       });
 
-      it('is added to ortb2 request when in bidRequest', function () {
+      it('is added to ortb2 request when in FPD', function () {
         config.setConfig({ s2sConfig: CONFIG });
 
         let uspBidRequest = utils.deepClone(BID_REQUESTS);
         uspBidRequest[0].uspConsent = '1NYN';
 
-        adapter.callBids(REQUEST, uspBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, uspBidRequest), uspBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
@@ -891,7 +900,7 @@ describe('S2S Adapter', function () {
         config.resetConfig();
         config.setConfig({ s2sConfig: CONFIG });
 
-        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         requestBid = JSON.parse(server.requests[1].requestBody);
 
         expect(requestBid.regs).to.not.exist;
@@ -929,7 +938,7 @@ describe('S2S Adapter', function () {
         consentBidRequest[0].uspConsent = '1NYN';
         consentBidRequest[0].gdprConsent = mockConsent();
 
-        adapter.callBids(REQUEST, consentBidRequest, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, consentBidRequest), consentBidRequest, addBidResponse, done, ajax);
         let requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.regs.ext.us_privacy).is.equal('1NYN');
@@ -977,7 +986,7 @@ describe('S2S Adapter', function () {
       };
 
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
@@ -1004,7 +1013,7 @@ describe('S2S Adapter', function () {
       };
 
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
@@ -1367,7 +1376,7 @@ describe('S2S Adapter', function () {
           };
 
           config.setConfig(_config);
-          adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+          adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
           sinon.assert.match(requestBid.device, {
             w: window.innerWidth,
@@ -1474,7 +1483,7 @@ describe('S2S Adapter', function () {
       };
 
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
@@ -1491,6 +1500,7 @@ describe('S2S Adapter', function () {
         content: {
           language: 'en'
         },
+        domain: 'mytestpage.com',
         page: 'http://mytestpage.com'
       });
     });
@@ -1815,7 +1825,7 @@ describe('S2S Adapter', function () {
           device: device
         });
 
-        adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(s2sBidRequest, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
 
         const requestBid = JSON.parse(server.requests[0].requestBody);
         expect(requestBid.site).to.exist.and.to.be.a('object');
@@ -2343,7 +2353,11 @@ describe('S2S Adapter', function () {
       }));
       const commonContextExpected = utils.mergeDeep({
         'page': 'http://mytestpage.com',
-        'publisher': { 'id': '1' }
+        'domain': 'mytestpage.com',
+        'publisher': {
+          'id': '1',
+          'domain': 'mytestpage.com'
+        }
       }, commonSite);
 
       const ortb2Fragments = {
@@ -2351,7 +2365,7 @@ describe('S2S Adapter', function () {
         bidder: Object.fromEntries(allowedBidders.map(bidder => [bidder, {site, user, bcat, badv}]))
       };
 
-      adapter.callBids({...s2sBidRequest, ortb2Fragments}, bidRequests, addBidResponse, done, ajax);
+      adapter.callBids(addFpdEnrichmentsToS2SRequest({...s2sBidRequest, ortb2Fragments}, bidRequests), bidRequests, addBidResponse, done, ajax);
       const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
       expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
       expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
