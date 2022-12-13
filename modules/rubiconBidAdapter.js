@@ -141,16 +141,6 @@ var sizeMap = {
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
-const hasBannerMediaTypeOnly = bidRequest => {
-  const bidRequestType = bidType(bidRequest);
-  return (bidRequestType.includes(BANNER) && bidRequestType.length == 1);
-};
-
-const hasBannerMediaType = bidRequest => {
-  const bidRequestType = bidType(bidRequest);
-  return (bidRequestType.includes(BANNER))
-}
-
 export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const {bidRequests} = context;
@@ -215,14 +205,12 @@ export const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     // skip banner-only requests
-    if (hasBannerMediaTypeOnly(bidRequest)) return;
+    const bidRequestType = bidType(bidRequest);
+    if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
 
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
-
-    if (bidRequest.params?.multiformat === true && imp.banner) {
-      delete imp.banner;
-    }
+    delete imp.banner;
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
@@ -302,15 +290,20 @@ export const spec = {
     let filteredRequests;
 
     filteredRequests = bidRequests.filter(req => {
-      const mediaTypes = bidType(req);
+      const mediaTypes = bidType(req) || [];
+      const { length } = mediaTypes;
+      const { bidonmultiformat, video } = req.params || {};
+
       return (
-        // if there's no banner in volved, add to PBS
-        !mediaTypes.includes(BANNER) ||
-        // if multiformat is true, and it doesn't contain only banner, add to PBS
-        (Boolean(req?.params?.multiformat) && !hasBannerMediaTypeOnly(req)) ||
-        // if multiformat is false, there's params.video, and there's not banner only, send to PBS
-        (!req?.params?.multiformat && req?.params?.video && !hasBannerMediaTypeOnly(req))
-      );
+        // if there's just one mediaType and it's video or native, just send it!
+        (length === 1 && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE))) ||
+        // if it's two mediaTypes, and they don't contain banner, send to PBS both native & video
+        (length === 2 && !mediaTypes.includes(BANNER)) ||
+        // if it contains the video param and the Video mediaType, send Video to PBS (not native!)
+        (video && mediaTypes.includes(VIDEO)) ||
+        // if bidonmultiformat is on, send everything to PBS
+        (bidonmultiformat && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE)))
+      )
     });
 
     if (filteredRequests && filteredRequests.length) {
@@ -325,10 +318,20 @@ export const spec = {
     }
 
     const bannerBidRequests = bidRequests.filter((req) => {
+      const mediaTypes = bidType(req) || [];
+      const {bidonmultiformat, video} = req.params || {};
       return (
-        hasBannerMediaTypeOnly(req) ||
-        (!req.params?.multiformat && !req.params?.video && hasBannerMediaType(req)) ||
-        (req.params?.multiformat && hasBannerMediaType(req))
+        // Send to fastlane if: it must include BANNER and...
+        mediaTypes.includes(BANNER) && (
+          // if it's just banner
+          (mediaTypes.length === 1) ||
+          // if bidonmultiformat is true
+          bidonmultiformat ||
+          // if bidonmultiformat is false and there's no video parameter
+          (!bidonmultiformat && !video) ||
+          // if there's video parameter, but there's no video mediatype
+          (!bidonmultiformat && video && !mediaTypes.includes(VIDEO))
+        )
       );
     });
     if (config.getConfig('rubicon.singleRequest') !== true) {
@@ -983,10 +986,14 @@ function mapSizes(sizes) {
 export function classifiedAsVideo(bidRequest) {
   let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
   let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  let isBidOnMultiformat = typeof deepAccess(bidRequest, `params.bidonmultiformat`) !== 'undefined';
   let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
   // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
   // based on whether or not there is a video object defined in the params
   // Given this legacy implementation, other code depends on params.video being defined
+
+  // if it's bidonmultiformat, we don't care of the video object
+  if (isVideo && isBidOnMultiformat) return true;
 
   if (isBanner && isMissingVideoParams) {
     isVideo = false;
