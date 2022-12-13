@@ -202,29 +202,22 @@ export const spec = {
 
     if (isArray(responses)) {
       responses.forEach(response => {
-        if (
-          response.body &&
-          response.body.ext &&
-          response.body.ext.sync
-        ) {
-          const sync = deepAccess(response, 'body.ext.sync', {})
-          if (syncOptions.pixelEnabled && isArray(sync.image)) {
-            sync.image.forEach(imgUrl => {
-              pixels.push({
-                type: 'image',
-                url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent)
-              });
-            })
-          }
+        if (syncOptions.pixelEnabled) {
+          deepAccess(response, 'body.ext.sync.image', []).forEach(imgUrl => {
+            pixels.push({
+              type: 'image',
+              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent)
+            });
+          })
+        }
 
-          if (syncOptions.iframeEnabled && isArray(sync.iframe)) {
-            sync.iframe.forEach(iframeUrl => {
-              pixels.push({
-                type: 'iframe',
-                url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent)
-              });
-            })
-          }
+        if (syncOptions.iframeEnabled) {
+          deepAccess(response, 'body.ext.sync.iframe', []).forEach(iframeUrl => {
+            pixels.push({
+              type: 'iframe',
+              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent)
+            });
+          })
         }
       })
     }
