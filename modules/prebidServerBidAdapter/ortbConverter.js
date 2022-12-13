@@ -18,7 +18,6 @@ import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.j
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
 import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
 import {beConvertCurrency} from '../../src/utils/currency.js';
-import { isPlainObject } from 'lodash';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -53,17 +52,6 @@ const PBS_CONVERTER = ortbConverter({
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
       })
-
-      if (request.app) {
-        request.app = s2sBidRequest.s2sConfig.app;
-      } else if (request.dooh) {
-        request.dooh = s2sBidRequest.s2sConfig.dooh;
-      } else {
-        request.site = {};
-        if (isPlainObject(s2sBidRequest.s2sConfig.site)) {
-          request.site = s2sBidRequest.s2sConfig.site;
-        }
-      }
 
       if (isArray(eidPermissions) && eidPermissions.length > 0) {
         if (requestedBidders && isArray(requestedBidders)) {

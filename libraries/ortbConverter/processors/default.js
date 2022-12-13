@@ -1,4 +1,4 @@
-import {deepSetValue, getDefinedParams, getDNT, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, getDefinedParams, getDNT, logWarn, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -20,6 +20,10 @@ export const DEFAULT_PROCESSORS = {
     appFpd: fpdFromTopLevelConfig('app'),
     siteFpd: fpdFromTopLevelConfig('site'),
     deviceFpd: fpdFromTopLevelConfig('device'),
+    onlyOneClient: {
+      priority: -99,
+      fn: onlyOneClientSection
+    },
     device: {
       // sets device w / h / ua / language
       fn: setDevice
@@ -164,4 +168,18 @@ export function setSite(ortbRequest, bidderRequest) {
   if (bidderRequest.refererInfo) {
     ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
   }
+}
+
+export function onlyOneClientSection(ortbRequest) {
+  ['dooh', 'app', 'site'].reduce((found, section) => {
+    if (ortbRequest[section] != null && Object.keys(ortbRequest[section]).length > 0) {
+      if (found != null) {
+        logWarn(`ORTB request specifies both '${found}' and '${section}'; dropping the latter.`)
+        delete ortbRequest[section];
+      } else {
+        found = section;
+      }
+    }
+    return found;
+  }, null);
 }

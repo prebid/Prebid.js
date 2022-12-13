@@ -1,4 +1,4 @@
-import {setDevice, setSite} from '../../../libraries/ortbConverter/processors/default.js';
+import {onlyOneClientSection, setDevice, setSite} from '../../../libraries/ortbConverter/processors/default.js';
 
 describe('setDevice', () => {
   it('sets device.w,  h, dnt, language, ua', () => {
@@ -57,5 +57,27 @@ describe('setSite', () => {
     const req = {};
     setSite(req, {refererInfo: {...refererInfo, ref: null}});
     expect(req.site.ref).to.not.exist;
+  });
+});
+
+describe('onlyOneClientSection', () => {
+  [
+    [['app'], 'app'],
+    [['site'], 'site'],
+    [['dooh'], 'dooh'],
+    [['app', 'site'], 'app'],
+    [['dooh', 'app', 'site'], 'dooh'],
+    [['dooh', 'site'], 'dooh']
+  ].forEach(([sections, winner]) => {
+    it(`should leave only ${winner} in request when it contains ${sections.join(', ')}`, () => {
+      const req = Object.fromEntries(sections.map(s => [s, {foo: 'bar'}]));
+      onlyOneClientSection(req);
+      expect(Object.keys(req)).to.eql([winner]);
+    })
+  });
+  it('should not choke if none of the sections are in the request', () => {
+    const req = {};
+    onlyOneClientSection(req);
+    expect(req).to.eql({});
   });
 });
