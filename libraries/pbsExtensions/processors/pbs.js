@@ -28,7 +28,7 @@ export const PBS_PROCESSORS = {
       fn: setImpBidParams
     },
     adUnitCode: {
-      // sets bid ext.prebid.adunitc ode
+      // sets bid ext.prebid.adunitcode
       fn: setImpAdUnitCode
     }
   },
