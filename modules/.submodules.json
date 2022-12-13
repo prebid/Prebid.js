@@ -76,7 +76,6 @@
       "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
-      "enrichmentFpdModule",
       "validationFpdModule",
       "topicsFpdModule"
     ],

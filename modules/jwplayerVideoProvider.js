@@ -7,7 +7,7 @@ import {
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
 } from '../libraries/video/constants/events.js';
-import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
