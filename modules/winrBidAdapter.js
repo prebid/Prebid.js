@@ -208,7 +208,7 @@ export const spec = {
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;

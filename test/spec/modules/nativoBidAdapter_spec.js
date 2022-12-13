@@ -1,5 +1,11 @@
 import { expect } from 'chai'
 import { spec, BidDataMap } from 'modules/nativoBidAdapter.js'
+import {
+  getSizeWildcardPrice,
+  getMediaWildcardPrices,
+  sizeToString,
+  parseFloorPriceData,
+} from '../../../modules/nativoBidAdapter'
 
 describe('bidDataMap', function () {
   it('Should fail gracefully if no key value pairs have been added and no key is sent', function () {
@@ -94,7 +100,7 @@ describe('nativoBidAdapterTests', function () {
     const bidRequestString = JSON.stringify(bidRequest)
     let bidRequests
 
-    beforeEach(function() {
+    beforeEach(function () {
       // Clone bidRequest each time
       bidRequests = [JSON.parse(bidRequestString)]
     })
@@ -119,12 +125,37 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pas')
     })
 
+    it('ntv_url should contain query params', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          location: 'https://www.test.com?queryTest=true',
+        },
+      })
+      console.log(request.url) // eslint-disable-line no-console
+      expect(request.url).to.include(encodeURIComponent('?queryTest=true'))
+    })
+
+    it('ntv_url parameter should NOT be empty even if the utl parameter was set as an empty value', function () {
+      bidRequests[0].params.url = ''
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          location: 'https://www.test.com',
+        },
+      })
+
+      expect(request.url).to.exist
+      expect(request.url).to.be.a('string')
+      expect(request.url).to.not.be.empty
+    })
+
     it('url should NOT contain placement specific query string parameters if placementId option is not provided', function () {
       bidRequests[0].params = {}
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          referer: 'https://www.test.com',
+          location: 'https://www.test.com',
         },
       })
 
@@ -487,5 +518,132 @@ describe('Response to Request Filter Flow', () => {
     expect(request.url).to.include(`ntv_atf=12345`)
     expect(request.url).to.include('ntv_avtf=1')
     expect(request.url).to.include('ntv_ctf=234')
+  })
+})
+
+describe('sizeToString', () => {
+  it('Formats size array correctly', () => {
+    const sizeString = sizeToString([300, 250])
+    expect(sizeString).to.be.equal('300x250')
+  })
+
+  it('Returns an empty array for invalid data', () => {
+    // Not an array
+    let sizeString = sizeToString(300, 350)
+    expect(sizeString).to.be.equal('')
+    // Single entry
+    sizeString = sizeToString([300])
+    expect(sizeString).to.be.equal('')
+    // Undefined
+    sizeString = sizeToString(undefined)
+    expect(sizeString).to.be.equal('')
+  })
+})
+
+describe('getSizeWildcardPrice', () => {
+  it('Generates the correct floor price data', () => {
+    let floorPrice = {
+      currency: 'USD',
+      floor: 1.0,
+    }
+    let getFloorMock = () => {
+      return floorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [300, 250],
+        },
+      },
+    }
+
+    let result = getSizeWildcardPrice(bidRequest, 'banner')
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: 'banner',
+        size: '*',
+      })
+    ).to.be.true
+    expect(result).to.equal(floorPrice)
+  })
+})
+
+describe('getMediaWildcardPrices', () => {
+  it('Generates the correct floor price data', () => {
+    let defaultFloorPrice = {
+      currency: 'USD',
+      floor: 1.1,
+    }
+    let sizefloorPrice = {
+      currency: 'USD',
+      floor: 2.2,
+    }
+    let getFloorMock = ({ currency, mediaType, size }) => {
+      if (Array.isArray(size)) return sizefloorPrice
+
+      return defaultFloorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [300, 250],
+        },
+      },
+    }
+
+    let result = getMediaWildcardPrices(bidRequest, ['*', [300, 250]])
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: '*',
+        size: '*',
+      })
+    ).to.be.true
+    expect(
+      floorMockSpy.calledWith({
+        currency: 'USD',
+        mediaType: '*',
+        size: [300, 250],
+      })
+    ).to.be.true
+    expect(result).to.deep.equal({ '*': 1.1, '300x250': 2.2 })
+  })
+})
+
+describe('parseFloorPriceData', () => {
+  it('Generates the correct floor price data', () => {
+    let defaultFloorPrice = {
+      currency: 'USD',
+      floor: 1.1,
+    }
+    let sizefloorPrice = {
+      currency: 'USD',
+      floor: 2.2,
+    }
+    let getFloorMock = ({ currency, mediaType, size }) => {
+      if (Array.isArray(size)) return sizefloorPrice
+
+      return defaultFloorPrice
+    }
+    let floorMockSpy = sinon.spy(getFloorMock)
+    let bidRequest = {
+      getFloor: floorMockSpy,
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+        },
+      },
+    }
+
+    let result = parseFloorPriceData(bidRequest)
+    expect(result).to.deep.equal({
+      '*': { '*': 1.1, '300x250': 2.2 },
+      banner: { '*': 1.1, '300x250': 2.2 },
+    })
   })
 })

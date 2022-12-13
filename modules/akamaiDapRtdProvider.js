@@ -202,7 +202,7 @@ export const dapUtils = {
     dapUtils.dapTokenize(configAsync, config.identity, onDone,
       function(token, status, xhr, onDone) {
         item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
-        let exp = dapUtils.dapExtractExpiryFromToken(token)
+        let exp = dapUtils.dapExtractExpiryFromToken(token);
         if (typeof exp == 'number') {
           item.expires_at = exp - 10;
         }
@@ -303,7 +303,7 @@ export const dapUtils = {
     dapUtils.dapEncryptedMembership(configAsync, token, onDone,
       function(encToken, status, xhr, onDone) {
         item.expires_at = now + DAP_DEFAULT_TOKEN_TTL;
-        let exp = dapUtils.dapExtractExpiryFromToken(encToken)
+        let exp = dapUtils.dapExtractExpiryFromToken(encToken);
         if (typeof exp == 'number') {
           item.expires_at = exp - 10;
         }

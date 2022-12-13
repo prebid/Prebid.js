@@ -21,6 +21,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {createEidsArray} from './userId/eids.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -419,7 +420,7 @@ function createVideoImp(bid) {
     }
   });
 
-  return video
+  return video;
 }
 
 /**
@@ -571,7 +572,12 @@ function nativeBidResponseHandler(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
+          if (!native.javascriptTrackers) {
+            native.javascriptTrackers = script;
+          } else {
+            native.javascriptTrackers += `\n${script}`;
+          }
           break;
       }
     });
@@ -596,6 +602,9 @@ export const spec = {
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const payload = createOrtbTemplate();
 
     // Pass the auctionId as ortb2 id
@@ -699,7 +708,7 @@ export const spec = {
               agencyName: deepAccess(bid, 'ext.agency_name', null),
               primaryCatId: getPrimaryCatFromResponse(bid.cat),
               mediaType
-            }
+            };
 
             const newBid = {
               requestId: bid.impid,

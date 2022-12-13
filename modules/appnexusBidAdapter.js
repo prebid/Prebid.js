@@ -10,6 +10,8 @@ import {
   getMaxValueFromArray,
   getMinValueFromArray,
   getParameterByName,
+  getUniqueIdentifierStr,
+  getWindowFromDocument,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -21,8 +23,8 @@ import {
   logInfo,
   logMessage,
   logWarn,
-  transformBidderParamKeywords,
-  getWindowFromDocument
+  mergeDeep,
+  transformBidderParamKeywords
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -34,16 +36,22 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
-const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api', 'startdelay'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEBUG_QUERY_PARAM_MAP = {
+  'apn_debug_dongle': 'dongle',
+  'apn_debug_member_id': 'member_id',
+  'apn_debug_timeout': 'debug_timeout'
+};
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -122,6 +130,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
@@ -178,6 +189,18 @@ export const spec = {
         logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
+      Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
+        let qval = getParameterByName(qparam);
+        if (isStr(qval) && qval !== '') {
+          debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
+          debugObj.enabled = true;
+        }
+      });
+      debugObj = convertTypes({
+        'member_id': 'number',
+        'debug_timeout': 'number'
+      }, debugObj);
+
       const debugBidRequest = find(bidRequests, hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
@@ -211,7 +234,7 @@ export const spec = {
       payload['iab_support'] = {
         omidpn: 'Appnexus',
         omidpv: '$prebid.version$'
-      }
+      };
     }
 
     if (member > 0) {
@@ -219,21 +242,38 @@ export const spec = {
     }
 
     if (appDeviceObjBid) {
-      payload.device = appDeviceObj
+      payload.device = appDeviceObj;
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
     }
 
-    let auctionKeywords = config.getConfig('appnexusAuctionKeywords');
-    if (isPlainObject(auctionKeywords)) {
-      let aucKeywords = transformBidderParamKeywords(auctionKeywords);
+    function grabOrtb2Keywords(ortb2Obj) {
+      const fields = ['site.keywords', 'site.content.keywords', 'user.keywords', 'app.keywords', 'app.content.keywords'];
+      let result = [];
 
-      if (aucKeywords.length > 0) {
-        aucKeywords.forEach(deleteValues);
-      }
+      fields.forEach(path => {
+        let keyStr = deepAccess(ortb2Obj, path);
+        if (isStr(keyStr)) result.push(keyStr);
+      });
+      return result;
+    }
 
-      payload.keywords = aucKeywords;
+    // grab the ortb2 keyword data (if it exists) and convert from the comma list string format to object format
+    let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
+    let ortb2KeywordsObjList = grabOrtb2Keywords(ortb2).map(keyStr => convertStringToKeywordsObj(keyStr));
+
+    let anAuctionKeywords = deepClone(config.getConfig('appnexusAuctionKeywords')) || {};
+    // need to convert the string values into array of strings, to properly merge values with other existing keys later
+    Object.keys(anAuctionKeywords).forEach(k => { if (isStr(anAuctionKeywords[k]) || isNumber(anAuctionKeywords[k])) anAuctionKeywords[k] = [anAuctionKeywords[k]] });
+    // combine all sources of keywords (converted from string comma list to object format) into one object (that combines the values for shared keys)
+    let mergedAuctionKeywords = mergeDeep({}, anAuctionKeywords, ...ortb2KeywordsObjList);
+
+    // convert to final format used by adserver
+    let auctionKeywords = transformBidderParamKeywords(mergedAuctionKeywords);
+    if (auctionKeywords.length > 0) {
+      auctionKeywords.forEach(deleteValues);
+      payload.keywords = auctionKeywords;
     }
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
@@ -261,7 +301,7 @@ export const spec = {
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -271,7 +311,7 @@ export const spec = {
         rd_top: bidderRequest.refererInfo.reachedTop,
         rd_ifs: bidderRequest.refererInfo.numIframes,
         rd_stk: bidderRequest.refererInfo.stack.map((url) => encodeURIComponent(url)).join(',')
-      }
+      };
       let pubPageUrl = bidderRequest.refererInfo.canonicalUrl;
       if (isStr(pubPageUrl) && pubPageUrl !== '') {
         refererinfo.rd_can = pubPageUrl;
@@ -406,7 +446,7 @@ export const spec = {
           if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
             s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
           }
-        })
+        });
       }
 
       if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
@@ -440,18 +480,8 @@ export const spec = {
     }
 
     return params;
-  },
-
-  /**
-   * Add element selector to javascript tracker to improve native viewability
-   * @param {Bid} bid
-   */
-  onBidWon: function (bid) {
-    if (FEATURES.NATIVE && bid.native) {
-      reloadViewabilityScriptWithCorrectParameters(bid);
-    }
   }
-}
+};
 
 function isPopulatedArray(arr) {
   return !!(isArray(arr) && arr.length > 0);
@@ -463,58 +493,9 @@ function deleteValues(keyPairObj) {
   }
 }
 
-function reloadViewabilityScriptWithCorrectParameters(bid) {
-  let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
-
-  if (viewJsPayload) {
-    let prebidParams = 'pbjs_adid=' + bid.adId + ';pbjs_auc=' + bid.adUnitCode;
-
-    let jsTrackerSrc = getViewabilityScriptUrlFromPayload(viewJsPayload)
-
-    let newJsTrackerSrc = jsTrackerSrc.replace('dom_id=%native_dom_id%', prebidParams);
-
-    // find iframe containing script tag
-    let frameArray = document.getElementsByTagName('iframe');
-
-    // boolean var to modify only one script. That way if there are muliple scripts,
-    // they won't all point to the same creative.
-    let modifiedAScript = false;
-
-    // first, loop on all ifames
-    for (let i = 0; i < frameArray.length && !modifiedAScript; i++) {
-      let currentFrame = frameArray[i];
-      try {
-        // IE-compatible, see https://stackoverflow.com/a/3999191/2112089
-        let nestedDoc = currentFrame.contentDocument || currentFrame.contentWindow.document;
-
-        if (nestedDoc) {
-          // if the doc is present, we look for our jstracker
-          let scriptArray = nestedDoc.getElementsByTagName('script');
-          for (let j = 0; j < scriptArray.length && !modifiedAScript; j++) {
-            let currentScript = scriptArray[j];
-            if (currentScript.getAttribute('data-src') == jsTrackerSrc) {
-              currentScript.setAttribute('src', newJsTrackerSrc);
-              currentScript.setAttribute('data-src', '');
-              if (currentScript.removeAttribute) {
-                currentScript.removeAttribute('data-src');
-              }
-              modifiedAScript = true;
-            }
-          }
-        }
-      } catch (exception) {
-        // trying to access a cross-domain iframe raises a SecurityError
-        // this is expected and ignored
-        if (!(exception instanceof DOMException && exception.name === 'SecurityError')) {
-          // all other cases are raised again to be treated by the calling function
-          throw exception;
-        }
-      }
-    }
-  }
-}
-
 function strIsAppnexusViewabilityScript(str) {
+  if (!str || str === '') return false;
+
   let regexMatchUrlStart = str.match(VIEWABILITY_URL_START);
   let viewUrlStartInStr = regexMatchUrlStart != null && regexMatchUrlStart.length >= 1;
 
@@ -522,30 +503,6 @@ function strIsAppnexusViewabilityScript(str) {
   let fileNameInStr = regexMatchFileName != null && regexMatchFileName.length >= 1;
 
   return str.startsWith(SCRIPT_TAG_START) && fileNameInStr && viewUrlStartInStr;
-}
-
-function getAppnexusViewabilityScriptFromJsTrackers(jsTrackerArray) {
-  let viewJsPayload;
-  if (isStr(jsTrackerArray) && strIsAppnexusViewabilityScript(jsTrackerArray)) {
-    viewJsPayload = jsTrackerArray;
-  } else if (isArray(jsTrackerArray)) {
-    for (let i = 0; i < jsTrackerArray.length; i++) {
-      let currentJsTracker = jsTrackerArray[i];
-      if (strIsAppnexusViewabilityScript(currentJsTracker)) {
-        viewJsPayload = currentJsTracker;
-      }
-    }
-  }
-  return viewJsPayload;
-}
-
-function getViewabilityScriptUrlFromPayload(viewJsPayload) {
-  // extracting the content of the src attribute
-  // -> substring between src=" and "
-  let indexOfFirstQuote = viewJsPayload.indexOf('src="') + 5; // offset of 5: the length of 'src=' + 1
-  let indexOfSecondQuote = viewJsPayload.indexOf('"', indexOfFirstQuote);
-  let jsTrackerSrc = viewJsPayload.substring(indexOfFirstQuote, indexOfSecondQuote);
-  return jsTrackerSrc;
 }
 
 function formatRequest(payload, bidderRequest) {
@@ -563,7 +520,7 @@ function formatRequest(payload, bidderRequest) {
   if (getParameterByName('apn_test').toUpperCase() === 'TRUE' || config.getConfig('apn_test') === true) {
     options.customHeaders = {
       'X-Is-Test': 1
-    }
+    };
   }
 
   if (payload.tags.length > MAX_IMPS_PER_REQUEST) {
@@ -629,7 +586,9 @@ function newRenderer(adUnitCode, rtbBid, rendererOptions = {}) {
  */
 function newBid(serverBid, rtbBid, bidderRequest) {
   const bidRequest = getBidRequest(serverBid.uuid, [bidderRequest]);
+  const adId = getUniqueIdentifierStr();
   const bid = {
+    adId: adId,
     requestId: serverBid.uuid,
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
@@ -717,20 +676,20 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   } else if (FEATURES.NATIVE && rtbBid.rtb[NATIVE]) {
     const nativeAd = rtbBid.rtb[NATIVE];
+    let viewScript;
 
-    // setting up the jsTracker:
-    // we put it as a data-src attribute so that the tracker isn't called
-    // until we have the adId (see onBidWon)
-    let jsTrackerDisarmed = rtbBid.viewability.config.replace('src=', 'data-src=');
+    if (strIsAppnexusViewabilityScript(rtbBid.viewability.config)) {
+      let prebidParams = 'pbjs_adid=' + adId + ';pbjs_auc=' + bidRequest.adUnitCode;
+      viewScript = rtbBid.viewability.config.replace('dom_id=%native_dom_id%', prebidParams);
+    }
 
     let jsTrackers = nativeAd.javascript_trackers;
-
     if (jsTrackers == undefined) {
-      jsTrackers = jsTrackerDisarmed;
+      jsTrackers = viewScript;
     } else if (isStr(jsTrackers)) {
-      jsTrackers = [jsTrackers, jsTrackerDisarmed];
+      jsTrackers = [jsTrackers, viewScript];
     } else {
-      jsTrackers.push(jsTrackerDisarmed);
+      jsTrackers.push(viewScript);
     }
 
     bid[NATIVE] = {
@@ -801,7 +760,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);
@@ -839,13 +798,25 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
 
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
+  let ortb2ImpKwStr = deepAccess(bid, 'ortb2Imp.ext.data.keywords');
+  if ((isStr(ortb2ImpKwStr) && ortb2ImpKwStr !== '') || !isEmpty(bid.params.keywords)) {
+    // convert ortb2 from comma list string format to bid param object format
+    let ortb2ImpKwObj = convertStringToKeywordsObj(ortb2ImpKwStr);
+
+    let bidParamsKwObj = (isPlainObject(bid.params.keywords)) ? deepClone(bid.params.keywords) : {};
+    // need to convert the string values into an array of strings, to properly merge values with other existing keys later
+    Object.keys(bidParamsKwObj).forEach(k => { if (isStr(bidParamsKwObj[k]) || isNumber(bidParamsKwObj[k])) bidParamsKwObj[k] = [bidParamsKwObj[k]] });
+
+    // combine both sources of keywords into one merged object (that combines the values for shared keys)
+    let keywordsObj = mergeDeep({}, bidParamsKwObj, ortb2ImpKwObj);
+
+    // convert to final format used by adserver
+    let keywordsUt = transformBidderParamKeywords(keywordsObj);
+    if (keywordsUt.length > 0) {
+      keywordsUt.forEach(deleteValues);
+      tag.keywords = keywordsUt;
     }
-    tag.keywords = keywords;
   }
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
@@ -949,6 +920,17 @@ function bidToTag(bid) {
               tag['video_frameworks'] = apiTmp;
             }
             break;
+
+          case 'startdelay':
+          case 'placement':
+            const contextKey = 'context';
+            if (typeof tag.video[contextKey] !== 'number') {
+              const placement = videoMediaType['placement'];
+              const startdelay = videoMediaType['startdelay'];
+              const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
+              tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
+            }
+            break;
         }
       });
   }
@@ -994,6 +976,32 @@ function transformSizes(requestSizes) {
   }
 
   return sizes;
+}
+
+function getContextFromPlacement(ortbPlacement) {
+  if (!ortbPlacement) {
+    return;
+  }
+
+  if (ortbPlacement === 2) {
+    return 'in-banner';
+  } else if (ortbPlacement > 2) {
+    return 'outstream';
+  }
+}
+
+function getContextFromStartDelay(ortbStartDelay) {
+  if (!ortbStartDelay) {
+    return;
+  }
+
+  if (ortbStartDelay === 0) {
+    return 'pre_roll';
+  } else if (ortbStartDelay === -1) {
+    return 'mid_roll';
+  } else if (ortbStartDelay === -2) {
+    return 'post_roll';
+  }
 }
 
 function hasUserInfo(bid) {
@@ -1240,6 +1248,39 @@ function convertKeywordsToString(keywords) {
 
   // remove last trailing comma
   result = result.substring(0, result.length - 1);
+  return result;
+}
+
+// converts a comma separated list of keywords into the standard keyword object format used in appnexus bid params
+// 'genre=rock,genre=pop,pets=dog,music' goes to { 'genre': ['rock', 'pop'], 'pets': ['dog'], 'music': [''] }
+function convertStringToKeywordsObj(keyStr) {
+  let result = {};
+
+  if (isStr(keyStr) && keyStr !== '') {
+    // will split based on commas and will eat white space before/after the comma
+    let keywordList = keyStr.split(/\s*(?:,)\s*/);
+    keywordList.forEach(kw => {
+      // if = exists, then split
+      if (kw.indexOf('=') !== -1) {
+        let kwPair = kw.split('=');
+        let key = kwPair[0];
+        let val = kwPair[1];
+
+        // then check for existing key in result > if so add value to the array > if not, add new key and create value array
+        if (result.hasOwnProperty(key)) {
+          result[key].push(val);
+        } else {
+          result[key] = [val];
+        }
+      } else {
+        // make a key with '' value; if key already exists > don't add
+        if (!result.hasOwnProperty(kw)) {
+          result[kw] = [''];
+        }
+      }
+    });
+  }
+
   return result;
 }
 

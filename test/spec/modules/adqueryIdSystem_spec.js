@@ -1,7 +1,5 @@
 import { adqueryIdSubmodule, storage } from 'modules/adqueryIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
-import {amxIdSubmodule} from '../../../modules/amxIdSystem';
-import * as utils from '../../../src/utils';
 
 const config = {
   storage: {

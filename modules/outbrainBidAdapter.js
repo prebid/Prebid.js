@@ -8,6 +8,7 @@ import { NATIVE, BANNER } from '../src/mediaTypes.js';
 import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -53,13 +54,17 @@ export const spec = {
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const ortb2 = bidderRequest.ortb2 || {};
     const page = bidderRequest.refererInfo.page;
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
-    const bcat = setOnAny(validBidRequests, 'params.bcat');
-    const badv = setOnAny(validBidRequests, 'params.badv');
-    const eids = setOnAny(validBidRequests, 'userIdAsEids')
+    const bcat = ortb2.bcat || setOnAny(validBidRequests, 'params.bcat');
+    const badv = ortb2.badv || setOnAny(validBidRequests, 'params.badv');
+    const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const wlang = ortb2.wlang;
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -106,6 +111,7 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      wlang: wlang,
       ext: {
         prebid: {
           channel: {

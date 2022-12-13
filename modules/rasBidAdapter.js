@@ -5,13 +5,21 @@ import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/uti
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';
 
-const getEndpoint = (network) => `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?`;
+const getEndpoint = (network) => {
+  return `https://csr.onet.pl/${encodeURIComponent(network)}/csr-006/csr.json?nid=${encodeURIComponent(network)}&`;
+};
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
+  if (params.customParams && typeof params.customParams === 'object') {
+    for (const param in params.customParams) {
+      if (params.customParams.hasOwnProperty(param)) {
+        newParams[param] = params.customParams[param];
+      }
+    }
+  }
   const du = deepAccess(bidderRequest, 'refererInfo.page');
   const dr = deepAccess(bidderRequest, 'refererInfo.ref');
-
   if (du) {
     newParams.du = du;
   }
@@ -90,10 +98,17 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
+    const slotSequence = deepAccess(adunit, 'params.slotSequence');
+
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
+
     queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
+
     if (sizes.length) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
+    }
+    if (slotSequence !== undefined) {
+      queryString += `&pos${i}=${encodeURIComponent(slotSequence)}`;
     }
   }
   return queryString;
