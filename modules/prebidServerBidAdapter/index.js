@@ -419,24 +419,6 @@ function getConsentData(bidRequests) {
   return { gdprConsent, uspConsent };
 }
 
-function appendSiteAppDooh(request, accountId) {
-  if (!request) return;
-
-  // ORTB specifies app OR site
-  if (typeof config.getConfig('app') === 'object') {
-    request.app = config.getConfig('app');
-    request.app.publisher = {id: accountId}
-  } else if (typeof config.getConfig('dooh') === 'object') {
-    request.dooh = config.getConfig('dooh');
-    request.dooh.publisher = {id: accountId}
-  } else {
-    request.site = {};
-    if (isPlainObject(config.getConfig('site'))) {
-      request.site = config.getConfig('site');
-    }
-  }
-}
-
 /**
  * Bidder adapter for Prebid Server
  */

@@ -47,11 +47,19 @@ const PBS_CONVERTER = ortbConverter({
       request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', proxyBidderRequest.auctionId);
 
-      [request.app, request.site].forEach(section => {
-        if (section && !section.publisher?.id) {
-          deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
+      if (s2sBidRequest.s2sConfig.app) {
+        request.app = s2sBidRequest.s2sConfig.app;
+        deepSetValue(request.app.publisher, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
+      } else if (request.dooh) {
+        request.dooh = s2sBidRequest.s2sConfig.dooh;
+        deepSetValue(request.dooh.publisher, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
+      } else {
+        request.site = {};
+        if (s2sBidRequest.s2sConfig.site) {
+          request.site = s2sBidRequest.s2sConfig.site;
+          deepSetValue(request.site.publisher, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
-      })
+      }
 
       if (isArray(eidPermissions) && eidPermissions.length > 0) {
         if (requestedBidders && isArray(requestedBidders)) {
