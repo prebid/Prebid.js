@@ -51,6 +51,8 @@ const PBS_CONVERTER = ortbConverter({
       [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
+        }
+      })
 
       if (request.app) {
         request.app = s2sBidRequest.s2sConfig.app;
