@@ -42,17 +42,18 @@ export const spec = {
     // Pull Social Canvas segments and embed URL
     const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
  
-    const transformedParams = Object.assign({}, {
+    const krakenParams = Object.assign({}, {
       pbv: '$prebid.version$',
       aid: firstBidRequest.auctionId,
       sid: spec._getSessionId(),
       url: spec._getAllMetadata(bidderRequest).pageURL,
-      requestCount: spec._getRequestCount(),
       to: bidderRequest.timeout,
       ts: new Date().getTime(),
       device: {
-        width: window.screen.width,
-        height: window.screen.height
+        size:  { 
+          width: window.screen.width,
+          height: window.screen.height
+        }
       },
       imp: impressions, 
       socan: socialCanvas,
@@ -65,20 +66,39 @@ export const spec = {
       eids: firstBidRequest.userIdAsEids
     });
 
+    const reqCount = spec._getRequestCount()
+    if(reqCount != null && reqCount > 0) {
+      krakenParams.requestCount = spec._getRequestCount()
+    }
+
     if(currency != null && currency != "USD") {
-      transformedParams.cur = currency
+      krakenParams.cur = currency
     }
 
     // User Agent Client Hints / SUA
     const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
     if (uaClientHints) {
-      transformedParams.device.sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
+      suaAttributes = ['browsers', 'platform', 'mobile', 'model', 'source']
+      suaValidAttributes = []
+
+      suaAttributes.forEach(attributeKey => {
+        var attributeValue = uaClientHints[attributeKey] 
+        if(attributeValue != null) {
+          if(((attributeKey == 'mobile' || attributeKey == 'source') && attributeValue < 1) ||
+            (attributeKey == 'model' && attributeValue.trim() == '')) {
+            return
+          }
+          suaValidAttributes.push(attributeKey)
+        }
+      })
+  
+      krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
     }
 
     return Object.assign({}, bidderRequest, {
       method: 'POST',
       url: `${HOST}/api/v1/prebid`,
-      data: transformedParams,
+      data: krakenParams,
       currency: currency
     });
   },
@@ -292,12 +312,15 @@ export const spec = {
       tid: bid.transactionId,
       pid: bid.params.placementId,
       code: bid.adUnitCode,
-      floor: bid.floor,
       banner: bid.mediaTypes.banner,
       video: bid.mediaTypes.video,
       fpd: { 
         gpid: getGPID(bid)
       },
+    }
+
+    if(bid.floor > 0) {
+      imp.floor = bid.floor
     }
     
     if(bid.bidRequestsCount > 0) {
