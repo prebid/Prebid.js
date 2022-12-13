@@ -9,7 +9,7 @@ import {config} from '../src/config.js';
 import {gppDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -370,15 +370,17 @@ export function setConsentConfig(config) {
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-// TODO this function will likely change a bit once PR #9205 is merged to master
-export function setOrtbGpp(ortbRequest, bidderRequest) {
-  const consent = bidderRequest.gppConsent;
-  if (consent) {
-    if (Array.isArray(consent.applicableSections)) {
-      deepSetValue(ortbRequest, 'regs.gpp_sid', consent.applicableSections);
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = gppDataHandler.getConsentData();
+    if (consent) {
+      if (Array.isArray(consent.applicableSections)) {
+        deepSetValue(ortb2, 'regs.gpp_sid', consent.applicableSections);
+      }
+      deepSetValue(ortb2, 'regs.gpp', consent.gppString);
     }
-    deepSetValue(ortbRequest, 'regs.gpp', consent.gppString);
-  }
+    return ortb2;
+  }));
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'gpp', fn: setOrtbGpp});
+enrichFPD.before(enrichFPDHook);
