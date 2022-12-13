@@ -112,7 +112,7 @@ function lookupIabConsent({onSuccess, onError}) {
   const invokeCMP = (cmpDirectAccess) ? invokeCMPDirect : invokeCMPFrame;
 
   function invokeCMPDirect({command, callback, parameter, version = CMP_VERSION}, resultCb) {
-    if (resultCb != null) {
+    if (typeof resultCb === 'function') {
       resultCb(cmpFrame[cmpApiName](command, callback, parameter, version));
     } else {
       cmpFrame[cmpApiName](command, callback, parameter, version);
@@ -139,7 +139,7 @@ function lookupIabConsent({onSuccess, onError}) {
     };
 
     // TODO? - add logic to check if random was already used in the same session, and roll another if so?
-    cmpCallbacks[callId] = (callback != null) ? callback : resultCb;
+    cmpCallbacks[callId] = (typeof callback === 'function') ? callback : resultCb;
     cmpFrame.postMessage(msg, '*');
 
     function readPostMessageResponse(event) {
