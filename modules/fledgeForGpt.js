@@ -65,9 +65,10 @@ export function setImpExtAe(imp, bidRequest, context) {
     delete imp.ext?.ae;
   }
 }
+registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
 
 // to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
-// fledge response processing in two steps: first aggregate all the auction configs by their imp:
+// fledge response processing in two steps: first aggregate all the auction configs by their imp...
 
 export function parseExtPrebidFledge(response, ortbResponse, context) {
   (ortbResponse.ext?.prebid?.fledge?.auctionconfigs || []).forEach((cfg) => {
@@ -80,8 +81,9 @@ export function parseExtPrebidFledge(response, ortbResponse, context) {
     }
   })
 }
+registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
 
-// then, make them available in the adapter's response. This is the client side version, for which the
+// ...then, make them available in the adapter's response. This is the client side version, for which the
 // interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}
 
 export function setResponseFledgeConfigs(response, ortbResponse, context) {
@@ -91,7 +93,4 @@ export function setResponseFledgeConfigs(response, ortbResponse, context) {
     response.fledgeAuctionConfigs = configs;
   }
 }
-
-registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
-registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
 registerOrtbProcessor({type: RESPONSE, name: 'fledgeAuctionConfigs', priority: -1, fn: setResponseFledgeConfigs, dialects: [PBS]})

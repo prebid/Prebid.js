@@ -8,7 +8,7 @@ import * as utils from '../../../src/utils.js';
 import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
-import {setImpExtAe} from 'modules/fledgeForGpt.js';
+import {parseExtPrebidFledge, setImpExtAe, setResponseFledgeConfigs} from 'modules/fledgeForGpt.js';
 
 const CODE = 'sampleBidder';
 const AD_UNIT_CODE = 'mock/placement';
@@ -113,6 +113,95 @@ describe('ortb processors for fledge', () => {
       const imp = {ext: {ae: false}};
       setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
       expect(imp.ext.ae).to.equal(false);
+    });
+  });
+  describe('parseExtPrebidFledge', () => {
+    function packageConfigs(configs) {
+      return {
+        ext: {
+          prebid: {
+            fledge: {
+              auctionconfigs: configs
+            }
+          }
+        }
+      }
+    }
+
+    function generateImpCtx(fledgeFlags) {
+      return Object.fromEntries(Object.entries(fledgeFlags).map(([impid, fledgeEnabled]) => [impid, {imp: {ext: {ae: fledgeEnabled}}}]));
+    }
+
+    function generateCfg(impid, ...ids) {
+      return ids.map((id) => ({impid, config: {id}}));
+    }
+
+    function extractResult(ctx) {
+      return Object.fromEntries(
+        Object.entries(ctx)
+          .map(([impid, ctx]) => [impid, ctx.fledgeConfigs?.map(cfg => cfg.config.id)])
+          .filter(([_, val]) => val != null)
+      );
+    }
+
+    it('should collect fledge configs by imp', () => {
+      const ctx = {
+        impContext: generateImpCtx({e1: 1, e2: 1, d1: 0})
+      };
+      const resp = packageConfigs(
+        generateCfg('e1', 1, 2, 3)
+          .concat(generateCfg('e2', 4)
+            .concat(generateCfg('d1', 5, 6)))
+      );
+      parseExtPrebidFledge({}, resp, ctx);
+      expect(extractResult(ctx.impContext)).to.eql({
+        e1: [1, 2, 3],
+        e2: [4],
+      });
+    });
+    it('should not choke if fledge config references unknown imp', () => {
+      const ctx = {impContext: generateImpCtx({i: 1})};
+      const resp = packageConfigs(generateCfg('unknown', 1));
+      parseExtPrebidFledge({}, resp, ctx);
+      expect(extractResult(ctx.impContext)).to.eql({});
+    });
+  });
+  describe('setResponseFledgeConfigs', () => {
+    it('should set fledgeAuctionConfigs paired with their corresponding bid id', () => {
+      const ctx = {
+        impContext: {
+          1: {
+            bidRequest: {bidId: 'bid1'},
+            fledgeConfigs: [{config: {id: 1}}, {config: {id: 2}}]
+          },
+          2: {
+            bidRequest: {bidId: 'bid2'},
+            fledgeConfigs: [{config: {id: 3}}]
+          },
+          3: {
+            bidRequest: {bidId: 'bid3'}
+          }
+        }
+      };
+      const resp = {};
+      setResponseFledgeConfigs(resp, {}, ctx);
+      expect(resp.fledgeAuctionConfigs).to.eql([
+        {bidId: 'bid1', config: {id: 1}},
+        {bidId: 'bid1', config: {id: 2}},
+        {bidId: 'bid2', config: {id: 3}},
+      ]);
+    });
+    it('should not set fledgeAuctionConfigs if none exist', () => {
+      const resp = {};
+      setResponseFledgeConfigs(resp, {}, {
+        impContext: {
+          1: {
+            fledgeConfigs: []
+          },
+          2: {}
+        }
+      });
+      expect(resp).to.eql({});
     });
   });
 });

@@ -90,6 +90,7 @@ export function ortbConverter({
         req: Object.assign({bidRequests}, defaultContext, context),
         imp: {}
       }
+      ctx.req.impContext = ctx.imp;
       const imps = bidRequests.map(bidRequest => {
         const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
@@ -127,7 +128,7 @@ export function ortbConverter({
           logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
         })
       ).filter(Boolean);
-      return buildResponse(bidResponses, response, augmentContext(ctx.req, {impContext: ctx.imp}));
+      return buildResponse(bidResponses, response, augmentContext(ctx.req));
     }
   }
 }
