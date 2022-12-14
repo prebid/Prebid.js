@@ -761,46 +761,51 @@ function getSlotPosition(adUnitElementId) {
     position.x = Math.round(sfGeom.t);
     position.y = Math.round(sfGeom.l);
   } else if (canAccessTopWindow()) {
-    // window.top based computing
-    const wt = getWindowTop();
-    const d = wt.document;
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
 
-    let domElement;
+      let domElement;
 
-    if (inIframe() === true) {
-      const ws = getWindowSelf();
-      const currentElement = ws.document.getElementById(adUnitElementId);
-      domElement = internal.getElementFromTopWindow(currentElement, ws);
-    } else {
-      domElement = wt.document.getElementById(adUnitElementId);
-    }
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(adUnitElementId);
+        domElement = internal.getElementFromTopWindow(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(adUnitElementId);
+      }
 
-    if (!domElement) {
+      if (!domElement) {
+        return '';
+      }
+
+      let box = domElement.getBoundingClientRect();
+
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = d.clientTop || body.clientTop || 0;
+      const clientLeft = d.clientLeft || body.clientLeft || 0;
+      const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
+      const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+
+      const elComputedStyle = wt.getComputedStyle(domElement, null);
+      const elComputedDisplay = elComputedStyle.display || 'block';
+      const mustDisplayElement = elComputedDisplay === 'none';
+
+      if (mustDisplayElement) {
+        domElement.style = domElement.style || {};
+        const originalDisplay = domElement.style.display;
+        domElement.style.display = 'block';
+        box = domElement.getBoundingClientRect();
+        domElement.style.display = originalDisplay || null;
+      }
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(LOG_PREFIX, err);
       return '';
     }
-
-    let box = domElement.getBoundingClientRect();
-
-    const docEl = d.documentElement;
-    const body = d.body;
-    const clientTop = d.clientTop || body.clientTop || 0;
-    const clientLeft = d.clientLeft || body.clientLeft || 0;
-    const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
-    const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
-
-    const elComputedStyle = wt.getComputedStyle(domElement, null);
-    const elComputedDisplay = elComputedStyle.display || 'block';
-    const mustDisplayElement = elComputedDisplay === 'none';
-
-    if (mustDisplayElement) {
-      domElement.style = domElement.style || {};
-      const originalDisplay = domElement.style.display;
-      domElement.style.display = 'block';
-      box = domElement.getBoundingClientRect();
-      domElement.style.display = originalDisplay || null;
-    }
-    position.x = Math.round(box.left + scrollLeft - clientLeft);
-    position.y = Math.round(box.top + scrollTop - clientTop);
   } else {
     return '';
   }
