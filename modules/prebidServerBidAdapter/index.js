@@ -20,7 +20,7 @@ import {
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {isValid} from '../../src/adapters/bidderFactory.js';
+import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -469,6 +469,9 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
+        },
+        onFledge: ({adUnitCode, config}) => {
+          addComponentAuction(adUnitCode, config);
         }
       })
     }
@@ -494,7 +497,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid}) {
+export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -518,8 +521,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
+            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
+            if (fledgeAuctionConfigs) {
+              fledgeAuctionConfigs.forEach(onFledge);
+            }
           } catch (error) {
             logError(error);
           }
