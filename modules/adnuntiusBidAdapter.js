@@ -9,14 +9,14 @@ const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
-// const DEFAULT_NATIVE = 'native'
+const META_DATA_KEY = 'adn.meta';
 
-const checkSegment = function (segment) {
+const checkSegment = function(segment) {
   if (isStr(segment)) return segment;
   if (segment.id) return segment.id
 }
 
-const getSegmentsFromOrtb = function (ortb2) {
+const getSegmentsFromOrtb = function(ortb2) {
   const userData = deepAccess(ortb2, 'user.data');
   let segments = [];
   if (userData) {
@@ -29,47 +29,118 @@ const getSegmentsFromOrtb = function (ortb2) {
   return segments
 }
 
-// function createNative(ad) {
-//   const native = {};
-//   const assets = ad.assets
-//   native.title = ad.text.title.content;
-//   native.image = {
-//     url: assets.image.cdnId,
-//     height: assets.image.height,
-//     width: assets.image.width,
-//   };
-//   if (assets.icon) {
-//     native.icon = {
-//       url: assets.icon.cdnId,
-//       height: assets.icon.height,
-//       width: assets.icon.width,
-//     };
-//   }
-
-//   native.sponsoredBy = ad.text.sponsoredBy?.content || '';
-//   native.body = ad.text.body?.content || '';
-//   native.cta = ad.text.cta?.content || '';
-//   native.clickUrl = ad.destinationUrls.destination || '';
-//   native.impressionTrackers = ad.impressionTrackingUrls || [ad.renderedPixel];
-
-//   return native;
-// }
-
-const handleMeta = function () {
-  const storage = getStorageManager({ bidderCode: BIDDER_CODE })
-  let adnMeta = null
-  if (storage.localStorageIsEnabled()) {
-    adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
+export const misc = {
+  getUnixTimestamp: function(addDays, asMinutes) {
+    const multiplication = addDays / (asMinutes ? 1440 : 1);
+    return Date.now() + (addDays && addDays > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
   }
-  const meta = (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
-  return meta
-}
+};
 
-const getUsi = function (meta, ortb2, bidderRequest) {
-  let usi = (meta !== null && meta.usi) ? meta.usi : false;
-  if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
-  return usi
-}
+const storageTool = (function() {
+  const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+
+  const getMetaInternal = function() {
+    if (!storage.localStorageIsEnabled()) {
+      return {};
+    }
+
+    let parsedJson;
+    try {
+      parsedJson = JSON.parse(storage.getDataFromLocalStorage(META_DATA_KEY));
+    } catch (e) {
+      return {};
+    }
+
+    let filteredEntries = parsedJson ? parsedJson.filter((datum) => {
+      if (datum.key === 'voidAuIds' && Array.isArray(datum.value)) {
+        return true;
+      }
+      return datum.key && datum.exp && datum.value && datum.exp > misc.getUnixTimestamp();
+    }) : [];
+    const voidAuIdsEntry = filteredEntries.find(entry => entry.key === 'voidAuIds');
+    if (voidAuIdsEntry) {
+      const now = misc.getUnixTimestamp();
+      voidAuIdsEntry.value = voidAuIdsEntry.value.filter(voidAuId => voidAuId.auId && voidAuId.exp > now);
+      if (!voidAuIdsEntry.value.length) {
+        filteredEntries = filteredEntries.filter(entry => entry.key !== 'voidAuIds');
+      }
+    }
+    return filteredEntries;
+  };
+
+  const setMetaInternal = function(apiResponse) {
+    if (!storage.localStorageIsEnabled()) {
+      return;
+    }
+
+    const updateVoidAuIds = function(currentVoidAuIds, auIdsAsString) {
+      const newAuIds = auIdsAsString ? auIdsAsString.split(';') : [];
+      const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
+        return newAuIds.indexOf(auIdObj.value) < -1;
+      }) || [];
+      const oneDayFromNow = misc.getUnixTimestamp(1);
+      const apiIdsArray = newAuIds.map(auId => {
+        return {exp: oneDayFromNow, auId: auId};
+      }) || [];
+      return notNewExistingAuIds.concat(apiIdsArray) || [];
+    }
+
+    const metaAsObj = getMetaInternal().reduce((a, entry) => ({...a, [entry.key]: {value: entry.value, exp: entry.exp}}), {});
+    for (const key in apiResponse) {
+      if (key !== 'voidAuIds') {
+        metaAsObj[key] = {
+          value: apiResponse[key],
+          exp: misc.getUnixTimestamp(100)
+        }
+      }
+    }
+    const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds || []);
+    if (currentAuIds.length > 0) {
+      metaAsObj.voidAuIds = {value: currentAuIds};
+    }
+    const metaDataForSaving = Object.entries(metaAsObj).map((entrySet) => {
+      if (entrySet[0] === 'voidAuIds') {
+        return {
+          key: entrySet[0],
+          value: entrySet[1].value
+        };
+      }
+      return {
+        key: entrySet[0],
+        value: entrySet[1].value,
+        exp: entrySet[1].exp
+      }
+    });
+    storage.setDataInLocalStorage(META_DATA_KEY, JSON.stringify(metaDataForSaving));
+  };
+
+  const getUsi = function(meta, ortb2) {
+    let usi = (meta && meta.usi) ? meta.usi : false;
+    if (ortb2 && ortb2.user && ortb2.user.id) {
+      usi = ortb2.user.id
+    }
+    return usi;
+  }
+
+  return {
+    getMeta: function(ortb2) {
+      const metaInternal = getMetaInternal().reduce((a, entry) => ({...a, [entry.key]: entry.value}), {});
+      metaInternal.usi = getUsi(metaInternal, ortb2);
+      if (!metaInternal.usi) {
+        delete metaInternal.usi;
+      }
+      if (metaInternal.voidAuIds) {
+        metaInternal.voidAuIdsArray = metaInternal.voidAuIds.map((voidAuId) => {
+          return voidAuId.auId;
+        })
+      }
+      return metaInternal;
+    },
+    setMeta: function(serverData) {
+      setMetaInternal(serverData);
+    }
+  };
+})();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -79,7 +150,7 @@ export const spec = {
     return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
 
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const networks = {};
     const bidRequests = {};
     const requests = [];
@@ -87,8 +158,7 @@ export const spec = {
     const ortb2 = bidderRequest.ortb2 || {};
     const bidderConfig = config.getConfig();
 
-    const adnMeta = handleMeta()
-    const usi = getUsi(adnMeta, ortb2, bidderRequest)
+    const adnMeta = storageTool.getMeta(ortb2);
     const segments = getSegmentsFromOrtb(ortb2);
     const tzo = new Date().getTimezoneOffset();
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
@@ -99,10 +169,14 @@ export const spec = {
 
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
-    if (usi) request.push('userId=' + usi);
+    if (adnMeta.usi) request.push('userId=' + adnMeta.usi);
     if (bidderConfig.useCookie === false) request.push('noCookies=true')
-    for (var i = 0; i < validBidRequests.length; i++) {
+    for (let i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
+      if (adnMeta.voidAuIdsArray && adnMeta.voidAuIdsArray.indexOf(bid.params.auId) > -1) {
+        // This auId is void. Do NOT waste time and energy sending a request to the server
+        continue
+      }
       let network = bid.params.network || 'network';
       const targeting = bid.params.targeting || {};
 
@@ -110,24 +184,27 @@ export const spec = {
         network += '_video'
       }
 
-      // if (bid.mediaTypes && bid.mediaTypes.native) {
-      //   network += '_native'
-      // }
-
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
       networks[network] = networks[network] || {};
       networks[network].adUnits = networks[network].adUnits || [];
       if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
-      if (adnMeta) networks[network].metaData = adnMeta;
-      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.bidId }
+      if (Object.keys(adnMeta).length > 0) {
+        const adnMetaClone = {...adnMeta};
+        delete adnMetaClone.voidAuIds;
+        delete adnMetaClone.voidAuIdsArray;
+        if (Object.keys(adnMetaClone).length > 0) {
+          networks[network].metaData = adnMetaClone;
+        }
+      }
+      const adUnit = {...targeting, auId: bid.params.auId, targetId: bid.bidId}
       if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) adUnit.dimensions = bid.mediaTypes.banner.sizes
       networks[network].adUnits.push(adUnit);
     }
 
     const networkKeys = Object.keys(networks)
-    for (var j = 0; j < networkKeys.length; j++) {
+    for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
@@ -144,7 +221,10 @@ export const spec = {
     return requests;
   },
 
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, bidRequest) {
+    if (serverResponse.body.metaData) {
+      storageTool.setMeta(serverResponse.body.metaData);
+    }
     const adUnits = serverResponse.body.adUnits;
     const bidResponsesById = adUnits.reduce((response, adUnit) => {
       if (adUnit.matchedAdCount >= 1) {
@@ -172,23 +252,22 @@ export const spec = {
         if (adUnit.vastXml) {
           adResponse[adUnit.targetId].vastXml = adUnit.vastXml
           adResponse[adUnit.targetId].mediaType = VIDEO
-          // } else if (ad.assets && ad.assets.image && ad.text && ad.text.title && ad.text.body && ad.destinationUrls && ad.destinationUrls.destination) {
-          //   adResponse[adUnit.targetId].native = createNative(ad);
-          //   adResponse[adUnit.targetId].mediaType = NATIVE;
         } else {
           adResponse[adUnit.targetId].ad = adUnit.html
         }
 
         return adResponse
-      } else return response
+      } else {
+        return response
+      }
     }, {});
 
-    const bidResponse = bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
-      if (bidResponsesById[adunitId]) { request.push(bidResponsesById[adunitId]) }
+    return bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
+      if (bidResponsesById[adunitId]) {
+        request.push(bidResponsesById[adunitId])
+      }
       return request
-    }, []);
-
-    return bidResponse
+    }, [])
   },
 
 }
