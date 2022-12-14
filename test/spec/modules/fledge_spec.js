@@ -8,6 +8,7 @@ import * as utils from '../../../src/utils.js';
 import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
+import {setImpExtAe} from 'modules/fledgeForGpt.js';
 
 const CODE = 'sampleBidder';
 const AD_UNIT_CODE = 'mock/placement';
@@ -98,5 +99,20 @@ describe('fledgeEnabled', function () {
 
     expect(bidRequests[1].bids[0].bidder).equals('rubicon');
     expect(bidRequests[1].fledgeEnabled).to.be.undefined;
+  });
+});
+
+describe('ortb processors for fledge', () => {
+  describe('imp.ext.ae', () => {
+    it('should be removed if fledge is not enabled', () => {
+      const imp = {ext: {ae: 1}};
+      setImpExtAe(imp, {}, {bidderRequest: {}});
+      expect(imp.ext.ae).to.not.exist;
+    })
+    it('should be left intact if fledge is enabled', () => {
+      const imp = {ext: {ae: false}};
+      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
+      expect(imp.ext.ae).to.equal(false);
+    });
   });
 });

@@ -4,7 +4,8 @@
  */
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { getGptSlotForAdUnitCode, logInfo, logWarn, memoize } from '../src/utils.js';
+import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
+import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 
 const MODULE = 'fledgeForGpt'
 
@@ -31,12 +32,10 @@ export function init(cfg) {
   }
 }
 
-export function addComponentAuctionHook(next, bidRequest, componentAuctionConfig) {
+export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig) {
   const seller = componentAuctionConfig.seller;
-  const adUnitCode = bidRequest.adUnitCode;
   const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (gptSlot && gptSlot.setConfig) {
-    delete componentAuctionConfig.bidId;
     gptSlot.setConfig({
       componentAuction: [{
         configKey: seller,
@@ -48,7 +47,7 @@ export function addComponentAuctionHook(next, bidRequest, componentAuctionConfig
     logWarn(MODULE, `unable to register component auction config for: ${adUnitCode} x ${seller}.`);
   }
 
-  next(bidRequest, componentAuctionConfig);
+  next(adUnitCode, componentAuctionConfig);
 }
 
 export function markBidsForFledge(next, bidderRequests) {
@@ -59,5 +58,40 @@ export function markBidsForFledge(next, bidderRequests) {
   }
   next(bidderRequests);
 }
-
 getHook('makeBidRequests').after(markBidsForFledge);
+
+export function setImpExtAe(imp, bidRequest, context) {
+  if (!context.bidderRequest.fledgeEnabled) {
+    delete imp.ext?.ae;
+  }
+}
+
+// to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
+// fledge response processing in two steps: first aggregate all the auction configs by their imp:
+
+export function parseExtPrebidFledge(response, ortbResponse, context) {
+  (ortbResponse.ext?.prebid?.fledge?.auctionconfigs || []).forEach((cfg) => {
+    const impCtx = context.impContext[cfg.impid];
+    if (!impCtx?.imp?.ext?.ae) {
+      logWarn('Received fledge auction configuration for an impression that was not in the request or did not ask for it', cfg, impCtx?.imp);
+    } else {
+      impCtx.fledgeConfigs = impCtx.fledgeConfigs || [];
+      impCtx.fledgeConfigs.push(cfg);
+    }
+  })
+}
+
+// then, make them available in the adapter's response. This is the client side version, for which the
+// interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}
+
+export function setResponseFledgeConfigs(response, ortbResponse, context) {
+  const configs = Object.values(context.impContext)
+    .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({bidId: impCtx.bidRequest.bidId, config: cfg.config})));
+  if (configs.length > 0) {
+    response.fledgeAuctionConfigs = configs;
+  }
+}
+
+registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
+registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
+registerOrtbProcessor({type: RESPONSE, name: 'fledgeAuctionConfigs', priority: -1, fn: setResponseFledgeConfigs, dialects: [PBS]})

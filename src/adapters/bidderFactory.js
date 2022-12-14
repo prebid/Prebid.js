@@ -247,7 +247,7 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest, fledgeAuctionConfig);
+              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
             }
           });
         },
@@ -467,9 +467,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
-  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
-}, 'addComponentAuction')
+export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+}, 'addComponentAuction');
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (!config.getConfig('adpod.brandCategoryExclusion')) {

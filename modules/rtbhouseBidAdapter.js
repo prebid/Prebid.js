@@ -171,10 +171,12 @@ export const spec = {
 
     if (fledgeAuctionConfigs) {
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
+        return {
           bidId,
-          auctionSignals: {}
-        }, cfg);
+          config: Object.assign({
+            auctionSignals: {}
+          }, cfg)
+        }
       });
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
