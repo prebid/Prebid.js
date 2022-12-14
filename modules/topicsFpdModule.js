@@ -200,7 +200,7 @@ function listenMessagesFromTopicIframe() {
 
 function checkTCFv2(vendorData, requiredPurposes = TCF_REQUIRED_PURPOSES) {
   const {gdprApplies, purpose} = vendorData;
-  if (!gdprApplies) {
+  if (!gdprApplies || !purpose) {
     return true;
   }
   return requiredPurposes.map((purposeNo) => {
