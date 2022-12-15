@@ -113,10 +113,7 @@ export class GppConsentHandler extends ConsentHandler {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
-        // TODO - is more needed here?  Are the properties below fine?
-        apiVersion: consentData.apiVersion,
         generatedAt: this.generatedTime,
-        gpp: consentData,
       }
     }
   }

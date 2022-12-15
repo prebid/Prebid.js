@@ -468,9 +468,6 @@ describe('consentManagementGpp', function () {
           }, {});
           let consentMeta = gppDataHandler.getConsentMeta();
           sinon.assert.notCalled(utils.logError);
-          expect(consentMeta.gpp.gppString).to.equal(testConsentData.gppString);
-          expect(consentMeta.gpp.applicableSections).to.deep.equal(testConsentData.applicableSections);
-          expect(consentMeta.apiVersion).to.equal(1);
           expect(consentMeta.generatedAt).to.be.above(1644367751709);
         });
 
