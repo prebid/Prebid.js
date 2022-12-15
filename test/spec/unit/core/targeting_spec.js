@@ -916,6 +916,30 @@ describe('targeting tests', function () {
   }); // end getAllTargeting without bids return empty object
 
   describe('Targeting in concurrent auctions', function () {
+    describe('check topBid', function () {
+      it('should select highest bid as top bid properly even when cpm object is mixed type (string/number)', function () {
+        let bidsReceived = [
+          createBidReceived({bidder: 'appnexus', cpm: '100', auctionId: '1', responseTimestamp: 100, adUnitCode: 'cpm-all-strings', adId: 'adid-1'}),
+          createBidReceived({bidder: 'rubicon', cpm: '200', auctionId: '1', responseTimestamp: 101, adUnitCode: 'cpm-all-strings', adId: 'adid-2'}),
+          createBidReceived({bidder: 'criteo', cpm: '5', auctionId: '1', responseTimestamp: 102, adUnitCode: 'cpm-all-strings', adId: 'adid-3'}),
+          createBidReceived({bidder: 'appnexus', cpm: 100, auctionId: '2', responseTimestamp: 103, adUnitCode: 'cpm-all-number', adId: 'adid-4'}),
+          createBidReceived({bidder: 'rubicon', cpm: 200, auctionId: '2', responseTimestamp: 104, adUnitCode: 'cpm-all-number', adId: 'adid-5'}),
+          createBidReceived({bidder: 'criteo', cpm: 5, auctionId: '2', responseTimestamp: 105, adUnitCode: 'cpm-all-number', adId: 'adid-6'}),
+          createBidReceived({bidder: 'appnexus', cpm: '100', auctionId: '3', responseTimestamp: 103, adUnitCode: 'cpm-mixed-string-number', adId: 'adid-7'}),
+          createBidReceived({bidder: 'rubicon', cpm: 200, auctionId: '3', responseTimestamp: 104, adUnitCode: 'cpm-mixed-string-number', adId: 'adid-8'}),
+          createBidReceived({bidder: 'criteo', cpm: 5, auctionId: '3', responseTimestamp: 105, adUnitCode: 'cpm-mixed-string-number', adId: 'adid-9'}),
+        ];
+        let adUnitCodes = ['cpm-all-strings', 'cpm-all-number', 'cpm-mixed-string-number'];
+
+        let bids = targetingInstance.getWinningBids(adUnitCodes, bidsReceived);
+
+        expect(bids.length).to.equal(3);
+        expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[1].adId).to.equal('adid-5');
+        expect(bids[2].adId).to.equal('adid-8');
+      });
+    });
+
     describe('check getOldestBid', function () {
       let bidExpiryStub;
       let auctionManagerStub;

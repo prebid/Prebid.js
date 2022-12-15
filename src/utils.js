@@ -738,10 +738,10 @@ export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp',
 
 function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
   return (previous, current) => {
-    if (previous.cpm === current.cpm) {
+    if (parseFloat(previous.cpm) === parseFloat(current.cpm)) {
       return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
     }
-    return previous.cpm < current.cpm ? current : previous;
+    return parseFloat(previous.cpm) < parseFloat(current.cpm) ? current : previous;
   }
 }
 
