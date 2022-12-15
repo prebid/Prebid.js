@@ -645,6 +645,25 @@ describe('AolAdapter', function () {
       });
     });
 
+    it('returns the basic bid info with gpp data when gpp consent data is included', () => {
+      let consentData = {
+        gppConsent: {
+          gppString: 'gppconsent',
+          applicableSections: [6],
+        }
+      };
+      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
+        id: 'bid-id',
+        imp: [],
+        regs: {
+          ext: {
+            gpp: 'gppconsent',
+            gpp_sid: [6]
+          }
+        }
+      });
+    });
+
     it('returns the bid object with eid array populated with PB set eids', () => {
       let userIdBid = Object.assign({
         userId: {}
@@ -792,6 +811,14 @@ describe('AolAdapter', function () {
       });
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal(
         'euconsent=test-consent;gdpr=1;us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted gpp privacy params when formatConsentData returns GPP data', function () {
+      formatConsentDataStub.returns({
+        gpp: 'gppstring',
+        gpp_sid: [6, 7]
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('gpp=gppstring;gpp_sid=6%2C7;');
     });
 
     it('should return formatted params when formatKeyValues returns data', function () {

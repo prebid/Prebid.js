@@ -159,6 +159,7 @@ export const spec = {
     if (bidderRequest) {
       consentData.gdpr = bidderRequest.gdprConsent;
       consentData.uspConsent = bidderRequest.uspConsent;
+      consentData.gppConsent = bidderRequest.gppConsent;
     }
 
     return bids.map(bid => {
@@ -334,6 +335,11 @@ export const spec = {
       deepSetValue(openRtbObject, 'regs.ext.us_privacy', consentData.uspConsent);
     }
 
+    if (consentData.gppConsent && consentData.gppConsent.gppString) {
+      deepSetValue(openRtbObject, 'regs.ext.gpp', consentData.gppConsent.gppString);
+      deepSetValue(openRtbObject, 'regs.ext.gpp_sid', consentData.gppConsent.applicableSections);
+    }
+
     if (typeof bid.userId === 'object') {
       openRtbObject.user = openRtbObject.user || {};
       openRtbObject.user.ext = openRtbObject.user.ext || {};
@@ -371,6 +377,11 @@ export const spec = {
 
     if (consentData.uspConsent) {
       params.us_privacy = consentData.uspConsent;
+    }
+
+    if (consentData.gppConsent && consentData.gppConsent.gppString) {
+      params.gpp = consentData.gppConsent.gppString;
+      params.gpp_sid = consentData.gppConsent.applicableSections;
     }
 
     return params;
