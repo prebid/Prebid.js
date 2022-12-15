@@ -645,25 +645,6 @@ describe('AolAdapter', function () {
       });
     });
 
-    it('returns the basic bid info with gpp data when gpp consent data is included', () => {
-      let consentData = {
-        gppConsent: {
-          gppString: 'gppconsent',
-          applicableSections: [6],
-        }
-      };
-      expect(spec.buildOpenRtbRequestData(bid, consentData)).to.deep.equal({
-        id: 'bid-id',
-        imp: [],
-        regs: {
-          ext: {
-            gpp: 'gppconsent',
-            gpp_sid: [6]
-          }
-        }
-      });
-    });
-
     it('returns the bid object with eid array populated with PB set eids', () => {
       let userIdBid = Object.assign({
         userId: {}
