@@ -9,7 +9,8 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { logError, insertElement, generateUUID } from '../src/utils.js';
+import { logError, generateUUID } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
@@ -18,11 +19,9 @@ import CONSTANTS from '../src/constants.json';
  * @param {string} propertyId
  */
 function injectConfigScript(propertyId) {
-  const scriptElement = document.createElement('script');
-  scriptElement.type = 'text/javascript';
-  scriptElement.src = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`;
+  const scriptSrc = `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`;
 
-  insertElement(scriptElement);
+  loadExternalScript(scriptSrc, 'confiant', () => {});
 }
 
 /**
