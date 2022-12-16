@@ -199,7 +199,7 @@ function getDocumentVisibility(window) {
 function getPageInfo(bidderRequest) {
   const topmostFrame = getFrameNesting();
   return {
-    location: deepAccess(bidderRequest, 'refererInfo.location', null),
+    location: deepAccess(bidderRequest, 'refererInfo.page', null),
     referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
     stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
     numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
