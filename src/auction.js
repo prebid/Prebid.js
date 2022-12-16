@@ -828,6 +828,16 @@ export const getAdvertiserDomain = () => {
   }
 }
 
+/**
+ * This function returns a function to get the primary category id from bid response meta
+ * @returns {function}
+ */
+export const getPrimaryCatId = () => {
+  return (bid) => {
+    return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
+  }
+}
+
 // factory for key value objs
 function createKeyVal(key, value) {
   return {
@@ -853,6 +863,7 @@ function defaultAdserverTargeting() {
     createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
+    createKeyVal(TARGETING_KEYS.ACAT, getPrimaryCatId()),
   ]
 }
 
@@ -865,7 +876,6 @@ function defaultAdserverTargeting() {
 export function getStandardBidderSettings(mediaType, bidderCode) {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
-
   if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
