@@ -1333,7 +1333,7 @@ export const spec = {
 
     let serverRequest = {
       method: 'POST',
-      url: ENDPOINT + '?source=ow-client&uniqueReqId=' + getUniqueNumber(1000),
+      url: ENDPOINT + '?source=ow-client',
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -1343,7 +1343,7 @@ export const spec = {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
       const urlEncodedPayloadStr = parseQueryStringParameters({
-        'source': 'ow-client', 'payload': JSON.stringify(payload), 'uniqueReqId': getUniqueNumber(1000)});
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'correlator': getUniqueNumber(1000)});
       if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
