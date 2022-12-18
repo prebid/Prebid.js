@@ -3,8 +3,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {getWindowSelf} from '../src/utils.js'
+import {getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
 import {getStorageManager} from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -149,6 +150,11 @@ export const spec = {
 
     return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
   },
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm));
+    }
+  }
 };
 
 function getSiteProperties({publisherId, bcat = []}, refererInfo) {
