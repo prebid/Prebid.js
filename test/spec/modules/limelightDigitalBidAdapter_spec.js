@@ -10,7 +10,12 @@ describe('limelightDigitalAdapter', function () {
       host: 'exchange.ortb.net',
       adUnitId: 123,
       adUnitType: 'banner',
-      publisherId: 'perfectPublisher'
+      publisherId: 'perfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -49,7 +54,12 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'ads.project-limelight.com',
       adUnitId: 456,
-      adUnitType: 'banner'
+      adUnitType: 'banner',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
     },
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
@@ -90,7 +100,12 @@ describe('limelightDigitalAdapter', function () {
       host: 'exchange.ortb.net',
       adUnitId: 789,
       adUnitType: 'video',
-      publisherId: 'secondPerfectPublisher'
+      publisherId: 'secondPerfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
@@ -128,7 +143,12 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 789,
-      adUnitType: 'video'
+      adUnitType: 'video',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
@@ -182,11 +202,21 @@ describe('limelightDigitalAdapter', function () {
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits'
+          'adUnits',
+          'custom1',
+          'custom2',
+          'custom3',
+          'custom4',
+          'custom5'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
         expect(data.secure).to.be.a('boolean');
+        expect(data.custom1).to.be.a('string');
+        expect(data.custom2).to.be.a('string');
+        expect(data.custom3).to.be.a('string');
+        expect(data.custom4).to.be.a('string');
+        expect(data.custom5).to.be.a('string');
         data.adUnits.forEach(adUnit => {
           expect(adUnit).to.have.all.keys(
             'id',
