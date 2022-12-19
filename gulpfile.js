@@ -5,30 +5,22 @@ console.time('Loading Plugins in Prebid');
 
 var argv = require('yargs').argv;
 var gulp = require('gulp');
-// var gutil = require('gulp-util');
-// var connect = require('gulp-connect');
-// var webpack = require('webpack');
-// var webpackStream = require('webpack-stream');
-// var terser = require('gulp-terser');
-// var gulpClean = require('gulp-clean');
-// var KarmaServer = require('karma').Server;
-// var karmaConfMaker = require('./karma.conf.maker.js');
-// var opens = require('opn');
-// var webpackConfig = require('./webpack.conf.js');
-// var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
-// var header = require('gulp-header');
-// var footer = require('gulp-footer');
 var replace = require('gulp-replace');
-// var shell = require('gulp-shell');
-// var eslint = require('gulp-eslint');
-// var gulpif = require('gulp-if');
-// var sourcemaps = require('gulp-sourcemaps');
-// var through = require('through2');
-// var fs = require('fs');
-// var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
+var gulpif = require('gulp-if');
+var connect = require('gulp-connect');
+var _ = require('lodash');
+var webpack = require('webpack');
+var webpackStream = require('webpack-stream');
+var webpackConfig = require('./webpack.conf');
+var helpers = require('./gulpHelpers');
+var header = require('gulp-header');
+var through = require('through2');
+var gutil = require('gulp-util');
+var footer = require('gulp-footer');
+var sourcemaps = require('gulp-sourcemaps');
 
 var prebid = require('./package.json');
 var dateString = 'Updated : ' + (new Date()).toISOString().substring(0, 10);
@@ -69,9 +61,7 @@ function escapePostbidConfig() {
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
 function lint(done) {
-
   var eslint = require('gulp-eslint');
-  var gulpif = require('gulp-if');
 
   if (argv.nolint) {
     return done();
@@ -79,7 +69,15 @@ function lint(done) {
   const isFixed = function (file) {
     return file.eslint != null && file.eslint.fixed;
   }
-  return gulp.src(['src/**/*.js', 'modules/**/*.js', 'test/**/*.js'], { base: './' })
+  return gulp.src([
+    'src/**/*.js',
+    'modules/**/*.js',
+    'libraries/**/*.js',
+    'test/**/*.js',
+    'plugins/**/*.js',
+    '!plugins/**/node_modules/**',
+    './*.js'
+  ], { base: './' })
     .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
@@ -88,7 +86,6 @@ function lint(done) {
 
 // View the code coverage report in the browser.
 function viewCoverage(done) {
-  var connect = require('gulp-connect');
   var opens = require('opn');
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
@@ -120,7 +117,6 @@ viewReview.displayName = 'view-review';
 
 // Watch Task with Live Reload
 function watch(done) {
-  var connect = require('gulp-connect');
   var mainWatcher = gulp.watch([
     'src/**/*.js',
     'modules/**/*.js',
@@ -152,18 +148,28 @@ function makeModuleList(modules) {
 }
 
 function makeDevpackPkg() {
-  var _ = require('lodash');
-  var connect = require('gulp-connect');
-  var webpack = require('webpack');
-  var webpackStream = require('webpack-stream');
-  var webpackConfig = require('./webpack.conf');
-  var helpers = require('./gulpHelpers');
   var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
+  Object.assign(cloned, {
+    devtool: 'source-map',
+    mode: 'development'
+  });
+
+  const babelConfig = require('./babelConfig.js')({
+    disableFeatures: helpers.getDisabledFeatures(),
+    prebidDistUrlBase: argv.distUrlBase || '/build/dev/'
+  });
+
+  // update babel config to set local dist url
+  cloned.module.rules
+    .flatMap((rule) => rule.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
+
   var externalModules = helpers.getArgModules();
 
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
+
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
@@ -173,17 +179,10 @@ function makeDevpackPkg() {
 }
 
 function makeWebpackPkg() {
-  var _ = require('lodash');
-  var webpack = require('webpack');
-  var webpackStream = require('webpack-stream');
-  var terser = require('gulp-terser');
-  var webpackConfig = require('./webpack.conf');
-  var helpers = require('./gulpHelpers');
-  var header = require('gulp-header');
-  var gulpif = require('gulp-if');
-
   var cloned = _.cloneDeep(webpackConfig);
-  delete cloned.devtool;
+  if (!argv.sourceMaps) {
+    delete cloned.devtool;
+  }
 
   var externalModules = helpers.getArgModules();
 
@@ -208,7 +207,6 @@ function gulpBundle(dev) {
 }
 
 function nodeBundle(modules) {
-  var through = require('through2');
   return new Promise((resolve, reject) => {
     bundle(false, modules)
       .on('error', (err) => {
@@ -222,12 +220,6 @@ function nodeBundle(modules) {
 }
 
 function bundle(dev, moduleArr) {
-  var _ = require('lodash');
-  var gutil = require('gulp-util');
-  var helpers = require('./gulpHelpers');
-  var footer = require('gulp-footer');
-  var gulpif = require('gulp-if');
-  var sourcemaps = require('gulp-sourcemaps');
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
 
@@ -242,8 +234,15 @@ function bundle(dev, moduleArr) {
       });
     }
   }
+  const coreFile = helpers.getBuiltPrebidCoreFile(dev);
+  const moduleFiles = helpers.getBuiltModules(dev, modules);
+  const depGraph = require(helpers.getBuiltPath(dev, 'dependencies.json'));
+  const dependencies = new Set();
+  [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
+    (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
+  });
 
-  var entries = [helpers.getBuiltPrebidCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+  const entries = [coreFile].concat(Array.from(dependencies), moduleFiles);
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
@@ -252,13 +251,12 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  // gutil.log('Concatenating files:\n', entries);
-  // gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  // gutil.log('Generating bundle:', outputFileName);
-  var globalVarName = /*argv.profile === "IH" ? prebid.ihGlobalVarName : */ prebid.globalVarName;
-  return gulp.src(
-    entries
-  )
+  gutil.log('Concatenating files:\n', entries);
+  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  gutil.log('Generating bundle:', outputFileName);
+
+  var globalVarName = prebid.globalVarName;
+  return gulp.src(entries)
     // Need to uodate the "Modules: ..." section in comment with the current modules list
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
@@ -271,8 +269,6 @@ function bundle(dev, moduleArr) {
 }
 
 function makeDevpackPkgForIh() {
-  var _ = require('lodash');
-  var connect = require('gulp-connect');
   var webpack = require('webpack');
   var webpackStream = require('webpack-stream');
   var webpackConfig = require('./webpack.idhub.conf');
@@ -292,14 +288,12 @@ function makeDevpackPkgForIh() {
 }
 
 function makeWebpackPkgForIh() {
-  var _ = require('lodash');
   var webpack = require('webpack');
   var webpackStream = require('webpack-stream');
   var terser = require('gulp-terser');
   var webpackConfig = require('./webpack.idhub.conf');
   var helpers = require('./gulpHelpers');
   var header = require('gulp-header');
-  var gulpif = require('gulp-if');
   var cloned = _.cloneDeep(webpackConfig);
 
   delete cloned.devtool;
@@ -316,13 +310,9 @@ function makeWebpackPkgForIh() {
 }
 
 function bundleForIh(dev, moduleArr) {
-  //console.log(dev);
-  // console.time('Loading Plugins for Prebid');
-  var _ = require('lodash');
   var gutil = require('gulp-util');
   var helpers = require('./gulpHelpers');
   var footer = require('gulp-footer');
-  var gulpif = require('gulp-if');
   var sourcemaps = require('gulp-sourcemaps');
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
@@ -371,7 +361,7 @@ function bundleForIh(dev, moduleArr) {
 function test(done) {
   var KarmaServer = require('karma').Server;
   var karmaConfMaker = require('./karma.conf.maker');
-  var helpers = require('./gulpHelpers');
+
   if (argv.notest) {
     done();
   } else if (argv.e2e) {
