@@ -1,11 +1,13 @@
 import {expect} from 'chai';
 import {newBidder} from '../../../src/adapters/bidderFactory';
 import {ENDPOINT_URL, spec} from '../../../modules/cwireBidAdapter';
-import {deepClone} from '../../../src/utils';
+import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
-import {stub} from 'sinon';
+import {sandbox, stub} from 'sinon';
+import {config} from '../../../src/config';
 
 describe('C-WIRE bid adapter', () => {
+  config.setConfig({debug: true});
   const adapter = newBidder(spec);
   let bidRequests = [
     {
@@ -21,9 +23,9 @@ describe('C-WIRE bid adapter', () => {
       'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
     }
   ];
-
   describe('inherited functions', function () {
     it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
       expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
       expect(spec.buildRequests).to.exist.and.to.be.a('function');
       expect(spec.interpretResponse).to.exist.and.to.be.a('function');
@@ -59,4 +61,56 @@ describe('C-WIRE bid adapter', () => {
       expect(payload.creativeId).to.deep.equal('str-str');
     });
   })
+
+  describe('buildRequests reads adUnit offsetWidth and offsetHeight', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        offsetWidth: 200,
+        offsetHeight: 250
+      });
+    });
+    it('width and height should be set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      const el = document.getElementById(`${bidRequest.adUnitCode}`)
+
+      logInfo(JSON.stringify(payload))
+
+      expect(el).to.exist;
+      expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
+      expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
+      expect(payload.slots[0].cwExt.style).to.not.exist
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
+  describe('buildRequests reads style attributes', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        style: {
+          maxWidth: '400px',
+        }
+      });
+    });
+    it('css maxWidth should be set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      const el = document.getElementById(`${bidRequest.adUnitCode}`)
+
+      logInfo(JSON.stringify(payload))
+
+      expect(el).to.exist;
+      expect(payload.slots[0].cwExt.style.maxWidth).to.eq('400px');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
 });

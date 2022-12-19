@@ -1,10 +1,42 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getParameterByName} from '../src/utils.js';
+import {getParameterByName, logInfo} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
 export const ENDPOINT_URL = 'https://embed.cwi.re/prebid/bid';
+
+/**
+ * Retrieve dimensions from a given slot in bidRequest. Attaches the dimensions to the bidRequest by spread operator.
+ * @param bid
+ * @returns {*&{cwExt: {dimensions: {width: number, height: number}}}}
+ */
+function slotDimensions(bid) {
+  let adUnitCode = bid.adUnitCode;
+  let slotEl = document.getElementById(adUnitCode);
+  if (slotEl) {
+    logInfo(`Slot element found: ${adUnitCode}`)
+    const slotW = slotEl.offsetWidth
+    const slotH = slotEl.offsetHeight
+    const cssMaxW = slotEl.style?.maxWidth;
+    logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
+
+    return {
+      ...bid,
+      cwExt: {
+        dimensions: {
+          width: slotW,
+          height: slotH,
+        },
+        ...(cssMaxW) && {
+          style: {
+            maxWidth: cssMaxW,
+          }
+        }
+      }
+    }
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -15,7 +47,7 @@ export const spec = {
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
+  isBidRequestValid: function (bid) {
     return true;
   },
 
@@ -25,18 +57,22 @@ export const spec = {
    * @param {validBidRequests[]} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     // These are passed from C WIRE config:
     // let placementId = getValue(bid.params, 'placementId');
     // let pageId = getValue(bid.params, 'pageId');
 
     // There are more fields on the refererInfo object
     let referrer = bidderRequest?.refererInfo?.page
+
+    // process bid requests
+    let processed = validBidRequests.map(bid => slotDimensions(bid));
+
     const payload = {
       userTracker: {
         sharedId: '123',
       },
-      slots: validBidRequests,
+      slots: processed,
       referrer: referrer
       /*
       Use `bidderRequest.bids[]` to get bidder-dependent
@@ -70,7 +106,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
+  interpretResponse: function (serverResponse, bidRequest) {
     return serverResponse.body?.bids || [];
   },
 };
