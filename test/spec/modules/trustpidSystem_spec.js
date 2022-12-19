@@ -27,6 +27,10 @@ describe('trustpid System', () => {
       storage.removeDataFromLocalStorage(connectDomainKey);
     });
 
+    after(() => {
+      window.FC_CONF = {};
+    })
+
     it('it should return object with key callback', () => {
       expect(trustpidSubmodule.getId()).to.have.property('callback');
     });
@@ -40,7 +44,7 @@ describe('trustpid System', () => {
     it('tests if localstorage & JSON works properly ', () => {
       const idGraph = {
         'domain': 'domainValue',
-        'umid': 'umidValue',
+        'atid': 'atidValue',
       };
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
       expect(JSON.parse(storage.getDataFromLocalStorage(connectDataKey))).to.have.property('connectId');
@@ -49,7 +53,7 @@ describe('trustpid System', () => {
     it('returns {callback: func} if domains don\'t match', () => {
       const idGraph = {
         'domain': 'domainValue',
-        'umid': 'umidValue',
+        'atid': 'atidValue',
       };
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
@@ -58,33 +62,33 @@ describe('trustpid System', () => {
 
     it('returns {id: {trustpid: data.trustpid}} if we have the right data stored in the localstorage ', () => {
       const idGraph = {
-        'domain': 'uat.mno.link',
-        'umid': 'umidValue',
+        'domain': 'test.domain',
+        'atid': 'atidValue',
       };
-      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
       const response = trustpidSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('trustpid');
-      expect(response.id.trustpid).to.be.equal('umidValue-xxxx');
+      expect(response.id.trustpid).to.be.equal('atidValue');
     });
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after the callback is called', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
-        'umid': 'umidValue',
+        'domain': 'test.domain',
+        'atid': 'atidValue',
       };
       const response = trustpidSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
-        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
         storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('umidValue-xxxx');
+          expect(result.trustpid).to.be.equal('atidValue');
           done()
         })
       }
@@ -92,8 +96,8 @@ describe('trustpid System', () => {
 
     it('returns null if domains don\'t match', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
-        'umid': 'umidValue',
+        'domain': 'test.domain',
+        'atid': 'atidValue',
       };
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
@@ -115,8 +119,8 @@ describe('trustpid System', () => {
 
     it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
-        'umid': 'umidValue',
+        'domain': 'test.domain',
+        'atid': 'atidValue',
       };
 
       const response = trustpidSubmodule.getId();
@@ -125,13 +129,13 @@ describe('trustpid System', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
           storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('umidValue-xxxx');
+          expect(result.trustpid).to.be.equal('atidValue');
           done()
         })
       }
@@ -139,8 +143,8 @@ describe('trustpid System', () => {
 
     it('returns null if we have the data stored in the localstorage after 500ms delay and the max (waiting) delay is only 200ms ', (done) => {
       const idGraph = {
-        'domain': 'uat.mno.link',
-        'umid': 'umidValue',
+        'domain': 'test.domain',
+        'atid': 'atidValue',
       };
 
       const response = trustpidSubmodule.getId({params: {maxDelayTime: 200}});
@@ -149,7 +153,7 @@ describe('trustpid System', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('uat.mno.link'));
+          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
           storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
@@ -190,26 +194,27 @@ describe('trustpid System', () => {
     });
   });
 
-  describe('trustpid messageHandler for acronyms', () => {
+  describe('trustpid messageHandler', () => {
     afterEach(() => {
       storage.removeDataFromLocalStorage(connectDataKey);
       storage.removeDataFromLocalStorage(connectDomainKey);
     });
 
+    after(() => {
+      window.FC_CONF = {};
+    })
+
     const domains = [
-      {domain: 'tmi.mno.link', acronym: 'ndye'},
-      {domain: 'tmi.vodafone.de', acronym: 'pqnx'},
-      {domain: 'tmi.telekom.de', acronym: 'avgw'},
-      {domain: 'tmi.tmid.es', acronym: 'kjws'},
-      {domain: 'uat.mno.link', acronym: 'xxxx'},
-      {domain: 'es.tmiservice.orange.com', acronym: 'aplw'},
+      'domain1',
+      'domain2',
+      'domain3',
     ];
 
-    domains.forEach(({domain, acronym}) => {
-      it(`correctly sets trustpid value and acronym to ${acronym} for ${domain} domain`, (done) => {
+    domains.forEach(domain => {
+      it(`correctly sets trustpid value for domain name ${domain}`, (done) => {
         const idGraph = {
           'domain': domain,
-          'umid': 'umidValue',
+          'atid': 'atidValue',
         };
 
         storage.setDataInLocalStorage(connectDomainKey, JSON.stringify(domain));
@@ -224,7 +229,7 @@ describe('trustpid System', () => {
         const response = trustpidSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('trustpid');
-        expect(response.id.trustpid).to.be.equal(`umidValue-${acronym}`);
+        expect(response.id.trustpid).to.be.equal('atidValue');
         done();
       });
     });

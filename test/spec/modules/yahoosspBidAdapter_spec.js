@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/yahoosspBidAdapter.js';
+import {createEidsArray} from '../../../modules/userId/eids';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -16,7 +17,7 @@ const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
 // Utility functions
-const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode}) => {
+const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode, ortb2}) => {
   const bidRequest = {
     adUnitCode,
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
@@ -30,7 +31,8 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
       bidOverride: bidOverrideObject
     },
     src: 'client',
-    transactionId: '5b17b67d-7704-4732-8cc9-5b1723e9bcf9'
+    transactionId: '5b17b67d-7704-4732-8cc9-5b1723e9bcf9',
+    ortb2
   };
 
   const bannerObj = {
@@ -71,7 +73,7 @@ const generateBidRequest = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObje
   return bidRequest;
 }
 
-let generateBidderRequest = (bidRequestArray, adUnitCode) => {
+let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
   const bidderRequest = {
     adUnitCode: adUnitCode || 'default-adUnitCode',
     auctionId: 'd4c83a3b-18e4-4208-b98b-63848449c7aa',
@@ -80,7 +82,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
     bidderRequestId: '112f1c7c5d399a',
     bids: bidRequestArray,
     refererInfo: {
-      referer: 'https://publisher-test.com',
+      page: 'https://publisher-test.com',
       reachedTop: true,
       isAmp: false,
       numIframes: 0,
@@ -93,12 +95,13 @@ let generateBidderRequest = (bidRequestArray, adUnitCode) => {
     },
     start: new Date().getTime(),
     timeout: 1000,
+    ortb2
   };
 
   return bidderRequest;
 };
 
-const generateBuildRequestMock = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode}) => {
+const generateBuildRequestMock = ({bidId, pos, adUnitCode, adUnitType, bidOverrideObject, videoContext, pubIdMode, ortb2}) => {
   const bidRequestConfig = {
     bidId: bidId || DEFAULT_BID_ID,
     pos: pos || DEFAULT_BID_POS,
@@ -106,11 +109,12 @@ const generateBuildRequestMock = ({bidId, pos, adUnitCode, adUnitType, bidOverri
     adUnitType: adUnitType || DEFAULT_AD_UNIT_TYPE,
     bidOverrideObject: bidOverrideObject || DEFAULT_PARAMS_BID_OVERRIDE,
     videoContext: videoContext || DEFAULT_VIDEO_CONTEXT,
-    pubIdMode: pubIdMode || false
+    pubIdMode: pubIdMode || false,
+    ortb2: ortb2 || {}
   };
   const bidRequest = generateBidRequest(bidRequestConfig);
   const validBidRequests = [bidRequest];
-  const bidderRequest = generateBidderRequest(validBidRequests, adUnitCode);
+  const bidderRequest = generateBidderRequest(validBidRequests, adUnitCode, ortb2);
 
   return { bidRequest, validBidRequests, bidderRequest }
 };
@@ -331,6 +335,19 @@ describe('YahooSSP Bid Adapter:', () => {
   });
 
   describe('Schain module support:', () => {
+    it('should not include schain data when schain array is empty', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: []
+      };
+      bidRequest.schain = globalSchain;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain).to.be.undefined;
+    });
+
     it('should send Global or Bidder specific schain', function () {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const globalSchain = {
@@ -355,10 +372,9 @@ describe('YahooSSP Bid Adapter:', () => {
     // Should not allow invalid "site" data types
     const INVALID_ORTB2_TYPES = [ null, [], 123, 'unsupportedKeyName', true, false, undefined ];
     INVALID_ORTB2_TYPES.forEach(param => {
-      const ortb2 = { site: param }
-      config.setConfig({ortb2});
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const ortb2 = { site: param }
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.be.undefined;
       });
@@ -375,8 +391,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: 'something'
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
         expect(data.site[param]).to.be.a('string');
@@ -391,8 +406,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: ['something']
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site[param]).to.exist;
         expect(data.site[param]).to.be.a('array');
@@ -408,8 +422,7 @@ describe('YahooSSP Bid Adapter:', () => {
             content: param
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content).to.be.undefined;
       });
@@ -426,8 +439,7 @@ describe('YahooSSP Bid Adapter:', () => {
           }
         }
       };
-      config.setConfig({ortb2});
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
       const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
       expect(data.site.content).to.be.a('object');
     });
@@ -443,8 +455,7 @@ describe('YahooSSP Bid Adapter:', () => {
             }
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.exist;
         expect(data.site.content[param]).to.be.a('string');
@@ -462,8 +473,7 @@ describe('YahooSSP Bid Adapter:', () => {
             }
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('number');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
@@ -480,8 +490,7 @@ describe('YahooSSP Bid Adapter:', () => {
             }
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('array');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
@@ -498,8 +507,7 @@ describe('YahooSSP Bid Adapter:', () => {
             }
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('object');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
@@ -513,10 +521,9 @@ describe('YahooSSP Bid Adapter:', () => {
     // Should not allow invalid "user" data types
     const INVALID_ORTB2_TYPES = [ null, [], 'unsupportedKeyName', true, false, undefined ];
     INVALID_ORTB2_TYPES.forEach(param => {
-      const ortb2 = { user: param }
-      config.setConfig({ortb2});
       it(`should not allow invalid site types to be added to bid-request: ${JSON.stringify(param)}`, () => {
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const ortb2 = { user: param }
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.be.undefined;
       });
@@ -531,8 +538,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: 'something'
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('string');
@@ -548,8 +554,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: 1982
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('number');
@@ -565,8 +570,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: ['something']
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.exist;
         expect(data.user[param]).to.be.a('array');
@@ -582,8 +586,7 @@ describe('YahooSSP Bid Adapter:', () => {
             [param]: {a: '123', b: '456'}
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user[param]).to.be.a('object');
         expect(data.user[param]).to.be.deep.include({[param]: {a: '123', b: '456'}});
@@ -605,8 +608,7 @@ describe('YahooSSP Bid Adapter:', () => {
             }
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user.data[0][param]).to.exist;
         expect(data.user.data[0][param]).to.be.a('string');
@@ -625,8 +627,7 @@ describe('YahooSSP Bid Adapter:', () => {
             data: [{[param]: [{id: 1}]}]
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user.data[0][param]).to.exist;
         expect(data.user.data[0][param]).to.be.a('array');
@@ -642,8 +643,7 @@ describe('YahooSSP Bid Adapter:', () => {
             data: [{[param]: {id: 'ext'}}]
           }
         };
-        config.setConfig({ortb2});
-        const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.user.data[0][param]).to.exist;
         expect(data.user.data[0][param]).to.be.a('object');
@@ -823,6 +823,7 @@ describe('YahooSSP Bid Adapter:', () => {
   describe('Request Headers validation:', () => {
     it('should return request objects with the relevant custom headers and content type declaration', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      bidderRequest.gdprConsent.gdprApplies = false;
       const options = spec.buildRequests(validBidRequests, bidderRequest).options;
       expect(options).to.deep.equal(
         {
@@ -835,19 +836,65 @@ describe('YahooSSP Bid Adapter:', () => {
     });
   });
 
+  describe('User data', () => {
+    it('should set the allowed sources user eids', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        admixerId: 'admixerId_FROM_USER_ID_MODULE',
+        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE',
+        amxId: 'amxId_FROM_USER_ID_MODULE',
+        britepoolid: 'britepoolid_FROM_USER_ID_MODULE',
+        deepintentId: 'deepintentId_FROM_USER_ID_MODULE',
+        publinkId: 'publinkId_FROM_USER_ID_MODULE',
+        intentIqId: 'intentIqId_FROM_USER_ID_MODULE',
+        idl_env: 'idl_env_FROM_USER_ID_MODULE',
+        imuid: 'imuid_FROM_USER_ID_MODULE',
+        criteoId: 'criteoId_FROM_USER_ID_MODULE',
+        fabrickId: 'fabrickId_FROM_USER_ID_MODULE',
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'amxrtb.com', uids: [{id: 'amxId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'britepool.com', uids: [{id: 'britepoolid_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'deepintent.com', uids: [{id: 'deepintentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'epsilon.com', uids: [{id: 'publinkId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intentiq.com', uids: [{id: 'intentIqId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'liveramp.com', uids: [{id: 'idl_env_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intimatemerger.com', uids: [{id: 'imuid_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'criteo.com', uids: [{id: 'criteoId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
+      ]);
+    });
+
+    it('should not set not allowed user eids sources', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        justId: 'justId_FROM_USER_ID_MODULE'
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([]);
+    });
+  });
+
   describe('Request Payload oRTB bid validation:', () => {
     it('should generate a valid openRTB bid-request object in the data field', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site).to.deep.equal({
         id: bidderRequest.bids[0].params.dcn,
-        page: bidderRequest.refererInfo.referer
+        page: bidderRequest.refererInfo.page
       });
 
       expect(data.device).to.deep.equal({
         dnt: 0,
         ua: navigator.userAgent,
-        ip: undefined
+        ip: undefined,
+        w: window.screen.width,
+        h: window.screen.height
       });
 
       expect(data.regs).to.deep.equal({

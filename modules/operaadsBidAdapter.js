@@ -1,9 +1,22 @@
-import { logWarn, isArray, isStr, triggerPixel, deepAccess, deepSetValue, isPlainObject, generateUUID, parseUrl, isFn, getDNT, logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import { OUTSTREAM } from '../src/video.js';
+import {
+  deepAccess,
+  deepSetValue,
+  generateUUID,
+  getDNT,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {OUTSTREAM} from '../src/video.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'operaads';
 
@@ -106,6 +119,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(validBidRequest => (buildOpenRtbBidRequest(validBidRequest, bidderRequest)))
   },
 
@@ -209,8 +225,6 @@ export const spec = {
  * @returns {Request}
  */
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
-  const pageReferrer = deepAccess(bidderRequest, 'refererInfo.referer');
-
   // build OpenRTB request body
   const payload = {
     id: bidderRequest.auctionId,
@@ -220,9 +234,10 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     device: getDevice(),
     site: {
       id: String(deepAccess(bidRequest, 'params.publisherId')),
-      domain: getDomain(pageReferrer),
-      page: pageReferrer,
-      ref: window.self === window.top ? document.referrer : '',
+      // TODO: does the fallback make sense here?
+      domain: bidderRequest?.refererInfo?.domain || window.location.host,
+      page: bidderRequest?.refererInfo?.page,
+      ref: bidderRequest?.refererInfo?.ref || '',
     },
     at: 1,
     bcat: getBcat(bidRequest),
@@ -534,7 +549,7 @@ function createImp(bidRequest) {
   const floorDetail = getBidFloor(bidRequest, {
     mediaType: mediaType || '*',
     size: size || '*'
-  })
+  });
 
   impItem.bidfloor = floorDetail.floor;
   impItem.bidfloorcur = floorDetail.currency;
@@ -678,23 +693,6 @@ function getUserId(bidRequest) {
   }
 
   return generateUUID();
-}
-
-/**
- * Get publisher domain
- *
- * @param {String} referer
- * @returns {String} domain
- */
-function getDomain(referer) {
-  let domain;
-
-  if (!(domain = config.getConfig('publisherDomain'))) {
-    const u = parseUrl(referer);
-    domain = u.hostname;
-  }
-
-  return domain.replace(/^https?:\/\/([\w\-\.]+)(?::\d+)?/, '$1');
 }
 
 /**

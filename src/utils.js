@@ -1,12 +1,10 @@
-/* eslint-disable no-console */
 import { config } from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
-
-const CONSTANTS = require('./constants.json');
-
+import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
 export { default as deepAccess } from 'dlv/index.js';
-export { default as deepSetValue } from 'dset';
+export { dset as deepSetValue } from 'dset';
 
 var tArr = 'Array';
 var tStr = 'String';
@@ -21,16 +19,18 @@ let consoleInfoExists = Boolean(consoleExists && window.console.info);
 let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
-const emitEvent = (function () {
-  // lazy load events to avoid circular import
-  let ev;
-  return function() {
-    if (ev == null) {
-      ev = require('./events.js');
-    }
-    return ev.emit.apply(ev, arguments);
+let eventEmitter;
+
+export function _setEventEmitter(emitFn) {
+  // called from events.js - this hoop is to avoid circular imports
+  eventEmitter = emitFn;
+}
+
+function emitEvent(...args) {
+  if (eventEmitter != null) {
+    eventEmitter(...args);
   }
-})();
+}
 
 // this allows stubbing of utility functions that are used internally by other utility functions
 export const internal = {
@@ -52,7 +52,7 @@ export const internal = {
   deepEqual
 };
 
-let prebidInternal = {}
+let prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -259,18 +259,21 @@ export function getWindowLocation() {
  */
 export function logMessage() {
   if (debugTurnedOn() && consoleLogExists) {
+    // eslint-disable-next-line no-console
     console.log.apply(console, decorateLog(arguments, 'MESSAGE:'));
   }
 }
 
 export function logInfo() {
   if (debugTurnedOn() && consoleInfoExists) {
+    // eslint-disable-next-line no-console
     console.info.apply(console, decorateLog(arguments, 'INFO:'));
   }
 }
 
 export function logWarn() {
   if (debugTurnedOn() && consoleWarnExists) {
+    // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
   emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
@@ -278,6 +281,7 @@ export function logWarn() {
 
 export function logError() {
   if (debugTurnedOn() && consoleErrorExists) {
+    // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
   emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
@@ -484,7 +488,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
 * @param {Boolean} [asLastChildChild]
-* @return {HTMLElement}
+* @return {HTML Element}
 */
 export function insertElement(elm, doc, target, asLastChildChild) {
   doc = doc || document;
@@ -514,7 +518,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new Promise((resolve) => {
+  return new GreedyPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
@@ -922,17 +926,6 @@ export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
 }
-/**
- * Returns the origin
- */
-export function getOrigin() {
-  // IE10 does not have this property. https://gist.github.com/hbogs/7908703
-  if (!window.location.origin) {
-    return window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-  } else {
-    return window.location.origin;
-  }
-}
 
 /**
  * Returns Do Not Track state
@@ -962,14 +955,22 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
     matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
   }
+  return matchingSlot;
+};
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (matchingSlot) {
     return {
       gptSlot: matchingSlot.getAdUnitPath(),
@@ -1355,3 +1356,84 @@ export function cyrb53Hash(str, seed = 0) {
   h2 = imul(h2 ^ (h2 >>> 16), 2246822507) ^ imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
+
+/**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  return (doc) ? doc.defaultView : null;
+}
+
+/**
+ * returns the result of `JSON.parse(data)`, or undefined if that throws an error.
+ * @param data
+ * @returns {any}
+ */
+export function safeJSONParse(data) {
+  try {
+    return JSON.parse(data);
+  } catch (e) {}
+}
+
+/**
+ * Returns a memoized version of `fn`.
+ *
+ * @param fn
+ * @param key cache key generator, invoked with the same arguments passed to `fn`.
+ *        By default, the first argument is used as key.
+ * @return {function(): any}
+ */
+export function memoize(fn, key = function (arg) { return arg; }) {
+  const cache = new Map();
+  const memoized = function () {
+    const cacheKey = key.apply(this, arguments);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, fn.apply(this, arguments));
+    }
+    return cache.get(cacheKey);
+  }
+  memoized.clear = cache.clear.bind(cache);
+  return memoized;
+}
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
+}
+
+/**
+ * Encode a string for inclusion in HTML.
+ * See https://pragmaticwebsecurity.com/articles/spasecurity/json-stringify-xss.html and
+ * https://codeql.github.com/codeql-query-help/javascript/js-bad-code-sanitization/
+ * @return {string}
+ */
+export const escapeUnsafeChars = (() => {
+  const escapes = {
+    '<': '\\u003C',
+    '>': '\\u003E',
+    '/': '\\u002F',
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\0': '\\0',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029'
+  };
+
+  return function(str) {
+    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
+  }
+})();

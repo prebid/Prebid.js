@@ -1,7 +1,8 @@
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /* eslint dot-notation:0, quote-props:0 */
-import { convertTypes, deepAccess, isArray, logError, isFn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
+import {convertTypes, deepAccess, isArray, isFn, logError} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
 
 const NATIVE_DEFAULTS = {
   TITLE_LEN: 100,
@@ -39,13 +40,16 @@ export const spec = {
   ),
 
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
       site: site(bidRequests, bidderRequest),
       app: app(bidRequests),
       device: device(),
-      bcat: bidRequests[0].params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || bidRequests[0].params.bcat,
       badv: bidRequests[0].params.badv,
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
@@ -92,7 +96,7 @@ function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
   const idToSlotConfig = {};
-  const bidResponse = response.body
+  const bidResponse = response.body;
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
@@ -149,6 +153,8 @@ function bidResponseAvailable(request, response) {
  * Produces an OpenRTBImpression from a slot config.
  */
 function impression(slot) {
+  var firstPartyData = slot.ortb2Imp?.ext || {};
+  var ext = Object.assign({}, firstPartyData, slotUnknownParams(slot));
   return {
     id: slot.bidId,
     banner: banner(slot),
@@ -156,7 +162,7 @@ function impression(slot) {
     tagid: slot.params.ct.toString(),
     video: video(slot),
     bidfloor: bidFloor(slot),
-    ext: ext(slot),
+    ext: Object.keys(ext).length > 0 ? ext : null,
   };
 }
 
@@ -205,7 +211,7 @@ function video(slot) {
 /**
  * Unknown params are captured and sent on ext
  */
-function ext(slot) {
+function slotUnknownParams(slot) {
   const ext = {};
   const knownParamsMap = {};
   KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
@@ -326,13 +332,16 @@ function site(bidRequests, bidderRequest) {
   const pubId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.cp : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
-    return {
+    // use the first party data if available, and override only publisher/ref/page properties
+    var firstPartyData = bidderRequest?.ortb2?.site || {};
+    return Object.assign({}, firstPartyData, {
       publisher: {
         id: pubId.toString(),
       },
-      ref: referrer(),
-      page: bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '',
-    }
+      // TODO: does the fallback make sense here?
+      ref: bidderRequest?.refererInfo?.ref || window.document.referrer,
+      page: bidderRequest?.refererInfo?.page || ''
+    });
   }
   return null;
 }
@@ -354,17 +363,6 @@ function app(bidderRequest) {
     }
   }
   return null;
-}
-
-/**
- * Attempts to capture the referrer url.
- */
-function referrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
-  }
 }
 
 /**
@@ -412,66 +410,20 @@ function adSize(slot, sizes) {
  * an openrtb User object.
  */
 function user(bidRequest, bidderRequest) {
-  var ext = {};
+  var user = bidderRequest?.ortb2?.user || { ext: {} };
+  var ext = user.ext;
   if (bidderRequest) {
     if (bidderRequest.gdprConsent) {
       ext.consent = bidderRequest.gdprConsent.consentString;
     }
   }
   if (bidRequest) {
-    if (bidRequest.userId) {
-      ext.eids = [];
-      addExternalUserId(ext.eids, bidRequest.userId.pubcid, 'pubcid.org');
-      addExternalUserId(ext.eids, bidRequest.userId.britepoolid, 'britepool.com');
-      addExternalUserId(ext.eids, bidRequest.userId.criteoId, 'criteo.com');
-      addExternalUserId(ext.eids, bidRequest.userId.idl_env, 'liveramp.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.id5id.uid'), 'id5-sync.com', deepAccess(bidRequest, 'userId.id5id.ext'));
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.parrableId.eid'), 'parrable.com');
-      addExternalUserId(ext.eids, bidRequest.userId.fabrickId, 'neustar.biz');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.haloId.haloId'), 'audigent.com');
-      addExternalUserId(ext.eids, bidRequest.userId.merkleId, 'merkleinc.com');
-      addExternalUserId(ext.eids, bidRequest.userId.lotamePanoramaId, 'crwdcntrl.net');
-      addExternalUserId(ext.eids, bidRequest.userId.connectid, 'verizonmedia.com');
-      addExternalUserId(ext.eids, deepAccess(bidRequest, 'userId.uid2.id'), 'uidapi.com');
-      // liveintent
-      if (bidRequest.userId.lipb && bidRequest.userId.lipb.lipbid) {
-        addExternalUserId(ext.eids, bidRequest.userId.lipb.lipbid, 'liveintent.com');
-      }
-      // TTD
-      addExternalUserId(ext.eids, bidRequest.userId.tdid, 'adserver.org', {
-        rtiPartner: 'TDID'
-      });
-      // digitrust
-      const digitrustResponse = bidRequest.userId.digitrustid;
-      if (digitrustResponse && digitrustResponse.data) {
-        var digitrust = {};
-        if (digitrustResponse.data.id) {
-          digitrust.id = digitrustResponse.data.id;
-        }
-        if (digitrustResponse.data.keyv) {
-          digitrust.keyv = digitrustResponse.data.keyv;
-        }
-        ext.digitrust = digitrust;
-      }
+    let eids = bidRequest.userIdAsEids;
+    if (eids) {
+      ext.eids = eids;
     }
   }
-  return { ext };
-}
-
-/**
- * Produces external userid object in ortb 3.0 model.
- */
-function addExternalUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [ uid ]
-    });
-  }
+  return user;
 }
 
 /**
