@@ -7,9 +7,9 @@
 import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -323,10 +323,14 @@ config.getConfig('consentManagement', config => setConsentConfig(config.consentM
 
 getHook('requestBids').before(requestBidsHook, 50);
 
-export function setOrtbUsp(ortbRequest, bidderRequest) {
-  if (bidderRequest.uspConsent) {
-    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-  }
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = uspDataHandler.getConsentData();
+    if (consent) {
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
+    }
+    return ortb2;
+  }))
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});
+enrichFPD.before(enrichFPDHook);
