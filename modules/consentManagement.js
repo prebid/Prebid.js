@@ -24,6 +24,7 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
+let actionTimeout;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -162,7 +163,7 @@ function lookupIabConsent({onSuccess, onError}) {
  * @param cb A callback that takes: a boolean that is true if the auction should be canceled; an error message and extra
  * error arguments that will be undefined if there's no error.
  */
-function loadConsentData(cb) {
+function loadConsentData(cb, useActionTimeout) {
   let isDone = false;
   let timer = null;
 
@@ -195,6 +196,7 @@ function loadConsentData(cb) {
       const continueToAuction = (data) => {
         done(data, false, 'CMP did not load, continuing auction...');
       }
+
       processCmpData(provisionalConsent, {
         onSuccess: continueToAuction,
         onError: () => continueToAuction(storeConsentData(undefined))
@@ -202,6 +204,12 @@ function loadConsentData(cb) {
     }
     if (consentTimeout === 0) {
       onTimeout();
+    } else if (useActionTimeout && actionTimeout) {
+      if (timer != null) {
+        clearTimeout(timer);
+      }
+
+      timer = setTimeout(onTimeout, actionTimeout);
     } else {
       timer = setTimeout(onTimeout, consentTimeout);
     }
@@ -218,7 +226,7 @@ function loadIfMissing(cb) {
     // eslint-disable-next-line standard/no-callback-literal
     cb(false);
   } else {
-    loadConsentData(cb);
+    loadConsentData(cb, true);
   }
 }
 
@@ -326,6 +334,10 @@ export function setConsentConfig(config) {
   } else {
     userCMP = DEFAULT_CMP;
     logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+  }
+
+  if (isNumber(config.actionTimeout)) {
+    actionTimeout = config.actionTimeout;
   }
 
   if (isNumber(config.timeout)) {
