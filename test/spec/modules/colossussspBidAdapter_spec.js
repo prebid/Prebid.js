@@ -101,7 +101,7 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
@@ -110,6 +110,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -143,7 +144,7 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
         );
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
@@ -155,6 +156,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.playerSize).to.be.an('array');
         expect(placement.minduration).to.be.an('number');
         expect(placement.maxduration).to.be.an('number');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -297,8 +299,8 @@ describe('ColossussspAdapter', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('hms.gif');
-      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/hms.gif?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/image?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
     });
   });
 });

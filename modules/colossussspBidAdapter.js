@@ -97,7 +97,7 @@ export const spec = {
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
       page: location.pathname,
-      placements: placements,
+      placements: placements
     };
 
     if (bidderRequest) {
@@ -117,6 +117,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
+        tid: bid.transactionId,
         eids: [],
         floor: {}
       };
@@ -213,7 +214,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'html' : 'hms.gif';
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
