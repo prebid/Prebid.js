@@ -112,7 +112,7 @@ function getSupportedEids(bid) {
 
 function isSecure(bid) {
   return deepAccess(bid, 'params.bidOverride.imp.secure') || (document.location.protocol === 'https:') ? 1 : 0;
-}
+};
 
 function getPubIdMode(bid) {
   let pubIdMode;
@@ -120,9 +120,9 @@ function getPubIdMode(bid) {
     pubIdMode = true;
   } else if (deepAccess(bid, 'params.dcn') && deepAccess(bid, 'params.pos')) {
     pubIdMode = false;
-  }
+  };
   return pubIdMode;
-}
+};
 
 function getAdapterMode() {
   let adapterMode = config.getConfig('yahoossp.mode');
@@ -134,7 +134,7 @@ function getAdapterMode() {
   } else if (adapterMode === 'all') {
     return '*';
   }
-}
+};
 
 function getResponseFormat(bid) {
   const adm = bid.adm;
@@ -143,7 +143,7 @@ function getResponseFormat(bid) {
   } else if (adm.indexOf('VAST') !== -1) {
     return VIDEO;
   }
-}
+};
 
 function getFloorModuleData(bid) {
   const adapterMode = getAdapterMode();
@@ -153,7 +153,7 @@ function getFloorModuleData(bid) {
     size: '*'
   };
   return (isFn(bid.getFloor)) ? bid.getFloor(getFloorRequestObject) : false;
-}
+};
 
 function filterBidRequestByMode(validBidRequests) {
   const mediaTypesMode = getAdapterMode();
@@ -170,9 +170,9 @@ function filterBidRequestByMode(validBidRequests) {
     result = validBidRequests.filter(bid => {
       return Object.keys(bid.mediaTypes).some(item => item === BANNER || item === VIDEO);
     });
-  }
+  };
   return result;
-}
+};
 
 function validateAppendObject(validationType, allowedKeys, inputObject, appendToObject) {
   const outputObject = {
@@ -184,46 +184,46 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
       case 'string':
         if (allowedKeys.indexOf(objectKey) !== -1 && isStr(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
-        }
+        };
         break;
       case 'number':
         if (allowedKeys.indexOf(objectKey) !== -1 && isNumber(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
-        }
+        };
         break;
 
       case 'array':
         if (allowedKeys.indexOf(objectKey) !== -1 && isArray(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
-        }
+        };
         break;
       case 'object':
         if (allowedKeys.indexOf(objectKey) !== -1 && isPlainObject(inputObject[objectKey])) {
           outputObject[objectKey] = inputObject[objectKey];
-        }
+        };
         break;
       case 'objectAllKeys':
         if (isPlainObject(inputObject)) {
           outputObject[objectKey] = inputObject[objectKey];
-        }
+        };
         break;
-    }
-  }
+    };
+  };
   return outputObject;
-}
+};
 
 function getTtl(bidderRequest) {
   const globalTTL = config.getConfig('yahoossp.ttl');
   return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
-}
+};
 
 function validateTTL(ttl) {
   return (isNumber(ttl) && ttl > 0 && ttl < 3600) ? ttl : DEFAULT_BID_TTL
-}
+};
 
 function isNotEmptyStr(value) {
   return (isStr(value) && value.length > 0);
-}
+};
 
 function generateOpenRtbObject(bidderRequest, bid) {
   if (bidderRequest) {
@@ -277,7 +277,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
-    }
+    };
 
     if (bidderRequest.gppConsent) {
       outBoundBidRequest.regs.ext.gpp = bidderRequest.gppConsent.gppString;
@@ -285,21 +285,21 @@ function generateOpenRtbObject(bidderRequest, bid) {
     } else if (bidderRequest.ortb2?.regs?.gpp) {
       outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
       outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
-    }
+    };
 
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
-    }
+    };
 
     const schainData = deepAccess(bid, 'schain.nodes');
     if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
-    }
+    };
 
     return outBoundBidRequest;
-  }
-}
+  };
+};
 
 function appendImpObject(bid, openRtbObject) {
   const mediaTypeMode = getAdapterMode();
@@ -318,8 +318,8 @@ function appendImpObject(bid, openRtbObject) {
       };
       if (bid.mediaTypes.banner.pos) {
         impObject.banner.pos = bid.mediaTypes.banner.pos;
-      }
-    }
+      };
+    };
 
     if (bid.mediaTypes.video && (mediaTypeMode === VIDEO || mediaTypeMode === '*')) {
       const playerSize = transformSizes(bid.mediaTypes.video.playerSize);
@@ -358,26 +358,26 @@ function appendImpObject(bid, openRtbObject) {
           }
         }
       }
-    }
+    };
 
     if (deepAccess(bid, 'ortb2Imp.ext.data') && isPlainObject(bid.ortb2Imp.ext.data)) {
       impObject.ext.data = bid.ortb2Imp.ext.data;
-    }
+    };
 
     if (deepAccess(bid, 'ortb2Imp.instl') && isNumber(bid.ortb2Imp.instl) && (bid.ortb2Imp.instl === 1)) {
       impObject.instl = bid.ortb2Imp.instl;
-    }
+    };
 
     if (getPubIdMode(bid) === false) {
       impObject.tagid = bid.params.pos;
       impObject.ext.pos = bid.params.pos;
     } else if (deepAccess(bid, 'params.placementId')) {
       impObject.tagid = bid.params.placementId
-    }
+    };
 
     openRtbObject.imp.push(impObject);
-  }
-}
+  };
+};
 
 function appendFirstPartyData(outBoundBidRequest, bid) {
   const ortb2Object = bid.ortb2;
@@ -395,7 +395,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site = validateAppendObject('string', allowedSiteStringKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
-  }
+  };
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
     const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
@@ -419,8 +419,8 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
       });
-    }
-  }
+    };
+  };
 
   if (appContentObject && isPlainObject(appContentObject)) {
     if (appContentDataArray && isArray(appContentDataArray)) {
@@ -439,8 +439,8 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         };
         outBoundBidRequest.app.content.data.push(newDataObject);
       });
-    }
-  }
+    };
+  };
 
   if (userObject && isPlainObject(userObject)) {
     const allowedUserStrings = ['id', 'buyeruid', 'gender', 'keywords', 'customdata'];
@@ -451,10 +451,10 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.user = validateAppendObject('number', allowedUserNumbers, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user = validateAppendObject('array', allowedUserArrays, userObject, outBoundBidRequest.user);
     outBoundBidRequest.user.ext = validateAppendObject('object', allowedUserObjects, userObject, outBoundBidRequest.user.ext);
-  }
+  };
 
   return outBoundBidRequest;
-}
+};
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   const pubIdMode = getPubIdMode(bidderRequest);
@@ -462,7 +462,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
 
   if (pubIdMode === true) {
     sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_PUBID;
-  }
+  };
 
   if (deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
     logInfo('yahoossp adapter e2etest mode is active');
@@ -485,7 +485,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
         }
       });
     }
-  }
+  };
 
   return {
     url: sspEndpoint,
@@ -494,7 +494,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
     options: requestOptions,
     bidderRequest: bidderRequest
   };
-}
+};
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
@@ -542,7 +542,7 @@ export const spec = {
     if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
       logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
-    }
+    };
 
     const requestOptions = {
       contentType: 'application/json',
@@ -618,7 +618,7 @@ export const spec = {
 
         if (bid.nurl) {
           bidResponse.vastUrl = bid.nurl;
-        }
+        };
       }
 
       if (deepAccess(bidderRequest, 'mediaTypes.video.context') === 'outstream' && !bidderRequest.renderer) {
