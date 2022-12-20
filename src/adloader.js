@@ -6,7 +6,6 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   'debugging',
   'adloox',
-  'admatic',
   'criteo',
   'outstream',
   'adagio',
