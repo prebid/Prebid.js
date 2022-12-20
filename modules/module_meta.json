@@ -18,9 +18,9 @@
       "module": "browsiRtdProvider"
     },
   {
-    "name": "plusXRtdProvider",
-    "path": "/modules/plusXRtdProvider.js",
-    "module": "plusXRtdProvider"
+    "name": "1plusXRtdProvider",
+    "path": "/modules/1plusXRtdProvider.js",
+    "module": "1plusXRtdProvider"
   },
   {
     "name": "adnuntiusRtdProvider",
@@ -126,6 +126,21 @@
       "name": "weboramaRtdProvider",
       "path": "/modules/weboramaRtdProvider.js",
       "module": "weboramaRtdProvider"
+    },
+    {
+      "name": "mgidRtdProvider",
+      "path": "/modules/mgidRtdProvider.js",
+      "module":"mgidRtdProvider"
+    },
+    {
+      "name": "aaxBlockmeterRtdProvider",
+      "path": "/modules/aaxBlockmeterRtdProvider.js",
+      "module":"aaxBlockmeterRtdProvider"
+    },
+    {
+      "name": "oneKeyRtdProvider",
+      "path": "/modules/oneKeyRtdProvider.js",
+      "module":"oneKeyRtdProvider"
     }
   ],
   "FPD Module": [
@@ -136,8 +151,13 @@
     },
     {
       "name": "validationFpdModule",
-      "path": "/modules/validationFpdModule/index..js",
+      "path": "/modules/validationFpdModule/index.js",
       "module": "validationFpdModule"
+    },
+    {
+      "name": "topicsFpdModule",
+      "path": "/modules/topicsFpdModule.js",
+      "module": "topicsFpdModule"
     }
   ],
   "Analytics Module": [
@@ -400,6 +420,36 @@
     "name": "intersectionRtdProvider",
     "path": "/modules/intersectionRtdProvider.js",
     "module": "intersectionRtdProvider"
+  },
+  {
+    "name": "bidwatchAnalyticsAdapter",
+    "path": "/modules/bidwatchAnalyticsAdapter.js",
+    "module": "bidwatchAnalyticsAdapter"
+  },
+  {
+    "name": "conversantAnalyticsAdapter",
+    "path": "/modules/conversantAnalyticsAdapter.js",
+    "module": "conversantAnalyticsAdapter"
+  },
+  {
+    "name": "hadronAnalyticsAdapter",
+    "path": "/modules/hadronAnalyticsAdapter.js",
+    "module": "hadronAnalyticsAdapter"
+  },
+  {
+    "name": "liveIntentAnalyticsAdapter",
+    "path": "/modules/liveIntentAnalyticsAdapter.js",
+    "module": "liveIntentAnalyticsAdapter"
+  },
+  {
+    "name": "magniteAnalyticsAdapter",
+    "path": "/modules/magniteAnalyticsAdapter.js",
+    "module": "magniteAnalyticsAdapter"
+  },
+  {
+    "name": "pianoDmpAnalyticsAdapter",
+    "path": "/modules/pianoDmpAnalyticsAdapter.js",
+    "module": "pianoDmpAnalyticsAdapter"
   }
   ],
   "Others": [
@@ -518,5 +568,18 @@
     "path": "/modules/yieldmoSyntheticInventoryModule.js",
     "module": "yieldmoSyntheticInventoryModule"
   }
+],
+"Video": [
+  {
+    "name": "jwplayerVideoProvider",
+    "path": "/modules/jwplayerVideoProvider.js",
+    "module": "jwplayerVideoProvider"
+  },
+  {
+    "name": "videojsVideoProvider",
+    "path": "/modules/videojsVideoProvider.js",
+    "module": "videojsVideoProvider"
+  }
+
 ]
 }
