@@ -1,14 +1,13 @@
-import {auctionManager} from '../../../src/auctionManager.js';
 import {deepSetValue} from '../../../src/utils.js';
 
-export function setImpAdUnitCode(imp, bidRequest, context, { adUnit, index = auctionManager.index } = {}) {
-  adUnit = adUnit || index.getAdUnit(bidRequest);
+export function setImpAdUnitCode(imp, bidRequest) {
+  const adUnitCode = bidRequest.adUnitCode;
 
-  if (adUnit) {
+  if (adUnitCode) {
     deepSetValue(
       imp,
       `ext.prebid.adunitcode`,
-      adUnit.code
+      adUnitCode
     );
   }
 }
