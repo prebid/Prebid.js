@@ -18,13 +18,13 @@ const CMP_VERSION = 2;
 
 export let userCMP;
 export let consentTimeout;
+export let actionTimeout;
 export let gdprScope;
 export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
-let actionTimeout;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -163,7 +163,7 @@ function lookupIabConsent({onSuccess, onError}) {
  * @param cb A callback that takes: a boolean that is true if the auction should be canceled; an error message and extra
  * error arguments that will be undefined if there's no error.
  */
-function loadConsentData(cb, useActionTimeout) {
+export function loadConsentData(cb, useActionTimeout, callMap = cmpCallMap, timeout = setTimeout) {
   let isDone = false;
   let timer = null;
 
@@ -178,7 +178,7 @@ function loadConsentData(cb, useActionTimeout) {
     }
   }
 
-  if (!includes(Object.keys(cmpCallMap), userCMP)) {
+  if (!includes(Object.keys(callMap), userCMP)) {
     done(null, false, `CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return;
   }
@@ -189,7 +189,7 @@ function loadConsentData(cb, useActionTimeout) {
       done(null, true, msg, ...extraArgs);
     }
   }
-  cmpCallMap[userCMP](callbacks);
+  callMap[userCMP](callbacks);
 
   if (!isDone) {
     const onTimeout = () => {
@@ -209,9 +209,9 @@ function loadConsentData(cb, useActionTimeout) {
         clearTimeout(timer);
       }
 
-      timer = setTimeout(onTimeout, actionTimeout);
+      timer = timeout(onTimeout, actionTimeout);
     } else {
-      timer = setTimeout(onTimeout, consentTimeout);
+      timer = timeout(onTimeout, consentTimeout);
     }
   }
 }

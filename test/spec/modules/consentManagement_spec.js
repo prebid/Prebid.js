@@ -1,4 +1,4 @@
-import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, staticConsentData, gdprScope } from 'modules/consentManagement.js';
+import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, actionTimeout, staticConsentData, gdprScope, loadConsentData } from 'modules/consentManagement.js';
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -724,6 +724,40 @@ describe('consentManagement', function () {
           expect(consent.apiVersion).to.equal(2);
         });
       });
+    });
+  });
+
+  describe('actionTimeout', function () {
+    afterEach(function () {
+      config.resetConfig();
+      resetConsentData();
+    });
+
+    it('should set actionTimeout if present', () => {
+      setConsentConfig({
+        gdpr: { timeout: 5000, actionTimeout: 5500 }
+      });
+
+      expect(userCMP).to.be.equal('iab');
+      expect(consentTimeout).to.be.equal(5000);
+      expect(actionTimeout).to.be.equal(5500);
+    });
+
+    it('should utilize actionTimeout duration on initial user visit when user action is pending', () => {
+      const cb = () => {};
+      const cmpCallMap = {
+        'iab': () => {},
+        'static': () => {}
+      };
+      const timeout = sinon.spy();
+
+      setConsentConfig({
+        gdpr: { timeout: 5000, actionTimeout: 5500 }
+      });
+
+      loadConsentData(cb, true, cmpCallMap, timeout);
+      sinon.assert.callCount(timeout, 1);
+      sinon.assert.calledWith(timeout, sinon.match.any, 5500);
     });
   });
 });
