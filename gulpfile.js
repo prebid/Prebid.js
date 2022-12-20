@@ -256,7 +256,7 @@ function bundle(dev, moduleArr) {
   gutil.log('Generating bundle:', outputFileName);
 
   var globalVarName = prebid.globalVarName;
-  return gulp.src(entries)
+  return gulp.src(entries, { allowEmpty: true })
     // Need to uodate the "Modules: ..." section in comment with the current modules list
     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
@@ -538,3 +538,4 @@ gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;
+////
