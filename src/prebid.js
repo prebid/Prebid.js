@@ -628,6 +628,13 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    if (adUnitCodes && adUnitCodes.length) {
+      // if specific adUnitCodes supplied filter adUnits for those codes
+      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+    } else {
+      // otherwise derive adUnitCodes from adUnits
+      adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+    }
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
@@ -659,14 +666,6 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
-
-  if (adUnitCodes && adUnitCodes.length) {
-    // if specific adUnitCodes supplied filter adUnits for those codes
-    adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
-  } else {
-    // otherwise derive adUnitCodes from adUnits
-    adUnitCodes = adUnits && adUnits.map(unit => unit.code);
-  }
 
   function auctionDone(bids, timedOut, auctionId) {
     if (typeof bidsBackHandler === 'function') {
