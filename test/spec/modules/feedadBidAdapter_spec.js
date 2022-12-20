@@ -617,7 +617,7 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.3'
+            sdk_version: '1.0.4'
           };
           subject(data);
           expect(server.requests.length).to.equal(1);
