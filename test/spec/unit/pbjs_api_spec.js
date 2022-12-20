@@ -23,6 +23,8 @@ import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 import {resetAuctionState} from 'src/auction.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
+import {enrichFPD} from '../../../src/fpd/enrichment.js';
+import {mockFpdEnrichments} from '../../helpers/fpd.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -195,7 +197,7 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub
+  let bidExpiryStub, sandbox;
 
   before(() => {
     hook.ready();
@@ -205,12 +207,15 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
 
   afterEach(function() {
+    sandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -1615,6 +1620,19 @@ describe('Unit: Prebid Module', function () {
     });
 
     describe('returns a promise that resolves', () => {
+      function delayHook(next, ...args) {
+        setTimeout(() => next(...args))
+      }
+
+      beforeEach(() => {
+        // make sure the return value works correctly when hooks give up priority
+        $$PREBID_GLOBAL$$.requestBids.before(delayHook)
+      });
+
+      afterEach(() => {
+        $$PREBID_GLOBAL$$.requestBids.getHooks({hook: delayHook}).remove();
+      });
+
       Object.entries({
         'immediately, without bidsBackHandler': (req) => $$PREBID_GLOBAL$$.requestBids(req),
         'after bidsBackHandler': (() => {
@@ -1665,7 +1683,10 @@ describe('Unit: Prebid Module', function () {
               sinon.assert.match(bids[bid.adUnitCode].bids[0], bid)
               done();
             });
-            completeAuction([bid]);
+            // `completeAuction` won't work until we're out of `delayHook`
+            // and the mocked auction has been set up;
+            // setTimeout here takes us after the setTimeout in `delayHook`
+            setTimeout(() => completeAuction([bid]));
           })
         })
       })
@@ -1733,39 +1754,62 @@ describe('Unit: Prebid Module', function () {
         configObj.resetConfig();
       });
 
-      it('passing global and auction-level FPD as ortb2Fragments.global', () => {
-        configObj.setConfig({
-          ortb2: {
+      describe('with FPD', () => {
+        let globalFPD, auctionFPD, mergedFPD;
+        beforeEach(() => {
+          globalFPD = {
             'k1': 'v1',
             'k2': {
               'k3': 'v3',
               'k4': 'v4'
             }
-          }
-        });
-        $$PREBID_GLOBAL$$.requestBids({
-          ortb2: {
+          };
+          auctionFPD = {
             'k5': 'v5',
             'k2': {
               'k3': 'override',
               'k7': 'v7'
             }
-          }
-        });
-        sinon.assert.calledWith(startAuctionStub, sinon.match({
-          ortb2Fragments: {
-            global: {
-              'k1': 'v1',
-              'k5': 'v5',
-              'k2': {
-                'k3': 'override',
-                'k4': 'v4',
-                'k7': 'v7'
-              }
+          };
+          mergedFPD = {
+            'k1': 'v1',
+            'k5': 'v5',
+            'k2': {
+              'k3': 'override',
+              'k4': 'v4',
+              'k7': 'v7'
             }
+          };
+        });
+
+        it('merged from setConfig and requestBids', () => {
+          configObj.setConfig({ortb2: globalFPD});
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          sinon.assert.calledWith(startAuctionStub, sinon.match({
+            ortb2Fragments: {global: mergedFPD}
+          }));
+        });
+
+        it('enriched through enrichFPD', () => {
+          function enrich(next, fpd) {
+            next.bail(fpd.then(ortb2 => {
+              ortb2.enrich = true;
+              return ortb2;
+            }))
           }
-        }))
+          enrichFPD.before(enrich);
+          try {
+            configObj.setConfig({ortb2: globalFPD});
+            $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+            sinon.assert.calledWith(startAuctionStub, sinon.match({
+              ortb2Fragments: {global: {...mergedFPD, enrich: true}}
+            }));
+          } finally {
+            enrichFPD.getHooks({hook: enrich}).remove();
+          }
+        })
       });
+
       it('passing bidder-specific FPD as ortb2Fragments.bidder', () => {
         configObj.setBidderConfig({
           bidders: ['bidderA', 'bidderC'],

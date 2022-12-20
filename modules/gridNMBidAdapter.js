@@ -432,7 +432,7 @@ export function getSyncUrl() {
 function segmentProcessing(segment, forceSegName) {
   return segment
     .map((seg) => {
-      const value = seg && (seg.value || seg.id || seg);
+      const value = seg && (seg.id || seg);
       if (typeof value === 'string' || typeof value === 'number') {
         return {
           value: value.toString(),

@@ -481,6 +481,13 @@ No additional params.
 | adTagUrl | string | The URL for the ad tag associated with the given ad event |
 | adUnitCode | string | Unique identifier that was used when creating the ad unit. |
 
+###### AUCTION_AD_LOAD_QUEUED
+
+| argument name | type | description |
+| ------------- | ---- | ----------- |
+| adTagUrl | string | The URL for the ad tag associated with the given ad event |
+| adUnitCode | string | Unique identifier that was used when creating the ad unit. |
+
 ###### AUCTION_AD_LOAD_ABORT
 
 | argument name | type | description |
