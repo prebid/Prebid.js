@@ -294,12 +294,20 @@ function trackingHandlerFactory(klass) {
 /**
  * Reads the user syncs off the server responses and converts them into Prebid.JS format
  * @param {SyncOptions} syncOptions
- * @param {FeedAdApiBidResponse[]} serverResponses
+ * @param {ServerResponse[]} serverResponses
  * @param gdprConsent
  * @param uspConsent
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  return serverResponses.map(response => response.ext)
+  return serverResponses.map(response => {
+    // validate response format
+    const ext = deepAccess(response, 'body.ext', []);
+    if (ext == null) {
+      return null;
+    }
+    return ext;
+  })
+    .filter(ext => ext != null)
     .flatMap(extension => {
       // extract user syncs from extension
       const pixels = syncOptions.pixelEnabled && extension.pixels ? extension.pixels : [];
