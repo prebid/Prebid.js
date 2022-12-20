@@ -4,7 +4,7 @@ import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 
 const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://appspb.cointraffic.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
 const DEFAULT_CURRENCY = 'EUR';
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',
@@ -50,7 +50,8 @@ export const spec = {
         currency: currency,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        referer: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        referer: bidderRequest.refererInfo.page,
       };
 
       return {

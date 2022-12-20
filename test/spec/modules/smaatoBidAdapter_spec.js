@@ -6,6 +6,7 @@ import {createEidsArray} from 'modules/userId/eids.js';
 const ADTYPE_IMG = 'Img';
 const ADTYPE_RICHMEDIA = 'Richmedia';
 const ADTYPE_VIDEO = 'Video';
+const ADTYPE_NATIVE = 'Native';
 
 const REFERRER = 'http://example.com/page.html'
 const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
@@ -18,7 +19,7 @@ const defaultBidderRequest = {
   },
   uspConsent: 'uspConsentString',
   refererInfo: {
-    referer: REFERRER,
+    ref: REFERRER,
   },
   timeout: 1200,
   auctionId: AUCTION_ID
@@ -123,9 +124,18 @@ describe('smaatoBidAdapterTest', () => {
     describe('common', () => {
       const MINIMAL_BIDDER_REQUEST = {
         refererInfo: {
-          referer: REFERRER,
+          ref: REFERRER,
         }
       };
+
+      let sandbox;
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      })
 
       it('auction type is 1 (first price auction)', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
@@ -319,24 +329,22 @@ describe('smaatoBidAdapterTest', () => {
       });
 
       it('sends first party data', () => {
-        this.sandbox = sinon.sandbox.create()
-        this.sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            ortb2: {
-              site: {
-                keywords: 'power tools,drills'
-              },
-              user: {
-                keywords: 'a,b',
-                gender: 'M',
-                yob: 1984
-              }
+        const ortb2 = {
+          site: {
+            keywords: 'power tools,drills',
+            publisher: {
+              id: 'otherpublisherid',
+              name: 'publishername'
             }
-          };
-          return utils.deepAccess(config, key);
-        });
+          },
+          user: {
+            keywords: 'a,b',
+            gender: 'M',
+            yob: 1984
+          }
+        };
 
-        const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.gender).to.equal('M');
@@ -345,7 +353,6 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
         expect(req.site.keywords).to.eql('power tools,drills');
         expect(req.site.publisher.id).to.equal('publisherId');
-        this.sandbox.restore();
       });
 
       it('has no user ids', () => {
@@ -415,7 +422,6 @@ describe('smaatoBidAdapterTest', () => {
         },
         adUnitCode: '/19968336/header-bid-tag-0',
         transactionId: 'transactionId',
-        sizes: [[300, 50]],
         bidId: 'bidId',
         bidderRequestId: 'bidderRequestId',
         src: 'client',
@@ -787,6 +793,168 @@ describe('smaatoBidAdapterTest', () => {
       });
     });
 
+    describe('buildRequests for native imps', () => {
+      const NATIVE_OPENRTB_REQUEST = {
+        ver: '1.2',
+        assets: [
+          {
+            id: 4,
+            required: 1,
+            img: {
+              type: 3,
+              w: 150,
+              h: 50,
+            }
+          },
+          {
+            id: 2,
+            required: 1,
+            img: {
+              type: 2,
+              w: 50,
+              h: 50
+            }
+          },
+          {
+            id: 0,
+            required: 1,
+            title: {
+              len: 80
+            }
+          },
+          {
+            id: 1,
+            required: 1,
+            data: {
+              type: 1
+            }
+          },
+          {
+            id: 3,
+            required: 1,
+            data: {
+              type: 2
+            }
+          },
+          {
+            id: 5,
+            required: 1,
+            data: {
+              type: 3
+            }
+          },
+          {
+            id: 6,
+            required: 1,
+            data: {
+              type: 4
+            }
+          },
+          {
+            id: 7,
+            required: 1,
+            data: {
+              type: 5
+            }
+          },
+          {
+            id: 8,
+            required: 1,
+            data: {
+              type: 6
+            }
+          },
+          {
+            id: 9,
+            required: 1,
+            data: {
+              type: 7
+            }
+          },
+          {
+            id: 10,
+            required: 0,
+            data: {
+              type: 8
+            }
+          },
+          {
+            id: 11,
+            required: 1,
+            data: {
+              type: 9
+            }
+          },
+          {
+            id: 12,
+            require: 0,
+            data: {
+              type: 10
+            }
+          },
+          {
+            id: 13,
+            required: 0,
+            data: {
+              type: 11
+            }
+          },
+          {
+            id: 14,
+            required: 1,
+            data: {
+              type: 12
+            }
+          }
+        ]
+      };
+
+      const singleNativeBidRequest = {
+        bidder: 'smaato',
+        params: {
+          publisherId: 'publisherId',
+          adspaceId: 'adspaceId'
+        },
+        nativeOrtbRequest: NATIVE_OPENRTB_REQUEST,
+        adUnitCode: '/19968336/header-bid-tag-0',
+        transactionId: 'transactionId',
+        bidId: 'bidId',
+        bidderRequestId: 'bidderRequestId',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      };
+
+      it('sends correct native imps', () => {
+        const reqs = spec.buildRequests([singleNativeBidRequest], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].id).to.be.equal('bidId');
+        expect(req.imp[0].tagid).to.be.equal('adspaceId');
+        expect(req.imp[0].bidfloor).to.be.undefined;
+        expect(req.imp[0].native.request).to.deep.equal(JSON.stringify(NATIVE_OPENRTB_REQUEST));
+      });
+
+      it('sends bidfloor when configured', () => {
+        const singleNativeBidRequestWithFloor = Object.assign({}, singleNativeBidRequest);
+        singleNativeBidRequestWithFloor.getFloor = function(arg) {
+          if (arg.currency === 'USD' &&
+              arg.mediaType === 'native' &&
+              JSON.stringify(arg.size) === JSON.stringify([150, 50])) {
+            return {
+              currency: 'USD',
+              floor: 0.123
+            }
+          }
+        }
+        const reqs = spec.buildRequests([singleNativeBidRequestWithFloor], defaultBidderRequest);
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.imp[0].bidfloor).to.be.equal(0.123);
+      });
+    });
+
     describe('in-app requests', () => {
       const LOCATION = {
         lat: 33.3,
@@ -926,49 +1094,130 @@ describe('smaatoBidAdapterTest', () => {
       }
     }
 
+    const NATIVE_RESPONSE = {
+      ver: '1.2',
+      link: {
+        url: 'https://link.url',
+        clicktrackers: [
+          'http://click.url/v1/click?e=prebid'
+        ]
+      },
+      assets: [
+        {
+          id: 0,
+          required: 1,
+          title: {
+            text: 'Title'
+          }
+        },
+        {
+          id: 2,
+          required: 1,
+          img: {
+            type: 1,
+            url: 'https://logo.png',
+            w: 40,
+            h: 40
+          }
+        },
+        {
+          id: 4,
+          required: 1,
+          img: {
+            type: 3,
+            url: 'https://main.png',
+            w: 480,
+            h: 320
+          }
+        },
+        {
+          id: 3,
+          required: 1,
+          data: {
+            type: 2,
+            value: 'Desc'
+          }
+        },
+        {
+          id: 14,
+          required: 1,
+          data: {
+            type: 12,
+            value: 'CTAText'
+          }
+        },
+        {
+          id: 5,
+          required: 0,
+          data: {
+            type: 3,
+            value: '2 stars'
+          }
+        }
+      ],
+      eventtrackers: [
+        {
+          event: 2,
+          method: 1,
+          url: 'https://js.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: 'http://view.url/v1/view?e=prebid'
+        }
+      ],
+      privacy: 'https://privacy.com/'
+    }
+
     const buildOpenRtbBidResponse = (adType) => {
       let adm = '';
 
       switch (adType) {
         case ADTYPE_IMG:
-          adm = JSON.stringify({
-            image: {
-              img: {
-                url: 'https://prebid/static/ad.jpg',
-                w: 320,
-                h: 50,
-                ctaurl: 'https://prebid/track/ctaurl'
-              },
-              impressiontrackers: [
-                'https://prebid/track/imp/1',
-                'https://prebid/track/imp/2'
-              ],
-              clicktrackers: [
-                'https://prebid/track/click/1'
-              ]
-            }
-          });
+          adm = JSON.stringify(
+            {
+              image: {
+                img: {
+                  url: 'https://prebid/static/ad.jpg',
+                  w: 320,
+                  h: 50,
+                  ctaurl: 'https://prebid/track/ctaurl'
+                },
+                impressiontrackers: [
+                  'https://prebid/track/imp/1',
+                  'https://prebid/track/imp/2'
+                ],
+                clicktrackers: [
+                  'https://prebid/track/click/1'
+                ]
+              }
+            });
           break;
         case ADTYPE_RICHMEDIA:
-          adm = JSON.stringify({
-            richmedia: {
-              mediadata: {
-                content: '<div><h3>RICHMEDIA CONTENT</h3></div>',
-                w: 800,
-                h: 600
-              },
-              impressiontrackers: [
-                'https://prebid/track/imp/1',
-                'https://prebid/track/imp/2'
-              ],
-              clicktrackers: [
-                'https://prebid/track/click/1'
-              ]
-            }
-          });
+          adm = JSON.stringify(
+            {
+              richmedia: {
+                mediadata: {
+                  content: '<div><h3>RICHMEDIA CONTENT</h3></div>',
+                  w: 800,
+                  h: 600
+                },
+                impressiontrackers: [
+                  'https://prebid/track/imp/1',
+                  'https://prebid/track/imp/2'
+                ],
+                clicktrackers: [
+                  'https://prebid/track/click/1'
+                ]
+              }
+            });
           break;
         case ADTYPE_VIDEO:
           adm = '<VAST version="2.0"></VAST>';
+          break;
+        case ADTYPE_NATIVE:
+          adm = JSON.stringify({ native: NATIVE_RESPONSE })
           break;
         default:
           throw Error('Invalid AdType');
@@ -1024,7 +1273,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('non ad pod', () => {
-      it('single image reponse', () => {
+      it('single image response', () => {
         const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), buildBidRequest());
 
         expect(bids).to.deep.equal([
@@ -1050,7 +1299,7 @@ describe('smaatoBidAdapterTest', () => {
         ]);
       });
 
-      it('single richmedia reponse', () => {
+      it('single richmedia response', () => {
         const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_RICHMEDIA), buildBidRequest());
 
         expect(bids).to.deep.equal([
@@ -1097,6 +1346,34 @@ describe('smaatoBidAdapterTest', () => {
               agencyId: 'CM6523',
               networkName: 'smaato',
               mediaType: 'video'
+            }
+          }
+        ]);
+      });
+
+      it('single native response', () => {
+        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_NATIVE), buildBidRequest());
+
+        expect(bids).to.deep.equal([
+          {
+            requestId: '226416e6e6bf41',
+            cpm: 0.01,
+            width: 350,
+            height: 50,
+            native: {
+              ortb: NATIVE_RESPONSE
+            },
+            ttl: 300,
+            creativeId: 'CR69381',
+            dealId: '12345',
+            netRevenue: true,
+            currency: 'USD',
+            mediaType: 'native',
+            meta: {
+              advertiserDomains: ['smaato.com'],
+              agencyId: 'CM6523',
+              networkName: 'smaato',
+              mediaType: 'native'
             }
           }
         ]);

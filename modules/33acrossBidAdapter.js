@@ -11,15 +11,18 @@ import {
   logWarn,
   getWindowSelf,
   mergeDeep,
+  pick
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
+const BIDDER_ALIASES = ['33across_mgni'];
 const END_POINT = 'https://ssc.33across.com/api/v1/hb';
 const SYNC_ENDPOINT = 'https://ssc-cms.33across.com/ps/?m=xch&rt=html&ru=deb';
 
 const CURRENCY = 'USD';
+const GVLID = 58;
 const GUID_PATTERN = /^[a-zA-Z0-9_-]{22}$/;
 
 const PRODUCT = {
@@ -69,7 +72,9 @@ function isBidRequestValid(bid) {
 }
 
 function _validateBasic(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
+  const invalidBidderName = bid.bidder !== BIDDER_CODE && !BIDDER_ALIASES.includes(bid.bidder);
+
+  if (invalidBidderName || !bid.params) {
     return false;
   }
 
@@ -194,7 +199,7 @@ function _buildRequestParams(bidRequests, bidderRequest) {
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
-  const pageUrl = (bidderRequest && bidderRequest.refererInfo) ? (bidderRequest.refererInfo.referer) : (undefined);
+  const pageUrl = bidderRequest?.refererInfo?.page
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
@@ -238,7 +243,8 @@ function _getMRAKey(bidRequest) {
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
 function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
   const ttxRequest = {};
-  const { siteId, test } = bidRequests[0].params;
+  const firstBidRequest = bidRequests[0];
+  const { siteId, test } = firstBidRequest.params;
 
   /*
    * Infer data for the request payload
@@ -250,12 +256,13 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   });
 
   ttxRequest.site = { id: siteId };
+  ttxRequest.device = _buildDeviceORTB(firstBidRequest.ortb2?.device);
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
   }
 
-  ttxRequest.id = bidRequests[0].auctionId;
+  ttxRequest.id = firstBidRequest.auctionId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -263,9 +270,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     });
   }
 
-  if (Array.isArray(bidRequests[0].userIdAsEids) && bidRequests[0].userIdAsEids.length > 0) {
+  if (Array.isArray(firstBidRequest.userIdAsEids) && firstBidRequest.userIdAsEids.length > 0) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
-      'eids': bidRequests[0].userIdAsEids
+      'eids': firstBidRequest.userIdAsEids
     });
   }
 
@@ -289,9 +296,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     }
   };
 
-  if (bidRequests[0].schain) {
+  if (firstBidRequest.schain) {
     ttxRequest.source = setExtensions(ttxRequest.source, {
-      'schain': bidRequests[0].schain
+      'schain': firstBidRequest.schain
     });
   }
 
@@ -317,7 +324,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     'url': url,
     'data': JSON.stringify(ttxRequest),
     'options': options
-  }
+  };
 }
 
 // BUILD REQUESTS: SET EXTENSIONS
@@ -329,12 +336,15 @@ function setExtensions(obj = {}, extFields) {
 
 // BUILD REQUESTS: IMP
 function _buildImpORTB(bidRequest) {
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
   const imp = {
     id: bidRequest.bidId,
     ext: {
       ttx: {
         prod: deepAccess(bidRequest, 'params.productId')
-      }
+      },
+      ...(gpid ? { gpid } : {})
     }
   };
 
@@ -430,7 +440,7 @@ function _buildBannerORTB(bidRequest) {
   return {
     format,
     ext
-  }
+  };
 }
 
 // BUILD REQUESTS: VIDEO
@@ -444,7 +454,7 @@ function _buildVideoORTB(bidRequest) {
     ...videoBidderParams // Bidder Specific overrides
   };
 
-  const video = {}
+  const video = {};
 
   const { w, h } = _getSize(videoParams.playerSize[0]);
   video.w = w;
@@ -730,11 +740,86 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   return sync;
 }
 
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB(device = {}) {
+  const win = getWindowSelf();
+  const deviceProps = {
+    ext: {
+      ttx: {
+        ...getScreenDimensions(),
+        pxr: win.devicePixelRatio,
+        vp: getViewportDimensions(),
+        ah: win.screen.availHeight,
+        mtp: win.navigator.maxTouchPoints
+      }
+    }
+  }
+
+  if (device.sua) {
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+  }
+
+  return deviceProps;
+}
+
+function getTopMostAccessibleWindow() {
+  let mostAccessibleWindow = getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleWindow();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
+}
+
+function getScreenDimensions() {
+  const {
+    innerWidth: windowWidth,
+    innerHeight: windowHeight,
+    screen
+  } = getWindowSelf();
+
+  const [biggerDimension, smallerDimension] = [
+    Math.max(screen.width, screen.height),
+    Math.min(screen.width, screen.height),
+  ];
+
+  if (windowHeight > windowWidth) { // Portrait mode
+    return {
+      w: smallerDimension,
+      h: biggerDimension,
+    };
+  }
+
+  // Landscape mode
+  return {
+    w: biggerDimension,
+    h: smallerDimension,
+  };
+}
+
 export const spec = {
   NON_MEASURABLE,
 
   code: BIDDER_CODE,
+  aliases: BIDDER_ALIASES,
   supportedMediaTypes: [ BANNER, VIDEO ],
+  gvlid: GVLID,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

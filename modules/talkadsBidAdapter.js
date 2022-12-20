@@ -2,14 +2,16 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CURRENCY = 'EUR';
 const BIDDER_CODE = 'talkads';
+const GVLID = 1074;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [ NATIVE, BANNER ],
-  params: null,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -17,7 +19,7 @@ export const spec = {
    * @param poBid  The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: (poBid) => {
+  isBidRequestValid: function (poBid) {
     utils.logInfo('isBidRequestValid : ', poBid);
     if (poBid.params === undefined) {
       utils.logError('VALIDATION FAILED : the parameters must be defined');
@@ -31,7 +33,7 @@ export const spec = {
       utils.logError('VALIDATION FAILED : the parameter "bidder_url" must be defined');
       return false;
     }
-    this.params = poBid.params;
+
     return !!(poBid.nativeParams || poBid.sizes);
   }, // isBidRequestValid
 
@@ -42,7 +44,9 @@ export const spec = {
    * @param poBidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: (paValidBidRequests, poBidderRequest) => {
+  buildRequests: function (paValidBidRequests, poBidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    paValidBidRequests = convertOrtbRequestToProprietaryNative(paValidBidRequests);
     utils.logInfo('buildRequests : ', paValidBidRequests, poBidderRequest);
     const laBids = paValidBidRequests.map((poBid, piId) => {
       const loOne = { id: piId, ad_unit: poBid.adUnitCode, bid_id: poBid.bidId, type: '', size: [] };
@@ -54,10 +58,12 @@ export const spec = {
       }
       return loOne;
     });
+    let laParams = paValidBidRequests[0].params;
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
       auction_id: paValidBidRequests[0].auctionId,
+      // TODO: should this use auctionId? see #8573
       transaction_id: paValidBidRequests[0].transactionId,
       bids: laBids,
       gdpr: { applies: false, consent: false },
@@ -71,7 +77,7 @@ export const spec = {
         loServerRequest.gdpr.consent = poBidderRequest.gdprConsent.consentString;
       }
     }
-    const lsUrl = this.params.bidder_url + '/' + this.params.tag_id;
+    const lsUrl = laParams.bidder_url + '/' + laParams.tag_id;
     return {
       method: 'POST',
       url: lsUrl,
@@ -86,7 +92,7 @@ export const spec = {
    * @param poPidRequest Request original server request
    * @return An array of bids which were nested inside the server.
    */
-  interpretResponse: (poServerResponse, poPidRequest) => {
+  interpretResponse: function (poServerResponse, poPidRequest) {
     utils.logInfo('interpretResponse : ', poServerResponse);
     if (!poServerResponse.body) {
       return [];
@@ -118,10 +124,11 @@ export const spec = {
    *
    * @param poBid The bid that won the auction
    */
-  onBidWon: (poBid) => {
+  onBidWon: function (poBid) {
     utils.logInfo('onBidWon : ', poBid);
+    let laParams = poBid.params[0];
     if (poBid.pbid) {
-      ajax(this.params.bidder_url + 'won/' + poBid.pbid);
+      ajax(laParams.bidder_url + 'won/' + poBid.pbid);
     }
   }, // onBidWon
 };

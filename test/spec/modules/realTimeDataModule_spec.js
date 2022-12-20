@@ -2,7 +2,9 @@ import * as rtdModule from 'modules/rtdModule/index.js';
 import {config} from 'src/config.js';
 import * as sinon from 'sinon';
 import {default as CONSTANTS} from '../../../src/constants.json';
-import {default as events} from '../../../src/events.js';
+import * as events from '../../../src/events.js';
+import 'src/prebid.js';
+import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
 
 const getBidRequestDataSpy = sinon.spy();
 
@@ -140,7 +142,56 @@ describe('Real time module', function () {
       const adUnits = rtdModule.getAdUnitTargeting(auction);
       assert.deepEqual(expectedAdUnits, adUnits)
       done();
-    })
+    });
+
+    describe('setBidRequestData', () => {
+      let withWait, withoutWait;
+
+      function runSetBidRequestData() {
+        return new Promise((resolve) => {
+          rtdModule.setBidRequestsData(resolve, {bidRequest: {}});
+        });
+      }
+
+      beforeEach(() => {
+        withWait = {
+          submod: validSMWait,
+          cbTime: 0,
+          cbRan: false
+        };
+        withoutWait = {
+          submod: validSM,
+          cbTime: 0,
+          cbRan: false
+        };
+
+        [withWait, withoutWait].forEach((c) => {
+          c.submod.getBidRequestData = sinon.stub().callsFake((_, cb) => {
+            setTimeout(() => {
+              c.cbRan = true;
+              cb();
+            }, c.cbTime);
+          });
+        });
+      });
+
+      it('should allow non-priority submodules to run synchronously', () => {
+        withWait.cbTime = withoutWait.cbTime = 0;
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.true;
+        })
+      });
+
+      it('should not wait for non-priority submodules if priority ones complete first', () => {
+        withWait.cbTime = 10;
+        withoutWait.cbTime = 100;
+        return runSetBidRequestData().then(() => {
+          expect(withWait.cbRan).to.be.true;
+          expect(withoutWait.cbRan).to.be.false;
+        });
+      });
+    });
   });
 
   it('deep merge object', function () {
@@ -195,7 +246,7 @@ describe('Real time module', function () {
             'name': 'tp1',
           },
           {
-            'name': 'tp2'
+            'name': 'tp2',
           }
         ]
       }
@@ -206,7 +257,7 @@ describe('Real time module', function () {
     function eventHandlingProvider(name) {
       const provider = {
         name: name,
-        init: () => true
+        init: () => true,
       }
       Object.values(EVENTS).forEach((ev) => provider[ev] = sinon.spy());
       return provider;
@@ -222,7 +273,19 @@ describe('Real time module', function () {
     afterEach(() => {
       _detachers.forEach((d) => d())
       config.resetConfig();
-    })
+    });
+
+    it('should set targeting for auctionEnd', () => {
+      providers.forEach(p => p.getTargetingData = sinon.spy());
+      const auction = {
+        adUnitCodes: ['a1'],
+        adUnits: [{code: 'a1'}]
+      };
+      mockEmitEvent(CONSTANTS.EVENTS.AUCTION_END, auction);
+      providers.forEach(p => {
+        expect(p.getTargetingData.calledWith(auction.adUnitCodes)).to.be.true;
+      });
+    });
 
     Object.entries(EVENTS).forEach(([event, hook]) => {
       it(`'${event}' should be propagated to providers through '${hook}'`, () => {
@@ -242,5 +305,69 @@ describe('Real time module', function () {
         expect(providers[1][hook].called).to.be.true;
       });
     });
-  })
+  });
+
+  describe('data deletion requests', () => {
+    let detach = () => null;
+
+    function mkRtdModule(name) {
+      const mod = {
+        name,
+        init: () => true,
+        onDataDeletionRequest: sinon.stub()
+      };
+      detach = ((orig) => {
+        const smDetach = attachRealTimeDataProvider(mod);
+        return function () {
+          orig();
+          smDetach();
+        }
+      })(detach);
+      return mod;
+    }
+    let sm1, sm2, cfg1, cfg2;
+    beforeEach(() => {
+      sm1 = mkRtdModule('mockMod1');
+      sm2 = mkRtdModule('mockMod2');
+      cfg1 = {
+        name: 'mockMod1',
+        i: 0
+      };
+      cfg2 = {
+        name: 'mockMod2',
+        i: 1
+      };
+      rtdModule.init(config);
+      config.setConfig({
+        realTimeData: {
+          dataProviders: [cfg1, cfg2],
+        }
+      });
+    });
+    afterEach(() => {
+      detach();
+      config.resetConfig();
+    });
+
+    it('calls onDataDeletionRequest on submodules', () => {
+      const next = sinon.stub();
+      onDataDeletionRequest(next, {a: 0});
+      sinon.assert.calledWith(next, {a: 0});
+      sinon.assert.calledWith(sm1.onDataDeletionRequest, cfg1);
+      sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
+    });
+
+    describe('does not choke if onDataDeletionRequest', () => {
+      Object.entries({
+        'is missing': () => { delete sm1.onDataDeletionRequest },
+        'throws': () => { sm1.onDataDeletionRequest.throws(new Error()) }
+      }).forEach(([t, setup]) => {
+        it(t, () => {
+          setup();
+          onDataDeletionRequest(sinon.stub());
+          sinon.assert.calledWith(sm2.onDataDeletionRequest, cfg2);
+        })
+      })
+    })
+  });
 });

@@ -71,6 +71,7 @@ describe('jixie Adapter', function () {
 
     const clientIdTest1_ = '1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const sessionIdTest1_ = '1594782644-1aba6a40-f711-11e9-868c-53a2ae972xxx';
+    const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -199,16 +200,19 @@ describe('jixie Adapter', function () {
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
-        .withArgs('_jx')
+        .withArgs('_jxtoko')
+        .returns(jxtokoTest1_);
+      getCookieStub
+        .withArgs('_jxx')
         .returns(clientIdTest1_);
       getCookieStub
-        .withArgs('_jxs')
+        .withArgs('_jxxs')
         .returns(sessionIdTest1_);
       getLocalStorageStub
-        .withArgs('_jx')
+        .withArgs('_jxx')
         .returns(clientIdTest1_);
       getLocalStorageStub
-        .withArgs('_jxs')
+        .withArgs('_jxxs')
         .returns(sessionIdTest1_
         );
       let miscDimsStub = sinon.stub(jixieaux, 'getMiscDims');
@@ -227,6 +231,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('client_id_ls', clientIdTest1_);
       expect(payload).to.have.property('session_id_c', sessionIdTest1_);
       expect(payload).to.have.property('session_id_ls', sessionIdTest1_);
+      expect(payload).to.have.property('jxtoko_id', jxtokoTest1_);
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);
@@ -240,6 +245,136 @@ describe('jixie Adapter', function () {
       getLocalStorageStub.restore();
       miscDimsStub.restore();
     });// it
+
+    it('it should popular the pricegranularity when info is available', function () {
+      let content = {
+        'ranges': [{
+          'max': 12,
+          'increment': 0.5
+        },
+        {
+          'max': 5,
+          'increment': 0.1
+        }],
+        precision: 1
+      };
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.callsFake(function fakeFn(prop) {
+        if (prop == 'priceGranularity') {
+          return content;
+        }
+        return null;
+      });
+
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0]);
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      getConfigStub.restore();
+      expect(payload.pricegranularity).to.deep.include(content);
+    });
+
+    it('it should popular the device info when it is available', function () {
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      let content = {w: 500, h: 400};
+      getConfigStub.callsFake(function fakeFn(prop) {
+        if (prop == 'device') {
+          return content;
+        }
+        return null;
+      });
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0]);
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      getConfigStub.restore();
+      expect(payload.device).to.have.property('ua', navigator.userAgent);
+      expect(payload.device).to.deep.include(content);
+    });
+
+    it('schain info should be accessible when available', function () {
+      const schain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: [{
+          asi: 'ssp.test',
+          sid: '00001',
+          hp: 1
+        }]
+      };
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], { schain: schain });
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      expect(payload.schain).to.deep.equal(schain);
+      expect(payload.schain).to.deep.include(schain);
+    });
+
+    it('should populate eids when supported userIds are available', function () {
+      const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
+        userId: {
+          tdid: '11111111-2222-3333-4444-555555555555',
+          uid2: { id: 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==' },
+          pubProvidedId: [{
+            source: 'puburl1.com',
+            uids: [{
+              id: 'pubid1',
+              atype: 1,
+              ext: {
+                stype: 'ppuid'
+              }
+            }]
+          }, {
+            source: 'puburl2.com',
+            uids: [{
+              id: 'pubid2'
+            }]
+          }]
+        }
+      });
+      const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.deep.include({
+        'source': 'adserver.org',
+        'uids': [
+          {
+            'id': '11111111-2222-3333-4444-555555555555',
+            'atype': 1,
+            'ext': {
+              'rtiPartner': 'TDID'
+            }
+          }
+        ]
+      });
+      expect(payload.eids).to.deep.include({
+        'source': 'uidapi.com',
+        'uids': [
+          {
+            'id': 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==',
+            'atype': 3
+          }
+        ]
+      });
+
+      expect(payload.eids).to.deep.include({
+        'source': 'puburl1.com',
+        'uids': [
+          {
+            'id': 'pubid1',
+            'atype': 1,
+            'ext': {
+              'stype': 'ppuid'
+            }
+          }
+        ]
+      });
+
+      expect(payload.eids).to.deep.include({
+        'source': 'puburl2.com',
+        'uids': [
+          {
+            'id': 'pubid2'
+          }
+        ]
+      });
+    });
   });// describe
 
   /**
@@ -398,10 +533,10 @@ describe('jixie Adapter', function () {
       let setCookieSpy = sinon.spy(storage, 'setCookie');
       let setLocalStorageSpy = sinon.spy(storage, 'setDataInLocalStorage');
       const result = spec.interpretResponse({body: responseBody_}, requestObj_)
-      expect(setLocalStorageSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setLocalStorageSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setCookieSpy.calledWith('_jxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
-      expect(setCookieSpy.calledWith('_jx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setLocalStorageSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setLocalStorageSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setCookieSpy.calledWith('_jxxs', '1600057934-43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
+      expect(setCookieSpy.calledWith('_jxx', '43aacc10-f643-11ea-8a10-c5fe2d394e7e')).to.equal(true);
 
       // video ad with vastUrl returned by adserver
       expect(result[0].requestId).to.equal('62847e4c696edcb')

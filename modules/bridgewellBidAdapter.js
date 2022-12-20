@@ -1,7 +1,8 @@
-import { _each, inIframe, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {_each, deepSetValue, inIframe} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'bridgewell';
 const REQUEST_ENDPOINT = 'https://prebid.scupio.com/recweb/prebid.aspx?cb=';
@@ -36,6 +37,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const adUnits = [];
     var bidderUrl = REQUEST_ENDPOINT + Math.random();
     var userIds;
@@ -72,7 +76,7 @@ export const spec = {
 
     let topUrl = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      topUrl = bidderRequest.refererInfo.referer;
+      topUrl = bidderRequest.refererInfo.page;
     }
 
     return {
@@ -85,9 +89,10 @@ export const spec = {
         },
         inIframe: inIframe(),
         url: topUrl,
-        referrer: getTopWindowReferrer(),
+        referrer: bidderRequest.refererInfo.ref,
         adUnits: adUnits,
-        refererInfo: bidderRequest.refererInfo,
+        // TODO: please do not send internal data structures over the network
+        refererInfo: bidderRequest.refererInfo.legacy,
       },
       validBidRequests: validBidRequests
     };
@@ -288,13 +293,5 @@ export const spec = {
     return bidResponses;
   }
 };
-
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
-}
 
 registerBidder(spec);

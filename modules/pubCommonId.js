@@ -5,11 +5,13 @@
  */
 import { logMessage, parseUrl, buildUrl, triggerPixel, generateUUID, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 
 const ID_NAME = '_pubcid';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -165,7 +167,7 @@ export function getPubcidConfig() { return pubcidConfig; }
  * @param {function} next The next function in the chain
  */
 
-export function requestBidHook(next, config) {
+export const requestBidHook = timedAuctionHook('pubCommonId', function requestBidHook(next, config) {
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   let pubcid = null;
 
@@ -221,7 +223,7 @@ export function requestBidHook(next, config) {
   }
 
   return next.call(this, config);
-}
+});
 
 // Helper to set a cookie
 export function setCookie(name, value, expires, sameSite) {

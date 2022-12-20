@@ -10,13 +10,17 @@ import {
   purpose2Rule,
   enableAnalyticsHook,
   getGvlid,
-  internal
+  internal, STRICT_STORAGE_ENFORCEMENT
 } from 'modules/gdprEnforcement.js';
 import { config } from 'src/config.js';
 import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { validateStorageEnforcement } from 'src/storageManager.js';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
+import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
+import 'src/prebid.js'
+import {hook} from '../../../src/hook.js';
+import {VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -96,6 +100,10 @@ describe('gdpr enforcement', function () {
       }
     }
   };
+
+  before(() => {
+    hook.ready();
+  });
 
   after(function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
@@ -293,6 +301,19 @@ describe('gdpr enforcement', function () {
       config.resetConfig();
       curBidderStub.restore();
     });
+
+    it(`should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
+      setEnforcementConfig({});
+      let consentData = {
+        vendorData: staticConfig.consentData.getTCData,
+        gdprApplies: true
+      }
+      gdprDataHandlerStub.returns(consentData);
+      const validate = sinon.stub().callsFake(() => false);
+      deviceAccessHook(nextFnSpy, VENDORLESS_GVLID, 'mockModule', undefined, {validate});
+      sinon.assert.callCount(validate, 0);
+      sinon.assert.calledWith(nextFnSpy, VENDORLESS_GVLID, 'mockModule', {hasEnforcementHook: true, valid: true});
+    })
   });
 
   describe('userSyncHook', function () {
@@ -770,11 +791,12 @@ describe('gdpr enforcement', function () {
   });
 
   describe('validateRules', function () {
-    const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = []) => ({
+    const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = [], softVendorExceptions = []) => ({
       purpose: purposeName,
-      enforcePurpose: enforcePurpose,
-      enforceVendor: enforceVendor,
-      vendorExceptions: vendorExceptions
+      enforcePurpose,
+      enforceVendor,
+      vendorExceptions,
+      softVendorExceptions,
     });
 
     const consentData = {
@@ -887,6 +909,44 @@ describe('gdpr enforcement', function () {
       const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
       expect(isAllowed).to.equal(true);
     });
+
+    describe('when the vendor has a softVendorException', () => {
+      const gdprRule = createGdprRule('storage', true, true, [], [vendorBlockedModule]);
+
+      it('should return false if general consent was not given', () => {
+        const isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
+        expect(isAllowed).to.be.false;
+      })
+      it('should return true if general consent was given', () => {
+        const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
+        expect(isAllowed).to.be.true;
+      })
+    })
+
+    describe('when module does not need vendor consent', () => {
+      Object.entries({
+        'storage': 1,
+        'basicAds': 2,
+        'measurement': 7
+      }).forEach(([purpose, purposeNo]) => {
+        describe(`for purpose ${purpose}`, () => {
+          const rule = createGdprRule(purpose);
+          Object.entries({
+            'allowed': true,
+            'not allowed': false
+          }).forEach(([t, consentGiven]) => {
+            it(`should be ${t} when purpose is ${t}`, () => {
+              const consent = utils.deepClone(consentData);
+              consent.vendorData.purpose.consents[purposeNo] = consentGiven;
+              // take legitimate interest out of the picture for this test
+              consent.vendorData.purpose.legitimateInterests = {};
+              const actual = validateRules(rule, consent, 'mockModule', VENDORLESS_GVLID);
+              expect(actual).to.equal(consentGiven);
+            })
+          })
+        })
+      })
+    })
 
     describe('Purpose 2 special case', function () {
       const consentDataWithLIFalse = utils.deepClone(consentData);
@@ -1070,56 +1130,104 @@ describe('gdpr enforcement', function () {
     })
   });
 
-  describe('getGvlid', function() {
+  describe('gvlid resolution', () => {
     let sandbox;
-    let getGvlidForBidAdapterStub;
-    let getGvlidForUserIdModuleStub;
-    let getGvlidForAnalyticsAdapterStub;
     beforeEach(function() {
       sandbox = sinon.createSandbox();
-      getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
-      getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
-      getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
     });
+
     afterEach(function() {
       sandbox.restore();
       config.resetConfig();
     });
 
-    it('should return "null" if called without passing any argument', function() {
-      const gvlid = getGvlid();
-      expect(gvlid).to.equal(null);
-    });
-
-    it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
-
-      const gvlid = getGvlid('moduleA');
-      expect(gvlid).to.equal(null);
-    });
-
-    it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
-      config.setConfig({
-        gvlMapping: {
-          moduleA: 1
-        }
+    describe('getGvlid', function() {
+      let getGvlidForBidAdapterStub;
+      let getGvlidForUserIdModuleStub;
+      let getGvlidForAnalyticsAdapterStub;
+      beforeEach(function() {
+        getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
+        getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
+        getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
       });
 
-      // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+      it('should return "null" if called without passing any argument', function() {
+        const gvlid = getGvlid();
+        expect(gvlid).to.equal(null);
+      });
 
-      const gvlid = getGvlid('moduleA');
-      expect(gvlid).to.equal(1);
+      it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
+
+        const gvlid = getGvlid('moduleA');
+        expect(gvlid).to.equal(null);
+      });
+
+      it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
+        config.setConfig({
+          gvlMapping: {
+            moduleA: 1
+          }
+        });
+
+        // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+
+        const gvlid = getGvlid('moduleA');
+        expect(gvlid).to.equal(1);
+      });
+
+      it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
+        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
+        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
+        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+
+        expect(getGvlid('moduleA')).to.equal(7);
+      });
+
+      it('should pass extra arguments to analytics\' getGvlid', () => {
+        getGvlidForAnalyticsAdapterStub.withArgs('analytics').returns(321);
+        const cfg = {some: 'args'};
+        getGvlid('analytics', cfg);
+        sinon.assert.calledWith(getGvlidForAnalyticsAdapterStub, 'analytics', cfg);
+      });
     });
 
-    it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
-      getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-      getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-      getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+    describe('getGvlidForAnalyticsAdapter', () => {
+      let getAnalyticsAdapter, adapter, adapterEntry;
 
-      expect(getGvlid('moduleA')).to.equal(7);
+      beforeEach(() => {
+        adapter = {};
+        adapterEntry = {
+          adapter
+        };
+        getAnalyticsAdapter = sandbox.stub(adapterManager, 'getAnalyticsAdapter');
+        getAnalyticsAdapter.withArgs('analytics').returns(adapterEntry);
+      });
+
+      it('should return gvlid from adapterManager if defined', () => {
+        adapterEntry.gvlid = 123;
+        adapter.gvlid = 321
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(123);
+      });
+
+      it('should return gvlid from adapter if defined', () => {
+        adapter.gvlid = 321;
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(321);
+      });
+
+      it('should invoke adapter.gvlid if it\'s a function', () => {
+        adapter.gvlid = (cfg) => cfg.k
+        const cfg = {k: 231};
+        expect(internal.getGvlidForAnalyticsAdapter('analytics', cfg)).to.eql(231);
+      });
+
+      it('should not choke if adapter gvlid fn throws', () => {
+        adapter.gvlid = () => { throw new Error(); };
+        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.not.be.ok;
+      });
     });
-  });
+  })
 });
