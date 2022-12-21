@@ -137,6 +137,7 @@ describe('Taboola Adapter', function () {
         'source': {'fd': 1},
         'bcat': [],
         'badv': [],
+        'wlang': [],
         'user': {
           'buyeruid': 0,
           'ext': {},
