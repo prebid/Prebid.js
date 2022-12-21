@@ -31,15 +31,38 @@ const SYNC_TYPES = {
 };
 
 const SUPPORTED_USER_ID_SOURCES = [
+  'admixer.net',
   'adserver.org',
+  'adtelligent.com',
+  'akamai.com',
+  'amxrtb.com',
+  'audigent.com',
+  'britepool.com',
   'criteo.com',
+  'crwdcntrl.net',
+  'deepintent.com',
+  'epsilon.com',
+  'hcn.health',
   'id5-sync.com',
+  'idx.lat',
   'intentiq.com',
+  'intimatemerger.com',
   'liveintent.com',
-  'quantcast.com',
-  'verizonmedia.com',
   'liveramp.com',
-  'yahoo.com'
+  'mediawallahscript.com',
+  'merkleinc.com',
+  'netid.de',
+  'neustar.biz',
+  'nextroll.com',
+  'novatiq.com',
+  'parrable.com',
+  'pubcid.org',
+  'quantcast.com',
+  'tapad.com',
+  'uidapi.com',
+  'verizonmedia.com',
+  'yahoo.com',
+  'zeotap.com'
 ];
 
 const pubapiTemplate = template`${'host'}/pubapi/3.0/${'network'}/${'placement'}/${'pageid'}/${'sizeid'}/ADTECH;v=2;cmd=bid;cors=yes;alias=${'alias'};misc=${'misc'};${'dynamicParams'}`;

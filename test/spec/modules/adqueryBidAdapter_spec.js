@@ -70,6 +70,13 @@ describe('adqueryBidAdapter', function () {
     it('should return false if any parameter missing', function () {
       expect(spec.isBidRequestValid(inValidBid)).to.be.false
     })
+
+    it('should return false when sizes for banner are not specified', () => {
+      const bid = utils.deepClone(bidRequest);
+      delete bid.mediaTypes.banner.sizes;
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   })
 
   describe('buildRequests', function () {
@@ -107,6 +114,10 @@ describe('adqueryBidAdapter', function () {
 
     it('should include bidder', function () {
       expect(rdata.bidder !== null).to.be.true
+    })
+
+    it('should include sizes', function () {
+      expect(rdata.sizes).not.be.null
     })
   })
 

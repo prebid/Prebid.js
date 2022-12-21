@@ -134,7 +134,8 @@ var sizeMap = {
   574: '620x891',
   576: '610x877',
   578: '980x552',
-  580: '505x656'
+  580: '505x656',
+  622: '192x160'
 };
 _each(sizeMap, (item, key) => sizeMap[item] = key);
 
@@ -333,7 +334,7 @@ export const spec = {
       }
     });
 
-    if (rubiConf.singleRequest !== true) {
+    if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -1109,15 +1110,25 @@ function mapSizes(sizes) {
 
 /**
  * Test if bid has mediaType or mediaTypes set for video.
- * Also makes sure the video object is present in the rubicon bidder params
+ * Also checks if the video object is present in the rubicon bidder params
  * @param {BidRequest} bidRequest
  * @returns {boolean}
  */
-export function hasVideoMediaType(bidRequest) {
-  if (typeof deepAccess(bidRequest, 'params.video') !== 'object') {
-    return false;
+export function classifiedAsVideo(bidRequest) {
+  let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
+  let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
+  // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
+  // based on whether or not there is a video object defined in the params
+  // Given this legacy implementation, other code depends on params.video being defined
+
+  if (isBanner && isMissingVideoParams) {
+    isVideo = false;
   }
-  return (typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined');
+  if (isVideo && isMissingVideoParams) {
+    deepSetValue(bidRequest, 'params.video', {});
+  }
+  return isVideo;
 }
 
 /**
@@ -1128,7 +1139,7 @@ export function hasVideoMediaType(bidRequest) {
  */
 function bidType(bid, log = false) {
   // Is it considered video ad unit by rubicon
-  if (hasVideoMediaType(bid)) {
+  if (classifiedAsVideo(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
     // We require either context as instream or outstream
     if (['outstream', 'instream'].indexOf(deepAccess(bid, `mediaTypes.${VIDEO}.context`)) === -1) {
@@ -1269,8 +1280,7 @@ export function hasValidSupplyChainParams(schain) {
 }
 
 /**
- * Creates a URL key value param, encoding the
- * param unless the key is schain
+ * Creates a URL key value param, encoding the param unless the key is schain
  * @param {String} key
  * @param {String} param
  * @returns {String}

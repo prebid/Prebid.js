@@ -1,4 +1,4 @@
-import { _each, buildUrl, triggerPixel } from '../src/utils.js';
+import { _each, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -37,10 +37,9 @@ export const spec = {
       bidSizes[bid.bidId] = bid.sizes;
     });
 
-    let tdid;
-    if (validBidRequests.length > 0 && validBidRequests[0].userId && validBidRequests[0].userId.tdid) {
-      tdid = validBidRequests[0].userId.tdid;
-    }
+    const firstBidRequest = validBidRequests[0];
+
+    const tdid = deepAccess(firstBidRequest, 'userId.tdid')
 
     const transformedParams = Object.assign({}, {
       sessionId: spec._getSessionId(),
@@ -61,6 +60,20 @@ export const spec = {
       },
       prebidRawBidRequests: validBidRequests
     }, spec._getAllMetadata(bidderRequest, tdid));
+
+    // User Agent Client Hints / SUA
+    const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    if (uaClientHints) {
+      transformedParams.device.sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
+    }
+
+    // Pull Social Canvas segments and embed URL
+    const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
+    if (socialCanvas) {
+      transformedParams.socialCanvasSegments = socialCanvas.segments;
+      transformedParams.socialEmbedURL = socialCanvas.embedURL;
+    }
+
     const encodedParams = encodeURIComponent(JSON.stringify(transformedParams));
     return Object.assign({}, bidderRequest, {
       method: 'GET',
@@ -218,7 +231,7 @@ export const spec = {
   _getAllMetadata(bidderRequest, tdid) {
     return {
       userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
-      pageURL: bidderRequest.refererInfo && bidderRequest.refererInfo.page,
+      pageURL: bidderRequest?.refererInfo?.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };

@@ -23,7 +23,7 @@ export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
   key => CONSTANTS.NATIVE_KEYS[key]
 );
 
-const IMAGE = {
+export const IMAGE = {
   ortb: {
     ver: '1.2',
     assets: [
@@ -80,7 +80,7 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS } = CONSTANTS;
+const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } = CONSTANTS;
 
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
@@ -272,7 +272,7 @@ export function fireNativeTrackers(message, bidResponse) {
   const nativeResponse = bidResponse.native.ortb || legacyPropertiesToOrtbNative(bidResponse.native);
 
   if (message.action === 'click') {
-    fireClickTrackers(nativeResponse);
+    fireClickTrackers(nativeResponse, message?.assetId);
   } else {
     fireImpressionTrackers(nativeResponse);
   }
@@ -305,8 +305,27 @@ export function fireImpressionTrackers(nativeResponse, {runMarkup = (mkup) => in
   }
 }
 
-export function fireClickTrackers(nativeResponse, {fetchURL = triggerPixel} = {}) {
-  (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = triggerPixel} = {}) {
+  // legacy click tracker
+  if (!assetId) {
+    (nativeResponse.link?.clicktrackers || []).forEach(url => fetchURL(url));
+  } else {
+    // ortb click tracker. This will try to call the clicktracker associated with the asset;
+    // will fallback to the link if none is found.
+    const assetIdLinkMap = (nativeResponse.assets || [])
+      .filter(a => a.link)
+      .reduce((map, asset) => {
+        map[asset.id] = asset.link;
+        return map
+      }, {});
+    const masterClickTrackers = nativeResponse.link?.clicktrackers || [];
+    let assetLink = assetIdLinkMap[assetId];
+    let clickTrackers = masterClickTrackers;
+    if (assetLink) {
+      clickTrackers = assetLink.clicktrackers || [];
+    }
+    clickTrackers.forEach(url => fetchURL(url));
+  }
 }
 
 /**
@@ -366,26 +385,14 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
-const getNativeRequest = (bidResponse) => auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
-
-function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} = {}) {
+function assetsMessage(data, adObject, keys) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
   };
 
-  // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
-  const ortbRequest = getNativeReq(adObject);
   let nativeResp = adObject.native;
-  const ortbResponse = adObject.native?.ortb;
-  let legacyResponse = {};
-  if (ortbRequest && ortbResponse) {
-    legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
-    nativeResp = {
-      ...adObject.native,
-      ...legacyResponse
-    };
-  }
+
   if (adObject.native.ortb) {
     message.ortb = adObject.native.ortb;
   }
@@ -416,13 +423,13 @@ function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} =
  * Constructs a message object containing asset values for each of the
  * requested data keys.
  */
-export function getAssetMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+export function getAssetMessage(data, adObject) {
   const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
-  return assetsMessage(data, adObject, keys, {getNativeReq});
+  return assetsMessage(data, adObject, keys);
 }
 
-export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
-  return assetsMessage(data, adObject, null, {getNativeReq});
+export function getAllAssetsMessage(data, adObject) {
+  return assetsMessage(data, adObject, null);
 }
 
 /**
@@ -430,11 +437,7 @@ export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeReq
  * appropriate for sending in adserver targeting or placeholder replacement.
  */
 function getAssetValue(value) {
-  if (typeof value === 'object' && value.url) {
-    return value.url;
-  }
-
-  return value;
+  return value?.url || value;
 }
 
 function getNativeKeys(adUnit) {
@@ -469,6 +472,10 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
   for (let key in legacyNativeAssets) {
     // skip conversion for non-asset keys
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (!NATIVE_KEYS.hasOwnProperty(key)) {
+      logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
 
     const asset = legacyNativeAssets[key];
     let required = 0;
@@ -541,7 +548,6 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       // in `ext` case, required field is not needed
       delete ortbAsset.required;
     }
-
     ortb.assets.push(ortbAsset);
   }
   return ortb;
@@ -731,7 +737,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
  * @param {*} ortbRequest the ortb request, useful to match ids.
  * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
  */
-function toLegacyResponse(ortbResponse, ortbRequest) {
+export function toLegacyResponse(ortbResponse, ortbRequest) {
   const legacyResponse = {};
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link.url;
@@ -746,6 +752,29 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
       legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset.data.type]]] = asset.data.value;
     }
   }
+
+  // Handle trackers
+  legacyResponse.impressionTrackers = [];
+  let jsTrackers = [];
+
+  if (ortbRequest?.imptrackers) {
+    legacyResponse.impressionTrackers.push(...ortbRequest.imptrackers);
+  }
+  for (const eventTracker of ortbResponse?.eventtrackers || []) {
+    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {
+      legacyResponse.impressionTrackers.push(eventTracker.url);
+    }
+    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.js) {
+      jsTrackers.push(eventTracker.url);
+    }
+  }
+
+  jsTrackers = jsTrackers.map(url => `<script async src="${url}"></script>`);
+  if (ortbResponse?.jstracker) { jsTrackers.push(ortbResponse.jstracker); }
+  if (jsTrackers.length) {
+    legacyResponse.javascriptTrackers = jsTrackers.join('\n');
+  }
+
   return legacyResponse;
 }
 

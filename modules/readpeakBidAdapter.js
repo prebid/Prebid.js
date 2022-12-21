@@ -41,7 +41,7 @@ export const spec = {
       cur: [currency],
       source: {
         fd: 1,
-        tid: bidRequests[0].transactionId,
+        tid: bidderRequest.auctionId,
         ext: {
           prebid: '$prebid.version$'
         }
