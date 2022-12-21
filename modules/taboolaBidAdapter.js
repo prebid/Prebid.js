@@ -148,7 +148,7 @@ export const spec = {
   },
 };
 
-function getSiteProperties({publisherId, bcat = []}, refererInfo) {
+function getSiteProperties({publisherId}, refererInfo) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
