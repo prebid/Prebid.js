@@ -230,6 +230,8 @@ describe('Taboola Adapter', function () {
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
         expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
+        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
       });
     });
 
