@@ -106,7 +106,12 @@ export const spec = {
       regs.coppa = 1;
     }
 
-    const ortb2 = bidderRequest.ortb2;
+    const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
+      badv: [],
+      wlang: []
+    };
+
     const request = {
       id: bidderRequest.auctionId,
       imp: imps,
