@@ -5,10 +5,10 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'ccx'
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
+const GVLID = 773;
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
 const SUPPORTED_VIDEO_MIMES = ['video/mp4', 'video/x-flv']
 const SUPPORTED_VIDEO_PLAYBACK_METHODS = [1, 2, 3, 4]
-const GVLID = 773;
 
 function _getDeviceObj () {
   let device = {}
