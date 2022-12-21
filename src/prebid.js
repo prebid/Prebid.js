@@ -45,7 +45,7 @@ import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
+import {default as adapterManager, gdprDataHandler, getS2SBidderSet, gppDataHandler, uspDataHandler} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
@@ -336,6 +336,7 @@ function getConsentMetadata() {
   return {
     gdpr: gdprDataHandler.getConsentMeta(),
     usp: uspDataHandler.getConsentMeta(),
+    gpp: gppDataHandler.getConsentMeta(),
     coppa: !!(config.getConfig('coppa'))
   }
 }
