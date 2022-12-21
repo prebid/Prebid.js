@@ -115,7 +115,7 @@ export const spec = {
       source: {fd: 1},
       tmax: bidderRequest.timeout,
       bcat: ortb2.bcat || bidRequest.params.bcat || [],
-      badv: ortb2.badv || bidRequest.params.adv || [],
+      badv: ortb2.badv || bidRequest.params.badv || [],
       wlang: ortb2.wlang || bidRequest.params.wlang || [],
       user,
       regs
