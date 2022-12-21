@@ -216,6 +216,22 @@ describe('Taboola Adapter', function () {
       expect(resData.tmax).to.equal(500);
     });
 
+    describe('first party data', function () {
+      it('should parse first party data', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            bcat: ['EX1', 'EX2', 'EX3'],
+            badv: ['site.com'],
+            wlang: ['de'],
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+      });
+    });
+
     describe('handle privacy segments when building request', function () {
       it('should pass GDPR consent', function () {
         const bidderRequest = {
