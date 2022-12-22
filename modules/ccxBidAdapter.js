@@ -20,7 +20,7 @@ function _getDeviceObj () {
 
 function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = bidderRequest?.refererInfo?.page
+  let url = bidderRequest?.refererInfo?.page || ''
   if (url.length > 0) {
     url = url.split('?')[0]
   }
