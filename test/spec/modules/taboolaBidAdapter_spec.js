@@ -553,7 +553,7 @@ describe('Taboola Adapter', function () {
   })
 
   describe('getUserSyncs', function () {
-    const usersyncUrl = 'https://trc.taboola.com/sg/prebid.js/1/cm';
+    const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 
     it('should not return user sync if pixelEnabled is false', function () {
       const res = spec.getUserSyncs({pixelEnabled: false});
@@ -568,9 +568,6 @@ describe('Taboola Adapter', function () {
     it('should pass consent tokens values', function() {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'GDPR_CONSENT'}, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT`
-      }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: 'MMM', consentString: 'GDPR_CONSENT'}, undefined)).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}?gdpr_consent=GDPR_CONSENT`
       }]);
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
