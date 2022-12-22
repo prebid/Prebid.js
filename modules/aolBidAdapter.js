@@ -160,6 +160,12 @@ export const spec = {
       consentData.gdpr = bidderRequest.gdprConsent;
       consentData.uspConsent = bidderRequest.uspConsent;
       consentData.gppConsent = bidderRequest.gppConsent;
+      if (!consentData.gppConsent && bidderRequest.ortb2?.regs?.gpp) {
+        consentData.gppConsent = {
+          gppString: bidderRequest.ortb2.regs.gpp,
+          applicableSections: bidderRequest.ortb2.regs.gpp_sid
+        }
+      }
     }
 
     return bids.map(bid => {

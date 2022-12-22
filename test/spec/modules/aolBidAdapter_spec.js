@@ -488,6 +488,20 @@ describe('AolAdapter', function () {
         expect(request.url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
       });
 
+      it('should return One Mobile url with configured GPP data', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        bidRequest.ortb2 = {
+          regs: {
+            gpp: 'testgpp',
+            gpp_sid: [8]
+          }
+        }
+        let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+        expect(request.url).to.contain('gpp=testgpp&gpp_sid=8');
+      });
+
       it('should return One Mobile url with cmd=bid option', function () {
         let bidRequest = createCustomBidRequest({
           params: getNexageGetBidParams()
