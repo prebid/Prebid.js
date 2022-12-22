@@ -1331,9 +1331,18 @@ export const spec = {
       delete payload.site;
     }
 
+    const correlator = getUniqueNumber(1000);
+    let url = ENDPOINT + '?source=ow-client&correlator=' + correlator;
+
+    // For Auction End Handler
+    bidderRequest.correlator = correlator;
+    bidderRequest.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
+    // For Timeout handler
+    bidderRequest?.bids?.forEach(bid => bid.correlator = correlator);
+
     let serverRequest = {
       method: 'POST',
-      url: ENDPOINT + '?source=ow-client',
+      url: url,
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -1343,7 +1352,7 @@ export const spec = {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
       const urlEncodedPayloadStr = parseQueryStringParameters({
-        'source': 'ow-client', 'payload': JSON.stringify(payload), 'correlator': getUniqueNumber(1000)});
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'correlator': correlator});
       if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
@@ -1352,6 +1361,7 @@ export const spec = {
           bidderRequest: bidderRequest,
           payloadStr: JSON.stringify(payload)
         };
+        bidderRequest.requestUrlPayloadLength = configuredEndPoint.length + '?'.length + urlEncodedPayloadStr.length;
       }
     }
 
