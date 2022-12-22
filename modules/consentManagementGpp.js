@@ -1,29 +1,26 @@
 /**
- * This module adds GDPR consentManagement support to prebid.js.  It interacts with
+ * This module adds GPP consentManagement support to prebid.js.  It interacts with
  * supported CMPs (Consent Management Platforms) to grab the user's consent information
- * and make it available for any GDPR supported adapters to read/pass this information to
- * their system.
+ * and make it available for any GPP supported adapters to read/pass this information to
+ * their system and for various other features/modules in Prebid.js.
  */
 import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
+import {gppDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
-import {enrichFPD} from '../src/fpd/enrichment.js';
+import { enrichFPD } from '../src/fpd/enrichment.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
-const CMP_VERSION = 2;
+const CMP_VERSION = 1;
 
 export let userCMP;
 export let consentTimeout;
-export let gdprScope;
 export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
-let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -32,11 +29,35 @@ const cmpCallMap = {
 };
 
 /**
+ * This function checks the state of the IAB gppData's applicableSection field (to ensure it's populated and has a valid value).
+ * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
+ *
+ * TODO --- The initial version of the GPP CMP API spec used this naming convention, but it was later changed as an update to the spec.
+ * CMPs should adjust their logic to use the new format (applicableSecctions), but that may not be the case with the initial release.
+ * Added support just in case for this transition period, can likely be removed at a later date...
+ * @param gppData represents the IAB gppData object
+ * @returns true|false
+ */
+function checkApplicableSectionIsReady(gppData) {
+  return gppData && Array.isArray(gppData.applicableSection) && gppData.applicableSection.length > 0 && gppData.applicableSection[0] !== 0;
+}
+
+/**
+ * This function checks the state of the IAB gppData's applicableSections field (to ensure it's populated and has a valid value).
+ * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
+ * @param gppData represents the IAB gppData object
+ * @returns true|false
+ */
+function checkApplicableSectionsIsReady(gppData) {
+  return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0;
+}
+
+/**
  * This function reads the consent string from the config to obtain the consent information of the user.
  * @param {function({})} onSuccess acts as a success callback when the value is read from config; pass along consentObject from CMP
  */
 function lookupStaticConsentData({onSuccess, onError}) {
-  processCmpData(staticConsentData, {onSuccess, onError})
+  processCmpData(staticConsentData, {onSuccess, onError});
 }
 
 /**
@@ -47,113 +68,113 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
  */
 function lookupIabConsent({onSuccess, onError}) {
+  const cmpApiName = '__gpp';
+  const cmpCallbacks = {};
+  let registeredPostMessageResponseListener = false;
+
   function findCMP() {
     let f = window;
     let cmpFrame;
-    let cmpFunction;
+    let cmpDirectAccess = false;
     while (true) {
       try {
-        if (typeof f.__tcfapi === 'function') {
-          cmpFunction = f.__tcfapi;
+        if (typeof f[cmpApiName] === 'function') {
           cmpFrame = f;
+          cmpDirectAccess = true;
           break;
         }
-      } catch (e) { }
+      } catch (e) {}
 
       // need separate try/catch blocks due to the exception errors thrown when trying to check for a frame that doesn't exist in 3rd party env
       try {
-        if (f.frames['__tcfapiLocator']) {
+        if (f.frames['__gppLocator']) {
           cmpFrame = f;
           break;
         }
-      } catch (e) { }
+      } catch (e) {}
 
       if (f === window.top) break;
       f = f.parent;
     }
+
     return {
       cmpFrame,
-      cmpFunction
+      cmpDirectAccess
     };
   }
 
-  function cmpResponseCallback(tcfData, success) {
-    logInfo('Received a response from CMP', tcfData);
-    if (success) {
-      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
-        processCmpData(tcfData, {onSuccess, onError});
-      } else {
-        provisionalConsent = tcfData;
-      }
-    } else {
-      onError('CMP unable to register callback function.  Please check CMP setup.');
-    }
-  }
-
-  const cmpCallbacks = {};
-  const { cmpFrame, cmpFunction } = findCMP();
+  const {cmpFrame, cmpDirectAccess} = findCMP();
 
   if (!cmpFrame) {
-    return onError('TCF2 CMP not found.');
-  }
-  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
-  // first to collect the user's consent choices represented in an encoded string (via getConsentData)
-  // second to collect the user's full unparsed consent information (via getVendorConsents)
-
-  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
-  // check to see if CMP is found on the same window level as prebid and call it directly if so
-  // check to see if prebid is in a safeframe (with CMP support)
-  // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
-  // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
-
-  if (typeof cmpFunction === 'function') {
-    logInfo('Detected CMP API is directly accessible, calling it now...');
-    cmpFunction('addEventListener', CMP_VERSION, cmpResponseCallback);
-  } else {
-    logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
-    callCmpWhileInIframe('addEventListener', cmpFrame, cmpResponseCallback);
+    return onError('GPP CMP not found.');
   }
 
-  function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
-    const apiName = '__tcfapi';
+  const invokeCMP = (cmpDirectAccess) ? invokeCMPDirect : invokeCMPFrame;
 
-    const callName = `${apiName}Call`;
+  function invokeCMPDirect({command, callback, parameter, version = CMP_VERSION}, resultCb) {
+    if (typeof resultCb === 'function') {
+      resultCb(cmpFrame[cmpApiName](command, callback, parameter, version));
+    } else {
+      cmpFrame[cmpApiName](command, callback, parameter, version);
+    }
+  }
 
-    /* Setup up a __cmp function to do the postMessage and stash the callback.
-    This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, cmpVersion, callback, arg) {
-      const callId = Math.random() + '';
-      const msg = {
-        [callName]: {
-          command: cmd,
-          version: cmpVersion,
-          parameter: arg,
-          callId: callId
-        }
-      };
-
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
+  function invokeCMPFrame({command, callback, parameter, version = CMP_VERSION}, resultCb) {
+    const callName = `${cmpApiName}Call`;
+    if (!registeredPostMessageResponseListener) {
+      // when we get the return message, call the stashed callback;
+      window.addEventListener('message', readPostMessageResponse, false);
+      registeredPostMessageResponseListener = true;
     }
 
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
+    // call CMP via postMessage
+    const callId = Math.random().toString();
+    const msg = {
+      [callName]: {
+        command: command,
+        parameter,
+        version,
+        callId: callId
+      }
+    };
 
-    // call CMP
-    window[apiName](commandName, CMP_VERSION, moduleCallback);
+    // TODO? - add logic to check if random was already used in the same session, and roll another if so?
+    cmpCallbacks[callId] = (typeof callback === 'function') ? callback : resultCb;
+    cmpFrame.postMessage(msg, '*');
 
     function readPostMessageResponse(event) {
-      const cmpDataPkgName = `${apiName}Return`;
-      const json = (typeof event.data === 'string' && includes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
+      const cmpDataPkgName = `${cmpApiName}Return`;
+      const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
       if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
         const payload = json[cmpDataPkgName];
-        // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
+
         if (cmpCallbacks.hasOwnProperty(payload.callId)) {
-          cmpCallbacks[payload.callId](payload.returnValue, payload.success);
+          cmpCallbacks[payload.callId](payload.returnValue);
         }
       }
     }
   }
+
+  const startupMsg = (cmpDirectAccess) ? 'Detected GPP CMP API is directly accessible, calling it now...'
+    : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
+  logInfo(startupMsg);
+
+  invokeCMP({
+    command: 'addEventListener',
+    callback: function (evt) {
+      if (evt) {
+        logInfo(`Received a ${(cmpDirectAccess ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
+        if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
+          invokeCMP({command: 'getGPPData'}, function (gppData) {
+            logInfo(`Received a ${cmpDirectAccess ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
+            processCmpData(gppData, {onSuccess, onError});
+          });
+        } else if (evt.pingData.cmpStatus === 'error') {
+          onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
+        }
+      }
+    }
+  });
 }
 
 /**
@@ -171,14 +192,14 @@ function loadConsentData(cb) {
       clearTimeout(timer);
     }
     isDone = true;
-    gdprDataHandler.setConsentData(consentData);
+    gppDataHandler.setConsentData(consentData);
     if (typeof cb === 'function') {
       cb(shouldCancelAuction, errMsg, ...extraArgs);
     }
   }
 
   if (!includes(Object.keys(cmpCallMap), userCMP)) {
-    done(null, false, `CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
+    done(null, false, `GPP CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return;
   }
 
@@ -193,9 +214,9 @@ function loadConsentData(cb) {
   if (!isDone) {
     const onTimeout = () => {
       const continueToAuction = (data) => {
-        done(data, false, 'CMP did not load, continuing auction...');
+        done(data, false, 'GPP CMP did not load, continuing auction...');
       }
-      processCmpData(provisionalConsent, {
+      processCmpData(consentData, {
         onSuccess: continueToAuction,
         onError: () => continueToAuction(storeConsentData(undefined))
       })
@@ -225,12 +246,12 @@ function loadIfMissing(cb) {
 /**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
- * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
+ * data as part of a gppConsent object which gets transferred to adapterManager's gppDataHandler object.
  * This information is later added into the bidRequest object for any supported adapters to read/pass along to their system.
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook(fn, reqBidsConfigObj) {
+export const requestBidsHook = timedAuctionHook('gpp', function requestBidsHook(fn, reqBidsConfigObj) {
   loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
     if (errMsg) {
       let log = logWarn;
@@ -261,18 +282,14 @@ export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook
  */
 function processCmpData(consentObject, {onSuccess, onError}) {
   function checkData() {
-    // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
-    const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
-    const tcString = consentObject && consentObject.tcString;
-    return !!(
-      (typeof gdprApplies !== 'boolean') ||
-      (gdprApplies === true && (!tcString || !isStr(tcString)))
-    );
-  }
+    const gppString = consentObject && consentObject.gppString;
+    const gppSection = (checkApplicableSectionsIsReady(consentObject)) ? consentObject.applicableSections
+      : (checkApplicableSectionIsReady(consentObject)) ? consentObject.applicableSection : [];
 
-  // do extra things for static config
-  if (userCMP === 'static') {
-    consentObject = consentObject.getTCData;
+    return !!(
+      (!Array.isArray(gppSection)) ||
+      (Array.isArray(gppSection) && (!gppString || !isStr(gppString)))
+    );
   }
 
   if (checkData()) {
@@ -288,13 +305,12 @@ function processCmpData(consentObject, {onSuccess, onError}) {
  */
 function storeConsentData(cmpConsentObject) {
   consentData = {
-    consentString: (cmpConsentObject) ? cmpConsentObject.tcString : undefined,
-    vendorData: (cmpConsentObject) || undefined,
-    gdprApplies: cmpConsentObject && typeof cmpConsentObject.gdprApplies === 'boolean' ? cmpConsentObject.gdprApplies : gdprScope
+    gppString: (cmpConsentObject) ? cmpConsentObject.gppString : undefined,
+
+    fullGppData: (cmpConsentObject) || undefined,
   };
-  if (cmpConsentObject && cmpConsentObject.addtlConsent && isStr(cmpConsentObject.addtlConsent)) {
-    consentData.addtlConsent = cmpConsentObject.addtlConsent;
-  }
+  consentData.applicableSections = (checkApplicableSectionsIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSections
+    : (checkApplicableSectionIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSection : [];
   consentData.apiVersion = CMP_VERSION;
   return consentData;
 }
@@ -306,7 +322,7 @@ export function resetConsentData() {
   consentData = undefined;
   userCMP = undefined;
   consentTimeout = undefined;
-  gdprDataHandler.reset();
+  gppDataHandler.reset();
 }
 
 /**
@@ -314,70 +330,57 @@ export function resetConsentData() {
  * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
-  // else for backward compatability, just use `config`
-  config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
+  config = config && config.gpp;
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement (gdpr) config not defined, exiting consent manager');
+    logWarn('consentManagement.gpp config not defined, exiting consent manager module');
     return;
   }
+
   if (isStr(config.cmpApi)) {
     userCMP = config.cmpApi;
   } else {
     userCMP = DEFAULT_CMP;
-    logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+    logInfo(`consentManagement.gpp config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
   }
 
   if (isNumber(config.timeout)) {
     consentTimeout = config.timeout;
   } else {
     consentTimeout = DEFAULT_CONSENT_TIMEOUT;
-    logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
+    logInfo(`consentManagement.gpp config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
-
-  // if true, then gdprApplies should be set to true
-  gdprScope = config.defaultGdprScope === true;
-
-  logInfo('consentManagement module has been activated...');
 
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;
       consentTimeout = 0;
     } else {
-      logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
+      logError(`consentManagement.gpp config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
+
+  logInfo('consentManagement.gpp module has been activated...');
+
   if (!addedConsentHook) {
     $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
-  gdprDataHandler.enable();
+  gppDataHandler.enable();
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
 export function enrichFPDHook(next, fpd) {
   return next(fpd.then(ortb2 => {
-    const consent = gdprDataHandler.getConsentData();
+    const consent = gppDataHandler.getConsentData();
     if (consent) {
-      if (typeof consent.gdprApplies === 'boolean') {
-        deepSetValue(ortb2, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+      if (Array.isArray(consent.applicableSections)) {
+        deepSetValue(ortb2, 'regs.gpp_sid', consent.applicableSections);
       }
-      deepSetValue(ortb2, 'user.ext.consent', consent.consentString);
+      deepSetValue(ortb2, 'regs.gpp', consent.gppString);
     }
     return ortb2;
   }));
 }
 
 enrichFPD.before(enrichFPDHook);
-
-export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
-  // this is not a standardized name for addtlConsent, so keep this as an ORTB library processor rather than an FPD enrichment
-  const addtl = bidderRequest.gdprConsent?.addtlConsent;
-  if (addtl && typeof addtl === 'string') {
-    deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
-  }
-}
-
-registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})
