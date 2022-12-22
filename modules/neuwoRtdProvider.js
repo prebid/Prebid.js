@@ -1,7 +1,9 @@
-import { deepAccess, deepSetValue, logError, logInfo, mergeDeep } from '../src/utils.js';
+import { deepAccess, deepSetValue, generateUUID, logError, logInfo, mergeDeep } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 export const DATA_PROVIDER = 'neuwo.ai';
 const SEGTAX_IAB = 2 // IAB - Content Taxonomy version 2
@@ -28,12 +30,15 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     'lang=en',
     'url=' + wrappedArgUrl
   ].join('&')
+  let billingId = generateUUID();
+  events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'auction', billingId, auctionId: reqBidsConfigObj.auctionId, vendor: neuwoRtdModule.name })
 
   const success = (responseContent) => {
     logInfo('NeuwoRTDModule', 'GetAiTopics: response', responseContent)
     try {
       var jsonContent = JSON.parse(responseContent);
-      injectTopics(jsonContent, reqBidsConfigObj, callback)
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
+      injectTopics(jsonContent, reqBidsConfigObj, callback, billingId)
     } catch (ex) {
       logError('NeuwoRTDModule', 'Response to JSON parse error', ex)
       callback()
@@ -72,7 +77,7 @@ function combineArray(base, source, key) {
   else return base
 }
 
-export function injectTopics(topics, bidsConfig, callback) {
+export function injectTopics(topics, bidsConfig, callback, billingId) {
   topics = topics || {}
 
   // join arrays of IAB category details to single array
@@ -88,6 +93,10 @@ export function injectTopics(topics, bidsConfig, callback) {
     name: DATA_PROVIDER,
     ext: { segtax: SEGTAX_IAB },
     segment
+  }
+
+  if (billingId && segment.length > 0) {
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'general', billingId, vendor: neuwoRtdModule.name })
   }
 
   addFragment(bidsConfig.ortb2Fragments.global, 'site.content.data', [IABSegments])
