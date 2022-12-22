@@ -155,7 +155,7 @@ export const spec = {
     const queryParams = [];
 
     if (gdprConsent) {
-      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
     }
 
     if (uspConsent) {
