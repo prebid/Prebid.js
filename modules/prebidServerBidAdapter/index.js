@@ -674,6 +674,28 @@ Object.assign(ORTB2.prototype, {
         if (adapter && adapter.getSpec().transformBidParams) {
           bid.params = adapter.getSpec().transformBidParams(bid.params, true, adUnit, bidRequests);
         }
+
+        //checking if a partner is pubmatic alias or pubmatic itself
+        const checkPubMaticAlias=function(bid){
+          if ((bid.bidder == 'pubmatic') || bid.bidder == 'pubmatic2' ||(owAliases && owAliases[bid.bidder] && owAliases[bid.bidder].includes('pubmatic'))){
+            return true;
+          }
+          return false;
+        }
+          // passing bid.bidViewability to pubmatic params, only when present
+        const addBidViewabilityDataS2S = function (bidRequests, bid) {
+          bidRequests.forEach(function(ibidReq) {
+            if (ibidReq.bidderCode === bid.bidder && checkPubMaticAlias(bid)) {
+              ibidReq.bids.forEach(function(iBid) {
+                if (iBid.adUnitCode === adUnit.code) {
+                  bid.params.bidViewability = iBid.bidViewability;
+                }
+              })
+          }
+          })
+        }
+        addBidViewabilityDataS2S(bidRequests, bid);
+
         acc[bid.bidder] = (s2sConfig.adapterOptions && s2sConfig.adapterOptions[bid.bidder]) ? Object.assign({}, bid.params, s2sConfig.adapterOptions[bid.bidder]) : bid.params;
         return acc;
       }, {...deepAccess(adUnit, 'ortb2Imp.ext')});
