@@ -1089,6 +1089,10 @@ function hasGetRequestEnabled() {
   return randomValue100 <= testGroupPercentage;
 }
 
+function getUniqueNumber(rangeEnd) {
+  return Math.floor(Math.random() * rangeEnd) + 1;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1327,9 +1331,18 @@ export const spec = {
       delete payload.site;
     }
 
+    const correlator = getUniqueNumber(1000);
+    let url = ENDPOINT + '?source=ow-client&correlator=' + correlator;
+
+    // For Auction End Handler
+    bidderRequest.correlator = correlator;
+    bidderRequest.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
+    // For Timeout handler
+    bidderRequest?.bids?.forEach(bid => bid.correlator = correlator);
+
     let serverRequest = {
       method: 'POST',
-      url: ENDPOINT + '?source=ow-client',
+      url: url,
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
@@ -1338,7 +1351,8 @@ export const spec = {
     if (hasGetRequestEnabled()) {
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
-      const urlEncodedPayloadStr = parseQueryStringParameters({ 'source': 'ow-client', 'payload': JSON.stringify(payload) });
+      const urlEncodedPayloadStr = parseQueryStringParameters({
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'correlator': correlator});
       if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
         serverRequest = {
           method: 'GET',
@@ -1347,6 +1361,7 @@ export const spec = {
           bidderRequest: bidderRequest,
           payloadStr: JSON.stringify(payload)
         };
+        bidderRequest.requestUrlPayloadLength = configuredEndPoint.length + '?'.length + urlEncodedPayloadStr.length;
       }
     }
 
@@ -1363,7 +1378,7 @@ export const spec = {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     // In case of Translator GET request, will copy the actual json data from payloadStr to data.
-    if(request?.payloadStr) request.data = request.payloadStr;
+    if (request?.payloadStr) request.data = request.payloadStr;
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
@@ -1435,6 +1450,13 @@ export const spec = {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
                   prepareMetaObject(br, bid, seatbidder.seat);
+
+                  // START of Experimental change
+                  if (response.body.ext) {
+                    br.ext = response.body.ext;
+                  }
+                  // END of Experimental change
+
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {

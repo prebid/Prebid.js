@@ -2521,7 +2521,6 @@ describe('PubMatic adapter', function () {
             auctionId: 'new-auction-id'
           });
           expect(request.method).to.equal('POST');
-          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
         });
 
         it('should return POST request, when translatorGetRequest config is enabled=false', () => {
@@ -2536,7 +2535,6 @@ describe('PubMatic adapter', function () {
           });
           const request = spec.buildRequests(bidRequests, {});
           expect(request.method).to.equal('POST');
-          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
           sandbox.restore();
         });
 
@@ -2552,7 +2550,6 @@ describe('PubMatic adapter', function () {
           });
           const request = spec.buildRequests(bidRequests, {});
           expect(request.method).to.equal('POST');
-          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
           sandbox.restore();
         });
 
@@ -2569,7 +2566,6 @@ describe('PubMatic adapter', function () {
           });
           const request = spec.buildRequests(bidRequests, {});
           expect(request.method).to.equal('POST');
-          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
           sandbox.restore();
         });
 
@@ -2587,7 +2583,6 @@ describe('PubMatic adapter', function () {
           });
           const request = spec.buildRequests(bidRequests, {});
           expect(request.method).to.equal('POST');
-          expect(request.url).to.equal(ENDPOINT + '?source=ow-client');
           sandbox.restore();
         });
 
@@ -2603,8 +2598,7 @@ describe('PubMatic adapter', function () {
             return utils.deepAccess(config, key);
           });
           const request = spec.buildRequests(bidRequests, {});
-          expect(request.method).to.equal('GET');
-          expect(request.url).to.equal(ENDPOINT);
+          expect(request.method).to.equal('GET');          
           sandbox.restore();
         });
 
@@ -2622,7 +2616,6 @@ describe('PubMatic adapter', function () {
           });
           const request = spec.buildRequests(bidRequests, {});
           expect(request.method).to.equal('GET');
-          expect(request.url).to.equal(ENDPOINT);
           sandbox.restore();
         });
       });
