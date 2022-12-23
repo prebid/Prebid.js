@@ -34,16 +34,6 @@ describe('Confiant RTD module', function () {
       utils.insertElement.restore();
     });
 
-    it('injectConfigScript() should insert script element', function() {
-      const propertyId = 'clientId';
-      injectConfigScript(propertyId);
-
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'SCRIPT'));
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.type === 'text/javascript'));
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.src === `https://cdn.confiant-integrations.net/${propertyId}/gpt_and_prebid/config.js`));
-    });
-
     it('should subscribe to rovided Window object', function () {
       const mockWindow = { addEventListener: sinon.spy() };
 

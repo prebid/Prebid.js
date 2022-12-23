@@ -34,9 +34,10 @@ pbjs.setConfig({
             name: 'confiant',
             params: {
                 // so please get in touch with us so we could help you to set up the module with proper parameters
-                propertyId: '', // required, obtained from Confiant Inc.
+                propertyId: '', // required, string param, obtained from Confiant Inc.
                 prebidExcludeBidders: '', // optional, comma separated list of bidders to exclude from Confiant's prebid.js integration
-                prebidNameSpace: '', // optional, name space for prebid.js integration
+                prebidNameSpace: '', // optional, string param, namespace for prebid.js integration
+                shouldEmitBillableEvent: false, // optional, boolean param, upon being set to true enables firing of the BillableEvent upon Confiant's impression scanning
             }
         }]
     }

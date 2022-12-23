@@ -42,11 +42,14 @@ function setupPage(config) {
   confiant[propertyId].clientSettings.prebidExcludeBidders = config?.params?.prebidExcludeBidders;
   confiant[propertyId].clientSettings.prebidNameSpace = config?.params?.prebidNameSpace;
 
-  if (window.frames['cnftComm']) {
-    subscribeToConfiantCommFrame(window);
-  } else {
-    setUpMutationObserver();
+  if (config?.params?.shouldEmitBillableEvent) {
+    if (window.frames['cnftComm']) {
+      subscribeToConfiantCommFrame(window);
+    } else {
+      setUpMutationObserver();
+    }
   }
+
   injectConfigScript(propertyId);
   return true;
 }
