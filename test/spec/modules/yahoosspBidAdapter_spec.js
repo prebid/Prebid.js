@@ -746,17 +746,6 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(data.regs.ext.gpp).to.equal('somegppstring');
       expect(data.regs.ext.gpp_sid).to.eql([6, 7]);
     });
-
-    it('should set the gpp consent data into the downstream request', () => {
-      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      bidderRequest.gppConsent = {
-        gppString: 'somegppstring',
-        applicableSections: [6, 7]
-      };
-      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal('somegppstring');
-      expect(data.regs.ext.gpp_sid).to.eql([6, 7]);
-    });
   });
 
   describe('Endpoint & Impression Request Mode:', () => {

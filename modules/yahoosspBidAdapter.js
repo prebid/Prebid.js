@@ -279,10 +279,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (bidderRequest.gppConsent) {
-      outBoundBidRequest.regs.ext.gpp = bidderRequest.gppConsent.gppString;
-      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.gppConsent.applicableSections;
-    } else if (bidderRequest.ortb2?.regs?.gpp) {
+    if (bidderRequest.ortb2?.regs?.gpp) {
       outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
       outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
     };
