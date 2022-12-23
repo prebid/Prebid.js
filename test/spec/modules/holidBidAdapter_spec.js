@@ -52,7 +52,8 @@ describe('holidBidAdapterTests', () => {
     })
 
     it('should include device', () => {
-      expect(payload.device).to.deep.equal({ w: 785, h: 600 })
+      expect(payload.device.w).to.be.greaterThan(1)
+      expect(payload.device.h).to.be.greaterThan(1)
     })
   })
 
