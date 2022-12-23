@@ -45,6 +45,12 @@ const DEFAULT_REQUEST = () => ({
       id: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
       atype: 1
     }]
+  }, {
+    source: 'digitrust.de',
+    uids: [{
+      id: 'd8aa10fa-d86c-451d-aad8-5f16162a9e64',
+      atype: 2
+    }]
   }],
   schain: {
     ver: '1.0',
@@ -271,7 +277,11 @@ describe('yieldlabBidAdapter', () => {
       })
 
       it('passes userids to bid request', () => {
-        expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg')
+        expect(request.url).to.include('ids=netid.de%3AfH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg%2Cdigitrust.de%3Ad8aa10fa-d86c-451d-aad8-5f16162a9e64')
+      })
+
+      it('passes atype to bid request', () => {
+        expect(request.url).to.include('atypes=netid.de%3A1%2Cdigitrust.de%3A2')
       })
 
       it('passes extra params to bid request', () => {
