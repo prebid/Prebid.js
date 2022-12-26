@@ -10,6 +10,7 @@ const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
 export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -148,6 +149,26 @@ export const spec = {
     }
 
     return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+    const queryParams = [];
+
+    if (gdprConsent) {
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+    }
+
+    if (uspConsent) {
+      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: USER_SYNC_IMG_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+      });
+    }
+    return syncs;
   },
 };
 
