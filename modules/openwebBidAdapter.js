@@ -149,7 +149,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   }
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

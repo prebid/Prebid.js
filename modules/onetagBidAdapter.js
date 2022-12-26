@@ -3,10 +3,9 @@
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
+import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { createEidsArray } from './userId/eids.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
@@ -14,7 +13,7 @@ const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -54,7 +53,7 @@ export function isValid(type, bid) {
 function buildRequests(validBidRequests, bidderRequest) {
   const payload = {
     bids: requestsToBids(validBidRequests),
-    ...getPageInfo()
+    ...getPageInfo(bidderRequest)
   };
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
@@ -65,8 +64,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
-  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userId) {
-    payload.userId = createEidsArray(validBidRequests[0].userId);
+  if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
+    payload.userId = validBidRequests[0].userIdAsEids;
   }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].schain && isSchainValid(validBidRequests[0].schain)) {
     payload.schain = validBidRequests[0].schain;
@@ -75,7 +74,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (storage.hasLocalStorage()) {
       payload.onetagSid = storage.getDataFromLocalStorage('onetag_sid');
     }
-  } catch (e) {}
+  } catch (e) { }
+  const connection = navigator.connection || navigator.webkitConnection;
+  payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
+  payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -113,7 +115,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
-      const {context, adUnitCode} = find(requestData.bids, (item) =>
+      const { context, adUnitCode } = find(requestData.bids, (item) =>
         item.bidId === bid.requestId &&
         item.type === VIDEO
       );
@@ -142,7 +144,7 @@ function createRenderer(bid, rendererOptions = {}) {
     loaded: false
   });
   try {
-    renderer.setRender(({renderer, width, height, vastXml, adUnitCode}) => {
+    renderer.setRender(({ renderer, width, height, vastXml, adUnitCode }) => {
       renderer.push(() => {
         window.onetag.Player.init({
           ...bid,
@@ -163,7 +165,6 @@ function createRenderer(bid, rendererOptions = {}) {
 function getFrameNesting() {
   let topmostFrame = window;
   let parent = window.parent;
-  let currentFrameNesting = 0;
   try {
     while (topmostFrame !== topmostFrame.parent) {
       parent = topmostFrame.parent;
@@ -171,13 +172,8 @@ function getFrameNesting() {
       parent.location.href;
       topmostFrame = topmostFrame.parent;
     }
-  } catch (e) {
-    currentFrameNesting = parent === topmostFrame.top ? 1 : 2;
-  }
-  return {
-    topmostFrame,
-    currentFrameNesting
-  }
+  } catch (e) { }
+  return topmostFrame;
 }
 
 function getDocumentVisibility(window) {
@@ -198,21 +194,15 @@ function getDocumentVisibility(window) {
 
 /**
  * Returns information about the page needed by the server in an object to be converted in JSON
- * @returns {{location: *, referrer: (*|string), masked: *, wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
+ * @returns {{location: *, referrer: (*|string), stack: (*|Array.<String>), numIframes: (*|Number), wWidth: (*|Number), wHeight: (*|Number), sWidth, sHeight, date: string, timeOffset: number}}
  */
-function getPageInfo() {
-  const { topmostFrame, currentFrameNesting } = getFrameNesting();
+function getPageInfo(bidderRequest) {
+  const topmostFrame = getFrameNesting();
   return {
-    location: topmostFrame.location.href,
-    referrer:
-      topmostFrame.document.referrer !== ''
-        ? topmostFrame.document.referrer
-        : null,
-    ancestorOrigin:
-      window.location.ancestorOrigins && window.location.ancestorOrigins.length > 0
-        ? window.location.ancestorOrigins[window.location.ancestorOrigins.length - 1]
-        : null,
-    masked: currentFrameNesting,
+    location: deepAccess(bidderRequest, 'refererInfo.page', null),
+    referrer: deepAccess(bidderRequest, 'refererInfo.ref', null),
+    stack: deepAccess(bidderRequest, 'refererInfo.stack', []),
+    numIframes: deepAccess(bidderRequest, 'refererInfo.numIframes', 0),
     wWidth: topmostFrame.innerWidth,
     wHeight: topmostFrame.innerHeight,
     oWidth: topmostFrame.outerWidth,
@@ -231,7 +221,7 @@ function getPageInfo() {
     timing: getTiming(),
     version: {
       prebid: '$prebid.version$',
-      adapter: '1.1.0'
+      adapter: '1.1.1'
     }
   };
 }
@@ -345,7 +335,7 @@ function getSizes(sizes) {
   const ret = [];
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i];
-    ret.push({width: size[0], height: size[1]})
+    ret.push({ width: size[0], height: size[1] })
   }
   return ret;
 }

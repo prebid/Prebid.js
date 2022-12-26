@@ -206,7 +206,7 @@ export const spec = {
         let bidWidth = nullify(bid.w);
         let bidHeight = nullify(bid.h);
 
-        let creative = null
+        let creative = null;
         let videoXml = null;
         let mediaType = null;
         let native = null;
@@ -389,7 +389,7 @@ let extractValidSize = (bidRequest, bidderRequest) => {
       requestedSizes = mediaTypes.video.sizes;
     }
   } else if (!isEmpty(bidRequest.sizes)) {
-    requestedSizes = bidRequest.sizes
+    requestedSizes = bidRequest.sizes;
   }
 
   // Ensure the size array is normalized
