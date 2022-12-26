@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {spec, internal, END_POINT_URL, userData} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config'
 import * as utils from '../../../src/utils'
+import {server} from '../../mocks/xhr'
 
 describe('Taboola Adapter', function () {
   let hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
@@ -90,6 +91,31 @@ describe('Taboola Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true)
     })
   })
+
+  describe('onBidWon', function () {
+    it('onBidWon exist as a function', () => {
+      expect(spec.onBidWon).to.exist.and.to.be.a('function');
+    });
+
+    it('should resolve price macro in nurl', function () {
+      const nurl = 'http://win.example.com/${AUCTION_PRICE}';
+      const bid = {
+        requestId: 1,
+        cpm: 2,
+        originalCpm: 3.4,
+        creativeId: 1,
+        ttl: 60,
+        netRevenue: true,
+        mediaType: 'banner',
+        ad: '...',
+        width: 300,
+        height: 250,
+        nurl: nurl
+      }
+      spec.onBidWon(bid);
+      expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
+    });
+  });
 
   describe('buildRequests', function () {
     const defaultBidRequest = {
