@@ -1810,6 +1810,16 @@ describe('Unit: Prebid Module', function () {
         })
       });
 
+      it('filtering adUnits by adUnitCodes', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{code: 'one'}, {code: 'two'}],
+          adUnitCodes: 'two'
+        });
+        sinon.assert.calledWith(startAuctionStub, sinon.match({
+          adUnits: [{code: 'two'}]
+        }));
+      });
+
       it('passing bidder-specific FPD as ortb2Fragments.bidder', () => {
         configObj.setBidderConfig({
           bidders: ['bidderA', 'bidderC'],
@@ -1869,6 +1879,7 @@ describe('Unit: Prebid Module', function () {
           mediaTypes: {banner: {sizes: [[300, 250]]}},
           bids: [{bidder: 'bd'}]
         }],
+        adUnitCodes: ['au'],
         ortb2Fragments
       });
       sinon.assert.calledWith(newAuctionStub, sinon.match({
