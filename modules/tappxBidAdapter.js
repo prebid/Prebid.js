@@ -11,7 +11,7 @@ const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
 const CUR = 'USD';
-const TAPPX_BIDDER_VERSION = '0.1.1005';
+const TAPPX_BIDDER_VERSION = '0.1.2';
 const TYPE_CNN = 'prebidjs';
 const LOG_PREFIX = '[TAPPX]: ';
 const VIDEO_SUPPORT = ['instream', 'outstream'];
@@ -271,12 +271,28 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     api[0] = deepAccess(validBidRequests, 'params.api') ? deepAccess(validBidRequests, 'params.api') : [3, 5];
   } else {
     let bundle = _extractPageUrl(validBidRequests, bidderRequest);
-    let site = {};
+    let site = deepAccess(validBidRequests, 'params.site') || {};
     site.name = bundle;
+    site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
+    site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    site.ext = {};
+    site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
+    site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
+    site.ext.page_rip = bidderRequest?.refererInfo?.page || '-';
+    site.ext.page_rit = bidderRequest?.refererInfo?.topmostLocation || '-';
+    site.ext.page_wlh = window.location.href || '-';
     publisher.name = bundle;
     publisher.domain = bundle;
+    let sitename = document.getElementsByTagName('meta')['title'];
+    if (sitename && sitename.content) {
+      site.name = sitename.content;
+    }
     tagid = `${site.name}_typeAdBanVid_${getOs()}`;
+    let keywords = document.getElementsByTagName('meta')['keywords'];
+    if (keywords && keywords.content) {
+      site.keywords = keywords.content;
+    }
     payload.site = site;
   }
   // < App/Site object
@@ -295,9 +311,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     if (
       ((bannerMediaType.sizes[0].indexOf(480) >= 0) && (bannerMediaType.sizes[0].indexOf(320) >= 0)) ||
       ((bannerMediaType.sizes[0].indexOf(768) >= 0) && (bannerMediaType.sizes[0].indexOf(1024) >= 0))) {
-      banner.pos = 7;
+      banner.pos = 0;
     } else {
-      banner.pos = 4;
+      banner.pos = 0;
     }
 
     banner.api = api;
@@ -565,8 +581,7 @@ export function _checkParamDataType(key, value, datatype) {
 }
 
 export function _extractPageUrl(validBidRequests, bidderRequest) {
-  // TODO: does the fallback make sense?
-  let url = bidderRequest?.refererInfo?.page || bidderRequest.refererInfo?.topmostLocation;
+  let url = bidderRequest?.refererInfo?.page || bidderRequest?.refererInfo?.topmostLocation;
   return parseDomain(url, {noLeadingWww: true});
 }
 

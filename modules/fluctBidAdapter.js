@@ -62,6 +62,11 @@ export const spec = {
       });
 
       data.params = request.params;
+
+      if (request.schain) {
+        data.schain = request.schain;
+      }
+
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
         tagId: request.params.tagId,
