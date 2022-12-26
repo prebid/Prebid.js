@@ -11,6 +11,7 @@ const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
 export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -108,8 +109,9 @@ export const spec = {
     }
 
     const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
       badv: [],
-      bcat: []
+      wlang: []
     };
 
     const request = {
@@ -119,8 +121,9 @@ export const spec = {
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
-      bcat: ortb2.bcat,
-      badv: ortb2.badv,
+      bcat: ortb2.bcat || bidRequest.params.bcat || [],
+      badv: ortb2.badv || bidRequest.params.badv || [],
+      wlang: ortb2.wlang || bidRequest.params.wlang || [],
       user,
       regs
     };
@@ -154,10 +157,30 @@ export const spec = {
     if (bid.nurl) {
       ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm));
     }
-  }
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    const syncs = []
+    const queryParams = [];
+
+    if (gdprConsent) {
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+    }
+
+    if (uspConsent) {
+      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: USER_SYNC_IMG_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+      });
+    }
+    return syncs;
+  },
 };
 
-function getSiteProperties({publisherId, bcat = []}, refererInfo) {
+function getSiteProperties({publisherId}, refererInfo) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,

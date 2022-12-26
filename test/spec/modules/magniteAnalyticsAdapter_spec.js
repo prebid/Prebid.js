@@ -306,7 +306,7 @@ const ANALYTICS_MESSAGE = {
 describe('magnite analytics adapter', function () {
   let sandbox;
   let clock;
-  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub;
+  let getDataFromLocalStorageStub, setDataInLocalStorageStub, localStorageIsEnabledStub, removeDataFromLocalStorageStub;
   let gptSlot0;
   let gptSlotRenderEnded0;
   beforeEach(function () {
@@ -325,6 +325,7 @@ describe('magnite analytics adapter', function () {
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
     localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage')
     sandbox = sinon.sandbox.create();
 
     localStorageIsEnabledStub.returns(true);
@@ -355,6 +356,7 @@ describe('magnite analytics adapter', function () {
     getDataFromLocalStorageStub.restore();
     setDataInLocalStorageStub.restore();
     localStorageIsEnabledStub.restore();
+    removeDataFromLocalStorageStub.restore();
     magniteAdapter.disableAnalytics();
   });
 
@@ -1932,19 +1934,21 @@ describe('magnite analytics adapter', function () {
     });
   });
 
-  it('getHostNameFromReferer correctly grabs hostname from an input URL', function () {
-    let inputUrl = 'https://www.prebid.org/some/path?pbjs_debug=true';
-    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.org');
-    inputUrl = 'https://www.prebid.com/some/path?pbjs_debug=true';
-    expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.com');
-    inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
-    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
-    inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
-    expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
+  describe('getHostNameFromReferer', () => {
+    it('correctly grabs hostname from an input URL', function () {
+      let inputUrl = 'https://www.prebid.org/some/path?pbjs_debug=true';
+      expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.org');
+      inputUrl = 'https://www.prebid.com/some/path?pbjs_debug=true';
+      expect(getHostNameFromReferer(inputUrl)).to.equal('www.prebid.com');
+      inputUrl = 'https://prebid.org/some/path?pbjs_debug=true';
+      expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+      inputUrl = 'http://xn--p8j9a0d9c9a.xn--q9jyb4c/';
+      expect(typeof getHostNameFromReferer(inputUrl)).to.equal('string');
 
-    // not non-UTF char's in query / path which break if noDecodeWholeURL not set
-    inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
-    expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+      // not non-UTF char's in query / path which break if noDecodeWholeURL not set
+      inputUrl = 'https://prebid.org/search_results/%95x%8Em%92%CA/?category=000';
+      expect(getHostNameFromReferer(inputUrl)).to.equal('prebid.org');
+    });
   });
 
   describe(`handle currency conversions`, () => {
@@ -1984,5 +1988,23 @@ describe('magnite analytics adapter', function () {
       expect(bidResponseObj.ogPrice).to.equal(100);
       expect(bidResponseObj.bidPriceUSD).to.equal(0);
     });
+  });
+
+  describe('onDataDeletionRequest', () => {
+    it('attempts to delete the magnite cookie when local storage is enabled', () => {
+      magniteAdapter.onDataDeletionRequest();
+
+      expect(removeDataFromLocalStorageStub.getCall(0).args[0]).to.equal('mgniSession');
+    });
+
+    it('throws an error if it cannot access the cookie', (done) => {
+      localStorageIsEnabledStub.returns(false);
+      try {
+        magniteAdapter.onDataDeletionRequest();
+      } catch (error) {
+        expect(error.message).to.equal('Unable to access local storage, no data deleted');
+        done();
+      }
+    })
   });
 });

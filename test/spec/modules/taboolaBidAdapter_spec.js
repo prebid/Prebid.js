@@ -163,6 +163,7 @@ describe('Taboola Adapter', function () {
         'source': {'fd': 1},
         'bcat': [],
         'badv': [],
+        'wlang': [],
         'user': {
           'buyeruid': 0,
           'ext': {},
@@ -240,6 +241,24 @@ describe('Taboola Adapter', function () {
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
       const resData = JSON.parse(res.data);
       expect(resData.tmax).to.equal(500);
+    });
+
+    describe('first party data', function () {
+      it('should parse first party data', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            bcat: ['EX1', 'EX2', 'EX3'],
+            badv: ['site.com'],
+            wlang: ['de'],
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
+        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+      });
     });
 
     describe('handle privacy segments when building request', function () {
@@ -578,8 +597,33 @@ describe('Taboola Adapter', function () {
     });
   })
 
-  describe('userData', function () {
-    // todo: add UT for getUserSyncs
+  describe('getUserSyncs', function () {
+    const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+
+    it('should not return user sync if pixelEnabled is false', function () {
+      const res = spec.getUserSyncs({pixelEnabled: false});
+      expect(res).to.be.an('array').that.is.empty;
+    });
+
+    it('should return user sync if pixelEnabled is true', function () {
+      const res = spec.getUserSyncs({pixelEnabled: true});
+      expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+    });
+
+    it('should pass consent tokens values', function() {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'GDPR_CONSENT'}, 'USP_CONSENT')).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=GDPR_CONSENT&us_privacy=USP_CONSENT`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: undefined}, undefined)).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT')).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT`
+      }]);
+    });
   })
 
   describe('internal functions', function () {
