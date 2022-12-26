@@ -108,8 +108,9 @@ export const spec = {
     }
 
     const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
       badv: [],
-      bcat: []
+      wlang: []
     };
 
     const request = {
@@ -119,8 +120,9 @@ export const spec = {
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
-      bcat: ortb2.bcat,
-      badv: ortb2.badv,
+      bcat: ortb2.bcat || bidRequest.params.bcat || [],
+      badv: ortb2.badv || bidRequest.params.badv || [],
+      wlang: ortb2.wlang || bidRequest.params.wlang || [],
       user,
       regs
     };
@@ -172,7 +174,7 @@ export const spec = {
   },
 };
 
-function getSiteProperties({publisherId, bcat = []}, refererInfo) {
+function getSiteProperties({publisherId}, refererInfo) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
