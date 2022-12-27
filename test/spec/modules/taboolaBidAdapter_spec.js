@@ -290,7 +290,7 @@ describe('Taboola Adapter', function () {
         const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
         const resData = JSON.parse(res.data)
         expect(resData.regs.ext.gpp).to.equal('testGpp')
-        expect(resData.regs.ext.gpp_sid).to.equal([1, 2, 3])
+        expect(resData.regs.ext.gpp_sid).to.eql([1, 2, 3])
       });
 
       it('should pass us privacy consent', function () {
