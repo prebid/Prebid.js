@@ -1,6 +1,5 @@
 import {
   deepAccess,
-  deepSetValue,
   getBidIdParameter,
   isStr,
   logMessage,
@@ -11,7 +10,6 @@ import CONSTANTS from '../src/constants.json'
 import { BANNER } from '../src/mediaTypes.js'
 
 import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { getRefererInfo } from '../src/refererDetection.js'
 
 const BIDDER_CODE = 'holid'
 const GVLID = 1177
@@ -31,21 +29,12 @@ export const spec = {
     return !!bid.params.adUnitID
   },
 
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests: function (validBidRequests, _bidderRequest) {
     return validBidRequests.map((bid) => {
       const requestData = {
+        ...bid.ortb2,
         id: bid.auctionId,
         imp: [getImp(bid)],
-        device: {
-          w: window.innerWidth,
-          h: window.innerHeight,
-        },
-        site: {
-          page: getRefererInfo().page,
-          ref: getRefererInfo().ref,
-          domain: getRefererInfo().domain,
-        },
-        regs: getRegs(bidderRequest),
       }
 
       return {
@@ -143,29 +132,6 @@ function getImp(bid) {
   }
 
   return imp
-}
-
-function getRegs(bidderRequest) {
-  const regs = {}
-
-  if (bidderRequest.gdprConsent) {
-    deepSetValue(
-      regs,
-      'ext.gdpr',
-      bidderRequest.gdprConsent.gdprApplies ? 1 : 0
-    )
-    deepSetValue(
-      regs,
-      'ext.gdprConsentString',
-      bidderRequest.gdprConsent.consentString || ''
-    )
-  }
-
-  if (bidderRequest.uspConsent) {
-    deepSetValue(regs, 'ext.us_privacy', bidderRequest.uspConsent)
-  }
-
-  return regs
 }
 
 function getBidders(serverResponse) {

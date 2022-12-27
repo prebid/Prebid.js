@@ -10,11 +10,25 @@ describe('holidBidAdapterTests', () => {
     params: { adUnitID: '12345' },
     mediaTypes: { banner: {} },
     sizes: [[300, 250]],
-    uspConsent: '1---',
-    gdprConsent: {
-      consentString: 'G4ll0p1ng_Un1c0rn5',
-      gdprApplies: true,
-    },
+    ortb2: {
+      site: {
+        publisher: {
+          domain: 'https://foo.bar',
+        }
+      },
+      regs: {
+        gdpr: 1,
+      },
+      user: {
+        ext: {
+          consent: 'G4ll0p1ng_Un1c0rn5',
+        }
+      },
+      device: {
+        h: 410,
+        w: 1860,
+      }
+    }
   }
 
   describe('isBidRequestValid', () => {
@@ -51,9 +65,11 @@ describe('holidBidAdapterTests', () => {
       })
     })
 
-    it('should include device', () => {
-      expect(payload.device.w).to.be.greaterThan(1)
-      expect(payload.device.h).to.be.greaterThan(1)
+    it('should include ortb2 first party data', () => {
+      expect(payload.device.w).to.equal(1860)
+      expect(payload.device.h).to.equal(410)
+      expect(payload.user.ext.consent).to.equal('G4ll0p1ng_Un1c0rn5')
+      expect(payload.regs.gdpr).to.equal(1)
     })
   })
 
@@ -107,41 +123,43 @@ describe('holidBidAdapterTests', () => {
   })
 
   describe('getUserSyncs', () => {
-    const optionsType = {
-      iframeEnabled: true,
-      pixelEnabled: true,
-    }
-    const serverResponse = [
-      {
-        body: {
-          ext: {
-            responsetimemillis: {
-              'test seat 1': 2,
-              'test seat 2': 1,
+    it('should return user sync', () => {
+      const optionsType = {
+        iframeEnabled: true,
+        pixelEnabled: true,
+      }
+      const serverResponse = [
+        {
+          body: {
+            ext: {
+              responsetimemillis: {
+                'test seat 1': 2,
+                'test seat 2': 1,
+              },
             },
           },
         },
-      },
-    ]
-    const gdprConsent = {
-      gdprApplies: 1,
-      consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
-    }
-    const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb'
-    const expectedUserSyncs = [
-      {
-        type: 'iframe',
-        url: 'https://null.holid.io/sync.html?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig&usp_consent=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
-      },
-    ]
-
-    const userSyncs = spec.getUserSyncs(
-      optionsType,
-      serverResponse,
-      gdprConsent,
-      uspConsent
-    )
-
-    expect(userSyncs).to.deep.equal(expectedUserSyncs)
+      ]
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
+      }
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb'
+      const expectedUserSyncs = [
+        {
+          type: 'iframe',
+          url: 'https://null.holid.io/sync.html?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig&usp_consent=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
+        },
+      ]
+  
+      const userSyncs = spec.getUserSyncs(
+        optionsType,
+        serverResponse,
+        gdprConsent,
+        uspConsent
+      )
+  
+      expect(userSyncs).to.deep.equal(expectedUserSyncs)
+    })
   })
 })
