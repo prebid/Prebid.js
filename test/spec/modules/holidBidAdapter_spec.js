@@ -151,14 +151,14 @@ describe('holidBidAdapterTests', () => {
           url: 'https://null.holid.io/sync.html?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig&usp_consent=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
         },
       ]
-  
+
       const userSyncs = spec.getUserSyncs(
         optionsType,
         serverResponse,
         gdprConsent,
         uspConsent
       )
-  
+
       expect(userSyncs).to.deep.equal(expectedUserSyncs)
     })
   })
