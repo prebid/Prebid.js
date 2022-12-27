@@ -1335,8 +1335,10 @@ export const spec = {
     let url = ENDPOINT + '?source=ow-client&correlator=' + correlator;
 
     // For Auction End Handler
-    bidderRequest.correlator = correlator;
-    bidderRequest.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
+    bidderRequest.nwMonitor = {};
+    bidderRequest.nwMonitor.reqMethod = 'POST';
+    bidderRequest.nwMonitor.correlator = correlator;
+    bidderRequest.nwMonitor.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
     // For Timeout handler
     bidderRequest?.bids?.forEach(bid => bid.correlator = correlator);
 
@@ -1361,7 +1363,8 @@ export const spec = {
           bidderRequest: bidderRequest,
           payloadStr: JSON.stringify(payload)
         };
-        bidderRequest.requestUrlPayloadLength = configuredEndPoint.length + '?'.length + urlEncodedPayloadStr.length;
+        bidderRequest.nwMonitor.reqMethod = 'GET';
+        bidderRequest.nwMonitor.requestUrlPayloadLength = configuredEndPoint.length + '?'.length + urlEncodedPayloadStr.length;
       }
     }
 
