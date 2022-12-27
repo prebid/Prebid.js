@@ -160,8 +160,8 @@ export const spec = {
   },
   onBidWon: (bid) => {
     if (bid.nurl) {
-      const nurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
-      ajax(nurl);
+      const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
+      ajax(resolvedNurl);
     }
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
