@@ -513,8 +513,17 @@ function openRtbSite(bidRequest, bidderRequest) {
 function openRtbDevice(bidRequest) {
   const deviceObj = {
     ua: navigator.userAgent,
-    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),    
   };
+   // Add User Agent Client hunts.
+   const uaClientHints = deepAccess(bidRequest, 'ortb2Imp.device.sua');
+   let sua = null;
+   if (uaClientHints) {
+     sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
+   }
+   if (sua) {
+     deepSetValue(deviceObj, 'sua', Object.assign({}, sua, deviceObj.sua));
+   }
   return deviceObj;
 }
 
