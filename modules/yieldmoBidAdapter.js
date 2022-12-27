@@ -522,7 +522,7 @@ function openRtbDevice(bidRequest) {
      sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
    }
    if (sua) {
-     deepSetValue(deviceObj, 'sua', Object.assign({}, sua, deviceObj.sua));
+     deepSetValue(deviceObj, 'sua', sua);
    }
   return deviceObj;
 }
