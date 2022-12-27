@@ -637,6 +637,9 @@ describe('Taboola Adapter', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT`
       }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', 'GPP_STRING')).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING`
+      }]);
     });
   })
 
