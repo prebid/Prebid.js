@@ -81,7 +81,7 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
-    const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
+    const {refererInfo, gdprConsent = {}, uspConsent, gppConsent} = bidderRequest;
     const {publisherId} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
@@ -102,6 +102,11 @@ export const spec = {
 
     if (uspConsent) {
       regs.ext.us_privacy = uspConsent;
+    }
+
+    if (gppConsent) {
+      regs.ext.gpp = gppConsent.gppString;
+      regs.ext.gpp_sid = gppConsent.applicableSections;
     }
 
     if (config.getConfig('coppa')) {
@@ -155,19 +160,23 @@ export const spec = {
   },
   onBidWon: (bid) => {
     if (bid.nurl) {
-      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm));
+      const nurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
+      ajax(nurl);
     }
   },
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = []
     const queryParams = [];
-
     if (gdprConsent) {
       queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
     }
 
     if (uspConsent) {
       queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    if (gppConsent) {
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent));
     }
 
     if (syncOptions.pixelEnabled) {
