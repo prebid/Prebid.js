@@ -279,6 +279,20 @@ describe('Taboola Adapter', function () {
         expect(resData.regs.ext.gdpr).to.equal(1)
       });
 
+      it('should pass GPP consent if exist in ortb2', function () {
+        const ortb2 = {
+          regs: {
+            gpp: 'testGpp',
+            gpp_sid: [1, 2, 3]
+          }
+        }
+
+        const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
+        const resData = JSON.parse(res.data)
+        expect(resData.regs.ext.gpp).to.equal('testGpp')
+        expect(resData.regs.ext.gpp_sid).to.equal([1, 2, 3])
+      });
+
       it('should pass us privacy consent', function () {
         const bidderRequest = {
           refererInfo: {

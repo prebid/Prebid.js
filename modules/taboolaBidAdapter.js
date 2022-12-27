@@ -81,7 +81,7 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
-    const {refererInfo, gdprConsent = {}, uspConsent, gppConsent} = bidderRequest;
+    const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {publisherId} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
@@ -104,9 +104,9 @@ export const spec = {
       regs.ext.us_privacy = uspConsent;
     }
 
-    if (gppConsent) {
-      regs.ext.gpp = gppConsent.gppString;
-      regs.ext.gpp_sid = gppConsent.applicableSections;
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
     }
 
     if (config.getConfig('coppa')) {
