@@ -643,7 +643,15 @@ magniteAdapter.disableAnalytics = function () {
   accountId = undefined;
   resetConfs();
   magniteAdapter.originDisableAnalytics();
-}
+};
+
+magniteAdapter.onDataDeletionRequest = function () {
+  if (storage.localStorageIsEnabled()) {
+    storage.removeDataFromLocalStorage(COOKIE_NAME);
+  } else {
+    throw Error('Unable to access local storage, no data deleted');
+  }
+};
 
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
