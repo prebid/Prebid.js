@@ -11,7 +11,8 @@ import {
   isStr,
   logError,
   parseQueryStringParameters,
-  parseUrl
+  parseUrl,
+  pick
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
