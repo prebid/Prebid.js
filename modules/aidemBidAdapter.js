@@ -220,6 +220,8 @@ function setPrebidImpressionObject(bidRequests, payload) {
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // Placement id
+    deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
     // Publisher id
     deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
     // Site id
