@@ -109,11 +109,18 @@ describe('riseAdapter', function () {
     const api = [1, 2];
     const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
     const protocols = [2, 3, 5, 6];
+    const isWrapper = false;
 
     it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].placementId).to.equal(placementId);
+    });
+
+    it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
+      bidRequests[0].params.isWrapper = isWrapper;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].is_wrapper).to.equal(isWrapper);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
