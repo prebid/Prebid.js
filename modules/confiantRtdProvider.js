@@ -4,7 +4,7 @@
  *
  * The {@link module:modules/realTimeData} module is required
  * The module will inject a Confiant Inc. script into the page to monitor ad impressions
- * @module modules/cleanioRtdProvider
+ * @module modules/confiantRtdProvider
  * @requires module:modules/realTimeData
  */
 
