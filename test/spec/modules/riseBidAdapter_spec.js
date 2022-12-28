@@ -109,7 +109,6 @@ describe('riseAdapter', function () {
     const api = [1, 2];
     const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
     const protocols = [2, 3, 5, 6];
-    const isWrapper = false;
 
     it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
@@ -118,7 +117,6 @@ describe('riseAdapter', function () {
     });
 
     it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
-      const bidderRequestWithIsWrapper = Object.assign({isWrapper}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('is_wrapper');
