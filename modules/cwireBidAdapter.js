@@ -38,6 +38,20 @@ function slotDimensions(bid) {
   }
 }
 
+/**
+ * Extracts feature flags from a comma-separated url parameter `cw_features`.
+ * @param validBidRequests
+ *
+ * @returns *[]
+ */
+function featureFlags(validBidRequests) {
+  let ffParam = getParameterByName('cw_features')
+  if (ffParam !== '') {
+    return ffParam.split(',')
+  }
+  return []
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -89,7 +103,11 @@ export const spec = {
 
     // Add optional/debug parameters
     let creativeId = getParameterByName('cw_creative')
+    const ff = featureFlags(validBidRequests);
 
+    if (ff.length > 0) {
+      payload.featureFlags = ff
+    }
     if (creativeId) {
       payload.creativeId = creativeId
     }
