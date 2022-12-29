@@ -103,13 +103,22 @@ export const spec = {
 
     // Add optional/debug parameters
     let creativeId = getParameterByName('cw_creative')
+
     const ff = featureFlags(validBidRequests);
+
+    // Enable debug flag by passing ?cw_debug=true as url parameter.
+    // Note: pbjs_debug=true enables it on prebid level
+    // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
+    const debug = getParameterByName('cw_debug');
 
     if (ff.length > 0) {
       payload.featureFlags = ff
     }
     if (creativeId) {
       payload.creativeId = creativeId
+    }
+    if (debug) {
+      payload.debug = true
     }
     const payloadString = JSON.stringify(payload);
     return {

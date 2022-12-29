@@ -136,4 +136,27 @@ describe('C-WIRE bid adapter', () => {
       sandbox.restore()
     });
   });
+
+  describe('buildRequests reads cw_debug flag', function () {
+    before(function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake(function () {
+        return 'true'
+      });
+    });
+
+    it('read from url parameter', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.debug).to.exist;
+      expect(payload.debug).to.equal(true);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
 });
