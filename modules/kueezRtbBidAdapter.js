@@ -1,6 +1,6 @@
 import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 1165;
@@ -55,7 +55,7 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode, schain } = bid;
+  const { params, bidId, userId, adUnitCode, schain, mediaTypes } = bid;
   let { bidFloor, ext } = params;
   const hashUrl = hashCode(topWindowUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
@@ -89,7 +89,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
-    schain: schain
+    schain: schain,
+    mediaTypes: mediaTypes
   };
 
   appendUserIdsToRequestPayload(data, userId);
@@ -167,11 +168,12 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
+      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER } = result;
       if (!ad || !price) {
         return;
       }
-      output.push({
+
+      const response = {
         requestId: bidId,
         cpm: price,
         width: width,
@@ -180,11 +182,22 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad,
         meta: {
           advertiserDomains: advertiserDomains || []
         }
-      })
+      };
+
+      if (mediaType === BANNER) {
+        Object.assign(response, {
+          ad: ad,
+        });
+      } else {
+        Object.assign(response, {
+          vastXml: ad,
+          mediaType: VIDEO
+        });
+      }
+      output.push(response);
     });
     return output;
   } catch (e) {
@@ -268,7 +281,7 @@ export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
