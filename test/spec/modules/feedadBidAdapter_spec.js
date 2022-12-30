@@ -358,14 +358,20 @@ describe('FeedAdAdapter', function () {
     const pixelSync2 = {type: 'image', url: 'the pixel url 2'};
     const iFrameSync1 = {type: 'iframe', url: 'the iFrame url 1'};
     const iFrameSync2 = {type: 'iframe', url: 'the iFrame url 2'};
+    const mockServerResponse = (content) => {
+      if (!(content instanceof Array)) {
+        content = [content];
+      }
+      return content.map(it => ({body: it}));
+    };
 
     it('should pass through the syncs out of the extension fields of the server response', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse)
       expect(result).to.deep.equal([
         pixelSync1,
@@ -376,7 +382,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should concat the syncs of all responses', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1],
           iframes: [iFrameSync2],
@@ -391,7 +397,7 @@ describe('FeedAdAdapter', function () {
         ext: {
           pixels: [pixelSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -402,7 +408,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should filter out duplicates', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync1],
           iframes: [iFrameSync2, iFrameSync2],
@@ -411,7 +417,7 @@ describe('FeedAdAdapter', function () {
         ext: {
           iframes: [iFrameSync2, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -420,12 +426,12 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include iFrame syncs if the option is disabled', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -434,12 +440,12 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include pixel syncs if the option is disabled', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, serverResponse);
       expect(result).to.deep.equal([
         iFrameSync1,
@@ -448,14 +454,33 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include any syncs if the sync options are disabled or missing', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, serverResponse);
       expect(result).to.deep.equal([]);
+    });
+
+    it('should handle empty responses', function () {
+      const serverResponse = mockServerResponse([]);
+      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse)
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should not throw if the server response is weird', function () {
+      const responses = [
+        mockServerResponse(null),
+        mockServerResponse('null'),
+        mockServerResponse(1234),
+        mockServerResponse({}),
+        mockServerResponse([{}, 123]),
+      ];
+      responses.forEach(it => {
+        expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, it)).not.to.throw;
+      });
     });
   });
 
@@ -592,7 +617,7 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.3'
+            sdk_version: '1.0.4'
           };
           subject(data);
           expect(server.requests.length).to.equal(1);
