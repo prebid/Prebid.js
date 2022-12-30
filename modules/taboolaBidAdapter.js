@@ -9,7 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
+export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -80,7 +80,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
-    const {publisherId, endpointUrl} = bidRequest.params;
+    const {publisherId} = bidRequest.params;
     const site = getSiteProperties(bidRequest.params, refererInfo);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
@@ -124,7 +124,7 @@ export const spec = {
       regs
     };
 
-    const url = [endpointUrl || END_POINT_URL, publisherId].join('/');
+    const url = [END_POINT_URL, publisherId].join('/');
 
     return {
       url,
@@ -170,15 +170,28 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
 
 function getImps(validBidRequests) {
   return validBidRequests.map((bid, id) => {
-    const {tagId, bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
-
-    return {
+    const {tagId} = bid.params;
+    const imp = {
       id: id + 1,
       banner: getBanners(bid),
-      tagid: tagId,
-      bidfloor,
-      bidfloorcur,
-    };
+      tagid: tagId
+    }
+    if (typeof bid.getFloor === 'function') {
+      const floorInfo = bid.getFloor({
+        currency: CURRENCY,
+        mediaType: BANNER,
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+        imp.bidfloor = parseFloat(floorInfo.floor);
+        imp.bidfloorcur = CURRENCY;
+      }
+    } else {
+      const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+      imp.bidfloor = bidfloor;
+      imp.bidfloorcur = bidfloorcur;
+    }
+    return imp;
   });
 }
 

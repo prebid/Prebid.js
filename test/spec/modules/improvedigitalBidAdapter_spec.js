@@ -15,6 +15,8 @@ import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams, toLegacyResponse} from '../../../src/native.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {hook} from '../../../src/hook.js';
 
 describe('Improve Digital Adapter Tests', function () {
   const METHOD = 'POST';
@@ -168,6 +170,10 @@ describe('Improve Digital Adapter Tests', function () {
     return bidRequests;
   }
 
+  before(() => {
+    hook.ready();
+  });
+
   describe('isBidRequestValid', function () {
     it('should return false when no bid', function () {
       expect(spec.isBidRequestValid()).to.equal(false);
@@ -220,7 +226,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should make a well-formed request objects', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
-      const request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      const request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
       expect(request.url).to.equal(AD_SERVER_URL);
@@ -390,7 +396,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should add GDPR consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdpr)[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
       expect(payload.user.ext.ConsentedProvidersSettings).to.not.exist;
@@ -401,13 +407,13 @@ describe('Improve Digital Adapter Tests', function () {
       const bidderRequestGdprEmptyAddtl = deepClone(bidderRequestGdpr);
       bidderRequestGdprEmptyAddtl.gdprConsent.addtlConsent = '1~';
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdprEmptyAddtl)[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdprEmptyAddtl))[0].data);
       expect(payload.user.ext.consented_providers_settings).to.not.exist;
     });
 
     it('should add ConsentedProvidersSettings when extend mode enabled', function () {
       const bidRequest = deepClone(extendBidRequest);
-      const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdpr)[0].data);
+      const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
       expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.equal('1~1.35.41.101');
@@ -416,7 +422,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     it('should add CCPA consent string', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], {...bidderRequest, ...{ uspConsent: '1YYY' }});
+      const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
       const payload = JSON.parse(request[0].data);
       expect(payload.regs.ext.us_privacy).to.equal('1YYY');
     });
@@ -425,17 +431,17 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('coppa').returns(true);
       let bidRequest = Object.assign({}, simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdpr)[0].data);
+      let payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.coppa).to.equal(1);
       getConfigStub.withArgs('coppa').returns(false);
       bidRequest = Object.assign({}, simpleBidRequest);
-      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequestGdpr)[0].data);
+      payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.coppa).to.equal(0);
     });
 
     it('should add referrer', function () {
       const bidRequest = Object.assign({}, simpleBidRequest);
-      const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
+      const request = spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
       const payload = JSON.parse(request.data);
       expect(payload.site.page).to.equal('https://blah.com/test.html');
     });
@@ -678,21 +684,21 @@ describe('Improve Digital Adapter Tests', function () {
         page: 'https://improveditigal.com/',
         domain: 'improveditigal.com'
       });
-      let request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site.content).does.exist.and.equal('XYZ');
       expect(payload.site.page).does.exist.and.equal('https://improveditigal.com/');
       expect(payload.site.domain).does.exist.and.equal('improveditigal.com');
       getConfigStub.reset();
 
-      request = spec.buildRequests([simpleBidRequest], bidderRequestReferrer)[0];
+      request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
       payload = JSON.parse(request.data);
       expect(payload.site.content).does.not.exist;
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
 
       const ortb2 = {site: {content: 'ZZZ'}};
-      request = spec.buildRequests([simpleBidRequest], {...bidderRequestReferrer, ortb2})[0];
+      request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest({...bidderRequestReferrer, ortb2}))[0];
       payload = JSON.parse(request.data);
       expect(payload.site.content).does.exist.and.equal('ZZZ');
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
