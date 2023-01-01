@@ -27,6 +27,9 @@ export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: [
+    {code: 'bcmint'}
+  ],
 
   isBidRequestValid: bid => {
     return !!bid.params && !!bid.params.zone;
