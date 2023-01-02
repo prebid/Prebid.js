@@ -306,17 +306,17 @@ function createUserIdString(eids) {
 
 /**
  * Creates a string from an array of eids with ID provider and atype if atype exists
- * @param {Array} eids
+ * @param {Array.<{source: String, uids: Array.<{id: String, atype: Number, ext: Object}>}>} eids
  * @returns {String} idprovider:atype,idprovider2:atype2,...
  */
 function createUserIdAtypesString(eids) {
-  const str = []
+  const str = [];
   for (let i = 0; i < eids.length; i++) {
     if (eids[i].uids[0].atype) {
-      str.push(eids[i].source + ':' + eids[i].uids[0].atype)
+      str.push(eids[i].source + ':' + eids[i].uids[0].atype);
     }
   }
-  return str.join(',')
+  return str.join(',');
 }
 
 /**
