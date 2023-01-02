@@ -421,6 +421,14 @@ describe('Aidem adapter', () => {
         'value', 'currency'
       )
     });
+
+    it('should hav wpar keys in environment object', function () {
+      const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      const payload = JSON.parse(requests.data)
+      expect(payload).to.have.property('environment')
+      expect(payload.environment).to.be.a('object').that.have.property('wpar')
+      expect(payload.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
+    });
   })
 
   describe('interpretResponse', () => {
