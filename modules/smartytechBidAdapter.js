@@ -4,7 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'smartytech';
 export const ENDPOINT_PROTOCOL = 'https';
-export const ENDPOINT_DOMAIN = 'server.bluecuttlefish.com';
+export const ENDPOINT_DOMAIN = 'server.smartytech.io';
 export const ENDPOINT_PATH = '/hb/v2/bidder';
 
 export const spec = {
@@ -106,10 +106,10 @@ export const spec = {
     }).map(item => spec._adResponse(item.bid, item.response));
   },
 
-  _adResponse: function (requestId, response) {
+  _adResponse: function (request, response) {
     const bidObject = {
-      requestId: requestId.bidId,
-      adUnitCode: requestId.adUnitCode,
+      requestId: request.bidId,
+      adUnitCode: request.adUnitCode,
       bidderCode: BIDDER_CODE,
       ad: response.ad,
       cpm: response.cpm,
