@@ -83,7 +83,7 @@ export const spec = {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {publisherId} = bidRequest.params;
-    const site = getSiteProperties(bidRequest.params, refererInfo);
+    const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
     const user = {
@@ -123,6 +123,7 @@ export const spec = {
       id: bidderRequest.auctionId,
       imp: imps,
       site,
+      pageType: ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType,
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
@@ -189,14 +190,14 @@ export const spec = {
   },
 };
 
-function getSiteProperties({publisherId}, refererInfo) {
+function getSiteProperties({publisherId}, refererInfo, ortb2) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
     name: publisherId,
-    domain: refererInfo?.domain || window.location?.host,
-    page: getPageUrl(refererInfo),
-    ref: getReferrer(refererInfo),
+    domain: ortb2?.site?.domain || refererInfo?.domain || window.location?.host,
+    page: ortb2?.site?.page || getPageUrl(refererInfo),
+    ref: ortb2?.site?.ref || getReferrer(refererInfo),
     publisher: {
       id: publisherId
     },
@@ -208,11 +209,12 @@ function getSiteProperties({publisherId}, refererInfo) {
 
 function getImps(validBidRequests) {
   return validBidRequests.map((bid, id) => {
-    const {tagId} = bid.params;
+    const {tagId, position} = bid.params;
     const imp = {
       id: id + 1,
       banner: getBanners(bid),
-      tagid: tagId
+      tagid: tagId,
+      position: position
     }
     if (typeof bid.getFloor === 'function') {
       const floorInfo = bid.getFloor({

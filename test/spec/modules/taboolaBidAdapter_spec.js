@@ -211,7 +211,7 @@ describe('Taboola Adapter', function () {
       expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
-    it('should pass bid floor even if they is a bid floor param', function () {
+    it('should pass bid floor even if it is a bid floor param', function () {
       const optionalParams = {
         bidfloor: 0.25,
         bidfloorcur: 'EUR'
@@ -231,6 +231,21 @@ describe('Taboola Adapter', function () {
       const resData = JSON.parse(res.data);
       expect(resData.imp[0].bidfloor).to.deep.equal(2.7);
       expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should pass impression position', function () {
+      const optionalParams = {
+        position: 2
+      };
+
+      const bidRequest = {
+        ...defaultBidRequest,
+        params: {...commonBidRequest.params, ...optionalParams}
+      };
+
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].position).to.deep.equal(2);
     });
 
     it('should pass bidder timeout', function () {
@@ -258,6 +273,22 @@ describe('Taboola Adapter', function () {
         expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
         expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+      });
+
+      it('should pass pageType if exists in ortb2', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            ext: {
+              data: {
+                pageType: 'news'
+              }
+            }
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+        expect(resData.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
       });
     });
 
