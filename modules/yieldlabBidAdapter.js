@@ -22,7 +22,7 @@ export const spec = {
    * @param {object} bid
    * @returns {boolean}
    */
-  isBidRequestValid: function (bid) {
+  isBidRequestValid(bid) {
     if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
       return true;
     }
@@ -35,7 +35,7 @@ export const spec = {
    * @param [bidderRequest]
    * @returns {ServerRequest|ServerRequest[]}
    */
-  buildRequests: function (validBidRequests, bidderRequest) {
+  buildRequests(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -121,7 +121,7 @@ export const spec = {
    * @param {BidRequest} originalBidRequest
    * @returns {Bid[]}
    */
-  interpretResponse: function (serverResponse, originalBidRequest) {
+  interpretResponse(serverResponse, originalBidRequest) {
     const bidResponses = [];
     const timestamp = Date.now();
     const reqParams = originalBidRequest.queryParams;
@@ -218,7 +218,7 @@ export const spec = {
    * @param {string} uspConsent Is the US Privacy Consent string.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
 
     if (syncOptions.iframeEnabled) {
