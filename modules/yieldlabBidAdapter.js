@@ -282,7 +282,7 @@ function getPlayerSize(format) {
 }
 
 /**
- * Expands a 'WxH' string as a 2-element [W, H] array
+ * Expands a 'WxH' string to a 2-element [W, H] array
  * @param {String} size
  * @returns {Array}
  */
@@ -292,7 +292,7 @@ function parseSize(size) {
 
 /**
  * Creates a string out of an array of eids with source and uid
- * @param {Array} eids
+ * @param {Array.<{source: String, uids: Array.<{id: String, atype: Number, ext: Object}>}>} eids
  * @returns {String}
  */
 function createUserIdString(eids) {
