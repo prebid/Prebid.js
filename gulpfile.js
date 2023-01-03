@@ -10,14 +10,12 @@ var replace = require('gulp-replace');
 const path = require('path');
 const execa = require('execa');
 var gulpif = require('gulp-if');
-var connect = require('gulp-connect');
 var _ = require('lodash');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
 var webpackConfig = require('./webpack.conf');
 var helpers = require('./gulpHelpers');
 var header = require('gulp-header');
-var through = require('through2');
 var gutil = require('gulp-util');
 var footer = require('gulp-footer');
 var sourcemaps = require('gulp-sourcemaps');
@@ -86,6 +84,7 @@ function lint(done) {
 
 // View the code coverage report in the browser.
 function viewCoverage(done) {
+  var connect = require('gulp-connect');
   var opens = require('opn');
   var coveragePort = 1999;
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
@@ -117,6 +116,7 @@ viewReview.displayName = 'view-review';
 
 // Watch Task with Live Reload
 function watch(done) {
+  var connect = require('gulp-connect');
   var mainWatcher = gulp.watch([
     'src/**/*.js',
     'modules/**/*.js',
@@ -148,6 +148,7 @@ function makeModuleList(modules) {
 }
 
 function makeDevpackPkg() {
+  var connect = require('gulp-connect');
   var cloned = _.cloneDeep(webpackConfig);
   Object.assign(cloned, {
     devtool: 'source-map',
@@ -207,6 +208,7 @@ function gulpBundle(dev) {
 }
 
 function nodeBundle(modules) {
+  var through = require('through2');
   return new Promise((resolve, reject) => {
     bundle(false, modules)
       .on('error', (err) => {
@@ -269,8 +271,7 @@ function bundle(dev, moduleArr) {
 }
 
 function makeDevpackPkgForIh() {
-  var webpack = require('webpack');
-  var webpackStream = require('webpack-stream');
+  var connect = require('gulp-connect');
   var webpackConfig = require('./webpack.idhub.conf');
   var helpers = require('./gulpHelpers');
   
@@ -289,11 +290,9 @@ function makeDevpackPkgForIh() {
 
 function makeWebpackPkgForIh() {
   var webpack = require('webpack');
-  var webpackStream = require('webpack-stream');
   var terser = require('gulp-terser');
   var webpackConfig = require('./webpack.idhub.conf');
   var helpers = require('./gulpHelpers');
-  var header = require('gulp-header');
   var cloned = _.cloneDeep(webpackConfig);
 
   delete cloned.devtool;
@@ -310,10 +309,7 @@ function makeWebpackPkgForIh() {
 }
 
 function bundleForIh(dev, moduleArr) {
-  var gutil = require('gulp-util');
   var helpers = require('./gulpHelpers');
-  var footer = require('gulp-footer');
-  var sourcemaps = require('gulp-sourcemaps');
   var modules = moduleArr || helpers.getArgModules();
   var allModules = helpers.getModuleNames(modules);
   if (modules.length === 0) {
@@ -459,7 +455,6 @@ function buildPostbid() {
 }
 
 function setupE2e(done) {
-  var gutil = require('gulp-util');
   if (!argv.host) {
     throw new gutil.PluginError({
       plugin: 'E2E test',
