@@ -140,6 +140,7 @@ import CONSTANTS from '../../src/constants.json';
 import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {getCoreStorageManager} from '../../src/storageManager.js';
+
 import {
   cyrb53Hash,
   deepAccess,
@@ -1342,7 +1343,10 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   (getGlobal()).onSSOLogout = onSSOLogout;
   (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
+
 }
+
+
 
 // init config update listener to start the application
 init(config);
