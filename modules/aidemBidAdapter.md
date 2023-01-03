@@ -18,6 +18,7 @@ This module is GDPR and CCPA compliant, and no 3rd party userIds are allowed.
 |---------------|----------|---------------------|---------------|----------|
 | `siteId`      | required | Unique site ID      | `'ABCDEF'`    | `String` |
 | `publisherId` | required | Unique publisher ID | `'ABCDEF'`    | `String` |
+| `placementId` | optional | Unique publisher tag ID | `'ABCDEF'`    | `String` |
 
 
 ### Banner Bid Params
