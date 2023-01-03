@@ -1,0 +1,134 @@
+<!--
+  GrowthCode Setup Example contact support@growthcode.io for more information.
+-->
+
+<html>
+<head>
+  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var FAILSAFE_TIMEOUT = 3300;
+    var PREBID_TIMEOUT = 1000;
+
+    var adUnits = [{
+      code: 'div-gpt-ad-1460505748561-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300,600]],
+        }
+      },
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'appnexus',
+        params: {
+          placementId: 13144370
+        }
+      }],
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function() {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function() {
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+      pbjs.enableAnalytics({
+        provider: 'growthCodeAnalytics',
+        options: {
+          pid: 'TEST01',
+          trackEvents: [
+            'auctionInit',
+            'auctionEnd',
+            'bidAdjustment',
+            'bidTimeout',
+            'bidTimeout',
+            'bidRequested',
+            'bidResponse',
+            'setTargeting',
+            'requestBids',
+            'addAdUnits',
+            'noBid',
+            'bidWon',
+            'bidderDone']
+        }
+      });
+      pbjs.setConfig({
+        debugging: {
+          enabled: true,
+          bids: [{
+            bidder: 'appnexus',
+            adUnitCode: '/19968336/header-bid-tag-0',
+            cpm: 1.5,
+            adId: '111111',
+            ad: '<html><body><img src="https://files.prebid.org/creatives/prebid300x250.png"></body></html>'
+          }]
+        },
+        userSync: {
+          userIds: [{
+            name: "sharedId",
+            storage: {
+              type: "html5",
+              name: "_sharedID",         // create a cookie with this name
+              expires: 365             // expires in 1 years
+            }
+          },{
+            name: 'growthCodeId',
+            params: {
+              pid: 'TEST01',
+              publisher_id: '_sharedID',
+              publisher_id_storage: 'html5',
+            }
+          }]
+        }
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function() {
+        pbjs.que.push(function() {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function() {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+
+<body>
+<h2>Prebid.js Test</h2>
+<h5>Div-1</h5>
+<div id='div-gpt-ad-1460505748561-0'>
+  <script type='text/javascript'>
+    googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+  </script>
+</div>
+</body>
+</html>

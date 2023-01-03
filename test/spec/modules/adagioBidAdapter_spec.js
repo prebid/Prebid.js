@@ -150,7 +150,9 @@ describe('Adagio bid adapter', () => {
           ext: {
             data: {
               environment: 'desktop',
-              pagetype: 'abc'
+              pagetype: 'abc',
+              category: ['cat1', 'cat2', 'cat3'],
+              subcategory: []
             }
           }
         }
@@ -170,6 +172,12 @@ describe('Adagio bid adapter', () => {
 
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
+
+      setExtraParam(bid, 'category');
+      expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
+
+      setExtraParam(bid, 'subcategory');
+      expect(bid.params.subcategory).to.be.undefined;
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -392,7 +400,7 @@ describe('Adagio bid adapter', () => {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: [3],
+            placement: 3,
             protocols: [8]
           }
         }).build();
@@ -407,7 +415,7 @@ describe('Adagio bid adapter', () => {
           skipafter: 4,
           minduration: 10,
           maxduration: 30,
-          placement: [3],
+          placement: 3,
           protocols: [8],
           w: 300,
           h: 250
@@ -1081,7 +1089,7 @@ describe('Adagio bid adapter', () => {
           impressionTrackers: [
             'https://eventrack.local/impression'
           ],
-          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          javascriptTrackers: '<script async src=\"https://eventrack.local/impression\"></script>',
           clickTrackers: [
             'https://i.am.a.clicktracker.url'
           ],
@@ -1103,6 +1111,19 @@ describe('Adagio bid adapter', () => {
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
+      });
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const serverResponseWithNativeCopy = utils.deepClone(serverResponseWithNative);
+        serverResponseWithNativeCopy.body.bids[0].admNative.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression-2'
+          },)
+        const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
+        const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
+        expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
   });
@@ -1243,6 +1264,29 @@ describe('Adagio bid adapter', () => {
       expect(result.print_number).to.be.a('String');
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
+    });
+
+    it('should return `adunit_position` feature when the slot is hidden', function () {
+      const elem = fixtures.getElementById();
+      sandbox.stub(window.top.document, 'getElementById').returns(elem);
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const bidRequest = new BidRequestBuilder({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+        },
+      })
+        .withParams()
+        .build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
+      expect(elem.style.display).to.equal(null); // set null to reset style
     });
   });
 
@@ -1391,6 +1435,7 @@ describe('Adagio bid adapter', () => {
         refererInfo: {
           numIframes: 0,
           reachedTop: true,
+          topmostLocation: 'https://test.io/article/a.html',
           page: 'https://test.io/article/a.html',
           domain: 'test.io',
           ref: 'https://google.com'
@@ -1417,6 +1462,7 @@ describe('Adagio bid adapter', () => {
         numIframes: 0,
         reachedTop: true,
         page: 'http://level.io/',
+        topmostLocation: 'http://level.io/',
         stack: [
           'http://level.io/',
           'http://example.com/iframe1.html',

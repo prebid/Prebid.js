@@ -120,6 +120,7 @@ export function detectReferer(win) {
     const stack = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
+
     let currentWindow;
     let bestLocation;
     let bestCanonicalUrl;
@@ -226,7 +227,11 @@ export function detectReferer(win) {
 
     const location = reachedTop || hasTopLocation ? bestLocation : null;
     const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
-    const page = ensureProtocol(canonicalUrl, win) || location;
+    let page = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win);
+
+    if (location && location.indexOf('?') > -1 && page.indexOf('?') === -1) {
+      page = `${page}${location.substring(location.indexOf('?'))}`;
+    }
 
     return {
       reachedTop,

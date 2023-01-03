@@ -31,6 +31,10 @@ describe('Mgid bid adapter', function () {
   const mgid_ver = spec.VERSION;
   const utcOffset = (new Date()).getTimezoneOffset().toString();
 
+  it('should expose gvlid', function() {
+    expect(spec.gvlid).to.equal(358)
+  });
+
   describe('isBidRequestValid', function () {
     let bid = {
       'adUnitCode': 'div',
@@ -540,6 +544,52 @@ describe('Mgid bid adapter', function () {
         'url': 'https://prebid.mgid.com/prebid/1',
         'data': '{"site":{"domain":"' + domain + '","page":"' + page + '"},"cur":["USD"],"geo":{"utcoffset":' + utcOffset + '},"device":{"ua":"' + ua + '","js":1,"dnt":' + dnt + ',"h":' + screenHeight + ',"w":' + screenWidth + ',"language":"' + lang + '"},"ext":{"mgid_ver":"' + mgid_ver + '","prebid_ver":"' + version + '"},"imp":[{"tagid":"2/div","secure":' + secure + ',"banner":{"w":300,"h":600,"format":[{"w":300,"h":600},{"w":300,"h":250}],"pos":1}}]}',
       });
+    });
+    it('should proper handle ortb2 data', function () {
+      let bid = Object.assign({}, abid);
+      bid.mediaTypes = {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      };
+      let bidRequests = [bid];
+
+      let bidderRequest = {
+        ortb2: {
+          site: {
+            content: {
+              data: [{
+                name: 'mgid.com',
+                ext: {
+                  segtax: 1,
+                },
+                segment: [
+                  {id: '123'},
+                  {id: '456'},
+                ],
+              }]
+            }
+          },
+          user: {
+            data: [{
+              name: 'mgid.com',
+              ext: {
+                segtax: 2,
+              },
+              segment: [
+                {'id': '789'},
+                {'id': '987'},
+              ],
+            }]
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.url).deep.equal('https://prebid.mgid.com/prebid/1');
+      expect(request.method).deep.equal('POST');
+      const data = JSON.parse(request.data);
+      expect(data.ext).deep.include(bidderRequest.ortb2);
     });
   });
 

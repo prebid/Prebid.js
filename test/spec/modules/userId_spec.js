@@ -9,7 +9,7 @@ import {
   setSubmoduleRegistry,
   syncDelay,
   PBJS_USER_ID_OPTOUT_NAME,
-  findRootDomain,
+  findRootDomain, requestDataDeletion,
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -46,6 +46,7 @@ import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
 import {amxIdSubmodule} from '../../../modules/amxIdSystem.js';
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js';
 import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
+import {imuIdSubmodule} from 'modules/imuIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -402,7 +403,10 @@ describe('User ID', function () {
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
-      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule, imuIdSubmodule]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
 
       config.setConfig({
         userSync: {
@@ -411,14 +415,68 @@ describe('User ID', function () {
             { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
             { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
             { name: 'identityLink', value: {'idl_env': 'identityLink-id-value-identityLink-id-value'} },
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
           ]
         }
       });
-      // before ppid should not be set
-      expect(window.googletag._ppid).to.equal(undefined);
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    it('should set PPID when the source needs to call out to the network', () => {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      const callback = sinon.stub();
+      setSubmoduleRegistry([{
+        name: 'sharedId',
+        getId: function () {
+          return {callback}
+        },
+        decode(d) {
+          return d
+        }
+      }]);
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          auctionDelay: 10,
+          userIds: [
+            {
+              name: 'sharedId',
+            }
+          ]
+        }
+      });
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        expect(window.googletag._ppid).to.be.undefined;
+        const uid = 'thismustbelongerthan32characters'
+        callback.yield({pubcid: uid});
+        expect(window.googletag._ppid).to.equal(uid);
+      });
+    });
+
+    it('should set googletag ppid correctly for imuIdSubmodule', function () {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      setSubmoduleRegistry([imuIdSubmodule]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'ppid.intimatemerger.com',
+          userIds: [
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
+          ]
+        }
+      });
+
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        // ppid should have been set without dashes and stuff
+        expect(window.googletag._ppid).to.equal('imppidvalueimppidvalueimppidvalue');
       });
     });
 
@@ -516,8 +574,21 @@ describe('User ID', function () {
         clearStack().then(() => {
           // simulate init complete
           mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
-        })
+        });
       });
+
+      it('should continue the auction when init fails', (done) => {
+        startInit();
+        requestBidsHook(() => {
+          done();
+        },
+        {adUnits: [getAdUnitMock()]},
+        {
+          delay: delay(),
+          getIds: () => Promise.reject(new Error())
+        }
+        );
+      })
 
       it('should not get stuck when init fails', () => {
         const err = new Error();
@@ -2632,45 +2703,70 @@ describe('User ID', function () {
       });
     });
 
-    describe('findRootDomain', function () {
-      let sandbox;
-
-      beforeEach(function () {
-        init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        config.setConfig({
-          userSync: {
-            syncDelay: 0,
-            userIds: [
-              {
-                name: 'pubCommonId',
-                value: { pubcid: '11111' },
-              },
-            ],
+    describe('requestDataDeletion', () => {
+      function idMod(name, value) {
+        return {
+          name,
+          getId() {
+            return {id: value}
           },
+          decode(d) {
+            return {[name]: d}
+          },
+          onDataDeletionRequest: sinon.stub()
+        }
+      }
+      let mod1, mod2, mod3, cfg1, cfg2, cfg3;
+
+      beforeEach(() => {
+        init(config);
+        mod1 = idMod('id1', 'val1');
+        mod2 = idMod('id2', 'val2');
+        mod3 = idMod('id3', 'val3');
+        cfg1 = getStorageMock('id1', 'id1', 'cookie');
+        cfg2 = getStorageMock('id2', 'id2', 'html5');
+        cfg3 = {name: 'id3', value: {id3: 'val3'}};
+        setSubmoduleRegistry([mod1, mod2, mod3]);
+        config.setConfig({
+          auctionDelay: 1,
+          userSync: {
+            userIds: [cfg1, cfg2, cfg3]
+          }
         });
-        sandbox = sinon.createSandbox();
-        sandbox
-          .stub(coreStorage, 'getCookie')
-          .onFirstCall()
-          .returns(null) // .co.uk
-          .onSecondCall()
-          .returns('writeable'); // realdomain.co.uk;
+        return getGlobal().refreshUserIds();
       });
 
-      afterEach(function () {
-        sandbox.restore();
+      it('deletes stored IDs', () => {
+        expect(coreStorage.getCookie('id1')).to.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.exist;
+        requestDataDeletion(sinon.stub());
+        expect(coreStorage.getCookie('id1')).to.not.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.not.exist;
       });
 
-      it('should just find the root domain', function () {
-        var domain = findRootDomain('sub.realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
+      it('invokes onDataDeletionRequest', () => {
+        requestDataDeletion(sinon.stub());
+        sinon.assert.calledWith(mod1.onDataDeletionRequest, cfg1, {id1: 'val1'});
+        sinon.assert.calledWith(mod2.onDataDeletionRequest, cfg2, {id2: 'val2'})
+        sinon.assert.calledWith(mod3.onDataDeletionRequest, cfg3, {id3: 'val3'})
       });
 
-      it('should find the full domain when no subdomain is present', function () {
-        var domain = findRootDomain('realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
-      });
+      describe('does not choke when onDataDeletionRequest', () => {
+        Object.entries({
+          'is missing': () => { delete mod1.onDataDeletionRequest },
+          'throws': () => { mod1.onDataDeletionRequest.throws(new Error()) }
+        }).forEach(([t, setup]) => {
+          it(t, () => {
+            setup();
+            const next = sinon.stub();
+            const arg = {random: 'value'};
+            requestDataDeletion(next, arg);
+            sinon.assert.calledOnce(mod2.onDataDeletionRequest);
+            sinon.assert.calledOnce(mod3.onDataDeletionRequest);
+            sinon.assert.calledWith(next, arg);
+          })
+        })
+      })
     });
   });
 

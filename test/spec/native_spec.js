@@ -5,6 +5,7 @@ import {
   nativeBidIsValid,
   getAssetMessage,
   getAllAssetsMessage,
+  toLegacyResponse,
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
@@ -37,12 +38,122 @@ const bid = {
     clickTrackers: ['https://tracker.example'],
     impressionTrackers: ['https://impression.example'],
     javascriptTrackers: '<script src="http://www.foobar.js"></script>',
+    privacyLink: 'https://privacy-link.example',
     ext: {
       foo: 'foo-value',
       baz: 'baz-value',
     },
   },
 };
+
+const ortbBid = {
+  adId: '123',
+  transactionId: 'au',
+  native: {
+    ortb: {
+      assets: [
+        {
+          id: 0,
+          title: {
+            text: 'Native Creative'
+          }
+        },
+        {
+          id: 1,
+          data: {
+            value: 'Cool description great stuff'
+          }
+        },
+        {
+          id: 2,
+          data: {
+            value: 'Do it'
+          }
+        },
+        {
+          id: 3,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/image.png',
+            h: 83,
+            w: 127
+          }
+        },
+        {
+          id: 4,
+          img: {
+            url: 'http://cdn.example.com/p/creative-image/icon.jpg',
+            h: 742,
+            w: 989
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'AppNexus',
+            type: 1
+          }
+        }
+      ],
+      link: {
+        url: 'https://www.link.example'
+      },
+      privacy: 'https://privacy-link.example',
+      ver: '1.2'
+    }
+  }
+};
+
+const completeNativeBid = {
+  adId: '123',
+  transactionId: 'au',
+  native: {
+    ...bid.native,
+    ...ortbBid.native
+  }
+}
+
+const ortbRequest = {
+  assets: [
+    {
+      id: 0,
+      required: 0,
+      title: {
+        len: 140
+      }
+    }, {
+      id: 1,
+      required: 0,
+      data: {
+        type: 2
+      }
+    }, {
+      id: 2,
+      required: 0,
+      data: {
+        type: 12
+      }
+    }, {
+      id: 3,
+      required: 0,
+      img: {
+        type: 3
+      }
+    }, {
+      id: 4,
+      required: 0,
+      img: {
+        type: 1
+      }
+    }, {
+      id: 5,
+      required: 0,
+      data: {
+        type: 1
+      }
+    }
+  ],
+  ver: '1.2'
+}
 
 const bidWithUndefinedFields = {
   transactionId: 'au',
@@ -90,6 +201,11 @@ describe('native.js', function () {
     expect(targeting.hb_native_foo).to.equal(bid.native.foo);
   });
 
+  it('can get targeting from null native keys', () => {
+    const targeting = getNativeTargeting({...bid, native: {...bid.native, displayUrl: null}});
+    expect(targeting.hb_native_displayurl).to.not.be.ok;
+  })
+
   it('sends placeholders for configured assets', function () {
     const adUnit = {
       transactionId: 'au',
@@ -117,6 +233,14 @@ describe('native.js', function () {
     );
     expect(targeting.hb_native_foo).to.equal(bid.native.ext.foo);
     expect(targeting.hb_native_baz).to.equal('hb_native_baz:123');
+  });
+
+  it('sends placeholdes targetings with ortb native response', function () {
+    const targeting = getNativeTargeting(completeNativeBid);
+
+    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal('Native Creative');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('Cool description great stuff');
+    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('https://www.link.example');
   });
 
   it('should only include native targeting keys with values', function () {
@@ -197,6 +321,10 @@ describe('native.js', function () {
           required: false,
           sendTargetingKeys: false,
         },
+        privacyLink: {
+          required: false,
+          sendTargetingKeys: false,
+        },
         ext: {
           foo: {
             required: false,
@@ -243,6 +371,7 @@ describe('native.js', function () {
       CONSTANTS.NATIVE_KEYS.icon,
       CONSTANTS.NATIVE_KEYS.sponsoredBy,
       CONSTANTS.NATIVE_KEYS.clickUrl,
+      CONSTANTS.NATIVE_KEYS.privacyLink,
       CONSTANTS.NATIVE_KEYS.rendererUrl,
     ]);
 
@@ -275,6 +404,7 @@ describe('native.js', function () {
       CONSTANTS.NATIVE_KEYS.icon,
       CONSTANTS.NATIVE_KEYS.sponsoredBy,
       CONSTANTS.NATIVE_KEYS.clickUrl,
+      CONSTANTS.NATIVE_KEYS.privacyLink,
     ]);
 
     expect(bid.native.adTemplate).to.deep.equal(
@@ -332,9 +462,9 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bid, {getNativeReq: () => null});
+    const message = getAllAssetsMessage(messageRequest, bid);
 
-    expect(message.assets.length).to.equal(9);
+    expect(message.assets.length).to.equal(10);
     expect(message.assets).to.deep.include({
       key: 'body',
       value: bid.native.body,
@@ -380,7 +510,7 @@ describe('native.js', function () {
       adId: '123',
     };
 
-    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields, {getNativeReq: () => null});
+    const message = getAllAssetsMessage(messageRequest, bidWithUndefinedFields);
 
     expect(message.assets.length).to.equal(4);
     expect(message.assets).to.deep.include({
@@ -398,6 +528,97 @@ describe('native.js', function () {
     expect(message.assets).to.deep.include({
       key: 'foo',
       value: bid.native.ext.foo,
+    });
+  });
+
+  it('creates native all asset message with complete format', function () {
+    const messageRequest = {
+      message: 'Prebid Native',
+      action: 'allAssetRequest',
+      adId: '123',
+    };
+
+    const message = getAllAssetsMessage(messageRequest, completeNativeBid);
+
+    expect(message.assets.length).to.equal(10);
+    expect(message.assets).to.deep.include({
+      key: 'body',
+      value: bid.native.body,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'image',
+      value: bid.native.image.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'clickUrl',
+      value: bid.native.clickUrl,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'title',
+      value: bid.native.title,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'icon',
+      value: bid.native.icon.url,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'cta',
+      value: bid.native.cta,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'sponsoredBy',
+      value: bid.native.sponsoredBy,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'privacyLink',
+      value: ortbBid.native.ortb.privacy,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'foo',
+      value: bid.native.ext.foo,
+    });
+    expect(message.assets).to.deep.include({
+      key: 'baz',
+      value: bid.native.ext.baz,
+    });
+  });
+
+  const SAMPLE_ORTB_REQUEST = toOrtbNativeRequest({
+    title: 'vtitle',
+    body: 'vbody'
+  });
+  const SAMPLE_ORTB_RESPONSE = {
+    link: {
+      url: 'url'
+    },
+    assets: [
+      {
+        id: 0,
+        title: {
+          text: 'vtitle'
+        }
+      },
+      {
+        id: 1,
+        data: {
+          value: 'vbody'
+        }
+      }
+    ],
+    eventtrackers: [
+      { event: 1, method: 1, url: 'https://sampleurl.com' },
+      { event: 1, method: 2, url: 'https://sampleurljs.com' }
+    ]
+  }
+  describe('toLegacyResponse', () => {
+    it('returns assets in legacy format for ortb responses', () => {
+      const actual = toLegacyResponse(SAMPLE_ORTB_RESPONSE, SAMPLE_ORTB_REQUEST);
+      expect(actual.body).to.equal('vbody');
+      expect(actual.title).to.equal('vtitle');
+      expect(actual.clickUrl).to.equal('url');
+      expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
+      expect(actual.impressionTrackers.length).to.equal(1);
+      expect(actual.impressionTrackers[0]).to.equal('https://sampleurl.com');
     });
   });
 });
@@ -672,6 +893,17 @@ describe('validate native', function () {
       }
     });
   });
+
+  ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
+    it(`should not generate an empty asset for key ${nativeKey}`, () => {
+      const ortbReq = toOrtbNativeRequest({
+        [nativeKey]: {
+          required: true
+        }
+      });
+      expect(ortbReq.assets.length).to.equal(0);
+    });
+  })
 
   it('should convert from ortb to old-style native request', () => {
     const openRTBRequest = {
@@ -1008,8 +1240,8 @@ describe('fireClickTrackers', () => {
     fetchURL = sinon.stub();
   });
 
-  function runTrackers(resp) {
-    fireClickTrackers(resp, {fetchURL});
+  function runTrackers(resp, assetId = null) {
+    fireClickTrackers(resp, assetId, {fetchURL});
   }
 
   it('should load each URL in link.clicktrackers', () => {
@@ -1020,5 +1252,56 @@ describe('fireClickTrackers', () => {
       }
     });
     urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+
+  it('should load each URL in asset.link.clicktrackers, when response is ORTB', () => {
+    const urls = ['asset_url1', 'asset_url2'];
+    runTrackers({
+      assets: [
+        {
+          id: 1,
+          link: {
+            clicktrackers: urls
+          }
+        }
+      ],
+    }, 1);
+    urls.forEach(url => sinon.assert.calledWith(fetchURL, url));
+  })
+})
+
+describe('toOrtbNativeResponse', () => {
+  it('should work when there are unrequested assets in the response', () => {
+    const legacyResponse = {
+      'title': 'vtitle',
+      'body': 'vbody'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: 'true'
+      },
+
+    });
+    const ortbResponse = toOrtbNativeResponse(legacyResponse, request);
+    expect(ortbResponse.assets.length).to.eql(1);
+  });
+
+  it('should not modify the request', () => {
+    const legacyResponse = {
+      title: 'vtitle'
+    }
+    const request = toOrtbNativeRequest({
+      title: {
+        required: true
+      }
+    });
+    const requestCopy = JSON.parse(JSON.stringify(request));
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    expect(request).to.eql(requestCopy);
+    sinon.assert.match(response.assets[0], {
+      title: {
+        text: 'vtitle'
+      }
+    })
   })
 })
