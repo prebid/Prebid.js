@@ -57,6 +57,7 @@ function executeIHLoggerCall() {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['ih'] = identityOnly;
   outputObj['orig'] = domain;
+  pixelURL += 'pubid=' + publisherId;
   ajax(
     pixelURL,
     null,
