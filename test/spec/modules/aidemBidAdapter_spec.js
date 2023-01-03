@@ -385,7 +385,7 @@ describe('Aidem adapter', () => {
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'banner', 'id', 'mediatype', 'imp_ext', 'tid'
+        'banner', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
       )
       expect(payload.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
@@ -401,7 +401,7 @@ describe('Aidem adapter', () => {
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'video', 'id', 'mediatype', 'imp_ext', 'tid'
+        'video', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
       )
       expect(payload.imp[0].video).to.be.a('object').that.has.all.keys(
         'format', 'mimes', 'minDuration', 'maxDuration', 'protocols'
@@ -420,6 +420,14 @@ describe('Aidem adapter', () => {
       expect(floor).to.be.a('object').that.has.all.keys(
         'value', 'currency'
       )
+    });
+
+    it('should hav wpar keys in environment object', function () {
+      const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      const payload = JSON.parse(requests.data)
+      expect(payload).to.have.property('environment')
+      expect(payload.environment).to.be.a('object').that.have.property('wpar')
+      expect(payload.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
     });
   })
 
