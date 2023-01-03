@@ -543,6 +543,63 @@ describe('YieldmoAdapter', function () {
         };
         expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
       });
+      it('should add device sua info to payload if available', function () {
+        let videoBid = mockVideoBid({ ortb2Imp: {
+          device: {
+            sua: {
+              platform: {
+                brand: 'macOS',
+                version: [ '12', '4', '0' ]
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Not;A=Brand',
+                  version: [ '99', '0', '0', '0' ]
+                }
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'x86'
+            }
+          }
+        }});
+        const payload = buildAndGetData([videoBid]);
+        expect(payload.device.sua).to.exist;
+        expect(payload.device.sua).to.deep.equal({
+          platform: {
+            brand: 'macOS',
+            version: [ '12', '4', '0' ]
+          },
+          browsers: [
+            {
+              brand: 'Chromium',
+              version: [ '106', '0', '5249', '119' ]
+            },
+            {
+              brand: 'Google Chrome',
+              version: [ '106', '0', '5249', '119' ]
+            },
+            {
+              brand: 'Not;A=Brand',
+              version: [ '99', '0', '0', '0' ]
+            }
+          ],
+          mobile: 0,
+          model: ''
+        }
+        );
+        videoBid = buildAndGetData([mockVideoBid()]);
+        expect(videoBid.device.sua).to.not.exist;
+      });
     });
   });
 

@@ -516,7 +516,7 @@ function openRtbDevice(bidRequest) {
     ua: navigator.userAgent,
     language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
   };
-  // Add User Agent Client hunts.
+  // Add User Agent Client hints.
   const uaClientHints = deepAccess(bidRequest, 'ortb2Imp.device.sua');
   let sua = null;
   if (uaClientHints) {
