@@ -10,6 +10,7 @@ import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -93,7 +94,7 @@ function lookupIabConsent({onSuccess, onError}) {
   const { cmpFrame, cmpFunction } = findCMP();
 
   if (!cmpFrame) {
-    return onError('CMP not found.');
+    return onError('TCF2 CMP not found.');
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
@@ -313,11 +314,11 @@ export function resetConsentData() {
  * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config && (config.gdpr || config.usp ? config.gdpr : config);
+  config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement config not defined, exiting consent manager');
+    logWarn('consentManagement (gdpr) config not defined, exiting consent manager');
     return;
   }
   if (isStr(config.cmpApi)) {
@@ -356,22 +357,27 @@ export function setConsentConfig(config) {
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
 
-export function setOrtbGdpr(ortbRequest, bidderRequest) {
-  const consent = bidderRequest.gdprConsent;
-  if (consent) {
-    if (typeof consent.gdprApplies === 'boolean') {
-      deepSetValue(ortbRequest, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = gdprDataHandler.getConsentData();
+    if (consent) {
+      if (typeof consent.gdprApplies === 'boolean') {
+        deepSetValue(ortb2, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+      }
+      deepSetValue(ortb2, 'user.ext.consent', consent.consentString);
     }
-    deepSetValue(ortbRequest, 'user.ext.consent', consent.consentString);
-  }
+    return ortb2;
+  }));
 }
 
+enrichFPD.before(enrichFPDHook);
+
 export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+  // this is not a standardized name for addtlConsent, so keep this as an ORTB library processor rather than an FPD enrichment
   const addtl = bidderRequest.gdprConsent?.addtlConsent;
   if (addtl && typeof addtl === 'string') {
     deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
   }
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'gdpr', fn: setOrtbGdpr});
 registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})

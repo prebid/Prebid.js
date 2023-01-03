@@ -985,6 +985,52 @@ describe('AppNexusAdapter', function () {
       expect(payload.us_privacy).to.exist.and.to.equal(consentString);
     });
 
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': [8]
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.privacy).to.exist;
+      expect(payload.privacy.gpp).to.equal(consentString);
+      expect(payload.privacy.gpp_sid).to.deep.equal([8]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.ortb2.regs', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'ortb2': {
+          'regs': {
+            'gpp': consentString,
+            'gpp_sid': [7]
+          }
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.privacy).to.exist;
+      expect(payload.privacy.gpp).to.equal(consentString);
+      expect(payload.privacy.gpp_sid).to.deep.equal([7]);
+    });
+
     it('supports sending hybrid mobile app parameters', function () {
       let appRequest = Object.assign({},
         bidRequests[0],

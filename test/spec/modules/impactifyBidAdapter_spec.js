@@ -166,6 +166,19 @@ describe('ImpactifyAdapter', function () {
       }
     };
 
+    it('should pass bidfloor', function () {
+      videoBidRequests[0].getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 1.23,
+        }
+      }
+
+      const res = spec.buildRequests(videoBidRequests, videoBidderRequest)
+      const resData = JSON.parse(res.data)
+      expect(resData.imp[0].bidfloor).to.equal(1.23)
+    });
+
     it('sends video bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
       expect(request.url).to.equal(ORIGIN + AUCTIONURI);
