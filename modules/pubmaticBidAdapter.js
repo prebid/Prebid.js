@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
+import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques, parseQueryStringParameters } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -8,7 +8,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
-const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=ow-client';
+const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator';
 const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.html?kdntuid=1&p=';
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
@@ -1040,6 +1040,22 @@ export function prepareMetaObject(br, bid, seat) {
   }
 }
 
+/**
+ * returns, boolean value according to translator get request is enabled
+ * and random value should be less than or equal to testGroupPercentage
+ * @returns boolean
+ */
+function hasGetRequestEnabled() {
+  if (!(config.getConfig('translatorGetRequest.enabled') === true)) return false;
+  const randomValue100 = Math.ceil(Math.random() * 100);
+  const testGroupPercentage = config.getConfig('translatorGetRequest.testGroupPercentage') || 0;
+  return randomValue100 <= testGroupPercentage;
+}
+
+function getUniqueNumber(rangeEnd) {
+  return Math.floor(Math.random() * rangeEnd) + 1;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1290,12 +1306,44 @@ export const spec = {
       delete payload.site;
     }
 
-    return {
+    const correlator = getUniqueNumber(1000);
+    let url = ENDPOINT + '?source=ow-client&correlator=' + correlator;
+
+    // For Auction End Handler
+    bidderRequest.nwMonitor = {};
+    bidderRequest.nwMonitor.reqMethod = 'POST';
+    bidderRequest.nwMonitor.correlator = correlator;
+    bidderRequest.nwMonitor.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
+    // For Timeout handler
+    bidderRequest?.bids?.forEach(bid => bid.correlator = correlator);
+
+    let serverRequest = {
       method: 'POST',
-      url: ENDPOINT,
+      url: url,
       data: JSON.stringify(payload),
       bidderRequest: bidderRequest
     };
+
+    // Allow translator request to execute it as GET Methoid if flag is set.
+    if (hasGetRequestEnabled()) {
+      const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
+      const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
+      const urlEncodedPayloadStr = parseQueryStringParameters({
+        'source': 'ow-client', 'payload': JSON.stringify(payload), 'correlator': correlator});
+      if ((configuredEndPoint + '?' + urlEncodedPayloadStr)?.length <= maxUrlLength) {
+        serverRequest = {
+          method: 'GET',
+          url: configuredEndPoint,
+          data: urlEncodedPayloadStr,
+          bidderRequest: bidderRequest,
+          payloadStr: JSON.stringify(payload)
+        };
+        bidderRequest.nwMonitor.reqMethod = 'GET';
+        bidderRequest.nwMonitor.requestUrlPayloadLength = configuredEndPoint.length + '?'.length + urlEncodedPayloadStr.length;
+      }
+    }
+
+    return serverRequest;
   },
 
   /**
@@ -1307,6 +1355,8 @@ export const spec = {
   interpretResponse: (response, request) => {
     const bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
+    // In case of Translator GET request, will copy the actual json data from payloadStr to data.
+    if (request?.payloadStr) request.data = request.payloadStr;
     let parsedRequest = JSON.parse(request.data);
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
@@ -1378,6 +1428,13 @@ export const spec = {
                     br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
                   }
                   prepareMetaObject(br, bid, seatbidder.seat);
+
+                  // START of Experimental change
+                  if (response.body.ext) {
+                    br.ext = response.body.ext;
+                  }
+                  // END of Experimental change
+
                   // adserverTargeting
                   if (seatbidder.ext && seatbidder.ext.buyid) {
                     br.adserverTargeting = {
