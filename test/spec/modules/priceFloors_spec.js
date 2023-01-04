@@ -1495,6 +1495,79 @@ describe('the price floors module', function () {
         });
       });
 
+      it('should use inverseFloorAdjustment function before bidder cpm adjustment', function () {
+        let functionUsed;
+        getGlobal().bidderSettings = {
+          rubicon: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              functionUsed = 'Rubicon Adjustment';
+              bidCpm *= 0.5;
+              if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
+              return bidCpm;
+            },
+            inverseBidAdjustment: function (bidCpm, bidResponse) {
+              functionUsed = 'Rubicon Inverse';
+              if (bidResponse.mediaType === 'video') bidCpm += 0.18;
+              return bidCpm / 0.5;
+            },
+          },
+          appnexus: {
+            bidCpmAdjustment: function (bidCpm, bidResponse) {
+              functionUsed = 'Appnexus Adjustment';
+              bidCpm *= 0.75;
+              if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
+              return bidCpm;
+            },
+            inverseBidAdjustment: function (bidCpm, bidResponse) {
+              functionUsed = 'Appnexus Inverse';
+              if (bidResponse.mediaType === 'video') bidCpm += 0.18;
+              return bidCpm / 0.75;
+            },
+          }
+        };
+
+        _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
+
+        _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+        let appnexusBid = {
+          ...bidRequest,
+          bidder: 'appnexus'
+        };
+
+        // should be same as the adjusted calculated inverses above test
+        expect(bidRequest.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 2.0
+        });
+
+        // should use rubicon inverse
+        expect(functionUsed).to.equal('Rubicon Inverse');
+
+        // appnexus asking for * should just be same floor
+        expect(appnexusBid.getFloor()).to.deep.equal({
+          currency: 'USD',
+          floor: 1.3334
+        });
+
+        expect(functionUsed).to.equal('Appnexus Inverse');
+
+        // now since asking for 'video' inverse function should include the .18
+        expect(bidRequest.getFloor({ mediaType: 'video' })).to.deep.equal({
+          currency: 'USD',
+          floor: 2.36
+        });
+
+        expect(functionUsed).to.equal('Rubicon Inverse');
+
+        // now since asking for 'video' inverse function should include the .18
+        expect(appnexusBid.getFloor({ mediaType: 'video' })).to.deep.equal({
+          currency: 'USD',
+          floor: 1.5734
+        });
+
+        expect(functionUsed).to.equal('Appnexus Inverse');
+      });
+
       it('should use standard cpmAdjustment if no bidder cpmAdjustment', function () {
         getGlobal().bidderSettings = {
           rubicon: {

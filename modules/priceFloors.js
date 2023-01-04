@@ -179,7 +179,7 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
+export function getBiddersCpmAdjustment(bidderName, inputCpm, bid) {
   const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
   if (adjustmentFunction) {
     return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
@@ -249,8 +249,22 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
 
   // if cpmAdjustment flag is true and we have a valid floor then run the adjustment on it
   if (floorData.enforcement.bidAdjustment && floorInfo.matchingFloor) {
-    let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor);
-    floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
+    // For cpm adjustments, they may use the "bid response" object now. So we should put as much info in it as we can
+    // But since this is at bidRequest time, we may not have everything! So put entire bidRequest and overwrite a couple things to be safe
+    const fakeBid = {
+      ...bidRequest,
+      mediaType: requestParams.mediaType, // default would be `*` but it is whatever the bidder adds to getFloor
+      size: requestParams.size // similaraliy, this may be * or an actual size, better than nothing!
+    }
+
+    // pub provided inverse function takes precedence, otherwise do old adjustment stuff
+    const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
+    if (inverseFunction) {
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, fakeBid);
+    } else {
+      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, fakeBid, floorData.inverseFloorAdjustment);
+      floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
+    }
   }
 
   if (floorInfo.matchingFloor) {
