@@ -2,7 +2,7 @@
  * appnexus.js - AppNexus Prebid Analytics Adapter
  */
 
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import {logEvent, sendBatch, setEndPoint} from './NewsCorpPrebidAnalytics/analytics.js';
 
