@@ -4631,7 +4631,7 @@ describe('PubMatic adapter', function () {
           // agencyName: 'agnm',
           // brandId: 'brid',
           // brandName: 'brnm',
-          // dchain: 'dc',
+          dchain: 'dc',
           // demandSource: 'ds',
           // secondaryCatIds: ['secondaryCatIds']
         }
@@ -4649,7 +4649,7 @@ describe('PubMatic adapter', function () {
       // expect(br.meta.agencyName).to.equal('agnm');
       expect(br.meta.brandId).to.equal('mystartab.com');
       // expect(br.meta.brandName).to.equal('brnm');
-      // expect(br.meta.dchain).to.equal('dc');
+      expect(br.meta.dchain).to.equal('dc');
       expect(br.meta.demandSource).to.equal(6);
       expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
       expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');
