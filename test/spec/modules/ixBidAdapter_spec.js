@@ -658,7 +658,7 @@ describe('IndexexchangeAdapter', function () {
     }
   };
 
-  const DEFAULT_VIDEO_BID_RESPONSE_WITH_MTYPE_SET = {
+  const DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM = {
     cur: 'USD',
     id: '1aa2bb3cc4de',
     seatbid: [
@@ -675,7 +675,6 @@ describe('IndexexchangeAdapter', function () {
             mtype: 2,
             adm: '<?xml version=\"1.0\" encoding=\"UTF-8\"?><VAST xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"vast.xsd\" version=\"3.0\"> <Ad id=\"488427365\">  <InLine>   <AdSystem>Test</AdSystem>   <AdTitle>In-Stream Video</AdTitle> </InLine> </Ad></VAST',
             ext: {
-              vasturl: 'www.abcd.com/vast',
               errorurl: 'www.abcd.com/error',
               dspid: 51,
               pricelevel: '_110',
@@ -1625,6 +1624,17 @@ describe('IndexexchangeAdapter', function () {
       expect(r.ext.ixdiag.tmax).to.equal(250);
     });
 
+    it('should set ixdiag.tmax value from bidderRequest overriding global config bidderTimeout', function () {
+      config.setConfig({
+        bidderTimeout: 250
+      });
+
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { timeout: 1234 })[0];
+      const r = extractPayload(request);
+
+      expect(r.ext.ixdiag.tmax).to.equal(1234);
+    });
+
     it('should not set ixdiag.tmax value if bidderTimeout is undefined', function () {
       config.setConfig({
         bidderTimeout: null
@@ -2063,6 +2073,44 @@ describe('IndexexchangeAdapter', function () {
         const pageUrl = extractPayload(requestWithFirstPartyData).site.page;
         const expectedPageUrl = DEFAULT_OPTION.refererInfo.page + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
         expect(pageUrl).to.equal(expectedPageUrl);
+      });
+
+      it('should set device sua if available in fpd and request size does not exceed limit', function () {
+        const ortb2 = {
+          device: {
+            sua: {
+              platform: {
+                brand: 'macOS',
+                version: [ '12', '6', '1' ]
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: [ '107', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [ '107', '0', '5249', '119' ]
+                },
+              ],
+              mobile: 0,
+              model: ''
+            }
+          }};
+
+        const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+        const payload = extractPayload(request);
+        expect(payload.device.sua.platform.brand).to.equal('macOS')
+        expect(payload.device.sua.mobile).to.equal(0)
+      });
+
+      it('should not set device sua if not available in fpd', function () {
+        const ortb2 = {
+          device: {}};
+
+        const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
+        const payload = extractPayload(request);
+        expect(payload.device).to.be.undefined
       });
 
       it('should not set first party data if it is not an object', function () {
@@ -3121,10 +3169,50 @@ describe('IndexexchangeAdapter', function () {
           }
         }
       ];
-      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE_WITH_MTYPE_SET }, {
+      const result = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM }, {
         data: videoBidderRequest.data, validBidRequests: ONE_VIDEO
       });
 
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should not set vastxml when vasturl is present and when mtype is 2 (video)', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4e',
+          cpm: 1.1,
+          creativeId: '12346',
+          mediaType: 'video',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [
+                [
+                  400,
+                  100
+                ]
+              ]
+            }
+          },
+          width: 640,
+          height: 480,
+          currency: 'USD',
+          ttl: 3600,
+          netRevenue: true,
+          vastUrl: 'www.abcd.com/vast',
+          meta: {
+            networkId: 51,
+            brandId: 303326,
+            brandName: 'OECTB',
+            advertiserDomains: ['www.abcd.com']
+          }
+        }
+      ];
+      let bid_response = DEFAULT_VIDEO_BID_RESPONSE_WITH_XML_ADM;
+      bid_response.seatbid[0].bid[0].ext['vasturl'] = 'www.abcd.com/vast';
+      const result = spec.interpretResponse({ body: bid_response }, {
+        data: videoBidderRequest.data, validBidRequests: ONE_VIDEO
+      });
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
