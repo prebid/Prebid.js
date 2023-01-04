@@ -255,7 +255,7 @@ export const lotamePanoramaIdSubmodule = {
 
     const getRequestHost = function() {
       if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
-        return btoa(SAFARI_ID_HOST);
+        return atob(SAFARI_ID_HOST);
       }
       return ID_HOST;
     }
