@@ -29,7 +29,7 @@ const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
-const SAFARI_ID_HOST = 'id.ltmsphrcl.net';
+const SAFARI_ID_HOST = 'c.ltmsphrcl.net';
 
 export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 let cookieDomain;
