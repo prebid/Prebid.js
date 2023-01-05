@@ -7,6 +7,7 @@ import CONSTANTS from '../src/constants.json';
 
 export const DATA_PROVIDER = 'neuwo.ai';
 const SEGTAX_IAB = 2 // IAB - Content Taxonomy version 2
+const CATTAX_IAB = 6 // IAB Tech Lab Content Taxonomy 2.2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
 
@@ -89,6 +90,9 @@ export function injectTopics(topics, bidsConfig, callback, billingId) {
   // effectively gets topics.marketing_categories.iab_tier_1, topics.marketing_categories.iab_tier_2
   // used as FPD segments content
 
+  let pagecat = segment.map(s => s.id)
+  let cattax = CATTAX_IAB
+
   let IABSegments = {
     name: DATA_PROVIDER,
     ext: { segtax: SEGTAX_IAB },
@@ -100,13 +104,20 @@ export function injectTopics(topics, bidsConfig, callback, billingId) {
   }
 
   addFragment(bidsConfig.ortb2Fragments.global, 'site.content.data', [IABSegments])
+
+  // upgrade category taxonomy to IAB 2.2, inject result to page categories
+  if (pagecat.length > 0) {
+    addFragment(bidsConfig.ortb2Fragments.global, 'site.cattax', cattax)
+    addFragment(bidsConfig.ortb2Fragments.global, 'site.pagecat', pagecat)
+  }
+
   logInfo('NeuwoRTDModule', 'injectTopics: post-injection bidsConfig', bidsConfig)
 
   callback()
 }
 
 /* eslint-disable object-property-newline */
-const D_IAB_ID = { // Content Taxonomy version 2.0 final release November 2017
+const D_IAB_ID = { // Content Taxonomy version 2.0 final release November 2017 [sic] (Taxonomy ID Mapping, IAB versions 2.0 - 2.2)
   'IAB19-1': '603', 'IAB6-1': '193', 'IAB5-2': '133', 'IAB20-1': '665', 'IAB20-2': '656', 'IAB23-2': '454', 'IAB3-2': '102', 'IAB20-3': '672', 'IAB8-5': '211',
   'IAB8-18': '211', 'IAB7-4': '288', 'IAB7-5': '233', 'IAB17-12': '484', 'IAB19-3': '608', 'IAB21-1': '442', 'IAB9-2': '248', 'IAB15-1': '456', 'IAB9-17': '265', 'IAB20-4': '658',
   'IAB2-3': '30', 'IAB2-1': '32', 'IAB17-1': '518', 'IAB2-2': '34', 'IAB2': '1', 'IAB8-2': '215', 'IAB17-2': '545', 'IAB17-26': '547', 'IAB9-3': '249', 'IAB18-1': '553', 'IAB20-5': '674',
