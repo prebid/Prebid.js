@@ -62,6 +62,7 @@ export const spec = {
       }
       if (bid.userIdAsEids && Array.isArray(bid.userIdAsEids)) {
         query.ids = createUserIdString(bid.userIdAsEids)
+        query.atypes = createUserIdAtypesString(bid.userIdAsEids)
       }
       if (bid.params.customParams && isPlainObject(bid.params.customParams)) {
         for (const prop in bid.params.customParams) {
@@ -301,6 +302,21 @@ function createUserIdString(eids) {
     str.push(eids[i].source + ':' + eids[i].uids[0].id)
   }
   return str.join(',')
+}
+
+/**
+ * Creates a string from an array of eids with ID provider and atype if atype exists
+ * @param {Array.<{source: String, uids: Array.<{id: String, atype: Number, ext: Object}>}>} eids
+ * @returns {String} idprovider:atype,idprovider2:atype2,...
+ */
+function createUserIdAtypesString(eids) {
+  const str = [];
+  for (let i = 0; i < eids.length; i++) {
+    if (eids[i].uids[0].atype) {
+      str.push(eids[i].source + ':' + eids[i].uids[0].atype);
+    }
+  }
+  return str.join(',');
 }
 
 /**

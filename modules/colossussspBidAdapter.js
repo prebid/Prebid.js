@@ -87,6 +87,11 @@ export const spec = {
       logMessage(e);
     }
 
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const userObj = firstPartyData.user;
+    const siteObj = firstPartyData.site;
+    const appObj = firstPartyData.app;
+
     // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
@@ -97,6 +102,9 @@ export const spec = {
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
       page: location.pathname,
+      userObj,
+      siteObj,
+      appObj,
       placements: placements
     };
 
