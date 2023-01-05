@@ -6,7 +6,7 @@ import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
 export const DATA_PROVIDER = 'neuwo.ai';
-const SEGTAX_IAB = 2 // IAB - Content Taxonomy version 2
+const SEGTAX_IAB = 6 // IAB - Content Taxonomy version 2
 const CATTAX_IAB = 6 // IAB Tech Lab Content Taxonomy 2.2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
