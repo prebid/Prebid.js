@@ -543,8 +543,8 @@ describe('YieldmoAdapter', function () {
         };
         expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
       });
-      it('should add device sua info to payload if available', function () {
-        let videoBid = mockVideoBid({ ortb2Imp: {
+      it('should add device info to payload if available', function () {
+        let videoBidder = mockBidderRequest({ ortb2: {
           device: {
             sua: {
               platform: {
@@ -571,8 +571,8 @@ describe('YieldmoAdapter', function () {
               architecture: 'x86'
             }
           }
-        }});
-        const payload = buildAndGetData([videoBid]);
+        }}, [mockVideoBid()]);
+        let payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
         expect(payload.device.sua).to.exist;
         expect(payload.device.sua).to.deep.equal({
           platform: {
@@ -594,11 +594,24 @@ describe('YieldmoAdapter', function () {
             }
           ],
           mobile: 0,
-          model: ''
+          model: '',
+          bitness: '64',
+          architecture: 'x86'
         }
         );
-        videoBid = buildAndGetData([mockVideoBid()]);
-        expect(videoBid.device.sua).to.not.exist;
+        expect(payload.device.ua).to.not.exist;
+        expect(payload.device.language).to.not.exist;
+        // remove sua info and check device object
+        videoBidder = mockBidderRequest({ ortb2: {
+          device: {
+            ua: navigator.userAgent,
+            language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+          }
+        }}, [mockVideoBid()]);
+        payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.device.sua).to.not.exist;
+        expect(payload.device.ua).to.exist;
+        expect(payload.device.language).to.exist;
       });
     });
   });

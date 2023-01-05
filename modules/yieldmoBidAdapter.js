@@ -11,8 +11,7 @@ import {
   isStr,
   logError,
   parseQueryStringParameters,
-  parseUrl,
-  pick
+  parseUrl
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -386,7 +385,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
-    device: openRtbDevice(bidRequests[0]),
+    device: deepAccess(bidderRequest, 'ortb2.device'),
     badv: bidRequests[0].params.badv || [],
     bcat: deepAccess(bidderRequest, 'bcat') || bidRequests[0].params.bcat || [],
     ext: {
@@ -506,26 +505,6 @@ function openRtbSite(bidRequest, bidderRequest) {
       .forEach(param => result[param] = siteParams[param]);
   }
   return result;
-}
-
-/**
- * @return Object OpenRTB's 'device' object
- */
-function openRtbDevice(bidRequest) {
-  const deviceObj = {
-    ua: navigator.userAgent,
-    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-  };
-  // Add User Agent Client hints.
-  const uaClientHints = deepAccess(bidRequest, 'ortb2Imp.device.sua');
-  let sua = null;
-  if (uaClientHints) {
-    sua = pick(uaClientHints, ['browsers', 'platform', 'mobile', 'model']);
-  }
-  if (sua) {
-    deepSetValue(deviceObj, 'sua', sua);
-  }
-  return deviceObj;
 }
 
 /**
