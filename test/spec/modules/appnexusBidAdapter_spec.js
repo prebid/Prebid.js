@@ -446,7 +446,7 @@ describe('AppNexusAdapter', function () {
       const payload1 = JSON.parse(request[0].data);
       const payload2 = JSON.parse(request[1].data);
 
-      // 300 / 15 = 20 total
+      // 300 / 15 = 20 total 
       expect(payload1.tags.length).to.equal(15);
       expect(payload2.tags.length).to.equal(5);
 
