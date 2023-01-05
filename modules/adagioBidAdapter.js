@@ -669,10 +669,8 @@ function autoFillParams(bid) {
   }
 
   // extra params
-  setExtraParam(bid, 'environment');
   setExtraParam(bid, 'pagetype');
   setExtraParam(bid, 'category');
-  setExtraParam(bid, 'subcategory');
 }
 
 function getPageDimensions() {
@@ -1094,8 +1092,6 @@ export const spec = {
               bidObj.placement = bidReq.params.placement;
               bidObj.pagetype = bidReq.params.pagetype;
               bidObj.category = bidReq.params.category;
-              bidObj.subcategory = bidReq.params.subcategory;
-              bidObj.environment = bidReq.params.environment;
             }
             bidResponses.push(bidObj);
           });
