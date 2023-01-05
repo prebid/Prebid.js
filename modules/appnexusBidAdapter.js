@@ -304,6 +304,18 @@ export const spec = {
       payload.us_privacy = bidderRequest.uspConsent;
     }
 
+    if (bidderRequest?.gppConsent) {
+      payload.privacy = {
+        gpp: bidderRequest.gppConsent.gppString,
+        gpp_sid: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      payload.privacy = {
+        gpp: bidderRequest.ortb2.regs.gpp,
+        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
+      }
+    }
+
     if (bidderRequest && bidderRequest.refererInfo) {
       let refererinfo = {
         // TODO: are these the correct referer values?
@@ -424,8 +436,17 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    function checkGppStatus(gppConsent) {
+      // this is a temporary measure to supress usersync in US-based GPP regions
+      // this logic will be revised when proper signals (akin to purpose1 from TCF2) can be determined for US GPP
+      if (gppConsent && Array.isArray(gppConsent.applicableSections)) {
+        return gppConsent.applicableSections.every(sec => typeof sec === 'number' && sec <= 5);
+      }
+      return true;
+    }
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent) && checkGppStatus(gppConsent)) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -710,6 +731,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      video: nativeAd.video,
       javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
