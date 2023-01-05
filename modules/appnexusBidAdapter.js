@@ -731,6 +731,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      video: nativeAd.video,
       javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
