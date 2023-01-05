@@ -497,6 +497,12 @@ describe('FeedAdAdapter', function () {
         expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, it)).not.to.throw;
       });
     });
+
+    it('should return empty array if the body extension is null', function () {
+      const response = mockServerResponse({ext: null});
+      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, response);
+      expect(result).to.deep.equal([]);
+    });
   });
 
   describe('event tracking calls', function () {
