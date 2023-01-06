@@ -47,4 +47,6 @@
     "criteoIdSystem",
     "sharedIdSystem",
     "uid2IdSystem"
+    "rtdModule",
+    "permutiveRtdProvider"
 ]
