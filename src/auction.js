@@ -483,6 +483,9 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
         'vastUrl',
         'native',
       ].includes(k))));
+      noBid.width = bid.width;
+      noBid.height = bid.height;
+      noBid.mediaType = bid.mediaType;
       noBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
       noBid.cpm = 0;
 
