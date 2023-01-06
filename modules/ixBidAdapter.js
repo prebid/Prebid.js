@@ -719,6 +719,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     if (pageUrl) {
       r.site.page = pageUrl;
     }
+
+    if (bidderRequest.gppConsent) {
+      deepSetValue(r, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(r, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    }
   }
 
   if (config.getConfig('coppa')) {
@@ -878,6 +883,16 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         const sua = {...fpd.device.sua};
         if (!isEmpty(sua)) {
           deepSetValue(r, 'device.sua', sua);
+        }
+      }
+
+      if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
+        if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+          deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
+        }
+
+        if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
+          deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
         }
       }
 
