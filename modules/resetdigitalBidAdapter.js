@@ -43,16 +43,29 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.ccpa = bidderRequest.uspConsent;
+    }
+
     for (let x = 0; x < validBidRequests.length; x++) {
       let req = validBidRequests[x]
 
       payload.imps.push({
         pub_id: req.params.pubId,
+        site_id: req.params.siteID ? req.params.siteID : null,
+        placement_id: req.params.placement ? req.params.placement : null,
+        position: req.params.position ? req.params.position : null,
+        bid_floor: req.params.bidFloor ? req.params.bidFloor : null,
+        lat_long: req.params.latLong ? req.params.latLong : null,
+        inventory: req.params.inventory ? req.params.inventory : null,
+        visitor: req.params.visitor ? req.params.visitor : null,
+        keywords: req.params.keywords ? req.params.keywords : null,
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         media_types: deepAccess(req, 'mediaTypes')
       });
     }
