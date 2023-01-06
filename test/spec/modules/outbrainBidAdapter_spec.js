@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec} from 'modules/outbrainBidAdapter.js';
-import {config} from 'src/config.js';
-import {server} from 'test/mocks/xhr';
+import { expect } from 'chai';
+import { spec } from 'modules/outbrainBidAdapter.js';
+import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 describe('Outbrain Adapter', function () {
@@ -43,6 +43,21 @@ describe('Outbrain Adapter', function () {
           250
         ]
       ]
+    }
+
+    const videoBidRequestParams = {
+      mediaTypes: {
+        video: {
+          playerSize: [[640, 480]],
+          mimes: ['video/mp4'],
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          playbackmethod: [1],
+          skip: 1,
+          placement: 4,
+          api: [2],
+          maxbitrate: 3000
+        }
+      }
     }
 
     describe('isBidRequestValid', function () {
@@ -90,6 +105,18 @@ describe('Outbrain Adapter', function () {
             }
           },
           ...displayBidRequestParams,
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+      it('should succeed when bid contains video', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
+          ...videoBidRequestParams,
         }
         expect(spec.isBidRequestValid(bid)).to.equal(true)
       })
@@ -298,6 +325,55 @@ describe('Outbrain Adapter', function () {
         expect(res.data).to.deep.equal(JSON.stringify(expectedData))
       })
 
+      it('should build video request', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...videoBidRequestParams,
+        }
+        const expectedData = {
+          site: {
+            page: 'https://example.com/',
+            publisher: {
+              id: 'publisher-id'
+            }
+          },
+          device: {
+            ua: navigator.userAgent
+          },
+          source: {
+            fd: 1
+          },
+          cur: [
+            'USD'
+          ],
+          imp: [
+            {
+              id: '1',
+              video: {
+                w: 640,
+                h: 480,
+                protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+                playbackmethod: [1],
+                mimes: ['video/mp4'],
+                skip: 1,
+                api: [2],
+                maxbitrate: 3000
+              }
+            }
+          ],
+          ext: {
+            prebid: {
+              channel: {
+                name: 'pbjs', version: '$prebid.version$'
+              }
+            }
+          }
+        }
+        const res = spec.buildRequests([bidRequest], commonBidderRequest)
+        expect(res.url).to.equal('https://bidder-url.com')
+        expect(res.data).to.deep.equal(JSON.stringify(expectedData))
+      })
+
       it('should pass optional parameters in request', function () {
         const bidRequest = {
           ...commonBidRequest,
@@ -390,7 +466,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         }
-        config.setConfig({coppa: true})
+        config.setConfig({ coppa: true })
 
         const res = spec.buildRequests([bidRequest], commonBidderRequest)
         const resData = JSON.parse(res.data)
@@ -412,7 +488,7 @@ describe('Outbrain Adapter', function () {
         let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.eids).to.deep.equal([
-          {source: 'liveramp.com', uids: [{id: 'id-value', atype: 3}]}
+          { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
         ]);
       });
 
@@ -421,7 +497,7 @@ describe('Outbrain Adapter', function () {
           ...commonBidRequest,
           ...nativeBidRequestParams,
         }
-        bidRequest.getFloor = function() {
+        bidRequest.getFloor = function () {
           return {
             currency: 'USD',
             floor: 1.23,
@@ -619,6 +695,66 @@ describe('Outbrain Adapter', function () {
         const res = spec.interpretResponse(serverResponse, request)
         expect(res).to.deep.equal(expectedRes)
       });
+
+      it('should interpret video response', function () {
+        const serverResponse = {
+          body: {
+            id: '123',
+            seatbid: [
+              {
+                bid: [
+                  {
+                    id: '111',
+                    impid: '1',
+                    price: 1.1,
+                    adm: '\u003cVAST version="3.0"\u003e\u003cAd\u003e\u003cInLine\u003e\u003cAdSystem\u003ezemanta\u003c/AdSystem\u003e\u003cAdTitle\u003e1\u003c/AdTitle\u003e\u003cImpression\u003ehttp://win.com\u003c/Impression\u003e\u003cImpression\u003ehttp://example.com/imptracker\u003c/Impression\u003e\u003cCreatives\u003e\u003cCreative\u003e\u003cLinear\u003e\u003cDuration\u003e00:00:25\u003c/Duration\u003e\u003cTrackingEvents\u003e\u003cTracking event="start"\u003ehttp://example.com/start\u003c/Tracking\u003e\u003cTracking event="progress" offset="00:00:03"\u003ehttp://example.com/p3s\u003c/Tracking\u003e\u003c/TrackingEvents\u003e\u003cVideoClicks\u003e\u003cClickThrough\u003ehttp://link.com\u003c/ClickThrough\u003e\u003c/VideoClicks\u003e\u003cMediaFiles\u003e\u003cMediaFile delivery="progressive" type="video/mp4" bitrate="700" width="640" height="360"\u003ehttps://example.com/123_360p.mp4\u003c/MediaFile\u003e\u003c/MediaFiles\u003e\u003c/Linear\u003e\u003c/Creative\u003e\u003c/Creatives\u003e\u003c/InLine\u003e\u003c/Ad\u003e\u003c/VAST\u003e',
+                    adid: '100',
+                    cid: '5',
+                    crid: '29998660',
+                    cat: ['cat-1'],
+                    adomain: [
+                      'example.com'
+                    ]
+                  }
+                ],
+                seat: '100',
+                group: 1
+              }
+            ],
+            bidid: '456',
+            cur: 'USD'
+          }
+        }
+        const request = {
+          bids: [
+            {
+              ...commonBidRequest,
+              ...videoBidRequestParams
+            }
+          ]
+        }
+        const expectedRes = [
+          {
+            requestId: request.bids[0].bidId,
+            cpm: 1.1,
+            creativeId: '29998660',
+            ttl: 360,
+            netRevenue: false,
+            currency: 'USD',
+            mediaType: 'video',
+            nurl: undefined,
+            vastXml: '<VAST version=\"3.0\"><Ad><InLine><AdSystem>zemanta</AdSystem><AdTitle>1</AdTitle><Impression>http://win.com</Impression><Impression>http://example.com/imptracker</Impression><Creatives><Creative><Linear><Duration>00:00:25</Duration><TrackingEvents><Tracking event=\"start\">http://example.com/start</Tracking><Tracking event=\"progress\" offset=\"00:00:03\">http://example.com/p3s</Tracking></TrackingEvents><VideoClicks><ClickThrough>http://link.com</ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"700\" width=\"640\" height=\"360\">https://example.com/123_360p.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
+            meta: {
+              'advertiserDomains': [
+                'example.com'
+              ]
+            },
+          }
+        ]
+
+        const res = spec.interpretResponse(serverResponse, request)
+        expect(res).to.deep.equal(expectedRes)
+      });
     })
   })
 
@@ -637,41 +773,41 @@ describe('Outbrain Adapter', function () {
     })
 
     it('should return user sync if pixel enabled with outbrain config', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: true})
-      expect(ret).to.deep.equal([{type: 'image', url: usersyncUrl}])
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
+      expect(ret).to.deep.equal([{ type: 'image', url: usersyncUrl }])
     })
 
     it('should not return user sync if pixel disabled', function () {
-      const ret = spec.getUserSyncs({pixelEnabled: false})
+      const ret = spec.getUserSyncs({ pixelEnabled: false })
       expect(ret).to.be.an('array').that.is.empty
     })
 
     it('should not return user sync if url is not set', function () {
       config.resetConfig()
-      const ret = spec.getUserSyncs({pixelEnabled: true})
+      const ret = spec.getUserSyncs({ pixelEnabled: true })
       expect(ret).to.be.an('array').that.is.empty
     })
 
-    it('should pass GDPR consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
+    it('should pass GDPR consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: false, consentString: 'foo' }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=0&gdpr_consent=foo`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: undefined }, undefined)).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=`
       }]);
     });
 
-    it('should pass US consent', function() {
+    it('should pass US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=1NYN`
       }]);
     });
 
-    it('should pass GDPR and US consent', function() {
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
+    it('should pass GDPR and US consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
       }]);
     });
