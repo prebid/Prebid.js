@@ -179,10 +179,10 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm, bid) {
+export function getBiddersCpmAdjustment(bidderName, inputCpm, bid, bidRequest) {
   const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
   if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
+    return parseFloat(adjustmentFunction(inputCpm, { ...bid, cpm: inputCpm }, bidRequest));
   }
   return parseFloat(inputCpm);
 }
@@ -250,9 +250,8 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
   // if cpmAdjustment flag is true and we have a valid floor then run the adjustment on it
   if (floorData.enforcement.bidAdjustment && floorInfo.matchingFloor) {
     // For cpm adjustments, they may use the "bid response" object now. So we should put as much info in it as we can
-    // But since this is at bidRequest time, we may not have everything! So put entire bidRequest and overwrite a couple things to be safe
     const fakeBid = {
-      ...bidRequest,
+      bidder: bidRequest.bidder,
       mediaType: requestParams.mediaType, // default would be `*` but it is whatever the bidder adds to getFloor
       size: requestParams.size // similaraliy, this may be * or an actual size, better than nothing!
     }
@@ -260,9 +259,9 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     // pub provided inverse function takes precedence, otherwise do old adjustment stuff
     const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
     if (inverseFunction) {
-      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, fakeBid);
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, fakeBid, bidRequest);
     } else {
-      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, fakeBid, floorData.inverseFloorAdjustment);
+      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, fakeBid, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
     }
   }
@@ -745,7 +744,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
+  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid, matchingBidRequest);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
