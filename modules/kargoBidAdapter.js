@@ -32,73 +32,88 @@ export const spec = {
     const impressions = [];
 
     _each(validBidRequests, bid => {
-      impressions.push(spec.getImpression(bid)) 
+      impressions.push(spec.getImpression(bid))
     });
 
     const firstBidRequest = validBidRequests[0];
 
     const tdid = deepAccess(firstBidRequest, 'userId.tdid')
- 
+
     const krakenParams = Object.assign({}, {
       pbv: '$prebid.version$',
       aid: firstBidRequest.auctionId,
       sid: spec._getSessionId(),
       url: spec._getAllMetadata(bidderRequest).pageURL,
-      to: bidderRequest.timeout,
+      timeout: bidderRequest.timeout,
       ts: new Date().getTime(),
       device: {
-        size:  [ 
+        size: [
           window.screen.width,
           window.screen.height
         ]
       },
-      imp: impressions, 
-      page: {
-        id: spec._getLocalStorageSafely['pageViewId'],
-        timestamp: spec._getLocalStorageSafely['pageViewTimestamp'],
-        url: spec._getLocalStorageSafely['pageViewUrl']
-      },
+      imp: impressions,
       user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
       eids: firstBidRequest.userIdAsEids
     });
 
     const reqCount = spec._getRequestCount()
-    if(reqCount != null && reqCount > 0) {
-      krakenParams.requestCount = spec._getRequestCount()
+    if (reqCount != null && reqCount > 0) {
+      krakenParams.requestCount = reqCount
     }
 
-    if(currency != null && currency != "USD") {
+    if (currency != null && currency != 'USD') {
       krakenParams.cur = currency
     }
 
-     // Pull Social Canvas segments and embed URL
-     const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
+    // Pull Social Canvas segments and embed URL
+    const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
 
-     if(socialCanvas != null) {
+    if (socialCanvas != null) {
       krakenParams.socan = socialCanvas
-     }
+    }
 
     // User Agent Client Hints / SUA
     const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
     if (uaClientHints) {
-      suaAttributes = ['browsers', 'platform', 'mobile', 'model', 'source']
-      suaValidAttributes = []
+      const suaAttributes = ['browsers', 'platform', 'mobile', 'model', 'source']
+      let suaValidAttributes = []
 
       suaAttributes.forEach(attributeKey => {
-        var attributeValue = uaClientHints[attributeKey] 
-        if(attributeValue != null) {
-          if(((attributeKey == 'mobile' || attributeKey == 'source') && attributeValue < 1) ||
+        var attributeValue = uaClientHints[attributeKey]
+        if (attributeValue != null) {
+          if (((attributeKey == 'mobile' || attributeKey == 'source') && attributeValue < 1) ||
             (attributeKey == 'model' && attributeValue.trim() == '')) {
             return
           }
           suaValidAttributes.push(attributeKey)
         }
       })
-  
+
       krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
     }
 
-    console.log(krakenParams)
+    const validPageId = spec._getLocalStorageSafely('pageViewId') != null 
+    const validPageTimestamp = spec._getLocalStorageSafely('pageViewTimestamp') != null
+    const validPageUrl = spec._getLocalStorageSafely('pageViewUrl') != null
+ 
+    if(validPageId || validPageTimestamp || validPageUrl) {
+      const page = {}
+      if(validPageId) {
+        page.id = spec._getLocalStorageSafely('pageViewId')
+      }
+
+      if(validPageTimestamp) {
+        page.timestamp = spec._getLocalStorageSafely('pageViewTimestamp')
+      }
+
+      if(validPageUrl) {
+        page.url = spec._getLocalStorageSafely('pageViewUrl')
+      }
+     
+      krakenParams.page = page
+    }
+
     return Object.assign({}, bidderRequest, {
       method: 'POST',
       url: `${HOST}/api/v1/prebid`,
@@ -225,12 +240,16 @@ export const spec = {
   _getUserIds(tdid, usp, gdpr) {
     const crb = spec._getCrb();
     const userIds = {
-      kargoID: crb.lexId,
-      clientID: crb.clientId,
-      crbIDs: crb.syncIds || {},
-      optOut: crb.optOut,
-      usp: usp
+      crbIDs: crb.syncIds || {}
     };
+
+    if (tdid) {
+      userIds.tdID = tdid;
+    }
+
+    if(usp) {
+      userIds.usp = usp
+    }
 
     try {
       if (gdpr) {
@@ -241,9 +260,19 @@ export const spec = {
       }
     } catch (e) {
     }
-    if (tdid) {
-      userIds.tdID = tdid;
+    
+    if(crb.lexId != null) {
+      userIds.kargoID = crb.lexId
     }
+
+    if(crb.clientId !=  null) {
+      userIds.clientID = crb.clientId
+    }
+
+    if(crb.optOut != null) {
+      userIds.optOut = crb.optOut
+    }
+
     return userIds;
   },
 
@@ -310,78 +339,78 @@ export const spec = {
   },
 
   getImpression(bid) {
-   const imp = {
+    const imp = {
       id: bid.bidId,
       tid: bid.transactionId,
       pid: bid.params.placementId,
       code: bid.adUnitCode
     }
 
-    if(bid.floor > 0) {
+    if (bid.floor > 0) {
       imp.floor = bid.floor
     }
-    
-    if(bid.bidRequestsCount > 0) {
+
+    if (bid.bidRequestsCount > 0) {
       imp.bidRequestCount = bid.bidRequestsCount
-    }  
-    
-    if(bid.bidderRequestsCount > 0) {
+    }
+
+    if (bid.bidderRequestsCount > 0) {
       imp.bidderRequestCount = bid.bidderRequestsCount
     }
 
-    if(bid.bidderWinsCount > 0) {
+    if (bid.bidderWinsCount > 0) {
       imp.bidderWinCount = bid.bidderWinsCount
     }
 
     const gpid = spec.getGPID(bid)
-    if(gpid != null && gpid != "") {
+    if (gpid != null && gpid != '') {
       imp.fpd = {
         gpid: gpid
       }
     }
 
-    if(bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner
-    }
+    if(bid.mediaTypes != null) {
+      if (bid.mediaTypes.banner != null) {
+        imp.banner = bid.mediaTypes.banner
+      }
 
-    if(bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video
-    }
+      if (bid.mediaTypes.video != null) {
+        imp.video = bid.mediaTypes.video
+      }
 
-    if(bid.mediaTypes.native != null) {
-      imp.banner = bid.mediaTypes.native
+      if (bid.mediaTypes.native != null) {
+        imp.native = bid.mediaTypes.native
+      }
     }
 
     return imp
   },
 
   getGPID(bid) {
-    if(bid.ortb2Imp != null) {
-   
-      if(bid.ortb2Imp.gpid != null & bid.ortb2Imp.gpid != "") {
-        return bid.ortb2Imp.gpid 
+    if (bid.ortb2Imp != null) {
+      if (bid.ortb2Imp.gpid != null & bid.ortb2Imp.gpid != '') {
+        return bid.ortb2Imp.gpid
       }
 
-      if(bid.ortb2Imp.Extensions != null && bid.ortb2Imp.Extensions.Data != null) {
-        if (bid.ortb2Imp.Extensions.Data.PBadSlot != null && bid.ortb2Imp.Extensions.Data.PBadSlot != "") {
-          return bid.ortb2Imp.Extensions.Data.PBadSlot
+      if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
+        if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
+          return bid.ortb2Imp.ext.data.pbAdSlot
         }
 
-        if (bid.ortb2Imp.Extensions.Data.PbAdSlot != null && bid.ortb2Imp.Extensions.Data.PbAdSlot != "") {
-          return bid.ortb2Imp.Extensions.Data.PbAdSlot
-        }
-    
-        if (bid.ortb2Imp.Extensions.Data.AdServer.AdSlot != null && bid.ortb2Imp.Extensions.Data.AdServer.AdSlot != "") {
-          return bid.ortb2Imp.Extensions.Data.AdServer.AdSlot
+        if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
+          return bid.ortb2Imp.ext.data.pbAdSlot
         }
 
+        if (bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
+          return bid.ortb2Imp.ext.data.adServer.adSlot
+        }
       }
     }
-    
-    if (bid.AdUnitCode != null && bid.AdUnitCode != "") {
-      return prebidRequest.AdUnitCode
+
+    if (bid.adUnitCode != null && bid.adUnitCode != '') {
+      return bid.adUnitCode
     }
-    return ""
+    return ''
   }
 
 };
