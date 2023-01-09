@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'livewrapped';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -46,6 +47,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const userId = find(bidRequests, hasUserId);
     const pubcid = find(bidRequests, hasPubcid);
     const publisherId = find(bidRequests, hasPublisherId);

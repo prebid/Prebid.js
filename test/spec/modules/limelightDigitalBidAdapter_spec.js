@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/limelightDigitalBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/limelightDigitalBidAdapter.js';
 
 describe('limelightDigitalAdapter', function () {
   const bid1 = {
@@ -29,7 +29,18 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid2 = {
     bidId: '58ee9870c3164a',
@@ -53,7 +64,23 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        },
+        {
+          asi: 'example1.com',
+          sid: '2',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid3 = {
     bidId: '019645c7d69460',
@@ -81,7 +108,18 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid4 = {
     bidId: '019645c7d69460',
@@ -107,7 +145,18 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
 
   describe('buildRequests', function () {
@@ -146,7 +195,8 @@ describe('limelightDigitalAdapter', function () {
             'sizes',
             'transactionId',
             'publisherId',
-            'userIdAsEids'
+            'userIdAsEids',
+            'supplyChain'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -154,6 +204,7 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.transactionId).to.be.a('string');
           expect(adUnit.sizes).to.be.an('array');
           expect(adUnit.userIdAsEids).to.be.an('array');
+          expect(adUnit.supplyChain).to.be.an('object');
         })
       })
     })
@@ -587,4 +638,5 @@ function validateAdUnit(adUnit, bid) {
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
+  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
 }

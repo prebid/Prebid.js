@@ -1,3 +1,4 @@
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /* eslint dot-notation:0, quote-props:0 */
 import {convertTypes, deepAccess, isArray, isFn, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -39,6 +40,9 @@ export const spec = {
   ),
 
   buildRequests: (bidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const request = {
       id: bidRequests[0].bidderRequestId,
       imp: bidRequests.map(slot => impression(slot)),
@@ -92,7 +96,7 @@ function bidResponseAvailable(request, response) {
   const idToImpMap = {};
   const idToBidMap = {};
   const idToSlotConfig = {};
-  const bidResponse = response.body
+  const bidResponse = response.body;
   // extract the request bids and the response bids, keyed by impr-id
   const ortbRequest = request.data;
   ortbRequest.imp.forEach(imp => {
@@ -149,6 +153,8 @@ function bidResponseAvailable(request, response) {
  * Produces an OpenRTBImpression from a slot config.
  */
 function impression(slot) {
+  var firstPartyData = slot.ortb2Imp?.ext || {};
+  var ext = Object.assign({}, firstPartyData, slotUnknownParams(slot));
   return {
     id: slot.bidId,
     banner: banner(slot),
@@ -156,7 +162,7 @@ function impression(slot) {
     tagid: slot.params.ct.toString(),
     video: video(slot),
     bidfloor: bidFloor(slot),
-    ext: ext(slot),
+    ext: Object.keys(ext).length > 0 ? ext : null,
   };
 }
 
@@ -205,7 +211,7 @@ function video(slot) {
 /**
  * Unknown params are captured and sent on ext
  */
-function ext(slot) {
+function slotUnknownParams(slot) {
   const ext = {};
   const knownParamsMap = {};
   KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
@@ -326,14 +332,16 @@ function site(bidRequests, bidderRequest) {
   const pubId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.cp : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
-    return {
+    // use the first party data if available, and override only publisher/ref/page properties
+    var firstPartyData = bidderRequest?.ortb2?.site || {};
+    return Object.assign({}, firstPartyData, {
       publisher: {
         id: pubId.toString(),
       },
       // TODO: does the fallback make sense here?
       ref: bidderRequest?.refererInfo?.ref || window.document.referrer,
       page: bidderRequest?.refererInfo?.page || ''
-    }
+    });
   }
   return null;
 }
@@ -402,7 +410,8 @@ function adSize(slot, sizes) {
  * an openrtb User object.
  */
 function user(bidRequest, bidderRequest) {
-  var ext = {};
+  var user = bidderRequest?.ortb2?.user || { ext: {} };
+  var ext = user.ext;
   if (bidderRequest) {
     if (bidderRequest.gdprConsent) {
       ext.consent = bidderRequest.gdprConsent.consentString;
@@ -414,7 +423,7 @@ function user(bidRequest, bidderRequest) {
       ext.eids = eids;
     }
   }
-  return { ext };
+  return user;
 }
 
 /**

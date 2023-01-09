@@ -4,7 +4,7 @@
  */
 
 import * as events from './events.js';
-import { fireNativeTrackers, getAssetMessage, getAllAssetsMessage } from './native.js';
+import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
 import constants from './constants.json';
 import {deepAccess, isApnGetTagDefined, isGptPubadsDefined, logError, logWarn, replaceAuctionPrice} from './utils.js';
 import {auctionManager} from './auctionManager.js';
@@ -15,6 +15,7 @@ import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const STALE_RENDER = constants.EVENTS.STALE_RENDER;
+const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
   'Prebid Request': handleRenderRequest,
@@ -113,6 +114,13 @@ function handleNativeRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
+
+  if (!WON_AD_IDS.has(adObject)) {
+    WON_AD_IDS.add(adObject);
+    auctionManager.addWinningBid(adObject);
+    events.emit(BID_WON, adObject);
+  }
+
   switch (data.action) {
     case 'assetRequest':
       reply(getAssetMessage(data, adObject));
@@ -126,12 +134,7 @@ function handleNativeRequest(reply, data, adObject) {
       resizeRemoteCreative(adObject);
       break;
     default:
-      const trackerType = fireNativeTrackers(data, adObject);
-      if (trackerType === 'click') {
-        return;
-      }
-      auctionManager.addWinningBid(adObject);
-      events.emit(BID_WON, adObject);
+      fireNativeTrackers(data, adObject);
   }
 }
 
@@ -190,7 +193,7 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width + 'px';
+      elementStyle.width = width ? width + 'px' : '100%';
       elementStyle.height = height + 'px';
     } else {
       logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);

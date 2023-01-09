@@ -4,7 +4,7 @@ import {
   getPriceGranularity,
   masSizeOrdering,
   resetUserSync,
-  hasVideoMediaType,
+  classifiedAsVideo,
   resetRubiConf
 } from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
@@ -257,7 +257,7 @@ describe('the rubicon adapter', function () {
         context: 'instream'
       },
     };
-    bid.params.video = '';
+    bid.params.video = false;
   }
 
   function createVideoBidderRequestOutstream() {
@@ -2139,6 +2139,33 @@ describe('the rubicon adapter', function () {
           expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
         });
 
+        it('should NOT include storedrequests in pbs payload', function () {
+          createVideoBidderRequest();
+          bidderRequest.bids[0].ortb2 = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-top-level-sr'
+              }
+            }
+          }
+
+          bidderRequest.bids[0].ortb2Imp = {
+            ext: {
+              prebid: {
+                storedrequest: 'no-send-imp-sr'
+              }
+            }
+          }
+
+          sandbox.stub(Date, 'now').callsFake(() =>
+            bidderRequest.auctionStart + 100
+          );
+
+          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          expect(request.data.ext.prebid.storedrequest).to.be.undefined;
+          expect(request.data.imp[0].ext.prebid.storedrequest).to.be.undefined;
+        });
+
         it('should include GAM ad unit in bid request', function () {
           createVideoBidderRequest();
           bidderRequest.bids[0].ortb2Imp = {
@@ -2293,57 +2320,50 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      describe('hasVideoMediaType', function () {
-        it('should return true if mediaType is video and size_id is set', function () {
+      describe('classifiedAsVideo', function () {
+        it('should return true if mediaTypes is video', function () {
           createVideoBidderRequest();
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
-          expect(legacyVideoTypeBidRequest).is.equal(true);
+          const bidClassifiedAsVideo = classifiedAsVideo(bidderRequest.bids[0]);
+          expect(bidClassifiedAsVideo).is.equal(true);
         });
 
         it('should return false if trying to use legacy mediaType with video', function () {
           createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes;
           bidderRequest.bids[0].mediaType = 'video';
-          const legacyVideoTypeBidRequest = hasVideoMediaType(bidderRequest.bids[0]);
+          const legacyVideoTypeBidRequest = classifiedAsVideo(bidderRequest.bids[0]);
           expect(legacyVideoTypeBidRequest).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not equal to video', function () {
-          expect(hasVideoMediaType({
+        it('should return false if bid.mediaTypes is not equal to video', function () {
+          expect(classifiedAsVideo({
             mediaType: 'banner'
           })).is.equal(false);
         });
 
-        it('should return false if bidRequest.mediaType is not defined', function () {
-          expect(hasVideoMediaType({})).is.equal(false);
+        it('should return false if bid.mediaTypes is not defined', function () {
+          expect(classifiedAsVideo({})).is.equal(false);
         });
 
-        it('should return true if bidRequest.mediaTypes.video.context is instream and size_id is defined', function () {
-          expect(hasVideoMediaType({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {
-                size_id: 7
-              }
-            }
-          })).is.equal(true);
+        it('Should return false if both banner and video mediaTypes are set and params.video is not an object', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
+          expect(classifiedAsVideo(bid)).to.equal(false);
+        });
+        it('Should return true if both banner and video mediaTypes are set and params.video is an object', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0];
+          bid.mediaTypes.banner = {flag: true};
+          bid.params.video = {};
+          expect(classifiedAsVideo(bid)).to.equal(true);
         });
 
-        it('should return false if bidRequest.mediaTypes.video.context is instream but size_id is not defined', function () {
-          expect(spec.isBidRequestValid({
-            mediaTypes: {
-              video: {
-                context: 'instream'
-              }
-            },
-            params: {
-              video: {}
-            }
-          })).is.equal(false);
+        it('Should return true and create a params.video object if one is not already present', function () {
+          createVideoBidderRequestNoVideo();
+          let bid = bidderRequest.bids[0]
+          expect(classifiedAsVideo(bid)).to.equal(true);
+          expect(bid.params.video).to.not.be.undefined;
         });
       });
     });

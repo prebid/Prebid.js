@@ -2,7 +2,7 @@ import { _each, isStr, deepClone, isArray, deepSetValue, inIframe, logMessage, l
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const GVLID = 842;
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
@@ -157,7 +157,7 @@ export const spec = {
     }
 
     if (bid.params.isTest) {
-      payload.test = Number(bid.params.isTest) // should be 1 or 0
+      payload.test = Number(bid.params.isTest); // should be 1 or 0
     }
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
@@ -166,7 +166,7 @@ export const spec = {
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
     payload.device.geo = payload.user.geo;
-    payload.site.page = payload.site.page.trim();
+    payload.site.page = payload.site?.page?.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // add the content object from config in request
@@ -180,7 +180,7 @@ export const spec = {
     }
 
     // passing transactionId in source.tid
-    deepSetValue(payload, 'source.tid', conf.transactionId);
+    deepSetValue(payload, 'source.tid', bidderRequest?.auctionId);
 
     // schain
     if (validBidRequests[0].schain) {
@@ -203,7 +203,7 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'}
+    var options = {contentType: 'text/plain'};
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);
@@ -436,7 +436,10 @@ function _createImpressionObject(bid, conf) {
     tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('bidFloor', bid.params.bidFloor), // capitalization dicated by 3.2.4 spec
     secure: 1,
-    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY // capitalization dicated by 3.2.4 spec
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY, // capitalization dicated by 3.2.4 spec
+    ext: {
+      tid: (bid.transactionId ? bid.transactionId : '')
+    }
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -459,7 +462,7 @@ function _createImpressionObject(bid, conf) {
       }
     }
   } else {
-    _logWarn('MediaTypes are Required for all Adunit Configs', bid)
+    _logWarn('MediaTypes are Required for all Adunit Configs', bid);
   }
 
   _addFloorFromFloorModule(impObj, bid);
@@ -490,7 +493,11 @@ function _parseSlotParam(paramName, paramValue) {
 
 function _parseAdSlot(bid) {
   _logInfo('parseAdSlot bid', bid)
-  bid.params.adUnit = '';
+  if (bid.adUnitCode) {
+    bid.params.adUnit = bid.adUnitCode;
+  } else {
+    bid.params.adUnit = '';
+  }
   bid.params.width = 0;
   bid.params.height = 0;
   bid.params.adSlot = _cleanSlotName(bid.params.adSlot);
@@ -528,9 +535,8 @@ function _cleanSlotName(slotName) {
 
 function _initConf(refererInfo) {
   return {
-    // TODO: do the fallbacks make sense here?
-    pageURL: refererInfo?.page || window.location.href,
-    refURL: refererInfo?.ref || window.document.referrer
+    pageURL: refererInfo?.page,
+    refURL: refererInfo?.ref
   };
 }
 

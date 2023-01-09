@@ -213,13 +213,11 @@ function getViewportDimensions(isIfr) {
     } catch (e) {
       return;
     }
-    docEl = tDoc.documentElement;
     body = tDoc.body;
 
     width = tWin.innerWidth || docEl.clientWidth || body.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight || body.clientHeight;
   } else {
-    docEl = tDoc.documentElement;
     width = tWin.innerWidth || docEl.clientWidth;
     height = tWin.innerHeight || docEl.clientHeight;
   }
@@ -355,7 +353,7 @@ function appendUserIdsToQueryParams(queryParams, userIds) {
         case 'lipb':
           queryParams[key] = userIdObjectOrValue.lipbid;
           if (Array.isArray(userIdObjectOrValue.segments) && userIdObjectOrValue.segments.length > 0) {
-            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|')
+            const liveIntentSegments = 'liveintent:' + userIdObjectOrValue.segments.join('|');
             queryParams.sm = `${queryParams.sm ? queryParams.sm + ',' : ''}${liveIntentSegments}`;
           }
           break;
@@ -504,7 +502,7 @@ function generateVideoParameters(bid, bidderRequest) {
         video: openRtbParams
       }
     ]
-  }
+  };
 
   queryParams['openrtb'] = JSON.stringify(openRtbReq);
 
@@ -527,7 +525,7 @@ function generateVideoParameters(bid, bidderRequest) {
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
-    queryParams.aucs = encodeURIComponent(gpid)
+    queryParams.aucs = encodeURIComponent(gpid);
   }
 
   // each video bid makes a separate request
