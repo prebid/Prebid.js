@@ -69,14 +69,14 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'foo',
             socialCanvas: {
-              segments: [1, 2, 3],
+              segments: ['segment_1', 'segment_2', 'segment_3'],
               url: "https://socan.url"
             }
           },
-          auctionId: 1234098,
-          bidId: 1,
-          adUnitCode: 101,
-          transactionId: 10101,
+          auctionId: '1234098',
+          bidId: '1',
+          adUnitCode: '101',
+          transactionId: '10101',
           userId: {
             tdid: 'fake-tdid'
           },
@@ -103,6 +103,9 @@ describe('kargo adapter tests', function () {
                 ]
               }
           ],
+          floorData: {
+            floorMin: 1
+          },
           ortb2: {
             device: {
               sua: {
@@ -147,9 +150,9 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'bar'
           },
-          bidId: 2,
-          adUnitCode: 202,
-          transactionId: 20202,
+          bidId: '2',
+          adUnitCode: '202',
+          transactionId: '20202',
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             video: {
@@ -175,9 +178,9 @@ describe('kargo adapter tests', function () {
           params: {
             placementId: 'bar'
           },
-          bidId: 3,
-          adUnitCode: 303,
-          transactionId: 30303,
+          bidId: '3',
+          adUnitCode: '303',
+          transactionId: '30303',
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             native: {
@@ -277,7 +280,7 @@ describe('kargo adapter tests', function () {
     function generatePageView() {
       return {
         id: "112233",
-        timestamp: String(frozenNow.getTime()),
+        timestamp: frozenNow.getTime(),
         url:  "http://pageview.url"
       }
     }
@@ -370,7 +373,7 @@ describe('kargo adapter tests', function () {
     function getExpectedKrakenParams(excludeUserIds, expectedGDPR, expectedPage, currency) {
       var base = {
         pbv: '$prebid.version$',
-        aid: 1234098,
+        aid: '1234098',
         sid:  getSessionId(),
         url: 'https://www.prebid.org',
         timeout: 200,
@@ -420,25 +423,26 @@ describe('kargo adapter tests', function () {
         ],
         imp: [
           {
-            code: 101,
-            id: 1,
+            code: '101',
+            id: '1',
             pid: "foo",
-            tid: 10101,
+            tid: '10101',
             banner: {
               sizes: [[320, 50], [300, 50]]
             },
             bidRequestCount: 1,
             bidderRequestCount: 2,
             bidderWinCount: 3,
+            floor: 1,
             fpd: {
               gpid: "/22558409563,18834096/dfy_mobile_adhesion"
             }
           },
           {
-            code: 202,
-            id: 2,
+            code: '202',
+            id: '2',
             pid: "bar",
-            tid: 20202,
+            tid: '20202',
             video: {
               sizes: [[320, 50], [300, 50]]
             },
@@ -447,10 +451,10 @@ describe('kargo adapter tests', function () {
             }
           },
           {
-            code: 303,
-            id: 3,
+            code: '303',
+            id: '3',
             pid: "bar",
-            tid: 30303,
+            tid: '30303',
             native: {
               sizes: [[320, 50], [300, 50]]
             },
@@ -460,7 +464,7 @@ describe('kargo adapter tests', function () {
           } 
         ],
         socan: {
-          segments: [1, 2, 3],
+          segments: ['segment_1', 'segment_2', 'segment_3'],
           url: "https://socan.url"
         },
         user: {

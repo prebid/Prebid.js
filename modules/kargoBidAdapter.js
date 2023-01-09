@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+const PREBID_VERSION = '$prebid.version$'
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk2.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
@@ -11,6 +12,19 @@ const SYNC_COUNT = 5;
 const GVLID = 972;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const CURRENCY_KEY = 'currency'
+const US_DOLLAR_KEY = 'USD'
+const TDID_BID_KEY = 'userId.tdid'
+const SOCIAL_CANVAS_BID_KEY = 'params.socialCanvas'
+const SUA_BID_KEY = 'ortb2.device.sua'
+const SUA_ATTRIBUTES = ['browsers', 'platform', 'mobile', 'model', 'source']
+const MOBILE = 'mobile'
+const MODEL = 'model'
+const SOURCE = 'source'
+const PAGE_VIEW_ID_LOCAL_KEY = 'pageViewId'
+const PAGE_VIEW_TIMESTAMP_LOCAL_KEY = 'pageViewTimestamp'
+const PAGE_VIEW_URL_LOCAL_KEY = 'pageViewUrl'
+const CRB_KEY = 'krg_crb'
 
 let sessionId,
   lastPageUrl,
@@ -27,7 +41,7 @@ export const spec = {
     return !!bid.params.placementId;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const currencyObj = config.getConfig('currency');
+    const currencyObj = config.getConfig(CURRENCY_KEY);
     const currency = (currencyObj && currencyObj.adServerCurrency) ? currencyObj.adServerCurrency : null;
     const impressions = [];
 
@@ -37,10 +51,10 @@ export const spec = {
 
     const firstBidRequest = validBidRequests[0];
 
-    const tdid = deepAccess(firstBidRequest, 'userId.tdid')
+    const tdid = deepAccess(firstBidRequest, TDID_BID_KEY)
 
     const krakenParams = Object.assign({}, {
-      pbv: '$prebid.version$',
+      pbv: PREBID_VERSION,
       aid: firstBidRequest.auctionId,
       sid: spec._getSessionId(),
       url: spec._getAllMetadata(bidderRequest).pageURL,
@@ -62,58 +76,64 @@ export const spec = {
       krakenParams.requestCount = reqCount
     }
 
-    if (currency != null && currency != 'USD') {
+    if (currency != null && currency != US_DOLLAR_KEY) {
       krakenParams.cur = currency
     }
 
     // Pull Social Canvas segments and embed URL
-    const socialCanvas = deepAccess(firstBidRequest, 'params.socialCanvas');
+    const socialCanvas = deepAccess(firstBidRequest, SOCIAL_CANVAS_BID_KEY);
 
     if (socialCanvas != null) {
       krakenParams.socan = socialCanvas
     }
 
     // User Agent Client Hints / SUA
-    const uaClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
+    const uaClientHints = deepAccess(firstBidRequest, SUA_BID_KEY);
     if (uaClientHints) {
-      const suaAttributes = ['browsers', 'platform', 'mobile', 'model', 'source']
-      let suaValidAttributes = []
+      const suaValidAttributes = []
 
-      suaAttributes.forEach(attributeKey => {
-        var attributeValue = uaClientHints[attributeKey]
-        if (attributeValue != null) {
-          if (((attributeKey == 'mobile' || attributeKey == 'source') && attributeValue < 1) ||
-            (attributeKey == 'model' && attributeValue.trim() == '')) {
-            return
-          }
-          suaValidAttributes.push(attributeKey)
+      for (const suaKey of SUA_ATTRIBUTES) {
+        const suaValue = uaClientHints[suaKey]
+        if(!suaValue) {
+          continue
         }
-      })
+
+        // Do not pass any empty strings
+        if(typeof suaValue == 'string' && suaValue.trim() === '') {
+          continue
+        }
+
+        switch (suaKey) {
+          case MOBILE, SOURCE:
+            if (suaValue < 1) {
+              return;
+            };
+          default:
+            suaValidAttributes.push(suaKey);
+        }
+      }
 
       krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
     }
 
-    const validPageId = spec._getLocalStorageSafely('pageViewId') != null 
-    const validPageTimestamp = spec._getLocalStorageSafely('pageViewTimestamp') != null
-    const validPageUrl = spec._getLocalStorageSafely('pageViewUrl') != null
+    const validPageId = spec._getLocalStorageSafely(PAGE_VIEW_ID_LOCAL_KEY) != null 
+    const validPageTimestamp = spec._getLocalStorageSafely(PAGE_VIEW_TIMESTAMP_LOCAL_KEY) != null
+    const validPageUrl = spec._getLocalStorageSafely(PAGE_VIEW_URL_LOCAL_KEY) != null
  
-    if(validPageId || validPageTimestamp || validPageUrl) {
-      const page = {}
-      if(validPageId) {
-        page.id = spec._getLocalStorageSafely('pageViewId')
-      }
-
-      if(validPageTimestamp) {
-        page.timestamp = spec._getLocalStorageSafely('pageViewTimestamp')
-      }
-
-      if(validPageUrl) {
-        page.url = spec._getLocalStorageSafely('pageViewUrl')
-      }
-     
+    const page = {}
+    if(validPageId) {
+      page.id = spec._getLocalStorageSafely(PAGE_VIEW_ID_LOCAL_KEY)
+    }
+    if(validPageTimestamp) {
+      page.timestamp = Number(spec._getLocalStorageSafely(PAGE_VIEW_TIMESTAMP_LOCAL_KEY))
+    }
+    if(validPageUrl) {
+      page.url = spec._getLocalStorageSafely(PAGE_VIEW_URL_LOCAL_KEY)
+    }
+    if (!_.isEmpty(page)) {
       krakenParams.page = page
     }
-
+    
     return Object.assign({}, bidderRequest, {
       method: 'POST',
       url: `${HOST}/api/v1/prebid`,
@@ -200,7 +220,7 @@ export const spec = {
 
   _getCrbFromCookie() {
     try {
-      const crb = JSON.parse(storage.getCookie('krg_crb'));
+      const crb = JSON.parse(storage.getCookie(CRB_KEY));
       if (crb && crb.v) {
         let vParsed = JSON.parse(atob(crb.v));
         if (vParsed) {
@@ -215,7 +235,7 @@ export const spec = {
 
   _getCrbFromLocalStorage() {
     try {
-      return JSON.parse(atob(spec._getLocalStorageSafely('krg_crb')));
+      return JSON.parse(atob(spec._getLocalStorageSafely(CRB_KEY)));
     } catch (e) {
       return {};
     }
@@ -284,8 +304,8 @@ export const spec = {
   _getAllMetadata(bidderRequest) {
     return {
       pageURL: bidderRequest?.refererInfo?.page,
-      rawCRB: storage.getCookie('krg_crb'),
-      rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
+      rawCRB: storage.getCookie(CRB_KEY),
+      rawCRBLocalStorage: spec._getLocalStorageSafely(CRB_KEY)
     };
   },
 
@@ -346,8 +366,8 @@ export const spec = {
       code: bid.adUnitCode
     }
 
-    if (bid.floor > 0) {
-      imp.floor = bid.floor
+    if (bid.floorData != null && bid.floorData.floorMin > 0) {
+      imp.floor = bid.floorData.floorMin
     }
 
     if (bid.bidRequestsCount > 0) {
