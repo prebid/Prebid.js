@@ -253,9 +253,9 @@ function bundle(dev, moduleArr) {
     outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
   }
 
-  gutil.log('Concatenating files:\n', entries);
-  gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
-  gutil.log('Generating bundle:', outputFileName);
+  // gutil.log('Concatenating files:\n', entries);
+  // gutil.log('Appending ' + prebid.globalVarName + '.processQueue();');
+  // gutil.log('Generating bundle:', outputFileName);
 
   var globalVarName = prebid.globalVarName;
   return gulp.src(entries, { allowEmpty: true })
