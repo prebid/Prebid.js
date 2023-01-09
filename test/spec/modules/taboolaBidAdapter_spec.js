@@ -148,7 +148,8 @@ describe('Taboola Adapter', function () {
           },
           'tagid': commonBidRequest.params.tagId,
           'bidfloor': null,
-          'bidfloorcur': 'USD'
+          'bidfloorcur': 'USD',
+          'ext': {}
         }],
         'site': {
           'id': commonBidRequest.params.publisherId,
@@ -168,7 +169,8 @@ describe('Taboola Adapter', function () {
           'buyeruid': 0,
           'ext': {},
         },
-        'regs': {'coppa': 0, 'ext': {}}
+        'regs': {'coppa': 0, 'ext': {}},
+        'ext': {}
       };
 
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
@@ -245,7 +247,24 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
       const resData = JSON.parse(res.data);
-      expect(resData.imp[0].position).to.deep.equal(2);
+      expect(resData.imp[0].banner.pos).to.deep.equal(2);
+    });
+
+    it('should pass gpid if configured', function () {
+      const ortb2Imp = {
+        ext: {
+          gpid: '/homepage/#1'
+        }
+      }
+      const bidRequest = {
+        ...defaultBidRequest,
+        ortb2Imp: ortb2Imp,
+        params: {...commonBidRequest.params}
+      };
+
+      const res = spec.buildRequests([bidRequest], commonBidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.imp[0].ext.gpid).to.deep.equal('/homepage/#1');
     });
 
     it('should pass bidder timeout', function () {
@@ -288,7 +307,7 @@ describe('Taboola Adapter', function () {
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         const resData = JSON.parse(res.data);
-        expect(resData.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
+        expect(resData.ext.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
       });
     });
 
