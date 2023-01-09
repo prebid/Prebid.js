@@ -296,21 +296,23 @@ function _findBidderRequest(bidderRequests, bidId) {
 }
 
 function _validateSize(bid) {
+  let size;
   if (deepAccess(bid, 'mediaTypes.video')) {
-    return ''; // Video bids arent allowed to override sizes via the trinity request
+    if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+      size = deepAccess(bid, 'mediaTypes.video.playerSize');
+    } else if (deepAccess(bid, 'mediaTypes.video.sizes')) {
+      size = deepAccess(bid, 'mediaTypes.video.sizes');
+    }
+  } else if (bid.params.sizes) {
+    size = bid.params.sizes;
+  } else if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    size = deepAccess(bid, 'mediaTypes.banner.sizes')
   }
-
-  if (bid.params.sizes) {
-    return parseSizesInput(bid.params.sizes).join(',');
-  }
-  if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
-  }
-
   // Handle deprecated sizes definition
   if (bid.sizes) {
-    return parseSizesInput(bid.sizes).join(',');
+    size = bid.sizes;
   }
+  return parseSizesInput(size).join(',');
 }
 
 function _validateSlot(bid) {
