@@ -1735,7 +1735,7 @@ describe('AppNexusAdapter', function () {
 
     it('should add advertiserDomains', function () {
       let responseAdvertiserId = deepClone(response);
-      responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
+      responseAdvertiserId.tags[0].ads[0].adomain = '123';
 
       let bidderRequest = {
         bids: [{
@@ -1745,7 +1745,7 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
-      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['123']);
     });
   });
 
