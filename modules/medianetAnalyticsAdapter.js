@@ -11,7 +11,7 @@ import {
   uniques,
   getHighestCpm
 } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import {ajax} from '../src/ajax.js';
@@ -40,6 +40,7 @@ const MEDIANET_BIDDER_CODE = 'medianet';
 const PREBID_VERSION = $$PREBID_GLOBAL$$.version;
 const ERROR_CONFIG_JSON_PARSE = 'analytics_config_parse_fail';
 const ERROR_CONFIG_FETCH = 'analytics_config_ajax_fail';
+const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';
 const BID_SUCCESS = 1;
 const BID_NOBID = 2;
 const BID_TIMEOUT = 3;
@@ -51,7 +52,7 @@ const CONFIG_PASS = 1;
 const CONFIG_ERROR = 3;
 
 const VALID_URL_KEY = ['canonical_url', 'og_url', 'twitter_url'];
-const DEFAULT_URL_KEY = 'page';
+const DEFAULT_URL_KEY = 'topmostLocation';
 
 const LOG_TYPE = {
   APPR: 'APPR',
@@ -62,6 +63,7 @@ let auctions = {};
 let config;
 let pageDetails;
 let logsQueue = [];
+let errorQueue = [];
 
 class ErrorLogger {
   constructor(event, additionalData) {
@@ -78,6 +80,7 @@ class ErrorLogger {
 
   send() {
     let url = EVENT_PIXEL_URL + '?' + formatQS(this);
+    errorQueue.push(url);
     triggerPixel(url);
   }
 }
@@ -160,7 +163,7 @@ class Configure {
 
   init() {
     // Forces Logging % to 100%
-    let urlObj = URL.parseUrl(pageDetails.page);
+    let urlObj = URL.parseUrl(pageDetails.topmostLocation);
     if (deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
@@ -194,15 +197,8 @@ class PageDetail {
     this.canonical_url = refererInfo.canonicalUrl;
     this.og_url = ogUrl;
     this.twitter_url = twitterUrl;
+    this.topmostLocation = refererInfo.topmostLocation;
     this.screen = this._getWindowSize();
-  }
-
-  _getTopWindowReferrer() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) {
-      return document.referrer;
-    }
   }
 
   _getWindowSize() {
@@ -235,7 +231,7 @@ class PageDetail {
 
   getLoggingData() {
     return {
-      requrl: this[config.urlToConsume] || this.page,
+      requrl: this[config.urlToConsume] || this.topmostLocation,
       dn: this.domain,
       ref: this.referrer,
       screen: this.screen
@@ -400,10 +396,6 @@ class Auction {
     return this.bids
       .filter((bid) => bid.adUnitCode === adslot)
       .map((bid) => bid.getLoggingData());
-  }
-
-  getWinnerAdslotBid(adslot) {
-    return this.getAdslotBids(adslot).filter((bid) => bid.winner);
   }
 
   _mergeFieldsToLog(objParams) {
@@ -641,17 +633,22 @@ function setTargetingHandler(params) {
 }
 
 function bidWonHandler(bid) {
-  const { requestId, auctionId, adUnitCode } = bid;
+  const { auctionId, adUnitCode, adId } = bid;
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
-  let bidObj = auctions[auctionId].findBid('bidId', requestId);
+  let bidObj = auctions[auctionId].findBid('adId', adId);
   if (!(bidObj instanceof Bid)) {
+    new ErrorLogger(ERROR_WINNING_BID_ABSENT, {
+      adId: adId,
+      acid: auctionId,
+      adUnitCode,
+    }).send();
     return;
   }
   auctions[auctionId].bidWonTime = Date.now();
   bidObj.winner = 1;
-  sendEvent(auctionId, adUnitCode, LOG_TYPE.RA);
+  sendEvent(auctionId, adUnitCode, LOG_TYPE.RA, bidObj.adId);
 }
 
 function isSampled() {
@@ -662,12 +659,12 @@ function isValidAuctionAdSlot(acid, adtag) {
   return (auctions[acid] instanceof Auction) && (auctions[acid].adSlots[adtag] instanceof AdSlot);
 }
 
-function sendEvent(id, adunit, logType) {
+function sendEvent(id, adunit, logType, adId) {
   if (!isValidAuctionAdSlot(id, adunit)) {
     return;
   }
   if (logType === LOG_TYPE.RA) {
-    fireAuctionLog(id, adunit, logType);
+    fireAuctionLog(id, adunit, logType, adId);
   } else {
     fireApPrLog(id, adunit, logType)
   }
@@ -688,7 +685,7 @@ function getCommonLoggingData(acid, adtag) {
   return Object.assign(commonParams, adunitParams, auctionParams);
 }
 
-function fireAuctionLog(acid, adtag, logType) {
+function fireAuctionLog(acid, adtag, logType, adId) {
   let commonParams = getCommonLoggingData(acid, adtag);
   commonParams.lgtp = logType;
   let targeting = deepAccess(commonParams, 'targ');
@@ -699,7 +696,10 @@ function fireAuctionLog(acid, adtag, logType) {
   let bidParams;
 
   if (logType === LOG_TYPE.RA) {
-    bidParams = auctions[acid].getWinnerAdslotBid(adtag);
+    const winningBidObj = auctions[acid].findBid('adId', adId);
+    if (!winningBidObj) return;
+    const winLogData = winningBidObj.getLoggingData();
+    bidParams = [winLogData];
     commonParams.lper = 1;
   } else {
     bidParams = auctions[acid].getAdslotBids(adtag).map(({winner, ...restParams}) => restParams);
@@ -767,8 +767,12 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
   getlogsQueue() {
     return logsQueue;
   },
+  getErrorQueue() {
+    return errorQueue;
+  },
   clearlogsQueue() {
     logsQueue = [];
+    errorQueue = [];
     auctions = {};
   },
   track({ eventType, args }) {

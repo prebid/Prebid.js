@@ -382,7 +382,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     ua: navigator.userAgent,
     session_id: getBidIdParameter('auctionId', generalObject),
     tmax: timeout
-  }
+  };
 
   const userIdsParam = getBidIdParameter('userId', generalObject);
   if (userIdsParam) {
@@ -431,5 +431,5 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.page_url = generalParams.page_url || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
   }
 
-  return generalParams
+  return generalParams;
 }

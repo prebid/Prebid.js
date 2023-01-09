@@ -1,10 +1,18 @@
 import {isStr, timestamp} from './utils.js';
+import {defer, GreedyPromise} from './utils/promise.js';
+
+/**
+ * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
+ * enforcement module will take it to mean "vendor consent was given".
+ *
+ * see https://github.com/prebid/Prebid.js/issues/8161
+ */
+export const VENDORLESS_GVLID = Object.freeze({});
 
 export class ConsentHandler {
   #enabled;
   #data;
-  #promise;
-  #resolve;
+  #defer;
   #ready;
   generatedTime;
 
@@ -12,17 +20,17 @@ export class ConsentHandler {
     this.reset();
   }
 
+  #resolve(data) {
+    this.#ready = true;
+    this.#data = data;
+    this.#defer.resolve(data);
+  }
+
   /**
    * reset this handler (mainly for tests)
    */
   reset() {
-    this.#promise = new Promise((resolve) => {
-      this.#resolve = (data) => {
-        this.#ready = true;
-        this.#data = data;
-        resolve(data);
-      };
-    });
+    this.#defer = defer();
     this.#enabled = false;
     this.#data = null;
     this.#ready = false;
@@ -56,12 +64,12 @@ export class ConsentHandler {
    */
   get promise() {
     if (this.#ready) {
-      return Promise.resolve(this.#data);
+      return GreedyPromise.resolve(this.#data);
     }
     if (!this.#enabled) {
       this.#resolve(null);
     }
-    return this.#promise;
+    return this.#defer.promise;
   }
 
   setConsentData(data, time = timestamp()) {
@@ -95,6 +103,17 @@ export class GdprConsentHandler extends ConsentHandler {
         consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
         generatedAt: this.generatedTime,
         apiVersion: consentData.apiVersion
+      }
+    }
+  }
+}
+
+export class GppConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && this.generatedTime) {
+      return {
+        generatedAt: this.generatedTime,
       }
     }
   }

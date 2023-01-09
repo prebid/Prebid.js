@@ -5,7 +5,7 @@
  */
 
 import adapterManager from '../src/adapterManager.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';

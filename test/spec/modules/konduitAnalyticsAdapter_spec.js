@@ -121,6 +121,5 @@ describe(`Konduit Analytics Adapter`, () => {
     expect(requestBody.konduitId).to.be.equal(konduitId);
     expect(requestBody.prebidVersion).to.be.equal('$prebid.version$');
     expect(requestBody.environment).to.be.an('object');
-    sinon.assert.callCount(konduitAnalyticsAdapter.track, 6);
   });
 });
