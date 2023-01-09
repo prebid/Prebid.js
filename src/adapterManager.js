@@ -443,7 +443,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
   if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
@@ -455,7 +455,7 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
     if (typeof bidAdapter.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdapter;
 
-      if (includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
       if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {

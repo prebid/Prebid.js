@@ -463,7 +463,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === VIDEO) {
+      if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
         if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
@@ -574,28 +574,30 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
-  let addBid = true;
+  if (FEATURES.VIDEO) {
+    let addBid = true;
 
-  const videoMediaType = deepAccess(
-    index.getMediaTypes({
-      requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      transactionId: bidResponse.transactionId
-    }), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
-  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+    const videoMediaType = deepAccess(
+      index.getMediaTypes({
+        requestId: bidResponse.originalRequestId || bidResponse.requestId,
+        transactionId: bidResponse.transactionId
+      }), 'video');
+    const context = videoMediaType && deepAccess(videoMediaType, 'context');
+    const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
 
-  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
-      addBid = false;
-      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-    } else if (!bidResponse.vastUrl) {
-      logError('videoCacheKey specified but not required vastUrl for video bid');
-      addBid = false;
+    if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
+      if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
+        addBid = false;
+        callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+      } else if (!bidResponse.vastUrl) {
+        logError('videoCacheKey specified but not required vastUrl for video bid');
+        addBid = false;
+      }
     }
-  }
-  if (addBid) {
-    addBidToAuction(auctionInstance, bidResponse);
-    afterBidAdded();
+    if (addBid) {
+      addBidToAuction(auctionInstance, bidResponse);
+      afterBidAdded();
+    }
   }
 }
 
@@ -610,7 +612,7 @@ const addLegacyFieldsIfNeeded = (bidResponse) => {
   }
 }
 
-const storeInCache = (batch) => {
+const _storeInCache = (batch) => {
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
@@ -636,6 +638,8 @@ const storeInCache = (batch) => {
     });
   });
 };
+
+const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {};
 
 let batchSize, batchTimeout;
 config.getConfig('cache', (cacheConfig) => {
@@ -772,7 +776,7 @@ function setupBidTargeting(bidObject) {
  */
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
-    if (mediaType === VIDEO) {
+    if (FEATURES.VIDEO && mediaType === VIDEO) {
       const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
@@ -881,7 +885,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
-  if (mediaType === 'video') {
+  if (FEATURES.VIDEO && mediaType === 'video') {
     const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].slice();
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = adserverTargeting;
 

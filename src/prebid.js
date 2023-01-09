@@ -225,12 +225,15 @@ function validateAdUnit(adUnit) {
 export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
-  validateVideoMediaType,
   validateSizes
 };
 
 if (FEATURES.NATIVE) {
   Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
+
+if (FEATURES.VIDEO) {
+  Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
@@ -248,7 +251,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.banner.hasOwnProperty('pos')) validatedBanner = validateAdUnitPos(validatedBanner, 'banner');
     }
 
-    if (mediaTypes.video) {
+    if (FEATURES.VIDEO && mediaTypes.video) {
       validatedVideo = validatedBanner ? validateVideoMediaType(validatedBanner) : validateVideoMediaType(adUnit);
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
@@ -995,21 +998,23 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
  * @alias module:pbjs.markWinningBidAsUsed
  */
 $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
-  let bids = [];
+  if (FEATURES.VIDEO) {
+    let bids = [];
 
-  if (markBidRequest.adUnitCode && markBidRequest.adId) {
-    bids = auctionManager.getBidsReceived()
-      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
-  } else if (markBidRequest.adUnitCode) {
-    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
-  } else if (markBidRequest.adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
-  } else {
-    logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-  }
+    if (markBidRequest.adUnitCode && markBidRequest.adId) {
+      bids = auctionManager.getBidsReceived()
+        .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+    } else if (markBidRequest.adUnitCode) {
+      bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+    } else if (markBidRequest.adId) {
+      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+    } else {
+      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+    }
 
-  if (bids.length > 0) {
-    bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+    if (bids.length > 0) {
+      bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+    }
   }
 };
 

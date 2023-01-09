@@ -904,7 +904,7 @@ export function isValidMediaTypes(mediaTypes) {
     return false;
   }
 
-  if (mediaTypes.video && mediaTypes.video.context) {
+  if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
     return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
