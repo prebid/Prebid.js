@@ -5,8 +5,8 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
+import { OUTSTREAM } from '../src/video.js';
+import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -53,7 +53,7 @@ export const spec = {
 
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!(bid.nativeParams || bid.sizes || deepAccess(bid, 'mediaTypes.video'))
+      (!!(bid.nativeParams || bid.sizes) || isValidVideoRequest(bid))
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -331,7 +331,13 @@ function getVideoAsset(bid) {
     skip: bid.mediaTypes.video.skip,
     delivery: bid.mediaTypes.video.delivery,
     api: bid.mediaTypes.video.api,
-    maxbitrate: bid.mediaTypes.video.maxbitrate
+    minbitrate: bid.mediaTypes.video.minbitrate,
+    maxbitrate: bid.mediaTypes.video.maxbitrate,
+    minduration: bid.mediaTypes.video.minduration,
+    maxduration: bid.mediaTypes.video.maxduration,
+    startdelay: bid.mediaTypes.video.startdelay,
+    placement: bid.mediaTypes.video.placement,
+    linearity: bid.mediaTypes.video.linearity
   };
 }
 
@@ -411,4 +417,21 @@ function createRenderer(bid) {
     logWarn('Prebid Error calling setRender on renderer', err);
   }
   return renderer;
+}
+
+function isValidVideoRequest(bid) {
+  const videoAdUnit = deepAccess(bid, 'mediaTypes.video')
+  if (!videoAdUnit) {
+    return false;
+  }
+
+  if (!Array.isArray(videoAdUnit.playerSize)) {
+    return false;
+  }
+
+  if (videoAdUnit.context == '') {
+    return false;
+  }
+
+  return true;
 }

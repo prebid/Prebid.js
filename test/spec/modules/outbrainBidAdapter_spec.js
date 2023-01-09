@@ -53,9 +53,14 @@ describe('Outbrain Adapter', function () {
           protocols: [1, 2, 3, 4, 5, 6, 7, 8],
           playbackmethod: [1],
           skip: 1,
-          placement: 4,
           api: [2],
-          maxbitrate: 3000
+          minbitrate: 1000,
+          maxbitrate: 3000,
+          minduration: 3,
+          maxduration: 10,
+          startdelay: 2,
+          placement: 4,
+          linearity: 1
         }
       }
     }
@@ -119,6 +124,22 @@ describe('Outbrain Adapter', function () {
           ...videoBidRequestParams,
         }
         expect(spec.isBidRequestValid(bid)).to.equal(true)
+      })
+      it('should fail when bid contains insufficient video information', function () {
+        const bid = {
+          bidder: 'outbrain',
+          params: {
+            publisher: {
+              id: 'publisher-id',
+            }
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            }
+          },
+        }
+        expect(spec.isBidRequestValid(bid)).to.equal(false)
       })
       it('should fail if publisher id is not set', function () {
         const bid = {
@@ -357,7 +378,13 @@ describe('Outbrain Adapter', function () {
                 mimes: ['video/mp4'],
                 skip: 1,
                 api: [2],
-                maxbitrate: 3000
+                minbitrate: 1000,
+                maxbitrate: 3000,
+                minduration: 3,
+                maxduration: 10,
+                startdelay: 2,
+                placement: 4,
+                linearity: 1
               }
             }
           ],
@@ -714,7 +741,8 @@ describe('Outbrain Adapter', function () {
                     cat: ['cat-1'],
                     adomain: [
                       'example.com'
-                    ]
+                    ],
+                    nurl: 'http://example.com/win/${AUCTION_PRICE}'
                   }
                 ],
                 seat: '100',
@@ -742,7 +770,7 @@ describe('Outbrain Adapter', function () {
             netRevenue: false,
             currency: 'USD',
             mediaType: 'video',
-            nurl: undefined,
+            nurl: 'http://example.com/win/${AUCTION_PRICE}',
             vastXml: '<VAST version=\"3.0\"><Ad><InLine><AdSystem>zemanta</AdSystem><AdTitle>1</AdTitle><Impression>http://win.com</Impression><Impression>http://example.com/imptracker</Impression><Creatives><Creative><Linear><Duration>00:00:25</Duration><TrackingEvents><Tracking event=\"start\">http://example.com/start</Tracking><Tracking event=\"progress\" offset=\"00:00:03\">http://example.com/p3s</Tracking></TrackingEvents><VideoClicks><ClickThrough>http://link.com</ClickThrough></VideoClicks><MediaFiles><MediaFile delivery=\"progressive\" type=\"video/mp4\" bitrate=\"700\" width=\"640\" height=\"360\">https://example.com/123_360p.mp4</MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
             meta: {
               'advertiserDomains': [
