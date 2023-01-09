@@ -1,8 +1,8 @@
 import { spec, isValid, hasTypeVideo, isSchainValid } from 'modules/onetagBidAdapter.js';
 import { expect } from 'chai';
-import {find} from 'src/polyfill.js';
+import { find } from 'src/polyfill.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import {INSTREAM, OUTSTREAM} from 'src/video.js';
+import { INSTREAM, OUTSTREAM } from 'src/video.js';
 
 describe('onetag', function () {
   function createBid() {
@@ -122,14 +122,14 @@ describe('onetag', function () {
       it('Should return true when correct multi format bid is passed', function () {
         expect(spec.isBidRequestValid(createMultiFormatBid())).to.be.true;
       });
-      it('Should split multi format bid into two single format bid with same bidId', function() {
-        const bids = JSON.parse(spec.buildRequests([ createMultiFormatBid() ]).data).bids;
+      it('Should split multi format bid into two single format bid with same bidId', function () {
+        const bids = JSON.parse(spec.buildRequests([createMultiFormatBid()]).data).bids;
         expect(bids.length).to.equal(2);
         expect(bids[0].bidId).to.equal(bids[1].bidId);
       });
-      it('Should retrieve correct request bid when extracting video request data', function() {
+      it('Should retrieve correct request bid when extracting video request data', function () {
         const requestBid = createMultiFormatBid();
-        const multiFormatRequest = spec.buildRequests([ requestBid ]);
+        const multiFormatRequest = spec.buildRequests([requestBid]);
         const serverResponse = {
           body: {
             bids: [
@@ -173,24 +173,30 @@ describe('onetag', function () {
       const data = JSON.parse(d);
       it('Should contain all keys', function () {
         expect(data).to.be.an('object');
-        expect(data).to.include.all.keys('location', 'referrer', 'masked', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'timing', 'version');
-        expect(data.location).to.be.a('string');
-        expect(data.masked).to.be.oneOf([0, 1, 2]);
+        expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version');
+        expect(data.location).to.satisfy(function (value) {
+          return value === null || typeof value === 'string';
+        });
         expect(data.referrer).to.satisfy(referrer => referrer === null || typeof referrer === 'string');
+        expect(data.stack).to.be.an('array');
+        expect(data.numIframes).to.be.a('number');
         expect(data.sHeight).to.be.a('number');
         expect(data.sWidth).to.be.a('number');
         expect(data.wWidth).to.be.a('number');
         expect(data.wHeight).to.be.a('number');
         expect(data.oHeight).to.be.a('number');
         expect(data.oWidth).to.be.a('number');
-        expect(data.ancestorOrigin).to.satisfy(function (value) {
-          return value === null || typeof value === 'string';
-        });
         expect(data.aWidth).to.be.a('number');
         expect(data.aHeight).to.be.a('number');
         expect(data.sLeft).to.be.a('number');
         expect(data.sTop).to.be.a('number');
         expect(data.hLength).to.be.a('number');
+        expect(data.networkConnectionType).to.satisfy(function (value) {
+          return value === null || typeof value === 'string'
+        });
+        expect(data.networkEffectiveConnectionType).to.satisfy(function (value) {
+          return value === null || typeof value === 'string'
+        });
         expect(data.bids).to.be.an('array');
         expect(data.version).to.have.all.keys('prebid', 'adapter');
         const bids = data['bids'];
@@ -231,14 +237,14 @@ describe('onetag', function () {
           expect(bid.pubId).to.be.a('string');
         }
       });
-    } catch (e) {}
+    } catch (e) { }
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let dataString = serverRequest.data;
       try {
         let dataObj = JSON.parse(dataString);
         expect(dataObj.bids).to.be.an('array').that.is.empty;
-      } catch (e) {}
+      } catch (e) { }
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
@@ -287,7 +293,7 @@ describe('onetag', function () {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
         if (dataItem.meta.mediaType === VIDEO) {
-          const {context} = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
+          const { context } = find(requestData.bids, (item) => item.bidId === dataItem.requestId);
           if (context === INSTREAM) {
             expect(dataItem).to.include.all.keys('videoCacheKey', 'vastUrl');
             expect(dataItem.vastUrl).to.be.a('string');
@@ -321,7 +327,7 @@ describe('onetag', function () {
   describe('getUserSyncs', function () {
     const sync_endpoint = 'https://onetag-sys.com/usync/';
     it('Returns an iframe if iframeEnabled is true', function () {
-      const syncs = spec.getUserSyncs({iframeEnabled: true});
+      const syncs = spec.getUserSyncs({ iframeEnabled: true });
       expect(syncs).to.be.an('array');
       expect(syncs.length).to.equal(1);
       expect(syncs[0].type).to.equal('iframe');
@@ -383,16 +389,16 @@ describe('onetag', function () {
       expect(isSchainValid(undefined)).to.be.false;
     });
     it('Should return false when schain is missing nodes key', function () {
-      const schain = {'otherKey': 'otherValue'};
+      const schain = { 'otherKey': 'otherValue' };
       expect(isSchainValid(schain)).to.be.false;
     });
     it('Should return false when schain is missing one of the required SupplyChainNode attribute', function () {
-      const missingAsiNode = {'sid': '00001', 'hp': 1};
-      const missingSidNode = {'asi': 'indirectseller.com', 'hp': 1};
-      const missingHpNode = {'asi': 'indirectseller.com', 'sid': '00001'};
-      expect(isSchainValid({'config': {'nodes': [missingAsiNode]}})).to.be.false;
-      expect(isSchainValid({'config': {'nodes': [missingSidNode]}})).to.be.false;
-      expect(isSchainValid({'config': {'nodes': [missingHpNode]}})).to.be.false;
+      const missingAsiNode = { 'sid': '00001', 'hp': 1 };
+      const missingSidNode = { 'asi': 'indirectseller.com', 'hp': 1 };
+      const missingHpNode = { 'asi': 'indirectseller.com', 'sid': '00001' };
+      expect(isSchainValid({ 'config': { 'nodes': [missingAsiNode] } })).to.be.false;
+      expect(isSchainValid({ 'config': { 'nodes': [missingSidNode] } })).to.be.false;
+      expect(isSchainValid({ 'config': { 'nodes': [missingHpNode] } })).to.be.false;
     });
     it('Should return true when schain contains all required attributes', function () {
       const validSchain = {

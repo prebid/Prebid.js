@@ -12,10 +12,11 @@ Yandex Bidder Adapter for Prebid.js.
 
 # Parameters
 
-| Name          | Scope    | Description             | Example   | Type      |
-|---------------|----------|-------------------------|-----------|-----------|
-| `pageId`      | required | Page ID                 | `123`     | `Integer` |
-| `impId`       | required | Block ID                | `1`       | `Integer` |
+| Name          | Required?                                  | Description | Example | Type      |
+|---------------|--------------------------------------------|-------------|---------|-----------|
+| `placementId` | Yes                                        | Block ID    | `123-1` | `String`  |
+| `pageId`      | No<br>Deprecated. Please use `placementId` | Page ID     | `123`   | `Integer` |
+| `impId`       | No<br>Deprecated. Please use `placementId` | Imp ID      | `1`     | `Integer` |
 
 # Test Parameters
 
@@ -24,15 +25,14 @@ var adUnits = [{
   code: 'banner-1',
   mediaTypes: {
     banner: {
-      sizes: [[240, 400]],
+      sizes: [[240, 400], [300, 600]],
     }
   },
   bids: [{
     {
       bidder: 'yandex',
       params: {
-        pageId: 346580,
-        impId: 143,
+        placementId: '346580-1'
       },
     }
   }]

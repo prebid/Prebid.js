@@ -2,6 +2,7 @@ import liAnalytics from 'modules/liveIntentAnalyticsAdapter';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import { auctionManager } from 'src/auctionManager.js';
+import {expectEvents} from '../../helpers/analytics.js';
 
 let utils = require('src/utils');
 let refererDetection = require('src/refererDetection');
@@ -286,12 +287,8 @@ describe('LiveIntent Analytics Adapter ', () => {
   });
 
   it('track is called', () => {
-    liAnalytics.enableAnalytics(config);
     sandbox.stub(liAnalytics, 'track');
-    events.emit(constants.EVENTS.AUCTION_END, args);
-    events.emit(constants.EVENTS.AUCTION_END, args);
-    events.emit(constants.EVENTS.AUCTION_END, args);
-    clock.tick(6000);
-    sinon.assert.callCount(liAnalytics.track, 3)
+    liAnalytics.enableAnalytics(config);
+    expectEvents().to.beTrackedBy(liAnalytics.track);
   })
 });

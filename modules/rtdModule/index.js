@@ -163,7 +163,7 @@ import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager, {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
@@ -246,6 +246,7 @@ function getConsentData() {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
+    gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
   }
 }

@@ -60,6 +60,12 @@ describe('adhashBidAdapter', function () {
       bid.params.platformURL = 'https://';
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
+    it('should return false when bidderURL is present but not https://', function () {
+      const bid = { ...validBid };
+      bid.params.bidderURL = 'http://example.com/';
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   });
 
   describe('buildRequests', function () {
@@ -73,11 +79,11 @@ describe('adhashBidAdapter', function () {
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { referer: 'http://example.com/' } }
+        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { topmostLocation: 'https://example.com/path.html' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=3.2&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -93,7 +99,7 @@ describe('adhashBidAdapter', function () {
       const result = spec.buildRequests([ bidRequest ], { gdprConsent: { gdprApplies: true, consentString: 'example' } });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=3.2&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -127,9 +133,15 @@ describe('adhashBidAdapter', function () {
         creatives: [{ costEUR: 1.234 }],
         advertiserDomains: 'adhash.com',
         badWords: [
-          ['onqjbeq1', 'full', 1],
-          ['onqjbeq2', 'partial', 1],
+          ['onqjbeq', 'full', 1],
+          ['onqjbeqo', 'partial', 1],
           ['tbbqjbeq', 'full', -1],
+          ['fgnegf', 'starts', 1],
+          ['raqf', 'ends', 1],
+          ['kkk[no]lll', 'regexp', 1],
+          ['дума', 'full', 1],
+          ['старт', 'starts', 1],
+          ['край', 'ends', 1],
         ],
         maxScore: 2
       }
@@ -155,42 +167,84 @@ describe('adhashBidAdapter', function () {
 
     it('should return empty array when there are bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example badWord1 text' + ' word'.repeat(493);
+        return 'example text badword badword example badword text' + ' word'.repeat(993);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (full cyrillic)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text дума дума example дума text' + ' текст'.repeat(993);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
 
     it('should return empty array when there are bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 badword2 example BadWord2text' + ' word'.repeat(494);
+        return 'example text partialbadwordb badwordb example badwordbtext' + ' word'.repeat(994);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (starts)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text startsWith starts text startsAgain' + ' word'.repeat(994);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (starts cyrillic)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text стартТекст старт text стартТекст' + ' дума'.repeat(994);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (ends)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text wordEnds ends text anotherends' + ' word'.repeat(994);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (ends cyrillic)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text ДругКрай край text ощеединкрай' + ' дума'.repeat(994);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (regexp)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text xxxayyy zzxxxAyyyzz text xxxbyyy' + ' word'.repeat(994);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
     });
 
     it('should return non-empty array when there are not enough bad words (full)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example text' + ' word'.repeat(494);
+        return 'example text badword badword example text' + ' word'.repeat(994);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are not enough bad words (partial)', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord2 example' + ' word'.repeat(496);
+        return 'example text partialbadwordb example' + ' word'.repeat(996);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are no-bad word matches', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text partialBadWord1 example text' + ' word'.repeat(495);
+        return 'example text partialbadword example text' + ' word'.repeat(995);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return non-empty array when there are bad words and good words', function () {
       bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
-        return 'example text badWord1 badWord1 example badWord1 goodWord goodWord ' + ' word'.repeat(492);
+        return 'example text badword badword example badword goodWord goodWord ' + ' word'.repeat(992);
       });
       expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });

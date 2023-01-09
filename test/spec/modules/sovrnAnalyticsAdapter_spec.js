@@ -1,8 +1,10 @@
 import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter.js';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {config} from 'src/config.js';
 import adaptermanager from 'src/adapterManager.js';
-import { server } from 'test/mocks/xhr.js';
+import {server} from 'test/mocks/xhr.js';
+import {expectEvents, fireEvents} from '../../helpers/analytics.js';
+
 var assert = require('assert');
 
 let events = require('src/events');
@@ -195,15 +197,7 @@ describe('Sovrn Analytics Adapter', function () {
           sovrnId: 123
         }
       });
-
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-
-      // 5 SovrnAnalytics events + 1 Clean.io event
-      sinon.assert.callCount(sovrnAnalyticsAdapter.track, 6);
+      expectEvents().to.beTrackedBy(sovrnAnalyticsAdapter.track);
     });
 
     it('should catch no events if no affiliate id', function () {
@@ -212,13 +206,7 @@ describe('Sovrn Analytics Adapter', function () {
         options: {
         }
       });
-
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-
+      fireEvents();
       sinon.assert.callCount(sovrnAnalyticsAdapter.track, 0);
     });
   });
