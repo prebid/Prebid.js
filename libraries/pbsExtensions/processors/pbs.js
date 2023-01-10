@@ -2,6 +2,7 @@ import {BID_RESPONSE, IMP, REQUEST, RESPONSE} from '../../../src/pbjsORTB.js';
 import {deepAccess, isPlainObject, isStr, mergeDeep} from '../../../src/utils.js';
 import {extPrebidMediaType} from './mediaType.js';
 import {setRequestExtPrebidAliases} from './aliases.js';
+import {setReqParams, setResponseParams} from './custom.js';
 import {setImpBidParams} from './params.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
@@ -19,6 +20,9 @@ export const PBS_PROCESSORS = {
     extPrebidAliases: {
       // sets ext.prebid.aliases
       fn: setRequestExtPrebidAliases
+    },
+    OW: {
+      fn: setReqParams
     }
   },
   [IMP]: {
@@ -78,6 +82,9 @@ export const PBS_PROCESSORS = {
         }
       }
     },
+    OW: {
+      fn: setResponseParams
+    }
   },
   [RESPONSE]: {
     serverSideStats: {
