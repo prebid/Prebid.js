@@ -1430,20 +1430,13 @@ export const spec = {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
 
-              newBid.meta = {};
-              if (bid.ext && bid.ext.dchain) {
-                newBid.meta.dchain = bid.ext.dchain;
+              prepareMetaObject(br, bid, seatbidder.seat);
+
+              // START of Experimental change
+              if (response.body.ext) {
+                br.ext = response.body.ext;
               }
-              if (bid.ext && bid.ext.dspid) {
-                newBid.meta.networkId = bid.ext.dspid;
-              }
-              if (bid.ext && bid.ext.advid) {
-                newBid.meta.buyerId = bid.ext.advid;
-              }
-              if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.advertiserDomains = bid.adomain;
-                newBid.meta.clickUrl = bid.adomain[0];
-              }
+              // END of Experimental change
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {
