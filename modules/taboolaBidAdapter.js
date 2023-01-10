@@ -9,7 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
-export const END_POINT_URL = 'https://hb.bidder.taboola.com/TaboolaHBOpenRTBRequestHandlerServlet';
+export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -60,14 +60,10 @@ export const userData = {
 
 export const internal = {
   getPageUrl: (refererInfo = {}) => {
-    return refererInfo.page || getWindowSelf().location.href;
+    return refererInfo?.page || getWindowSelf().location.href;
   },
   getReferrer: (refererInfo = {}) => {
-    if (refererInfo.ref) {
-      return refererInfo.ref;
-    } else {
-      return getWindowSelf().document.referrer;
-    }
+    return refererInfo?.ref || getWindowSelf().document.referrer;
   }
 }
 
@@ -151,7 +147,7 @@ export const spec = {
       return [];
     }
 
-    return bids.map((bid, id) => getBid(bid.bidId, currency, bidResponses[id])).filter(Boolean);
+    return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
   },
 };
 
@@ -160,7 +156,7 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
   return {
     id: publisherId,
     name: publisherId,
-    domain: refererInfo?.domain || window.location.host,
+    domain: refererInfo?.domain || window.location?.host,
     page: getPageUrl(refererInfo),
     ref: getReferrer(refererInfo),
     publisher: {
@@ -174,15 +170,28 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
 
 function getImps(validBidRequests) {
   return validBidRequests.map((bid, id) => {
-    const {tagId, bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
-
-    return {
+    const {tagId} = bid.params;
+    const imp = {
       id: id + 1,
       banner: getBanners(bid),
-      tagid: tagId,
-      bidfloor,
-      bidfloorcur,
-    };
+      tagid: tagId
+    }
+    if (typeof bid.getFloor === 'function') {
+      const floorInfo = bid.getFloor({
+        currency: CURRENCY,
+        mediaType: BANNER,
+        size: '*'
+      });
+      if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+        imp.bidfloor = parseFloat(floorInfo.floor);
+        imp.bidfloorcur = CURRENCY;
+      }
+    } else {
+      const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+      imp.bidfloor = bidfloor;
+      imp.bidfloorcur = bidfloorcur;
+    }
+    return imp;
   });
 }
 
@@ -208,7 +217,7 @@ function getBidResponses({body}) {
 
   const {seatbid, cur} = body;
 
-  if (!seatbid.length || !seatbid[0].bid) {
+  if (!seatbid.length || !seatbid[0].bid || !seatbid[0].bid.length) {
     return [];
   }
 
@@ -218,14 +227,14 @@ function getBidResponses({body}) {
   };
 }
 
-function getBid(requestId, currency, bidResponse) {
+function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
   const {
     price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
-
+  let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
@@ -241,7 +250,7 @@ function getBid(requestId, currency, bidResponse) {
     width,
     height,
     meta,
-    netRevenue: false
+    netRevenue: true
   };
 }
 

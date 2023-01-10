@@ -5,6 +5,9 @@ import {
   getMediaWildcardPrices,
   sizeToString,
   parseFloorPriceData,
+  getPageUrlFromBidRequest,
+  hasProtocol,
+  addProtocol,
 } from '../../../modules/nativoBidAdapter'
 
 describe('bidDataMap', function () {
@@ -125,12 +128,23 @@ describe('nativoBidAdapterTests', function () {
       expect(request.url).to.include('ntv_pas')
     })
 
+    it('ntv_url should contain query params', function () {
+      const request = spec.buildRequests(bidRequests, {
+        bidderRequestId: 123456,
+        refererInfo: {
+          location: 'https://www.test.com?queryTest=true',
+        },
+      })
+      console.log(request.url) // eslint-disable-line no-console
+      expect(request.url).to.include(encodeURIComponent('?queryTest=true'))
+    })
+
     it('ntv_url parameter should NOT be empty even if the utl parameter was set as an empty value', function () {
       bidRequests[0].params.url = ''
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          referer: 'https://www.test.com',
+          location: 'https://www.test.com',
         },
       })
 
@@ -144,7 +158,7 @@ describe('nativoBidAdapterTests', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
-          referer: 'https://www.test.com',
+          location: 'https://www.test.com',
         },
       })
 
@@ -634,5 +648,86 @@ describe('parseFloorPriceData', () => {
       '*': { '*': 1.1, '300x250': 2.2 },
       banner: { '*': 1.1, '300x250': 2.2 },
     })
+  })
+})
+
+describe('hasProtocol', () => {
+  it('https://www.testpage.com', () => {
+    expect(hasProtocol('https://www.testpage.com')).to.be.true
+  })
+  it('http://www.testpage.com', () => {
+    expect(hasProtocol('http://www.testpage.com')).to.be.true
+  })
+  it('//www.testpage.com', () => {
+    expect(hasProtocol('//www.testpage.com')).to.be.false
+  })
+  it('www.testpage.com', () => {
+    expect(hasProtocol('www.testpage.com')).to.be.false
+  })
+  it('httpsgsjhgflih', () => {
+    expect(hasProtocol('httpsgsjhgflih')).to.be.false
+  })
+})
+
+describe('addProtocol', () => {
+  it('www.testpage.com', () => {
+    expect(addProtocol('www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+  it('//www.testpage.com', () => {
+    expect(addProtocol('//www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+  it('http://www.testpage.com', () => {
+    expect(addProtocol('http://www.testpage.com')).to.be.equal('http://www.testpage.com')
+  })
+  it('https://www.testpage.com', () => {
+    expect(addProtocol('https://www.testpage.com')).to.be.equal('https://www.testpage.com')
+  })
+})
+
+describe('getPageUrlFromBidRequest', () => {
+  const bidRequest = {}
+
+  beforeEach(() => {
+    bidRequest.params = {}
+  })
+
+  it('Returns undefined for no url param', () => {
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).to.be.undefined
+  })
+
+  it('@testUrl', () => {
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).to.be.undefined
+  })
+
+  it('https://www.testpage.com', () => {
+    bidRequest.params.url = 'https://www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('https://www.testpage.com/test/path', () => {
+    bidRequest.params.url = 'https://www.testpage.com/test/path'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('www.testpage.com', () => {
+    bidRequest.params.url = 'www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('http://www.testpage.com', () => {
+    bidRequest.params.url = 'http://www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
+  })
+
+  it('//www.testpage.com', () => {
+    bidRequest.params.url = '//www.testpage.com'
+    const url = getPageUrlFromBidRequest(bidRequest)
+    expect(url).not.to.be.undefined
   })
 })

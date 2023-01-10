@@ -40,7 +40,7 @@ export const spec = {
         bidId: validBidRequests[i].bidId,
         nativeParams: validBidRequests[i].nativeParams,
         placementHash: validBidRequests[i].params.hash,
-        // TODO: is 'page' the right value here?
+        userId: validBidRequests[i].userId,
         referer: bidderRequest.refererInfo.page,
         userAgent: navigator.userAgent,
       }

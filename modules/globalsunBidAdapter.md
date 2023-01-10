@@ -1,15 +1,15 @@
 # Overview
 
 ```
-Module Name: AndBeyond.Media Bidder Adapter
-Module Type: AndBeyond.Media Bidder Adapter
-Maintainer: sysengg@andbeyond.media
+Module Name: Globalsun Bidder Adapter
+Module Type: Globalsun Bidder Adapter
+Maintainer: prebid@globalsun.io
 ```
 
 # Description
 
-Connects to AndBeyond.Media exchange for bids.
-AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and Native.
+Connects to Globalsun exchange for bids.
+Globalsun bid adapter supports Banner, Video (instream and outstream) and Native.
 
 # Test Parameters
 ```
@@ -24,7 +24,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'globalsun',
                             params: {
                                 placementId: 'testBanner',
                             }
@@ -43,7 +43,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'globalsun',
                             params: {
                                 placementId: 'testVideo',
                             }
@@ -68,7 +68,7 @@ AndBeyond.Media bid adapter supports Banner, Video (instream and outstream) and 
                     },
                     bids: [
                         {
-                            bidder: 'beyondmedia',
+                            bidder: 'globalsun',
                             params: {
                                 placementId: 'testNative',
                             }

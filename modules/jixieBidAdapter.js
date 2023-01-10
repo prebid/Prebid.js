@@ -56,6 +56,8 @@ function fetchIds_() {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
+    tmp = storage.getCookie('_jxtoko');
+    if (tmp) ret.jxtoko_id = tmp;
   } catch (error) {}
   return ret;
 }
