@@ -253,3 +253,4 @@ function parseNative(bid) {
 
   return result;
 }
+
