@@ -192,8 +192,6 @@ export const spec = {
   }
 };
 
-registerBidder(spec);
-
 function transformSizes(requestSizes) {
   if (!isArray(requestSizes)) {
     return [];
@@ -254,3 +252,4 @@ function parseNative(bid) {
   return result;
 }
 
+registerBidder(spec);
