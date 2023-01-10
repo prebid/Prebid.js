@@ -292,13 +292,13 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
     adUnit.bids[bidId].forEach(function(bid) {
       const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
       partnerBids.push({
-        'pn': getAdapterNameForAlias(bid.bidder),
+        'pn': getAdapterNameForAlias(bid.adapterCode || bid.bidder),
         'bc': bid.bidderCode || bid.bidder,
         'bidid': prebidBidId || bid.bidId,
         'origbidid': bid.bidId,
         'db': bid.bidResponse ? 0 : 1,
         'kgpv': getValueForKgpv(bid, adUnitId),
-        'kgpsv': bid.params.kgpv ? getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse) : adUnitId,
+        'kgpsv': bid.params && bid.params.kgpv ? getUpdatedKGPVForVideo(bid.params.kgpv, bid.bidResponse) : adUnitId,
         'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
         'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
         'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
