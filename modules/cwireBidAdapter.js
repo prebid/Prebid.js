@@ -1,10 +1,15 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {getParameterByName, logInfo} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
+const CWID_KEY = 'cw_cwid';
+
 export const ENDPOINT_URL = 'https://embed.cwi.re/prebid/bid';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
  * Retrieve dimensions from a given slot in bidRequest. Attaches the dimensions to the bidRequest by spread operator.
@@ -52,9 +57,32 @@ function featureFlags(validBidRequests) {
   return []
 }
 
+/**
+ * Reads the CWID from local storage.
+ */
+function getCwid() {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(CWID_KEY) : null;
+}
+
+function hasCwid() {
+  return storage.localStorageIsEnabled() && storage.getDataFromLocalStorage(CWID_KEY);
+}
+
+/**
+ * Store the CWID to local storage.
+ */
+function updateCwid(cwid) {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(CWID_KEY, cwid)
+  } else {
+    logInfo(`Could not set CWID ${cwid} in localstorage`);
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -83,9 +111,6 @@ export const spec = {
     let processed = validBidRequests.map(bid => slotDimensions(bid));
 
     const payload = {
-      userTracker: {
-        sharedId: '123',
-      },
       slots: processed,
       referrer: referrer
       /*
@@ -101,6 +126,8 @@ export const spec = {
       */
     };
 
+    const cwid = getCwid();
+
     // Add optional/debug parameters
     let creativeId = getParameterByName('cw_creative')
 
@@ -111,6 +138,9 @@ export const spec = {
     // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
     const debug = getParameterByName('cw_debug');
 
+    if (cwid) {
+      payload.cwid = cwid
+    }
     if (ff.length > 0) {
       payload.featureFlags = ff
     }
@@ -134,6 +164,13 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
+    if (!hasCwid()) {
+      const cwid = serverResponse.body?.cwid
+      if (cwid) {
+        updateCwid(cwid);
+      }
+    }
+
     return serverResponse.body?.bids || [];
   },
 };

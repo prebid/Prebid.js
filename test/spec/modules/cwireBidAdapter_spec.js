@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {newBidder} from '../../../src/adapters/bidderFactory';
-import {ENDPOINT_URL, spec} from '../../../modules/cwireBidAdapter';
+import {ENDPOINT_URL, spec, storage} from '../../../modules/cwireBidAdapter';
 import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
 import {sandbox, stub} from 'sinon';
@@ -154,6 +154,29 @@ describe('C-WIRE bid adapter', () => {
 
       expect(payload.debug).to.exist;
       expect(payload.debug).to.equal(true);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('buildRequests reads cw_id from Localstorage', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'taerfagerg');
+    });
+
+    it('cw_id is set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.cwid).to.exist;
+      expect(payload.cwid).to.equal('taerfagerg');
     });
     after(function () {
       sandbox.restore()
