@@ -82,7 +82,8 @@ describe('C-WIRE bid adapter', () => {
       expect(el).to.exist;
       expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
       expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
-      expect(payload.slots[0].cwExt.style).to.not.exist
+      expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
+      expect(payload.slots[0].cwExt.style.maxWidth).to.not.exist;
     });
     after(function () {
       sandbox.restore()
@@ -94,6 +95,7 @@ describe('C-WIRE bid adapter', () => {
       documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
         style: {
           maxWidth: '400px',
+          maxHeight: '350px',
         }
       });
     });
@@ -108,6 +110,7 @@ describe('C-WIRE bid adapter', () => {
 
       expect(el).to.exist;
       expect(payload.slots[0].cwExt.style.maxWidth).to.eq('400px');
+      !expect(payload.slots[0].cwExt.style.maxHeight).to.eq('350px');
     });
     after(function () {
       sandbox.restore()

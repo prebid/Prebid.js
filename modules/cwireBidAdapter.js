@@ -12,9 +12,9 @@ export const ENDPOINT_URL = 'https://embed.cwi.re/prebid/bid';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
- * Retrieve dimensions from a given slot in bidRequest. Attaches the dimensions to the bidRequest by spread operator.
+ * Retrieve dimensions and CSS max height/width from a given slot and attach the properties to the bidRequest.
  * @param bid
- * @returns {*&{cwExt: {dimensions: {width: number, height: number}}}}
+ * @returns {*&{cwExt: {dimensions: {width: number, height: number}, style: {maxWidth: number, maxHeight: number}}}}
  */
 function slotDimensions(bid) {
   let adUnitCode = bid.adUnitCode;
@@ -24,7 +24,9 @@ function slotDimensions(bid) {
     const slotW = slotEl.offsetWidth
     const slotH = slotEl.offsetHeight
     const cssMaxW = slotEl.style?.maxWidth;
+    const cssMaxH = slotEl.style?.maxHeight;
     logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
+    logInfo(`Slot Styles (maxW/maxH): ${cssMaxW} / ${cssMaxH}`)
 
     return {
       ...bid,
@@ -33,9 +35,12 @@ function slotDimensions(bid) {
           width: slotW,
           height: slotH,
         },
-        ...(cssMaxW) && {
-          style: {
-            maxWidth: cssMaxW,
+        style: {
+          ...(cssMaxW) && {
+            maxWidth: cssMaxW
+          },
+          ...(cssMaxH) && {
+            maxHeight: cssMaxH
           }
         }
       }
