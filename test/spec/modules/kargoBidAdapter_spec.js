@@ -407,20 +407,6 @@ describe('kargo adapter tests', function () {
             source: 1
           },
         },
-        eids: [
-          {
-            source: "adserver.org",
-            uids: [
-                {
-                    id: "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
-                    atype: 1,
-                    ext: {
-                        rtiPartner: "TDID"
-                    }
-                }
-            ]
-          }
-        ],
         imp: [
           {
             code: '101',
@@ -481,7 +467,21 @@ describe('kargo adapter tests', function () {
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
           optOut: false,
-          usp: "1---"
+          usp: "1---",
+          eids: [
+            {
+              source: "adserver.org",
+              uids: [
+                  {
+                      id: "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
+                      atype: 1,
+                      ext: {
+                          rtiPartner: "TDID"
+                      }
+                  }
+              ]
+            }
+          ],
         },
       };
 
@@ -492,7 +492,21 @@ describe('kargo adapter tests', function () {
       if (excludeUserIds === true) {
         base.user = {
           crbIDs: {},
-          usp: "1---"
+          usp: "1---",
+          eids: [
+            {
+              source: "adserver.org",
+              uids: [
+                  {
+                      id: "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
+                      atype: 1,
+                      ext: {
+                          rtiPartner: "TDID"
+                      }
+                  }
+              ]
+            }
+          ]
         };
       }
 

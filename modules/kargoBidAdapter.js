@@ -91,8 +91,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
-    eids: firstBidRequest.userIdAsEids
+    user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
   });
 
   const reqCount = spec._getRequestCount()
@@ -284,7 +283,7 @@ function _getLocalStorageSafely(key) {
   }
 }
 
-function _getUserIds(tdid, usp, gdpr) {
+function _getUserIds(tdid, usp, gdpr, eids) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
@@ -318,6 +317,10 @@ function _getUserIds(tdid, usp, gdpr) {
 
   if(crb.optOut != null) {
     userIds.optOut = crb.optOut
+  }
+
+  if(eids != null) {
+    userIds.eids = eids
   }
 
   return userIds;
@@ -440,10 +443,6 @@ function getGPID(bid) {
     }
 
     if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
-      if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot
-      }
-
       if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
         return bid.ortb2Imp.ext.data.pbAdSlot
       }
