@@ -300,8 +300,8 @@ function _validateSize(bid) {
   if (deepAccess(bid, 'mediaTypes.video')) {
     if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
       size = deepAccess(bid, 'mediaTypes.video.playerSize');
-    } else if (deepAccess(bid, 'mediaTypes.video.sizes')) {
-      size = deepAccess(bid, 'mediaTypes.video.sizes');
+    } else if (deepAccess(bid, 'mediaTypes.video.size')) {
+      size = deepAccess(bid, 'mediaTypes.video.size');
     }
   } else if (bid.params.sizes) {
     size = bid.params.sizes;
