@@ -296,23 +296,23 @@ function _findBidderRequest(bidderRequests, bidId) {
 }
 
 function _validateSize(bid) {
-  let size = null;
-  if (deepAccess(bid, 'mediaTypes.video')) {
-    if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
-      size = deepAccess(bid, 'mediaTypes.video.playerSize');
-    } else if (deepAccess(bid, 'mediaTypes.video.size')) {
-      size = deepAccess(bid, 'mediaTypes.video.size');
-    }
-  } else if (bid.params.sizes) {
-    size = bid.params.sizes;
-  } else if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    size = deepAccess(bid, 'mediaTypes.banner.sizes')
+  let size = [];
+  if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
   }
-  // Handle deprecated sizes definition if still unset
-  if (!size && bid.sizes) {
-    size = bid.sizes;
+  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.sizes'))
   }
-  return parseSizesInput(size).join(',');
+  if (deepAccess(bid, 'params.sizes')) {
+    size.push(deepAccess(bid, 'params.sizes'));
+  }
+  if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
+    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'))
+  }
+  if (deepAccess(bid, 'sizes')) {
+    size.push(deepAccess(bid, 'sizes'))
+  }
+  return [...new Set(parseSizesInput(...size))].join(',');
 }
 
 function _validateSlot(bid) {
