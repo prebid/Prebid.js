@@ -93,4 +93,128 @@ describe('pbjs -> ortb bid params to imp[].ext.prebid.BIDDER', () => {
       sinon.assert.calledWith(transform, params, true, adUnit, bidderRequests);
     })
   });
+  describe('when adapter partner is pubmatic and ViewabilityScoreGeneration Scenerios are considered', () => {
+    let context, bidderRequest;
+    beforeEach(() => {
+      bidderRequest = {
+        bidder: 'pubmatic',
+        params: {
+          wiid: 'dummyWiid',
+          publisherId: '789',
+          adSlot: '/123/dummy',
+          profId: '789',
+        },
+        adUnitCode: 'Div1',
+        sizes: [
+          [728, 90]
+        ],
+        bidViewability: {
+          rendered: 75,
+          viewed: 2,
+          createdAt: 1672142009388,
+          updatedAt: 1672725045075,
+          totalViewTime: 561
+        }
+      };
+      context = {
+        's2sBidRequest': {
+          's2sConfig': {
+            'bidders': [
+              'pubmatic'
+            ],
+            'extPrebid': {
+              'aliases': {
+                'adg': 'adgeneration',
+                'districtm': 'appnexus',
+                'districtmDMX': 'dmx',
+                'pubmatic2': 'pubmatic'
+              }
+            }
+          }
+        }
+      }
+    })
+
+    it('When bidViewability is populated', () => {
+      expect(setParams(
+        bidderRequest
+        ,
+        context
+      )).to.eql({
+        ext: {
+          prebid: {
+            bidder: {
+              pubmatic: {
+                adSlot: '/123/dummy',
+                profId: '789',
+                publisherId: '789',
+                wiid: 'dummyWiid',
+                bidViewability: {
+                  'rendered': 75,
+                  'viewed': 2,
+                  'createdAt': 1672142009388,
+                  'updatedAt': 1672725045075,
+                  'totalViewTime': 561
+                }
+              }
+            }
+          }
+        }
+      });
+    });
+
+    it('When bidViewabilty is not populated', () => {
+      expect(setParams({
+        bidder: 'pubmatic',
+        params: {
+          adSlot: '/123/dummy',
+          profId: '789',
+          publisherId: '789',
+          wiid: 'dummyWiid'
+        }
+      },
+      context
+      )).to.eql({
+        ext: {
+          prebid: {
+            bidder: {
+              pubmatic: {
+                adSlot: '/123/dummy',
+                profId: '789',
+                publisherId: '789',
+                wiid: 'dummyWiid',
+              }
+            }
+          }
+        }
+      });
+    })
+    it('When different bidder other than pubmatic is present and bidViewabilty is populated', () => {
+      expect(setParams({
+        bidder: 'appnexus',
+        params: {
+          placement_id: 9880618
+        },
+        bidViewability: {
+          rendered: 75,
+          viewed: 2,
+          createdAt: 1672142009388,
+          updatedAt: 1672725045075,
+          totalViewTime: 561
+        }
+      },
+      context
+      )).to.eql({
+        ext: {
+          prebid: {
+            bidder: {
+              appnexus: {
+                placement_id: 9880618
+              }
+            }
+          }
+        }
+      });
+    })
+  });
 });
