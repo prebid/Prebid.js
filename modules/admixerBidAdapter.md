@@ -20,10 +20,9 @@ Please use ```admixer``` as the bidder code.
                    {
                        bidder: "admixer",
                        params: {
-                           zone: '2eb6bd58-865c-47ce-af7f-a918108c3fd2'
+                           zone: '2eb6bd58-865c-47ce-af7f-a918108c3fd2',
+                           bidFloor: 0.1
                        }
-                       ,
-                       bidFloor: 0.1,
                    }
                ]
            },{
