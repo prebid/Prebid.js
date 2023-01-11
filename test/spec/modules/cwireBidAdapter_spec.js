@@ -13,7 +13,8 @@ describe('C-WIRE bid adapter', () => {
     {
       'bidder': 'cwire',
       'params': {
-        'placementId': '4057'
+        'pageId': '4057',
+        'placementId': 'ad-slot-bla'
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -185,4 +186,30 @@ describe('C-WIRE bid adapter', () => {
       sandbox.restore()
     });
   })
+  describe('pageId is a required param', function () {
+    it('invalid request', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      delete bidRequest.params
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.false;
+    })
+
+    it('valid request', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.pageId = 'test'
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.true;
+    })
+
+    it('build request adds pageId', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageId).to.exist;
+    })
+  });
 });

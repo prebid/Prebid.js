@@ -95,7 +95,9 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return true;
+    // pageId is required
+    const valid = !!(bid.params?.pageId)
+    return valid;
   },
 
   /**
@@ -106,8 +108,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // These are passed from C WIRE config:
-    // let placementId = getValue(bid.params, 'placementId');
-    // let pageId = getValue(bid.params, 'pageId');
+    let placementId = validBidRequests[0]?.params?.placementId;
+    let pageId = validBidRequests[0]?.params?.pageId;
 
     // There are more fields on the refererInfo object
     let referrer = bidderRequest?.refererInfo?.page
@@ -117,20 +119,11 @@ export const spec = {
 
     const payload = {
       slots: processed,
+      placementId,
+      pageId,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: bidderRequest?.auctionId || generateUUID()
-      /*
-      Use `bidderRequest.bids[]` to get bidder-dependent
-      request info.
-
-      If your bidder supports multiple currencies, use
-      `config.getConfig(currency)` to find which one the ad
-      server needs.
-
-      Pull the requested transaction ID from
-      `bidderRequest.bids[].transactionId`.
-      */
     };
 
     const cwid = getCwid();
