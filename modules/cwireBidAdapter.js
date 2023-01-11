@@ -7,7 +7,7 @@ import {getParameterByName, logInfo} from '../src/utils.js';
 const BIDDER_CODE = 'cwire';
 const CWID_KEY = 'cw_cwid';
 
-export const ENDPOINT_URL = 'https://embed.cwi.re/prebid/bid';
+export const ENDPOINT_URL = 'https://prebid.cwi.re/v1/bid';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -117,7 +117,7 @@ export const spec = {
 
     const payload = {
       slots: processed,
-      referrer: referrer
+      referrer: referrer // TODO: rename to httpRef :facepalm:
       /*
       Use `bidderRequest.bids[]` to get bidder-dependent
       request info.
@@ -143,6 +143,8 @@ export const spec = {
     // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
     const debug = getParameterByName('cw_debug');
 
+    // TODO: refgroups?
+    // TODO: pageviewId = auctionId?
     if (cwid) {
       payload.cwid = cwid
     }
@@ -176,6 +178,7 @@ export const spec = {
       }
     }
 
+    // TODO map from html to ad
     return serverResponse.body?.bids || [];
   },
 };
