@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getParameterByName, logInfo} from '../src/utils.js';
+import {generateUUID, getParameterByName, logInfo} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -117,7 +117,9 @@ export const spec = {
 
     const payload = {
       slots: processed,
-      httpRef: referrer
+      httpRef: referrer,
+      // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
+      pageViewId: bidderRequest?.auctionId || generateUUID()
       /*
       Use `bidderRequest.bids[]` to get bidder-dependent
       request info.
@@ -144,7 +146,6 @@ export const spec = {
     const debug = getParameterByName('cw_debug');
 
     // TODO: refgroups?
-    // TODO: pageviewId = auctionId?
     if (cwid) {
       payload.cwid = cwid
     }
