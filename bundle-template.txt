@@ -1,6 +1,5 @@
-/* <%= prebid.name %> v<%= prebid.version %>  News Corp Customized
+/* <%= prebid.name %> v<%= prebid.version %>  News Corp Customized For: <%= website %>
 Updated: <%= (new Date()).toISOString().substring(0, 10) %>
-For: <%= website %>
 Modules: <%= modules %> */
 
 if (!window.<%= prebid.globalVarName %> || !window.<%= prebid.globalVarName %>.libLoaded) {
