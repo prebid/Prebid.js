@@ -76,8 +76,8 @@ describe('C-WIRE bid adapter', () => {
 
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
-      expect(payload.creativeId).to.exist;
-      expect(payload.creativeId).to.deep.equal('str-str');
+      expect(payload.cwcreative).to.exist;
+      expect(payload.cwcreative).to.deep.equal('str-str');
     });
   })
 

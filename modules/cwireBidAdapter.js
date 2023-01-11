@@ -129,7 +129,7 @@ export const spec = {
     const cwid = getCwid();
 
     // Add optional/debug parameters
-    let creativeId = getParameterByName('cw_creative')
+    let cwcreative = getParameterByName('cw_creative')
 
     const ff = featureFlags(validBidRequests);
 
@@ -145,8 +145,8 @@ export const spec = {
     if (ff.length > 0) {
       payload.featureFlags = ff
     }
-    if (creativeId) {
-      payload.creativeId = creativeId
+    if (cwcreative) {
+      payload.cwcreative = cwcreative
     }
     if (debug) {
       payload.debug = true
