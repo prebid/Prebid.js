@@ -849,6 +849,8 @@ describe('kargo adapter tests', function () {
       sandbox.stub(spec, '_getCrb').callsFake(function() {
         return crb;
       });
+
+
     });
 
     function getUserSyncsWhenAllowed(gdprConsent, usPrivacy) {

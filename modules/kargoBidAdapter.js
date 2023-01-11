@@ -80,8 +80,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   const krakenParams = Object.assign({}, {
     pbv: PREBID_VERSION,
     aid: firstBidRequest.auctionId,
-    sid: spec._getSessionId(),
-    url: spec._getAllMetadata(bidderRequest).pageURL,
+    sid: _getSessionId(),
+    url: getAllMetadata(bidderRequest).pageURL,
     timeout: bidderRequest.timeout,
     ts: new Date().getTime(),
     device: {
@@ -91,10 +91,10 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
+    user: getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
   });
 
-  const reqCount = spec._getRequestCount()
+  const reqCount = getRequestCount()
   if (reqCount != null && reqCount > 0) {
     krakenParams.requestCount = reqCount
   }
@@ -139,19 +139,20 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
   }
 
-  const validPageId = spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null 
-  const validPageTimestamp = spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) != null
-  const validPageUrl = spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) != null
+  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null 
+  const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) != null
+  const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) != null
+
 
   const page = {}
   if(validPageId) {
-    page.id = spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID)
+    page.id = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID)
   }
   if(validPageTimestamp) {
-    page.timestamp = Number(spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP))
+    page.timestamp = Number(getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP))
   }
   if(validPageUrl) {
-    page.url = spec._getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL)
+    page.url = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL)
   }
   if (!_.isEmpty(page)) {
     krakenParams.page = page
@@ -168,8 +169,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(response, bidRequest) {
   let bids = response.body;
   const bidResponses = [];
-  for (let bidId in bids) {
-    let adUnit = bids[bidId];
+  for (let bidID in bids) {
+    let adUnit = bids[bidID];
     let meta = {
       mediaType: BANNER
     };
@@ -185,7 +186,7 @@ function interpretResponse(response, bidRequest) {
 
     const bidResponse = {
       ad: adUnit.adm,
-      requestId: bidId,
+      requestId: bidID,
       cpm: Number(adUnit.cpm),
       width: adUnit.width,
       height: adUnit.height,
@@ -210,8 +211,9 @@ function interpretResponse(response, bidRequest) {
 
 function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
   const syncs = [];
-  const seed = spec._generateRandomUuid();
-  const clientId = spec._getClientId();
+  const seed = _generateRandomUuid();
+  const clientId = getClientId();
+  
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
   var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
   // don't sync if opted out via usPrivacy
@@ -240,11 +242,43 @@ function onTimeout(timeoutData) {
   }
 
   timeoutData.forEach((bid) => {
-    this._sendTimeoutData(bid.auctionId, bid.timeout);
+    sendTimeoutData(bid.auctionId, bid.timeout);
+
   });
 }
 
-function _getCrbFromCookie() {
+function _generateRandomUuid() {
+  try {
+    // crypto.getRandomValues is supported everywhere but Opera Mini for years
+    var buffer = new Uint8Array(16);
+    crypto.getRandomValues(buffer);
+    buffer[6] = (buffer[6] & ~176) | 64;
+    buffer[8] = (buffer[8] & ~64) | 128;
+    var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
+      return ('00' + x.toString(16)).slice(-2);
+    }).join('');
+    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+  } catch (e) {
+    return '';
+  }
+}
+
+function _getCrb() {
+  let localStorageCrb = getCrbFromLocalStorage();
+  if (Object.keys(localStorageCrb).length) {
+    return localStorageCrb;
+  }
+  return getCrbFromCookie();
+}
+
+function _getSessionId() {
+  if (!sessionId) {
+    sessionId = _generateRandomUuid();
+  }
+  return sessionId;
+}
+
+function getCrbFromCookie() {
   try {
     const crb = JSON.parse(STORAGE.getCookie(CERBERUS.KEY));
     if (crb && crb.v) {
@@ -259,23 +293,17 @@ function _getCrbFromCookie() {
   }
 }
 
-function _getCrbFromLocalStorage() {
+function getCrbFromLocalStorage() {
   try {
-    return JSON.parse(atob(spec._getLocalStorageSafely(CERBERUS.KEY)));
+    return JSON.parse(atob(getLocalStorageSafely(CERBERUS.KEY)));
   } catch (e) {
     return {};
   }
 }
 
-function _getCrb() {
-  let localStorageCrb = spec._getCrbFromLocalStorage();
-  if (Object.keys(localStorageCrb).length) {
-    return localStorageCrb;
-  }
-  return spec._getCrbFromCookie();
-}
 
-function _getLocalStorageSafely(key) {
+
+function getLocalStorageSafely(key) {
   try {
     return STORAGE.getDataFromLocalStorage(key);
   } catch (e) {
@@ -283,7 +311,7 @@ function _getLocalStorageSafely(key) {
   }
 }
 
-function _getUserIds(tdid, usp, gdpr, eids) {
+function getUserIds(tdid, usp, gdpr, eids) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
@@ -326,27 +354,20 @@ function _getUserIds(tdid, usp, gdpr, eids) {
   return userIds;
 }
 
-function _getClientId() {
+function getClientId() {
   const crb = spec._getCrb();
   return crb.clientId;
 }
 
-function _getAllMetadata(bidderRequest) {
+function getAllMetadata(bidderRequest) {
   return {
     pageURL: bidderRequest?.refererInfo?.page,
     rawCRB: STORAGE.getCookie(CERBERUS.KEY),
-    rawCRBLocalStorage: spec._getLocalStorageSafely(CERBERUS.KEY)
+    rawCRBLocalStorage: getLocalStorageSafely(CERBERUS.KEY)
   };
 }
 
-function _getSessionId() {
-  if (!sessionId) {
-    sessionId = spec._generateRandomUuid();
-  }
-  return sessionId;
-}
-
-function _getRequestCount() {
+function getRequestCount() {
   if (lastPageUrl === window.location.pathname) {
     return ++requestCounter;
   }
@@ -354,23 +375,7 @@ function _getRequestCount() {
   return requestCounter = 0;
 }
 
-function _generateRandomUuid() {
-  try {
-    // crypto.getRandomValues is supported everywhere but Opera Mini for years
-    var buffer = new Uint8Array(16);
-    crypto.getRandomValues(buffer);
-    buffer[6] = (buffer[6] & ~176) | 64;
-    buffer[8] = (buffer[8] & ~64) | 128;
-    var hex = Array.prototype.map.call(new Uint8Array(buffer), function(x) {
-      return ('00' + x.toString(16)).slice(-2);
-    }).join('');
-    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
-  } catch (e) {
-    return '';
-  }
-}
-
-function _sendTimeoutData(auctionId, auctionTimeout) {
+function sendTimeoutData(auctionId, auctionTimeout) {
   let params = {
     aid: auctionId,
     ato: auctionTimeout,
@@ -468,17 +473,8 @@ export const spec = {
   getUserSyncs,
   supportedMediaTypes: BIDDER.SUPPORTED_MEDIA_TYPES,
   onTimeout,
-  _getCrbFromCookie,
-  _getCrbFromLocalStorage,
   _getCrb,
-  _getLocalStorageSafely,
-  _getUserIds,
-  _getClientId,
-  _getAllMetadata,
-  _getSessionId,
-  _getRequestCount,
-  _generateRandomUuid,
-  _sendTimeoutData
+  _getSessionId
 };
 
 registerBidder(spec);
