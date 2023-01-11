@@ -311,6 +311,7 @@ function bidWon({ data }) {
   // log "bid won" for the winning bid of a placement
   _queue.push(bidWonPayload);
 
+/*
   // get other bids in the auction for the placement and log "bid lost" status code
   _queue = _queue.concat(pbjs.getBidResponsesForAdUnitCode(data.adUnitCode).bids
     .filter(bid => bid !== data && bid.adUnitCode === data.adUnitCode)
@@ -333,6 +334,7 @@ function bidWon({ data }) {
         ]
       };
     }));
+  */
 }
 
 function bidTimeout({ data = [] }) {
