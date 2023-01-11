@@ -117,7 +117,7 @@ export const spec = {
 
     const payload = {
       slots: processed,
-      referrer: referrer // TODO: rename to httpRef :facepalm:
+      httpRef: referrer
       /*
       Use `bidderRequest.bids[]` to get bidder-dependent
       request info.
