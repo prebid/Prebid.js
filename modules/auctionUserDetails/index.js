@@ -107,7 +107,7 @@ export function auctionInitHandler () {
   if (frequencyDepth) {
     storedObject = localStorage.getItem(PREFIX + HOSTNAME);
     let slotCount = window.owpbjs.adUnits.length + (storedObject == null ? frequencyDepth.slotCnt : 0);
-	if (storedObject !== null) {
+    if (storedObject !== null) {
       storedDate = JSON.parse(storedObject).timestamp.date;
       const isStorageCleared = clearStorage(storedDate);
       if (isStorageCleared) {

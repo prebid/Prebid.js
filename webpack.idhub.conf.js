@@ -1,5 +1,5 @@
-var prebid = require('./package.json');
-var path = require('path');
+// var prebid = require('./package.json');
+// var path = require('path');
 var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
@@ -16,7 +16,7 @@ if (argv.analyze) {
 }
 
 //Get Webpack config and ovverride entry point for IDHUB related profiles.
-var webpackConfig = require('./webpack.conf');
+var webpackConfig = require('./webpack.conf.js');
 
 webpackConfig['entry'] = (() => {
     const entry = {

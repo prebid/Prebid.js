@@ -11,9 +11,9 @@ export function setRequestExtPrebid(ortbRequest, bidderRequest) {
         auctiontimestamp: bidderRequest.auctionStart,
         targeting: {
           includewinners: true,
-            // earlier ext.prebid.targeting used to replace with s2sconfig prebid object but since 6.x extPrebid is mergeing with
-            // s2sConfig extPrebid which restrict bidder specific targeting keys in response. And as OW needs these keys in dfp calls
-            // we need to overwrite includebidderkeys to true as mentioned in UOE-7693
+          // earlier ext.prebid.targeting used to replace with s2sconfig prebid object but since 6.x extPrebid is mergeing with
+          // s2sConfig extPrebid which restrict bidder specific targeting keys in response. And as OW needs these keys in dfp calls
+          // we need to overwrite includebidderkeys to true as mentioned in UOE-7693
           includebidderkeys: true
         }
       },

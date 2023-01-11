@@ -387,7 +387,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['psl'] = getPSL(auctionId);
   outputObj['dvc'] = {'plt': getDevicePlatform()};
-  outputObj["bm"] = window.PWT && window.PWT.browserMapping;
+  outputObj['bm'] = window.PWT && window.PWT.browserMapping;
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
     if (testGroupId <= 15 && testGroupId >= 0) {
@@ -420,7 +420,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'bs': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.bidServed,
       'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
       'rc': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.slotCnt,
-	  'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
+      'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
     };
     slotsArray.push(slotObject);
     return slotsArray;

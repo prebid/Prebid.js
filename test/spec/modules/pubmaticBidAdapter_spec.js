@@ -2575,7 +2575,7 @@ describe('PubMatic adapter', function () {
             return utils.deepAccess(config, key);
           });
           const request = spec.buildRequests(bidRequests, {});
-          expect(request.method).to.equal('GET');          
+          expect(request.method).to.equal('GET');
           sandbox.restore();
         });
 

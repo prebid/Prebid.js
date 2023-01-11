@@ -1,4 +1,4 @@
-/** @module pbjs prebidjs for idhub*/
+/** @module pbjs prebidjs for idhub */
 
 import { getGlobal } from './prebidGlobal.js';
 import {
@@ -17,7 +17,7 @@ const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const {REQUEST_BIDS } = CONSTANTS.EVENTS;
+const { REQUEST_BIDS } = CONSTANTS.EVENTS;
 // initialize existing debugging sessions if present
 sessionLoader();
 

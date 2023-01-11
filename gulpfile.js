@@ -13,8 +13,8 @@ var gulpif = require('gulp-if');
 var _ = require('lodash');
 var webpack = require('webpack');
 var webpackStream = require('webpack-stream');
-var webpackConfig = require('./webpack.conf');
-var helpers = require('./gulpHelpers');
+var webpackConfig = require('./webpack.conf.js');
+var helpers = require('./gulpHelpers.js');
 var header = require('gulp-header');
 var gutil = require('gulp-util');
 var footer = require('gulp-footer');
@@ -270,79 +270,79 @@ function bundle(dev, moduleArr) {
     .pipe(gulpif(dev, sourcemaps.write('.')));
 }
 
-function makeDevpackPkgForIh() {
-  var connect = require('gulp-connect');
-  var webpackConfig = require('./webpack.idhub.conf');
-  var helpers = require('./gulpHelpers');
-  
-  var cloned = _.cloneDeep(webpackConfig);
-  cloned.devtool = 'source-map';
-  var externalModules = helpers.getArgModules();
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
-  
-  return gulp.src([].concat(moduleSources, analyticsSources, "src/prebidIdhub.js"))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulp.dest('build/dev'))
-    .pipe(connect.reload());
-}
+// function makeDevpackPkgForIh() {
+//   var connect = require('gulp-connect');
+//   var webpackConfig = require('./webpack.idhub.conf');
+//   var helpers = require('./gulpHelpers');
 
-function makeWebpackPkgForIh() {
-  var webpack = require('webpack');
-  var terser = require('gulp-terser');
-  var webpackConfig = require('./webpack.idhub.conf');
-  var helpers = require('./gulpHelpers');
-  var cloned = _.cloneDeep(webpackConfig);
+//   var cloned = _.cloneDeep(webpackConfig);
+//   cloned.devtool = 'source-map';
+//   var externalModules = helpers.getArgModules();
+//   const analyticsSources = helpers.getAnalyticsSources();
+//   const moduleSources = helpers.getModulePaths(externalModules);
 
-  delete cloned.devtool;
-  
-  var externalModules = helpers.getArgModules();
-  const analyticsSources = helpers.getAnalyticsSources();
-  const moduleSources = helpers.getModulePaths(externalModules);
-  
-  return gulp.src([].concat(moduleSources, analyticsSources, "src/prebidIdhub.js"))
-    .pipe(helpers.nameModules(externalModules))
-    .pipe(webpackStream(cloned, webpack))
-    .pipe(gulpif(file => file.basename === 'prebid-core-idhub.js', header(banner, { prebid: prebid })))
-    .pipe(gulp.dest('build/dist'));
-}
+//   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebidIdhub.js'))
+//     .pipe(helpers.nameModules(externalModules))
+//     .pipe(webpackStream(cloned, webpack))
+//     .pipe(gulp.dest('build/dev'))
+//     .pipe(connect.reload());
+// }
 
-function bundleForIh(dev, moduleArr) {
-  var helpers = require('./gulpHelpers');
-  var modules = moduleArr || helpers.getArgModules();
-  var allModules = helpers.getModuleNames(modules);
-  if (modules.length === 0) {
-    modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
-  } else {
-    var diff = _.difference(modules, allModules);
+// function makeWebpackPkgForIh() {
+//   var webpack = require('webpack');
+//   var terser = require('gulp-terser');
+//   var webpackConfig = require('./webpack.idhub.conf');
+//   var helpers = require('./gulpHelpers');
+//   var cloned = _.cloneDeep(webpackConfig);
 
-    if (diff.length !== 0) {
-      throw new gutil.PluginError({
-        plugin: 'bundle',
-        message: 'invalid modules: ' + diff.join(', ')
-      });
-    }
-  }
-  var entries = [helpers.getBuiltPrebidIHCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
-  
-  var outputFileNameForIH = 'prebidIdhub.js';
-  // change output filename if argument --tag given
-  if (argv.tag && argv.tag.length) {
-    outputFileNameForIH = outputFileNameForIH.replace(/\.js$/, `.${argv.tag}.js`);
-  }
-  return gulp.src(
-    entries
-  )
-    .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
-    .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
-    .pipe(concat(outputFileNameForIH))
-    .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
-      global: prebid.globalVarName
-    }
-    )))
-    .pipe(gulpif(dev, sourcemaps.write('.')));
-}
+//   delete cloned.devtool;
+
+//   var externalModules = helpers.getArgModules();
+//   const analyticsSources = helpers.getAnalyticsSources();
+//   const moduleSources = helpers.getModulePaths(externalModules);
+
+//   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebidIdhub.js'))
+//     .pipe(helpers.nameModules(externalModules))
+//     .pipe(webpackStream(cloned, webpack))
+//     .pipe(gulpif(file => file.basename === 'prebid-core-idhub.js', header(banner, { prebid: prebid })))
+//     .pipe(gulp.dest('build/dist'));
+// }
+
+// function bundleForIh(dev, moduleArr) {
+//   var helpers = require('./gulpHelpers');
+//   var modules = moduleArr || helpers.getArgModules();
+//   var allModules = helpers.getModuleNames(modules);
+//   if (modules.length === 0) {
+//     modules = allModules.filter(module => explicitModules.indexOf(module) === -1);
+//   } else {
+//     var diff = _.difference(modules, allModules);
+
+//     if (diff.length !== 0) {
+//       throw new gutil.PluginError({
+//         plugin: 'bundle',
+//         message: 'invalid modules: ' + diff.join(', ')
+//       });
+//     }
+//   }
+//   var entries = [helpers.getBuiltPrebidIHCoreFile(dev)].concat(helpers.getBuiltModules(dev, modules));
+
+//   var outputFileNameForIH = 'prebidIdhub.js';
+//   // change output filename if argument --tag given
+//   if (argv.tag && argv.tag.length) {
+//     outputFileNameForIH = outputFileNameForIH.replace(/\.js$/, `.${argv.tag}.js`);
+//   }
+//   return gulp.src(
+//     entries
+//   )
+//     .pipe(replace(/(Modules: )(.*?)(\*\/)/, ('$1' + getModulesListToAddInBanner(helpers.getArgModules()) + ' $3')))
+//     .pipe(gulpif(dev, sourcemaps.init({ loadMaps: true })))
+//     .pipe(concat(outputFileNameForIH))
+//     .pipe(gulpif(!argv.manualEnable, footer('\n<%= global %>.processQueue();', {
+//       global: prebid.globalVarName
+//     }
+//     )))
+//     .pipe(gulpif(dev, sourcemaps.write('.')));
+// }
 
 // Run the unit tests.
 //
@@ -356,7 +356,7 @@ function bundleForIh(dev, moduleArr) {
 
 function test(done) {
   var KarmaServer = require('karma').Server;
-  var karmaConfMaker = require('./karma.conf.maker');
+  var karmaConfMaker = require('./karma.conf.maker.js');
 
   if (argv.notest) {
     done();
@@ -430,7 +430,7 @@ function newKarmaCallback(done) {
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
   var KarmaServer = require('karma').Server;
-  var karmaConfMaker = require('./karma.conf.maker');
+  var karmaConfMaker = require('./karma.conf.maker.js');
   new KarmaServer(karmaConfMaker(true, false, false, argv.file), newKarmaCallback(done)).start();
 }
 
@@ -499,7 +499,7 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-//gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, makeDevpackPkgForIh, gulpBundle.bind(null, true)));
+// gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, makeDevpackPkgForIh, gulpBundle.bind(null, true)));
 gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
 
 // gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg, makeWebpackPkgForIh, gulpBundle.bind(null, false)));
@@ -520,7 +520,7 @@ gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', wa
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watch)));
 gulp.task('serve-fake', gulp.series(clean, gulp.parallel('build-bundle-dev', watch), injectFakeServerEndpointDev, test, startFakeServer));
 
-//gulp.task('default', gulp.series(clean, makeWebpackPkg, makeWebpackPkgForIh));
+// gulp.task('default', gulp.series(clean, makeWebpackPkg, makeWebpackPkgForIh));
 gulp.task('default', gulp.series(clean, makeWebpackPkg));
 
 gulp.task('e2e-test', gulp.series(clean, setupE2e, gulp.parallel('build-bundle-prod', watch), injectFakeServerEndpoint, test));
@@ -533,4 +533,4 @@ gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;
-////
+/// /

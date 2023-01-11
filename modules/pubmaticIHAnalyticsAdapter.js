@@ -1,7 +1,7 @@
 import { logError, logInfo, isNumber } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+// import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
@@ -19,16 +19,16 @@ const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
 const DEFAULT_IDENTITY_ONLY = '0';
-const IH_INIT = "initIdentityHub"; 
+const IH_INIT = 'initIdentityHub';
 const IH_ANALYTICS_EXPIRY = 7;
-const IH_LOGGER_STORAGE_KEY = "IH_LGCL_TS"
+const IH_LOGGER_STORAGE_KEY = 'IH_LGCL_TS'
 
 /// /////////// VARIABLES //////////////
 let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let identityOnly = DEFAULT_IDENTITY_ONLY;
-let domain = "";
+let domain = '';
 
 export const coreStorage = getCoreStorageManager('userid');
 
@@ -41,11 +41,11 @@ export function firePubMaticIHLoggerCall() {
 
   const expiresStr = (new Date(Date.now() + (expiry * (60 * 60 * 24 * 1000)))).toUTCString();
   if (ts === undefined || (ts !== undefined && new Date(ts) < today)) {
-    logInfo("IHANALYTICS: Emitting event IH_INIT");
+    logInfo('IHANALYTICS: Emitting event IH_INIT');
     coreStorage.setDataInLocalStorage(IH_LOGGER_STORAGE_KEY, expiresStr);
     events.emit(IH_INIT);
   } else {
-    logInfo("IHANALYTICS: Not triggering logger call");
+    logInfo('IHANALYTICS: Not triggering logger call');
   }
 };
 
@@ -88,7 +88,7 @@ let pubmaticIHAdapter = Object.assign({}, baseAdapter, {
       profileId = Number(conf.options.profileId) || 0;
       profileVersionId = Number(conf.options.profileVersionId) || 0;
       identityOnly = conf.options.identityOnly;
-      domain = conf.options.domain || "";
+      domain = conf.options.domain || '';
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;

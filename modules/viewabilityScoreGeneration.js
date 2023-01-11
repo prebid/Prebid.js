@@ -21,13 +21,13 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
   if (vsgObj) {
     bidderRequests.forEach(bidderRequest => {
       bidderRequest.bids.forEach(bid => {
-		const bidViewabilityFields = { ...vsgObj[bid.adUnitCode]};
-		// Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
-		delete bidViewabilityFields.lastViewStarted;
-		// Deleteing totalTimeView incase value is less than 1 sec.
-		if(bidViewabilityFields.totalViewTime == 0) {
-			delete bidViewabilityFields.totalViewTime;
-		}
+        const bidViewabilityFields = { ...vsgObj[bid.adUnitCode] };
+        // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
+        delete bidViewabilityFields.lastViewStarted;
+        // Deleteing totalTimeView incase value is less than 1 sec.
+        if (bidViewabilityFields.totalViewTime == 0) {
+          delete bidViewabilityFields.totalViewTime;
+        }
         if (vsgObj[bid.adUnitCode]) bid.bidViewability = bidViewabilityFields;
       });
     });
@@ -89,24 +89,24 @@ export const gptImpressionViewableHandler = (adSlotElementId, setToLocalStorageC
 };
 
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentage, setToLocalStorageCb) => {
-	const currentTime = Date.now();
-	const lastViewStarted = vsgObj[adSlotElementId].lastViewStarted;
-	let diff;
-	if(inViewPercentage < 50) {
-		if (lastViewStarted) {
-			diff = currentTime - lastViewStarted;
-			vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
-			delete vsgObj[adSlotElementId].lastViewStarted;
-		}
-	} else {
-	if (lastViewStarted) {
-		diff = currentTime - lastViewStarted;
-		vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
-	}
-	vsgObj[adSlotElementId].lastViewStarted = currentTime;
-	vsgObj[adSlotElementId].lastViewed = parseInt(performance.now());
-	setToLocalStorageCb('viewability-data', vsgObj);
-	}
+  const currentTime = Date.now();
+  const lastViewStarted = vsgObj[adSlotElementId].lastViewStarted;
+  let diff;
+  if (inViewPercentage < 50) {
+    if (lastViewStarted) {
+      diff = currentTime - lastViewStarted;
+      vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
+      delete vsgObj[adSlotElementId].lastViewStarted;
+    }
+  } else {
+    if (lastViewStarted) {
+      diff = currentTime - lastViewStarted;
+      vsgObj[adSlotElementId].totalViewTime = Math.round((vsgObj[adSlotElementId].totalViewTime || 0) + diff / 1000);
+    }
+    vsgObj[adSlotElementId].lastViewStarted = currentTime;
+    vsgObj[adSlotElementId].lastViewed = parseInt(performance.now());
+    setToLocalStorageCb('viewability-data', vsgObj);
+  }
 };
 
 export const calculateBucket = (bucketCategories, score) => {
@@ -129,8 +129,8 @@ export const calculateBucket = (bucketCategories, score) => {
 
 export const addViewabilityTargeting = (globalConfig, targetingSet, vsgLocalStorageObj, cb) => {
   Object.keys(targetingSet).forEach(targetKey => {
-    if(Object.keys(targetingSet[targetKey]).length !== 0) {
-      // Will add only required targetting keys by this module. 
+    if (Object.keys(targetingSet[targetKey]).length !== 0) {
+      // Will add only required targetting keys by this module.
       targetingSet[targetKey] = {};
       if (
         vsgLocalStorageObj[targetKey] &&
@@ -174,25 +174,25 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
 
 export const setGptEventHandlers = () => {
   // events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
-    // add the GPT event listeners
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-        gptSlotRenderEndedHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
-      });
-
-      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-        gptImpressionViewableHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
-      });
-
-      window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-        gptSlotVisibilityChangedHandler(currentAdSlotElement, event.inViewPercentage, setAndStringifyToLocalStorage);
-      });
+  // add the GPT event listeners
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
+      const currentAdSlotElement = event.slot.getSlotElementId();
+      gptSlotRenderEndedHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
     });
+
+    window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+      const currentAdSlotElement = event.slot.getSlotElementId();
+      gptImpressionViewableHandler(currentAdSlotElement, setAndStringifyToLocalStorage);
+    });
+
+    window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
+      const currentAdSlotElement = event.slot.getSlotElementId();
+      gptSlotVisibilityChangedHandler(currentAdSlotElement, event.inViewPercentage, setAndStringifyToLocalStorage);
+    });
+  });
   // });
 };
 

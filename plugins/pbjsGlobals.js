@@ -27,7 +27,7 @@ function getNpmVersion(version) {
 }
 
 module.exports = function(api, options) {
-  const pbGlobal = prebid.profile === "IH" ? prebid.ihGlobalVarName : prebid.globalVarName; //options.globalVarName || prebid.globalVarName;
+  const pbGlobal = prebid.profile === 'IH' ? prebid.ihGlobalVarName : prebid.globalVarName; // options.globalVarName || prebid.globalVarName;
   const features = featureMap(options.disableFeatures);
   let replace = {
     '$prebid.version$': prebid.version,

@@ -1343,10 +1343,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   (getGlobal()).onSSOLogout = onSSOLogout;
   (getGlobal()).getUserIdsAsync = normalizePromise(getUserIdsAsync);
   (getGlobal()).getUserIdsAsEidBySource = getUserIdsAsEidBySource;
-
 }
-
-
 
 // init config update listener to start the application
 init(config);
