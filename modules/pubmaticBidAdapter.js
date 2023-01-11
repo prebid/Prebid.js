@@ -1432,12 +1432,11 @@ export const spec = {
               if (newBid['dealId'] && bid.ext && bid.ext.deal_channel) {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
-
-              prepareMetaObject(br, bid, seatbidder.seat);
+              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // START of Experimental change
               if (response.body.ext) {
-                br.ext = response.body.ext;
+                newBid['ext'] = response.body.ext;
               }
               // END of Experimental change
 
