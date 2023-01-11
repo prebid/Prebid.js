@@ -7,28 +7,30 @@ export function setImpBidParams(
   {adUnit, bidderRequests, index = auctionManager.index, bidderRegistry = adapterManager.bidderRegistry} = {}) {
   let params = bidRequest.params;
   const adapter = bidderRegistry[bidRequest.bidder];
+  let owAliases;
+
   if (adapter && adapter.getSpec().transformBidParams) {
     adUnit = adUnit || index.getAdUnit(bidRequest);
     bidderRequests = bidderRequests || [context.bidderRequest];
     params = adapter.getSpec().transformBidParams(params, true, adUnit, bidderRequests);
   }
-  //init OWAlias
+  // init OWAlias
   if (context && context.s2sBidRequest && context.s2sBidRequest.s2sConfig && context.s2sBidRequest.s2sConfig.extPrebid) {
     owAliases = context.s2sBidRequest.s2sConfig.extPrebid.aliases;
   }
 
   // checking if a partner is pubmatic alias or pubmatic itself
   var checkPubMaticAlias = function checkPubMaticAlias(bidder) {
-    if (bidder == 'pubmatic' || bidder == 'pubmatic2' || owAliases && owAliases[bidder] && owAliases[bidder].includes('pubmatic')) {
+    if (bidder == 'pubmatic' || bidder == 'pubmatic2' || (owAliases && owAliases[bidder] && owAliases[bidder].includes('pubmatic'))) {
       return true;
     }
     return false;
   };
   // passing bid.bidViewability to pubmatic params, only when present
   var addBidViewabilityDataS2S = function addBidViewabilityDataS2S() {
-      if (checkPubMaticAlias(bidRequest.bidder) && bidRequest.bidViewability) {
-        params.bidViewability = bidRequest.bidViewability
-      }
+    if (checkPubMaticAlias(bidRequest.bidder) && bidRequest.bidViewability) {
+      params.bidViewability = bidRequest.bidViewability
+    }
   };
   addBidViewabilityDataS2S();
 

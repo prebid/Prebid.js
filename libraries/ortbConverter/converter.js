@@ -1,5 +1,5 @@
 import {compose} from './lib/composer.js';
-import {logError, memoize} from '../../src/utils.js';
+import {deepClone, logError, memoize} from '../../src/utils.js';
 import {DEFAULT_PROCESSORS} from './processors/default.js';
 import {BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
 import {mergeProcessors} from './lib/mergeProcessors.js';
@@ -93,13 +93,21 @@ export function ortbConverter({
       const imps = bidRequests.map(bidRequest => {
         const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
-        if (result != null) {
-          if (result.hasOwnProperty('id')) {
-            impContext.bidRequest = bidRequest;
-            ctx.imp[result.id] = impContext;
-            return result;
+        let resultCopy = deepClone(result);
+
+        if (resultCopy?.ext?.prebid?.bidder) {
+          for (let bidderCode in resultCopy.ext.prebid.bidder) {
+            let bid = resultCopy.ext.prebid.bidder[bidderCode];
+            delete bid?.kgpv;
           }
-          logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, result);
+        }
+        if (resultCopy != null) {
+          if (resultCopy.hasOwnProperty('id')) {
+            impContext.bidRequest = bidRequest;
+            ctx.imp[resultCopy.id] = impContext;
+            return resultCopy;
+          }
+          logError('Converted ORTB imp does not specify an id, ignoring bid request', bidRequest, resultCopy);
         }
       }).filter(Boolean);
 

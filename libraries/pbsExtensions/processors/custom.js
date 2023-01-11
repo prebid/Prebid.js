@@ -96,7 +96,7 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
     for (bidder in bidders) {
       let bid = imp.ext.prebid.bidder[bidder];
       // If bid params contains kgpv then delete it as we do not want to pass it in request.
-      delete bid.kgpv;
+      // delete bid.kgpv;
       if ((bidder !== 'pubmatic') && !(owAliases && owAliases[bidder] && owAliases[bidder].includes('pubmatic'))) {
         delete bid.wiid;
       } else {
