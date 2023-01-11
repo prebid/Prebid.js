@@ -172,8 +172,9 @@ export const spec = {
       }
     }
 
-    // TODO map from html to ad
-    return serverResponse.body?.bids || [];
+    // Rename `html` response property to `ad` as used by prebid.
+    const bids = serverResponse.body?.bids.map(({html, ...rest}) => ({...rest, ad: html}));
+    return bids || [];
   },
 };
 registerBidder(spec);

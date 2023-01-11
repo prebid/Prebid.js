@@ -24,6 +24,24 @@ describe('C-WIRE bid adapter', () => {
       'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
     }
   ];
+  const response = {
+    body: {
+      'cwid': '2ef90743-7936-4a82-8acf-e73382a64e94',
+      'hash': '17112D98BBF55D3A',
+      'bids': [{
+        'html': '<h1>Hello world</h1>',
+        'cpm': 100,
+        'currency': 'CHF',
+        'dimensions': [1, 1],
+        'netRevenue': true,
+        'creativeId': '3454',
+        'requestId': '2c634d4ca5ccfb',
+        'placementId': 177,
+        'transactionId': 'b4b32618-1350-4828-b6f0-fbb5c329e9a4',
+        'ttl': 360
+      }]
+    }
+  }
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -210,6 +228,15 @@ describe('C-WIRE bid adapter', () => {
       const payload = JSON.parse(request.data);
 
       expect(payload.pageId).to.exist;
+    })
+  });
+
+  describe('process serverResponse', function () {
+    it('html to ad mapping', function () {
+      let bidResponse = deepClone(response);
+      const bids = spec.interpretResponse(bidResponse, {});
+
+      expect(bids[0].ad).to.exist;
     })
   });
 });
