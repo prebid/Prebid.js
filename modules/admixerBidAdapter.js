@@ -1,4 +1,4 @@
-import { logError } from '../src/utils.js';
+import { logError, isFn, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
@@ -57,6 +57,10 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
       }
+      let bidFloor = getBidFloor(bidderRequest);
+      if (bidFloor) {
+        payload.imps[0].bidFloor = bidFloor;
+      }
     }
     validRequest.forEach((bid) => {
       let imp = {};
@@ -96,4 +100,20 @@ export const spec = {
     return pixels;
   }
 };
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidFloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0;
+  }
+}
 registerBidder(spec);

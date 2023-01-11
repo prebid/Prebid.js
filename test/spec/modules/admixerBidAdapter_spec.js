@@ -19,15 +19,19 @@ describe('AdmixerAdapter', function () {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': BIDDER_CODE,
-      'params': {
-        'zone': ZONE_ID
+      bidder: BIDDER_CODE,
+      params: {
+        zone: ZONE_ID,
       },
-      'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250], [300, 600]],
-      'bidId': '30b31c1838de1e',
-      'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
+      adUnitCode: 'adunit-code',
+      sizes: [
+        [300, 250],
+        [300, 600],
+      ],
+      bidId: '30b31c1838de1e',
+      bidderRequestId: '22edbae2733bf6',
+      auctionId: '1d1a030790a475',
+      bidFloor: 0.1
     };
 
     it('should return true when required params found', function () {
@@ -44,6 +48,38 @@ describe('AdmixerAdapter', function () {
     });
   });
 
+  describe('buildRequestsWithFloor', function () {
+    let validRequest = [
+      {
+        bidder: BIDDER_CODE,
+        params: {
+          zone: ZONE_ID,
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [
+          [300, 250],
+          [300, 600],
+        ],
+        bidId: '30b31c1838de1e',
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '1d1a030790a475',
+        bidFloor: 0.1
+      },
+    ];
+    let bidderRequest = {
+      bidderCode: BIDDER_CODE,
+      refererInfo: {
+        page: 'https://example.com',
+      },
+    };
+
+    it('should return true when bidFloors are equal', function () {
+      const request = spec.buildRequests(validRequest, bidderRequest);
+      const payload = request.data;
+      expect(payload.imps[0].bidFloor).to.deep.equal(0.1);
+    });
+  });
+
   describe('buildRequests', function () {
     let validRequest = [
       {
@@ -55,7 +91,7 @@ describe('AdmixerAdapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
+        'auctionId': '1d1a030790a475'
       }
     ];
     let bidderRequest = {
