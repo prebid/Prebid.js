@@ -5,7 +5,7 @@ import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixerADX'];
+const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ADX_ENDPOINT_URL = 'http://inv-nets.admixer.net/adxprebid.1.2.aspx';
 export const spec = {
@@ -69,8 +69,12 @@ export const spec = {
       payload.imps.push(imp);
     });
     return {
-      method: 'POST',
-      url: endpointUrl || (bidderRequest.bidderCode==='admixerADX'? ADX_ENDPOINT_URL:ENDPOINT_URL) ,
+      method: "POST",
+      url:
+        endpointUrl ||
+        (bidderRequest.bidderCode === 'admixeradx'
+          ? ADX_ENDPOINT_URL
+          : ENDPOINT_URL),
       data: payload,
     };
   },
