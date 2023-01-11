@@ -59,7 +59,7 @@ export const spec = {
       }
       let bidFloor = getBidFloor(bidderRequest);
       if (bidFloor) {
-        payload.imps[0].bidFloor = bidFloor;
+        payload.bidFloor = bidFloor;
       }
     }
     validRequest.forEach((bid) => {
@@ -101,10 +101,6 @@ export const spec = {
   }
 };
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
-  }
-
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
