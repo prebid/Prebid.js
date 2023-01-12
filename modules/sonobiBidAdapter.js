@@ -85,6 +85,7 @@ export const spec = {
 
     const payload = {
       'key_maker': JSON.stringify(data),
+      video_options: _getVideoOptions(validBidRequests),
       // TODO: is 'page' the right value here?
       'ref': bidderRequest.refererInfo.page,
       's': generateUUID(),
@@ -93,7 +94,6 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
-
     };
 
     const fpd = bidderRequest.ortb2;
@@ -295,7 +295,7 @@ function _findBidderRequest(bidderRequests, bidId) {
   }
 }
 
-// This function takes all the possible sizes 
+// This function takes all the possible sizes
 // returns string csv
 function _validateSize(bid) {
   let size = [];
@@ -316,7 +316,7 @@ function _validateSize(bid) {
   }
   // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
   // Then throw it into Set to uniquify it.
-  // Then spread it to an array again. Then join it into a csv of sizes
+  // Spread it to an array again. Then join it into a csv of sizes
   return [...new Set(parseSizesInput(...size))].join(',');
 }
 
@@ -396,6 +396,15 @@ export function _getPlatform(context = window) {
     return 'tablet'
   }
   return 'desktop';
+}
+
+function _getVideoOptions(bids) {
+  const videoOptions = bids.map(bid => {
+    if (deepAccess(bid, 'mediaTypes.video')) {
+      return deepAccess(bid, 'mediaTypes.video');
+    }
+  })
+  return JSON.stringify(videoOptions);
 }
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
