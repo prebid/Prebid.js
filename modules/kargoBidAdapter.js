@@ -169,10 +169,20 @@ function buildRequests(validBidRequests, bidderRequest) {
 function interpretResponse(response, bidRequest) {
   let bids = response.body;
   const bidResponses = [];
-  for (let bidID in bids) {
-    let adUnit = bids[bidID];
+
+  if (_.isEmpty(bids)) {
+    return bidResponses;
+  }
+
+  if (typeof bids !== 'object') {
+    return bidResponses;
+  }
+
+  Object.entries(bids).forEach((entry) => {
+    const [bidID, adUnit] = entry
+
     let meta = {
-      mediaType: BANNER
+      mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER,
     };
 
     if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
@@ -180,12 +190,7 @@ function interpretResponse(response, bidRequest) {
       meta.advertiserDomains = adUnit.metadata.landingPageDomain;
     }
 
-    if (adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType)) {
-      meta.mediaType = adUnit.mediaType;
-    }
-
     const bidResponse = {
-      ad: adUnit.adm,
       requestId: bidID,
       cpm: Number(adUnit.cpm),
       width: adUnit.width,
@@ -201,17 +206,19 @@ function interpretResponse(response, bidRequest) {
 
     if (meta.mediaType == VIDEO) {
       bidResponse.vastXml = adUnit.adm;
+    } else {
+      bidResponse.ad = adUnit.adm;
     }
 
     bidResponses.push(bidResponse);
-  }
+  })
 
   return bidResponses;
 }
 
 function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
   const syncs = [];
-  const seed = _generateRandomUuid();
+  const seed = _generateRandomUUID();
   const clientId = getClientId();
   
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
@@ -247,7 +254,7 @@ function onTimeout(timeoutData) {
   });
 }
 
-function _generateRandomUuid() {
+function _generateRandomUUID() {
   try {
     // crypto.getRandomValues is supported everywhere but Opera Mini for years
     var buffer = new Uint8Array(16);
@@ -273,7 +280,7 @@ function _getCrb() {
 
 function _getSessionId() {
   if (!sessionId) {
-    sessionId = _generateRandomUuid();
+    sessionId = _generateRandomUUID();
   }
   return sessionId;
 }
