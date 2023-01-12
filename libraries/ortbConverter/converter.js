@@ -1,5 +1,5 @@
 import {compose} from './lib/composer.js';
-import {deepClone, logError, memoize} from '../../src/utils.js';
+import {deepClone, logError, memoize, timestamp} from '../../src/utils.js';
 import {DEFAULT_PROCESSORS} from './processors/default.js';
 import {BID_RESPONSE, DEFAULT, getProcessors, IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
 import {mergeProcessors} from './lib/mergeProcessors.js';
@@ -14,7 +14,11 @@ export function ortbConverter({
   response,
 } = {}) {
   const REQ_CTX = new WeakMap();
-
+  let impressionReqIdMap = {};
+  let firstBidRequest;
+  window.partnersWithoutErrorAndBids = {};
+  window.matchedimpressions = {};
+  
   function builder(slot, wrapperFn, builderFn, errorHandler) {
     let build;
     return function () {
@@ -83,6 +87,29 @@ export function ortbConverter({
     }
   );
 
+  function createLatencyMap(impressionID, id) {
+    impressionReqIdMap[id] = impressionID;
+    window.pbsLatency[impressionID] = {
+      'startTime': timestamp()
+    };
+  }
+  
+  // Get list of all errored partners
+  function getErroredPartners(responseExt) {
+    if (responseExt && responseExt.errors) {
+      return Object.keys(responseExt.errors);
+    }
+  }
+
+  function findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi, responseExt, impValue) {
+    window.partnersWithoutErrorAndBids[impValue] = listofPartnersWithmi.filter(partner => !erroredPartners.includes(partner));
+    erroredPartners.forEach(partner => {
+      if (responseExt.errors[partner] && responseExt.errors[partner][0].code == 1) {
+        window.partnersWithoutErrorAndBids[impValue].push(partner);
+      }
+    })
+  }
+
   return {
     toORTB({bidderRequest, bidRequests, context = {}}) {
       bidRequests = bidRequests || bidderRequest.bids;
@@ -116,9 +143,23 @@ export function ortbConverter({
       if (request != null) {
         REQ_CTX.set(request, ctx);
       }
+
+      firstBidRequest = ctx.req.actualBidderRequests[0];
+      // check if isPrebidPubMaticAnalyticsEnabled in s2sConfig and if it is then get auctionId from adUnit
+      const { s2sConfig } = ctx.req.s2sBidRequest;
+      let isAnalyticsEnabled = s2sConfig.extPrebid && s2sConfig.extPrebid.isPrebidPubMaticAnalyticsEnabled;
+      iidValue = isAnalyticsEnabled ? firstBidRequest.auctionId : firstBidRequest.bids[0].params.wiid;
+
+      createLatencyMap(iidValue, firstBidRequest.auctionId);
       return request;
     },
     fromORTB({request, response}) {
+      // Get impressionID from impressionReqIdMap to check response belongs to same request
+      let impValue = impressionReqIdMap[response.id];
+      if (impValue && window.pbsLatency[impValue]) {
+        window.pbsLatency[impValue]['endTime'] = timestamp();
+      }
+
       const ctx = REQ_CTX.get(request);
       if (ctx == null) {
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
@@ -127,13 +168,36 @@ export function ortbConverter({
         return Object.assign({ortbRequest: request}, extraParams, ctx);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
-      const bidResponses = (response.seatbid || []).flatMap(seatbid =>
-        (seatbid.bid || []).map((bid) => {
-          if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
-            return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
+      let impForSlots, partnerBidsForslots;
+      if (firstBidRequest.hasOwnProperty('adUnitsS2SCopy')) {
+        impForSlots = firstBidRequest.adUnitsS2SCopy.length;
+      }
+
+      let extObj = response.ext || {};
+      let miObj = extObj.matchedimpression || {};
+      window.matchedimpressions = {...window.matchedimpressions, ...miObj};
+
+      const listofPartnersWithmi = window.partnersWithoutErrorAndBids[impValue] = Object.keys(miObj);
+      const erroredPartners = getErroredPartners(extObj);
+      if (erroredPartners) {
+        findPartnersWithoutErrorsAndBids(erroredPartners, listofPartnersWithmi, extObj, impValue);
+      }
+
+      const bidResponses = (response.seatbid || []).flatMap(seatbid => {
+          if (seatbid.hasOwnProperty('bid')) {
+            partnerBidsForslots = seatbid.bid.length;
           }
-          logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
-        })
+          window.partnersWithoutErrorAndBids[impValue] = window.partnersWithoutErrorAndBids[impValue].filter((partner) => {
+            return ((partner !== seatbid.seat) || (impForSlots !== partnerBidsForslots));
+          });
+
+          return (seatbid.bid || []).map((bid) => {
+            if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
+              return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
+            }
+            logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
+          })
+        }
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));
     }
