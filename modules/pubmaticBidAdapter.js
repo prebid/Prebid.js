@@ -1316,7 +1316,9 @@ export const spec = {
     bidderRequest.nwMonitor.correlator = correlator;
     bidderRequest.nwMonitor.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
     // For Timeout handler
-    bidderRequest?.bids?.forEach(bid => bid.correlator = correlator);
+    if (bidderRequest?.bids?.length && isArray(bidderRequest?.bids)) {
+      bidderRequest.bids.forEach(bid => bid.correlator = correlator);
+    }
 
     let serverRequest = {
       method: 'POST',
