@@ -204,6 +204,27 @@ describe('C-WIRE bid adapter', () => {
       sandbox.restore()
     });
   })
+
+  describe('buildRequests maps flattens params for legacy compat', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({});
+    });
+    it('pageId flattened', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.slots[0].pageId).to.exist;
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
   describe('pageId is a required param', function () {
     it('invalid request', function () {
       let bidRequest = deepClone(bidRequests[0]);
@@ -227,7 +248,7 @@ describe('C-WIRE bid adapter', () => {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.pageId).to.exist;
+      expect(payload.slots[0].pageId).to.exist;
     })
   });
 

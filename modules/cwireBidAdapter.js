@@ -19,6 +19,7 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 function slotDimensions(bid) {
   let adUnitCode = bid.adUnitCode;
   let slotEl = document.getElementById(adUnitCode);
+
   if (slotEl) {
     logInfo(`Slot element found: ${adUnitCode}`)
     const slotW = slotEl.offsetWidth
@@ -28,7 +29,7 @@ function slotDimensions(bid) {
     logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
     logInfo(`Slot Styles (maxW/maxH): ${cssMaxW} / ${cssMaxH}`)
 
-    return {
+    bid = {
       ...bid,
       cwExt: {
         dimensions: {
@@ -46,6 +47,7 @@ function slotDimensions(bid) {
       }
     }
   }
+  return bid
 }
 
 /**
@@ -107,20 +109,17 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    // These are passed from C WIRE config:
-    let placementId = validBidRequests[0]?.params?.placementId;
-    let pageId = validBidRequests[0]?.params?.pageId;
-
     // There are more fields on the refererInfo object
     let referrer = bidderRequest?.refererInfo?.page
 
     // process bid requests
-    let processed = validBidRequests.map(bid => slotDimensions(bid));
+    let processed = validBidRequests
+      .map(bid => slotDimensions(bid))
+      // Flattens the pageId and placement Id for backwards compatibility.
+      .map((bid) => ({...bid, pageId: bid.params?.pageId, placementId: bid.params?.placementId}));
 
     const payload = {
       slots: processed,
-      placementId,
-      pageId,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: bidderRequest?.auctionId || generateUUID()
