@@ -6,14 +6,14 @@ const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'arcspan';
 
 /** @type {RtdSubmodule} */
-export const subModuleObj = {
+export const arcspanSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: alterBidRequests,
 };
 
 function init(config, userConsent) {
-  if (config.params.silo === 'undefined') {
+  if (typeof config.params.silo === 'undefined') {
     return false;
   }
   var _s = document.createElement('script');
@@ -68,4 +68,4 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   callback();
 }
 
-submodule(MODULE_NAME, subModuleObj);
+submodule(MODULE_NAME, arcspanSubmodule);
