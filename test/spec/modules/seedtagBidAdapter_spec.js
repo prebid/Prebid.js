@@ -395,6 +395,52 @@ describe('Seedtag Adapter', function () {
         expect(payload.schain).to.not.exist;
       });
     });
+
+    describe('GPP param', function () {
+      it('should be added to payload when bidderRequest has gppConsent param', function () {
+        const gppConsent = {
+          gppString: 'someGppString',
+          applicableSections: [7]
+        }
+        bidderRequest['gppConsent'] = gppConsent
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(gppConsent.gppString);
+        expect(data.gppConsent.applicableSections[0]).to.equal(gppConsent.applicableSections[0]);
+      });
+
+      it('should be undefined on payload when bidderRequest has not gppConsent param', function () {
+        bidderRequest.gppConsent = undefined
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
+      });
+
+      it('should be added to payload when bidderRequest has ortb2 param', function () {
+        const ortb2 = {
+          regs: {
+            gpp: 'someGppString',
+            gpp_sid: [7]
+          }
+        }
+        bidderRequest['gppConsent'] = undefined
+        bidderRequest['ortb2'] = ortb2;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(ortb2.regs.gpp);
+        expect(data.gppConsent.applicableSections[0]).to.equal(ortb2.regs.gpp_sid[0]);
+      });
+
+      it('should be added to payload when bidderRequest has neither gppConsent nor ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+        bidderRequest['gppConsent'] = undefined;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
+      });
+    });
   });
 
   describe('interpret response method', function () {
@@ -533,11 +579,11 @@ describe('Seedtag Adapter', function () {
       const timeoutUrl = getTimeoutUrl(timeoutData);
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-          params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
-          '&timeout=' +
-          timeout
+        params.publisherId +
+        '&adUnitId=' +
+        params.adUnitId +
+        '&timeout=' +
+        timeout
       );
     });
 
@@ -549,11 +595,11 @@ describe('Seedtag Adapter', function () {
       expect(
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-            params.publisherId +
-            '&adUnitId=' +
-            params.adUnitId +
-            '&timeout=' +
-            timeout
+          params.publisherId +
+          '&adUnitId=' +
+          params.adUnitId +
+          '&timeout=' +
+          timeout
         )
       ).to.equal(true);
     });
