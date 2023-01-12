@@ -1,10 +1,11 @@
-import { logError, isFn, deepAccess } from '../src/utils.js';
+import {logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
+const BIDDER_CODE_ADX = 'admixeradx';
 const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ADX_ENDPOINT_URL = 'http://inv-nets.admixer.net/adxprebid.1.2.aspx';
@@ -69,10 +70,10 @@ export const spec = {
       payload.imps.push(imp);
     });
     return {
-      method: "POST",
+      method: 'POST',
       url:
         endpointUrl ||
-        (bidderRequest.bidderCode === 'admixeradx'
+        (bidderRequest.bidderCode === BIDDER_CODE_ADX
           ? ADX_ENDPOINT_URL
           : ENDPOINT_URL),
       data: payload,
