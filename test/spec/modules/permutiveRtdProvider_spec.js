@@ -249,6 +249,42 @@ describe('permutiveRtdProvider', function () {
           name: 'example'
         },
         user: {
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: { taxonomyname: 'iab_audience_taxonomy' },
+              segment: [{ id: '687' }, { id: '123' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      const transformedUserData = {
+        name: 'transformation',
+        ext: { test: true },
+        segment: [1, 2, 3]
+      }
+
+      setBidderRtb(bidderConfig, moduleConfig, {
+        // TODO: this argument is unused, is the test still valid / needed?
+        testTransformation: userData => transformedUserData
+      })
+
+      acBidders.forEach(bidder => {
+        expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+      })
+    })
+    it('should update user.keywords and not override existing values', function () {
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const sampleOrtbConfig = {
+        site: {
+          name: 'example'
+        },
+        user: {
           keywords: 'a,b',
           data: [
             {
@@ -275,9 +311,64 @@ describe('permutiveRtdProvider', function () {
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
-        expect(bidderConfig[bidder].user.keywords).to.equal(sampleOrtbConfig.user.keywords)
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal('a,b,p_standard_aud=123,p_standard_aud=abc')
       })
+    })
+    it('should merge ortb2 correctly for ac and ssps', function () {
+      setLocalStorage({
+        '_ppam': [],
+        '_psegs': [],
+        '_pcrprs': ['abc', 'def', 'xyz'],
+        '_pssps': {
+          ssps: ['foo', 'bar'],
+          cohorts: ['xyz', 'uvw'],
+        }
+      })
+      const moduleConfig = {
+        name: 'permutive',
+        waitForIt: true,
+        params: {
+          acBidders: ['foo', 'other'],
+          maxSegs: 30
+        }
+      }
+      const bidderConfig = {};
+
+      setBidderRtb(bidderConfig, moduleConfig)
+
+      // include both ac and ssp cohorts, as foo is both in ac bidders and ssps
+      const expectedFooTargetingData = [
+        { id: 'abc' },
+        { id: 'def' },
+        { id: 'xyz' },
+        { id: 'uvw' },
+      ]
+      expect(bidderConfig['foo'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedFooTargetingData
+      }])
+
+      // don't include ac targeting as it's not in ac bidders
+      const expectedBarTargetingData = [
+        { id: 'xyz' },
+        { id: 'uvw' },
+      ]
+      expect(bidderConfig['bar'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedBarTargetingData
+      }])
+
+      // only include ac targeting as this ssp is not in ssps list
+      const expectedOtherTargetingData = [
+        { id: 'abc' },
+        { id: 'def' },
+        { id: 'xyz' },
+      ]
+      expect(bidderConfig['other'].user.data).to.deep.include.members([{
+        name: 'permutive.com',
+        segment: expectedOtherTargetingData
+      }])
     })
   })
 
@@ -291,7 +382,11 @@ describe('permutiveRtdProvider', function () {
       const segments = getSegments(max)
 
       for (const key in segments) {
-        expect(segments[key]).to.have.length(max)
+        if (key === 'ssp') {
+          expect(segments[key].cohorts).to.have.length(max)
+        } else {
+          expect(segments[key]).to.have.length(max)
+        }
       }
     })
   })
@@ -311,7 +406,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'appnexus') {
               expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
-              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -332,7 +427,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'rubicon') {
               expect(deepAccess(params, 'visitor.permutive')).to.eql(data.rubicon)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -363,7 +458,7 @@ describe('permutiveRtdProvider', function () {
                 deepAccess(params, 'visitor.permutive'),
                 'Should map all targeting values to a string',
               ).to.eql(data.rubicon.map(String))
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -383,7 +478,7 @@ describe('permutiveRtdProvider', function () {
             const { bidder, params } = bid
 
             if (bidder === 'ozone') {
-              expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -417,7 +512,7 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'rubicon') {
               expect(deepAccess(params, 'visitor.permutive')).to.eql(data.gam)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac)
+              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
@@ -555,6 +650,7 @@ function transformedTargeting (data = getTargetingData()) {
     appnexus: data._papns,
     rubicon: data._prubicons,
     gam: data._pdfps,
+    ssp: data._pssps,
   }
 }
 
@@ -565,7 +661,8 @@ function getTargetingData () {
     _papns: ['appnexus1', 'appnexus2'],
     _psegs: ['1234', '1000001', '1000002'],
     _ppam: ['ppam1', 'ppam2'],
-    _pcrprs: ['pcrprs1', 'pcrprs2']
+    _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
+    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
   }
 }
 
