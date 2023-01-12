@@ -249,19 +249,12 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
 
   // if cpmAdjustment flag is true and we have a valid floor then run the adjustment on it
   if (floorData.enforcement.bidAdjustment && floorInfo.matchingFloor) {
-    // For cpm adjustments, they may use the "bid response" object now. So we should put as much info in it as we can
-    const fakeBid = {
-      bidder: bidRequest.bidder,
-      mediaType: requestParams.mediaType, // default would be `*` but it is whatever the bidder adds to getFloor
-      size: requestParams.size // similaraliy, this may be * or an actual size, better than nothing!
-    }
-
     // pub provided inverse function takes precedence, otherwise do old adjustment stuff
     const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
     if (inverseFunction) {
-      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, fakeBid, bidRequest);
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest);
     } else {
-      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, fakeBid, bidRequest);
+      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, {}, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
     }
   }

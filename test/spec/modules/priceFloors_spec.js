@@ -1505,9 +1505,10 @@ describe('the price floors module', function () {
               if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
               return bidCpm;
             },
-            inverseBidAdjustment: function (bidCpm, bidResponse) {
+            inverseBidAdjustment: function (bidCpm, bidRequest) {
               functionUsed = 'Rubicon Inverse';
-              if (bidResponse.mediaType === 'video') bidCpm += 0.18;
+              // if video is the only mediaType on Bid Request => add 0.18
+              if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
               return bidCpm / 0.5;
             },
           },
@@ -1518,9 +1519,10 @@ describe('the price floors module', function () {
               if (bidResponse.mediaType === 'video') bidCpm -= 0.18;
               return bidCpm;
             },
-            inverseBidAdjustment: function (bidCpm, bidResponse) {
+            inverseBidAdjustment: function (bidCpm, bidRequest) {
               functionUsed = 'Appnexus Inverse';
-              if (bidResponse.mediaType === 'video') bidCpm += 0.18;
+              // if video is the only mediaType on Bid Request => add 0.18
+              if (bidRequest.mediaTypes.video && Object.keys(bidRequest.mediaTypes).length === 1) bidCpm += 0.18;
               return bidCpm / 0.75;
             },
           }
@@ -1529,12 +1531,15 @@ describe('the price floors module', function () {
         _floorDataForAuction[bidRequest.auctionId] = utils.deepClone(basicFloorConfig);
 
         _floorDataForAuction[bidRequest.auctionId].data.values = { '*': 1.0 };
+
+        // start with banner as only mediaType
+        bidRequest.mediaTypes = { banner: { sizes: [[300, 250]] } };
         let appnexusBid = {
           ...bidRequest,
-          bidder: 'appnexus'
+          bidder: 'appnexus',
         };
 
-        // should be same as the adjusted calculated inverses above test
+        // should be same as the adjusted calculated inverses above test (banner)
         expect(bidRequest.getFloor()).to.deep.equal({
           currency: 'USD',
           floor: 2.0
@@ -1543,7 +1548,7 @@ describe('the price floors module', function () {
         // should use rubicon inverse
         expect(functionUsed).to.equal('Rubicon Inverse');
 
-        // appnexus asking for * should just be same floor
+        // appnexus just using banner should be same
         expect(appnexusBid.getFloor()).to.deep.equal({
           currency: 'USD',
           floor: 1.3334
@@ -1551,7 +1556,8 @@ describe('the price floors module', function () {
 
         expect(functionUsed).to.equal('Appnexus Inverse');
 
-        // now since asking for 'video' inverse function should include the .18
+        // now since asking for 'video' only mediaType inverse function should include the .18
+        bidRequest.mediaTypes = { video: { context: 'instream' } };
         expect(bidRequest.getFloor({ mediaType: 'video' })).to.deep.equal({
           currency: 'USD',
           floor: 2.36
@@ -1560,6 +1566,7 @@ describe('the price floors module', function () {
         expect(functionUsed).to.equal('Rubicon Inverse');
 
         // now since asking for 'video' inverse function should include the .18
+        appnexusBid.mediaTypes = { video: { context: 'instream' } };
         expect(appnexusBid.getFloor({ mediaType: 'video' })).to.deep.equal({
           currency: 'USD',
           floor: 1.5734
@@ -1580,7 +1587,7 @@ describe('the price floors module', function () {
             bidCpmAdjustment: function (bidCpm, bidResponse) {
               return bidCpm * mediaTypeFactors[bidResponse.mediaType];
             },
-            inverseBidAdjustment: function (bidCpm, bidResponse, bidRequest) {
+            inverseBidAdjustment: function (bidCpm, bidRequest) {
               // For the inverse we add up each mediaType in the request and divide by number of Mt's to get the inverse number
               let factor = Object.keys(bidRequest.mediaTypes).reduce((sum, mediaType) => sum += mediaTypeFactors[mediaType], 0);
               factor = factor / Object.keys(bidRequest.mediaTypes).length;
