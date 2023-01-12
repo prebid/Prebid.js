@@ -260,6 +260,18 @@ export const spec = {
       payload.coppa = coppa;
     }
 
+    if (bidderRequest.gppConsent) {
+      payload.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        applicableSections: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      payload.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+      }
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
