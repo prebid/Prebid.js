@@ -450,7 +450,7 @@ function getImpression(bid) {
 
 function getGPID(bid) {
   if (bid.ortb2Imp != null) {
-    if (bid.ortb2Imp.gpid != null & bid.ortb2Imp.gpid != '') {
+    if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
       return bid.ortb2Imp.gpid
     }
 
@@ -459,7 +459,7 @@ function getGPID(bid) {
         return bid.ortb2Imp.ext.data.pbAdSlot
       }
 
-      if (bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
+      if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
         return bid.ortb2Imp.ext.data.adServer.adSlot
       }
     }
