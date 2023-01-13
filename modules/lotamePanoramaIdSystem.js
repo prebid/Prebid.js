@@ -29,7 +29,7 @@ const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
-const SAFARI_ID_HOST = 'c.ltmsphrcl.net';
+const ID_HOST_COOKIELESS = 'c.ltmsphrcl.net';
 
 export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
 let cookieDomain;
@@ -255,7 +255,7 @@ export const lotamePanoramaIdSubmodule = {
 
     const getRequestHost = function() {
       if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
-        return SAFARI_ID_HOST;
+        return ID_HOST_COOKIELESS;
       }
       return ID_HOST;
     }
