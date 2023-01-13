@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/admixerBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { config } from '../../../src/config.js';
+import {expect} from 'chai';
+import {spec} from 'modules/admixerBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {config} from '../../../src/config.js';
 
 const BIDDER_CODE = 'admixer';
 const BIDDER_CODE_ADX = 'admixeradx';
@@ -149,20 +149,10 @@ describe('AdmixerAdapter', function () {
       refererInfo: {
         page: 'https://example.com',
       },
-      floors: {
         data: {
-          currency: 'USD',
-          schema: {
-            fields: ['mediaType'],
-          },
-          values: {
-            '*': 0.6,
-          },
-        },
-      },
     };
-
     it('gets floor', function () {
+      validRequest[0].getFloor = () => { return { floor: 0.6 } };
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
       expect(payload.bidFloor).to.deep.equal(0.6);
@@ -243,18 +233,9 @@ describe('AdmixerAdapter', function () {
     ];
 
     it('Returns valid values', function () {
-      let userSyncAll = spec.getUserSyncs(
-        { pixelEnabled: true, iframeEnabled: true },
-        responses
-      );
-      let userSyncImg = spec.getUserSyncs(
-        { pixelEnabled: true, iframeEnabled: false },
-        responses
-      );
-      let userSyncFrm = spec.getUserSyncs(
-        { pixelEnabled: false, iframeEnabled: true },
-        responses
-      );
+      let userSyncAll = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: true}, responses);
+      let userSyncImg = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false}, responses);
+      let userSyncFrm = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: true}, responses);
       expect(userSyncAll).to.be.an('array').with.lengthOf(2);
       expect(userSyncImg).to.be.an('array').with.lengthOf(1);
       expect(userSyncImg[0].url).to.be.equal(imgUrl);
