@@ -149,7 +149,6 @@ describe('AdmixerAdapter', function () {
       refererInfo: {
         page: 'https://example.com',
       },
-        data: {
     };
     it('gets floor', function () {
       validRequest[0].getFloor = () => { return { floor: 0.6 } };
