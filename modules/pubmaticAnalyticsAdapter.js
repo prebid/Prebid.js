@@ -201,8 +201,8 @@ function getDevicePlatform() {
 }
 
 function getValueForKgpv(bid, adUnitId) {
-  if (bid.params && bid.params.regexPattern) {
-    return bid.params.regexPattern;
+  if (bid.params && (bid.params.regexPattern || bid.params.regex_pattern)) {
+    return (bid.params.regexPattern || bid.params.regex_pattern);
   } else if (bid.bidResponse && bid.bidResponse.regexPattern) {
     return bid.bidResponse.regexPattern;
   } else if (bid.params && bid.params.kgpv) {
