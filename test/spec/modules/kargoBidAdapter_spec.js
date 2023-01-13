@@ -943,7 +943,7 @@ describe('kargo adapter tests', function () {
       expect(triggerPixelStub.getCall(0)).to.be.null;
       spec.onTimeout([{ auctionId: '1234', timeout: 2000 }]);
       expect(triggerPixelStub.getCall(0)).to.not.be.null;
-      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://krk.kargo.com/api/v1/event/timeout');
+      expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('https://krk2.kargo.com/api/v1/event/timeout');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('aid=1234');
       expect(triggerPixelStub.getCall(0).args[0]).to.include('ato=2000');
     });

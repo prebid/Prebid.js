@@ -8,9 +8,10 @@ const PREBID_VERSION = '$prebid.version$'
 
 const BIDDER = Object.freeze({
   CODE: 'kargo',
-  HOST: 'https://krk2.kargo.com',
+  HOST: 'krk2.kargo.com',
   REQUEST_METHOD: 'POST',
   REQUEST_ENDPOINT: '/api/v1/prebid',
+  TIMEOUT_ENDPOINT: '/api/v1/event/timeout',
   GVLID: 972,
   SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
 });
@@ -160,7 +161,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
-    url: `${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
+    url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
     data: krakenParams,
     currency: currency
   });
@@ -391,8 +392,8 @@ function sendTimeoutData(auctionId, auctionTimeout) {
   try {
     let timeoutRequestUrl = buildUrl({
       protocol: 'https',
-      hostname: 'krk.kargo.com',
-      pathname: '/api/v1/event/timeout',
+      hostname: BIDDER.HOST,
+      pathname: BIDDER.TIMEOUT_ENDPOINT,
       search: params
     });
 
