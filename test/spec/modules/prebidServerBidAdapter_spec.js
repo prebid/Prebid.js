@@ -1,3 +1,4 @@
+/* eslint-disable no-trailing-spaces */
 import {expect} from 'chai';
 import {
   PrebidServer as Adapter,
@@ -1701,6 +1702,121 @@ describe('S2S Adapter', function () {
         key: 'fizz',
         value: ['buzz']
       }]);
+    });
+
+    describe('filterSettings', function () {
+      const getRequestBid = userSync => {
+        let cookieSyncConfig = utils.deepClone(CONFIG);
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+        s2sBidRequest.s2sConfig = cookieSyncConfig;
+  
+        config.setConfig({ userSync, s2sConfig: cookieSyncConfig });
+  
+        let bidRequest = utils.deepClone(BID_REQUESTS);
+        adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
+        return JSON.parse(server.requests[0].requestBody);
+      }
+
+      it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and only the all key is present in userSync.filterSettings', function () {
+        const userSync = {
+          filterSettings: {
+            all: {
+              bidders: ['appnexus', 'rubicon', 'pubmatic'],
+              filter: 'exclude'
+            }
+          }
+        };
+        const requestBid = getRequestBid(userSync);
+
+        expect(requestBid.filterSettings).to.deep.equal({
+          'image': {
+            'bidders': ['appnexus', 'rubicon', 'pubmatic'],
+            'filter': 'exclude'
+          },
+          'iframe': {
+            'bidders': ['appnexus', 'rubicon', 'pubmatic'],
+            'filter': 'exclude'
+          }
+        });
+      });
+  
+      it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and only the iframe key is present in userSync.filterSettings', function () {
+        const userSync = {
+          filterSettings: {
+            iframe: {
+              bidders: ['rubicon', 'pubmatic'],
+              filter: 'include'
+            }
+          }
+        };
+        const requestBid = getRequestBid(userSync);
+
+        expect(requestBid.filterSettings).to.deep.equal({
+          'image': {
+            'bidders': '*',
+            'filter': 'include'
+          },
+          'iframe': {
+            'bidders': ['rubicon', 'pubmatic'],
+            'filter': 'include'
+          }
+        });
+      });
+
+      it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and the image and iframe keys are both present in userSync.filterSettings', function () {
+        const userSync = {
+          filterSettings: {
+            image: {
+              bidders: ['triplelift', 'appnexus'],
+              filter: 'include'
+            },
+            iframe: {
+              bidders: ['pulsepoint', 'triplelift', 'appnexus', 'rubicon'],
+              filter: 'exclude'
+            }
+          }
+        };
+        const requestBid = getRequestBid(userSync);
+
+        expect(requestBid.filterSettings).to.deep.equal({
+          'image': {
+            'bidders': ['triplelift', 'appnexus'],
+            'filter': 'include'
+          },
+          'iframe': {
+            'bidders': ['pulsepoint', 'triplelift', 'appnexus', 'rubicon'],
+            'filter': 'exclude'
+          }
+        });
+      });
+
+      it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and the all and iframe keys are both present in userSync.filterSettings', function () {
+        const userSync = {
+          filterSettings: {
+            all: {
+              bidders: ['triplelift', 'appnexus'],
+              filter: 'include'
+            },
+            iframe: {
+              bidders: ['pulsepoint', 'triplelift', 'appnexus', 'rubicon'],
+              filter: 'exclude'
+            }
+          }
+        };
+        const requestBid = getRequestBid(userSync);
+
+        expect(requestBid.filterSettings).to.deep.equal({
+          'image': {
+            'bidders': ['triplelift', 'appnexus'],
+            'filter': 'include'
+          },
+          'iframe': {
+            'bidders': ['pulsepoint', 'triplelift', 'appnexus', 'rubicon'],
+            'filter': 'exclude'
+          }
+        });
+      });
     });
 
     it('adds limit to the cookie_sync request if userSyncLimit is greater than 0', function () {
