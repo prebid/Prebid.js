@@ -4,7 +4,8 @@ import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
-export const storage = getStorageManager();
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+export const storage = getStorageManager({bidderCode: 'datablocks'});
 
 const NATIVE_ID_MAP = {};
 const NATIVE_PARAMS = {
@@ -252,6 +253,9 @@ export const spec = {
 
   // GENERATE THE RTB REQUEST
   buildRequests: function(validRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequests = convertOrtbRequestToProprietaryNative(validRequests);
+
     // RETURN EMPTY IF THERE ARE NO VALID REQUESTS
     if (!validRequests.length) {
       return [];
@@ -347,16 +351,17 @@ export const spec = {
     // GENERATE SITE OBJECT
     let site = {
       domain: window.location.host,
-      page: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      page: bidderRequest.refererInfo.page,
       schain: validRequests[0].schain || {},
       ext: {
-        p_domain: config.getConfig('publisherDomain'),
+        p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,
         frames: bidderRequest.refererInfo.numIframes,
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {
@@ -383,7 +388,7 @@ export const spec = {
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
-        ortb2: config.getConfig('ortb2') || {}
+        ortb2: bidderRequest.ortb2 || {}
       }
     };
 

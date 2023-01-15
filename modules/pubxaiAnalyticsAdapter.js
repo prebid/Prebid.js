@@ -1,6 +1,6 @@
 import { deepAccess, getGptSlotInfoForAdUnitCode, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
@@ -91,7 +91,12 @@ function mapBidResponse(bidResponse, status) {
     } else {
       Object.assign(bid, {
         bidId: bidResponse.requestId,
-        floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        floorProvider: events.floorDetail?.floorProvider || null,
+        floorFetchStatus: events.floorDetail?.fetchStatus || null,
+        floorLocation: events.floorDetail?.location || null,
+        floorModelVersion: events.floorDetail?.modelVersion || null,
+        floorSkipRate: events.floorDetail?.skipRate || 0,
+        isFloorSkipped: events.floorDetail?.skipped || false,
         isWinningBid: true,
         placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,
@@ -135,24 +140,25 @@ export function getOS() {
 // add sampling rate
 pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
   return (Math.floor((Math.random() * samplingRate + 1)) === parseInt(samplingRate));
-}
+};
 
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
     let location = getWindowLocation();
     const storage = getStorage();
     data.initOptions = initOptions;
+    data.pageDetail = {};
+    Object.assign(data.pageDetail, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      Object.assign(data.pageDetail, {
-        host: location.host,
-        path: location.pathname,
-        search: location.search,
-        adUnitCount: data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null
-      });
+      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 
-      data.pmcDetail = {}
+      data.pmcDetail = {};
       Object.assign(data.pmcDetail, {
         bidDensity: storage ? storage.getItem('pbx:dpbid') : null,
         maxBid: storage ? storage.getItem('pbx:mxbid') : null,

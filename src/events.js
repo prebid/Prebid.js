@@ -1,8 +1,9 @@
 /**
  * events.js
  */
-var utils = require('./utils.js');
-var CONSTANTS = require('./constants.json');
+import * as utils from './utils.js'
+import CONSTANTS from './constants.json';
+
 var slice = Array.prototype.slice;
 var push = Array.prototype.push;
 
@@ -16,8 +17,7 @@ var idPaths = CONSTANTS.EVENT_ID_PATHS;
 
 // keep a record of all events fired
 var eventsFired = [];
-
-module.exports = (function () {
+const _public = (function () {
   var _handlers = {};
   var _public = {};
 
@@ -133,6 +133,10 @@ module.exports = (function () {
     return _handlers;
   };
 
+  _public.addEvents = function (events) {
+    allEvents = allEvents.concat(events);
+  }
+
   /**
    * This method can return a copy of all the events fired
    * @return {Array} array of events fired
@@ -149,3 +153,11 @@ module.exports = (function () {
 
   return _public;
 }());
+
+utils._setEventEmitter(_public.emit.bind(_public));
+
+export const {on, off, get, getEvents, emit, addEvents} = _public;
+
+export function clearEvents() {
+  eventsFired.length = 0;
+}

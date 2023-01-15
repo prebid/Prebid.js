@@ -8,9 +8,10 @@ import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, bui
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import events from '../src/events.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+import {getPPID} from '../src/adserver.js';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -88,7 +89,14 @@ export function buildDfpVideoUrl(options) {
     sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
-  const encodedCustomParams = getCustParams(bid, options);
+
+  const urlSearchComponent = urlComponents.search;
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz;
+  if (urlSzParam) {
+    derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
+  }
+
+  let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
@@ -111,12 +119,23 @@ export function buildDfpVideoUrl(options) {
   const uspConsent = uspDataHandler.getConsentData();
   if (uspConsent) { queryParams.us_privacy = uspConsent; }
 
-  return buildUrl({
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    // TODO - need to know what to set here for queryParams...
+  }
+
+  if (!queryParams.ppid) {
+    const ppid = getPPID();
+    if (ppid != null) {
+      queryParams.ppid = ppid;
+    }
+  }
+
+  return buildUrl(Object.assign({
     protocol: 'https',
     host: 'securepubads.g.doubleclick.net',
-    pathname: '/gampad/ads',
-    search: queryParams
-  });
+    pathname: '/gampad/ads'
+  }, urlComponents, { search: queryParams }));
 }
 
 export function notifyTranslationModule(fn) {
@@ -172,7 +191,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     let initialValue = {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
-    }
+    };
     let customParams = {};
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {
@@ -227,9 +246,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
   if (descriptionUrl) { components.search.description_url = descriptionUrl; }
 
-  const encodedCustomParams = getCustParams(bid, options);
-  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
-
+  components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
   return buildUrl(components);
 }
 
@@ -258,7 +275,7 @@ function getDescriptionUrl(bid, components, prop) {
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
-function getCustParams(bid, options) {
+function getCustParams(bid, options, urlCustParams) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
   let allTargetingData = {};
@@ -281,7 +298,12 @@ function getCustParams(bid, options) {
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  return encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  if (urlCustParams) {
+    encodedParams = urlCustParams + '%26' + encodedParams;
+  }
+
+  return encodedParams;
 }
 
 registerVideoSupport('dfp', {

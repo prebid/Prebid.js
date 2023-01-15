@@ -1,4 +1,4 @@
-import { deepAccess, parseSizesInput, isArray, deepSetValue, parseUrl, isStr, isNumber, logInfo } from '../src/utils.js';
+import { deepAccess, parseSizesInput, isArray, deepSetValue, isStr, isNumber, logInfo } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -10,7 +10,7 @@ const DEFAULT_APIS = [1, 2];
 const GVLID = 14;
 
 function isRtbDebugEnabled(refInfo) {
-  return refInfo.referer.indexOf('adk_debug=true') !== -1;
+  return refInfo.topmostLocation?.indexOf('adk_debug=true') !== -1;
 }
 
 function buildImp(bidRequest) {
@@ -61,6 +61,7 @@ function buildRequestParams(tags, bidderRequest) {
   let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
   let req = {
     id: auctionId,
+    // TODO: transactionId is undefined here, should this be auctionId? see #8573
     tid: transactionId,
     site: buildSite(refererInfo),
     imp: tags
@@ -83,13 +84,10 @@ function buildRequestParams(tags, bidderRequest) {
 }
 
 function buildSite(refInfo) {
-  let loc = parseUrl(refInfo.referer);
-  let result = {
-    page: `${loc.protocol}://${loc.hostname}${loc.pathname}`,
-    secure: ~~(loc.protocol === 'https')
-  };
-  if (self === top && document.referrer) {
-    result.ref = document.referrer;
+  const result = {
+    page: refInfo.page,
+    secure: ~~(refInfo.page && refInfo.page.startsWith('https')),
+    ref: refInfo.ref
   }
   let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {

@@ -2,13 +2,14 @@ import { generateUUID, deepAccess, createTrackPixelHtml, getDNT } from '../src/u
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const CONSTANTS = {
   DSU_KEY: 'apr_dsu',
   BIDDER_CODE: 'apstream',
   GVLID: 394
 };
-const storage = getStorageManager(CONSTANTS.GVLID, CONSTANTS.BIDDER_CODE);
+const storage = getStorageManager({gvlid: CONSTANTS.GVLID, bidderCode: CONSTANTS.BIDDER_CODE});
 
 var dsuModule = (function() {
   'use strict';
@@ -266,7 +267,7 @@ var dsuModule = (function() {
 
   return {
     readOrCreateDsu: readOrCreateDsu
-  }
+  };
 })();
 
 function serializeSizes(sizes) {
@@ -342,7 +343,7 @@ function getBids(bids) {
     const bidId = bid.bidId;
 
     let mediaType = '';
-    const mediaTypes = Object.keys(bid.mediaTypes)
+    const mediaTypes = Object.keys(bid.mediaTypes);
     switch (mediaTypes[0]) {
       case 'video':
         mediaType = 'v';
@@ -416,6 +417,8 @@ function isBidRequestValid(bid) {
 }
 
 function buildRequests(bidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
   const data = {
     med: encodeURIComponent(window.location.href),
     auid: bidderRequest.auctionId,

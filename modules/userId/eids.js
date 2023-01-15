@@ -1,9 +1,37 @@
 import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
 
 // Each user-id sub-module is expected to mention respective config here
-const USER_IDS_CONFIG = {
+export const USER_IDS_CONFIG = {
 
   // key-name : {config}
+
+  // GrowthCode
+  'growthCodeId': {
+    getValue: function(data) {
+      return data.gc_id
+    },
+    source: 'growthcode.io',
+    atype: 1,
+    getUidExt: function(data) {
+      const extendedData = pick(data, [
+        'h1',
+        'h2',
+        'h3',
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
+  },
+
+  // trustpid
+  'trustpid': {
+    source: 'trustpid.com',
+    atype: 1,
+    getValue: function (data) {
+      return data;
+    },
+  },
 
   // intentIqId
   'intentIqId': {
@@ -14,6 +42,12 @@ const USER_IDS_CONFIG = {
   // naveggId
   'naveggId': {
     source: 'navegg.com',
+    atype: 1
+  },
+
+  // justId
+  'justId': {
+    source: 'justtag.com',
     atype: 1
   },
 
@@ -45,6 +79,22 @@ const USER_IDS_CONFIG = {
       if (data.ext) {
         return data.ext;
       }
+    }
+  },
+
+  // ftrack
+  'ftrackId': {
+    source: 'flashtalking.com',
+    atype: 1,
+    getValue: function(data) {
+      let value = '';
+      if (data && data.ext && data.ext.DeviceID) {
+        value = data.ext.DeviceID;
+      }
+      return value;
+    },
+    getUidExt: function(data) {
+      return data && data.ext;
     }
   },
 
@@ -122,15 +172,25 @@ const USER_IDS_CONFIG = {
 
   // merkleId
   'merkleId': {
-    source: 'merkleinc.com',
     atype: 3,
+    getSource: function(data) {
+      if (data?.ext?.ssp) {
+        return `${data.ext.ssp}.merkleinc.com`
+      }
+      return 'merkleinc.com'
+    },
     getValue: function(data) {
       return data.id;
     },
     getUidExt: function(data) {
-      return (data && data.keyID) ? {
-        keyID: data.keyID
-      } : undefined;
+      if (data.keyID) {
+        return {
+          keyID: data.keyID
+        }
+      }
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
 
@@ -146,8 +206,8 @@ const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId
-  'haloId': {
+  // hadronId
+  'hadronId': {
     source: 'audigent.com',
     atype: 1
   },
@@ -155,12 +215,6 @@ const USER_IDS_CONFIG = {
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
-    atype: 1
-  },
-
-  // nextroll
-  'nextrollId': {
-    source: 'nextroll.com',
     atype: 1
   },
 
@@ -210,12 +264,6 @@ const USER_IDS_CONFIG = {
     }
   },
 
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
-  },
-
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
@@ -248,6 +296,11 @@ const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
+  },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
@@ -264,6 +317,65 @@ const USER_IDS_CONFIG = {
     source: 'adquery.io',
     atype: 1
   },
+
+  // DAC ID
+  'dacId': {
+    source: 'impact-ad.jp',
+    atype: 1
+  },
+
+  // 33across ID
+  '33acrossId': {
+    source: '33across.com',
+    atype: 1,
+    getValue: function(data) {
+      return data.envelope;
+    }
+  },
+
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
+  // Gravito MP ID
+  'gravitompId': {
+    source: 'gravito.net',
+    atype: 1
+  },
+
+  // cpexId
+  'cpexId': {
+    source: 'czechadid.cz',
+    atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -271,7 +383,7 @@ function createEidObject(userIdData, subModuleKey) {
   const conf = USER_IDS_CONFIG[subModuleKey];
   if (conf && userIdData) {
     let eid = {};
-    eid.source = conf['source'];
+    eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -301,10 +413,19 @@ function createEidObject(userIdData, subModuleKey) {
 // if any adapter does not want any particular userId to be passed then adapter can use Array.filter(e => e.source != 'tdid')
 export function createEidsArray(bidRequestUserId) {
   let eids = [];
+
   for (const subModuleKey in bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
+      } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
+        bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
+          const eid = createEidObject(config, subModuleKey);
+
+          if (eid) {
+            eids.push(eid);
+          }
+        })
       } else {
         const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
         if (eid) {
@@ -313,6 +434,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 

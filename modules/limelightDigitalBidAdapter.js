@@ -1,7 +1,7 @@
-import { logMessage, groupBy, uniques, flatten, deepAccess } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'limelightDigital';
 
@@ -26,7 +26,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll'],
+  aliases: ['pll', 'iionads'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -94,23 +94,20 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    const syncs = serverResponses.map(response => response.body).reduce(flatten, [])
-      .map(response => deepAccess(response, 'ext.sync')).filter(Boolean);
-    const iframeSyncUrls = !syncOptions.iframeEnabled ? [] : syncs.map(sync => sync.iframe).filter(Boolean)
-      .filter(uniques).map(url => {
-        return {
-          type: 'iframe',
-          url: url
-        }
-      });
-    const pixelSyncUrls = !syncOptions.pixelEnabled ? [] : syncs.map(sync => sync.pixel).filter(Boolean)
-      .filter(uniques).map(url => {
-        return {
-          type: 'image',
-          url: url
-        }
-      });
-    return [iframeSyncUrls, pixelSyncUrls].reduce(flatten, []);
+    const iframeSyncs = [];
+    const imageSyncs = [];
+    for (let i = 0; i < serverResponses.length; i++) {
+      const serverResponseHeaders = serverResponses[i].headers;
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      if (iframeSync != null) {
+        iframeSyncs.push(iframeSync)
+      } else if (imgSync != null) {
+        imageSyncs.push(imgSync)
+      }
+    }
+    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
+      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
   }
 };
 
@@ -160,7 +157,8 @@ function buildPlacement(bidRequest) {
       }),
       type: bidRequest.params.adUnitType.toUpperCase(),
       publisherId: bidRequest.params.publisherId,
-      userIdAsEids: bidRequest.userIdAsEids
+      userIdAsEids: bidRequest.userIdAsEids,
+      supplyChain: bidRequest.schain
     }
   }
 }

@@ -1,4 +1,4 @@
-import { deepAccess, logWarn } from '../src/utils.js';
+import {deepAccess, isArray, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
@@ -7,7 +7,7 @@ import {ajax} from '../src/ajax.js';
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.2';
+const VERSION = '1.0.5';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
@@ -16,7 +16,8 @@ const VERSION = '1.0.2';
  * @property {number} ad_type
  * @property {string} client_token
  * @property {string} placement_id
- * @property {string} sdk_version
+ * @property {string} prebid_adapter_version
+ * @property {string} prebid_sdk_version
  * @property {boolean} app_hybrid
  *
  * @property {string} [app_bundle_id]
@@ -31,7 +32,7 @@ const VERSION = '1.0.2';
  * @typedef {object} FeedAdApiBidResponse
  * @inner
  *
- * @property {string} ad - Ad HTML payload
+ * @property {string} [ad] - Ad HTML payload
  * @property {number} cpm - number / float
  * @property {string} creativeId - ID of creative for tracking
  * @property {string} currency - 3-letter ISO 4217 currency-code
@@ -40,6 +41,7 @@ const VERSION = '1.0.2';
  * @property {string} requestId - bids[].bidId
  * @property {number} ttl - Time to live for this ad
  * @property {number} width - Width of creative returned in [].ad
+ * @property {object} [ext] - an extension object
  */
 
 /**
@@ -180,7 +182,8 @@ function createApiBidRParams(request) {
     ad_type: 0,
     client_token: request.params.clientToken,
     placement_id: request.params.placementId,
-    sdk_version: `prebid_${VERSION}`,
+    prebid_adapter_version: VERSION,
+    prebid_sdk_version: '$prebid.version$',
     app_hybrid: false,
   });
 }
@@ -206,7 +209,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     })
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
-    referer: data.refererInfo.referer,
+    referer: data.refererInfo.page,
     transactionId: bid.transactionId
   });
   if (bidderRequest.gdprConsent) {
@@ -230,10 +233,16 @@ function buildRequests(validBidRequests, bidderRequest) {
  * @returns {Bid[]} the FeedAd bids
  */
 function interpretResponse(serverResponse, request) {
-  /**
-   * @type FeedAdApiBidResponse[]
-   */
-  return typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
+  const response = typeof serverResponse.body === 'string' ? JSON.parse(serverResponse.body) : serverResponse.body;
+  if (!isArray(response)) {
+    return [];
+  }
+  return response.filter(bid => Object.prototype.hasOwnProperty.call(bid, 'ad'))
+    .map(bid => {
+      const copy = Object.assign({}, bid);
+      delete copy.ext;
+      return copy;
+    });
 }
 
 /**
@@ -258,7 +267,8 @@ function createTrackingParams(data, klass) {
     prebid_bid_id: bidId,
     prebid_transaction_id: transactionId,
     referer,
-    sdk_version: VERSION
+    prebid_adapter_version: VERSION,
+    prebid_sdk_version: '$prebid.version$',
   };
 }
 
@@ -284,6 +294,38 @@ function trackingHandlerFactory(klass) {
 }
 
 /**
+ * Reads the user syncs off the server responses and converts them into Prebid.JS format
+ * @param {SyncOptions} syncOptions
+ * @param {ServerResponse[]} serverResponses
+ * @param gdprConsent
+ * @param uspConsent
+ */
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  return serverResponses.map(response => {
+    // validate response format
+    const ext = deepAccess(response, 'body.ext', []);
+    if (ext == null) {
+      return null;
+    }
+    return ext;
+  })
+    .filter(ext => ext != null)
+    .flatMap(extension => {
+      // extract user syncs from extension
+      const pixels = syncOptions.pixelEnabled && extension.pixels ? extension.pixels : [];
+      const iframes = syncOptions.iframeEnabled && extension.iframes ? extension.iframes : [];
+      return pixels.concat(...iframes);
+    })
+    .reduce((syncs, sync) => {
+      // remove duplicates
+      if (!syncs.find(it => it.type === sync.type && it.url === sync.url)) {
+        syncs.push(sync);
+      }
+      return syncs;
+    }, []);
+}
+
+/**
  * @type {BidderSpec}
  */
 export const spec = {
@@ -294,7 +336,8 @@ export const spec = {
   buildRequests,
   interpretResponse,
   onTimeout: trackingHandlerFactory('prebid_bidTimeout'),
-  onBidWon: trackingHandlerFactory('prebid_bidWon')
+  onBidWon: trackingHandlerFactory('prebid_bidWon'),
+  getUserSyncs
 };
 
 registerBidder(spec);

@@ -2,30 +2,29 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
+const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
-function newWebpackConfig(codeCoverage) {
+function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
-  // remove optimize plugin for tests
-  webpackConfig.plugins.pop()
+  Object.assign(webpackConfig, {
+    mode: 'development',
+    devtool: 'inline-source-map',
+  });
 
-  webpackConfig.devtool = 'inline-source-map';
+  delete webpackConfig.entry;
 
-  if (codeCoverage) {
-    webpackConfig.module.rules.push({
-      enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      use: {
-        loader: '@jsdevtools/coverage-istanbul-loader',
-        options: { esModules: true }
-      },
-      test: /\.js$/
-    })
-  }
+  webpackConfig.module.rules
+    .flatMap((r) => r.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => {
+      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
+    });
+
   return webpackConfig;
 }
 
@@ -107,11 +106,11 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file) {
-  var webpackConfig = newWebpackConfig(codeCoverage);
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
 
-  var files = file ? ['test/test_deps.js', file] : ['test/test_index.js'];
+  var files = file ? ['test/test_deps.js', file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {
@@ -154,6 +153,12 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     reporters: ['mocha'],
 
+    client: {
+      mocha: {
+        timeout: 3000
+      }
+    },
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
@@ -166,10 +171,10 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
     browserDisconnectTolerance: 3,
-    concurrency: 6,
+    concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
-  }
+  };
 
   // To ensure that, we are able to run single spec file
   // here we are adding preprocessors, when file is passed

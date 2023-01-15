@@ -1,17 +1,34 @@
-import { isNumber, isStr, isInteger, isBoolean, isArray, isEmpty, isArrayOfNums, getWindowTop, parseQueryStringParameters, parseUrl, deepSetValue, deepAccess, logError } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import includes from 'core-js-pure/features/array/includes';
-import find from 'core-js-pure/features/array/find.js';
-import { createEidsArray } from './userId/eids.js';
+import {
+  deepAccess,
+  deepSetValue,
+  getWindowTop,
+  isArray,
+  isArrayOfNums,
+  isBoolean,
+  isEmpty,
+  isInteger,
+  isNumber,
+  isStr,
+  logError,
+  parseQueryStringParameters,
+  parseUrl
+} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {Renderer} from '../src/Renderer.js';
+import {find, includes} from '../src/polyfill.js';
+import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
+const GVLID = 173;
 const CURRENCY = 'USD';
 const TIME_TO_LIVE = 300;
 const NET_REVENUE = true;
-const BANNER_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebid';
-const VIDEO_SERVER_ENDPOINT = 'https://ads.yieldmo.com/exchange/prebidvideo';
+const PB_COOKIE_ASSIST_SYNC_ENDPOINT = `https://ads.yieldmo.com/pbcas`;
+const BANNER_PATH = '/exchange/prebid';
+const VIDEO_PATH = '/exchange/prebidvideo';
+const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
+const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
 const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
@@ -26,7 +43,7 @@ const BANNER_REQUEST_PROPERTIES_TO_REDUCE = ['description', 'title', 'pr', 'page
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
+  gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
    * @param {object} bid, bid to validate
@@ -45,6 +62,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const stage = isStage(bidderRequest);
+    const bannerUrl = getAdserverUrl(BANNER_PATH, stage);
+    const videoUrl = getAdserverUrl(VIDEO_PATH, stage);
     const bannerBidRequests = bidRequests.filter(request => hasBannerMediaType(request));
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
@@ -53,7 +73,8 @@ export const spec = {
       let serverRequest = {
         pbav: '$prebid.version$',
         p: [],
-        page_url: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        page_url: bidderRequest.refererInfo.page,
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
@@ -107,8 +128,8 @@ export const spec = {
         serverRequest.eids = JSON.stringify(eids);
       };
       // check if url exceeded max length
-      const url = `${BANNER_SERVER_ENDPOINT}?${parseQueryStringParameters(serverRequest)}`;
-      let extraCharacters = url.length - MAX_BANNER_REQUEST_URL_LENGTH;
+      const fullUrl = `${bannerUrl}?${parseQueryStringParameters(serverRequest)}`;
+      let extraCharacters = fullUrl.length - MAX_BANNER_REQUEST_URL_LENGTH;
       if (extraCharacters > 0) {
         for (let i = 0; i < BANNER_REQUEST_PROPERTIES_TO_REDUCE.length; i++) {
           extraCharacters = shortcutProperty(extraCharacters, serverRequest, BANNER_REQUEST_PROPERTIES_TO_REDUCE[i]);
@@ -121,7 +142,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'GET',
-        url: BANNER_SERVER_ENDPOINT,
+        url: bannerUrl,
         data: serverRequest
       });
     }
@@ -133,7 +154,7 @@ export const spec = {
       };
       serverRequests.push({
         method: 'POST',
-        url: VIDEO_SERVER_ENDPOINT,
+        url: videoUrl,
         data: serverRequest
       });
     }
@@ -163,8 +184,25 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function () {
-    return [];
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
+    const syncs = [];
+    const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
+    const usPrivacy = `us_privacy=${encodeURIComponent(uspConsent)}`;
+    const pbCookieAssistSyncUrl = `${PB_COOKIE_ASSIST_SYNC_ENDPOINT}?${usPrivacy}${gdprFlag}${gdprString}`;
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: pbCookieAssistSyncUrl + '&type=iframe'
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: pbCookieAssistSyncUrl + '&type=image'
+      });
+    }
+    return syncs;
   }
 };
 registerBidder(spec);
@@ -210,6 +248,16 @@ function addPlacement(request) {
   if (gpid) {
     placementInfo.gpid = gpid;
   }
+
+  // get the transaction id for the banner bid.
+  const transactionId = deepAccess(request, 'ortb2Imp.ext.tid');
+
+  if (transactionId) {
+    placementInfo.tid = transactionId;
+  }
+  if (request.auctionId) {
+    placementInfo.auctionId = request.auctionId;
+  }
   return JSON.stringify(placementInfo);
 }
 
@@ -219,6 +267,7 @@ function addPlacement(request) {
  */
 function createNewBannerBid(response) {
   return {
+    dealId: response.publisherDealId,
     requestId: response['callback_id'],
     cpm: response.cpm,
     width: response.width,
@@ -244,6 +293,7 @@ function createNewVideoBid(response, bidRequest) {
   const imp = find((deepAccess(bidRequest, 'data.imp') || []), imp => imp.id === response.impid);
 
   let result = {
+    dealId: response.dealid,
     requestId: imp.id,
     cpm: response.price,
     width: imp.video.w,
@@ -335,9 +385,9 @@ function openRtbRequest(bidRequests, bidderRequest) {
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
-    device: openRtbDevice(bidRequests[0]),
+    device: deepAccess(bidderRequest, 'ortb2.device'),
     badv: bidRequests[0].params.badv || [],
-    bcat: bidRequests[0].params.bcat || [],
+    bcat: deepAccess(bidderRequest, 'bcat') || bidRequests[0].params.bcat || [],
     ext: {
       prebid: '$prebid.version$',
     },
@@ -348,6 +398,9 @@ function openRtbRequest(bidRequests, bidderRequest) {
     openRtbRequest.schain = schain;
   }
 
+  if (bidRequests[0].auctionId) {
+    openRtbRequest.auctionId = bidRequests[0].auctionId;
+  }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
 
   return openRtbRequest;
@@ -365,7 +418,8 @@ function openRtbImpression(bidRequest) {
     tagid: bidRequest.adUnitCode,
     bidfloor: getBidFloor(bidRequest, VIDEO),
     ext: {
-      placement_id: bidRequest.params.placementId
+      placement_id: bidRequest.params.placementId,
+      tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid')
     },
     video: {
       w: size[0],
@@ -430,13 +484,13 @@ function extractPlayerSize(bidRequest) {
 function openRtbSite(bidRequest, bidderRequest) {
   let result = {};
 
-  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+  const loc = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
   if (!isEmpty(loc)) {
     result.page = `${loc.protocol}://${loc.hostname}${loc.pathname}`;
   }
 
-  if (self === top && document.referrer) {
-    result.ref = document.referrer;
+  if (bidderRequest.refererInfo?.ref) {
+    result.ref = bidderRequest.refererInfo.ref;
   }
 
   const keywords = document.getElementsByTagName('meta')['keywords'];
@@ -451,17 +505,6 @@ function openRtbSite(bidRequest, bidderRequest) {
       .forEach(param => result[param] = siteParams[param]);
   }
   return result;
-}
-
-/**
- * @return Object OpenRTB's 'device' object
- */
-function openRtbDevice(bidRequest) {
-  const deviceObj = {
-    ua: navigator.userAgent,
-    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-  };
-  return deviceObj;
 }
 
 /**
@@ -497,13 +540,13 @@ function validateVideoParams(bid) {
       error += ' when ' + conditionStr;
     }
     throw new Error(error);
-  }
+  };
 
   const paramInvalid = (paramStr, value, expectedStr) => {
     expectedStr = expectedStr ? ', expected: ' + expectedStr : '';
     value = JSON.stringify(value);
     throw new Error(`"${paramStr}"=${value} is invalid${expectedStr}`);
-  }
+  };
 
   const isDefined = val => typeof val !== 'undefined';
   const validate = (fieldPath, validateCb, errorCb, errorCbParam) => {
@@ -529,7 +572,7 @@ function validateVideoParams(bid) {
       }
       return value;
     }
-  }
+  };
 
   try {
     validate('video.context', val => !isEmpty(val), paramRequired);
@@ -626,4 +669,13 @@ function canAccessTopWindow() {
   } catch (error) {
     return false;
   }
+}
+
+function isStage(bidderRequest) {
+  return !!bidderRequest.refererInfo?.referer?.includes('pb_force_a');
+}
+
+function getAdserverUrl(path, stage) {
+  const domain = stage ? STAGE_DOMAIN : PROD_DOMAIN;
+  return `${domain}${path}`;
 }

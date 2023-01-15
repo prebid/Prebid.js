@@ -1,23 +1,12 @@
 import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {parseDomain} from '../src/refererDetection.js';
 const BIDDER_CODE = 'apacdex';
-const CONFIG = {
-  'apacdex': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/apacdex',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/apacdex'
-  },
-  'quantumdex': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/quantumdex',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/quantumdex'
-  },
-  'valueimpression': {
-    'ENDPOINT': 'https://useast.quantumdex.io/auction/adapter',
-    'USERSYNC': 'https://sync.quantumdex.io/usersync/adapter'
-  }
-};
+const ENDPOINT = 'https://useast.quantumdex.io/auction/pbjs'
+const USERSYNC = 'https://sync.quantumdex.io/usersync/pbjs'
 
-var bidderConfig = CONFIG[BIDDER_CODE];
 var bySlotTargetKey = {};
 var bySlotSizesCount = {}
 
@@ -55,8 +44,6 @@ export const spec = {
     let geo;
     let test;
     let bids = [];
-
-    bidderConfig = CONFIG[validBidRequests[0].bidder];
 
     test = config.getConfig('debug');
 
@@ -116,9 +103,10 @@ export const spec = {
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.page = pageUrl
+    payload.site.page = pageUrl;
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
-    payload.site.hostname = getDomain(pageUrl);
+    // TODO: does it make sense to fall back to window.location for the domain?
+    payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
 
     // Apply GDPR parameters to request.
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -136,12 +124,12 @@ export const spec = {
 
     // Apply schain.
     if (schain) {
-      payload.schain = schain
+      payload.schain = schain;
     }
 
     // Apply eids.
     if (eids) {
-      payload.eids = eids
+      payload.eids = eids;
     }
 
     // Apply geo
@@ -156,13 +144,14 @@ export const spec = {
         transactionId: bid.transactionId,
         sizes: bid.sizes,
         bidId: bid.bidId,
+        adUnitCode: bid.adUnitCode,
         bidFloor: bid.bidFloor
       }
     });
 
     return {
       method: 'POST',
-      url: bidderConfig.ENDPOINT,
+      url: ENDPOINT,
       data: payload,
       withCredentials: true,
       bidderRequests: bids
@@ -209,32 +198,47 @@ export const spec = {
     });
     return bidResponses;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
-    try {
-      if (syncOptions.iframeEnabled) {
-        syncs.push({
-          type: 'iframe',
-          url: bidderConfig.USERSYNC
-        });
+    if (hasPurpose1Consent(gdprConsent)) {
+      let params = '';
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        } else {
+          params = `?gdpr_consent=${gdprConsent.consentString}`;
+        }
       }
-      if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
-        serverResponses[0].body.pixel.forEach(px => {
-          if (px.type === 'image' && syncOptions.pixelEnabled) {
-            syncs.push({
-              type: 'image',
-              url: px.url
-            });
-          }
-          if (px.type === 'iframe' && syncOptions.iframeEnabled) {
-            syncs.push({
-              type: 'iframe',
-              url: px.url
-            });
-          }
-        });
+      if (uspConsent) {
+        params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
       }
-    } catch (e) { }
+
+      try {
+        if (syncOptions.iframeEnabled) {
+          syncs.push({
+            type: 'iframe',
+            url: USERSYNC + params
+          });
+        }
+        if (serverResponses.length > 0 && serverResponses[0].body && serverResponses[0].body.pixel) {
+          serverResponses[0].body.pixel.forEach(px => {
+            if (px.type === 'image' && syncOptions.pixelEnabled) {
+              syncs.push({
+                type: 'image',
+                url: px.url + params
+              });
+            }
+            if (px.type === 'iframe' && syncOptions.iframeEnabled) {
+              syncs.push({
+                type: 'iframe',
+                url: px.url + params
+              });
+            }
+          });
+        }
+      } catch (e) { }
+    }
     return syncs;
   }
 };
@@ -282,18 +286,8 @@ function _getDoNotTrack() {
  * @returns {string}
  */
 function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
-  if (config.getConfig('pageUrl')) {
-    return config.getConfig('pageUrl');
-  }
-  if (deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.location.href;
-  } catch (e) {
-    return window.location.href;
-  }
+  // TODO: does it make sense to fall back to window.location?
+  return bidderRequest?.refererInfo?.page || window.location.href;
 }
 
 /**
@@ -303,34 +297,8 @@ function _extractTopWindowUrlFromBidderRequest(bidderRequest) {
  * @returns {string}
  */
 function _extractTopWindowReferrerFromBidderRequest(bidderRequest) {
-  if (bidderRequest && deepAccess(bidderRequest, 'refererInfo.referer')) {
-    return bidderRequest.refererInfo.referer;
-  }
-
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return window.document.referrer;
-  }
-}
-
-/**
- * Extracts the domain from given page url
- *
- * @param {string} url
- * @returns {string}
- */
-export function getDomain(pageUrl) {
-  if (config.getConfig('publisherDomain')) {
-    var publisherDomain = config.getConfig('publisherDomain');
-    return publisherDomain.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
-  }
-
-  if (!pageUrl) {
-    return pageUrl;
-  }
-
-  return pageUrl.replace('http://', '').replace('https://', '').replace('www.', '').split(/[/?#:]/)[0];
+  // TODO: does it make sense to fall back to window.document.referrer?
+  return bidderRequest?.refererInfo?.ref || window.document.referrer;
 }
 
 /**

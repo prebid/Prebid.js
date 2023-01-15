@@ -1,6 +1,7 @@
 import { config } from './config.js';
-import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {logWarn, logInfo, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import {includes} from './polyfill.js';
+import {BANNER} from './mediaTypes.js';
 
 let sizeConfig = [];
 
@@ -75,22 +76,19 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     } else {
       mediaTypes = {};
     }
-  } else {
-    mediaTypes = deepClone(mediaTypes);
   }
 
   let oldSizes = deepAccess(mediaTypes, 'banner.sizes');
   if (maps.shouldFilter && oldSizes) {
+    mediaTypes = deepClone(mediaTypes);
     mediaTypes.banner.sizes = oldSizes.filter(size => maps.sizesSupported[size]);
   }
 
-  let allMediaTypes = Object.keys(mediaTypes);
-
   let results = {
     active: (
-      allMediaTypes.every(type => type !== 'banner')
+      !mediaTypes.hasOwnProperty(BANNER)
     ) || (
-      allMediaTypes.some(type => type === 'banner') && deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
@@ -111,7 +109,7 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     results.filterResults = {
       before: oldSizes,
       after: mediaTypes.banner.sizes
-    }
+    };
   }
 
   return results;
@@ -153,4 +151,49 @@ function evaluateSizeConfig(configs) {
     sizesSupported: {},
     shouldFilter: false
   });
+}
+
+export function processAdUnitsForLabels(adUnits, activeLabels) {
+  return adUnits.reduce((adUnits, adUnit) => {
+    let {
+      active,
+      mediaTypes,
+      filterResults
+    } = resolveStatus(
+      getLabels(adUnit, activeLabels),
+      adUnit.mediaTypes,
+      adUnit.sizes
+    );
+
+    if (!active) {
+      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
+    } else {
+      if (filterResults) {
+        logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+      }
+
+      adUnit.mediaTypes = mediaTypes;
+
+      adUnit.bids = adUnit.bids.reduce((bids, bid) => {
+        let {
+          active,
+          mediaTypes,
+          filterResults
+        } = resolveStatus(getLabels(bid, activeLabels), adUnit.mediaTypes);
+
+        if (!active) {
+          logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
+        } else {
+          if (filterResults) {
+            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+            bid.mediaTypes = mediaTypes;
+          }
+          bids.push(bid);
+        }
+        return bids;
+      }, []);
+      adUnits.push(adUnit);
+    }
+    return adUnits;
+  }, []);
 }
