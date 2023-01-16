@@ -5,8 +5,7 @@ import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
-const BIDDER_CODE_ADX = 'admixeradx';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
+const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ADX_ENDPOINT_URL = 'http://inv-nets.admixer.net/adxprebid.1.2.aspx';
 export const spec = {

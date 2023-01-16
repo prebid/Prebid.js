@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import {
   spec as adapter,
   SUPPORTED_ID_SYSTEMS,
@@ -13,8 +13,9 @@ import {
   getUniqueDealId,
 } from 'modules/kueezRtbBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
+import { version } from 'package.json';
+import { useFakeTimers } from 'sinon';
+import { BANNER, VIDEO } from '../../../src/mediaTypes';
 
 const SUB_DOMAIN = 'exchange';
 
@@ -36,8 +37,41 @@ const BID = {
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
-  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'mediaTypes': [BANNER]
 };
+
+const VIDEO_BID = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
+  'bidderRequestId': '12a8ae9ada9c13',
+  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'params': {
+    'subDomain': SUB_DOMAIN,
+    'cId': '635509f7ff6642d368cb9837',
+    'pId': '59ac17c192832d0011283fe3',
+    'bidFloor': 0.1
+  },
+  'sizes': [[545, 307]],
+  'mediaTypes': {
+    'video': {
+      'playerSize': [[545, 307]],
+      'context': 'instream',
+      'mimes': [
+        'video/mp4',
+        'application/javascript'
+      ],
+      'protocols': [2, 3, 5, 6],
+      'maxduration': 60,
+      'minduration': 0,
+      'startdelay': 0,
+      'linearity': 1,
+      'api': [2],
+      'placement': 1
+    }
+  }
+}
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
@@ -73,6 +107,23 @@ const SERVER_RESPONSE = {
   }
 };
 
+const VIDEO_SERVER_RESPONSE = {
+  body: {
+    'cid': '635509f7ff6642d368cb9837',
+    'results': [{
+      'ad': '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
+      'advertiserDomains': ['kueezrtb.com'],
+      'exp': 60,
+      'width': 545,
+      'height': 307,
+      'mediaType': 'video',
+      'creativeId': '12610997325162499419',
+      'price': 2,
+      'cookies': []
+    }]
+  }
+};
+
 const REQUEST = {
   data: {
     width: 300,
@@ -83,7 +134,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
+    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -110,6 +161,11 @@ describe('KueezRtbBidAdapter', function () {
 
     it('exists and is a string', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
+    });
+
+    it('exists and contains media types', function () {
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
     });
   });
 
@@ -155,7 +211,53 @@ describe('KueezRtbBidAdapter', function () {
       sandbox.stub(Date, 'now').returns(1000);
     });
 
-    it('should build request for each size', function () {
+    it('should build video request', function () {
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0]).to.deep.equal({
+        method: 'POST',
+        url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
+        data: {
+          adUnitCode: '63550ad1ff6642d368cba59dh5884270560',
+          bidFloor: 0.1,
+          bidId: '2d52001cabd527',
+          bidderVersion: adapter.version,
+          cb: 1000,
+          gdpr: 1,
+          gdprConsent: 'consent_string',
+          usPrivacy: 'consent_string',
+          prebidVersion: version,
+          publisherId: '59ac17c192832d0011283fe3',
+          url: 'https%3A%2F%2Fwww.greatsite.com',
+          referrer: 'https://www.somereferrer.com',
+          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          schain: VIDEO_BID.schain,
+          sizes: ['545x307'],
+          uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+          uqs: getTopWindowQueryParams(),
+          mediaTypes: {
+            video: {
+              api: [2],
+              context: 'instream',
+              linearity: 1,
+              maxduration: 60,
+              mimes: [
+                'video/mp4',
+                'application/javascript'
+              ],
+              minduration: 0,
+              placement: 1,
+              playerSize: [[545, 307]],
+              protocols: [2, 3, 5, 6],
+              startdelay: 0
+            }
+          }
+        }
+      });
+    });
+
+    it('should build banner request for each size', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -179,6 +281,7 @@ describe('KueezRtbBidAdapter', function () {
           prebidVersion: version,
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
+          mediaTypes: [BANNER],
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
@@ -193,7 +296,7 @@ describe('KueezRtbBidAdapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -202,7 +305,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.kueezrtb.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
@@ -210,7 +313,7 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
@@ -226,16 +329,16 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({price: 1, ad: ''});
+      const responses = adapter.interpretResponse({ price: 1, ad: '' });
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
+      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
       expect(responses).to.be.empty;
     });
 
-    it('should return an array of interpreted responses', function () {
+    it('should return an array of interpreted banner responses', function () {
       const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
@@ -250,6 +353,26 @@ describe('KueezRtbBidAdapter', function () {
         ad: '<iframe>console.log("hello world")</iframe>',
         meta: {
           advertiserDomains: ['securepubads.g.doubleclick.net']
+        }
+      });
+    });
+
+    it('should return an array of interpreted video responses', function () {
+      const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0]).to.deep.equal({
+        requestId: '2d52001cabd527',
+        cpm: 2,
+        width: 545,
+        height: 307,
+        mediaType: 'video',
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 60,
+        vastXml: '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
+        meta: {
+          advertiserDomains: ['kueezrtb.com']
         }
       });
     });
@@ -271,11 +394,11 @@ describe('KueezRtbBidAdapter', function () {
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return {lipbid: id};
+            return { lipbid: id };
           case 'parrableId':
-            return {eid: id};
+            return { eid: id };
           case 'id5id':
-            return {uid: id};
+            return { uid: id };
           default:
             return id;
         }
@@ -294,18 +417,18 @@ describe('KueezRtbBidAdapter', function () {
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({'c_id': '1'});
-      const pid = extractPID({'p_id': '1'});
-      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
+      const cid = extractCID({ 'c_id': '1' });
+      const pid = extractPID({ 'p_id': '1' });
+      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({'cID': '1'});
-      const pid = extractPID({'Pid': '2'});
-      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
+      const cid = extractCID({ 'cID': '1' });
+      const pid = extractPID({ 'Pid': '2' });
+      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -365,7 +488,7 @@ describe('KueezRtbBidAdapter', function () {
         now
       });
       setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      const { value, created } = getStorageItem('myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -381,8 +504,8 @@ describe('KueezRtbBidAdapter', function () {
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({event: 'send'});
-      const {event} = tryParseJSON(data);
+      const data = JSON.stringify({ event: 'send' });
+      const { event } = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
