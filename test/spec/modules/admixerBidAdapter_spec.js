@@ -151,7 +151,9 @@ describe('AdmixerAdapter', function () {
       },
     };
     it('gets floor', function () {
-      validRequest[0].getFloor = () => { return { floor: 0.6 } };
+      bidderRequest.getFloor = () => {
+        return { floor: 0.6 };
+      };
       const request = spec.buildRequests(validRequest, bidderRequest);
       const payload = request.data;
       expect(payload.bidFloor).to.deep.equal(0.6);
