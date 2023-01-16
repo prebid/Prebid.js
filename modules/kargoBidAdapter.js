@@ -116,15 +116,15 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (uaClientHints) {
     const suaValidAttributes = []
 
-    for (const suaKey of SUA_ATTRIBUTES) {
+    SUA_ATTRIBUTES.forEach(suaKey => {
       const suaValue = uaClientHints[suaKey]
       if(!suaValue) {
-        continue
+        return;
       }
 
       // Do not pass any empty strings
       if(typeof suaValue == 'string' && suaValue.trim() === '') {
-        continue
+        return;
       }
 
       switch (suaKey) {
@@ -135,7 +135,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         default:
           suaValidAttributes.push(suaKey);
       }
-    }
+    });
 
     krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
   }
@@ -251,7 +251,6 @@ function onTimeout(timeoutData) {
 
   timeoutData.forEach((bid) => {
     sendTimeoutData(bid.auctionId, bid.timeout);
-
   });
 }
 
