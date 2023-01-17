@@ -91,11 +91,11 @@ export class GreedyPromise extends (getGlobal().Promise || Promise) {
     return res;
   }
 
-  static resolve(value){
+  static resolve(value) {
     return new this(resolve => resolve(value))
   }
 
-  static reject(error){
+  static reject(error) {
     return new this((resolve, reject) => reject(error))
   }
 }
