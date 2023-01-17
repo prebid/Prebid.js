@@ -1613,17 +1613,6 @@ describe('IndexexchangeAdapter', function () {
       expect(r.ext.ixdiag.fpd).to.exist;
     });
 
-    it('should set ixdiag.tmax value if it exists using tmax', function () {
-      config.setConfig({
-        bidderTimeout: 250
-      });
-
-      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID)[0];
-      const r = extractPayload(request);
-
-      expect(r.ext.ixdiag.tmax).to.equal(250);
-    });
-
     it('should set ixdiag.tmax value from bidderRequest overriding global config bidderTimeout', function () {
       config.setConfig({
         bidderTimeout: 250

@@ -628,8 +628,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   const r = {};
-  const tmax = deepAccess(bidderRequest, 'timeout', config.getConfig('bidderTimeout'));
-
+  const tmax = deepAccess(bidderRequest, 'timeout');
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
   r.site = {};
