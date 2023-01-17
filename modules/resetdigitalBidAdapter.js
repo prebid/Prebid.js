@@ -65,7 +65,7 @@ export const spec = {
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        coppa: req.ortb2.regs ? req.ortb2.regs.coppa : 0,
         media_types: deepAccess(req, 'mediaTypes')
       });
     }
