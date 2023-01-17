@@ -1,4 +1,4 @@
-import { _each, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -26,7 +26,7 @@ const CURRENCY = Object.freeze({
 const REQUEST_KEYS = Object.freeze({
   SOCIAL_CANVAS: 'params.socialCanvas',
   SUA: 'ortb2.device.sua',
-  TDID: 'userId.tdid',
+  TDID_ADAPTER: 'userId.tdid',
 });
 
 const SUA = Object.freeze({
@@ -76,7 +76,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   const firstBidRequest = validBidRequests[0];
-  const tdid = deepAccess(firstBidRequest, REQUEST_KEYS.TDID)
+  const tdidAdapter = deepAccess(firstBidRequest, REQUEST_KEYS.TDID_ADAPTER);
 
   const krakenParams = Object.assign({}, {
     pbv: PREBID_VERSION,
@@ -92,23 +92,23 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
   });
 
   const reqCount = getRequestCount()
   if (reqCount != null && reqCount > 0) {
-    krakenParams.requestCount = reqCount
+    krakenParams.requestCount = reqCount;
   }
 
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
-    krakenParams.cur = currency
+    krakenParams.cur = currency;
   }
 
   // Pull Social Canvas segments and embed URL
   const socialCanvas = deepAccess(firstBidRequest, REQUEST_KEYS.SOCIAL_CANVAS);
 
   if (socialCanvas != null) {
-    krakenParams.socan = socialCanvas
+    krakenParams.socan = socialCanvas;
   }
 
   // User Agent Client Hints / SUA
@@ -117,21 +117,23 @@ function buildRequests(validBidRequests, bidderRequest) {
     const suaValidAttributes = []
 
     SUA_ATTRIBUTES.forEach(suaKey => {
-      const suaValue = uaClientHints[suaKey]
-      if(!suaValue) {
+      const suaValue = uaClientHints[suaKey];
+      if (!suaValue) {
         return;
       }
 
       // Do not pass any empty strings
-      if(typeof suaValue == 'string' && suaValue.trim() === '') {
+      if (typeof suaValue == 'string' && suaValue.trim() === '') {
         return;
       }
 
       switch (suaKey) {
-        case SUA.MOBILE, SUA.SOURCE:
+        case SUA.MOBILE:
+        case SUA.SOURCE:
           if (suaValue < 1) {
             return;
           };
+          break;
         default:
           suaValidAttributes.push(suaKey);
       }
@@ -140,25 +142,24 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.device.sua = pick(uaClientHints, suaValidAttributes);
   }
 
-  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null 
+  const validPageId = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID) != null
   const validPageTimestamp = getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP) != null
   const validPageUrl = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL) != null
 
-
   const page = {}
-  if(validPageId) {
-    page.id = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID)
+  if (validPageId) {
+    page.id = getLocalStorageSafely(CERBERUS.PAGE_VIEW_ID);
   }
-  if(validPageTimestamp) {
-    page.timestamp = Number(getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP))
+  if (validPageTimestamp) {
+    page.timestamp = Number(getLocalStorageSafely(CERBERUS.PAGE_VIEW_TIMESTAMP));
   }
-  if(validPageUrl) {
-    page.url = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL)
+  if (validPageUrl) {
+    page.url = getLocalStorageSafely(CERBERUS.PAGE_VIEW_URL);
   }
-  if (!_.isEmpty(page)) {
-    krakenParams.page = page
+  if (!isEmpty(page)) {
+    krakenParams.page = page;
   }
-  
+
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
     url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
@@ -171,7 +172,7 @@ function interpretResponse(response, bidRequest) {
   let bids = response.body;
   const bidResponses = [];
 
-  if (_.isEmpty(bids)) {
+  if (isEmpty(bids)) {
     return bidResponses;
   }
 
@@ -180,10 +181,10 @@ function interpretResponse(response, bidRequest) {
   }
 
   Object.entries(bids).forEach((entry) => {
-    const [bidID, adUnit] = entry
+    const [bidID, adUnit] = entry;
 
     let meta = {
-      mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER,
+      mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER
     };
 
     if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
@@ -221,7 +222,7 @@ function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
   const syncs = [];
   const seed = _generateRandomUUID();
   const clientId = getClientId();
-  
+
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
   var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
   // don't sync if opted out via usPrivacy
@@ -308,8 +309,6 @@ function getCrbFromLocalStorage() {
   }
 }
 
-
-
 function getLocalStorageSafely(key) {
   try {
     return STORAGE.getDataFromLocalStorage(key);
@@ -318,18 +317,24 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function getUserIds(tdid, usp, gdpr, eids) {
+function getUserIds(tdidAdapter, usp, gdpr, eids) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
   };
 
-  if (tdid) {
-    userIds.tdID = tdid;
+  // Pull Trade Desk ID from adapter
+  if (tdidAdapter) {
+    userIds.tdID = tdidAdapter;
   }
 
-  if(usp) {
-    userIds.usp = usp
+  // Pull Trade Desk ID from our storage
+  if (!tdidAdapter && crb.tdID) {
+    userIds.tdID = crb.tdID;
+  }
+
+  if (usp) {
+    userIds.usp = usp;
   }
 
   try {
@@ -341,21 +346,21 @@ function getUserIds(tdid, usp, gdpr, eids) {
     }
   } catch (e) {
   }
-  
-  if(crb.lexId != null) {
-    userIds.kargoID = crb.lexId
+
+  if (crb.lexId != null) {
+    userIds.kargoID = crb.lexId;
   }
 
-  if(crb.clientId !=  null) {
-    userIds.clientID = crb.clientId
+  if (crb.clientId != null) {
+    userIds.clientID = crb.clientId;
   }
 
-  if(crb.optOut != null) {
-    userIds.optOut = crb.optOut
+  if (crb.optOut != null) {
+    userIds.optOut = crb.optOut;
   }
 
-  if(eids != null) {
-    userIds.eids = eids
+  if (eids != null) {
+    userIds.eids = eids;
   }
 
   return userIds;
@@ -385,7 +390,7 @@ function getRequestCount() {
 function sendTimeoutData(auctionId, auctionTimeout) {
   let params = {
     aid: auctionId,
-    ato: auctionTimeout,
+    ato: auctionTimeout
   };
 
   try {
@@ -406,22 +411,22 @@ function getImpression(bid) {
     tid: bid.transactionId,
     pid: bid.params.placementId,
     code: bid.adUnitCode
-  }
+  };
 
   if (bid.floorData != null && bid.floorData.floorMin > 0) {
-    imp.floor = bid.floorData.floorMin
+    imp.floor = bid.floorData.floorMin;
   }
 
   if (bid.bidRequestsCount > 0) {
-    imp.bidRequestCount = bid.bidRequestsCount
+    imp.bidRequestCount = bid.bidRequestsCount;
   }
 
   if (bid.bidderRequestsCount > 0) {
-    imp.bidderRequestCount = bid.bidderRequestsCount
+    imp.bidderRequestCount = bid.bidderRequestsCount;
   }
 
   if (bid.bidderWinsCount > 0) {
-    imp.bidderWinCount = bid.bidderWinsCount
+    imp.bidderWinCount = bid.bidderWinsCount;
   }
 
   const gpid = getGPID(bid)
@@ -431,17 +436,17 @@ function getImpression(bid) {
     }
   }
 
-  if(bid.mediaTypes != null) {
+  if (bid.mediaTypes != null) {
     if (bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner
+      imp.banner = bid.mediaTypes.banner;
     }
 
     if (bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video
+      imp.video = bid.mediaTypes.video;
     }
 
     if (bid.mediaTypes.native != null) {
-      imp.native = bid.mediaTypes.native
+      imp.native = bid.mediaTypes.native;
     }
   }
 
@@ -451,24 +456,24 @@ function getImpression(bid) {
 function getGPID(bid) {
   if (bid.ortb2Imp != null) {
     if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
-      return bid.ortb2Imp.gpid
+      return bid.ortb2Imp.gpid;
     }
 
     if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
       if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot
+        return bid.ortb2Imp.ext.data.pbAdSlot;
       }
 
       if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
-        return bid.ortb2Imp.ext.data.adServer.adSlot
+        return bid.ortb2Imp.ext.data.adServer.adSlot;
       }
     }
   }
 
   if (bid.adUnitCode != null && bid.adUnitCode != '') {
-    return bid.adUnitCode
+    return bid.adUnitCode;
   }
-  return ''
+  return '';
 }
 
 export const spec = {
