@@ -162,6 +162,12 @@ export function setDevice(ortbRequest) {
 
 export function setSite(ortbRequest, bidderRequest) {
   if (bidderRequest.refererInfo) {
+	const { page, domain } = bidderRequest.refererInfo;
     ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
+	// We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
+	const ref = window.document.referrer;
+	if(bidderRequest?.src === 's2s') {
+		ortbRequest.site = Object.assign(ortbRequest.site, { page, domain, ref });
+	}
   }
 }

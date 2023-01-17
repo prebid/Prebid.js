@@ -170,7 +170,7 @@ export function ortbConverter({
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
       let impForSlots, partnerBidsForslots;
-      if (firstBidRequest.hasOwnProperty('adUnitsS2SCopy')) {
+      if (firstBidRequest && firstBidRequest.hasOwnProperty('adUnitsS2SCopy')) {
         impForSlots = firstBidRequest.adUnitsS2SCopy.length;
       }
 
