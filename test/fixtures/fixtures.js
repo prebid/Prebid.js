@@ -989,7 +989,7 @@ export function getAdServerTargeting() {
       'hb_size_pagescience': '300x250',
       'hb_pb_pagescience': '10.00',
       'hb_adid_pagescience': '25bedd4813632d7',
-      'hb_bidder_pagescienc': 'pagescience',
+      'hb_bidder_pagescience': 'pagescience',
       'hb_size_brightcom': '300x250',
       'hb_pb_brightcom': '10.00',
       'hb_adid_brightcom': '26e0795ab963896',
@@ -1100,7 +1100,7 @@ export function getTargetingKeysBidLandscape() {
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc',
+      CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescience',
       'pagescience'
     ],
     [
