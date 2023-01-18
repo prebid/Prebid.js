@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import {newBidder} from '../../../src/adapters/bidderFactory';
-import {ENDPOINT_URL, spec, storage} from '../../../modules/cwireBidAdapter';
+import {BID_ENDPOINT, spec, storage} from '../../../modules/cwireBidAdapter';
 import {deepClone, logInfo} from '../../../src/utils';
 import * as utils from 'src/utils.js';
 import {sandbox, stub} from 'sinon';
@@ -53,7 +53,7 @@ describe('C-WIRE bid adapter', () => {
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
-      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.url).to.equal(BID_ENDPOINT);
       expect(request.method).to.equal('POST');
     });
   });

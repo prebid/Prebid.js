@@ -7,7 +7,8 @@ import {generateUUID, getParameterByName, logInfo} from '../src/utils.js';
 const BIDDER_CODE = 'cwire';
 const CWID_KEY = 'cw_cwid';
 
-export const ENDPOINT_URL = 'https://prebid.cwi.re/v1/bid';
+export const BID_ENDPOINT = 'https://prebid.cwi.re/v1/bid';
+export const EVENT_ENDPOINT = 'https://prebid.cwi.re/v1/event';
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -153,7 +154,7 @@ export const spec = {
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: BID_ENDPOINT,
       data: payloadString,
     };
   },
@@ -175,5 +176,29 @@ export const spec = {
     const bids = serverResponse.body?.bids.map(({html, ...rest}) => ({...rest, ad: html}));
     return bids || [];
   },
+
+  onBidWon: function (bid) {
+    logInfo(`Bid won.`)
+    const event = {
+      type: 'BID_WON',
+      payload: {
+        bid: bid
+      }
+    }
+    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+  },
+
+  onBidderError: function (error, bidderRequest) {
+    logInfo(`Bidder error: ${error}`)
+    const event = {
+      type: 'BID_ERROR',
+      payload: {
+        error: error,
+        bidderRequest: bidderRequest
+      }
+    }
+    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+  },
+
 };
 registerBidder(spec);
