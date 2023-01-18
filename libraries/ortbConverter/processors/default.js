@@ -167,7 +167,10 @@ export function setSite(ortbRequest, bidderRequest) {
 	// We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
 	const ref = window.document.referrer;
 	if(bidderRequest?.src === 's2s') {
-		ortbRequest.site = Object.assign(ortbRequest.site, { page, domain, ref });
+		ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
+		if(ref.length) {
+			ortbRequest.site.ref = ref;
+		}
 	}
   }
 }
