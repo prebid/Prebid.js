@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { spec } from 'modules/smartadserverBidAdapter.js';
 
@@ -394,7 +395,6 @@ describe('Smart bid adapter tests', function () {
     afterEach(function () {
       config.setConfig({ ortb2: undefined });
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with GDPR', function () {
@@ -446,7 +446,6 @@ describe('Smart bid adapter tests', function () {
   describe('ccpa/us privacy tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with us privacy', function () {
@@ -475,7 +474,6 @@ describe('Smart bid adapter tests', function () {
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const INSTREAM_DEFAULT_PARAMS = [{
@@ -746,7 +744,6 @@ describe('Smart bid adapter tests', function () {
   describe('Outstream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const OUTSTREAM_DEFAULT_PARAMS = [{
@@ -1055,6 +1052,17 @@ describe('Smart bid adapter tests', function () {
   });
 
   describe('Floors module', function () {
+    const getFloor = (bid) => {
+      switch (bid.mediaType) {
+        case BANNER:
+          return { currency: 'USD', floor: 1.93 };
+        case VIDEO:
+          return { currency: 'USD', floor: 2.72 };
+        default:
+          return {};
+      }
+    };
+
     it('should include floor from bid params', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS))[0].data);
       expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
@@ -1094,12 +1102,91 @@ describe('Smart bid adapter tests', function () {
       const floor = spec.getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
+
+    it('should take floor from bidder params over ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73, bidfloor: 1.25 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(1.25);
+    });
+
+    it('should take floor from banner ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(1.93);
+    });
+
+    it('should take floor from video ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(2.72);
+    });
+
+    it('should take floor from multiple media type ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 600]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const requests = spec.buildRequests(bidRequest);
+      expect(requests).to.have.lengthOf(2);
+
+      const requestContents = requests.map(r => JSON.parse(r.data));
+      const videoRequest = requestContents.filter(r => r.videoData)[0];
+      expect(videoRequest).to.not.equal(null).and.to.not.be.undefined;
+      expect(videoRequest).to.have.property('bidfloor').and.to.equal(2.72);
+
+      const bannerRequest = requestContents.filter(r => !r.videoData)[0];
+      expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
+      expect(bannerRequest).to.have.property('bidfloor').and.to.equal(1.93);
+    });
   });
 
   describe('Verify bid requests with multiple mediaTypes', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{

@@ -13,6 +13,7 @@ export const spec = {
   gvlid: GVL_ID,
   aliases: ['smart'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
+
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -131,7 +132,6 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-
     const adServerCurrency = config.getConfig('currency.adServerCurrency');
     const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
     const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
@@ -144,7 +144,6 @@ export const spec = {
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
         currencyCode: adServerCurrency,
-        bidfloor: bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency),
         targeting: bid.params.target && bid.params.target !== '' ? bid.params.target : undefined,
         buid: bid.params.buId && bid.params.buId !== '' ? bid.params.buId : undefined,
         appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
@@ -178,11 +177,14 @@ export const spec = {
       const videoMediaType = deepAccess(bid, 'mediaTypes.video');
       const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
       const isAdUnitContainingVideo = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
+
       if (!isAdUnitContainingVideo && bannerMediaType) {
         payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, BANNER);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else if (isAdUnitContainingVideo && !bannerMediaType) {
         spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
+        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else if (isAdUnitContainingVideo && bannerMediaType) {
         // If there are video and banner media types in the ad unit, we clone the payload
@@ -190,9 +192,12 @@ export const spec = {
         let videoPayload = deepClone(payload);
 
         spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
+        videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
         bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
 
         payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
+        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, BANNER);
+
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else {
         bidRequests.push({});
@@ -253,24 +258,21 @@ export const spec = {
    *
    * @param {object} bid Bid request object
    * @param {string} currency Ad server currency
+   * @param {string} mediaType Bid media type
    * @return {number} Floor price
    */
-  getBidFloor: function (bid, currency) {
+  getBidFloor: function (bid, currency, mediaType) {
     if (!isFn(bid.getFloor)) {
       return DEFAULT_FLOOR;
     }
 
     const floor = bid.getFloor({
       currency: currency || 'USD',
-      mediaType: '*',
+      mediaType,
       size: '*'
     });
 
-    if (isPlainObject(floor) && !isNaN(floor.floor)) {
-      return floor.floor;
-    }
-
-    return DEFAULT_FLOOR;
+    return isPlainObject(floor) && !isNaN(floor.floor) ? floor.floor : DEFAULT_FLOOR;
   },
 
   /**
