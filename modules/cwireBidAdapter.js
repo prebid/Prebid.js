@@ -52,13 +52,13 @@ function slotDimensions(bid) {
 }
 
 /**
- * Extracts feature flags from a comma-separated url parameter `cw_features`.
+ * Extracts feature flags from a comma-separated url parameter `cwfeatures`.
  * @param validBidRequests
  *
  * @returns *[]
  */
 function featureFlags(validBidRequests) {
-  let ffParam = getParameterByName('cw_features')
+  let ffParam = getParameterByName('cwfeatures')
   if (ffParam !== '') {
     return ffParam.split(',')
   }
@@ -129,14 +129,14 @@ export const spec = {
     const cwid = getCwid();
 
     // Add optional/debug parameters
-    let cwcreative = getParameterByName('cw_creative')
+    let cwcreative = getParameterByName('cwcreative')
 
     const ff = featureFlags(validBidRequests);
 
-    // Enable debug flag by passing ?cw_debug=true as url parameter.
+    // Enable debug flag by passing ?cwdebug=true as url parameter.
     // Note: pbjs_debug=true enables it on prebid level
     // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
-    const debug = getParameterByName('cw_debug');
+    const debug = getParameterByName('cwdebug');
 
     // TODO: refgroups?
     if (cwid) {
