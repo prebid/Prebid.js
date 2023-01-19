@@ -310,6 +310,8 @@ export function getFloorDataFromAdUnits(adUnits) {
         // copy over the new rules into our values object
         Object.assign(accum.values, newRules);
       }
+    } else if (adUnit.floors != null) {
+      logWarn(`adUnit '${adUnit.code}' provides an invalid \`floor\` definition, it will be ignored for floor calculations`, adUnit);
     }
     return accum;
   }, {});
