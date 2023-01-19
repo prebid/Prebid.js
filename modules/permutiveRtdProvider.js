@@ -243,7 +243,7 @@ function getCustomBidderFn (moduleConfig, bidder) {
  */
 function getDefaultBidderFn (bidder) {
   const isPStandardTargetingEnabled = (data, acEnabled) => {
-    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.cohorts.length)
+    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.cohorts && data.ssp.cohorts.length)
   }
   const pStandardTargeting = (data, acEnabled) => {
     const ac = (acEnabled) ? (data.ac ?? []) : []

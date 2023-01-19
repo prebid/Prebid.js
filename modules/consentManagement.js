@@ -94,7 +94,7 @@ function lookupIabConsent({onSuccess, onError}) {
   const { cmpFrame, cmpFunction } = findCMP();
 
   if (!cmpFrame) {
-    return onError('CMP not found.');
+    return onError('TCF2 CMP not found.');
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
@@ -314,11 +314,11 @@ export function resetConsentData() {
  * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config && (config.gdpr || config.usp ? config.gdpr : config);
+  config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement config not defined, exiting consent manager');
+    logWarn('consentManagement (gdpr) config not defined, exiting consent manager');
     return;
   }
   if (isStr(config.cmpApi)) {

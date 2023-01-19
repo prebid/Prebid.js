@@ -47,19 +47,26 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function init() {
     if (!jwplayer) {
-      triggerSetupFailure(-1); // TODO: come up with code for player absent
+      triggerSetupFailure(-1); // TODO: come up with error code schema- player is absent
       return;
     }
 
     playerVersion = jwplayer.version;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2); // TODO: come up with code for version not supported
+      triggerSetupFailure(-2); // TODO: come up with error code schema - version not supported
+      return;
+    }
+
+    if (!document.getElementById(divId)) {
+      triggerSetupFailure(-3); // TODO: come up with error code schema - missing div id
       return;
     }
 
     player = jwplayer(divId);
-    if (player.getState() === undefined) {
+    if (!player || !player.getState) {
+      triggerSetupFailure(-4); // TODO: come up with error code schema - factory function failure
+    } else if (player.getState() === undefined) {
       setupPlayer(playerConfig);
     } else {
       const payload = getSetupCompletePayload();
