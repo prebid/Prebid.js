@@ -271,15 +271,22 @@ export const spec = {
 };
 
 function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
-  const { consentString, gdprApplies } = gdprConsent;
+  const { consentString, gdprApplies } = gdprConsent || {};
 
-  return url.replace(
-    '{{.GDPR}}', Number(gdprApplies)
-  ).replace(
-    '{{.GDPRConsent}}', consentString
-  ).replace(
-    '{{.USPrivacy}}', uspConsent
-  );
+  if (gdprApplies) {
+    const gdpr = Number(gdprApplies);
+    url = url.replace('{{.GDPR}}', gdpr);
+
+    if (gdpr == 1 && consentString && consentString.length > 0) {
+      url = url.replace('{{.GDPRConsent}}', consentString);
+    }
+  }
+
+  if (uspConsent) {
+    url = url.replace('{{.USPrivacy}}', uspConsent);
+  }
+
+  return url;
 };
 
 function getAdEl(bid) {
