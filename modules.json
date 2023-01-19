@@ -30,6 +30,7 @@
   "telariaBidAdapter",
   "tripleliftBidAdapter",
   "yahoosspBidAdapter",
+  "seedTagBidAdapter",
   "userId",
   "id5IdSystem"
 ]
