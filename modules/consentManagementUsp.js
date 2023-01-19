@@ -100,6 +100,14 @@ function lookupUspConsent({onSuccess, onError}) {
     return onError('USP CMP not found.');
   }
 
+  function registerDataDelHandler(invoker, arg2) {
+    try {
+      invoker('registerDeletion', arg2, adapterManager.callDataDeletionRequest);
+    } catch (e) {
+      logError('Error invoking CMP `registerDeletion`:', e);
+    }
+  }
+
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
 
@@ -115,11 +123,7 @@ function lookupUspConsent({onSuccess, onError}) {
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
-    uspapiFunction(
-      'registerDeletion',
-      USPAPI_VERSION,
-      adapterManager.callDataDeletionRequest
-    )
+    registerDataDelHandler(uspapiFunction, USPAPI_VERSION);
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
@@ -129,11 +133,7 @@ function lookupUspConsent({onSuccess, onError}) {
       uspapiFrame,
       callbackHandler.consentDataCallback
     );
-    callUspApiWhileInIframe(
-      'registerDeletion',
-      uspapiFrame,
-      adapterManager.callDataDeletionRequest
-    );
+    registerDataDelHandler(callUspApiWhileInIframe, uspapiFrame);
   }
 
   let listening = false;
