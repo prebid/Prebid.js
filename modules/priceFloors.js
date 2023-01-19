@@ -28,6 +28,7 @@ import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {beConvertCurrency} from '../src/utils/currency.js';
+import {adjustCpm} from '../src/utils/cpm.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -179,12 +180,8 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm, bid, bidRequest) {
-  const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
-  if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm, { ...bid, cpm: inputCpm }, bidRequest));
-  }
-  return parseFloat(inputCpm);
+export function getBiddersCpmAdjustment(inputCpm, bid, bidRequest) {
+  return parseFloat(adjustCpm(inputCpm, {...bid, cpm: inputCpm}, bidRequest));
 }
 
 /**
@@ -254,7 +251,7 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
     if (inverseFunction) {
       floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest);
     } else {
-      let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor, {}, bidRequest);
+      let cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
       floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
     }
   }
@@ -737,7 +734,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid, matchingBidRequest);
+  adjustedCpm = getBiddersCpmAdjustment(adjustedCpm, bid, matchingBidRequest);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
