@@ -59,7 +59,7 @@ function slotDimensions(bid) {
  */
 function featureFlags(validBidRequests) {
   let ffParam = getParameterByName('cwfeatures')
-  if (ffParam !== '') {
+  if (ffParam) {
     return ffParam.split(',')
   }
   return []
