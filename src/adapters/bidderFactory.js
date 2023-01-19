@@ -202,6 +202,8 @@ export function newBidder(spec) {
         adUnitCodesHandled[adUnitCode] = true;
         if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
+        } else {
+          addBidResponse.reject(adUnitCode, bid, CONSTANTS.REJECTION_REASON.INVALID)
         }
       }
 
@@ -212,7 +214,7 @@ export function newBidder(spec) {
         done();
         config.runWithBidder(spec.code, () => {
           events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
         });
       }
 
@@ -262,6 +264,7 @@ export function newBidder(spec) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -272,6 +275,7 @@ export function newBidder(spec) {
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bid, CONSTANTS.REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -291,8 +295,8 @@ export function newBidder(spec) {
     return false;
   }
 
-  function registerSyncs(responses, gdprConsent, uspConsent) {
-    registerSyncInner(spec, responses, gdprConsent, uspConsent);
+  function registerSyncs(responses, gdprConsent, uspConsent, gppConsent) {
+    registerSyncInner(spec, responses, gdprConsent, uspConsent, gppConsent);
   }
 
   function filterAndWarn(bid) {
@@ -444,14 +448,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   })
 }, 'processBidderRequests')
 
-export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
       iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
       pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-    }, responses, gdprConsent, uspConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];

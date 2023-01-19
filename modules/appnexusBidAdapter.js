@@ -11,6 +11,7 @@ import {
   getMinValueFromArray,
   getParameterByName,
   getUniqueIdentifierStr,
+  getWindowFromDocument,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -23,8 +24,7 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  transformBidderParamKeywords,
-  getWindowFromDocument
+  transformBidderParamKeywords
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -43,10 +43,15 @@ const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
-const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api', 'startdelay'];
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
+const DEBUG_QUERY_PARAM_MAP = {
+  'apn_debug_dongle': 'dongle',
+  'apn_debug_member_id': 'member_id',
+  'apn_debug_timeout': 'debug_timeout'
+};
 const VIDEO_MAPPING = {
   playback_method: {
     'unknown': 0,
@@ -184,6 +189,18 @@ export const spec = {
         logError('AppNexus Debug Auction Cookie Error:\n\n' + e);
       }
     } else {
+      Object.keys(DEBUG_QUERY_PARAM_MAP).forEach(qparam => {
+        let qval = getParameterByName(qparam);
+        if (isStr(qval) && qval !== '') {
+          debugObj[DEBUG_QUERY_PARAM_MAP[qparam]] = qval;
+          debugObj.enabled = true;
+        }
+      });
+      debugObj = convertTypes({
+        'member_id': 'number',
+        'debug_timeout': 'number'
+      }, debugObj);
+
       const debugBidRequest = find(bidRequests, hasDebug);
       if (debugBidRequest && debugBidRequest.debug) {
         debugObj = debugBidRequest.debug;
@@ -250,10 +267,10 @@ export const spec = {
     // need to convert the string values into array of strings, to properly merge values with other existing keys later
     Object.keys(anAuctionKeywords).forEach(k => { if (isStr(anAuctionKeywords[k]) || isNumber(anAuctionKeywords[k])) anAuctionKeywords[k] = [anAuctionKeywords[k]] });
     // combine all sources of keywords (converted from string comma list to object format) into one object (that combines the values for shared keys)
-    let mergedAuctionKeywrds = mergeDeep({}, anAuctionKeywords, ...ortb2KeywordsObjList);
+    let mergedAuctionKeywords = mergeDeep({}, anAuctionKeywords, ...ortb2KeywordsObjList);
 
     // convert to final format used by adserver
-    let auctionKeywords = transformBidderParamKeywords(mergedAuctionKeywrds);
+    let auctionKeywords = transformBidderParamKeywords(mergedAuctionKeywords);
     if (auctionKeywords.length > 0) {
       auctionKeywords.forEach(deleteValues);
       payload.keywords = auctionKeywords;
@@ -285,6 +302,18 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.us_privacy = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest?.gppConsent) {
+      payload.privacy = {
+        gpp: bidderRequest.gppConsent.gppString,
+        gpp_sid: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      payload.privacy = {
+        gpp: bidderRequest.ortb2.regs.gpp,
+        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
+      }
     }
 
     if (bidderRequest && bidderRequest.refererInfo) {
@@ -407,8 +436,17 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent) {
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    function checkGppStatus(gppConsent) {
+      // this is a temporary measure to supress usersync in US-based GPP regions
+      // this logic will be revised when proper signals (akin to purpose1 from TCF2) can be determined for US GPP
+      if (gppConsent && Array.isArray(gppConsent.applicableSections)) {
+        return gppConsent.applicableSections.every(sec => typeof sec === 'number' && sec <= 5);
+      }
+      return true;
+    }
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent) && checkGppStatus(gppConsent)) {
       return [{
         type: 'iframe',
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
@@ -587,9 +625,8 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
   };
 
-  // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
   if (rtbBid.adomain) {
-    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] });
+    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [rtbBid.adomain] });
   }
 
   if (rtbBid.advertiser_id) {
@@ -693,6 +730,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
       displayUrl: nativeAd.displayurl,
       clickTrackers: nativeAd.link.click_trackers,
       impressionTrackers: nativeAd.impression_trackers,
+      video: nativeAd.video,
       javascriptTrackers: jsTrackers
     };
     if (nativeAd.main_img) {
@@ -903,6 +941,17 @@ function bidToTag(bid) {
               tag['video_frameworks'] = apiTmp;
             }
             break;
+
+          case 'startdelay':
+          case 'placement':
+            const contextKey = 'context';
+            if (typeof tag.video[contextKey] !== 'number') {
+              const placement = videoMediaType['placement'];
+              const startdelay = videoMediaType['startdelay'];
+              const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
+              tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
+            }
+            break;
         }
       });
   }
@@ -948,6 +997,32 @@ function transformSizes(requestSizes) {
   }
 
   return sizes;
+}
+
+function getContextFromPlacement(ortbPlacement) {
+  if (!ortbPlacement) {
+    return;
+  }
+
+  if (ortbPlacement === 2) {
+    return 'in-banner';
+  } else if (ortbPlacement > 2) {
+    return 'outstream';
+  }
+}
+
+function getContextFromStartDelay(ortbStartDelay) {
+  if (!ortbStartDelay) {
+    return;
+  }
+
+  if (ortbStartDelay === 0) {
+    return 'pre_roll';
+  } else if (ortbStartDelay === -1) {
+    return 'mid_roll';
+  } else if (ortbStartDelay === -2) {
+    return 'post_roll';
+  }
 }
 
 function hasUserInfo(bid) {
@@ -1202,28 +1277,30 @@ function convertKeywordsToString(keywords) {
 function convertStringToKeywordsObj(keyStr) {
   let result = {};
 
-  // will split based on commas and will eat white space before/after the comma
-  let keywordList = keyStr.split(/\s*(?:,)\s*/);
-  keywordList.forEach(kw => {
-    // if = exists, then split
-    if (kw.indexOf('=') !== -1) {
-      let kwPair = kw.split('=');
-      let key = kwPair[0];
-      let val = kwPair[1];
+  if (isStr(keyStr) && keyStr !== '') {
+    // will split based on commas and will eat white space before/after the comma
+    let keywordList = keyStr.split(/\s*(?:,)\s*/);
+    keywordList.forEach(kw => {
+      // if = exists, then split
+      if (kw.indexOf('=') !== -1) {
+        let kwPair = kw.split('=');
+        let key = kwPair[0];
+        let val = kwPair[1];
 
-      // then check for existing key in result > if so add value to the array > if not, add new key and create value array
-      if (result.hasOwnProperty(key)) {
-        result[key].push(val);
+        // then check for existing key in result > if so add value to the array > if not, add new key and create value array
+        if (result.hasOwnProperty(key)) {
+          result[key].push(val);
+        } else {
+          result[key] = [val];
+        }
       } else {
-        result[key] = [val];
+        // make a key with '' value; if key already exists > don't add
+        if (!result.hasOwnProperty(kw)) {
+          result[kw] = [''];
+        }
       }
-    } else {
-      // make a key with '' value; if key already exists > don't add
-      if (!result.hasOwnProperty(kw)) {
-        result[kw] = [''];
-      }
-    }
-  });
+    });
+  }
 
   return result;
 }

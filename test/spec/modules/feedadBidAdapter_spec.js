@@ -4,6 +4,7 @@ import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import {server} from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
+const EXPECTED_ADAPTER_VERSION = '1.0.5';
 
 describe('FeedAdAdapter', function () {
   describe('Public API', function () {
@@ -300,6 +301,20 @@ describe('FeedAdAdapter', function () {
       expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
       expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
     });
+    it('should include adapter and prebid version', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids[0].params.prebid_adapter_version).to.equal(EXPECTED_ADAPTER_VERSION);
+      expect(result.data.bids[0].params.prebid_sdk_version).to.equal('$prebid.version$');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -358,14 +373,20 @@ describe('FeedAdAdapter', function () {
     const pixelSync2 = {type: 'image', url: 'the pixel url 2'};
     const iFrameSync1 = {type: 'iframe', url: 'the iFrame url 1'};
     const iFrameSync2 = {type: 'iframe', url: 'the iFrame url 2'};
+    const mockServerResponse = (content) => {
+      if (!(content instanceof Array)) {
+        content = [content];
+      }
+      return content.map(it => ({body: it}));
+    };
 
     it('should pass through the syncs out of the extension fields of the server response', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse)
       expect(result).to.deep.equal([
         pixelSync1,
@@ -376,7 +397,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should concat the syncs of all responses', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1],
           iframes: [iFrameSync2],
@@ -391,7 +412,7 @@ describe('FeedAdAdapter', function () {
         ext: {
           pixels: [pixelSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -402,7 +423,7 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should filter out duplicates', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync1],
           iframes: [iFrameSync2, iFrameSync2],
@@ -411,7 +432,7 @@ describe('FeedAdAdapter', function () {
         ext: {
           iframes: [iFrameSync2, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -420,12 +441,12 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include iFrame syncs if the option is disabled', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, serverResponse);
       expect(result).to.deep.equal([
         pixelSync1,
@@ -434,12 +455,12 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include pixel syncs if the option is disabled', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, serverResponse);
       expect(result).to.deep.equal([
         iFrameSync1,
@@ -448,13 +469,38 @@ describe('FeedAdAdapter', function () {
     });
 
     it('should not include any syncs if the sync options are disabled or missing', function () {
-      const serverResponse = [{
+      const serverResponse = mockServerResponse([{
         ext: {
           pixels: [pixelSync1, pixelSync2],
           iframes: [iFrameSync1, iFrameSync2],
         }
-      }];
+      }]);
       const result = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: false}, serverResponse);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should handle empty responses', function () {
+      const serverResponse = mockServerResponse([]);
+      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, serverResponse)
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should not throw if the server response is weird', function () {
+      const responses = [
+        mockServerResponse(null),
+        mockServerResponse('null'),
+        mockServerResponse(1234),
+        mockServerResponse({}),
+        mockServerResponse([{}, 123]),
+      ];
+      responses.forEach(it => {
+        expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, it)).not.to.throw;
+      });
+    });
+
+    it('should return empty array if the body extension is null', function () {
+      const response = mockServerResponse({ext: null});
+      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, response);
       expect(result).to.deep.equal([]);
     });
   });
@@ -592,7 +638,8 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.3'
+            prebid_adapter_version: EXPECTED_ADAPTER_VERSION,
+            prebid_sdk_version: '$prebid.version$',
           };
           subject(data);
           expect(server.requests.length).to.equal(1);
