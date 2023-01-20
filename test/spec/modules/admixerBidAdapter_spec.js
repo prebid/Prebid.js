@@ -7,7 +7,7 @@ const BIDDER_CODE = 'admixer';
 const BIDDER_CODE_ADX = 'admixeradx';
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ENDPOINT_URL_CUSTOM = 'https://custom.admixer.net/prebid.aspx';
-const ENDPOINT_URL_ADX = 'http://inv-nets.admixer.net/adxprebid.1.2.aspx';
+const ENDPOINT_URL_ADX = 'https://inv-nets.admixer.net/adxprebid.1.2.aspx';
 const ZONE_ID = '2eb6bd58-865c-47ce-af7f-a918108c3fd2';
 
 describe('AdmixerAdapter', function () {
@@ -17,29 +17,29 @@ describe('AdmixerAdapter', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.be.exist.and.to.be.a('function');
     });
-  });
+  });//inv-nets.admixer.net/adxprebid.1.2.aspx
 
-  describe('isBidRequestValid', function () {
+  http: describe("isBidRequestValid", function () {
     let bid = {
       bidder: BIDDER_CODE,
       params: {
         zone: ZONE_ID,
       },
-      adUnitCode: 'adunit-code',
+      adUnitCode: "adunit-code",
       sizes: [
         [300, 250],
         [300, 600],
       ],
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
+      bidId: "30b31c1838de1e",
+      bidderRequestId: "22edbae2733bf6",
+      auctionId: "1d1a030790a475",
     };
 
-    it('should return true when required params found', function () {
+    it("should return true when required params found", function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return false when required params are not passed', function () {
+    it("should return false when required params are not passed", function () {
       let bid = Object.assign({}, bid);
       delete bid.params;
       bid.params = {
