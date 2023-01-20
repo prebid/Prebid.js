@@ -279,6 +279,11 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+    };
+
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };

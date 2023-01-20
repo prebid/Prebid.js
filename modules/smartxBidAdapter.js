@@ -67,7 +67,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    // TODO: does the fallback make sense here?
     const page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const isPageSecure = !!page.match(/^https:/)
 
@@ -77,6 +76,7 @@ export const spec = {
       const bidfloor = getBidFloor(bid) || 0;
       const bidfloorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = getBidIdParameter('siteId', bid.params);
+      const sitekey = getBidIdParameter('sitekey', bid.params);
       const domain = getBidIdParameter('domain', bid.params);
       const cat = getBidIdParameter('cat', bid.params) || [''];
       let pubcid = null;
@@ -192,9 +192,23 @@ export const spec = {
         }
       }
 
+      // Add sitekey if available
+      if (sitekey) {
+        requestPayload.site.content.ext.sitekey = sitekey;
+      }
+
       // Add common id if available
       if (pubcid) {
         userExt.fpc = pubcid;
+      }
+
+      // Add schain object if available
+      if (bid && bid.schain) {
+        requestPayload['source'] = {
+          ext: {
+            schain: bid.schain
+          }
+        };
       }
 
       // Only add the user object if it's not empty
@@ -204,9 +218,7 @@ export const spec = {
         };
       }
 
-      //     requestPayload.user.ext.ver = pbjs.version;
-
-      // Targeting
+      // Add targeting
       if (getBidIdParameter('data', bid.params.user)) {
         var targetingarr = [];
         for (var i = 0; i < bid.params.user.data.length; i++) {
@@ -225,8 +237,6 @@ export const spec = {
           }
         }
 
-        // Todo: USER ID MODULE
-
         requestPayload.user = {
           ext: userExt,
           data: targetingarr
@@ -241,7 +251,7 @@ export const spec = {
         options: {
           contentType: 'application/json',
           customHeaders: {
-            'x-openrtb-version': '2.3'
+            'x-openrtb-version': '2.5'
           }
         }
       };
@@ -269,7 +279,6 @@ export const spec = {
           }
           /**
            * Make sure currency and price are the right ones
-           * TODO: what about the pre_market_bid partners sizes?
            */
           _each(currentBidRequest.params.pre_market_bids, function (pmb) {
             if (pmb.deal_id == smartxBid.id) {
