@@ -426,23 +426,19 @@ const testsInterpretResponse = [
     args: {
       fn: spec.interpretResponse(getConfigInterpretResponseRTB(false)),
     },
-    want: [
-      {
-        cpm: 0,
-        currency: 'EUR',
-        height: 250,
-        width: 300,
-        creativeId: '34567ertyaza',
-        mediaType: 'video',
-        netRevenue: true,
-        requestId: '2def0c5b2a7f6e',
-        ttl: 300,
-        vastXml,
-        vastUrl:
-          'data:text/xml;charset=utf-8;base64,' +
-          btoa(vastXml.replace(/\\"/g, '"')),
-      },
-    ],
+    want: [{
+      cpm: 0,
+      currency: 'EUR',
+      height: 250,
+      width: 300,
+      creativeId: '34567ertyaza',
+      mediaType: 'video',
+      netRevenue: true,
+      requestId: '2def0c5b2a7f6e',
+      ttl: 300,
+      vastXml,
+      vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
+    }]
   },
   {
     title: 'ServerResponse with message: invalid tag, return empty array',
@@ -456,20 +452,18 @@ const testsInterpretResponse = [
     args: {
       fn: spec.interpretResponse({ body: { bids: [getConfigBannerBid()] } }),
     },
-    want: [
-      {
-        ad: '',
-        cpm: 1,
-        creativeId: '34567erty',
-        currency: 'EUR',
-        height: 250,
-        mediaType: 'banner',
-        netRevenue: true,
-        requestId: '2def0c5b2a7f6e',
-        ttl: 300,
-        width: 300,
-      },
-    ],
+    want: [{
+      ad: '',
+      cpm: 1,
+      creativeId: '34567erty',
+      currency: 'EUR',
+      height: 250,
+      mediaType: 'banner',
+      netRevenue: true,
+      requestId: '2def0c5b2a7f6e',
+      ttl: 300,
+      width: 300
+    }]
   },
   {
     title: 'ServerResponse with unhandled mediaType, return empty array',
@@ -563,11 +557,9 @@ const testsBuildBid = [
       creativeId: getConfigVideoBid().extras.deal_id,
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
-      vastUrl:
-        'data:text/xml;charset=utf-8;base64,' +
-        btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
+      vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
       ttl: 300,
-    },
+    }
   },
   {
     title: 'use default height width output model for video',
@@ -599,11 +591,9 @@ const testsBuildBid = [
       creativeId: getConfigVideoBid().extras.deal_id,
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
-      vastUrl:
-        'data:text/xml;charset=utf-8;base64,' +
-        btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
+      vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
       ttl: 300,
-    },
+    }
   },
   {
     title: 'input data respect the output model for banner',
