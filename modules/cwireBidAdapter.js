@@ -10,6 +10,11 @@ const CWID_KEY = 'cw_cwid';
 export const BID_ENDPOINT = 'https://prebid.cwi.re/v1/bid';
 export const EVENT_ENDPOINT = 'https://prebid.cwi.re/v1/event';
 
+/**
+ * Allows limiting ad impressions per site render. Unique per prebid instance ID.
+ */
+export const pageViewId = generateUUID();
+
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 /**
@@ -141,7 +146,7 @@ export const spec = {
       slots: processed,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
-      pageViewId: bidderRequest?.auctionId || generateUUID(),
+      pageViewId: pageViewId,
       ...(cwId) && {
         cwid: cwId
       },
