@@ -135,7 +135,7 @@ describe('Admaru Adapter', function () {
       expect(syncs).to.deep.equal([
         {
           type: 'iframe',
-          url: 'http://p2.admaru.net/UserSync/sync',
+          url: 'https://p2.admaru.net/UserSync/sync',
         },
       ]);
     });
@@ -152,7 +152,7 @@ describe('Admaru Adapter', function () {
       expect(syncs).to.deep.equal([
         {
           type: 'image',
-          url: 'http://p2.admaru.net/UserSync/sync',
+          url: 'https://p2.admaru.net/UserSync/sync',
         },
       ]);
     });
