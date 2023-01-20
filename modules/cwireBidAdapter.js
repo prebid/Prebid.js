@@ -126,13 +126,6 @@ export const spec = {
       // Flattens the pageId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, placementId: bid.params?.placementId}));
 
-    const payload = {
-      slots: processed,
-      httpRef: referrer,
-      // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
-      pageViewId: bidderRequest?.auctionId || generateUUID()
-    };
-
     const cwId = getCwid();
 
     const cwCreative = getParameterByName('cwcreative')
@@ -144,21 +137,27 @@ export const spec = {
     // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
     const debug = getParameterByName('cwdebug');
 
-    if (cwId) {
-      payload.cwid = cwId
-    }
-    if (cwCreative) {
-      payload.cwcreative = cwCreative
-    }
-    if (cwGroups.length > 0) {
-      payload.refgroups = cwGroups
-    }
-    if (cwFeatures.length > 0) {
-      payload.featureFlags = cwFeatures
-    }
-    if (debug) {
-      payload.debug = true
-    }
+    const payload = {
+      slots: processed,
+      httpRef: referrer,
+      // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
+      pageViewId: bidderRequest?.auctionId || generateUUID(),
+      ...(cwId) && {
+        cwid: cwId
+      },
+      ...(cwGroups.length > 0) && {
+        refgroups: cwGroups
+      },
+      ...(cwFeatures.length > 0) && {
+        featureFlags: cwFeatures
+      },
+      ...(cwCreative) && {
+        cwcreative: cwCreative
+      },
+      ...(debug) && {
+        debug: true
+      }
+    };
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
