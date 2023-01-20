@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {generateUUID, getParameterByName, logInfo} from '../src/utils.js';
+import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -136,21 +136,28 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    // pageId is required
-    const valid = !!(bid.params?.pageId)
-    return valid;
+    if (!bid.params?.placementId || !isNumber(bid.params.placementId)) {
+      logError('placementId not provided or not a number');
+      return false;
+    }
+
+    if (!bid.params?.pageId || !isNumber(bid.params.pageId)) {
+      logError('pageId not provided or not a number');
+      return false;
+    }
+    return true;
   },
 
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests[]} validBidRequests An array of bids.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {

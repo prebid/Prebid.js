@@ -248,7 +248,7 @@ describe('C-WIRE bid adapter', () => {
     });
   })
 
-  describe('pageId is a required param', function () {
+  describe('pageId and placementId are required params', function () {
     it('invalid request', function () {
       let bidRequest = deepClone(bidRequests[0]);
       delete bidRequest.params
@@ -259,11 +259,22 @@ describe('C-WIRE bid adapter', () => {
 
     it('valid request', function () {
       let bidRequest = deepClone(bidRequests[0]);
-      bidRequest.pageId = 'test'
+      bidRequest.params.pageId = 42
+      bidRequest.params.placementId = 42
 
       const valid = spec.isBidRequestValid(bidRequest);
       expect(valid).to.be.true;
     })
+
+    it('cwcreative must be of type string', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.pageId = 42
+      bidRequest.params.placementId = 42
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.true;
+    })
+
 
     it('build request adds pageId', function () {
       let bidRequest = deepClone(bidRequests[0]);
