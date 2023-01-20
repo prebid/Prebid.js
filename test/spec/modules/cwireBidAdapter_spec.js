@@ -159,7 +159,30 @@ describe('C-WIRE bid adapter', () => {
     });
   });
 
-  describe('buildRequests reads cw_debug flag', function () {
+  describe('buildRequests reads cwgroups flag', function () {
+    before(function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake(function () {
+        return 'group1,group2'
+      });
+    });
+
+    it('read from url parameter', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.refgroups).to.exist;
+      expect(payload.refgroups).to.include.members(['group1', 'group2']);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('buildRequests reads debug flag', function () {
     before(function () {
       sandbox.stub(utils, 'getParameterByName').callsFake(function () {
         return 'true'

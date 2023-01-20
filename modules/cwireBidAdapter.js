@@ -53,14 +53,21 @@ function slotDimensions(bid) {
 
 /**
  * Extracts feature flags from a comma-separated url parameter `cwfeatures`.
- * @param validBidRequests
  *
  * @returns *[]
  */
-function featureFlags(validBidRequests) {
+function getFeatureFlags() {
   let ffParam = getParameterByName('cwfeatures')
   if (ffParam) {
     return ffParam.split(',')
+  }
+  return []
+}
+
+function getRefGroups() {
+  const groups = getParameterByName('cwgroups')
+  if (groups) {
+    return groups.split(',')
   }
   return []
 }
@@ -126,27 +133,28 @@ export const spec = {
       pageViewId: bidderRequest?.auctionId || generateUUID()
     };
 
-    const cwid = getCwid();
+    const cwId = getCwid();
 
-    // Add optional/debug parameters
-    let cwcreative = getParameterByName('cwcreative')
-
-    const ff = featureFlags(validBidRequests);
+    const cwCreative = getParameterByName('cwcreative')
+    const cwGroups = getRefGroups()
+    const cwFeatures = getFeatureFlags();
 
     // Enable debug flag by passing ?cwdebug=true as url parameter.
     // Note: pbjs_debug=true enables it on prebid level
     // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
     const debug = getParameterByName('cwdebug');
 
-    // TODO: refgroups?
-    if (cwid) {
-      payload.cwid = cwid
+    if (cwId) {
+      payload.cwid = cwId
     }
-    if (ff.length > 0) {
-      payload.featureFlags = ff
+    if (cwCreative) {
+      payload.cwcreative = cwCreative
     }
-    if (cwcreative) {
-      payload.cwcreative = cwcreative
+    if (cwGroups.length > 0) {
+      payload.refgroups = cwGroups
+    }
+    if (cwFeatures.length > 0) {
+      payload.featureFlags = cwFeatures
     }
     if (debug) {
       payload.debug = true
