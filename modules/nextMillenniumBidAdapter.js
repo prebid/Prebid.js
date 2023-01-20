@@ -280,6 +280,9 @@ function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
     if (gdpr == 1 && consentString && consentString.length > 0) {
       url = url.replace('{{.GDPRConsent}}', consentString);
     }
+  } else {
+    url = url.replace('{{.GDPR}}', 0);
+    url = url.replace('{{.GDPRConsent}}', '');
   }
 
   if (uspConsent) {
