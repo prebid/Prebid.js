@@ -99,6 +99,38 @@ function updateCwid(cwid) {
   }
 }
 
+/**
+ * Extract and collect cwire specific extensions.
+ */
+function getCwExtension() {
+  const cwId = getCwid();
+  const cwCreative = getParameterByName('cwcreative')
+  const cwGroups = getRefGroups()
+  const cwFeatures = getFeatureFlags();
+  // Enable debug flag by passing ?cwdebug=true as url parameter.
+  // Note: pbjs_debug=true enables it on prebid level
+  // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
+  const debug = getParameterByName('cwdebug');
+
+  return {
+    ...(cwId) && {
+      cwid: cwId
+    },
+    ...(cwGroups.length > 0) && {
+      refgroups: cwGroups
+    },
+    ...(cwFeatures.length > 0) && {
+      featureFlags: cwFeatures
+    },
+    ...(cwCreative) && {
+      cwcreative: cwCreative
+    },
+    ...(debug) && {
+      debug: true
+    }
+  };
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -131,37 +163,13 @@ export const spec = {
       // Flattens the pageId and placement Id for backwards compatibility.
       .map((bid) => ({...bid, pageId: bid.params?.pageId, placementId: bid.params?.placementId}));
 
-    const cwId = getCwid();
-
-    const cwCreative = getParameterByName('cwcreative')
-    const cwGroups = getRefGroups()
-    const cwFeatures = getFeatureFlags();
-
-    // Enable debug flag by passing ?cwdebug=true as url parameter.
-    // Note: pbjs_debug=true enables it on prebid level
-    // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
-    const debug = getParameterByName('cwdebug');
-
+    const extensions = getCwExtension();
     const payload = {
       slots: processed,
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: pageViewId,
-      ...(cwId) && {
-        cwid: cwId
-      },
-      ...(cwGroups.length > 0) && {
-        refgroups: cwGroups
-      },
-      ...(cwFeatures.length > 0) && {
-        featureFlags: cwFeatures
-      },
-      ...(cwCreative) && {
-        cwcreative: cwCreative
-      },
-      ...(debug) && {
-        debug: true
-      }
+      ...extensions
     };
     const payloadString = JSON.stringify(payload);
     return {
