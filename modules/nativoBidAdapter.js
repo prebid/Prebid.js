@@ -140,13 +140,9 @@ export const spec = {
     const floorPriceData = {}
     let placementId, pageUrl
     validBidRequests.forEach((bidRequest) => {
-      pageUrl = deepAccess(
-        bidRequest,
-        'params.url',
-      )
-      if (pageUrl == undefined || pageUrl === '') {
-        pageUrl = bidderRequest.refererInfo.location
-      }
+      pageUrl =
+        getPageUrlFromBidRequest(bidRequest) ||
+        bidderRequest.refererInfo.location
 
       placementId = deepAccess(bidRequest, 'params.placementId')
 
@@ -380,10 +376,12 @@ export const spec = {
         return syncs
       }
 
-      body =
-        typeof response.body === 'string'
-          ? JSON.parse(response.body)
-          : response.body
+      try {
+        body =
+          typeof response.body === 'string'
+            ? JSON.parse(response.body)
+            : response.body
+      } catch (err) { return }
 
       // Make sure we have valid content
       if (!body || !body.seatbid || body.seatbid.length === 0) return
@@ -465,7 +463,7 @@ export function parseFloorPriceData(bidRequest) {
     // Setup price floor data per media type
     let mediaTypeData = bidMediaTypes[mediaType]
     let mediaTypeFloorPriceData = {}
-    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || [];
+    let mediaTypeSizes = mediaTypeData.sizes || mediaTypeData.playerSize || []
     // Step through each size of the media type so we can get floor data for each size per media type
     mediaTypeSizes.forEach((size) => {
       // Get floor price data per the getFloor method and respective media type / size combination
@@ -633,4 +631,38 @@ function appendFilterData(filter, filterData) {
   if (filterData && Array.isArray(filterData) && filterData.length) {
     filterData.forEach((ad) => filter.add(ad))
   }
+}
+
+export function getPageUrlFromBidRequest(bidRequest) {
+  let paramPageUrl = deepAccess(bidRequest, 'params.url')
+
+  if (paramPageUrl == undefined) return
+
+  if (hasProtocol(paramPageUrl)) return paramPageUrl
+
+  paramPageUrl = addProtocol(paramPageUrl)
+
+  try {
+    const url = new URL(paramPageUrl)
+    return url.href
+  } catch (err) {}
+}
+
+export function hasProtocol(url) {
+  const protocolRegexp = /^http[s]?\:/
+  return protocolRegexp.test(url)
+}
+
+export function addProtocol(url) {
+  if (hasProtocol(url)) {
+    return url
+  }
+
+  let protocolPrefix = 'https:'
+
+  if (url.indexOf('//') !== 0) {
+    protocolPrefix += '//'
+  }
+
+  return `${protocolPrefix}${url}`
 }

@@ -220,6 +220,8 @@ function setPrebidImpressionObject(bidRequests, payload) {
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // Placement id
+    deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
     // Publisher id
     deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
     // Site id
@@ -265,6 +267,8 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.inp.jp', window.JSON.parse.name === 'parse' && typeof window.JSON.parse.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.ofe', window.Object.fromEntries.name === 'fromEntries' && typeof window.Object.fromEntries.prototype === 'undefined');
   deepSetValue(payload, 'environment.inp.oa', window.Object.assign.name === 'assign' && typeof window.Object.assign.prototype === 'undefined');
+  deepSetValue(payload, 'environment.wpar.innerWidth', window.innerWidth);
+  deepSetValue(payload, 'environment.wpar.innerHeight', window.innerHeight);
 }
 
 function setPrebidImpressionObjectFloor(bidRequest, impressionObject) {

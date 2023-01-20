@@ -186,7 +186,8 @@ describe('auctionmanager.js', function () {
       source: 'client',
       mediaType: 'banner',
       meta: {
-        advertiserDomains: ['adomain']
+        advertiserDomains: ['adomain'],
+        primaryCatId: 'IAB-test'
       }
     };
 
@@ -200,6 +201,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
+      expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -290,6 +292,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
               }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
+              }
             }
           ]
 
@@ -366,6 +374,12 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
               }
             }
           ]
@@ -452,6 +466,24 @@ describe('auctionmanager.js', function () {
       var expected = getDefaultExpected(bid);
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('Should set targeting as expecting when pbs is enabled', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1',
+          enabled: true,
+          defaultVendor: 'appnexus',
+          bidders: ['appnexus'],
+          timeout: 1000,
+          adapter: 'prebidServer'
+        }
+      });
+
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 

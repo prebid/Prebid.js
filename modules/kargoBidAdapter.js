@@ -128,11 +128,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       }
 
       switch (suaKey) {
-        case SUA.MOBILE:
-        case SUA.SOURCE:
-          if (suaValue < 1) {
-            return;
-          };
+        case SUA.MOBILE && suaValue < 1: // Do not pass 0 value for mobile
+        case SUA.SOURCE && suaValue < 1: // Do not pass 0 value for source
           break;
         default:
           suaValidAttributes.push(suaKey);

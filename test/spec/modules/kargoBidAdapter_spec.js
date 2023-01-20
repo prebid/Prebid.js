@@ -54,7 +54,7 @@ describe('kargo adapter tests', function () {
           if (noAdServerCurrency) {
             return {};
           }
-          if(nonUSDAdServerCurrency) {
+          if (nonUSDAdServerCurrency) {
             return {adServerCurrency: 'EUR'};
           }
           return {adServerCurrency: 'USD'};
@@ -70,7 +70,7 @@ describe('kargo adapter tests', function () {
             placementId: 'foo',
             socialCanvas: {
               segments: ['segment_1', 'segment_2', 'segment_3'],
-              url: "https://socan.url"
+              url: 'https://socan.url'
             }
           },
           auctionId: '1234098',
@@ -90,18 +90,18 @@ describe('kargo adapter tests', function () {
           bidderRequestsCount: 2,
           bidderWinsCount: 3,
           userIdAsEids: [
-              {
-                "source": "adserver.org",
-                "uids": [
-                    {
-                        "id": "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
-                        "atype": 1,
-                        "ext": {
-                            "rtiPartner": "TDID"
-                        }
-                    }
-                ]
-              }
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'id': 'ed1562d5-e52b-406f-8e65-e5ab3ed5583c',
+                  'atype': 1,
+                  'ext': {
+                    'rtiPartner': 'TDID'
+                  }
+                }
+              ]
+            }
           ],
           floorData: {
             floorMin: 1
@@ -135,14 +135,14 @@ describe('kargo adapter tests', function () {
           },
           ortb2Imp: {
             ext: {
-                data: {
-                    adServer: {
-                        name: "gam",
-                        adSlot: "/22558409563,18834096/dfy_mobile_adhesion"
-                    },
-                    pbAdSlot: "/22558409563,18834096/dfy_mobile_adhesion"
+              data: {
+                adServer: {
+                  name: 'gam',
+                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
                 },
-                gpid: "/22558409563,18834096/dfy_mobile_adhesion"
+                pbAdSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+              },
+              gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
           }
         },
@@ -164,13 +164,13 @@ describe('kargo adapter tests', function () {
           bidderWinsCount: 0,
           ortb2Imp: {
             ext: {
-                data: {
-                    adServer: {
-                        name: "gam",
-                        adSlot: "/22558409563,18834096/dfy_mobile_adhesion"
-                    },
-                    pbAdSlot: "/22558409563,18834096/dfy_mobile_adhesion"
-                }
+              data: {
+                adServer: {
+                  name: 'gam',
+                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                },
+                pbAdSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+              }
             }
           }
         },
@@ -189,12 +189,12 @@ describe('kargo adapter tests', function () {
           },
           ortb2Imp: {
             ext: {
-                data: {
-                    adServer: {
-                        name: "gam",
-                        adSlot: "/22558409563,18834096/dfy_mobile_adhesion"
-                    }
+              data: {
+                adServer: {
+                  name: 'gam',
+                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
                 }
+              }
             }
           }
         }
@@ -279,9 +279,9 @@ describe('kargo adapter tests', function () {
 
     function generatePageView() {
       return {
-        id: "112233",
+        id: '112233',
         timestamp: frozenNow.getTime(),
-        url:  "http://pageview.url"
+        url: 'http://pageview.url'
       }
     }
 
@@ -359,7 +359,7 @@ describe('kargo adapter tests', function () {
     function initializePageView() {
       setLocalStorageItem('pageViewId', 112233);
       setLocalStorageItem('pageViewTimestamp', frozenNow.getTime());
-      setLocalStorageItem('pageViewUrl', "http://pageview.url");
+      setLocalStorageItem('pageViewUrl', 'http://pageview.url');
     }
 
     function initializeEmptyKrgCrbCookie() {
@@ -374,12 +374,12 @@ describe('kargo adapter tests', function () {
       var base = {
         pbv: '$prebid.version$',
         aid: '1234098',
-        sid:  getSessionId(),
+        sid: getSessionId(),
         url: 'https://www.prebid.org',
         timeout: 200,
         ts: frozenNow.getTime(),
         device: {
-          size: [ 
+          size: [
             screen.width,
             screen.height
           ],
@@ -411,7 +411,7 @@ describe('kargo adapter tests', function () {
           {
             code: '101',
             id: '1',
-            pid: "foo",
+            pid: 'foo',
             tid: '10101',
             banner: {
               sizes: [[320, 50], [300, 50]]
@@ -421,37 +421,37 @@ describe('kargo adapter tests', function () {
             bidderWinCount: 3,
             floor: 1,
             fpd: {
-              gpid: "/22558409563,18834096/dfy_mobile_adhesion"
+              gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
           },
           {
             code: '202',
             id: '2',
-            pid: "bar",
+            pid: 'bar',
             tid: '20202',
             video: {
               sizes: [[320, 50], [300, 50]]
             },
             fpd: {
-              gpid: "/22558409563,18834096/dfy_mobile_adhesion"
+              gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
           },
           {
             code: '303',
             id: '3',
-            pid: "bar",
+            pid: 'bar',
             tid: '30303',
             native: {
               sizes: [[320, 50], [300, 50]]
             },
             fpd: {
-              gpid: "/22558409563,18834096/dfy_mobile_adhesion"
+              gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
-          } 
+          }
         ],
         socan: {
           segments: ['segment_1', 'segment_2', 'segment_3'],
-          url: "https://socan.url"
+          url: 'https://socan.url'
         },
         user: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
@@ -467,18 +467,18 @@ describe('kargo adapter tests', function () {
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
           optOut: false,
-          usp: "1---",
+          usp: '1---',
           eids: [
             {
-              source: "adserver.org",
+              source: 'adserver.org',
               uids: [
-                  {
-                      id: "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
-                      atype: 1,
-                      ext: {
-                          rtiPartner: "TDID"
-                      }
+                {
+                  id: 'ed1562d5-e52b-406f-8e65-e5ab3ed5583c',
+                  atype: 1,
+                  ext: {
+                    rtiPartner: 'TDID'
                   }
+                }
               ]
             }
           ],
@@ -492,34 +492,34 @@ describe('kargo adapter tests', function () {
       if (excludeUserIds === true) {
         base.user = {
           crbIDs: {},
-          usp: "1---",
+          usp: '1---',
           eids: [
             {
-              source: "adserver.org",
+              source: 'adserver.org',
               uids: [
-                  {
-                      id: "ed1562d5-e52b-406f-8e65-e5ab3ed5583c",
-                      atype: 1,
-                      ext: {
-                          rtiPartner: "TDID"
-                      }
+                {
+                  id: 'ed1562d5-e52b-406f-8e65-e5ab3ed5583c',
+                  atype: 1,
+                  ext: {
+                    rtiPartner: 'TDID'
                   }
+                }
               ]
             }
           ]
         };
       }
 
-      if(expectedPage) {
+      if (expectedPage) {
         base.page = expectedPage;
       }
 
-      if(currency) {
+      if (currency) {
         base.cur = currency
       }
 
-      const reqCount = requestCount++ 
-      if(reqCount > 0) {
+      const reqCount = requestCount++
+      if (reqCount > 0) {
         base.requestCount = reqCount
       }
 
@@ -545,7 +545,7 @@ describe('kargo adapter tests', function () {
 
       var request = spec.buildRequests(clonedBids, payload);
       var krakenParams = request.data;
-      
+
       expect(request.url).to.equal('https://krk2.kargo.com/api/v1/prebid');
       expect(request.method).to.equal('POST');
       expect(request.timeout).to.equal(200);
@@ -641,7 +641,7 @@ describe('kargo adapter tests', function () {
       simulateNonUSDAdServerCurrency();
       initializeKrgCrb();
       initializePageView();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView(), "EUR"));
+      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView(), 'EUR'));
     });
 
     it('sends gdpr consent', function () {
@@ -848,8 +848,6 @@ describe('kargo adapter tests', function () {
       sandbox.stub(spec, '_getCrb').callsFake(function() {
         return crb;
       });
-
-
     });
 
     function getUserSyncsWhenAllowed(gdprConsent, usPrivacy) {
