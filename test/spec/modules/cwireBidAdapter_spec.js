@@ -275,7 +275,6 @@ describe('C-WIRE bid adapter', () => {
       expect(valid).to.be.true;
     })
 
-
     it('build request adds pageId', function () {
       let bidRequest = deepClone(bidRequests[0]);
 
