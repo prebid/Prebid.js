@@ -25,6 +25,10 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
+let timer = null;
+let isDone;
+let loadIfMissingCb;
+let iabCmpHasLoaded = false;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -85,6 +89,23 @@ function lookupIabConsent({onSuccess, onError}) {
         processCmpData(tcfData, {onSuccess, onError});
       } else {
         provisionalConsent = tcfData;
+
+        if (!iabCmpHasLoaded && !isNaN(actionTimeout)) {
+          iabCmpHasLoaded = true;
+
+          if (timer != null) {
+            clearTimeout(timer);
+            timer = null;
+          }
+
+          if (actionTimeout === 0) {
+            onTimeout();
+          } else {
+            timer = window.setTimeout(onTimeout, actionTimeout);
+          }
+        }
+
+        iabCmpHasLoaded = true;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -157,26 +178,28 @@ function lookupIabConsent({onSuccess, onError}) {
   }
 }
 
+function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
+  if (timer != null) {
+    clearTimeout(timer);
+  }
+
+  isDone = true;
+  gdprDataHandler.setConsentData(consentData);
+  if (typeof loadIfMissingCb === 'function') {
+    loadIfMissingCb(shouldCancelAuction, errMsg, ...extraArgs);
+  }
+}
+
 /**
  * Look up consent data and store it in the `consentData` global as well as `adapterManager.js`' gdprDataHandler.
  *
  * @param cb A callback that takes: a boolean that is true if the auction should be canceled; an error message and extra
  * error arguments that will be undefined if there's no error.
  */
-export function loadConsentData(cb, useActionTimeout, callMap = cmpCallMap, timeout = setTimeout) {
-  let isDone = false;
-  let timer = null;
+export function loadConsentData(cb, callMap = cmpCallMap) {
+  isDone = false;
 
-  function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
-    if (timer != null) {
-      clearTimeout(timer);
-    }
-    isDone = true;
-    gdprDataHandler.setConsentData(consentData);
-    if (typeof cb === 'function') {
-      cb(shouldCancelAuction, errMsg, ...extraArgs);
-    }
-  }
+  if (cb) loadIfMissingCb = cb;
 
   if (!includes(Object.keys(callMap), userCMP)) {
     done(null, false, `CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
@@ -192,28 +215,25 @@ export function loadConsentData(cb, useActionTimeout, callMap = cmpCallMap, time
   callMap[userCMP](callbacks);
 
   if (!isDone) {
-    const onTimeout = () => {
-      const continueToAuction = (data) => {
-        done(data, false, 'CMP did not load, continuing auction...');
-      }
-
-      processCmpData(provisionalConsent, {
-        onSuccess: continueToAuction,
-        onError: () => continueToAuction(storeConsentData(undefined))
-      })
-    }
     if (consentTimeout === 0) {
       onTimeout();
-    } else if (useActionTimeout && actionTimeout) {
-      if (timer != null) {
-        clearTimeout(timer);
-      }
-
-      timer = timeout(onTimeout, actionTimeout);
     } else {
-      timer = timeout(onTimeout, consentTimeout);
+      if (timer === null) {
+        timer = window.setTimeout(onTimeout, consentTimeout);
+      }
     }
   }
+}
+
+const onTimeout = () => {
+  const continueToAuction = (data) => {
+    done(data, false, 'CMP did not load, continuing auction...');
+  }
+
+  processCmpData(provisionalConsent, {
+    onSuccess: continueToAuction,
+    onError: () => continueToAuction(storeConsentData(undefined))
+  })
 }
 
 /**
@@ -226,7 +246,7 @@ function loadIfMissing(cb) {
     // eslint-disable-next-line standard/no-callback-literal
     cb(false);
   } else {
-    loadConsentData(cb, true);
+    loadConsentData(cb);
   }
 }
 
@@ -322,6 +342,8 @@ export function resetConsentData() {
  * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
+  // eslint-disable-next-line no-console
+  console.log('setConsentConfig func invoked');
   // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
   config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
