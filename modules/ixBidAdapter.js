@@ -898,7 +898,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       const clonedRObject = deepClone(r);
 
       clonedRObject.site = mergeDeep({}, clonedRObject.site, site);
-      clonedRObject.user = mergeDeep({}, clonedRObject.user, user);
+      clonedRObject.user = mergeDeep({}, clonedRObject.user, user);      
 
       const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
 
@@ -949,6 +949,331 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       });
 
       currentRequestSize = baseRequestSize;
+      r.imp = [];
+      isFpdAdded = false;
+    }
+  }
+
+  return requests;
+}
+
+/**
+ * Builds a request object to be sent to the ad server based on bid requests.
+ *
+ * @param  {array}  validBidRequests A list of valid bid request config objects.
+ * @param  {object} bidderRequest    An object containing other info like gdprConsent.
+ * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transactionId
+ * @param  {array}  version          Endpoint version denoting banner, video or native.
+ * @return {array}                   List of objects describing the request to the server.
+ *
+ */
+function buildRequest_v2(validBidRequests, bidderRequest, impressions, version) {
+  // Always use secure HTTPS protocol.
+  let baseUrl = SECURE_BID_URL;
+  // Get ids from Prebid User ID Modules
+  let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
+  let userEids = eidInfo.toSend;
+  const pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
+
+  // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
+  // and if the data for the partner exist
+  if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
+    let identityInfo = window.headertag.getIdentityInfo();
+    if (identityInfo && typeof identityInfo === 'object') {
+      for (const partnerName in identityInfo) {
+        if (identityInfo.hasOwnProperty(partnerName)) {
+          let response = identityInfo[partnerName];
+          if (!response.responsePending && response.data && typeof response.data === 'object' &&
+            Object.keys(response.data).length && !eidInfo.seenSources[response.data.source]) {
+            userEids.push(response.data);
+          }
+        }
+      }
+    }
+  }
+
+  // If `roundel` alias bidder, only send requests if liveramp ids exist.
+  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
+    return [];
+  }
+
+  const r = {};
+  const tmax = deepAccess(bidderRequest, 'timeout');
+  // Since bidderRequestId are the same for different bid request, just use the first one.
+  r.id = validBidRequests[0].bidderRequestId.toString();
+  r.site = {};
+  r.ext = {};
+  r.ext.source = 'prebid';
+  r.ext.ixdiag = {};
+  r.ext.ixdiag.ls = storage.localStorageIsEnabled();
+  r.imp = [];
+  r.at = 1;
+
+  // getting ixdiags for adunits of the video, outstream & multi format (MF) style
+  let ixdiag = buildIXDiag(validBidRequests);
+  for (var key in ixdiag) {
+    r.ext.ixdiag[key] = ixdiag[key];
+  }
+
+  if (tmax) {
+    r.ext.ixdiag.tmax = tmax;
+  }
+
+  if (config.getConfig('userSync')) {
+    r.ext.ixdiag.syncsPerBidder = config.getConfig('userSync').syncsPerBidder;
+  }
+
+  // Get cached errors stored in LocalStorage
+  const cachedErrors = getCachedErrors();
+
+  if (!isEmpty(cachedErrors)) {
+    r.ext.ixdiag.err = cachedErrors;
+  }
+
+  // Add number of available imps to ixDiag.
+  r.ext.ixdiag.imps = Object.keys(impressions).length;
+
+  // set source.tid to auctionId for outgoing request to Exchange.
+  r.source = {
+    tid: validBidRequests[0].auctionId,
+  }
+
+  // if an schain is provided, send it along
+  if (validBidRequests[0].schain) {
+    r.source.ext = {};
+    r.source.ext.schain = validBidRequests[0].schain;
+  }
+
+  if (userEids.length > 0) {
+    r.user = {};
+    r.user.eids = userEids;
+  }
+
+  if (document.referrer && document.referrer !== '') {
+    r.site.ref = document.referrer;
+  }
+
+  // Apply GDPR information to the request if GDPR is enabled.
+  if (bidderRequest) {
+    if (bidderRequest.gdprConsent) {
+      gdprConsent = bidderRequest.gdprConsent;
+
+      if (gdprConsent.hasOwnProperty('gdprApplies')) {
+        r.regs = {
+          ext: {
+            gdpr: gdprConsent.gdprApplies ? 1 : 0
+          }
+        };
+      }
+
+      if (gdprConsent.hasOwnProperty('consentString')) {
+        r.user = r.user || {};
+        r.user.ext = {
+          consent: gdprConsent.consentString || ''
+        };
+
+        if (gdprConsent.hasOwnProperty('addtlConsent') && gdprConsent.addtlConsent) {
+          r.user.ext.consented_providers_settings = {
+            consented_providers: gdprConsent.addtlConsent
+          };
+        }
+      }
+    }
+
+    if (bidderRequest.uspConsent) {
+      deepSetValue(r, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      usPrivacy = bidderRequest.uspConsent;
+    }
+
+    if (pageUrl) {
+      r.site.page = pageUrl;
+    }
+
+    if (bidderRequest.gppConsent) {
+      deepSetValue(r, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(r, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    }
+  }
+
+  if (config.getConfig('coppa')) {
+    deepSetValue(r, 'regs.coppa', 1);
+  }
+
+  const payload = {};
+  // Use the siteId in the first bid request as the main siteId.
+  siteID = validBidRequests[0].params.siteId;
+  payload.s = siteID;
+
+  // Parse additional runtime configs.
+  const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
+  const otherIxConfig = config.getConfig(bidderCode);
+  const requests = [];
+  let requestSequenceNumber = 0;
+  const transactionIds = Object.keys(impressions);
+  let isFpdAdded = false;
+
+  if (otherIxConfig) {
+    // Append firstPartyData to r.site.page if firstPartyData exists.
+    if (typeof otherIxConfig.firstPartyData === 'object') {
+      const firstPartyData = otherIxConfig.firstPartyData;
+      let firstPartyString = '?';
+      for (const key in firstPartyData) {
+        if (firstPartyData.hasOwnProperty(key)) {
+          firstPartyString += `${encodeURIComponent(key)}=${encodeURIComponent(firstPartyData[key])}&`;
+        }
+      }
+      firstPartyString = firstPartyString.slice(0, -1);
+
+      if ('page' in r.site) {
+        r.site.page += firstPartyString;
+      } else {
+        r.site.page = firstPartyString;
+      } 
+      
+    }
+  }
+
+  for (let adUnitIndex = 0; adUnitIndex < transactionIds.length; adUnitIndex++) {
+    if (requests.length >= MAX_REQUEST_LIMIT) {
+      break;
+    }
+
+    const adUnitImpressions = impressions[transactionIds[adUnitIndex]];
+    const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
+    const sourceImpressions = { ixImps, missingBannerImpressions };
+    const impressionObjects = Object.keys(sourceImpressions)
+      .map((key) => sourceImpressions[key])
+      .filter(item => Array.isArray(item))
+      .reduce((acc, curr) => acc.concat(...curr), []);
+
+    const gpid = impressions[transactionIds[adUnitIndex]].gpid;
+    const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
+    const tid = impressions[transactionIds[adUnitIndex]].tid;
+    const sid = impressions[transactionIds[adUnitIndex]].sid
+
+    if (impressionObjects.length && BANNER in impressionObjects[0]) {
+      const { id, banner: { topframe } } = impressionObjects[0];
+      const _bannerImpression = {
+        id,
+        banner: {
+          topframe,
+          format: impressionObjects.map(({ banner: { w, h }, ext }) => ({ w, h, ext }))
+        },
+      };
+
+      for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
+        // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
+        if (_bannerImpression.banner.format[i].ext != null && _bannerImpression.banner.format[i].ext.sid != null) {
+          delete _bannerImpression.banner.format[i].ext.sid;
+        }
+
+        // add floor per size
+        if ('bidfloor' in impressionObjects[i]) {
+          _bannerImpression.banner.format[i].ext.bidfloor = impressionObjects[i].bidfloor
+        }
+      }
+
+      const position = impressions[transactionIds[adUnitIndex]].pos;
+      if (isInteger(position)) {
+        _bannerImpression.banner.pos = position;
+      }
+
+      if (dfpAdUnitCode || gpid || tid || sid) {
+        _bannerImpression.ext = {};
+        _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
+        _bannerImpression.ext.gpid = gpid;
+        _bannerImpression.ext.tid = tid;
+        _bannerImpression.ext.sid = sid;
+      }
+
+      if ('bidfloor' in impressionObjects[0]) {
+        _bannerImpression.bidfloor = impressionObjects[0].bidfloor;
+      }
+
+      if ('bidfloorcur' in impressionObjects[0]) {
+        _bannerImpression.bidfloorcur = impressionObjects[0].bidfloorcur;
+      }
+
+      r.imp.push(_bannerImpression);
+    } else {
+      // set imp.ext.gpid to resolved gpid for each imp
+      impressionObjects.forEach(imp => deepSetValue(imp, 'ext.gpid', gpid));
+      r.imp.push(...impressionObjects);
+    }
+
+    const fpd = deepAccess(bidderRequest, 'ortb2') || {};
+    if (!isEmpty(fpd) && !isFpdAdded) {
+      r.ext.ixdiag.fpd = true;
+
+      const site = { ...(fpd.site || fpd.context) };
+
+      Object.keys(site).forEach(key => {
+        if (FIRST_PARTY_DATA.SITE.indexOf(key) === -1) {
+          delete site[key];
+        }
+      });
+
+      const user = { ...fpd.user };
+
+      Object.keys(user).forEach(key => {
+        if (FIRST_PARTY_DATA.USER.indexOf(key) === -1) {
+          delete user[key];
+        }
+      });
+
+      if (fpd.device) {
+        const sua = {...fpd.device.sua};
+        if (!isEmpty(sua)) {
+          deepSetValue(r, 'device.sua', sua);
+        }
+      }
+
+      if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
+        if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+          deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
+        }
+
+        if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
+          deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+        }
+      }
+
+      const clonedRObject = deepClone(r);
+
+      clonedRObject.site = mergeDeep({}, clonedRObject.site, site);
+      clonedRObject.user = mergeDeep({}, clonedRObject.user, user);
+ 
+      r.site = mergeDeep({}, r.site, site);
+      r.user = mergeDeep({}, r.user, user);
+      isFpdAdded = true;
+      
+    }
+
+    // add identifiers info to ixDiag
+    const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot;
+    const tagId = impressions[transactionIds[adUnitIndex]].tagId;
+    const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
+    const divId = impressions[transactionIds[adUnitIndex]].divId;
+    if (pbaAdSlot || tagId || adUnitCode || divId) {      
+      r.ext.ixdiag.pbadslot = pbaAdSlot;
+      r.ext.ixdiag.tagid = tagId;
+      r.ext.ixdiag.adunitcode = adUnitCode;
+      r.ext.ixdiag.divId = divId;
+    }
+
+    const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
+
+    if (isLastAdUnit) {
+      requests.push({
+        method: 'POST',
+        url: baseUrl + '?s=' + siteID,
+        data: deepClone(r),
+        option: {
+          contentType: 'text/plain',
+        },
+        validBidRequests
+      });
+
       r.imp = [];
       isFpdAdded = false;
     }
@@ -1502,14 +1827,26 @@ export const spec = {
     }
 
     // Step 4: Build banner, video & native requests
-    if (Object.keys(bannerImps).length > 0) {
-      reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
-    }
-    if (Object.keys(videoImps).length > 0) {
-      reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
-    }
-    if (Object.keys(nativeImps).length > 0) {
-      reqs.push(...buildRequest(validBidRequests, bidderRequest, nativeImps));
+    if (FEATURE_TOGGLES.isFeatureEnabled("pbjs_use_build_request_v2")) {
+      if (Object.keys(bannerImps).length > 0) {
+        reqs.push(...buildRequest_v2(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
+      }
+      if (Object.keys(videoImps).length > 0) {
+        reqs.push(...buildRequest_v2(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
+      }
+      if (Object.keys(nativeImps).length > 0) {
+        reqs.push(...buildRequest_v2(validBidRequests, bidderRequest, nativeImps));
+      }
+    } else {
+      if (Object.keys(bannerImps).length > 0) {
+        reqs.push(...buildRequest(validBidRequests, bidderRequest, bannerImps, BANNER_ENDPOINT_VERSION));
+      }
+      if (Object.keys(videoImps).length > 0) {
+        reqs.push(...buildRequest(validBidRequests, bidderRequest, videoImps, VIDEO_ENDPOINT_VERSION));
+      }
+      if (Object.keys(nativeImps).length > 0) {
+        reqs.push(...buildRequest(validBidRequests, bidderRequest, nativeImps));
+      }
     }
 
     return reqs;
