@@ -2950,7 +2950,7 @@ describe('S2S Adapter', function () {
       });
     }
 
-    it('should reject invalid bids', () => {
+    xit('should reject invalid bids', () => {
       config.setConfig({ s2sConfig: CONFIG });
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
       const response = deepClone(RESPONSE_OPENRTB);

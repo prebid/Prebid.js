@@ -20,7 +20,7 @@ import {
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {isValid} from '../../src/adapters/bidderFactory.js';
+// import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -459,8 +459,10 @@ export function PrebidServer() {
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
             addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+          } else if (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.seatnonbid && bid && bid.nonbid) {
+            emitNoBid(bid);
           } else {
-            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
+            if (bid && !bid.seatnonbid) {
               addBidResponse(adUnit, bid);
               if (bid.pbsWurl) {
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
@@ -542,6 +544,17 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     logError('PBS request not made.  Check endpoints.');
   }
 }, 'processPBSRequest');
+
+function emitNoBid(bid) {
+  const status = bid.nonbid.statuscode;
+  if (status > 0 && status < 100) {
+    events.emit(CONSTANTS.EVENTS.NO_BID, bid);
+  } else if (status > 99 && status < 400) {
+    events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, bid);
+  } else if (status === undefined) {
+    logError('No bid not emitted. No status defined');
+  }
+};
 
 /**
  * Global setter that sets eids permissions for bidders

@@ -127,7 +127,13 @@ export function ortbConverter({
           logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
         })
       ).filter(Boolean);
-      return buildResponse(bidResponses, response, augmentContext(ctx.req));
+      const bidNonResposes = ((response.ext && response.ext.seatnonbid) || []).flatMap(seatnonbid =>
+        (seatnonbid.nonbid || []).map(nonbid => {
+          return augmentContext({addUnit: nonbid.impid}, {bid: {nonbid, seatnonbid, ortbResponse: response}})
+        })
+      ).filter(Boolean);
+      const responses = bidResponses.concat(bidNonResposes);
+      return buildResponse(responses, response, augmentContext(ctx.req));
     }
   }
 }
