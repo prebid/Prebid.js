@@ -21,7 +21,8 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'revenuemaker' },
-    { code: 'firstid-ssp' },
+    { code: 'first-id', gvlid: 1178 },
+    { code: 'adwebone' },
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
