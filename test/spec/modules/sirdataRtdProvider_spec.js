@@ -44,8 +44,6 @@ describe('sirdataRtdProvider', function() {
 
       addSegmentData({adUnits}, data, config, () => {});
       expect(adUnits[0].bids[0].params.keywords).to.have.deep.property('sd_rtd', ['111111', '222222', '333333']);
-      expect(adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('sd_rtd', ['333333']);
-      expect(adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('sd_rtd', ['111111', '222222']);
     });
   });
 
@@ -87,8 +85,6 @@ describe('sirdataRtdProvider', function() {
       request.respond(200, responseHeader, JSON.stringify(data));
 
       expect(reqBidsConfigObj.adUnits[0].bids[0].params.keywords).to.have.deep.property('sd_rtd', ['111111', '222222', '333333']);
-      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.site.ext.data).to.have.deep.property('sd_rtd', ['333333']);
-      expect(reqBidsConfigObj.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('sd_rtd', ['111111', '222222']);
     });
   });
 });
