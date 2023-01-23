@@ -277,7 +277,7 @@ describe('consentManagement', function () {
         requestBidsHook(() => { hookRan = true; }, {});
         expect(hookRan).to.be.true;
         expect(gdprDataHandler.ready).to.be.true;
-      });
+      })
 
       it('should throw proper errors when CMP is not found', function () {
         setConsentConfig(goodConfig);
@@ -293,471 +293,471 @@ describe('consentManagement', function () {
         expect(gdprDataHandler.ready).to.be.true;
       });
 
-      // it('should not trip when adUnits have no size', () => {
-      //   setConsentConfig(staticConfig);
-      //   let ran = false;
-      //   requestBidsHook(() => {
-      //     ran = true;
-      //   }, {adUnits: [{code: 'test', mediaTypes: {video: {}}}]});
-      //   return gdprDataHandler.promise.then(() => {
-      //     expect(ran).to.be.true;
-      //   });
-      // });
+      it('should not trip when adUnits have no size', () => {
+        setConsentConfig(staticConfig);
+        let ran = false;
+        requestBidsHook(() => {
+          ran = true;
+        }, {adUnits: [{code: 'test', mediaTypes: {video: {}}}]});
+        return gdprDataHandler.promise.then(() => {
+          expect(ran).to.be.true;
+        });
+      });
 
-      // it('should continue the auction immediately, without consent data, if timeout is 0', (done) => {
-      //   setConsentConfig({
-      //     cmpApi: 'iab',
-      //     timeout: 0,
-      //     defaultGdprScope: true
-      //   });
-      //   window.__tcfapi = function () {};
-      //   try {
-      //     requestBidsHook(() => {
-      //       const consent = gdprDataHandler.getConsentData();
-      //       expect(consent.gdprApplies).to.be.true;
-      //       expect(consent.consentString).to.be.undefined;
-      //       done();
-      //     }, {})
-      //   } finally {
-      //     delete window.__tcfapi;
-      //   }
-      // })
+      it('should continue the auction immediately, without consent data, if timeout is 0', (done) => {
+        setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 0,
+          defaultGdprScope: true
+        });
+        window.__tcfapi = function () {};
+        try {
+          requestBidsHook(() => {
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.gdprApplies).to.be.true;
+            expect(consent.consentString).to.be.undefined;
+            done();
+          }, {})
+        } finally {
+          delete window.__tcfapi;
+        }
+      })
     });
 
-    // describe('already known consentData:', function () {
-    //   let cmpStub = sinon.stub();
+    describe('already known consentData:', function () {
+      let cmpStub = sinon.stub();
 
-    //   function mockCMP(cmpResponse) {
-    //     return function(...args) {
-    //       args[2](Object.assign({eventStatus: 'tcloaded'}, cmpResponse), true);
-    //     }
-    //   }
+      function mockCMP(cmpResponse) {
+        return function(...args) {
+          args[2](Object.assign({eventStatus: 'tcloaded'}, cmpResponse), true);
+        }
+      }
 
-    //   beforeEach(function () {
-    //     didHookReturn = false;
-    //     window.__tcfapi = function () { };
-    //   });
+      beforeEach(function () {
+        didHookReturn = false;
+        window.__tcfapi = function () { };
+      });
 
-    //   afterEach(function () {
-    //     config.resetConfig();
-    //     cmpStub.restore();
-    //     delete window.__tcfapi;
-    //     resetConsentData();
-    //   });
+      afterEach(function () {
+        config.resetConfig();
+        cmpStub.restore();
+        delete window.__tcfapi;
+        resetConsentData();
+      });
 
-    //   it('should bypass CMP and simply use previously stored consentData', function () {
-    //     let testConsentData = {
-    //       gdprApplies: true,
-    //       tcString: 'xyz',
-    //     };
+      it('should bypass CMP and simply use previously stored consentData', function () {
+        let testConsentData = {
+          gdprApplies: true,
+          tcString: 'xyz',
+        };
 
-    //     cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
-    //     setConsentConfig(goodConfig);
-    //     requestBidsHook(() => { }, {});
-    //     cmpStub.reset();
+        cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
+        setConsentConfig(goodConfig);
+        requestBidsHook(() => { }, {});
+        cmpStub.reset();
 
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, {});
-    //     let consent = gdprDataHandler.getConsentData();
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {});
+        let consent = gdprDataHandler.getConsentData();
 
-    //     expect(didHookReturn).to.be.true;
-    //     expect(consent.consentString).to.equal(testConsentData.tcString);
-    //     expect(consent.gdprApplies).to.be.true;
-    //     sinon.assert.notCalled(cmpStub);
-    //   });
+        expect(didHookReturn).to.be.true;
+        expect(consent.consentString).to.equal(testConsentData.tcString);
+        expect(consent.gdprApplies).to.be.true;
+        sinon.assert.notCalled(cmpStub);
+      });
 
-    //   it('should not set consent.gdprApplies to true if defaultGdprScope is true', function () {
-    //     let testConsentData = {
-    //       gdprApplies: false,
-    //       tcString: 'xyz',
-    //     };
+      it('should not set consent.gdprApplies to true if defaultGdprScope is true', function () {
+        let testConsentData = {
+          gdprApplies: false,
+          tcString: 'xyz',
+        };
 
-    //     cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
+        cmpStub = sinon.stub(window, '__tcfapi').callsFake(mockCMP(testConsentData));
 
-    //     setConsentConfig({
-    //       cmpApi: 'iab',
-    //       timeout: 7500,
-    //       defaultGdprScope: true
-    //     });
+        setConsentConfig({
+          cmpApi: 'iab',
+          timeout: 7500,
+          defaultGdprScope: true
+        });
 
-    //     requestBidsHook(() => {
-    //       didHookReturn = true;
-    //     }, {});
+        requestBidsHook(() => {
+          didHookReturn = true;
+        }, {});
 
-    //     let consent = gdprDataHandler.getConsentData();
+        let consent = gdprDataHandler.getConsentData();
 
-    //     expect(consent.gdprApplies).to.be.false;
-    //   });
-    // });
+        expect(consent.gdprApplies).to.be.false;
+      });
+    });
 
-    // describe('iframe tests', function () {
-    //   let cmpPostMessageCb = () => { };
-    //   let stringifyResponse;
+    describe('iframe tests', function () {
+      let cmpPostMessageCb = () => { };
+      let stringifyResponse;
 
-    //   function createIFrameMarker(frameName) {
-    //     let ifr = document.createElement('iframe');
-    //     ifr.width = 0;
-    //     ifr.height = 0;
-    //     ifr.name = frameName;
-    //     document.body.appendChild(ifr);
-    //     return ifr;
-    //   }
+      function createIFrameMarker(frameName) {
+        let ifr = document.createElement('iframe');
+        ifr.width = 0;
+        ifr.height = 0;
+        ifr.name = frameName;
+        document.body.appendChild(ifr);
+        return ifr;
+      }
 
-    //   function creatCmpMessageHandler(prefix, returnValue) {
-    //     return function (event) {
-    //       if (event && event.data) {
-    //         let data = event.data;
-    //         if (data[`${prefix}Call`]) {
-    //           let callId = data[`${prefix}Call`].callId;
-    //           let response = {
-    //             [`${prefix}Return`]: {
-    //               callId,
-    //               returnValue,
-    //               success: true
-    //             }
-    //           };
-    //           event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
-    //         }
-    //       }
-    //     }
-    //   }
+      function creatCmpMessageHandler(prefix, returnValue) {
+        return function (event) {
+          if (event && event.data) {
+            let data = event.data;
+            if (data[`${prefix}Call`]) {
+              let callId = data[`${prefix}Call`].callId;
+              let response = {
+                [`${prefix}Return`]: {
+                  callId,
+                  returnValue,
+                  success: true
+                }
+              };
+              event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
+            }
+          }
+        }
+      }
 
-    //   function testIFramedPage(testName, messageFormatString, tarConsentString, ver) {
-    //     it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
-    //       stringifyResponse = messageFormatString;
-    //       setConsentConfig(goodConfig);
-    //       requestBidsHook(() => {
-    //         let consent = gdprDataHandler.getConsentData();
-    //         sinon.assert.notCalled(utils.logError);
-    //         expect(consent.consentString).to.equal(tarConsentString);
-    //         expect(consent.gdprApplies).to.be.true;
-    //         expect(consent.apiVersion).to.equal(ver);
-    //         done();
-    //       }, {});
-    //     });
-    //   }
+      function testIFramedPage(testName, messageFormatString, tarConsentString, ver) {
+        it(`should return the consent string from a postmessage + addEventListener response - ${testName}`, (done) => {
+          stringifyResponse = messageFormatString;
+          setConsentConfig(goodConfig);
+          requestBidsHook(() => {
+            let consent = gdprDataHandler.getConsentData();
+            sinon.assert.notCalled(utils.logError);
+            expect(consent.consentString).to.equal(tarConsentString);
+            expect(consent.gdprApplies).to.be.true;
+            expect(consent.apiVersion).to.equal(ver);
+            done();
+          }, {});
+        });
+      }
 
-    //   beforeEach(function () {
-    //     sinon.stub(utils, 'logError');
-    //     sinon.stub(utils, 'logWarn');
-    //   });
+      beforeEach(function () {
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+      });
 
-    //   afterEach(function () {
-    //     utils.logError.restore();
-    //     utils.logWarn.restore();
-    //     config.resetConfig();
-    //     resetConsentData();
-    //   });
+      afterEach(function () {
+        utils.logError.restore();
+        utils.logWarn.restore();
+        config.resetConfig();
+        resetConsentData();
+      });
 
-    //   describe('v2 CMP workflow for iframe pages:', function () {
-    //     stringifyResponse = false;
-    //     let ifr2 = null;
+      describe('v2 CMP workflow for iframe pages:', function () {
+        stringifyResponse = false;
+        let ifr2 = null;
 
-    //     beforeEach(function () {
-    //       ifr2 = createIFrameMarker('__tcfapiLocator');
-    //       cmpPostMessageCb = creatCmpMessageHandler('__tcfapi', {
-    //         tcString: 'abc12345234',
-    //         gdprApplies: true,
-    //         purposeOneTreatment: false,
-    //         eventStatus: 'tcloaded'
-    //       });
-    //       window.addEventListener('message', cmpPostMessageCb, false);
-    //     });
+        beforeEach(function () {
+          ifr2 = createIFrameMarker('__tcfapiLocator');
+          cmpPostMessageCb = creatCmpMessageHandler('__tcfapi', {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          });
+          window.addEventListener('message', cmpPostMessageCb, false);
+        });
 
-    //     afterEach(function () {
-    //       delete window.__tcfapi; // deletes the local copy made by the postMessage CMP call function
-    //       document.body.removeChild(ifr2);
-    //       window.removeEventListener('message', cmpPostMessageCb);
-    //     });
+        afterEach(function () {
+          delete window.__tcfapi; // deletes the local copy made by the postMessage CMP call function
+          document.body.removeChild(ifr2);
+          window.removeEventListener('message', cmpPostMessageCb);
+        });
 
-    //     testIFramedPage('with/JSON response', false, 'abc12345234', 2);
-    //     testIFramedPage('with/String response', true, 'abc12345234', 2);
+        testIFramedPage('with/JSON response', false, 'abc12345234', 2);
+        testIFramedPage('with/String response', true, 'abc12345234', 2);
 
-    //     it('should contain correct v2 CMP definition', (done) => {
-    //       setConsentConfig(goodConfig);
-    //       requestBidsHook(() => {
-    //         const nbArguments = window.__tcfapi.toString().split('\n')[0].split(', ').length;
-    //         expect(nbArguments).to.equal(4);
-    //         done();
-    //       }, {});
-    //     });
-    //   });
-    // });
+        it('should contain correct v2 CMP definition', (done) => {
+          setConsentConfig(goodConfig);
+          requestBidsHook(() => {
+            const nbArguments = window.__tcfapi.toString().split('\n')[0].split(', ').length;
+            expect(nbArguments).to.equal(4);
+            done();
+          }, {});
+        });
+      });
+    });
 
-    // describe('direct calls to CMP API tests', function () {
-    //   let cmpStub = sinon.stub();
+    describe('direct calls to CMP API tests', function () {
+      let cmpStub = sinon.stub();
 
-    //   beforeEach(function () {
-    //     didHookReturn = false;
-    //     sinon.stub(utils, 'logError');
-    //     sinon.stub(utils, 'logWarn');
-    //   });
+      beforeEach(function () {
+        didHookReturn = false;
+        sinon.stub(utils, 'logError');
+        sinon.stub(utils, 'logWarn');
+      });
 
-    //   afterEach(function () {
-    //     config.resetConfig();
-    //     cmpStub.restore();
-    //     utils.logError.restore();
-    //     utils.logWarn.restore();
-    //     resetConsentData();
-    //   });
+      afterEach(function () {
+        config.resetConfig();
+        cmpStub.restore();
+        utils.logError.restore();
+        utils.logWarn.restore();
+        resetConsentData();
+      });
 
-    //   describe('v2 CMP workflow for normal pages:', function () {
-    //     beforeEach(function() {
-    //       window.__tcfapi = function () { };
-    //     });
+      describe('v2 CMP workflow for normal pages:', function () {
+        beforeEach(function() {
+          window.__tcfapi = function () { };
+        });
 
-    //     afterEach(function () {
-    //       delete window.__tcfapi;
-    //     });
+        afterEach(function () {
+          delete window.__tcfapi;
+        });
 
-    //     it('performs lookup check and stores consentData for a valid existing user', function () {
-    //       let testConsentData = {
-    //         tcString: 'abc12345234',
-    //         gdprApplies: true,
-    //         purposeOneTreatment: false,
-    //         eventStatus: 'tcloaded'
-    //       };
-    //       cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-    //         args[2](testConsentData, true);
-    //       });
+        it('performs lookup check and stores consentData for a valid existing user', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
 
-    //       setConsentConfig(goodConfig);
+          setConsentConfig(goodConfig);
 
-    //       requestBidsHook(() => {
-    //         didHookReturn = true;
-    //       }, {});
-    //       let consent = gdprDataHandler.getConsentData();
-    //       sinon.assert.notCalled(utils.logError);
-    //       expect(didHookReturn).to.be.true;
-    //       expect(consent.consentString).to.equal(testConsentData.tcString);
-    //       expect(consent.gdprApplies).to.be.true;
-    //       expect(consent.apiVersion).to.equal(2);
-    //     });
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
 
-    //     it('produces gdpr metadata', function () {
-    //       let testConsentData = {
-    //         tcString: 'abc12345234',
-    //         gdprApplies: true,
-    //         purposeOneTreatment: false,
-    //         eventStatus: 'tcloaded',
-    //         vendorData: {
-    //           tcString: 'abc12345234'
-    //         }
-    //       };
-    //       cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-    //         args[2](testConsentData, true);
-    //       });
+        it('produces gdpr metadata', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded',
+            vendorData: {
+              tcString: 'abc12345234'
+            }
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
 
-    //       setConsentConfig(goodConfig);
+          setConsentConfig(goodConfig);
 
-    //       requestBidsHook(() => {
-    //         didHookReturn = true;
-    //       }, {});
-    //       let consentMeta = gdprDataHandler.getConsentMeta();
-    //       sinon.assert.notCalled(utils.logError);
-    //       expect(consentMeta.consentStringSize).to.be.above(0)
-    //       expect(consentMeta.gdprApplies).to.be.true;
-    //       expect(consentMeta.apiVersion).to.equal(2);
-    //       expect(consentMeta.generatedAt).to.be.above(1644367751709);
-    //     });
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consentMeta = gdprDataHandler.getConsentMeta();
+          sinon.assert.notCalled(utils.logError);
+          expect(consentMeta.consentStringSize).to.be.above(0)
+          expect(consentMeta.gdprApplies).to.be.true;
+          expect(consentMeta.apiVersion).to.equal(2);
+          expect(consentMeta.generatedAt).to.be.above(1644367751709);
+        });
 
-    //     it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {
-    //       let testConsentData = {
-    //         tcString: 'abc12345234',
-    //         addtlConsent: 'superduperstring',
-    //         gdprApplies: true,
-    //         purposeOneTreatment: false,
-    //         eventStatus: 'tcloaded'
-    //       };
-    //       cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-    //         args[2](testConsentData, true);
-    //       });
+        it('performs lookup check and stores consentData for a valid existing user with additional consent', function () {
+          let testConsentData = {
+            tcString: 'abc12345234',
+            addtlConsent: 'superduperstring',
+            gdprApplies: true,
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
 
-    //       setConsentConfig(goodConfig);
+          setConsentConfig(goodConfig);
 
-    //       requestBidsHook(() => {
-    //         didHookReturn = true;
-    //       }, {});
-    //       let consent = gdprDataHandler.getConsentData();
-    //       sinon.assert.notCalled(utils.logError);
-    //       expect(didHookReturn).to.be.true;
-    //       expect(consent.consentString).to.equal(testConsentData.tcString);
-    //       expect(consent.addtlConsent).to.equal(testConsentData.addtlConsent);
-    //       expect(consent.gdprApplies).to.be.true;
-    //       expect(consent.apiVersion).to.equal(2);
-    //     });
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.addtlConsent).to.equal(testConsentData.addtlConsent);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
 
-    //     it('throws an error when processCmpData check fails + does not call requestBids callback', function () {
-    //       let testConsentData = {};
-    //       let bidsBackHandlerReturn = false;
+        it('throws an error when processCmpData check fails + does not call requestBids callback', function () {
+          let testConsentData = {};
+          let bidsBackHandlerReturn = false;
 
-    //       cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-    //         args[2](testConsentData);
-    //       });
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData);
+          });
 
-    //       setConsentConfig(goodConfig);
+          setConsentConfig(goodConfig);
 
-    //       sinon.assert.notCalled(utils.logWarn);
-    //       sinon.assert.notCalled(utils.logError);
+          sinon.assert.notCalled(utils.logWarn);
+          sinon.assert.notCalled(utils.logError);
 
-    //       [utils.logWarn, utils.logError].forEach((stub) => stub.reset());
+          [utils.logWarn, utils.logError].forEach((stub) => stub.reset());
 
-    //       requestBidsHook(() => {
-    //         didHookReturn = true;
-    //       }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
-    //       let consent = gdprDataHandler.getConsentData();
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, { bidsBackHandler: () => bidsBackHandlerReturn = true });
+          let consent = gdprDataHandler.getConsentData();
 
-    //       sinon.assert.calledOnce(utils.logError);
-    //       sinon.assert.notCalled(utils.logWarn);
-    //       expect(didHookReturn).to.be.false;
-    //       expect(bidsBackHandlerReturn).to.be.true;
-    //       expect(consent).to.be.null;
-    //       expect(gdprDataHandler.ready).to.be.true;
-    //     });
+          sinon.assert.calledOnce(utils.logError);
+          sinon.assert.notCalled(utils.logWarn);
+          expect(didHookReturn).to.be.false;
+          expect(bidsBackHandlerReturn).to.be.true;
+          expect(consent).to.be.null;
+          expect(gdprDataHandler.ready).to.be.true;
+        });
 
-    //     describe('when proper consent is not available', () => {
-    //       let tcfStub;
+        describe('when proper consent is not available', () => {
+          let tcfStub;
 
-    //       function runAuction() {
-    //         setConsentConfig({
-    //           cmpApi: 'iab',
-    //           timeout: 10,
-    //           defaultGdprScope: true
-    //         });
-    //         return new Promise((resolve, reject) => {
-    //           requestBidsHook(() => {
-    //             didHookReturn = true;
-    //           }, {});
-    //           setTimeout(() => didHookReturn ? resolve() : reject(new Error('Auction did not run')), 20);
-    //         })
-    //       }
+          function runAuction() {
+            setConsentConfig({
+              cmpApi: 'iab',
+              timeout: 10,
+              defaultGdprScope: true
+            });
+            return new Promise((resolve, reject) => {
+              requestBidsHook(() => {
+                didHookReturn = true;
+              }, {});
+              setTimeout(() => didHookReturn ? resolve() : reject(new Error('Auction did not run')), 20);
+            })
+          }
 
-    //       function mockTcfEvent(tcdata) {
-    //         tcfStub.callsFake((api, version, cb) => {
-    //           if (api === 'addEventListener' && version === 2) {
-    //             // eslint-disable-next-line standard/no-callback-literal
-    //             cb(tcdata, true)
-    //           }
-    //         });
-    //       }
+          function mockTcfEvent(tcdata) {
+            tcfStub.callsFake((api, version, cb) => {
+              if (api === 'addEventListener' && version === 2) {
+                // eslint-disable-next-line standard/no-callback-literal
+                cb(tcdata, true)
+              }
+            });
+          }
 
-    //       beforeEach(() => {
-    //         tcfStub = sinon.stub(window, '__tcfapi');
-    //       });
+          beforeEach(() => {
+            tcfStub = sinon.stub(window, '__tcfapi');
+          });
 
-    //       afterEach(() => {
-    //         tcfStub.restore();
-    //       })
+          afterEach(() => {
+            tcfStub.restore();
+          })
 
-    //       it('should continue auction with null consent when CMP is unresponsive', () => {
-    //         return runAuction().then(() => {
-    //           const consent = gdprDataHandler.getConsentData();
-    //           expect(consent.gdprApplies).to.be.true;
-    //           expect(consent.consentString).to.be.undefined;
-    //           expect(gdprDataHandler.ready).to.be.true;
-    //         });
-    //       });
+          it('should continue auction with null consent when CMP is unresponsive', () => {
+            return runAuction().then(() => {
+              const consent = gdprDataHandler.getConsentData();
+              expect(consent.gdprApplies).to.be.true;
+              expect(consent.consentString).to.be.undefined;
+              expect(gdprDataHandler.ready).to.be.true;
+            });
+          });
 
-    //       it('should use consent provided by events other than tcloaded', () => {
-    //         mockTcfEvent({
-    //           eventStatus: 'cmpuishown',
-    //           tcString: 'mock-consent-string',
-    //           vendorData: {}
-    //         });
-    //         return runAuction().then(() => {
-    //           const consent = gdprDataHandler.getConsentData();
-    //           expect(consent.gdprApplies).to.be.true;
-    //           expect(consent.consentString).to.equal('mock-consent-string');
-    //           expect(consent.vendorData.vendorData).to.eql({});
-    //           expect(gdprDataHandler.ready).to.be.true;
-    //         });
-    //       });
+          it('should use consent provided by events other than tcloaded', () => {
+            mockTcfEvent({
+              eventStatus: 'cmpuishown',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            return runAuction().then(() => {
+              const consent = gdprDataHandler.getConsentData();
+              expect(consent.gdprApplies).to.be.true;
+              expect(consent.consentString).to.equal('mock-consent-string');
+              expect(consent.vendorData.vendorData).to.eql({});
+              expect(gdprDataHandler.ready).to.be.true;
+            });
+          });
 
-    //       Object.entries({
-    //         'null': null,
-    //         'empty': '',
-    //         'undefined': undefined
-    //       }).forEach(([t, cs]) => {
-    //         // some CMPs appear to reply with an empty consent string in 'cmpuishown' - make sure we don't use that
-    //         it(`should NOT use "default" consent if string is ${t}`, () => {
-    //           mockTcfEvent({
-    //             eventStatus: 'cmpuishown',
-    //             tcString: cs,
-    //             vendorData: {random: 'junk'}
-    //           });
-    //           return runAuction().then(() => {
-    //             const consent = gdprDataHandler.getConsentData();
-    //             expect(consent.gdprApplies).to.be.true;
-    //             expect(consent.consentString).to.be.undefined;
-    //             expect(consent.vendorData).to.be.undefined;
-    //           });
-    //         })
-    //       });
-    //     });
+          Object.entries({
+            'null': null,
+            'empty': '',
+            'undefined': undefined
+          }).forEach(([t, cs]) => {
+            // some CMPs appear to reply with an empty consent string in 'cmpuishown' - make sure we don't use that
+            it(`should NOT use "default" consent if string is ${t}`, () => {
+              mockTcfEvent({
+                eventStatus: 'cmpuishown',
+                tcString: cs,
+                vendorData: {random: 'junk'}
+              });
+              return runAuction().then(() => {
+                const consent = gdprDataHandler.getConsentData();
+                expect(consent.gdprApplies).to.be.true;
+                expect(consent.consentString).to.be.undefined;
+                expect(consent.vendorData).to.be.undefined;
+              });
+            })
+          });
+        });
 
-    //     it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
-    //       // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
-    //       let testConsentData = {
-    //         tcString: 'abc12345234',
-    //         purposeOneTreatment: false,
-    //         eventStatus: 'tcloaded'
-    //       };
-    //       cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
-    //         args[2](testConsentData, true);
-    //       });
+        it('It still considers it a valid cmp response if gdprApplies is not a boolean', function () {
+          // gdprApplies is undefined, should just still store consent response but use whatever defaultGdprScope was
+          let testConsentData = {
+            tcString: 'abc12345234',
+            purposeOneTreatment: false,
+            eventStatus: 'tcloaded'
+          };
+          cmpStub = sinon.stub(window, '__tcfapi').callsFake((...args) => {
+            args[2](testConsentData, true);
+          });
 
-    //       setConsentConfig({
-    //         cmpApi: 'iab',
-    //         timeout: 7500,
-    //         defaultGdprScope: true
-    //       });
+          setConsentConfig({
+            cmpApi: 'iab',
+            timeout: 7500,
+            defaultGdprScope: true
+          });
 
-    //       requestBidsHook(() => {
-    //         didHookReturn = true;
-    //       }, {});
-    //       let consent = gdprDataHandler.getConsentData();
-    //       sinon.assert.notCalled(utils.logError);
-    //       expect(didHookReturn).to.be.true;
-    //       expect(consent.consentString).to.equal(testConsentData.tcString);
-    //       expect(consent.gdprApplies).to.be.true;
-    //       expect(consent.apiVersion).to.equal(2);
-    //     });
-    //   });
-    // });
+          requestBidsHook(() => {
+            didHookReturn = true;
+          }, {});
+          let consent = gdprDataHandler.getConsentData();
+          sinon.assert.notCalled(utils.logError);
+          expect(didHookReturn).to.be.true;
+          expect(consent.consentString).to.equal(testConsentData.tcString);
+          expect(consent.gdprApplies).to.be.true;
+          expect(consent.apiVersion).to.equal(2);
+        });
+      });
+    });
   });
 
-  // describe('actionTimeout', function () {
-  //   afterEach(function () {
-  //     config.resetConfig();
-  //     resetConsentData();
-  //   });
+  describe('actionTimeout', function () {
+    afterEach(function () {
+      config.resetConfig();
+      resetConsentData();
+    });
 
-  //   it('should set actionTimeout if present', () => {
-  //     setConsentConfig({
-  //       gdpr: { timeout: 5000, actionTimeout: 5500 }
-  //     });
+    it('should set actionTimeout if present', () => {
+      setConsentConfig({
+        gdpr: { timeout: 5000, actionTimeout: 5500 }
+      });
 
-  //     expect(userCMP).to.be.equal('iab');
-  //     expect(consentTimeout).to.be.equal(5000);
-  //     expect(actionTimeout).to.be.equal(5500);
-  //   });
+      expect(userCMP).to.be.equal('iab');
+      expect(consentTimeout).to.be.equal(5000);
+      expect(actionTimeout).to.be.equal(5500);
+    });
 
-  //   it('should utilize actionTimeout duration on initial user visit when user action is pending', () => {
-  //     const cb = () => {};
-  //     const cmpCallMap = {
-  //       'iab': () => {},
-  //       'static': () => {}
-  //     };
-  //     const timeout = sinon.spy();
+    it('should utilize actionTimeout duration on initial user visit when user action is pending', () => {
+      const cb = () => {};
+      const cmpCallMap = {
+        'iab': () => {},
+        'static': () => {}
+      };
+      const timeout = sinon.spy();
 
-  //     setConsentConfig({
-  //       gdpr: { timeout: 5000, actionTimeout: 5500 }
-  //     });
+      setConsentConfig({
+        gdpr: { timeout: 5000, actionTimeout: 5500 }
+      });
 
-  //     loadConsentData(cb, true, cmpCallMap, timeout);
-  //     sinon.assert.callCount(timeout, 1);
-  //     sinon.assert.calledWith(timeout, sinon.match.any, 5500);
-  //   });
-  // });
+      loadConsentData(cb, true, cmpCallMap, timeout);
+      sinon.assert.callCount(timeout, 1);
+      sinon.assert.calledWith(timeout, sinon.match.any, 5500);
+    });
+  });
 });
