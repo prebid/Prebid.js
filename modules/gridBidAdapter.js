@@ -94,8 +94,7 @@ export const spec = {
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout || config.getConfig('bidderTimeout');
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -652,7 +651,7 @@ function getUserIdFromFPDStorage() {
 function segmentProcessing(segment, forceSegName) {
   return segment
     .map((seg) => {
-      const value = seg && (seg.value || seg.id || seg);
+      const value = seg && (seg.id || seg);
       if (typeof value === 'string' || typeof value === 'number') {
         return {
           value: value.toString(),

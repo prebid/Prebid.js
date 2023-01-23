@@ -7,7 +7,7 @@ import {
   AUTOSTART_BLOCKED, PLAY_ATTEMPT_FAILED, CONTENT_LOADED, PLAY, PAUSE, BUFFER, TIME, SEEK_START, SEEK_END, MUTE, VOLUME,
   RENDITION_UPDATE, ERROR, COMPLETE, PLAYLIST_COMPLETE, FULLSCREEN, PLAYER_RESIZE, VIEWABLE, CAST
 } from '../libraries/video/constants/events.js';
-import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
@@ -47,19 +47,26 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
 
   function init() {
     if (!jwplayer) {
-      triggerSetupFailure(-1); // TODO: come up with code for player absent
+      triggerSetupFailure(-1); // TODO: come up with error code schema- player is absent
       return;
     }
 
     playerVersion = jwplayer.version;
 
     if (playerVersion < minimumSupportedPlayerVersion) {
-      triggerSetupFailure(-2); // TODO: come up with code for version not supported
+      triggerSetupFailure(-2); // TODO: come up with error code schema - version not supported
+      return;
+    }
+
+    if (!document.getElementById(divId)) {
+      triggerSetupFailure(-3); // TODO: come up with error code schema - missing div id
       return;
     }
 
     player = jwplayer(divId);
-    if (player.getState() === undefined) {
+    if (!player || !player.getState) {
+      triggerSetupFailure(-4); // TODO: come up with error code schema - factory function failure
+    } else if (player.getState() === undefined) {
       setupPlayer(playerConfig);
     } else {
       const payload = getSetupCompletePayload();
