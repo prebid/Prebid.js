@@ -32,5 +32,6 @@
   "yahoosspBidAdapter",
   "seedtagBidAdapter",
   "userId",
-  "id5IdSystem"
+  "id5IdSystem",
+  "intersectionRtdProvider"
 ]
