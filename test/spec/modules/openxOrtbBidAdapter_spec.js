@@ -617,7 +617,7 @@ describe('OpenxRtbAdapter', function () {
             expect(request[0].data.device.sua).to.deep.equal(bidderRequestWithUserAgentClientHints.ortb2.device.sua);
             const bidderRequestWithoutUserAgentClientHints = {refererInfo: {}, ortb2: {}};
             request = spec.buildRequests(bidRequests, bidderRequestWithoutUserAgentClientHints);
-            expect(request[0].data.device.sua).to.not.exist;
+            expect(request[0].data.device?.sua).to.not.exist;
           });
         });
       });
