@@ -221,10 +221,6 @@ export function loadConsentData(cb, useActionTimeout, callMap = cmpCallMap, time
     }
 
     if (useActionTimeout) {
-      // if (timer !== null) {
-      //   clearTimeout(timer);
-      // }
-
       if (actionTimeout === 0) {
         onTimeout();
       } else {
