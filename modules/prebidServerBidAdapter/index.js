@@ -20,7 +20,7 @@ import {
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-// import {isValid} from '../../src/adapters/bidderFactory.js';
+import {isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -462,7 +462,7 @@ export function PrebidServer() {
           } else if (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.seatnonbid && bid && bid.nonbid) {
             emitNoBid(bid);
           } else {
-            if (bid && !bid.seatnonbid) {
+            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid)) && !bid.seatnonbid) {
               addBidResponse(adUnit, bid);
               if (bid.pbsWurl) {
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
