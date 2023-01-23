@@ -54,8 +54,7 @@
           pbjs.setConfig({
             consentManagement: {
               cmpApi: 'iab',
-              timeout: 0,
-              actionTimeout: 5000,
+              timeout: 5000,
               allowAuctionWithoutConsent: true
             },
             pubcid: {
@@ -65,9 +64,6 @@
           pbjs.requestBids({
             bidsBackHandler: sendAdserverRequest,
             timeout: PREBID_TIMEOUT
-          });
-          pbjs.onEvent('auctionInit', function() {
-            console.log('auction has started');
           });
         });
 

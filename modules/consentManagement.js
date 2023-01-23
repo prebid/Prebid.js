@@ -25,8 +25,6 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
-// let timer = null;
-// let isDone;
 let loadIfMissingCb;
 let iabCmpHasLoaded = false;
 let shouldWaitForActionTimeout = false;
