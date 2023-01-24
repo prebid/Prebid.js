@@ -151,11 +151,11 @@ const MEDIA_TYPES = {
   Native: 4
 };
 
-var baseRequestSize = 0;
-var currentRequestSize = 0;
-var wasAdUnitImpressionsTrimmed = false;
-var currentImpressionSize = 0;
-var buildRequestV2 = false;
+let baseRequestSize = 0;
+let currentRequestSize = 0;
+let wasAdUnitImpressionsTrimmed = false;
+let currentImpressionSize = 0;
+let buildRequestV2 = false;
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
