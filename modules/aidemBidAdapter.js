@@ -1,4 +1,4 @@
-import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, logError, logInfo} from '../src/utils.js';
+import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, isNumber, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -21,6 +21,8 @@ export const ERROR_CODES = {
   SITE_ID_INVALID_VALUE: 4,
   MEDIA_TYPE_NOT_SUPPORTED: 5,
   PUBLISHER_ID_INVALID_VALUE: 6,
+  INVALID_RATELIMIT: 7,
+  PLACEMENT_ID_INVALID_VALUE: 8,
 };
 
 const endpoints = {
@@ -149,7 +151,11 @@ function getPageUrl(bidderRequest) {
 }
 
 function buildWinNotice(bid) {
+  const params = bid.params[0]
   return {
+    publisherId: params.publisherId,
+    siteId: params.siteId,
+    placementId: params.placementId,
     burl: deepAccess(bid, 'meta.burl'),
     cpm: bid.cpm,
     currency: bid.currency,
@@ -220,7 +226,7 @@ function setPrebidImpressionObject(bidRequests, payload) {
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
     deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
-    // Placement id
+    // placement id
     deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
     // Publisher id
     deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
@@ -341,7 +347,7 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
 
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
   logInfo('AIDEM Bid Adapter meta', openRTBResponseBidObject);
-  deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', openRTBResponseBidObject.adomain);
+  deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', deepAccess(openRTBResponseBidObject, 'meta.advertiserDomains'));
   if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
     const primaryCatId = openRTBResponseBidObject.cat.shift();
     deepSetValue(prebidResponseBidObject, 'meta.primaryCatId', primaryCatId);
@@ -406,10 +412,26 @@ function hasValidVideoParameters(bidRequest) {
   return valid
 }
 
+function passesRateLimit(bidRequest) {
+  const rateLimit = deepAccess(bidRequest, 'params.rateLimit', 1);
+  if (!isNumber(rateLimit) || rateLimit > 1 || rateLimit < 0) {
+    logError('AIDEM Bid Adapter: invalid rateLimit (must be a number between 0 and 1)', { bidder: BIDDER_CODE, code: ERROR_CODES.INVALID_RATELIMIT });
+    return false
+  }
+  if (rateLimit !== 1) {
+    const randomRateValue = Math.random()
+    if (randomRateValue > rateLimit) {
+      return false
+    }
+  }
+  return true
+}
+
 function hasValidParameters(bidRequest) {
   // Assigned from AIDEM to a publisher website
   const siteId = deepAccess(bidRequest, 'params.siteId');
   const publisherId = deepAccess(bidRequest, 'params.publisherId');
+  const placementId = deepAccess(bidRequest, 'params.placementId');
 
   if (!isStr(siteId)) {
     logError('AIDEM Bid Adapter: siteId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
@@ -418,6 +440,11 @@ function hasValidParameters(bidRequest) {
 
   if (!isStr(publisherId)) {
     logError('AIDEM Bid Adapter: publisherId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.PUBLISHER_ID_INVALID_VALUE });
+    return false;
+  }
+
+  if (!isStr(placementId)) {
+    logError('AIDEM Bid Adapter: placementId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.PLACEMENT_ID_INVALID_VALUE });
     return false;
   }
 
@@ -446,7 +473,11 @@ export const spec = {
       return false
     }
 
-    return hasValidParameters(bidRequest)
+    if (!hasValidParameters(bidRequest)) {
+      return false
+    }
+
+    return passesRateLimit(bidRequest)
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
