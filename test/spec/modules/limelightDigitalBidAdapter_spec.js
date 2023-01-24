@@ -202,21 +202,11 @@ describe('limelightDigitalAdapter', function () {
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits',
-          'custom1',
-          'custom2',
-          'custom3',
-          'custom4',
-          'custom5'
+          'adUnits'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
         expect(data.secure).to.be.a('boolean');
-        expect(data.custom1).to.be.a('string');
-        expect(data.custom2).to.be.a('string');
-        expect(data.custom3).to.be.a('string');
-        expect(data.custom4).to.be.a('string');
-        expect(data.custom5).to.be.a('string');
         data.adUnits.forEach(adUnit => {
           expect(adUnit).to.have.all.keys(
             'id',
@@ -226,7 +216,12 @@ describe('limelightDigitalAdapter', function () {
             'transactionId',
             'publisherId',
             'userIdAsEids',
-            'supplyChain'
+            'supplyChain',
+            'custom1',
+            'custom2',
+            'custom3',
+            'custom4',
+            'custom5'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -235,6 +230,11 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.sizes).to.be.an('array');
           expect(adUnit.userIdAsEids).to.be.an('array');
           expect(adUnit.supplyChain).to.be.an('object');
+          expect(adUnit.custom1).to.be.a('string');
+          expect(adUnit.custom2).to.be.a('string');
+          expect(adUnit.custom3).to.be.a('string');
+          expect(adUnit.custom4).to.be.a('string');
+          expect(adUnit.custom5).to.be.a('string');
         })
       })
     })
