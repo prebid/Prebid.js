@@ -20,18 +20,20 @@ export const spec = {
     let bidIds = [];
     let eids;
     validBidRequests.forEach(bidRequest => {
-      let sizes = prepareSizes(bidRequest.sizes)
+      let formatType = getFormatType(bidRequest)
+      let alkimiSizes = prepareAlkimiSizes(bidRequest.sizes)
 
       if (bidRequest.userIdAsEids) {
         eids = eids || bidRequest.userIdAsEids
       }
+
       bids.push({
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
-        bidFloor: bidRequest.params.bidFloor,
-        width: sizes[0].width,
-        height: sizes[0].height,
-        impMediaType: getFormatType(bidRequest),
+        bidFloor: getBidFloor(bidRequest, formatType),
+        width: alkimiSizes[0].width,
+        height: alkimiSizes[0].height,
+        impMediaType: formatType,
         adUnitCode: bidRequest.adUnitCode
       })
       bidIds.push(bidRequest.bidId)
@@ -128,8 +130,23 @@ export const spec = {
   }
 }
 
-function prepareSizes(sizes) {
+function prepareAlkimiSizes(sizes) {
   return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
+}
+
+function prepareBidFloorSize(sizes) {
+  return sizes && sizes.length === 1 ? sizes[0] : '*';
+}
+
+function getBidFloor(bidRequest, formatType) {
+  if (typeof bidRequest.getFloor === 'function') {
+    const bidFloorSize = prepareBidFloorSize(bidRequest.sizes)
+    const floor = bidRequest.getFloor({ currency: 'USD', mediaType: formatType.toLowerCase(), size: bidFloorSize });
+    if (floor && !isNaN(floor.floor) && (floor.currency === 'USD')) {
+      return floor.floor;
+    }
+  }
+  return bidRequest.params.bidFloor;
 }
 
 const getFormatType = bidRequest => {
