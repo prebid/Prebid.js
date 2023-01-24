@@ -374,6 +374,16 @@ describe('The smartx adapter', function () {
         }
       })
     });
+
+    it('should pass sitekey param', function () {
+      var request;
+
+      bid.params.sitekey = 'foo'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content.ext.sitekey).to.equal('foo');
+    });
   });
 
   describe('interpretResponse', function () {
