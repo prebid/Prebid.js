@@ -1426,7 +1426,7 @@ export const spec = {
                   }
                 });
               }
-              if(newBid['dealId']){
+              if (newBid['dealId']) {
                 newBid['dealChannel'] = 'PMP';
               }
               if (newBid['dealId'] && bid.ext && bid.ext.deal_channel) {
