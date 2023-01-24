@@ -1,4 +1,15 @@
-import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, actionTimeout, staticConsentData, gdprScope, loadConsentData } from 'modules/consentManagement.js';
+import {
+  setConsentConfig,
+  requestBidsHook,
+  resetConsentData,
+  userCMP,
+  consentTimeout,
+  actionTimeout,
+  staticConsentData,
+  gdprScope,
+  loadConsentData,
+  setActionTimeout
+} from 'modules/consentManagement.js';
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -754,10 +765,13 @@ describe('consentManagement', function () {
       setConsentConfig({
         gdpr: { timeout: 5000, actionTimeout: 5500 }
       });
+      loadConsentData(cb, cmpCallMap, timeout);
 
-      loadConsentData(cb, true, cmpCallMap, timeout);
-      sinon.assert.callCount(timeout, 1);
-      sinon.assert.calledWith(timeout, sinon.match.any, 5500);
+      sinon.assert.calledWith(timeout, sinon.match.any, 5000);
+
+      setActionTimeout();
+
+      timeout.lastCall.lastArg === 5500;
     });
   });
 });
