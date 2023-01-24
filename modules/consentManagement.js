@@ -25,8 +25,9 @@ export let staticConsentData;
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
-let iabCmpHasLoaded = false;
 let onTimeout;
+let timer = null;
+let actionTimer = null;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -45,8 +46,7 @@ function lookupStaticConsentData({onSuccess, onError}) {
 export function setActionTimeout(timeout = setTimeout) {
   clearTimeout(timer);
   timer = null;
-  timer = timeout(onTimeout, actionTimeout);
-  iabCmpHasLoaded = true;
+  actionTimer = timeout(onTimeout, actionTimeout);
 }
 
 /**
@@ -94,7 +94,7 @@ function lookupIabConsent({onSuccess, onError}) {
         processCmpData(tcfData, {onSuccess, onError});
       } else {
         provisionalConsent = tcfData;
-        if (!iabCmpHasLoaded && timer != null) setActionTimeout();
+        if (!isNaN(actionTimeout) && actionTimer === null && timer != null) setActionTimeout();
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -167,8 +167,6 @@ function lookupIabConsent({onSuccess, onError}) {
   }
 }
 
-let timer = null;
-
 /**
  * Look up consent data and store it in the `consentData` global as well as `adapterManager.js`' gdprDataHandler.
  *
@@ -183,6 +181,12 @@ export function loadConsentData(cb, callMap = cmpCallMap, timeout = setTimeout) 
       clearTimeout(timer);
       timer = null;
     }
+
+    if (actionTimer != null) {
+      clearTimeout(actionTimer);
+      actionTimer = null;
+    }
+
     isDone = true;
     gdprDataHandler.setConsentData(consentData);
     if (typeof cb === 'function') {
