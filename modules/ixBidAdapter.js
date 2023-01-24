@@ -599,7 +599,7 @@ function getEidInfo(allEids) {
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // V2 does not have request splitting logic.
-  buildRequestV2 = FEATURE_TOGGLES.isFeatureEnabled("pbjs_use_buildRequestV2");
+  buildRequestV2 = FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2');
   baseRequestSize = 0;
   currentRequestSize = 0;
   wasAdUnitImpressionsTrimmed = false;
@@ -854,7 +854,7 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
     logError('IX Bid Adapter: Base request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.EXCEEDS_MAX_SIZE });
     return requests;
   }
-  
+
   currentRequestSize = baseRequestSize;
   let fpdRequestSize = 0;
 
@@ -889,7 +889,7 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
         } else {
           r.site.page = firstPartyString;
         }
-      }      
+      }
     }
   }
 }
