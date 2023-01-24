@@ -1168,6 +1168,19 @@ describe('triplelift adapter', function () {
         }
       })
     });
+    it('should add gpp consent data to bid request object if gpp data exists', function() {
+      bidderRequest.ortb2 = {
+        regs: {
+          'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'gpp_sid': [7]
+        }
+      }
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs).to.deep.equal({
+        'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'gpp_sid': [7]
+      })
+    });
   });
 
   describe('interpretResponse', function () {
