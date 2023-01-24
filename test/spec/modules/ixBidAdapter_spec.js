@@ -3667,9 +3667,9 @@ describe('IndexexchangeAdapter', function () {
       }
     });
 
-    it('6 ad units should generate only 1 request if build_request_v2 FT is enabled', function () {
+    it('6 ad units should generate only 1 request if buildRequestV2 FT is enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_build_request_v2 = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -3706,9 +3706,9 @@ describe('IndexexchangeAdapter', function () {
       }
     });
 
-    it('1 request with 2 ad units, build_request_v2 enabled', function () {
+    it('1 request with 2 ad units, buildRequestV2 enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_build_request_v2 = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
