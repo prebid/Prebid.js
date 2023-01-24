@@ -90,6 +90,14 @@ export class GreedyPromise extends (getGlobal().Promise || Promise) {
     res.#parent = this;
     return res;
   }
+
+  static resolve(value) {
+    return new this(resolve => resolve(value))
+  }
+
+  static reject(error) {
+    return new this((resolve, reject) => reject(error))
+  }
 }
 
 /**

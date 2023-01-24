@@ -149,8 +149,8 @@ describe('Adagio bid adapter', () => {
         site: {
           ext: {
             data: {
-              environment: 'desktop',
-              pagetype: 'abc'
+              pagetype: 'abc',
+              category: ['cat1', 'cat2', 'cat3']
             }
           }
         }
@@ -165,11 +165,11 @@ describe('Adagio bid adapter', () => {
         return utils.deepAccess(config, key);
       });
 
-      setExtraParam(bid, 'environment');
-      expect(bid.params.environment).to.equal('desktop');
-
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
+
+      setExtraParam(bid, 'category');
+      expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -392,7 +392,7 @@ describe('Adagio bid adapter', () => {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: [3],
+            placement: 3,
             protocols: [8]
           }
         }).build();
@@ -407,7 +407,7 @@ describe('Adagio bid adapter', () => {
           skipafter: 4,
           minduration: 10,
           maxduration: 30,
-          placement: [3],
+          placement: 3,
           protocols: [8],
           w: 300,
           h: 250
@@ -776,8 +776,6 @@ describe('Adagio bid adapter', () => {
             adUnitElementId: 'gpt-adunit-code',
             pagetype: 'ARTICLE',
             category: 'NEWS',
-            subcategory: 'SPORT',
-            environment: 'desktop',
             supportIObs: true
           },
           adUnitCode: 'adunit-code',
@@ -825,8 +823,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -860,8 +856,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -1081,7 +1075,7 @@ describe('Adagio bid adapter', () => {
           impressionTrackers: [
             'https://eventrack.local/impression'
           ],
-          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          javascriptTrackers: '<script async src=\"https://eventrack.local/impression\"></script>',
           clickTrackers: [
             'https://i.am.a.clicktracker.url'
           ],
@@ -1103,6 +1097,19 @@ describe('Adagio bid adapter', () => {
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
+      });
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const serverResponseWithNativeCopy = utils.deepClone(serverResponseWithNative);
+        serverResponseWithNativeCopy.body.bids[0].admNative.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression-2'
+          },)
+        const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
+        const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
+        expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
   });
@@ -1244,6 +1251,29 @@ describe('Adagio bid adapter', () => {
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
     });
+
+    it('should return `adunit_position` feature when the slot is hidden', function () {
+      const elem = fixtures.getElementById();
+      sandbox.stub(window.top.document, 'getElementById').returns(elem);
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const bidRequest = new BidRequestBuilder({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+        },
+      })
+        .withParams()
+        .build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
+      expect(elem.style.display).to.equal(null); // set null to reset style
+    });
   });
 
   describe('Adagio features when prebid in Safeframe', function() {
@@ -1348,19 +1378,6 @@ describe('Adagio bid adapter', () => {
   });
 
   describe.skip('optional params auto detection', function() {
-    it('should auto detect environment', function() {
-      const getDeviceStub = sandbox.stub(_features, 'getDevice');
-
-      getDeviceStub.returns(5);
-      expect(adagio.autoDetectEnvironment()).to.eq('tablet');
-
-      getDeviceStub.returns(4);
-      expect(adagio.autoDetectEnvironment()).to.eq('mobile');
-
-      getDeviceStub.returns(2);
-      expect(adagio.autoDetectEnvironment()).to.eq('desktop');
-    });
-
     it('should auto detect adUnitElementId when GPT is used', function() {
       sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
       expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');
