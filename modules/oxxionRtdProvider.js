@@ -1,20 +1,24 @@
 import { submodule } from '../src/hook.js'
 import { deepAccess, logInfo } from '../src/utils.js'
+import MD5 from 'crypto-js/md5.js';
+// import { ajax } from '../src/ajax.js';
 
 const oxxionRtdSearchFor = [ 'adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'userId', 'labelAny', 'adId' ];
 const LOG_PREFIX = 'oxxionRtdProvider submodule: ';
-
+const CHECK_INTEREST_URL = 'http://wwww.interest.com/api/';
 const allAdUnits = [];
 
 /** @type {RtdSubmodule} */
 export const oxxionSubmodule = {
   name: 'oxxionRtd',
   init: init,
+  onAuctionInitEvent: onAuctionInit,
   onAuctionEndEvent: onAuctionEnd,
   getBidRequestData: getAdUnits,
 };
 
 function init(config, userConsent) {
+  logInfo(LOG_PREFIX, 'init()', config, userConsent);
   if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts) || config.params.contexts.length == 0) {
     return false
   }
@@ -30,6 +34,35 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       }
     });
   }
+}
+
+function onAuctionInit (auctionDetails, config, userConsent) {
+  logInfo(LOG_PREFIX, 'onAuctionInit()', {
+    auctionDetails,
+    config,
+    userConsent
+  });
+  const { keys } = Object;
+  const { stringify } = JSON;
+  const gdpr = userConsent.gdpr.consentString;
+  let index = 0;
+  const requests = auctionDetails.adUnits.flatMap(({ bids = [], mediaTypes = [], code = '' }) => {
+    return bids.flatMap(({ bidder, params = {} }) => {
+      return keys(mediaTypes).map((mediaTypeKey) => ({
+        id: index++,
+        adUnit: code,
+        bidder,
+        mediaType: mediaTypeKey,
+        params: MD5(stringify(params)).toString(),
+        sizes: mediaTypes[mediaTypeKey].sizes || []
+      }));
+    });
+  });
+  const payload = {
+    gdpr,
+    requests
+  };
+  logInfo(LOG_PREFIX, 'onAuctionInit() payload', payload);
 }
 
 function insertVideoTracking(bidResponse, config, maxCpm) {
@@ -114,6 +147,24 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
       insertVideoTracking(auctionDetails.bidsReceived[transactionsToCheck[transaction]['bids'][bid].key], config, transactionsToCheck[transaction].secondMaxCpm);
     });
   });
+}
+
+function getPromisifiedAjax (url, data = {}, options = {}) {
+  return new Promise((resolve, reject) => {
+    const callbacks = {
+      success(responseText, { response }) {
+        resolve(JSON.parse(response));
+      },
+      error(error) {
+        reject(error);
+      }
+    };
+    ajax(url, callbacks, data, options);
+  })
+}
+
+function getRandomNumber (max) {
+  return Math.round(Math.random() * max);
 }
 
 submodule('realTimeData', oxxionSubmodule);
