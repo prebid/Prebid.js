@@ -525,8 +525,8 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
   if (gppsid) {
     deepSetValue(openRtbRequest, 'regs.ext.gpp_sid', gppsid);
   }
-  if (!gpp && gdpr && 'gdprApplies' in gdpr) {
-    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr.gdprApplies ? 1 : 0);
+  if (!gpp) {
+    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
     deepSetValue(openRtbRequest, 'user.ext.consent', gdpr.consentString);
   }
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
