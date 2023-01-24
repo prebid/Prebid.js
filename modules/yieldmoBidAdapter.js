@@ -521,13 +521,12 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
   const gppsid = deepAccess(bidderRequest, 'gppConsent.applicableSections');
   if (gpp) {
     deepSetValue(openRtbRequest, 'regs.ext.gpp', gpp);
+  } else {
+    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
+    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr && gdpr.consentString ? gdpr.consentString : '');
   }
   if (gppsid) {
     deepSetValue(openRtbRequest, 'regs.ext.gpp_sid', gppsid);
-  }
-  if (!gpp) {
-    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
-    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr.consentString);
   }
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
   if (!gpp && uspConsent) {
