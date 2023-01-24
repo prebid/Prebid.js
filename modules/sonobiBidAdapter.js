@@ -295,8 +295,8 @@ function _findBidderRequest(bidderRequests, bidId) {
   }
 }
 
-// This function takes all the possible sizes 
-// returns string csv
+// This function takes all the possible sizes.
+// returns string csv.
 function _validateSize(bid) {
   let size = [];
   if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
@@ -316,7 +316,7 @@ function _validateSize(bid) {
   }
   // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
   // Then throw it into Set to uniquify it.
-  // Then spread it to an array again. Then join it into a csv of sizes
+  // Then spread it to an array again. Then join it into a csv of sizes.
   return [...new Set(parseSizesInput(...size))].join(',');
 }
 

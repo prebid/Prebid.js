@@ -16,18 +16,26 @@
         var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
+            code: 'div-1',
             mediaTypes: {
-                banner: {
-                    sizes: [[300, 250], [300,600]],
+                video: {
+                    sizes: [[300, 250], [300, 600]],
+                    tag : ['Cats', 'Dogs']
                 }
             },
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'appnexus',
+                bidder: 'sonobi',
                 params: {
-                    placementId: 13144370
+                    placementId: 'e6ac2d62fc0dde307cf3',
+                    ad_unit: '/7780971/apex_3pdm_integration',
+                },
+                mediaTypes: {
+                video: {
+                    sizes: [[300, 250], [300, 600]],
+                    tag : ['Cats', 'Dogs']
                 }
+            },
             }]
 
         }];
@@ -71,7 +79,7 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-1').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
@@ -82,9 +90,9 @@
 <body>
 <h2>Prebid.js Test</h2>
 <h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
+<div id='div-1'>
     <script type='text/javascript'>
-        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+        googletag.cmd.push(function() { googletag.display('div-1'); });
     </script>
 </div>
 </body>
