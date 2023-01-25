@@ -916,6 +916,11 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias, options) {
 };
 
 /**
+ * @alias module:pbjs.aliasRegistry
+ */
+$$PREBID_GLOBAL$$.aliasRegistry = adapterManager.aliasRegistry;
+
+/**
  * The bid response object returned by an external bidder adapter during the auction.
  * @typedef {Object} AdapterBidResponse
  * @property {string} pbAg Auto granularity price bucket; CPM <= 5 ? increment = 0.05 : CPM > 5 && CPM <= 10 ? increment = 0.10 : CPM > 10 && CPM <= 20 ? increment = 0.50 : CPM > 20 ? priceCap = 20.00.  Example: `"0.80"`.

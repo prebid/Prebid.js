@@ -3017,6 +3017,14 @@ describe('Unit: Prebid Module', function () {
     });
   });
 
+  describe('aliasRegistry', function () {
+    it('should return the same value as adapterManager.aliasRegistry', function () {
+      const adapterManagerAliasRegistry = adapterManager.aliasRegistry;
+      const pbjsAliasRegistry = $$PREBID_GLOBAL$$.aliasRegistry;
+      assert.equal(adapterManagerAliasRegistry, pbjsAliasRegistry);
+    });
+  });
+
   describe('setPriceGranularity', function () {
     it('should log error when not passed granularity', function () {
       const logErrorSpy = sinon.spy(utils, 'logError');
