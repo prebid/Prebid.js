@@ -38,6 +38,10 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
@@ -121,17 +125,26 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
+  // gather user.data
+  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
+  if (ortb2UserData && ortb2UserData.length) {
+    user = utils.mergeDeep(user, {
+      data: [...ortb2UserData]
+    });
+  };
   return user;
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = {
+  var site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
+    ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
-    ...firstPartyData.site
-  };
+  },
+  firstPartyData.site
+  );
 
   var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {

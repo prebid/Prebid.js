@@ -214,7 +214,7 @@ export function newBidder(spec) {
         done();
         config.runWithBidder(spec.code, () => {
           events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
         });
       }
 
@@ -295,8 +295,8 @@ export function newBidder(spec) {
     return false;
   }
 
-  function registerSyncs(responses, gdprConsent, uspConsent) {
-    registerSyncInner(spec, responses, gdprConsent, uspConsent);
+  function registerSyncs(responses, gdprConsent, uspConsent, gppConsent) {
+    registerSyncInner(spec, responses, gdprConsent, uspConsent, gppConsent);
   }
 
   function filterAndWarn(bid) {
@@ -448,14 +448,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   })
 }, 'processBidderRequests')
 
-export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
       iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
       pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-    }, responses, gdprConsent, uspConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];
@@ -545,22 +545,24 @@ export function getIabSubCategory(bidderCode, category) {
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
+  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
+    bid.width = parseInt(bid.width, 10);
+    bid.height = parseInt(bid.height, 10);
+    return true;
+  }
+
   const bidRequest = index.getBidRequest(bid);
   const mediaTypes = index.getMediaTypes(bid);
 
   const sizes = (bidRequest && bidRequest.sizes) || (mediaTypes && mediaTypes.banner && mediaTypes.banner.sizes);
-  const parsedSizes = parseSizesInput(sizes).map(sz => sz.split('x').map(n => parseInt(n, 10)));
-
-  if ((bid.width || parseInt(bid.width, 10) === 0) && (bid.height || parseInt(bid.height, 10) === 0)) {
-    bid.width = parseInt(bid.width, 10);
-    bid.height = parseInt(bid.height, 10);
-    return parsedSizes.length === 0 || parsedSizes.some(([w, h]) => bid.width === w && bid.height === h);
-  }
+  const parsedSizes = parseSizesInput(sizes);
 
   // if a banner impression has one valid size, we assign that size to any bid
   // response that does not explicitly set width or height
   if (parsedSizes.length === 1) {
-    ([bid.width, bid.height] = parsedSizes[0]);
+    const [ width, height ] = parsedSizes[0].split('x');
+    bid.width = parseInt(width, 10);
+    bid.height = parseInt(height, 10);
     return true;
   }
 
@@ -602,7 +604,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     return false;
   }
   if (bid.mediaType === 'banner' && !validBidSize(adUnitCode, bid, {index})) {
-    logError(errorMessage(`Banner bids require a width and height that match one of the requested sizes`));
+    logError(errorMessage(`Banner bids require a width and height`));
     return false;
   }
 
