@@ -707,7 +707,7 @@ describe('emx_digital Adapter', function () {
       }));
     });
 
-    it('returns valid advertiser domain', function () {
+    it('returns valid advertiser domains', function () {
       const bidResponse = utils.deepClone(serverResponse);
       let result = spec.interpretResponse({body: bidResponse});
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
