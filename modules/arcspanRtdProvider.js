@@ -1,5 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { mergeDeep } from '../src/utils.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -16,14 +17,13 @@ function init(config, userConsent) {
   if (typeof config.params.silo === 'undefined') {
     return false;
   }
-  var _s = document.createElement('script');
-  _s.type = 'text/javascript';
+  var scriptUrl;
   if (config.params.silo === 'test') {
-    _s.src = 'https://localhost:8080/as.js';
+    scriptUrl = 'https://localhost:8080/as.js';
   } else {
-    _s.src = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
+    scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
   }
-  document.head.appendChild(_s);
+  loadExternalScript(scriptUrl, SUBMODULE_NAME);
   return true;
 }
 
