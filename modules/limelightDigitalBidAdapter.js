@@ -55,9 +55,8 @@ export const spec = {
       winTop = window;
     }
     const placements = groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
-    let map = Object.keys(placements)
+    return Object.keys(placements)
       .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
-    return map;
   },
 
   /**
@@ -81,7 +80,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse, bidRequest) => {
+  interpretResponse: (serverResponse) => {
     const bidResponses = [];
     const serverBody = serverResponse.body;
     const len = serverBody.length;
