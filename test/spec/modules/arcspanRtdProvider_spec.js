@@ -5,14 +5,8 @@ import { loadExternalScript } from 'src/adloader.js';
 describe('arcspanRtdProvider', function () {
   describe('init', function () {
     afterEach(function () {
-      var collection = document.head.getElementsByTagName('script');
-      for (let i = 0; i < collection.length; i++) {
-        if (collection[i].src.endsWith('as.js')) {
-          collection[i].remove();
-        }
-      }
-      window.arcobj1 = {};
-      window.arcobj2 = {};
+      window.arcobj1 = undefined;
+      window.arcobj2 = undefined;
     });
 
     it('successfully initializes with a valid silo ID', function () {
@@ -38,8 +32,8 @@ describe('arcspanRtdProvider', function () {
 
   describe('alterBidRequests', function () {
     afterEach(function () {
-      window.arcobj1 = {};
-      window.arcobj2 = {};
+      window.arcobj1 = undefined;
+      window.arcobj2 = undefined;
     });
 
     it('alters the bid request 1', function () {

@@ -17,13 +17,15 @@ function init(config, userConsent) {
   if (typeof config.params.silo === 'undefined') {
     return false;
   }
-  var scriptUrl;
-  if (config.params.silo === 'test') {
-    scriptUrl = 'https://localhost:8080/as.js';
-  } else {
-    scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
+  if (typeof window.arcobj1 === 'undefined') {
+    var scriptUrl;
+    if (config.params.silo === 'test') {
+      scriptUrl = 'https://localhost:8080/as.js';
+    } else {
+      scriptUrl = 'https://silo' + config.params.silo + '.p7cloud.net/as.js';
+    }
+    loadExternalScript(scriptUrl, SUBMODULE_NAME);
   }
-  loadExternalScript(scriptUrl, SUBMODULE_NAME);
   return true;
 }
 
