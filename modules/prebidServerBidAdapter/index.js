@@ -222,10 +222,23 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
   _syncCount++;
 
+  let filterSettings = {};
+  const userSyncFilterSettings = getConfig('userSync.filterSettings');
+
+  if (userSyncFilterSettings) {
+    const { all, iframe, image } = userSyncFilterSettings;
+    const ifrm = iframe || all;
+    const img = image || all;
+
+    if (ifrm) filterSettings = Object.assign({ iframe: ifrm }, filterSettings);
+    if (img) filterSettings = Object.assign({ image: img }, filterSettings);
+  }
+
   const payload = {
     uuid: generateUUID(),
     bidders: bidderCodes,
-    account: s2sConfig.accountId
+    account: s2sConfig.accountId,
+    filterSettings
   };
 
   let userSyncLimit = s2sConfig.userSyncLimit;
