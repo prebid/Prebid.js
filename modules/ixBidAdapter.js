@@ -612,10 +612,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let userEids = eidInfo.toSend;
 
   let MAX_REQUEST_SIZE = 8000;
-  // Modify request size limit if its FT is enabeld.
-  if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_32kb_size_limit') || FEATURE_TOGGLES.isFeatureEnabled('buildRequestV2')) {
-    MAX_REQUEST_SIZE = 32000;
-  }
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
