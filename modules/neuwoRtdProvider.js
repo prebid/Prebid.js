@@ -31,19 +31,20 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     'lang=en',
     'url=' + wrappedArgUrl
   ].join('&')
-  let billingId = generateUUID();
-  events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'auction', billingId, auctionId: reqBidsConfigObj.auctionId, vendor: neuwoRtdModule.name })
+  const billingId = generateUUID();
 
   const success = (responseContent) => {
     logInfo('NeuwoRTDModule', 'GetAiTopics: response', responseContent)
     try {
-      var jsonContent = JSON.parse(responseContent);
-      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
-      injectTopics(jsonContent, reqBidsConfigObj, callback, billingId)
+      const jsonContent = JSON.parse(responseContent);
+      if (jsonContent.marketing_categories) {
+        events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'request', billingId, vendor: neuwoRtdModule.name })
+      }
+      injectTopics(jsonContent, reqBidsConfigObj, billingId)
     } catch (ex) {
       logError('NeuwoRTDModule', 'Response to JSON parse error', ex)
-      callback()
     }
+    callback()
   }
 
   const error = (err) => {
@@ -58,7 +59,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 }
 
 export function addFragment(base, path, addition) {
-  let container = {}
+  const container = {}
   deepSetValue(container, path, addition)
   mergeDeep(base, container)
 }
@@ -73,47 +74,38 @@ export function addFragment(base, path, addition) {
  */
 function combineArray(base, source, key) {
   if (Array.isArray(base) === false) base = []
-  let addition = deepAccess(source, key, [])
+  const addition = deepAccess(source, key, [])
   if (Array.isArray(addition)) return base.concat(addition)
   else return base
 }
 
-export function injectTopics(topics, bidsConfig, callback, billingId) {
+export function injectTopics(topics, bidsConfig) {
   topics = topics || {}
 
   // join arrays of IAB category details to single array
-  let combinedTiers = combineArray(
+  const combinedTiers = combineArray(
     combineArray([], topics, RESPONSE_IAB_TIER_1),
     topics, RESPONSE_IAB_TIER_2)
 
-  let segment = pickSegments(combinedTiers)
+  const segment = pickSegments(combinedTiers)
   // effectively gets topics.marketing_categories.iab_tier_1, topics.marketing_categories.iab_tier_2
   // used as FPD segments content
 
-  let pagecat = segment.map(s => s.id)
-  let cattax = CATTAX_IAB
-
-  let IABSegments = {
+  const IABSegments = {
     name: DATA_PROVIDER,
     ext: { segtax: SEGTAX_IAB },
     segment
   }
 
-  if (billingId && segment.length > 0) {
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, { type: 'general', billingId, vendor: neuwoRtdModule.name })
-  }
-
   addFragment(bidsConfig.ortb2Fragments.global, 'site.content.data', [IABSegments])
 
   // upgrade category taxonomy to IAB 2.2, inject result to page categories
-  if (pagecat.length > 0) {
-    addFragment(bidsConfig.ortb2Fragments.global, 'site.cattax', cattax)
-    addFragment(bidsConfig.ortb2Fragments.global, 'site.pagecat', pagecat)
+  if (segment.length > 0) {
+    addFragment(bidsConfig.ortb2Fragments.global, 'site.cattax', CATTAX_IAB)
+    addFragment(bidsConfig.ortb2Fragments.global, 'site.pagecat', segment.map(s => s.id))
   }
 
   logInfo('NeuwoRTDModule', 'injectTopics: post-injection bidsConfig', bidsConfig)
-
-  callback()
 }
 
 /* eslint-disable object-property-newline */
