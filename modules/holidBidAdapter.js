@@ -85,11 +85,12 @@ export const spec = {
     }
 
     const syncs = []
+    const bidders = getBidders(serverResponse)
 
-    if (optionsType.iframeEnabled) {
+    if (optionsType.iframeEnabled && bidders) {
       const queryParams = []
 
-      queryParams.push('bidders=' + getBidders(serverResponse))
+      queryParams.push('bidders=' + bidders)
       queryParams.push('gdpr=' + +gdprConsent.gdprApplies)
       queryParams.push('gdpr_consent=' + gdprConsent.consentString)
       queryParams.push('usp_consent=' + (uspConsent || ''))
@@ -107,6 +108,8 @@ export const spec = {
 
       return syncs
     }
+
+    return []
   },
 }
 
@@ -136,10 +139,12 @@ function getImp(bid) {
 
 function getBidders(serverResponse) {
   const bidders = serverResponse
-    .map((res) => Object.keys(res.body.ext.responsetimemillis))
+    .map((res) => Object.keys(res.body.ext.responsetimemillis || []))
     .flat(1)
 
-  return encodeURIComponent(JSON.stringify([...new Set(bidders)]))
+  if (bidders.length) {
+    return encodeURIComponent(JSON.stringify([...new Set(bidders)]))
+  }
 }
 
 function addWurl(auctionId, adId, wurl) {
