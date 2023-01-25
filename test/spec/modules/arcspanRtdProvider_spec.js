@@ -1,7 +1,6 @@
 import { arcspanSubmodule } from 'modules/arcspanRtdProvider.js';
-import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js';
-import { config } from 'src/config.js';
 import { expect } from 'chai';
+import { loadExternalScript } from 'src/adloader.js';
 
 describe('arcspanRtdProvider', function () {
   describe('init', function () {
@@ -18,56 +17,22 @@ describe('arcspanRtdProvider', function () {
 
     it('successfully initializes with a valid silo ID', function () {
       expect(arcspanSubmodule.init(getGoodConfig())).to.equal(true);
-
-      var collection = document.head.getElementsByTagName('script');
-      var scriptFound = false;
-      var error = false;
-      for (let i = 0; i < collection.length; i++) {
-        if (collection[i].src === 'https://silo13.p7cloud.net/as.js') {
-          scriptFound = true;
-          break;
-        }
-        if (collection[i].src.endsWith('as.js')) {
-          error = true;
-          break;
-        }
-      }
-      expect(scriptFound).to.equal(true);
-      expect(error).to.equal(false);
+      expect(loadExternalScript.called).to.be.ok;
+      expect(loadExternalScript.args[0][0]).to.deep.equal('https://silo13.p7cloud.net/as.js');
+      loadExternalScript.resetHistory();
     });
 
     it('fails to initialize with a missing silo ID', function () {
       expect(arcspanSubmodule.init(getBadConfig())).to.equal(false);
-
-      var collection = document.head.getElementsByTagName('script');
-      var scriptFound = false;
-      for (let i = 0; i < collection.length; i++) {
-        if (collection[i].src.endsWith('as.js')) {
-          scriptFound = true;
-          break;
-        }
-      }
-      expect(scriptFound).to.equal(false);
+      expect(loadExternalScript.called).to.be.not.ok;
+      loadExternalScript.resetHistory();
     });
 
     it('drops localhost script for test silo', function () {
       expect(arcspanSubmodule.init(getTestConfig())).to.equal(true);
-
-      var collection = document.head.getElementsByTagName('script');
-      var scriptFound = false;
-      var error = false;
-      for (let i = 0; i < collection.length; i++) {
-        if (collection[i].src === 'https://localhost:8080/as.js') {
-          scriptFound = true;
-          break;
-        }
-        if (collection[i].src.endsWith('as.js')) {
-          error = true;
-          break;
-        }
-      }
-      expect(scriptFound).to.equal(true);
-      expect(error).to.equal(false);
+      expect(loadExternalScript.called).to.be.ok;
+      expect(loadExternalScript.args[0][0]).to.deep.equal('https://localhost:8080/as.js');
+      loadExternalScript.resetHistory();
     });
   });
 
