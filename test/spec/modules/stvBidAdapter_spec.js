@@ -169,7 +169,7 @@ describe('stvAdapter', function() {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&w=300&h=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
@@ -177,7 +177,7 @@ describe('stvAdapter', function() {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL);
       let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=101&w=300&h=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&prebidDevMode=1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&prebidDevMode=1&media_types%5Bbanner%5D=300x250');
     });
 
     // Without gdprConsent
@@ -191,7 +191,7 @@ describe('stvAdapter', function() {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
       let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&w=300&h=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
     var request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
