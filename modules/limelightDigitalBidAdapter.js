@@ -80,7 +80,7 @@ export const spec = {
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: (serverResponse) => {
+  interpretResponse: (serverResponse, bidRequest) => {
     const bidResponses = [];
     const serverBody = serverResponse.body;
     const len = serverBody.length;
@@ -113,7 +113,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function buildRequest(winTop, host, adUnits, bidRequest) {
+function buildRequest(winTop, host, adUnits) {
   return {
     method: 'POST',
     url: `https://${host}/hb`,
