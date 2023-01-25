@@ -3,7 +3,10 @@ import { timestamp, deepAccess } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+
 const BIDDER_CODE = 'resetdigital';
+const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -48,14 +51,30 @@ export const spec = {
     }
 
     for (let x = 0; x < validBidRequests.length; x++) {
-      let req = validBidRequests[x]
+      let req = validBidRequests[x];
+
+      let bidFloor = req.params.bidFloor ? req.params.bidFloor : null;
+      let bidFloorCur = req.params.bidFloor ? req.params.bidFloorCur : null;
+
+      if (typeof req.getFloor === 'function') {
+        const floorInfo = req.getFloor({
+          currency: CURRENCY,
+          mediaType: BANNER,
+          size: '*'
+        });
+        if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+          bidFloor = parseFloat(floorInfo.floor);
+          bidFloorCur = CURRENCY;
+        }
+      }
 
       payload.imps.push({
         pub_id: req.params.pubId,
         site_id: req.params.siteID ? req.params.siteID : null,
         placement_id: req.params.placement ? req.params.placement : null,
         position: req.params.position ? req.params.position : null,
-        bid_floor: req.params.bidFloor ? req.params.bidFloor : null,
+        bid_floor: bidFloor,
+        bid_floor_cur: bidFloorCur,
         lat_long: req.params.latLong ? req.params.latLong : null,
         inventory: req.params.inventory ? req.params.inventory : null,
         visitor: req.params.visitor ? req.params.visitor : null,
@@ -75,7 +94,8 @@ export const spec = {
     return {
       method: 'POST',
       url: url,
-      data: JSON.stringify(payload)
+      data: JSON.stringify(payload),
+      bids: validBidRequests
     };
   },
   interpretResponse: function(serverResponse, bidRequest) {
