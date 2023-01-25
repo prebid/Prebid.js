@@ -17,7 +17,7 @@ function init(config, userConsent) {
   if (typeof config.params.silo === 'undefined') {
     return false;
   }
-  if (typeof window.arcobj1 === 'undefined') {
+  if (typeof window.arcobj2 === 'undefined') {
     var scriptUrl;
     if (config.params.silo === 'test') {
       scriptUrl = 'https://localhost:8080/as.js';
