@@ -1757,6 +1757,91 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    it('should merge in bid-level ortb2Imp with adUnit-level ortb2Imp', () => {
+      const adUnit = {
+        ...adUnits[1],
+        ortb2Imp: {oneone: {twoone: 'val'}, onetwo: 'val'}
+      };
+      adUnit.bids[0].ortb2Imp = {oneone: {twotwo: 'val'}, onethree: 'val', onetwo: 'val2'};
+      const reqs = Object.fromEntries(
+        adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})
+          .map((req) => [req.bidderCode, req])
+      );
+      expect(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp).to.eql({
+        oneone: {
+          twoone: 'val',
+          twotwo: 'val',
+        },
+        onetwo: 'val2',
+        onethree: 'val'
+      });
+      expect(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp).to.eql(adUnit.ortb2Imp);
+    })
+
+    describe('with named s2s configs', () => {
+      beforeEach(() => {
+        config.setConfig({
+          s2sConfig: [
+            {
+              enabled: true,
+              adapter: 'mockS2S1',
+              configName: 'one',
+              bidders: ['A']
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S2',
+              configName: 'two',
+              bidders: ['B']
+            }
+          ]
+        })
+      });
+
+      it('generates requests for "module" bids', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'two'},
+              ortb2Imp: {
+                p2: 'two'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs[0].adUnitS2SCopy[0].ortb2Imp).to.eql({
+          p1: 'adUnit',
+          p2: 'one'
+        });
+        expect(reqs[0].bids[0].ortb2Imp).to.eql({
+          p1: 'adUnit',
+          p2: 'one'
+        });
+        expect(reqs[1].adUnitS2SCopy[0].ortb2Imp).to.eql({
+          p1: 'adUnit',
+          p2: 'two'
+        });
+        expect(reqs[1].bids[0].ortb2Imp).to.eql({
+          p1: 'adUnit',
+          p2: 'two'
+        });
+
+      });
+    });
+
     describe('when calling the s2s adapter', () => {
       beforeEach(() => {
         config.setConfig({

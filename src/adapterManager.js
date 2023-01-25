@@ -67,13 +67,15 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
   return adUnits.reduce((result, adUnit) => {
     result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
       .reduce((bids, bid) => {
-        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-          'nativeParams',
-          'nativeOrtbRequest',
-          'ortb2Imp',
-          'mediaType',
-          'renderer'
-        ]));
+        bid = Object.assign({}, bid,
+          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
+          getDefinedParams(adUnit, [
+            'nativeParams',
+            'nativeOrtbRequest',
+            'mediaType',
+            'renderer'
+          ])
+        );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
 
