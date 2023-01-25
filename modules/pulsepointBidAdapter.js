@@ -16,7 +16,7 @@ const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
-const DEFAULT_TMAX = 300;
+const DEFAULT_TMAX = 500;
 
 /**
  * PulsePoint Bid Adapter.
