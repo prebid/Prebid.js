@@ -107,3 +107,14 @@ export class GdprConsentHandler extends ConsentHandler {
     }
   }
 }
+
+export class GppConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && this.generatedTime) {
+      return {
+        generatedAt: this.generatedTime,
+      }
+    }
+  }
+}

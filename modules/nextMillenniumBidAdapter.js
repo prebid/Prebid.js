@@ -1,4 +1,5 @@
 import {
+  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
@@ -24,7 +25,6 @@ const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
-const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
@@ -208,20 +208,27 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const pixels = [];
-    let syncUrl = SYNC_ENDPOINT;
 
-    if (gdprConsent && gdprConsent.gdprApplies) {
-      syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString;
-    }
-    if (uspConsent) {
-      syncUrl += 'us_privacy=' + uspConsent;
-    }
+    if (isArray(responses)) {
+      responses.forEach(response => {
+        if (syncOptions.pixelEnabled) {
+          deepAccess(response, 'body.ext.sync.image', []).forEach(imgUrl => {
+            pixels.push({
+              type: 'image',
+              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent)
+            });
+          })
+        }
 
-    if (syncOptions.iframeEnabled) {
-      pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
-    }
-    if (syncOptions.pixelEnabled) {
-      pixels.push({type: 'image', url: syncUrl + 'type=image'});
+        if (syncOptions.iframeEnabled) {
+          deepAccess(response, 'body.ext.sync.iframe', []).forEach(iframeUrl => {
+            pixels.push({
+              type: 'iframe',
+              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent)
+            });
+          })
+        }
+      })
     }
 
     return pixels;
@@ -261,6 +268,28 @@ export const spec = {
 
     return url;
   },
+};
+
+function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
+  const { consentString, gdprApplies } = gdprConsent || {};
+
+  if (gdprApplies) {
+    const gdpr = Number(gdprApplies);
+    url = url.replace('{{.GDPR}}', gdpr);
+
+    if (gdpr == 1 && consentString && consentString.length > 0) {
+      url = url.replace('{{.GDPRConsent}}', consentString);
+    }
+  } else {
+    url = url.replace('{{.GDPR}}', 0);
+    url = url.replace('{{.GDPRConsent}}', '');
+  }
+
+  if (uspConsent) {
+    url = url.replace('{{.USPrivacy}}', uspConsent);
+  }
+
+  return url;
 };
 
 function getAdEl(bid) {

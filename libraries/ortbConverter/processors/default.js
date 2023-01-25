@@ -1,4 +1,4 @@
-import {deepSetValue, getDefinedParams, getDNT, logWarn, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -24,14 +24,6 @@ export const DEFAULT_PROCESSORS = {
       priority: -99,
       fn: onlyOneClientSection
     },
-    device: {
-      // sets device w / h / ua / language
-      fn: setDevice
-    },
-    site: {
-      // sets site.domain, page, and ref from refererInfo
-      fn: setSite
-    },
     props: {
       // sets request properties id, tmax, test, source.tid
       fn(ortbRequest, bidderRequest) {
@@ -45,15 +37,7 @@ export const DEFAULT_PROCESSORS = {
         }
         deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
-    },
-    coppa: {
-      fn(ortbRequest) {
-        const coppa = config.getConfig('coppa');
-        if (typeof coppa === 'boolean') {
-          deepSetValue(ortbRequest, 'regs.coppa', coppa ? 1 : 0);
-        }
-      }
-    },
+    }
   },
   [IMP]: {
     fpd: {
@@ -148,25 +132,9 @@ function fpdFromTopLevelConfig(prop) {
     fn(ortbRequest) {
       const data = config.getConfig(prop);
       if (typeof data === 'object') {
-        ortbRequest[prop] = data;
+        ortbRequest[prop] = mergeDeep({}, ortbRequest[prop], data);
       }
     }
-  }
-}
-
-export function setDevice(ortbRequest) {
-  ortbRequest.device = Object.assign({
-    w: window.innerWidth,
-    h: window.innerHeight,
-    dnt: getDNT() ? 1 : 0,
-    ua: window.navigator.userAgent,
-    language: window.navigator.language.split('-').shift()
-  }, ortbRequest.device);
-}
-
-export function setSite(ortbRequest, bidderRequest) {
-  if (bidderRequest.refererInfo) {
-    ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
   }
 }
 
