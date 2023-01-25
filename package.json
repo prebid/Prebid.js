@@ -27,7 +27,7 @@
     "header bidding",
     "prebid"
   ],
-  "globalVarName": "msq_pbjs",
+  "globalVarName": "pbjs",
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
