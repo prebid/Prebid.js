@@ -1505,6 +1505,28 @@ describe('S2S Adapter', function () {
       });
     });
 
+    it('site should not be present when app is present', function () {
+      const _config = {
+        s2sConfig: CONFIG,
+        app: { bundle: 'com.test.app' },
+        site: {
+          publisher: {
+            id: '1234',
+            domain: 'test.com'
+          },
+          content: {
+            language: 'en'
+          }
+        }
+      };
+
+      config.setConfig(_config);
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const requestBid = JSON.parse(server.requests[0].requestBody);
+      expect(requestBid.site).to.not.exist;
+      expect(requestBid.app).to.exist.and.to.be.a('object');
+    });
+
     it('adds appnexus aliases to request', function () {
       config.setConfig({ s2sConfig: CONFIG });
 
