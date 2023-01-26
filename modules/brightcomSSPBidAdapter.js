@@ -22,6 +22,7 @@ const TRACK_EVENT_URL = 'https://rt.marphezis.com/prebid'
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 883,
   supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
@@ -123,11 +124,7 @@ function buildRequests(bidReqs, bidderRequest) {
 }
 
 function isBidRequestValid(bid) {
-  if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
-    return false;
-  }
-
-  if (typeof bid.params.publisherId === 'undefined') {
+  if (bid.bidder !== BIDDER_CODE || !bid.params || !bid.params.publisherId) {
     return false;
   }
 
