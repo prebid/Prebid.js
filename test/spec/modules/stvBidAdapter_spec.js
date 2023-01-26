@@ -293,7 +293,7 @@ describe('stvAdapter', function() {
       expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
-    it('should get the correct dspx video bid response by display ad', function() {
+    it('should get the correct smartstream video bid response by display ad', function() {
       let bidRequest = [{
         'method': 'GET',
         'url': ENDPOINT_URL,

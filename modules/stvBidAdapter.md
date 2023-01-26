@@ -27,7 +27,7 @@ STV/Smartstream adapter for Prebid.
                 {
                     bidder: "stv",
                     params: {
-                        placement: '101',   // [required] info available from your contact with DSPx team
+                        placement: '101',   // [required] info available from your contact with Smartstream team
                         /* // [optional params]
                             bcat:  "IAB2,IAB4",  // [optional] list of blocked advertiser categories (IAB), comma separated 
                         */
