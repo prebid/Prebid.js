@@ -919,6 +919,9 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias, options) {
  * @alias module:pbjs.aliasRegistry
  */
 $$PREBID_GLOBAL$$.aliasRegistry = adapterManager.aliasRegistry;
+config.getConfig('aliasRegistry', config => {
+  if (config.aliasRegistry === 'private') delete $$PREBID_GLOBAL$$.aliasRegistry;
+});
 
 /**
  * The bid response object returned by an external bidder adapter during the auction.

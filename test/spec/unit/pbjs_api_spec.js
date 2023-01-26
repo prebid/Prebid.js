@@ -3018,10 +3018,16 @@ describe('Unit: Prebid Module', function () {
   });
 
   describe('aliasRegistry', function () {
-    it('should return the same value as adapterManager.aliasRegistry', function () {
+    it('should return the same value as adapterManager.aliasRegistry by default', function () {
       const adapterManagerAliasRegistry = adapterManager.aliasRegistry;
       const pbjsAliasRegistry = $$PREBID_GLOBAL$$.aliasRegistry;
       assert.equal(adapterManagerAliasRegistry, pbjsAliasRegistry);
+    });
+
+    it('should return undefined if the aliasRegistry config option is set to private', function () {
+      configObj.setConfig({ aliasRegistry: 'private' });
+      const pbjsAliasRegistry = $$PREBID_GLOBAL$$.aliasRegistry;
+      assert.equal(pbjsAliasRegistry, undefined);
     });
   });
 
