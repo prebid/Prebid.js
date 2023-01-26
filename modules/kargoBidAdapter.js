@@ -116,7 +116,11 @@ export const spec = {
       };
 
       if (meta.mediaType == VIDEO) {
-        bidResponse.vastXml = adUnit.adm;
+        if (adUnit.admUrl) {
+          bidResponse.vastUrl = adUnit.admUrl;
+        } else {
+          bidResponse.vastXml = adUnit.adm;
+        }
       }
 
       bidResponses.push(bidResponse);
