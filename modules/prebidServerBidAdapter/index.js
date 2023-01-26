@@ -445,9 +445,12 @@ export function PrebidServer() {
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
-        onResponse: function (isValid, requestedBidders) {
+        onResponse: function (isValid, requestedBidders, response) {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
+          }
+          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+            response.ext.seatnonbid.forEach(seatnonbid => emitNoBids(seatnonbid))
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
@@ -459,10 +462,8 @@ export function PrebidServer() {
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
             addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
-          } else if (s2sBidRequest.s2sConfig.extPrebid && s2sBidRequest.s2sConfig.extPrebid.seatnonbid && bid && bid.nonbid) {
-            emitNoBid(bid);
           } else {
-            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid)) && !bid.seatnonbid) {
+            if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
               if (bid.pbsWurl) {
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
@@ -529,7 +530,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {
-            onResponse(true, requestedBidders);
+            onResponse(true, requestedBidders, result);
           }
         },
         error: function () {
@@ -545,16 +546,28 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   }
 }, 'processPBSRequest');
 
-function emitNoBid(bid) {
-  const status = bid.nonbid.statuscode;
-  if (status > 0 && status < 100) {
-    events.emit(CONSTANTS.EVENTS.NO_BID, bid);
-  } else if (status > 99 && status < 400) {
-    events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, bid);
-  } else if (status === undefined) {
-    logError('No bid not emitted. No status defined');
-  }
+function shouldEmitNonbids(s2sConfig, response) {
+  return s2sConfig.extPrebid && s2sConfig.extPrebid.seatnonbid && response && response.ext && response.ext.seatnonbid;
+}
+
+function emitNoBids(seatnonbid) {
+  seatnonbid.nonbid.forEach(nonbid => {
+    const status = nonbid.statuscode;
+    const payload = packageNonBid(seatnonbid, nonbid);
+    if (status > 0 && status < 100) {
+      events.emit(CONSTANTS.EVENTS.NO_BID, payload);
+    } else if (status > 99 && status < 400) {
+      events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, payload);
+    } else if (status === undefined) {
+      logError('No bid not emitted. No status defined');
+    }
+  });
+
 };
+
+function packageNonBid(seatnonbid, nonbid) {
+  return {...seatnonbid, nonbid}
+}
 
 /**
  * Global setter that sets eids permissions for bidders
