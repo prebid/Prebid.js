@@ -1767,15 +1767,15 @@ describe('adapterManager tests', function () {
         adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})
           .map((req) => [req.bidderCode, req])
       );
-      expect(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp).to.eql({
+      sinon.assert.match(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp, {
         oneone: {
           twoone: 'val',
           twotwo: 'val',
         },
         onetwo: 'val2',
         onethree: 'val'
-      });
-      expect(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp).to.eql(adUnit.ortb2Imp);
+      })
+      sinon.assert.match(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp, adUnit.ortb2Imp)
     })
 
     it('picks ortb2Imp from "module" when only one s2sConfig is set', () => {
@@ -1803,7 +1803,7 @@ describe('adapterManager tests', function () {
       };
       const req = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})[0];
       [req.adUnitsS2SCopy[0].ortb2Imp, req.bids[0].ortb2Imp].forEach(imp => {
-        expect(imp).to.eql({
+        sinon.assert.match(imp, {
           p1: 'adUnit',
           p2: 'module'
         });
@@ -1855,16 +1855,16 @@ describe('adapterManager tests', function () {
         };
         const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
         [reqs[0].adUnitsS2SCopy[0].ortb2Imp, reqs[0].bids[0].ortb2Imp].forEach(imp => {
-          expect(imp).to.eql({
+          sinon.assert.match(imp, {
             p1: 'adUnit',
             p2: 'one'
-          });
+          })
         });
         [reqs[1].adUnitsS2SCopy[0].ortb2Imp, reqs[1].bids[0].ortb2Imp].forEach(imp => {
-          expect(imp).to.eql({
+          sinon.assert.match(imp, {
             p1: 'adUnit',
             p2: 'two'
-          });
+          })
         });
       });
 
@@ -1892,15 +1892,15 @@ describe('adapterManager tests', function () {
         };
         const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
         expect(reqs.length).to.equal(1);
-        expect(reqs[0].adUnitsS2SCopy[0].ortb2Imp).to.eql({
+        sinon.assert.match(reqs[0].adUnitsS2SCopy[0].ortb2Imp, {
           p1: 'adUnit',
           p2: 'one'
-        });
-        expect(reqs[0].bids[0].ortb2Imp).to.eql({
+        })
+        sinon.assert.match(reqs[0].bids[0].ortb2Imp, {
           p1: 'adUnit',
           p2: 'one',
           p3: 'bidderA'
-        });
+        })
       });
     });
 
