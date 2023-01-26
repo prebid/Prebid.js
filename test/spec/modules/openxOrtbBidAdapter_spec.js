@@ -579,6 +579,47 @@ describe('OpenxRtbAdapter', function () {
             });
           });
         });
+
+        describe('with user agent client hints', function () {
+          it('should add device.sua if available', function () {
+            const bidderRequestWithUserAgentClientHints = { refererInfo: {},
+              ortb2: {
+                device: {
+                  sua: {
+                    source: 2,
+                    platform: {
+                      brand: 'macOS',
+                      version: [ '12', '4', '0' ]
+                    },
+                    browsers: [
+                      {
+                        brand: 'Chromium',
+                        version: [ '106', '0', '5249', '119' ]
+                      },
+                      {
+                        brand: 'Google Chrome',
+                        version: [ '106', '0', '5249', '119' ]
+                      },
+                      {
+                        brand: 'Not;A=Brand',
+                        version: [ '99', '0', '0', '0' ]
+                      }],
+                    mobile: 0,
+                    model: 'Pro',
+                    bitness: '64',
+                    architecture: 'x86'
+                  }
+                }
+              }};
+
+            let request = spec.buildRequests(bidRequests, bidderRequestWithUserAgentClientHints);
+            expect(request[0].data.device.sua).to.exist;
+            expect(request[0].data.device.sua).to.deep.equal(bidderRequestWithUserAgentClientHints.ortb2.device.sua);
+            const bidderRequestWithoutUserAgentClientHints = {refererInfo: {}, ortb2: {}};
+            request = spec.buildRequests(bidRequests, bidderRequestWithoutUserAgentClientHints);
+            expect(request[0].data.device?.sua).to.not.exist;
+          });
+        });
       });
 
       context('when there is a consent management framework', function () {
