@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: DSPx Bidder Adapter
+Module Name: STV/Smartstream Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: prebid@dspx.tv
+Maintainer: prebid@smartstream.tv
 ```
 
 # Description
 
-DSPx adapter for Prebid.
+STV/Smartstream adapter for Prebid.
 
 # Test Parameters
 ```
