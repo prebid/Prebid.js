@@ -562,8 +562,7 @@ function emitNoBids(seatnonbid) {
       logError('No bid not emitted. No status defined');
     }
   });
-
-};
+}
 
 function packageNonBid(seatnonbid, nonbid) {
   return {...seatnonbid, nonbid}
