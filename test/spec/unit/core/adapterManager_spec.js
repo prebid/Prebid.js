@@ -1778,6 +1778,38 @@ describe('adapterManager tests', function () {
       expect(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp).to.eql(adUnit.ortb2Imp);
     })
 
+    it('picks ortb2Imp from "module" when only one s2sConfig is set', () => {
+      config.setConfig({
+        s2sConfig: [
+          {
+            enabled: true,
+            adapter: 'mockS2S1',
+          }
+        ]
+      });
+      const adUnit = {
+        code: 'mockau',
+        ortb2Imp: {
+          p1: 'adUnit'
+        },
+        bids: [
+          {
+            module: 'pbsBidAdapter',
+            ortb2Imp: {
+              p2: 'module'
+            }
+          }
+        ]
+      };
+      const req = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})[0];
+      [req.adUnitsS2SCopy[0].ortb2Imp, req.bids[0].ortb2Imp].forEach(imp => {
+        expect(imp).to.eql({
+          p1: 'adUnit',
+          p2: 'module'
+        });
+      });
+    });
+
     describe('with named s2s configs', () => {
       beforeEach(() => {
         config.setConfig({
@@ -1822,23 +1854,53 @@ describe('adapterManager tests', function () {
           ]
         };
         const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
-        expect(reqs[0].adUnitS2SCopy[0].ortb2Imp).to.eql({
+        [reqs[0].adUnitsS2SCopy[0].ortb2Imp, reqs[0].bids[0].ortb2Imp].forEach(imp => {
+          expect(imp).to.eql({
+            p1: 'adUnit',
+            p2: 'one'
+          });
+        });
+        [reqs[1].adUnitsS2SCopy[0].ortb2Imp, reqs[1].bids[0].ortb2Imp].forEach(imp => {
+          expect(imp).to.eql({
+            p1: 'adUnit',
+            p2: 'two'
+          });
+        });
+      });
+
+      it('applies module-level ortb2Imp to "normal" s2s requests', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              bidder: 'A',
+              ortb2Imp: {
+                p3: 'bidderA'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs.length).to.equal(1);
+        expect(reqs[0].adUnitsS2SCopy[0].ortb2Imp).to.eql({
           p1: 'adUnit',
           p2: 'one'
         });
         expect(reqs[0].bids[0].ortb2Imp).to.eql({
           p1: 'adUnit',
-          p2: 'one'
+          p2: 'one',
+          p3: 'bidderA'
         });
-        expect(reqs[1].adUnitS2SCopy[0].ortb2Imp).to.eql({
-          p1: 'adUnit',
-          p2: 'two'
-        });
-        expect(reqs[1].bids[0].ortb2Imp).to.eql({
-          p1: 'adUnit',
-          p2: 'two'
-        });
-
       });
     });
 
