@@ -126,6 +126,8 @@ export const spec = {
       payload.userId = createEidsArray(bidderRequest.userId);
     }
 
+    payload.pbjs_version = '$prebid.version$';
+
     const data = JSON.stringify(payload);
     const options = {
       withCredentials: true
