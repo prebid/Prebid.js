@@ -12,10 +12,9 @@ import {
   deepClone,
   isGptPubadsDefined,
 } from '../src/utils.js';
-import * as _find from 'core-js-pure/features/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import $$PREBID_GLOBAL$$ from '../src/prebid.js';
 /** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
-const find = _find;
 
 const url = 'https://an.adingo.jp';
 
@@ -81,6 +80,7 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
        * browsi枠は`adUnit.path`を持たない
        * 共通のadUnitPathを持つ（複製元の）枠を探す
        */
+      console.info(typeof(find))
       const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
       adUnit.analytics = analytics;
       adUnit.bids = bids;
@@ -88,6 +88,7 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
       adUnit.code = code;
       adUnit.mediaTypes.banner.name = name;
     } catch (_error) {
+      console.info(_error)
       logError(JSON.stringify({
         message: '対応するDWIDを持つ枠が見つかりませんでした。',
         adUnitCode: adUnit.code,
