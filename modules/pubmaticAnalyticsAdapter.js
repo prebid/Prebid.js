@@ -454,8 +454,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(auctionId);
-  pixelURL += '&bidid=' + (generatedBidId ? enc(generatedBidId) : enc(winningBid.bidId));
-  pixelURL += '&origbidid=' + enc(winningBid.bidId);
+  pixelURL += '&bidid=' + (generatedBidId ? enc(generatedBidId) : enc(winningBidId));
+  pixelURL += '&origbidid=' + enc(winningBidId);
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);

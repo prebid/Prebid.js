@@ -1364,22 +1364,6 @@ export const spec = {
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       let requestData = JSON.parse(request.data);
-      if (requestData && requestData.imp && requestData.imp.length > 0) {
-        requestData.imp.forEach(impData => {
-          bidResponses.push({
-            requestId: impData.id,
-            width: 0,
-            height: 0,
-            ttl: 300,
-            ad: '',
-            creativeId: 0,
-            netRevenue: NET_REVENUE,
-            cpm: 0,
-            currency: respCur,
-            referrer: parsedReferrer,
-          })
-        });
-      }
       if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
         bidResponses = [];
         // Supporting multiple bid responses for same adSize
@@ -1455,6 +1439,28 @@ export const spec = {
 
               bidResponses.push(newBid);
             });
+        });
+      }
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        var uniqueImpIds = bidResponses.map(bid => bid.requestId)
+          .filter((value, index, self) => self.indexOf(value) === index);
+        requestData.imp.forEach(function (impData) {
+          uniqueImpIds.forEach(function (impid) {
+            if (impid !== impData.id) {
+              bidResponses.push({
+                requestId: impData.id,
+                width: 0,
+                height: 0,
+                ttl: 300,
+                ad: '',
+                creativeId: 0,
+                netRevenue: NET_REVENUE,
+                cpm: 0,
+                currency: respCur,
+                referrer: parsedReferrer
+              });
+            }
+          });
         });
       }
     } catch (error) {
