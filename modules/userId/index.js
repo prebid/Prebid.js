@@ -129,7 +129,7 @@ import {find, includes} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import {gdprDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
@@ -148,13 +148,14 @@ import {
   logError,
   logInfo,
   logWarn,
-  timestamp,
-  isEmpty
+  isEmpty, deepSetValue
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
+import {findRootDomain} from '../../src/fpd/rootDomain.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -216,6 +217,14 @@ export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
 }
 
+function cookieSetter(submodule) {
+  const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
+  const name = submodule.config.storage.name;
+  return function setCookie(suffix, value, expiration) {
+    coreStorage.setCookie(name + (suffix || ''), value, expiration, 'Lax', domainOverride);
+  }
+}
+
 /**
  * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
@@ -225,15 +234,15 @@ export function setStoredValue(submodule, value) {
    * @type {SubmoduleStorage}
    */
   const storage = submodule.config.storage;
-  const domainOverride = (typeof submodule.submodule.domainOverride === 'function') ? submodule.submodule.domainOverride() : null;
 
   try {
-    const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
+    const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
     if (storage.type === COOKIE) {
-      coreStorage.setCookie(storage.name, valueStr, expiresStr, 'Lax', domainOverride);
+      const setCookie = cookieSetter(submodule);
+      setCookie(null, valueStr, expiresStr);
       if (typeof storage.refreshInSeconds === 'number') {
-        coreStorage.setCookie(`${storage.name}_last`, new Date().toUTCString(), expiresStr, 'Lax', domainOverride);
+        setCookie('_last', new Date().toUTCString(), expiresStr);
       }
     } else if (storage.type === LOCAL_STORAGE) {
       coreStorage.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
@@ -244,6 +253,31 @@ export function setStoredValue(submodule, value) {
     }
   } catch (error) {
     logError(error);
+  }
+}
+
+export function deleteStoredValue(submodule) {
+  let deleter, suffixes;
+  switch (submodule.config?.storage?.type) {
+    case COOKIE:
+      const setCookie = cookieSetter(submodule);
+      const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
+      deleter = (suffix) => setCookie(suffix, '', expiry)
+      suffixes = ['', '_last'];
+      break;
+    case LOCAL_STORAGE:
+      deleter = (suffix) => coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix)
+      suffixes = ['', '_last', '_exp'];
+      break;
+  }
+  if (deleter) {
+    suffixes.forEach(suffix => {
+      try {
+        deleter(suffix)
+      } catch (e) {
+        logError(e);
+      }
+    });
   }
 }
 
@@ -352,60 +386,6 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
 }
 
 /**
-   * Find the root domain
-   * @param {string|undefined} fullDomain
-   * @return {string}
-   */
-export function findRootDomain(fullDomain = window.location.hostname) {
-  if (!coreStorage.cookiesAreEnabled()) {
-    return fullDomain;
-  }
-
-  const domainParts = fullDomain.split('.');
-  if (domainParts.length == 2) {
-    return fullDomain;
-  }
-  let rootDomain;
-  let continueSearching;
-  let startIndex = -2;
-  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
-  const TEST_COOKIE_VALUE = 'writeable';
-  do {
-    rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
-
-    // Write a test cookie
-    coreStorage.setCookie(
-      TEST_COOKIE_NAME,
-      TEST_COOKIE_VALUE,
-      expirationDate,
-      'Lax',
-      rootDomain,
-      undefined
-    );
-
-    // See if the write was successful
-    const value = coreStorage.getCookie(TEST_COOKIE_NAME, undefined);
-    if (value === TEST_COOKIE_VALUE) {
-      continueSearching = false;
-      // Delete our test cookie
-      coreStorage.setCookie(
-        TEST_COOKIE_NAME,
-        '',
-        'Thu, 01 Jan 1970 00:00:01 GMT',
-        undefined,
-        rootDomain,
-        undefined
-      );
-    } else {
-      startIndex += -1;
-      continueSearching = Math.abs(startIndex) <= domainParts.length;
-    }
-  } while (continueSearching);
-  return rootDomain;
-}
-
-/**
  * @param {SubmoduleContainer[]} submodules
  * @param {function} cb - callback for after processing is done.
  */
@@ -425,6 +405,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
+        updatePPID(submodule.idObj);
       } else {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
@@ -613,9 +594,9 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
 
 let initIdSystem;
 
-function getPPID() {
+function getPPID(eids = getUserIdsAsEids() || []) {
   // userSync.ppid should be one of the 'source' values in getUserIdsAsEids() eg pubcid.org or id5-sync.com
-  const matchingUserId = ppidSource && (getUserIdsAsEids() || []).find(userID => userID.source === ppidSource);
+  const matchingUserId = ppidSource && eids.find(userID => userID.source === ppidSource);
   if (matchingUserId && typeof deepAccess(matchingUserId, 'uids.0.id') === 'string') {
     const ppidValue = matchingUserId.uids[0].id.replace(/[\W_]/g, '');
     if (ppidValue.length >= 32 && ppidValue.length <= 150) {
@@ -642,18 +623,6 @@ export const requestBidsHook = timedAuctionHook('userId', function requestBidsHo
   ]).then(() => {
     // pass available user id data to bid adapters
     addIdDataToAdUnitBids(reqBidsConfigObj.adUnits || getGlobal().adUnits, initializedSubmodules);
-    const ppid = getPPID();
-    if (ppid) {
-      if (isGptPubadsDefined()) {
-        window.googletag.pubads().setPublisherProvidedId(ppid);
-      } else {
-        window.googletag = window.googletag || {};
-        window.googletag.cmd = window.googletag.cmd || [];
-        window.googletag.cmd.push(function() {
-          window.googletag.pubads().setPublisherProvidedId(ppid);
-        });
-      }
-    }
     uidMetrics().join(useMetrics(reqBidsConfigObj.metrics), {propagate: false, includeGroups: true});
     // calling fn allows prebid to continue processing
     fn.call(this, reqBidsConfigObj);
@@ -853,6 +822,24 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
     }
   }
+  updatePPID(submodule.idObj);
+}
+
+function updatePPID(userIds = getUserIds()) {
+  if (userIds && ppidSource) {
+    const ppid = getPPID(createEidsArray(userIds));
+    if (ppid) {
+      if (isGptPubadsDefined()) {
+        window.googletag.pubads().setPublisherProvidedId(ppid);
+      } else {
+        window.googletag = window.googletag || {};
+        window.googletag.cmd = window.googletag.cmd || [];
+        window.googletag.cmd.push(function() {
+          window.googletag.pubads().setPublisherProvidedId(ppid);
+        });
+      }
+    }
+  }
 }
 
 function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
@@ -1002,10 +989,26 @@ function updateSubmodules() {
   if (!addedUserIdHook && submodules.length) {
     // priority value 40 will load after consentManagement with a priority of 50
     getGlobal().requestBids.before(requestBidsHook, 40);
+    adapterManager.callDataDeletionRequest.before(requestDataDeletion);
     coreGetPPID.after((next) => next(getPPID()));
     logInfo(`${MODULE_NAME} - usersync config updated for ${submodules.length} submodules: `, submodules.map(a => a.submodule.name));
     addedUserIdHook = true;
   }
+}
+
+export function requestDataDeletion(next, ...args) {
+  logInfo('UserID: received data deletion request; deleting all stored IDs...')
+  submodules.forEach(submodule => {
+    if (typeof submodule.submodule.onDataDeletionRequest === 'function') {
+      try {
+        submodule.submodule.onDataDeletionRequest(submodule.config, submodule.idObj, ...args);
+      } catch (e) {
+        logError(`Error calling onDataDeletionRequest for ID submodule ${submodule.submodule.name}`, e);
+      }
+    }
+    deleteStoredValue(submodule);
+  })
+  next.apply(this, args);
 }
 
 /**
@@ -1075,3 +1078,11 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 init(config);
 
 module('userId', attachIdSystem);
+
+export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
+  const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');
+  if (eids) {
+    deepSetValue(ortbRequest, 'user.ext.eids', eids);
+  }
+}
+registerOrtbProcessor({type: REQUEST, name: 'userExtEids', fn: setOrtbUserExtEids});

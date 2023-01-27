@@ -94,7 +94,12 @@ describe('fluctAdapter', function () {
       expect(request.data.params.kv).to.eql(undefined);
     });
 
-    it('includes filtered user.eids if any exists', function () {
+    it('includes no data.schain by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.schain).to.eql(undefined);
+    });
+
+    it('includes filtered user.eids if any exist', function () {
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign(bidReq, {
           userIdAsEids: [
@@ -173,6 +178,37 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
       expect(request.data.params.kv).to.eql({
         imsids: ['imsid1', 'imsid2']
+      });
+    });
+
+    it('includes data.schain if any exists', function () {
+      // this should be done by schain.js
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign(bidReq, {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: 'publisher-id',
+                hp: 1
+              }
+            ]
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.schain).to.eql({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'example.com',
+            sid: 'publisher-id',
+            hp: 1
+          }
+        ]
       });
     });
   });

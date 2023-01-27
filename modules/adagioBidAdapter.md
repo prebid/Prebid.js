@@ -10,19 +10,17 @@ Connects to Adagio demand source to fetch bids.
 
 ## Configuration
 
-Adagio require several params. These params must be set at Prebid.js global config level or at adUnit level.
+Adagio require several params. These params must be set at Prebid.js BidderConfig config level or at adUnit level.
 
 Below, the list of Adagio params and where they can be set.
 
 | Param name | Global config | AdUnit config |
 | ---------- | ------------- | ------------- |
 | siteId | x |
-| organizationId (obsolete) | | x
-| site (obsolete) | | x
+| organizationId * | | x
+| site * | | x
 | pagetype | x | x
-| environment | x | x
 | category | x | x
-| subcategory | x | x
 | useAdUnitCodeAsAdUnitElementId | x | x
 | useAdUnitCodeAsPlacement | x | x
 | placement | | x
@@ -30,6 +28,8 @@ Below, the list of Adagio params and where they can be set.
 | debug | | x
 | video | | x
 | native | | x
+
+_* These params are deprecated in favor the Global configuration setup, see below._
 
 ### Global configuration
 
@@ -49,14 +49,20 @@ pbjs.setConfig({
     // - underscores `_`
     // Also, each param can have at most 50 unique active values (case-insensitive).
     pagetype: 'article', // Highly recommended. The pagetype describes what kind of content will be present in the page.
-    environment: 'mobile', // Recommended. Environment where the page is displayed.
     category: 'sport', // Recommended. Category of the content displayed in the page.
-    subcategory: 'handball', // Optional. Subcategory of the content displayed in the page.
     useAdUnitCodeAsAdUnitElementId: false, // Optional. Use it by-pass adUnitElementId and use the adUnit code as value
     useAdUnitCodeAsPlacement: false, // Optional. Use it to by-pass placement and use the adUnit code as value
   },
 });
 ```
+
+#### Note on FPD support
+
+Adagio will use FPD data as fallback for the params below:
+- pagetype
+- category
+
+If the FPD value is an array, the 1st value of this array will be used.
 
 ### adUnit configuration
 
@@ -97,9 +103,7 @@ var adUnits = [
     debug: true,
     adagio: {
       pagetype: 'article',
-      environment: 'mobile',
       category: 'sport',
-      subcategory: 'handball',
       useAdUnitCodeAsAdUnitElementId: false,
       useAdUnitCodeAsPlacement: false,
     }
@@ -199,12 +203,6 @@ var adUnits = [
           }
         },
         {
-          key: "environment",
-          val: function (bidResponse) {
-            return bidResponse.environment;
-          }
-        },
-        {
           key: "placement",
           val: function (bidResponse) {
             return bidResponse.placement;
@@ -220,12 +218,6 @@ var adUnits = [
           key: "category",
           val: function (bidResponse) {
             return bidResponse.category;
-          }
-        },
-        {
-          key: "subcategory",
-          val: function (bidResponse) {
-            return bidResponse.subcategory;
           }
         }
       ]
