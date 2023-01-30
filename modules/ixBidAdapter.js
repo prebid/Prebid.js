@@ -380,8 +380,8 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.netRevenue = NET_REVENUE;
   bid.currency = currency;
   bid.creativeId = rawBid.hasOwnProperty('crid') ? rawBid.crid : '-';
-
-  if (rawBid.mtype == MEDIA_TYPES.Video) {
+  // If mtype = video is passed and vastURl is not set, set vastxml
+  if (rawBid.mtype == MEDIA_TYPES.Video && ((rawBid.ext && !rawBid.ext.vasturl) || !rawBid.ext)) {
     bid.vastXml = rawBid.adm;
   } else if (rawBid.ext && rawBid.ext.vasturl) {
     bid.vastUrl = rawBid.ext.vasturl;
@@ -425,7 +425,6 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.adomain && rawBid.adomain.length > 0) {
     bid.meta.advertiserDomains = rawBid.adomain;
   }
-
   return bid;
 }
 
@@ -629,8 +628,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   }
 
   const r = {};
-  const tmax = config.getConfig('bidderTimeout');
-
+  const tmax = deepAccess(bidderRequest, 'timeout');
   // Since bidderRequestId are the same for different bid request, just use the first one.
   r.id = validBidRequests[0].bidderRequestId.toString();
   r.site = {};
@@ -719,6 +717,11 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     if (pageUrl) {
       r.site.page = pageUrl;
+    }
+
+    if (bidderRequest.gppConsent) {
+      deepSetValue(r, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(r, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
     }
   }
 
@@ -856,7 +859,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     currentRequestSize += currentImpressionSize;
 
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
-
     if (!isEmpty(fpd) && !isFpdAdded) {
       r.ext.ixdiag.fpd = true;
 
@@ -875,6 +877,23 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
           delete user[key];
         }
       });
+
+      if (fpd.device) {
+        const sua = {...fpd.device.sua};
+        if (!isEmpty(sua)) {
+          deepSetValue(r, 'device.sua', sua);
+        }
+      }
+
+      if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
+        if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
+          deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
+        }
+
+        if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
+          deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+        }
+      }
 
       const clonedRObject = deepClone(r);
 
