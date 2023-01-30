@@ -68,18 +68,6 @@ const INVALID_BIDS = [
     },
     params: {
       publisherId: '3014912',
-      siteId: '3014912',
-    }
-  },
-  {
-    bidder: 'aidem',
-    mediaTypes: {
-      banner: {
-        sizes: [[300, 250], [300, 600]],
-      }
-    },
-    params: {
-      publisherId: '3014912',
     }
   },
   {
@@ -301,7 +289,7 @@ const WIN_NOTICE = {
     'hb_size': '300x250',
     'hb_source': 'client',
     'hb_format': 'banner',
-    'hb_adomain': 'tenutabene.it'
+    'hb_adomain': 'example.com'
   },
 
   'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',

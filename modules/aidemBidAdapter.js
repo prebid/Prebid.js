@@ -32,29 +32,29 @@ const endpoints = {
     timeout: `${BASE_URL}/notice/timeout`,
     error: `${BASE_URL}/notice/error`,
   }
-}
+};
 
 export function setEndPoints(env = null, path = '', mediaType = BANNER) {
   switch (env) {
     case 'local':
-      endpoints.request = mediaType === BANNER ? `${LOCAL_BASE_URL}${path}/bid/request` : `${LOCAL_BASE_URL}${path}/bid/videorequest`
-      endpoints.notice.win = `${LOCAL_BASE_URL}${path}/notice/win`
-      endpoints.notice.error = `${LOCAL_BASE_URL}${path}/notice/error`
-      endpoints.notice.timeout = `${LOCAL_BASE_URL}${path}/notice/timeout`
+      endpoints.request = mediaType === BANNER ? `${LOCAL_BASE_URL}${path}/bid/request` : `${LOCAL_BASE_URL}${path}/bid/videorequest`;
+      endpoints.notice.win = `${LOCAL_BASE_URL}${path}/notice/win`;
+      endpoints.notice.error = `${LOCAL_BASE_URL}${path}/notice/error`;
+      endpoints.notice.timeout = `${LOCAL_BASE_URL}${path}/notice/timeout`;
       break;
     case 'main':
-      endpoints.request = mediaType === BANNER ? `${BASE_URL}${path}/bid/request` : `${BASE_URL}${path}/bid/videorequest`
-      endpoints.notice.win = `${BASE_URL}${path}/notice/win`
-      endpoints.notice.error = `${BASE_URL}${path}/notice/error`
-      endpoints.notice.timeout = `${BASE_URL}${path}/notice/timeout`
+      endpoints.request = mediaType === BANNER ? `${BASE_URL}${path}/bid/request` : `${BASE_URL}${path}/bid/videorequest`;
+      endpoints.notice.win = `${BASE_URL}${path}/notice/win`;
+      endpoints.notice.error = `${BASE_URL}${path}/notice/error`;
+      endpoints.notice.timeout = `${BASE_URL}${path}/notice/timeout`;
       break;
   }
-  return endpoints
+  return endpoints;
 }
 
 config.getConfig('aidem', function (config) {
-  if (config.aidem.env) { setEndPoints(config.aidem.env, config.aidem.path, config.aidem.mediaType) }
-})
+  if (config.aidem.env) { setEndPoints(config.aidem.env, config.aidem.path, config.aidem.mediaType); }
+});
 
 // AIDEM Custom FN
 function recur(obj) {
@@ -123,8 +123,8 @@ function getDevice() {
 
 function getRegs() {
   let regs = {};
-  const consentManagement = config.getConfig('consentManagement')
-  const coppa = config.getConfig('coppa')
+  const consentManagement = config.getConfig('consentManagement');
+  const coppa = config.getConfig('coppa');
   if (consentManagement && !!(consentManagement.gdpr)) {
     deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
   } else {
@@ -147,11 +147,11 @@ function getRegs() {
 }
 
 function getPageUrl(bidderRequest) {
-  return bidderRequest?.refererInfo?.page
+  return bidderRequest?.refererInfo?.page;
 }
 
 function buildWinNotice(bid) {
-  const params = bid.params[0]
+  const params = bid.params[0];
   return {
     publisherId: params.publisherId,
     siteId: params.siteId,
@@ -167,7 +167,7 @@ function buildWinNotice(bid) {
     ttl: bid.ttl,
     requestTimestamp: bid.requestTimestamp,
     responseTimestamp: bid.responseTimestamp,
-  }
+  };
 }
 
 function buildErrorNotice(prebidErrorResponse) {
@@ -177,29 +177,29 @@ function buildErrorNotice(prebidErrorResponse) {
     auctionId: prebidErrorResponse.auctionId,
     bidderRequestId: prebidErrorResponse.bidderRequestId,
     metrics: {}
-  }
+  };
 }
 
 function hasValidFloor(obj) {
-  if (!obj) return false
-  const hasValue = !isNaN(Number(obj.value))
-  const hasCurrency = contains(AVAILABLE_CURRENCIES, obj.currency)
-  return hasValue && hasCurrency
+  if (!obj) return false;
+  const hasValue = !isNaN(Number(obj.value));
+  const hasCurrency = contains(AVAILABLE_CURRENCIES, obj.currency);
+  return hasValue && hasCurrency;
 }
 
 function getMediaType(bidRequest) {
-  if ((bidRequest.mediaTypes && bidRequest.mediaTypes.hasOwnProperty('video')) || bidRequest.params.hasOwnProperty('video')) { return VIDEO }
-  return BANNER
+  if ((bidRequest.mediaTypes && bidRequest.mediaTypes.hasOwnProperty('video')) || bidRequest.params.hasOwnProperty('video')) { return VIDEO; }
+  return BANNER;
 }
 
 function getPrebidRequestFields(bidderRequest, bidRequests) {
-  const payload = {}
+  const payload = {};
   // Base Payload Data
   deepSetValue(payload, 'id', bidderRequest.auctionId);
   // Impressions
-  setPrebidImpressionObject(bidRequests, payload)
+  setPrebidImpressionObject(bidRequests, payload);
   // Device
-  deepSetValue(payload, 'device', getDevice())
+  deepSetValue(payload, 'device', getDevice());
   // Timeout
   deepSetValue(payload, 'tmax', bidderRequest.timeout);
   // Currency
@@ -209,13 +209,13 @@ function getPrebidRequestFields(bidderRequest, bidRequests) {
   // Privacy Regs
   deepSetValue(payload, 'regs', getRegs());
   // Site
-  setPrebidSiteObject(bidderRequest, payload)
+  setPrebidSiteObject(bidderRequest, payload);
   // Environment
-  setPrebidRequestEnvironment(payload)
+  setPrebidRequestEnvironment(payload);
   // AT auction type
   deepSetValue(payload, 'at', 1);
 
-  return payload
+  return payload;
 }
 
 function setPrebidImpressionObject(bidRequests, payload) {
@@ -232,18 +232,18 @@ function setPrebidImpressionObject(bidRequests, payload) {
     deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
     // Site id
     deepSetValue(payload, 'site.id', deepAccess(bidRequest, 'params.siteId'));
-    const mediaType = getMediaType(bidRequest)
+    const mediaType = getMediaType(bidRequest);
     switch (mediaType) {
       case 'banner':
-        setPrebidImpressionObjectBanner(bidRequest, impressionObject)
+        setPrebidImpressionObjectBanner(bidRequest, impressionObject);
         break;
       case 'video':
-        setPrebidImpressionObjectVideo(bidRequest, impressionObject)
+        setPrebidImpressionObjectVideo(bidRequest, impressionObject);
         break;
     }
 
     // Floor (optional)
-    setPrebidImpressionObjectFloor(bidRequest, impressionObject)
+    setPrebidImpressionObjectFloor(bidRequest, impressionObject);
 
     impressionObject.imp_ext = {};
 
@@ -278,10 +278,10 @@ function setPrebidRequestEnvironment(payload) {
 }
 
 function setPrebidImpressionObjectFloor(bidRequest, impressionObject) {
-  const floor = deepAccess(bidRequest, 'params.floor')
+  const floor = deepAccess(bidRequest, 'params.floor');
   if (hasValidFloor(floor)) {
-    deepSetValue(impressionObject, 'floor.value', floor.value)
-    deepSetValue(impressionObject, 'floor.currency', floor.currency)
+    deepSetValue(impressionObject, 'floor.value', floor.value);
+    deepSetValue(impressionObject, 'floor.currency', floor.currency);
   }
 }
 
@@ -328,7 +328,7 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
   deepSetValue(prebidResponseBidObject, 'currency', openRTBResponseBidObject.cur ? openRTBResponseBidObject.cur.toUpperCase() : DEFAULT_CURRENCY);
   deepSetValue(prebidResponseBidObject, 'width', openRTBResponseBidObject.w);
   deepSetValue(prebidResponseBidObject, 'height', openRTBResponseBidObject.h);
-  deepSetValue(prebidResponseBidObject, 'dealId', openRTBResponseBidObject.dealid)
+  deepSetValue(prebidResponseBidObject, 'dealId', openRTBResponseBidObject.dealid);
   deepSetValue(prebidResponseBidObject, 'netRevenue', true);
   deepSetValue(prebidResponseBidObject, 'ttl', 60000);
 
@@ -341,8 +341,8 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
     deepSetValue(prebidResponseBidObject, 'mediaType', BANNER);
     deepSetValue(prebidResponseBidObject, 'ad', openRTBResponseBidObject.adm);
   }
-  setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject)
-  return prebidResponseBidObject
+  setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject);
+  return prebidResponseBidObject;
 }
 
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
@@ -363,28 +363,28 @@ function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponse
 }
 
 function hasValidMediaType(bidRequest) {
-  const supported = hasBannerMediaType(bidRequest) || hasVideoMediaType(bidRequest)
+  const supported = hasBannerMediaType(bidRequest) || hasVideoMediaType(bidRequest);
   if (!supported) {
     logError('AIDEM Bid Adapter: media type not supported', { bidder: BIDDER_CODE, code: ERROR_CODES.MEDIA_TYPE_NOT_SUPPORTED });
   }
-  return supported
+  return supported;
 }
 
 function hasBannerMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.banner')
+  return !!deepAccess(bidRequest, 'mediaTypes.banner');
 }
 
 function hasVideoMediaType(bidRequest) {
-  return !!deepAccess(bidRequest, 'mediaTypes.video')
+  return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
 function hasValidBannerMediaType(bidRequest) {
-  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes')
+  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes');
   if (!sizes) {
     logError('AIDEM Bid Adapter: media type sizes missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
     return false;
   }
-  return true
+  return true;
 }
 
 function hasValidVideoMediaType(bidRequest) {
@@ -393,45 +393,44 @@ function hasValidVideoMediaType(bidRequest) {
     logError('AIDEM Bid Adapter: media type playerSize missing', { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
     return false;
   }
-  return true
+  return true;
 }
 
 function hasValidVideoParameters(bidRequest) {
-  let valid = true
+  let valid = true;
   const adUnitsParameters = deepAccess(bidRequest, 'mediaTypes.video');
   const bidderParameter = deepAccess(bidRequest, 'params.video');
   for (let property of REQUIRED_VIDEO_PARAMS) {
-    const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property)
-    const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property)
+    const hasAdUnitParameter = adUnitsParameters.hasOwnProperty(property);
+    const hasBidderParameter = bidderParameter && bidderParameter.hasOwnProperty(property);
     if (!hasAdUnitParameter && !hasBidderParameter) {
       logError(`AIDEM Bid Adapter: ${property} is not included in either the adunit or params level`, { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
-      valid = false
+      valid = false;
     }
   }
 
-  return valid
+  return valid;
 }
 
 function passesRateLimit(bidRequest) {
   const rateLimit = deepAccess(bidRequest, 'params.rateLimit', 1);
   if (!isNumber(rateLimit) || rateLimit > 1 || rateLimit < 0) {
     logError('AIDEM Bid Adapter: invalid rateLimit (must be a number between 0 and 1)', { bidder: BIDDER_CODE, code: ERROR_CODES.INVALID_RATELIMIT });
-    return false
+    return false;
   }
   if (rateLimit !== 1) {
-    const randomRateValue = Math.random()
+    const randomRateValue = Math.random();
     if (randomRateValue > rateLimit) {
-      return false
+      return false;
     }
   }
-  return true
+  return true;
 }
 
 function hasValidParameters(bidRequest) {
   // Assigned from AIDEM to a publisher website
   const siteId = deepAccess(bidRequest, 'params.siteId');
   const publisherId = deepAccess(bidRequest, 'params.publisherId');
-  const placementId = deepAccess(bidRequest, 'params.placementId');
 
   if (!isStr(siteId)) {
     logError('AIDEM Bid Adapter: siteId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
@@ -443,12 +442,7 @@ function hasValidParameters(bidRequest) {
     return false;
   }
 
-  if (!isStr(placementId)) {
-    logError('AIDEM Bid Adapter: placementId must valid string', { bidder: BIDDER_CODE, code: ERROR_CODES.PLACEMENT_ID_INVALID_VALUE });
-    return false;
-  }
-
-  return true
+  return true;
 }
 
 export const spec = {
@@ -458,32 +452,32 @@ export const spec = {
     logInfo('bid: ', bidRequest);
 
     // check if request has valid mediaTypes
-    if (!hasValidMediaType(bidRequest)) return false
+    if (!hasValidMediaType(bidRequest)) return false;
 
     // check if request has valid media type parameters at adUnit level
     if (hasBannerMediaType(bidRequest) && !hasValidBannerMediaType(bidRequest)) {
-      return false
+      return false;
     }
 
     if (hasVideoMediaType(bidRequest) && !hasValidVideoMediaType(bidRequest)) {
-      return false
+      return false;
     }
 
     if (hasVideoMediaType(bidRequest) && !hasValidVideoParameters(bidRequest)) {
-      return false
+      return false;
     }
 
     if (!hasValidParameters(bidRequest)) {
-      return false
+      return false;
     }
 
-    return passesRateLimit(bidRequest)
+    return passesRateLimit(bidRequest);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     logInfo('validBidRequests: ', validBidRequests);
     logInfo('bidderRequest: ', bidderRequest);
-    const prebidRequest = getPrebidRequestFields(bidderRequest, validBidRequests)
+    const prebidRequest = getPrebidRequestFields(bidderRequest, validBidRequests);
     const payloadString = JSON.stringify(prebidRequest);
 
     return {
@@ -505,7 +499,7 @@ export const spec = {
         return;
       }
       logInfo('CPM OK');
-      const bid = getPrebidResponseBidObject(bidObject)
+      const bid = getPrebidResponseBidObject(bidObject);
       bids.push(bid);
     });
     return bids;
@@ -514,14 +508,14 @@ export const spec = {
   onBidWon: function(bid) {
     // Bidder specific code
     logInfo('onBidWon bid: ', bid);
-    const notice = buildWinNotice(bid)
+    const notice = buildWinNotice(bid);
     ajax(endpoints.notice.win, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
   },
 
   onBidderError: function({ bidderRequest }) {
     // Bidder specific code
-    const notice = buildErrorNotice(bidderRequest)
+    const notice = buildErrorNotice(bidderRequest);
     ajax(endpoints.notice.error, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
   },
-}
+};
 registerBidder(spec);
