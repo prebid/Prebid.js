@@ -68,6 +68,8 @@ export const spec = {
       requestId: response.slotBidId,
       cpm: response.cpm,
       currency: response.currency || DEFAULT_CURRENCY,
+      adType: response.adType || '1',
+      settings: response.settings,
       width: response.adWidth,
       height: response.adHeight,
       ttl: CREATIVE_TTL,
@@ -79,6 +81,9 @@ export const spec = {
       },
       ad: response.ad
     };
+    /* eslint-disable no-console */
+    console.log("testingResponse===>", responseBid);
+    /* eslint-enable no-console */
     bids.push(responseBid);
     return bids;
   }
