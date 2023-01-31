@@ -154,6 +154,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (!isEmpty(ext)) {
     data.ext = ext;
   }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
+  }
   return data;
 }
 

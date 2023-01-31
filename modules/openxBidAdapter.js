@@ -268,6 +268,11 @@ function buildCommonQueryParamsFromBids(bids, bidderRequest) {
     nocache: new Date().getTime()
   };
 
+  const userAgentClientHints = deepAccess(bidderRequest, 'ortb2.device.sua');
+  if (userAgentClientHints) {
+    defaultParams.sua = JSON.stringify(userAgentClientHints);
+  }
+
   const userDataSegments = buildFpdQueryParams('user.data', bidderRequest.ortb2);
   if (userDataSegments.length > 0) {
     defaultParams.sm = userDataSegments;
