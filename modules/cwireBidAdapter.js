@@ -176,6 +176,9 @@ export const spec = {
       httpRef: referrer,
       // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
       pageViewId: pageViewId,
+      sdk: {
+        version: '$prebid.version$'
+      },
       ...extensions
     };
     const payloadString = JSON.stringify(payload);
