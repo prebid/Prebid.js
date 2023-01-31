@@ -80,7 +80,6 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
        * browsi枠は`adUnit.path`を持たない
        * 共通のadUnitPathを持つ（複製元の）枠を探す
        */
-      console.info(typeof(find))
       const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
       adUnit.analytics = analytics;
       adUnit.bids = bids;
@@ -88,7 +87,6 @@ export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adU
       adUnit.code = code;
       adUnit.mediaTypes.banner.name = name;
     } catch (_error) {
-      console.info(_error)
       logError(JSON.stringify({
         message: '対応するDWIDを持つ枠が見つかりませんでした。',
         adUnitCode: adUnit.code,
