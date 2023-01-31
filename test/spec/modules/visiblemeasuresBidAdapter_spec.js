@@ -4,6 +4,8 @@ import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'visiblemeasures'
+const adUrl = 'https://us-e.visiblemeasures.com/pbjs';
+const syncUrl = 'https://cs.visiblemeasures.com';
 
 describe('VisibleMeasuresBidAdapter', function () {
   const bids = [
@@ -103,7 +105,7 @@ describe('VisibleMeasuresBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://sa-lb.deliverimp.com/pbjs');
+      expect(serverRequest.url).to.equal(adUrl);
     });
 
     it('Returns general data valid', function () {
@@ -381,7 +383,7 @@ describe('VisibleMeasuresBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://sa-cs.deliverimp.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal(`${syncUrl}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -392,7 +394,7 @@ describe('VisibleMeasuresBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://sa-cs.deliverimp.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal(`${syncUrl}/image?pbjs=1&ccpa_consent=1---&coppa=0`)
     });
   });
 });
