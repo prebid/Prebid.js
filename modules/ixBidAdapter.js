@@ -155,7 +155,6 @@ let baseRequestSize = 0;
 let currentRequestSize = 0;
 let wasAdUnitImpressionsTrimmed = false;
 let currentImpressionSize = 0;
-let buildRequestV2 = false;
 
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
@@ -598,8 +597,6 @@ function getEidInfo(allEids) {
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
-  // V2 does not have request splitting logic.
-  buildRequestV2 = FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2');
   baseRequestSize = 0;
   currentRequestSize = 0;
   wasAdUnitImpressionsTrimmed = false;
@@ -638,14 +635,15 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = applyRegulations(r, bidderRequest);
 
   let payload = {};
-  createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE, buildRequestV2);
+  createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE);
 
   let requestSequenceNumber = 0;
   const transactionIds = Object.keys(impressions);
   let isFpdAdded = false;
 
   for (let adUnitIndex = 0; adUnitIndex < transactionIds.length; adUnitIndex++) {
-    if (!buildRequestV2) {
+    // buildRequestV2 does not have request spliting logic.
+    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
       if (currentRequestSize >= MAX_REQUEST_SIZE) {
         break;
       }
@@ -654,7 +652,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       break;
     }
 
-    r = addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE, buildRequestV2);
+    r = addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE);
     currentRequestSize += currentImpressionSize;
 
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
@@ -682,7 +680,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     }
 
     // add identifiers info to ixDiag
-    r = addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE, buildRequestV2);
+    r = addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE);
 
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
@@ -712,6 +710,12 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   return requests;
 }
 
+/**
+ * addRTI adds RTI info of the partner to retrieved user IDs from prebid ID module.
+ *
+ * @param {array} userEids userEids info retrieved from prebid
+ * @param {array} eidInfo eidInfo info from prebid
+ */
 function addRTI(userEids, eidInfo) {
   let identityInfo = window.headertag.getIdentityInfo();
   if (identityInfo && typeof identityInfo === 'object') {
@@ -727,6 +731,11 @@ function addRTI(userEids, eidInfo) {
   }
 }
 
+/**
+ * createRequest creates the base request object
+ * @param  {array}  validBidRequests A list of valid bid request config objects.
+ * @return {object}                  Object describing the request to the server.
+ */
 function createRequest(validBidRequests) {
   const r = {};
   // Since bidderRequestId are the same for different bid request, just use the first one.
@@ -741,6 +750,16 @@ function createRequest(validBidRequests) {
   return r
 }
 
+/**
+ * enrichRequest adds userSync configs, source, and referer info to request and ixDiag objects.
+ *
+ * @param  {object} r                Base reuqest object.
+ * @param  {object} bidderRequest    An object containing other info like gdprConsent.
+ * @param  {array}  impressions      A list of impressions to be added to the request.
+ * @param  {array}  validBidRequests A list of valid bid request config objects.
+ * @param  {array}  userEids         User ID info retrieved from Prebid ID module.
+ * @return {object}                  Enriched object describing the request to the server.
+ */
 function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids) {
   const tmax = deepAccess(bidderRequest, 'timeout');
   if (tmax) {
@@ -784,6 +803,13 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   return r
 }
 
+/**
+ * applyRegulations applies regulation info such as GDPR and GPP to the reqeust obejct.
+ *
+ * @param  {object}  r                Base reuqest object.
+ * @param  {object}  bidderRequest    An object containing other info like gdprConsent.
+ * @return {object}                   Object enriched with regulation info describing the request to the server.
+ */
 function applyRegulations(r, bidderRequest) {
   // Apply GDPR information to the request if GDPR is enabled.
   if (bidderRequest) {
@@ -835,7 +861,18 @@ function applyRegulations(r, bidderRequest) {
   return r
 }
 
-function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE, buildRequestV2) {
+/**
+ * createPayload creates the payload to be sent with the request.
+ *
+ * @param  {array}  validBidRequests    A list of valid bid request config objects.
+ * @param  {object} bidderRequest       An object containing other info like gdprConsent.
+ * @param  {object} r                   Reuqest object.
+ * @param  {string} baseUrl             Base exchagne URL.
+ * @param  {array}  requests            List of request obejcts.
+ * @param  {object} payload             Request payload object.
+ * @param  {int}    MAX_REQUEST_SIZE    Maximum request size limit (buildrequest V1).
+ */
+function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE) {
   // Use the siteId in the first bid request as the main siteId.
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
@@ -868,7 +905,7 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
 
       fpdRequestSize = encodeURIComponent(firstPartyString).length;
 
-      if (!buildRequestV2) {
+      if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
         if (fpdRequestSize < MAX_REQUEST_SIZE) {
           if ('page' in r.site) {
             r.site.page += firstPartyString;
@@ -890,7 +927,17 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
   }
 }
 
-function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE, buildRequestV2) {
+/**
+ * addImpressions adds impressions to request object
+ *
+ * @param  {array}  impressions        List of impressions to be added to the request.
+ * @param  {array}  transactionIds     List of transaction Ids.
+ * @param  {object} r                  Reuqest object.
+ * @param  {int}    adUnitIndex        Index of the current add unit
+ * @param  {int}    MAX_REQUEST_SIZE   Maximum request size limit (buildrequest V1).
+ * @return {object}                    Reqyest object with added impressions describing the request to the server.
+ */
+function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE) {
   const adUnitImpressions = impressions[transactionIds[adUnitIndex]];
   const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
 
@@ -903,7 +950,7 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST
 
   currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
 
-  if (!buildRequestV2) {
+  if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
     while (impressionObjects.length && currentImpressionSize > remainingRequestSize) {
       wasAdUnitImpressionsTrimmed = true;
       impressionObjects.pop();
@@ -969,6 +1016,16 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST
   return r;
 }
 
+/**
+ * addFPD adds ortb2 first party data to request object.
+ *
+ * @param  {object} bidderRequest     An object containing other info like gdprConsent.
+ * @param  {object} r                 Reuqest object.
+ * @param  {object} fpd               ortb2 first party data.
+ * @param  {object} site              First party site data.
+ * @param  {object} user              First party user data.
+ * @return {object}                   Reqyest object with added FPD describing the request to the server.
+ */
 function addFPD(bidderRequest, r, fpd, site, user) {
   r.ext.ixdiag.fpd = true;
 
@@ -1004,7 +1061,19 @@ function addFPD(bidderRequest, r, fpd, site, user) {
   return r;
 }
 
-function addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE, buildRequestV2) {
+/**
+ * addIdentifiersInfo adds indentifier info to ixDaig.
+ *
+ * @param  {array}  impressions        List of impressions to be added to the request.
+ * @param  {object} r                  Reuqest object.
+ * @param  {array}  transactionIds     List of transaction Ids.
+ * @param  {int}    adUnitIndex        Index of the current add unit
+ * @param  {object} payload            Request payload object.
+ * @param  {string} baseUrl            Base exchagne URL.
+ * @param  {int}    MAX_REQUEST_SIZE   Maximum request size limit (buildrequest V1).
+ * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
+ */
+function addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE) {
   const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot;
   const tagId = impressions[transactionIds[adUnitIndex]].tagId;
   const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
@@ -1012,7 +1081,7 @@ function addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload
   if (pbaAdSlot || tagId || adUnitCode || divId) {
     const clonedRObject = deepClone(r);
     const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
-    if (!buildRequestV2) {
+    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
       if (requestSize < MAX_REQUEST_SIZE) {
         r.ext.ixdiag.pbadslot = pbaAdSlot;
         r.ext.ixdiag.tagid = tagId;
