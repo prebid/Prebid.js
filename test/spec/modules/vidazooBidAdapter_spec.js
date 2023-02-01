@@ -242,7 +242,7 @@ describe('VidazooBidAdapter', function () {
     it('should build video request', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       config.setConfig({
-        bidderTimeout: 250
+        bidderTimeout: 3000
       });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -267,7 +267,7 @@ describe('VidazooBidAdapter', function () {
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
-          bidderTimeout: 250,
+          bidderTimeout: 3000,
           transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
           bidderRequestId: '12a8ae9ada9c13',
           gpid: '',
@@ -306,7 +306,7 @@ describe('VidazooBidAdapter', function () {
 
     it('should build banner request for each size', function () {
       config.setConfig({
-        bidderTimeout: 250
+        bidderTimeout: 3000
       });
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
@@ -324,7 +324,7 @@ describe('VidazooBidAdapter', function () {
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
-          bidderTimeout: 250,
+          bidderTimeout: 3000,
           transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
           bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
