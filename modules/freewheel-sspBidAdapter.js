@@ -351,7 +351,7 @@ export const spec = {
         try {
           requestParams.schain = JSON.stringify(schain);
         } catch (error) {
-          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain:' + error);
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
         }
       }
 
