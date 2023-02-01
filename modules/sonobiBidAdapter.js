@@ -132,15 +132,6 @@ export const spec = {
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain);
     }
-    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      const userIds = deepClone(validBidRequests[0].userId);
-
-      if (userIds.id5id) {
-        userIds.id5id = deepAccess(userIds, 'id5id.uid');
-      }
-
-      payload.userid = JSON.stringify(userIds);
-    }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
     if (Array.isArray(eids) && eids.length > 0) {
