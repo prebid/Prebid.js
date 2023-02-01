@@ -216,4 +216,56 @@ describe('BeOp Bid Adapter tests', () => {
       expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.include('pid=5a8af500c9e77c00017e4cad');
     });
   });
+
+  describe('Ensure keywords is always array of string', function () {
+    let bidRequests = [];
+    afterEach(function () {
+      bidRequests = [];
+    });
+
+    it('should work with keywords as an array', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = ['a', 'b'];
+      bidRequests.push(bid);
+      config.setConfig({
+        currency: { adServerCurrency: 'USD' }
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('a');
+      expect(payload.kwds).to.include('b');
+    });
+
+    it('should work with keywords as a string', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list of keywords';
+      bidRequests.push(bid);
+      config.setConfig({
+        currency: { adServerCurrency: 'USD' }
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list of keywords');
+    });
+
+    it('should work with keywords as a string containing a comma', function () {
+      let bid = Object.assign({}, validBid);
+      bid.params.keywords = 'list, of, keywords';
+      bidRequests.push(bid);
+      config.setConfig({
+        currency: { adServerCurrency: 'USD' }
+      });
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      const url = request.url;
+      expect(payload.kwds).to.exist;
+      expect(payload.kwds).to.include('list');
+      expect(payload.kwds).to.include('of');
+      expect(payload.kwds).to.include('keywords');
+    })
+  })
 });

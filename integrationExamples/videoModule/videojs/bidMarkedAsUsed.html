@@ -101,10 +101,6 @@
           console.log('player setup failed: ', e);
         });
 
-        pbjs.onEvent('videoContentLoaded', (e) => {
-          pbjs.requestBids(adUnits);
-        });
-
         pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
@@ -113,6 +109,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
+        pbjs.requestBids(adUnits);
       });
     </script>
 </head>
