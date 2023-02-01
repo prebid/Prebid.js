@@ -95,7 +95,7 @@ export const spec = {
         const floorInfo = request.getFloor({
           currency: 'USD',
           mediaType: impData.video ? 'video' : 'banner',
-          size : [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
         });
         if (floorInfo && floorInfo.floor) {
           impData.bidfloor = floorInfo.floor;
