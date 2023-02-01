@@ -13,6 +13,7 @@ import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import { bidderSettings } from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
+import { adjustCpm } from 'src/utils/cpm.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -1197,6 +1198,61 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.called).to.equal(false);
       expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
+    });
+
+    it('should accept the bid and the bidderSettings scope should be set to the adapterCode initially, when both the allowAlternateBidderCodes flag is true and the catchUnknownBidderCodesWithAdapterBidAdjustment flag is true', function () {
+      const cpm = 1;
+      const getBidAdjustment = sinon.spy();
+
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+      bidderSettingStub.withArgs(CODE, 'catchUnknownBidderCodesWithAdapterBidAdjustment').returns(true);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+
+      const { adapterCode } = bids1;
+      const scope = adapterCode;
+      adjustCpm(cpm, bids1, {}, {index: {}, bs: { get: () => true }}, getBidAdjustment);
+
+      expect(getBidAdjustment.args[0][1]).to.equal(scope);
+    });
+
+    it('should not accept the bid, when the allowAlternateBidderCodes flag is false and catchUnknownBidderCodesWithAdapterBidAdjustment flag is set to true', function () {
+      bidderSettingStub.withArgs(CODE, 'catchUnknownBidderCodesWithAdapterBidAdjustment').returns(true);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(logWarnSpy.callCount).to.equal(1);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
+    });
+
+    it('should accept the bid and the bidderSettings scope should be set to the bidderCode initially, when both the allowAlternateBidderCodes flag is true and the catchUnknownBidderCodesWithAdapterBidAdjustment flag is true', function () {
+      const cpm = 1;
+      const getBidAdjustment = sinon.spy();
+
+      bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
+
+      const bidder = newBidder(spec);
+      spec.interpretResponse.returns(bids1);
+      bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+      expect(addBidResponseStub.called).to.equal(true);
+      expect(logWarnSpy.callCount).to.equal(0);
+      expect(logErrorSpy.callCount).to.equal(0);
+
+      const { bidderCode } = bids1;
+      const scope = bidderCode;
+      adjustCpm(cpm, bids1, {}, {index: {}, bs: { get: () => false }}, getBidAdjustment);
+
+      expect(getBidAdjustment.args[0][1]).to.equal(scope);
     });
   });
 
