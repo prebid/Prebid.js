@@ -181,30 +181,32 @@ export const spec = {
         payload.eids = createEidsArray(bid.userId);
       }
 
-      const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+      if (bidderRequest && bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
+
       const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
-      const isAdUnitContainingVideo = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
+      const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+      const isSupportedVideoContext = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
 
-      if (!isAdUnitContainingVideo && bannerMediaType) {
-        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, BANNER);
-        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
-      } else if (isAdUnitContainingVideo && !bannerMediaType) {
-        spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
-        bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
-      } else if (isAdUnitContainingVideo && bannerMediaType) {
-        // If there are video and banner media types in the ad unit, we clone the payload
-        // to create a specific one for video.
-        let videoPayload = deepClone(payload);
+      if (bannerMediaType || isSupportedVideoContext) {
+        let type;
+        if (bannerMediaType) {
+          type = BANNER;
+          payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
 
-        spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
-        videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
-        bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
+          if (isSupportedVideoContext) {
+            let videoPayload = deepClone(payload);
+            spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
+            videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
+            bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
+          }
+        } else {
+          type = VIDEO;
+          spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
+        }
 
-        payload.sizes = spec.adaptBannerSizes(bannerMediaType.sizes);
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, BANNER);
-
+        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, type);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else {
         bidRequests.push({});
