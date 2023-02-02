@@ -50,6 +50,7 @@ export const spec = {
       let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
       let referrer = utils.getBidIdParameter('ref', bidRequestParams);
       let location = utils.getBidIdParameter('loc', bidRequestParams);
+      let currency = utils.getBidIdParameter('currency', bidRequestParams);
       // Append location & referrer
       if (location === '') {
         location = utils.getWindowLocation();
@@ -93,6 +94,9 @@ export const spec = {
         'ref': referrer,
         'size': parsedSizes
       }, stylesParamsArray, customParamsArray);
+      if (currency !== '') {
+        requestData.currency = currency;
+      }
 
       serverRequests.push({
         method: 'POST',
@@ -122,6 +126,7 @@ export const spec = {
     const HEIGHT = serverBody.height;
     const CREATIVE = serverBody.content_url;
     const CALLBACK_UID = serverBody.callback_uid;
+    const CURRENCY = serverBody.currency || 'USD';
     const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
     const REFERER = utils.getWindowTop();
     let bidRequest = request.bidRequest;
@@ -134,7 +139,7 @@ export const spec = {
         creativeId: CALLBACK_UID,
         ttl: TIME_TO_LIVE,
         referrer: REFERER,
-        currency: 'USD',
+        currency: CURRENCY,
         netRevenue: true,
         adUrl: CREATIVE,
         meta: {
