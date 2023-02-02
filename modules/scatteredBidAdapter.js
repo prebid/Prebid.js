@@ -37,7 +37,6 @@ export const converter = ortbConverter({
     ttl: 360
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.netRevenue = context.bidRequest.netRevenue === 'net';
     return buildBidResponse(bid, context);
   }
 })
