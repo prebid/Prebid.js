@@ -4,6 +4,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { OUTSTREAM, INSTREAM } from '../src/video.js';
+
 const VERSION = '0.2.1';
 const GVLID = 842;
 const NET_REVENUE = true;
@@ -121,6 +123,15 @@ _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAss
 // key -> asset
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
+function isNonEmptyArray(test) {
+  if (isArray(test) === true) {
+    if (test.length > 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -141,6 +152,28 @@ export const spec = {
       }
     } else {
       return false;
+    }
+
+    // video ad validation
+    if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+      // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
+      let mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
+      let paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
+      if (isNonEmptyArray(mediaTypesVideoMimes) === false && isNonEmptyArray(paramsVideoMimes) === false) {
+        logWarn(LOG_PREFIX + 'Error: For video ads, bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array. Call to OpenBid will not be sent for ad unit:' + JSON.stringify(bid));
+        return false;
+      }
+
+      if (!bid.mediaTypes[VIDEO].hasOwnProperty('context')) {
+        logError(`${LOG_PREFIX}: no context specified in bid. Rejecting bid: `, bid);
+        return false;
+      }
+
+      if (bid.mediaTypes[VIDEO].context === 'outstream') {
+        delete bid.mediaTypes[VIDEO];
+        logWarn(`${LOG_PREFIX}: outstream not currently supported `, bid);
+        return false;
+      }
     }
 
     return true;
@@ -296,6 +329,14 @@ export const spec = {
                       case BANNER:
                         break;
                       case VIDEO:
+                        const videoContext = deepAccess(request, 'mediaTypes.video.context');
+                        switch (videoContext) {
+                          case OUTSTREAM:
+                            // not currently supported
+                            break;
+                          case INSTREAM:
+                            break;
+                        }
                         newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;

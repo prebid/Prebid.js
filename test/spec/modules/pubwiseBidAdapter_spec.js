@@ -622,6 +622,90 @@ const videoBidRequests =
   }
 ];
 
+let newvideoRequests = [{
+  'bidder': 'pwbid',
+  'params': {
+    'siteId': 'xxxxx',
+    'video': {
+      'mimes': ['video/mp4'],
+      'skippable': true,
+      'protocols': [1, 2, 5],
+      'linearity': 1
+    }
+  },
+  'mediaTypes': {
+    'video': {
+      'playerSize': [
+        [640, 480]
+      ],
+      'protocols': [1, 2, 5],
+      'context': 'instream',
+      'mimes': ['video/flv'],
+      'skippable': false,
+      'skip': 1,
+      'linearity': 2
+    }
+  },
+  'adUnitCode': 'video1',
+  'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
+  'sizes': [
+    [640, 480]
+  ],
+  'bidId': '2c95df014cfe97',
+  'bidderRequestId': '1fe59391566442',
+  'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
+  'src': 'client',
+  'bidRequestsCount': 1,
+  'bidderRequestsCount': 1,
+  'bidderWinsCount': 0
+}];
+
+let newvideoBidResponses = {
+  'body': {
+    'id': '1621441141473',
+    'cur': 'USD',
+    'customdata': 'openrtb1',
+    'ext': {
+      'buyid': 'myBuyId'
+    },
+    'seatbid': [{
+      'bid': [{
+        'id': '2c95df014cfe97',
+        'impid': '2c95df014cfe97',
+        'price': 4.2,
+        'cid': 'test1',
+        'crid': 'test2',
+        'adm': "<VAST version='3.0'><Ad id='601364'><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Creatives><Creative AdID='601364'><Linear skipoffset='20%'><TrackingEvents><Tracking event='close'><![CDATA[https://pwtracking.com/linear/close]]></Tracking><Tracking event='skip'><![CDATA[https://pwtracking.com/linear/skip]]></Tracking><MediaFiles><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://localhost/pubwise.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
+        'w': 0,
+        'h': 0
+      }],
+      'ext': {
+        'buyid': 'myBuyId'
+      }
+    }]
+  },
+  'headers': {}
+};
+
+let videoBidResponse = {
+  'body': {
+    'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+    'seatbid': [{
+      'bid': [{
+        'id': '74858439-49D7-4169-BA5D-44A046315B2F',
+        'impid': '22bddb28db77d',
+        'price': 1.3,
+        'adm': '<VAST version="3.0"><Ad id="601364"><!--not real sample--></Ad></VAST>',
+        'h': 250,
+        'w': 300,
+        'ext': {
+          'deal_channel': 6
+        }
+      }]
+    }]
+  }
+};
+
 it('Request params check for video ad', function () {
   let request = spec.buildRequests(videoBidRequests, {
     auctionId: 'new-auction-id'
@@ -662,72 +746,86 @@ it('Request params check for video ad', function () {
 });
 
 it('should assign mediaType even if bid.ext.mediaType does not exists', function() {
-  let newvideoRequests = [{
-    'bidder': 'pwbid',
-    'params': {
-      'siteId': '5670',
-      'video': {
-        'mimes': ['video/mp4'],
-        'skippable': true,
-        'protocols': [1, 2, 5],
-        'linearity': 1
-      }
-    },
-    'mediaTypes': {
-      'video': {
-        'playerSize': [
-          [640, 480]
-        ],
-        'protocols': [1, 2, 5],
-        'context': 'instream',
-        'mimes': ['video/flv'],
-        'skippable': false,
-        'skip': 1,
-        'linearity': 2
-      }
-    },
-    'adUnitCode': 'video1',
-    'transactionId': '803e3750-0bbe-4ffe-a548-b6eca15087bf',
-    'sizes': [
-      [640, 480]
-    ],
-    'bidId': '2c95df014cfe97',
-    'bidderRequestId': '1fe59391566442',
-    'auctionId': '3a4118ef-fb96-4416-b0b0-3cfc1cebc142',
-    'src': 'client',
-    'bidRequestsCount': 1,
-    'bidderRequestsCount': 1,
-    'bidderWinsCount': 0
-  }];
-  let newvideoBidResponses = {
-    'body': {
-      'id': '1621441141473',
-      'cur': 'USD',
-      'customdata': 'openrtb1',
-      'ext': {
-        'buyid': 'myBuyId'
-      },
-      'seatbid': [{
-        'bid': [{
-          'id': '2c95df014cfe97',
-          'impid': '2c95df014cfe97',
-          'price': 4.2,
-          'cid': 'test1',
-          'crid': 'test2',
-          'adm': "<VAST version='3.0'><Ad id='601364'><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Creatives><Creative AdID='601364'><Linear skipoffset='20%'><TrackingEvents><Tracking event='close'><![CDATA[https://pwtracking.com/linear/close]]></Tracking><Tracking event='skip'><![CDATA[https://pwtracking.com/linear/skip]]></Tracking><MediaFiles><MediaFile delivery='progressive' type='video/mp4' bitrate='500' width='400' height='300' scalable='true' maintainAspectRatio='true'><![CDATA[https://localhost/pubwise.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>",
-          'w': 0,
-          'h': 0
-        }],
-        'ext': {
-          'buyid': 'myBuyId'
-        }
-      }]
-    },
-    'headers': {}
-  }
   let newrequest = spec.buildRequests(newvideoRequests, {
     auctionId: 'new-auction-id'
   });
   let newresponse = spec.interpretResponse(newvideoBidResponses, newrequest);
-  expect(newresponse[0].mediaType).to.equal('video')
-})
+  expect(newresponse[0].mediaType).to.equal('video');
+});
+
+it('should not assign renderer if bid is video and request is for instream', function() {
+  let request = spec.buildRequests(videoBidRequests, {
+    auctionId: 'new-auction-id'
+  });
+  let response = spec.interpretResponse(videoBidResponse, request);
+  expect(response[0].renderer).to.not.exist;
+});
+
+it('should process instream and outstream', function() {
+  let validOutstreamRequest =
+  {
+    code: 'video1',
+    mediaTypes: {
+      video: {
+        playerSize: [640, 480],
+        context: 'outstream'
+      }
+    },
+    bidder: 'pwbid',
+    bidId: '47acc48ad47af5',
+    requestId: '0fb4905b-1234-4152-86be-c6f6d259ba99',
+    bidderRequestId: '1c56ad30b9b8ca8',
+    transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+    params: {
+      siteId: 'xxxxx',
+      adSlot: 'Div1', // ad_id or tagid
+      video: {
+        mimes: ['video/mp4', 'video/x-flv'],
+        skippable: true,
+        minduration: 5,
+        maxduration: 30
+      }
+    }
+  };
+
+  let outstreamBidRequest =
+  [
+    validOutstreamRequest
+  ];
+
+  let validInstreamRequest = {
+    code: 'video1',
+    mediaTypes: {
+      video: {
+        playerSize: [640, 480],
+        context: 'instream'
+      }
+    },
+    bidder: 'pwbid',
+    bidId: '47acc48ad47af5',
+    requestId: '0fb4905b-1234-4152-86be-c6f6d259ba99',
+    bidderRequestId: '1c56ad30b9b8ca8',
+    transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+    params: {
+      siteId: 'xxxxx',
+      adSlot: 'Div1', // ad_id or tagid
+      video: {
+        mimes: ['video/mp4', 'video/x-flv'],
+        skippable: true,
+        minduration: 5,
+        maxduration: 30
+      }
+    }
+  };
+
+  let instreamBidRequest =
+  [
+    validInstreamRequest
+  ];
+
+  let outstreamRequest = spec.isBidRequestValid(validOutstreamRequest);
+  expect(outstreamRequest).to.equal(false);
+
+  let instreamRequest = spec.isBidRequestValid(validInstreamRequest);
+  expect(instreamRequest).to.equal(true);
+});
