@@ -539,7 +539,7 @@ describe('SonobiBidAdapter', function () {
       ]);
     });
 
-    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
+    it('should return a properly formatted request with the userid value omitted when the userId object is present on the bidRequest. ', function () {
       bidRequest[0].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       bidRequest[1].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -547,6 +547,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
+      expect(bidRequests.data.userid).to.be.empty;
     });
 
     it('should return a properly formatted request with keywrods included as a csv of strings', function () {
