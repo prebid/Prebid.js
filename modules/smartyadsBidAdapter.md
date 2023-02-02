@@ -10,6 +10,15 @@ Maintainer: supply@smartyads.com
 
 Module that connects to SmartyAds' demand sources
 
+# Parameters
+
+| Name          | Scope    | Description               | Example              |
+| :------------ | :------- | :------------------------ | :------------------- |
+| `sourceid`  | required (for prebid.js)     | placement ID | "0" |
+| `host`      | required (for prebid-server) | const value, set to "prebid" | "prebid" |
+| `accountid` | required (for prebid-server) | partner ID | "1901" |
+| `traffic`   | optional (for prebid.js)     | Configures the mediaType that should be used. Values can be banner, native or video | "banner" |
+
 # Test Parameters
 ```
     var adUnits = [

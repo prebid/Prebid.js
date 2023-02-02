@@ -297,7 +297,8 @@ function getParam(validBidRequests, bidderRequest) {
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
     utils.deepAccess(validBidRequests[0], 'userId.pubcid');
   let isMobile = isMobileAndTablet() ? 1 : 0;
-  let isTest = 0;
+  // input test status by Publisher. more frequently for test true req
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
