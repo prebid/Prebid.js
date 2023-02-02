@@ -201,7 +201,6 @@ describe('interpretResponse', function () {
       height: 456,
       width: 345,
       mediaType: 'banner',
-      netRevenue: true,
       requestId: '123',
       ttl: 360,
     };
