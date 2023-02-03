@@ -40,9 +40,10 @@ export const spec = {
     }
     return true;
   },
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let bidRequest;
     let serverRequests = [];
+    let ortb2 = bidderRequest.ortb2 || {};
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
       let bidRequestParams = bidRequest.params;
@@ -50,7 +51,7 @@ export const spec = {
       let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
       let referrer = utils.getBidIdParameter('ref', bidRequestParams);
       let location = utils.getBidIdParameter('loc', bidRequestParams);
-      let currency = utils.getBidIdParameter('currency', bidRequestParams);
+      let currency = ortb2.currency || '';
       // Append location & referrer
       if (location === '') {
         location = utils.getWindowLocation();
