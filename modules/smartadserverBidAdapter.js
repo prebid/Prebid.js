@@ -160,10 +160,21 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
-        payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
-        payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+      if (bidderRequest) {
+        if (bidderRequest.gdprConsent) {
+          payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
+          payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+          payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
+        }
+
+        if (bidderRequest.gppConsent) {
+          payload.gpp = bidderRequest.gppConsent.gppString;
+          payload.gpp_sid = bidderRequest.gppConsent.applicableSections;
+        }
+
+        if (bidderRequest.uspConsent) {
+          payload.us_privacy = bidderRequest.uspConsent;
+        }
       }
 
       if (bid && bid.userId) {
