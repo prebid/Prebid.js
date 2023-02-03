@@ -790,8 +790,8 @@ function bidToTag(bid) {
     tag.code = bid.params.inv_code;
   }
   tag.allow_smaller_sizes = bid.params.allow_smaller_sizes || false;
-  tag.use_pmt_rule = (typeof bid.params.use_payment_rule === 'boolean') ? bid.params.use_payment_rule : 
-    (typeof bid.params.use_pmt_rule === 'boolean') ? bid.params.use_pmt_rule : false;
+  tag.use_pmt_rule = (typeof bid.params.use_payment_rule === 'boolean') ? bid.params.use_payment_rule
+    : (typeof bid.params.use_pmt_rule === 'boolean') ? bid.params.use_pmt_rule : false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);
