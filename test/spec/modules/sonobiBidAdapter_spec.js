@@ -547,7 +547,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.userid).to.be.empty;
+      expect(bidRequests.data.userid).to.be.undefined;
     });
 
     it('should return a properly formatted request with keywrods included as a csv of strings', function () {
