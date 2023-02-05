@@ -18,7 +18,7 @@ var adUnits = [
     sizes: [[300, 250]],
     bids: [
       {
-        bidder: 'minutemediaplus',
+        bidder: 'mmplus',
         params: {
           cId: '562524b21b1c1f08117fc7f9',
           pId: '59ac17c192832d0011283fe3',

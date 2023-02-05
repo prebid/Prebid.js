@@ -5,7 +5,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const GVLID = 918;
 const DEFAULT_SUB_DOMAIN = 'exchange';
-const BIDDER_CODE = 'minutemediaplus';
+const BIDDER_CODE = 'mmplus';
 const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;

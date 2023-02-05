@@ -203,7 +203,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
     let sandbox;
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        minutemediaplus: {
+        mmplus: {
           storageAllowed: true
         }
       };
@@ -438,7 +438,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
   describe('unique deal id', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        minutemediaplus: {
+        mmplus: {
           storageAllowed: true
         }
       };
@@ -473,7 +473,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
   describe('storage utils', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
-        minutemediaplus: {
+        mmplus: {
           storageAllowed: true
         }
       };
