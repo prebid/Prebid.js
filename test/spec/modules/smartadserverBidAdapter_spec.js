@@ -443,6 +443,30 @@ describe('Smart bid adapter tests', function () {
     });
   });
 
+  describe('GPP', function () {
+    it('should be added to payload when gppConsent available in bidder request', function () {
+      const options = {
+        gppConsent: {
+          gppString: 'some-gpp-string',
+          applicableSections: [3, 5]
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, options);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload).to.have.property('gpp').and.to.equal(options.gppConsent.gppString);
+      expect(payload).to.have.property('gpp_sid').and.to.be.an('array');
+      expect(payload.gpp_sid).to.have.lengthOf(2).and.to.deep.equal(options.gppConsent.applicableSections);
+    });
+
+    it('should be undefined on payload when gppConsent unavailable in bidder request', function () {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {});
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.gpp).to.be.undefined;
+    });
+  });
+
   describe('ccpa/us privacy tests', function () {
     afterEach(function () {
       config.resetConfig();
