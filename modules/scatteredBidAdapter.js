@@ -3,41 +3,16 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, logInfo, parseSizesInput } from '../src/utils.js';
+import { deepAccess, logInfo } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'scattered';
 const GVLID = 1179;
-export function buildImps(validBidRequests) {
-  return validBidRequests.map((bid, index) => {
-    let imp = {
-      id: `${index + 1}`
-    };
-    const bannerParams = deepAccess(bid, 'mediaTypes.banner');
-    if (bannerParams && bannerParams.sizes) {
-      const sizes = parseSizesInput(bannerParams.sizes);
-      const format = sizes.map(size => {
-        const [width, height] = size.split('x');
-        const w = parseInt(width, 10);
-        const h = parseInt(height, 10);
-        return { w, h };
-      });
-
-      imp.banner = {
-        format
-      };
-    };
-    return imp;
-  });
-}
-
 export const converter = ortbConverter({
   context: {
     mediaType: BANNER,
-    ttl: 360
-  },
-  bidResponse(buildBidResponse, bid, context) {
-    return buildBidResponse(bid, context);
+    ttl: 360,
+    netRevenue: true
   }
 })
 
