@@ -162,8 +162,10 @@ function getCustomVendorPurposeId(customVendorConsents, purposeName) {
   }
 }
 
-function validateCustomVendor(purpose, customVendorConsents) {
+function validateCustomVendor(purpose, consentData) {
   if (customizePrebidId) {
+    if (!consentData) return false;
+    const customVendorConsents = consentData.customVendorConsents;
     if (!TCF2CustomVendor[purpose].id) {
       TCF2CustomVendor[purpose].id = getCustomVendorPurposeId(customVendorConsents, TCF2CustomVendor[purpose].name);
     }
@@ -245,7 +247,7 @@ export function deviceAccessHook(fn, gvlid, moduleName, result, {validate = vali
         gvlid = getGvlid(moduleName) || gvlid;
       }
       const curModule = moduleName || curBidder;
-        const isPrebidAllowed = validateCustomVendor(Purpose1, consentData.customVendorConsents);
+        const isPrebidAllowed = validateCustomVendor(Purpose1, consentData);
         let isAllowed = isPrebidAllowed && validateRules(purpose1Rule, consentData, curModule, gvlid);
       if (isAllowed) {
         result.valid = true;
@@ -271,7 +273,7 @@ export function userSyncHook(fn, ...args) {
   const curBidder = config.getCurrentBidder();
   if (shouldEnforce(consentData, 1, curBidder)) {
     const gvlid = getGvlid(curBidder);
-      const isPrebidAllowed = validateCustomVendor(Purpose1, consentData.customVendorConsents);
+      const isPrebidAllowed = validateCustomVendor(Purpose1, consentData);
       let isAllowed = isPrebidAllowed && validateRules(purpose1Rule, consentData, curBidder, gvlid);
     if (isAllowed) {
       fn.call(this, ...args);
@@ -295,7 +297,7 @@ export function userIdHook(fn, submodules, consentData) {
     let userIdModules = submodules.map((submodule) => {
       const gvlid = getGvlid(submodule.submodule);
       const moduleName = submodule.submodule.name;
-        const isPrebidAllowed = validateCustomVendor(Purpose1, consentData.customVendorConsents);
+        const isPrebidAllowed = validateCustomVendor(Purpose1, consentData);
         let isAllowed = isPrebidAllowed && validateRules(purpose1Rule, consentData, moduleName, gvlid);
       if (isAllowed) {
         return submodule;
@@ -320,8 +322,8 @@ export function userIdHook(fn, submodules, consentData) {
 export function makeBidRequestsHook(fn, adUnits, ...args) {
   const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 2)) {
-    const isPrebidAllowed = validateCustomVendor(Purpose1, consentData.customVendorConsents)
-      && validateCustomVendor(Purpose2, consentData.customVendorConsents);
+    const isPrebidAllowed = validateCustomVendor(Purpose1, consentData)
+      && validateCustomVendor(Purpose2, consentData);
     if (!isPrebidAllowed) {
       logWarn(`TCF2 blocked prebid.`, consentData);
       adUnits.forEach(adUnit => {
@@ -358,7 +360,7 @@ export function makeBidRequestsHook(fn, adUnits, ...args) {
 export function enableAnalyticsHook(fn, config) {
   const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 7, 'Analytics')) {
-    const isPrebidAllowed = validateCustomVendor(Purpose7, consentData.customVendorConsents);
+    const isPrebidAllowed = validateCustomVendor(Purpose7, consentData);
     if (!isPrebidAllowed) {
       logWarn(`TCF2 blocked prebid analytics adapter.`);
       config = [];
