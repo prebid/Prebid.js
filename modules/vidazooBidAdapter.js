@@ -27,6 +27,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
+export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
 const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
@@ -131,7 +132,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     bidRequestsCount: bidRequestsCount,
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
-    bidderTimeout: bidderTimeout
+    bidderTimeout: bidderTimeout,
+    webSessionId: webSessionId
   };
 
   appendUserIdsToRequestPayload(data, userId);
