@@ -1,5 +1,12 @@
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { find } from '../src/polyfill.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { Renderer } from '../src/Renderer.js';
 import {
-  _each,
   convertTypes,
   deepAccess,
   deepSetValue,
@@ -11,16 +18,8 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput
+  parseSizesInput, _each
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
-import {Renderer} from '../src/Renderer.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -182,24 +181,6 @@ export const converter = ortbConverter({
     // multibid
     const multibid = config.getConfig('multibid');
     addMultibid(data, multibid);
-
-    const aliasedBidRequests = bidRequests
-      // get all bidRequests that are using an alias
-      .filter(bidRequest => bidRequest.bidder !== spec.code)
-      // transform those bidRequests in
-      // {
-      //  'alias1': rubicon,
-      //  'alias2': rubicon,
-      // }
-      .reduce((acc, bidRequest) => {
-        return {
-          ...acc,
-          [bidRequest.bidder]: spec.code
-        }
-      }, {});
-    if (Object.keys(aliasedBidRequests).length > 0) {
-      data.ext.prebid.aliases = aliasedBidRequests;
-    }
 
     return data;
   },
@@ -1186,17 +1167,26 @@ export function resetUserSync() {
   hasSynced = false;
 }
 
+/**
+ * Sets the floor on the bidRequest. imp.bidfloor and imp.bidfloorcur
+ * should be already set by the conversion library. if they're not,
+ * or invalid, try to read from params.floor.
+ * @param {*} bidRequest
+ * @param {*} imp
+ */
 function setBidFloors(bidRequest, imp) {
   if (imp.bidfloorcur != 'USD') {
     delete imp.bidfloor;
     delete imp.bidfloorcur;
   }
 
-  let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+  if (!imp.bidfloor) {
+    let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
 
-  if (!isNaN(bidFloor)) {
-    imp.bidfloor = bidFloor;
-    imp.bidfloorcur = 'USD';
+    if (!isNaN(bidFloor)) {
+      imp.bidfloor = bidFloor;
+      imp.bidfloorcur = 'USD';
+    }
   }
 }
 
@@ -1248,7 +1238,9 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
 
   mergeDeep(data, fpd);
 
-  deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  if (keywords && keywords.size) {
+    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  }
   delete data?.ext?.prebid?.storedrequest;
 }
 

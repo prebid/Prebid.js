@@ -18,6 +18,7 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
+import adapterManager from 'src/adapterManager.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -1734,7 +1735,7 @@ describe('the rubicon adapter', function () {
 
         it('should add alias name to PBS Request', function () {
           createVideoBidderRequest();
-
+          adapterManager.aliasRegistry['superRubicon'] = 'rubicon';
           bidderRequest.bidderCode = 'superRubicon';
           bidderRequest.bids[0].bidder = 'superRubicon';
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
