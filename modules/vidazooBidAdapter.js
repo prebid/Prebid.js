@@ -90,6 +90,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const bidderCode = bidderRequest.bidderCode;
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -133,7 +134,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
-    webSessionId: webSessionId
+    webSessionId: webSessionId,
+    bidderCode: bidderCode
   };
 
   appendUserIdsToRequestPayload(data, userId);
