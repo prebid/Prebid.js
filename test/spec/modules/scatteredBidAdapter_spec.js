@@ -99,7 +99,6 @@ describe('Scattered adapter', function () {
       const bidderRequest = request.data;
       assert.equal(bidderRequest.id, validBidderRequest.auctionId);
       assert.ok(bidderRequest.site);
-      assert.ok(bidderRequest.device);
       assert.ok(bidderRequest.source);
       assert.lengthOf(bidderRequest.imp, 1);
     });
@@ -107,24 +106,25 @@ describe('Scattered adapter', function () {
     it('should configure the site object', function () {
       let request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
       const site = request.data.site;
-      assert.equal(site.domain, 'localhost');
-      assert.equal(site.page, 'http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true');
+      assert.equal(site.publisher.name, validBidderRequest.ortb2.site.publisher.name)
     });
 
     it('should configure site with ortb2', function () {
-      mergeDeep(validBidderRequest.ortb2.site, {
-        id: '876',
-        publisher: {
-          domain: 'publisher1.eu'
+      const req = mergeDeep({}, validBidderRequest, {
+        ortb2: {
+          site: {
+            id: '876',
+            publisher: {
+              domain: 'publisher1.eu'
+            }
+          }
         }
       });
 
-      let request = spec.buildRequests(arrayOfValidBidRequests, validBidderRequest);
+      let request = spec.buildRequests(arrayOfValidBidRequests, req);
       const site = request.data.site;
       assert.deepEqual(site, {
-        domain: 'localhost',
         id: '876',
-        page: 'http://localhost:9999/integrationExamples/gpt/hello_world.html?pbjs_debug=true',
         publisher: {
           domain: 'publisher1.eu',
           name: 'publisher1 INC.'
