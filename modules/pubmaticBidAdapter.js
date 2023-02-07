@@ -1443,12 +1443,15 @@ export const spec = {
             });
         });
       }
+      // adding zero bid for every no-bid
       if (requestData && requestData.imp && requestData.imp.length > 0) {
-        var uniqueImpIds = bidResponses.map(bid => bid.requestId)
+        let requestIds = requestData.imp.map(reqData => reqData.id);
+        let uniqueImpIds = bidResponses.map(bid => bid.requestId)
           .filter((value, index, self) => self.indexOf(value) === index);
-        requestData.imp.forEach(function (impData) {
-          uniqueImpIds.forEach(function (impid) {
-            if (impid !== impData.id) {
+        let nonBidIds = requestIds.filter(x => !uniqueImpIds.includes(x));
+        nonBidIds.forEach(function(nonBidId) {
+          requestData.imp.forEach(function (impData) {
+            if (impData.id === nonBidId) {
               bidResponses.push({
                 requestId: impData.id,
                 width: 0,
