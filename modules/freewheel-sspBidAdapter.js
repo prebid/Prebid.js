@@ -341,9 +341,6 @@ export const spec = {
       var keyCode = hashcode(zone + '' + timeInMillis);
       var bidfloor = getBidFloor(currentBidRequest, config);
 
-      logWarn('wx test 2');
-      logWarn(bidfloor);
-
       var requestParams = {
         reqType: 'AdsSetup',
         protocolVersion: '2.0',
