@@ -10,8 +10,10 @@ import {
 } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
+const GVLID = 115;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
