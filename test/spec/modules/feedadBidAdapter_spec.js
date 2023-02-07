@@ -4,6 +4,7 @@ import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import {server} from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
+const EXPECTED_ADAPTER_VERSION = '1.0.5';
 
 describe('FeedAdAdapter', function () {
   describe('Public API', function () {
@@ -300,6 +301,20 @@ describe('FeedAdAdapter', function () {
       expect(result.data.gdprApplies).to.equal(request.gdprConsent.gdprApplies);
       expect(result.data.consentIabTcf).to.equal(request.gdprConsent.consentString);
     });
+    it('should include adapter and prebid version', function () {
+      let bid = {
+        code: 'feedad',
+        mediaTypes: {
+          banner: {
+            sizes: [[320, 250]]
+          }
+        },
+        params: {clientToken: 'clientToken', placementId: 'placement-id'}
+      };
+      let result = spec.buildRequests([bid], bidderRequest);
+      expect(result.data.bids[0].params.prebid_adapter_version).to.equal(EXPECTED_ADAPTER_VERSION);
+      expect(result.data.bids[0].params.prebid_sdk_version).to.equal('$prebid.version$');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -482,6 +497,12 @@ describe('FeedAdAdapter', function () {
         expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, it)).not.to.throw;
       });
     });
+
+    it('should return empty array if the body extension is null', function () {
+      const response = mockServerResponse({ext: null});
+      const result = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, response);
+      expect(result).to.deep.equal([]);
+    });
   });
 
   describe('event tracking calls', function () {
@@ -617,7 +638,8 @@ describe('FeedAdAdapter', function () {
             prebid_bid_id: bidId,
             prebid_transaction_id: transactionId,
             referer,
-            sdk_version: '1.0.4'
+            prebid_adapter_version: EXPECTED_ADAPTER_VERSION,
+            prebid_sdk_version: '$prebid.version$',
           };
           subject(data);
           expect(server.requests.length).to.equal(1);

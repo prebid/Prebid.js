@@ -60,6 +60,10 @@ function hasVideoMediaType(bid) {
   return !!bid.mediaTypes && !!bid.mediaTypes.video;
 }
 
+function hasBannerMediaType(bid) {
+  return !!bid.mediaTypes && !!bid.mediaTypes.banner;
+}
+
 function hasMandatoryDisplayParams(bid) {
   const p = bid.params;
   return (
@@ -72,17 +76,27 @@ function hasMandatoryDisplayParams(bid) {
 function hasMandatoryVideoParams(bid) {
   const videoParams = getVideoParams(bid);
 
-  return (
+  let isValid =
     !!bid.params.publisherId &&
     !!bid.params.adUnitId &&
     hasVideoMediaType(bid) &&
     !!videoParams.playerSize &&
     isArray(videoParams.playerSize) &&
-    videoParams.playerSize.length > 0 &&
-    // only instream is supported for video
-    videoParams.context === 'instream' &&
-    bid.params.placement === 'inStream'
-  );
+    videoParams.playerSize.length > 0;
+
+  switch (bid.params.placement) {
+    // instream accept only video format
+    case 'inStream':
+      return isValid && videoParams.context === 'instream';
+    // outstream accept banner/native/video format
+    default:
+      return (
+        isValid &&
+        videoParams.context === 'outstream' &&
+        hasBannerMediaType(bid) &&
+        hasMandatoryDisplayParams(bid)
+      );
+  }
 }
 
 function buildBidRequest(validBidRequest) {
@@ -258,6 +272,18 @@ export const spec = {
     let coppa = config.getConfig('coppa');
     if (coppa) {
       payload.coppa = coppa;
+    }
+
+    if (bidderRequest.gppConsent) {
+      payload.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        applicableSections: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      payload.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+      }
     }
 
     const payloadString = JSON.stringify(payload);

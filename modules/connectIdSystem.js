@@ -66,6 +66,11 @@ export const connectIdSubmodule = {
       us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
     };
 
+    if (connectIdSubmodule.isUnderGPPJurisdiction(consentData)) {
+      data.gpp = consentData.gppConsent.gppString;
+      data.gpp_sid = encodeURIComponent(consentData.gppConsent.applicableSections.join(','));
+    }
+
     INPUT_PARAM_KEYS.forEach(key => {
       if (typeof params[key] != 'undefined') {
         data[key] = params[key];
@@ -98,12 +103,21 @@ export const connectIdSubmodule = {
   },
 
   /**
-   * Utility function that returns a boolean flag indicating if the opporunity
+   * Utility function that returns a boolean flag indicating if the opportunity
    * is subject to GDPR
    * @returns {Boolean}
    */
   isEUConsentRequired(consentData) {
     return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
+  },
+
+  /**
+   * Utility function that returns a boolean flag indicating if the opportunity
+   * is subject to GPP jurisdiction.
+   * @returns {Boolean}
+   */
+  isUnderGPPJurisdiction(consentData) {
+    return !!(consentData && consentData.gppConsent && consentData.gppConsent.gppString);
   },
 
   /**
