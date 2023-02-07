@@ -1,6 +1,7 @@
-import { logWarn, isArray } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -213,6 +214,27 @@ function getAPIName(componentId) {
   return componentId.replace('-', '');
 }
 
+function getBidFloor(bid, config) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: getFloorCurrency(config),
+      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (e) {
+    return -1;
+  }
+}
+
+function getFloorCurrency(config) {
+  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+}
+
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
@@ -317,6 +339,11 @@ export const spec = {
       var zone = currentBidRequest.params.zoneId;
       var timeInMillis = new Date().getTime();
       var keyCode = hashcode(zone + '' + timeInMillis);
+      var bidfloor = getBidFloor(currentBidRequest, config);
+
+      logWarn('wx test 2');
+      logWarn(bidfloor);
+
       var requestParams = {
         reqType: 'AdsSetup',
         protocolVersion: '2.0',
@@ -324,6 +351,8 @@ export const spec = {
         componentId: 'prebid',
         componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
+        _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
+        _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
         pKey: keyCode
       };
 

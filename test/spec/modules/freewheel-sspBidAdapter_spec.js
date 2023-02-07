@@ -84,7 +84,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       {
         'bidder': 'freewheel-ssp',
         'params': {
-          'zoneId': '277225'
+          'zoneId': '277225',
+          'bidfloor': 2.00,
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -113,6 +114,31 @@ describe('freewheelSSP BidAdapter Test', () => {
         }
       }
     ];
+
+    it('should get bidfloor value from params if no getFloor method', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(2.00);
+      expect(payload._fw_bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should get bidfloor value from getFloor method if available', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(1.16);
+      expect(payload._fw_bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should return empty bidFloorCurrency when bidfloor <= 0', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.getFloor = () => ({ currency: 'USD', floor: -1 });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(0);
+      expect(payload._fw_bidfloorcur).to.deep.equal('');
+    });
 
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
