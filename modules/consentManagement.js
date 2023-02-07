@@ -4,11 +4,13 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import {isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -16,12 +18,16 @@ const CMP_VERSION = 2;
 
 export let userCMP;
 export let consentTimeout;
+export let actionTimeout;
 export let gdprScope;
 export let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
 let provisionalConsent;
+let onTimeout;
+let timer = null;
+let actionTimer = null;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -35,6 +41,12 @@ const cmpCallMap = {
  */
 function lookupStaticConsentData({onSuccess, onError}) {
   processCmpData(staticConsentData, {onSuccess, onError})
+}
+
+export function setActionTimeout(timeout = setTimeout) {
+  clearTimeout(timer);
+  timer = null;
+  actionTimer = timeout(onTimeout, actionTimeout);
 }
 
 /**
@@ -82,6 +94,7 @@ function lookupIabConsent({onSuccess, onError}) {
         processCmpData(tcfData, {onSuccess, onError});
       } else {
         provisionalConsent = tcfData;
+        if (!isNaN(actionTimeout) && actionTimer === null && timer != null) setActionTimeout();
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -92,7 +105,7 @@ function lookupIabConsent({onSuccess, onError}) {
   const { cmpFrame, cmpFunction } = findCMP();
 
   if (!cmpFrame) {
-    return onError('CMP not found.');
+    return onError('TCF2 CMP not found.');
   }
   // to collect the consent information from the user, we perform two calls to the CMP in parallel:
   // first to collect the user's consent choices represented in an encoded string (via getConsentData)
@@ -160,14 +173,20 @@ function lookupIabConsent({onSuccess, onError}) {
  * @param cb A callback that takes: a boolean that is true if the auction should be canceled; an error message and extra
  * error arguments that will be undefined if there's no error.
  */
-function loadConsentData(cb) {
+export function loadConsentData(cb, callMap = cmpCallMap, timeout = setTimeout) {
   let isDone = false;
-  let timer = null;
 
   function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
     if (timer != null) {
       clearTimeout(timer);
+      timer = null;
     }
+
+    if (actionTimer != null) {
+      clearTimeout(actionTimer);
+      actionTimer = null;
+    }
+
     isDone = true;
     gdprDataHandler.setConsentData(consentData);
     if (typeof cb === 'function') {
@@ -186,10 +205,11 @@ function loadConsentData(cb) {
       done(null, true, msg, ...extraArgs);
     }
   }
-  cmpCallMap[userCMP](callbacks);
+
+  callMap[userCMP](callbacks);
 
   if (!isDone) {
-    const onTimeout = () => {
+    onTimeout = () => {
       const continueToAuction = (data) => {
         done(data, false, 'CMP did not load, continuing auction...');
       }
@@ -198,10 +218,16 @@ function loadConsentData(cb) {
         onError: () => continueToAuction(storeConsentData(undefined))
       })
     }
+
     if (consentTimeout === 0) {
       onTimeout();
     } else {
-      timer = setTimeout(onTimeout, consentTimeout);
+      if (timer != null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+
+      timer = timeout(onTimeout, consentTimeout);
     }
   }
 }
@@ -312,11 +338,11 @@ export function resetConsentData() {
  * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
  */
 export function setConsentConfig(config) {
-  // if `config.gdpr` or `config.usp` exist, assume new config format.
+  // if `config.gdpr`, `config.usp` or `config.gpp` exist, assume new config format.
   // else for backward compatability, just use `config`
-  config = config && (config.gdpr || config.usp ? config.gdpr : config);
+  config = config && (config.gdpr || config.usp || config.gpp ? config.gdpr : config);
   if (!config || typeof config !== 'object') {
-    logWarn('consentManagement config not defined, exiting consent manager');
+    logWarn('consentManagement (gdpr) config not defined, exiting consent manager');
     return;
   }
   if (isStr(config.cmpApi)) {
@@ -324,6 +350,10 @@ export function setConsentConfig(config) {
   } else {
     userCMP = DEFAULT_CMP;
     logInfo(`consentManagement config did not specify cmp.  Using system default setting (${DEFAULT_CMP}).`);
+  }
+
+  if (isNumber(config.actionTimeout)) {
+    actionTimeout = config.actionTimeout;
   }
 
   if (isNumber(config.timeout)) {
@@ -354,3 +384,28 @@ export function setConsentConfig(config) {
   loadConsentData(); // immediately look up consent data to make it available without requiring an auction
 }
 config.getConfig('consentManagement', config => setConsentConfig(config.consentManagement));
+
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = gdprDataHandler.getConsentData();
+    if (consent) {
+      if (typeof consent.gdprApplies === 'boolean') {
+        deepSetValue(ortb2, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
+      }
+      deepSetValue(ortb2, 'user.ext.consent', consent.consentString);
+    }
+    return ortb2;
+  }));
+}
+
+enrichFPD.before(enrichFPDHook);
+
+export function setOrtbAdditionalConsent(ortbRequest, bidderRequest) {
+  // this is not a standardized name for addtlConsent, so keep this as an ORTB library processor rather than an FPD enrichment
+  const addtl = bidderRequest.gdprConsent?.addtlConsent;
+  if (addtl && typeof addtl === 'string') {
+    deepSetValue(ortbRequest, 'user.ext.ConsentedProvidersSettings.consented_providers', addtl);
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'gdprAddtlConsent', fn: setOrtbAdditionalConsent})

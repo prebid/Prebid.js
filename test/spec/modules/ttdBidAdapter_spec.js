@@ -2,6 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/ttdBidAdapter';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config';
+import { detectReferer } from 'src/refererDetection.js';
+
+import { buildWindowTree } from '../../helpers/refererDetectionHelper';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
@@ -200,20 +203,15 @@ describe('ttdBidAdapter', function () {
       'bidRequestsCount': 1
     }];
 
+    const testWindow = buildWindowTree(['https://www.example.com/test', 'https://www.example.com/other/page', 'https://www.example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
+    const baseBidderRequestReferer = detectReferer(testWindow)();
     const baseBidderRequest = {
       'bidderCode': 'ttd',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
-      'refererInfo': {
-        'page': 'https://www.example.com/test',
-        'reachedTop': true,
-        'numIframes': 0,
-        'stack': [
-          'https://www.example.com/test'
-        ]
-      },
+      'refererInfo': baseBidderRequestReferer,
       'start': 1540945362099,
       'doneCbCallCount': 0
     };
@@ -291,6 +289,11 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.page).to.equal('https://www.example.com/test');
     });
 
+    it('ensure top most location is used', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.site.page).to.equal('https://www.example.com/test');
+    });
+
     it('sets the banner pos correctly if sent', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].mediaTypes.banner.pos = 1;
@@ -308,6 +311,43 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
+    });
+
+    it('merges first party site data', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const baseBidderRequestWithoutRefererDomain = {
+        ...baseBidderRequest,
+        refererInfo: {
+          ...baseBannerBidRequests.referer,
+          domain: null
+        }
+      }
+      const requestBody = testBuildRequests(
+        baseBannerBidRequests, {...baseBidderRequestWithoutRefererDomain, ortb2}
+      ).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher).to.deep.equal({domain: 'https://foo.bar', id: '13144370'});
+    });
+
+    it('referer domain overrides first party site data publisher domain', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const requestBody = testBuildRequests(
+        baseBannerBidRequests, {...baseBidderRequest, ortb2}
+      ).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher.domain).to.equal(baseBidderRequest.refererInfo.domain);
     });
 
     it('sets keywords properly if sent', function () {
@@ -385,6 +425,20 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
       config.resetConfig();
       expect(requestBody.regs.coppa).to.equal(1);
+    });
+
+    it('adds gpp consent info to the request', function () {
+      const ortb2 = {
+        regs: {
+          gpp: 'somegppstring',
+          gpp_sid: [6, 7]
+        }
+      };
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.regs.gpp).to.equal('somegppstring');
+      expect(requestBody.regs.gpp_sid).to.eql([6, 7]);
     });
 
     it('adds schain info to the request', function () {

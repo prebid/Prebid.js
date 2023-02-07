@@ -128,7 +128,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     it('should return a properly formatted request with schain defined', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload.schain).to.deep.equal(bidRequests[0].schain)
+      expect(payload.schain).to.deep.equal('{\"ver\":\"1.0\",\"complete\":1,\"nodes\":[{\"asi\":\"example.com\",\"sid\":\"0\",\"hp\":1,\"rid\":\"bidrequestid\",\"domain\":\"example.com\"}]}');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
@@ -483,6 +483,23 @@ describe('freewheelSSP BidAdapter Test', () => {
         'bidId': '2',
         'bidderRequestId': '3',
         'auctionId': '4',
+      },
+      {
+        'bidder': 'freewheelssp',
+        'params': {
+          'zoneId': '277225',
+          'format': 'test'
+        },
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [300, 600],
+          }
+        },
+        'sizes': [[300, 400]],
+        'bidId': '2',
+        'bidderRequestId': '3',
+        'auctionId': '4',
       }
     ];
 
@@ -510,7 +527,8 @@ describe('freewheelSSP BidAdapter Test', () => {
     '   </Creatives>' +
     '   <Extensions>' +
     '     <Extension type=\'StickyPricing\'><Price currency="EUR">0.2000</Price></Extension>' +
-    '    </Extensions>' +
+    '     <Extension type=\'StickyBrand\'><Domain><![CDATA[minotaur.com]]></Domain><Sector><![CDATA[BEAUTY & HYGIENE]]></Sector><Advertiser><![CDATA[James Bond Trademarks]]></Advertiser><Brand><![CDATA[007 Seven]]></Brand></Extension>' +
+    '   </Extensions>' +
     '  </InLine>' +
     ' </Ad>' +
     '</VAST>';
@@ -536,12 +554,15 @@ describe('freewheelSSP BidAdapter Test', () => {
           bannerId: '12345',
           vastXml: response,
           mediaType: 'video',
-          ad: ad
+          ad: ad,
+          meta: {
+            advertiserDomains: 'minotaur.com'
+          }
         }
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['minotaur.com']);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');
@@ -570,7 +591,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       ];
 
       let result = spec.interpretResponse(response, request[0]);
-      expect(result[0].meta.advertiserDomains).to.deep.equal([]);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['minotaur.com']);
       expect(result[0].dealId).to.equal('NRJ-PRO-00008');
       expect(result[0].campaignId).to.equal('SMF-WOW-55555');
       expect(result[0].bannerId).to.equal('12345');

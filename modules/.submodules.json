@@ -36,6 +36,7 @@
       "quantcastIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
+      "teadsIdSystem",
       "tncIdSystem",
       "trustpidSystem",
       "uid2IdSystem",
@@ -51,10 +52,14 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
+      "arcspanRtdProvider",
       "blueconicRtdProvider",
       "browsiRtdProvider",
+      "captifyRtdProvider",
+      "confiantRtdProvider",
       "dgkeywordRtdProvider",
       "geoedgeRtdProvider",
       "hadronRtdProvider",
@@ -62,18 +67,23 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider", 
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
-      "enrichmentFpdModule",
       "validationFpdModule",
       "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
   }
 }

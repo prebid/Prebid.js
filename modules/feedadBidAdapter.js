@@ -7,7 +7,7 @@ import {ajax} from '../src/ajax.js';
  * Version of the FeedAd bid adapter
  * @type {string}
  */
-const VERSION = '1.0.3';
+const VERSION = '1.0.5';
 
 /**
  * @typedef {object} FeedAdApiBidRequest
@@ -16,7 +16,8 @@ const VERSION = '1.0.3';
  * @property {number} ad_type
  * @property {string} client_token
  * @property {string} placement_id
- * @property {string} sdk_version
+ * @property {string} prebid_adapter_version
+ * @property {string} prebid_sdk_version
  * @property {boolean} app_hybrid
  *
  * @property {string} [app_bundle_id]
@@ -181,7 +182,8 @@ function createApiBidRParams(request) {
     ad_type: 0,
     client_token: request.params.clientToken,
     placement_id: request.params.placementId,
-    sdk_version: `prebid_${VERSION}`,
+    prebid_adapter_version: VERSION,
+    prebid_sdk_version: '$prebid.version$',
     app_hybrid: false,
   });
 }
@@ -207,7 +209,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     })
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
-    // TODO: is 'page' the right value here?
     referer: data.refererInfo.page,
     transactionId: bid.transactionId
   });
@@ -266,7 +267,8 @@ function createTrackingParams(data, klass) {
     prebid_bid_id: bidId,
     prebid_transaction_id: transactionId,
     referer,
-    sdk_version: VERSION
+    prebid_adapter_version: VERSION,
+    prebid_sdk_version: '$prebid.version$',
   };
 }
 
@@ -294,12 +296,20 @@ function trackingHandlerFactory(klass) {
 /**
  * Reads the user syncs off the server responses and converts them into Prebid.JS format
  * @param {SyncOptions} syncOptions
- * @param {FeedAdApiBidResponse[]} serverResponses
+ * @param {ServerResponse[]} serverResponses
  * @param gdprConsent
  * @param uspConsent
  */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  return serverResponses.map(response => response.ext)
+  return serverResponses.map(response => {
+    // validate response format
+    const ext = deepAccess(response, 'body.ext', []);
+    if (ext == null) {
+      return null;
+    }
+    return ext;
+  })
+    .filter(ext => ext != null)
     .flatMap(extension => {
       // extract user syncs from extension
       const pixels = syncOptions.pixelEnabled && extension.pixels ? extension.pixels : [];

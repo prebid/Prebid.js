@@ -1,4 +1,5 @@
 import {
+  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
@@ -14,6 +15,7 @@ import {
 
 import CONSTANTS from '../src/constants.json';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -22,18 +24,21 @@ import { getRefererInfo } from '../src/refererDetection.js';
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
-const SYNC_ENDPOINT = 'https://statics.nextmillmedia.com/load-cookie.html?v=4';
+const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
   'playbackmethod', 'protocols', 'startdelay'
 ];
 
+const sendingDataStatistic = initSendingDataStatistic();
+events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
+
 const EXPIRENCE_WURL = 20 * 60000;
 const wurlMap = {};
+cleanWurl();
 
 events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
-cleanWurl();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -135,17 +140,19 @@ export const spec = {
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
+      const params = bid.params;
 
       requests.push({
         method: 'POST',
         url: isTest ? TEST_ENDPOINT : ENDPOINT,
         data: JSON.stringify(postBody),
         options: {
-          contentType: 'application/json',
+          contentType: 'text/plain',
           withCredentials: true
         },
 
         bidId,
+        params,
         auctionId,
       });
     });
@@ -160,6 +167,7 @@ export const spec = {
     _each(response.seatbid, (resp) => {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidId;
+        const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
         addWurl({auctionId, requestId, wurl});
@@ -168,6 +176,7 @@ export const spec = {
 
         const bidResponse = {
           requestId,
+          params,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
@@ -198,29 +207,89 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
-    if (!syncOptions.iframeEnabled) {
+    const pixels = [];
+
+    if (isArray(responses)) {
+      responses.forEach(response => {
+        if (syncOptions.pixelEnabled) {
+          deepAccess(response, 'body.ext.sync.image', []).forEach(imgUrl => {
+            pixels.push({
+              type: 'image',
+              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent)
+            });
+          })
+        }
+
+        if (syncOptions.iframeEnabled) {
+          deepAccess(response, 'body.ext.sync.iframe', []).forEach(iframeUrl => {
+            pixels.push({
+              type: 'iframe',
+              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent)
+            });
+          })
+        }
+      })
+    }
+
+    return pixels;
+  },
+
+  getUrlPixelMetric(eventName, bid) {
+    const bidder = bid.bidder || bid.bidderCode;
+    if (bidder != BIDDER_CODE) return;
+
+    let params;
+    if (bid.params) {
+      params = Array.isArray(bid.params) ? bid.params : [bid.params];
+    } else {
+      if (Array.isArray(bid.bids)) params = bid.bids.map(bidI => bidI.params);
+    };
+
+    if (!params.length) return;
+
+    const placementIdsArray = [];
+    const groupIdsArray = [];
+    params.forEach(paramsI => {
+      if (paramsI.group_id) {
+        groupIdsArray.push(paramsI.group_id);
+      } else {
+        if (paramsI.placement_id) placementIdsArray.push(paramsI.placement_id);
+      };
+    });
+
+    const placementIds = (placementIdsArray.length && `&placements=${placementIdsArray.join(';')}`) || '';
+    const groupIds = (groupIdsArray.length && `&groups=${groupIdsArray.join(';')}`) || '';
+
+    if (!(groupIds || placementIds)) {
       return;
     };
 
-    let syncurl = gdprConsent && gdprConsent.gdprApplies ? `${SYNC_ENDPOINT}&gdpr=1&gdpr_consent=${gdprConsent.consentString}` : SYNC_ENDPOINT;
+    const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs${groupIds}${placementIds}`;
 
-    let bidders = [];
-    if (responses) {
-      _each(responses, (response) => {
-        if (!(response && response.body && response.body.ext && response.body.ext.responsetimemillis)) return;
-        _each(Object.keys(response.body.ext.responsetimemillis), b => bidders.push(b));
-      });
-    };
-
-    if (bidders.length) {
-      syncurl += `&bidders=${bidders.join(',')}`;
-    };
-
-    return [{
-      type: 'iframe',
-      url: syncurl
-    }];
+    return url;
   },
+};
+
+function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
+  const { consentString, gdprApplies } = gdprConsent || {};
+
+  if (gdprApplies) {
+    const gdpr = Number(gdprApplies);
+    url = url.replace('{{.GDPR}}', gdpr);
+
+    if (gdpr == 1 && consentString && consentString.length > 0) {
+      url = url.replace('{{.GDPRConsent}}', consentString);
+    }
+  } else {
+    url = url.replace('{{.GDPR}}', 0);
+    url = url.replace('{{.GDPRConsent}}', '');
+  }
+
+  if (uspConsent) {
+    url = url.replace('{{.USPrivacy}}', uspConsent);
+  }
+
+  return url;
 };
 
 function getAdEl(bid) {
@@ -342,6 +411,10 @@ function bidWonHandler(bid) {
   };
 }
 
+function auctionInitHandler() {
+  sendingDataStatistic.initEvents();
+}
+
 function cleanWurl() {
   const dateNow = Date.now();
   Object.keys(wurlMap).forEach(key => {
@@ -351,6 +424,81 @@ function cleanWurl() {
   });
 
   setTimeout(cleanWurl, 60000);
+}
+
+function initSendingDataStatistic() {
+  class SendingDataStatistic {
+    eventNames = [
+      CONSTANTS.EVENTS.BID_TIMEOUT,
+      CONSTANTS.EVENTS.BID_RESPONSE,
+      CONSTANTS.EVENTS.BID_REQUESTED,
+      CONSTANTS.EVENTS.NO_BID,
+    ];
+
+    disabledSending = false;
+    enabledSending = false;
+    eventHendlers = {};
+
+    initEvents() {
+      this.disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
+      if (this.disabledSending) {
+        this.removeEvents();
+      } else {
+        this.createEvents();
+      };
+    }
+
+    createEvents() {
+      if (this.enabledSending) return;
+
+      this.enabledSending = true;
+      for (let eventName of this.eventNames) {
+        if (!this.eventHendlers[eventName]) {
+          this.eventHendlers[eventName] = this.eventHandler(eventName);
+        };
+
+        events.on(eventName, this.eventHendlers[eventName]);
+      };
+    }
+
+    removeEvents() {
+      if (!this.enabledSending) return;
+
+      this.enabledSending = false;
+      for (let eventName of this.eventNames) {
+        if (!this.eventHendlers[eventName]) continue;
+
+        events.off(eventName, this.eventHendlers[eventName]);
+      };
+    }
+
+    eventHandler(eventName) {
+      const eventHandlerFunc = this.getEventHandler(eventName);
+      if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
+        return bids => {
+          if (this.disabledSending || !Array.isArray(bids)) return;
+
+          for (let bid of bids) {
+            eventHandlerFunc(bid);
+          };
+        }
+      };
+
+      return eventHandlerFunc;
+    }
+
+    getEventHandler(eventName) {
+      return bid => {
+        if (this.disabledSending) return;
+
+        const url = spec.getUrlPixelMetric(eventName, bid);
+        if (!url) return;
+        triggerPixel(url);
+      };
+    }
+  };
+
+  return new SendingDataStatistic();
 }
 
 registerBidder(spec);
