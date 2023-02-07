@@ -460,7 +460,9 @@ describe('Taboola Adapter', function () {
                 'w': 300,
                 'h': 250,
                 'exp': 60,
-                'lurl': 'http://us-trc.taboola.com/sample'
+                'lurl': 'http://us-trc.taboola.com/sample',
+                'nurl': 'http://win.example.com/',
+
               }
             ],
             'seat': '14204545260'
@@ -546,7 +548,8 @@ describe('Taboola Adapter', function () {
                   'w': 300,
                   'h': 250,
                   'exp': 60,
-                  'lurl': 'http://us-trc.taboola.com/sample'
+                  'lurl': 'http://us-trc.taboola.com/sample',
+                  'nurl': 'http://win.example.com/'
                 },
                 {
                   'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
@@ -562,7 +565,9 @@ describe('Taboola Adapter', function () {
                   'w': 300,
                   'h': 250,
                   'exp': 60,
-                  'lurl': 'http://us-trc.taboola.com/sample'
+                  'lurl': 'http://us-trc.taboola.com/sample',
+                  'nurl': 'http://win.example.com/'
+
                 }
               ],
               'seat': '14204545260'
@@ -586,6 +591,7 @@ describe('Taboola Adapter', function () {
           ad: multiServerResponse.body.seatbid[0].bid[0].adm,
           width: bid.w,
           height: bid.h,
+          nurl: 'http://win.example.com/',
           meta: {
             'advertiserDomains': bid.adomain
           },
@@ -601,6 +607,7 @@ describe('Taboola Adapter', function () {
           ad: multiServerResponse.body.seatbid[0].bid[1].adm,
           width: bid.w,
           height: bid.h,
+          nurl: 'http://win.example.com/',
           meta: {
             'advertiserDomains': bid.adomain
           },
@@ -625,6 +632,7 @@ describe('Taboola Adapter', function () {
           ad: bid.adm,
           width: bid.w,
           height: bid.h,
+          nurl: 'http://win.example.com/',
           meta: {
             'advertiserDomains': bid.adomain
           },
@@ -651,6 +659,7 @@ describe('Taboola Adapter', function () {
           ad: bid.adm,
           width: bid.w,
           height: bid.h,
+          nurl: 'http://win.example.com/',
           meta: {
             'advertiserDomains': bid.adomain
           },
