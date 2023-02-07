@@ -1298,7 +1298,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.amxId');
               expect(bid.userId.amxId).to.equal('test_amxid_id');
               expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'amxrtb.com',
+                source: 'amxdt.net',
                 uids: [{
                   id: 'test_amxid_id',
                   atype: 1,
