@@ -21,7 +21,7 @@ export const spec = {
     let eids;
     validBidRequests.forEach(bidRequest => {
       let formatType = getFormatType(bidRequest)
-      let alkimiSizes = prepareAlkimiSizes(bidRequest.sizes)
+      let sizes = prepareSizes(bidRequest.sizes)
 
       if (bidRequest.userIdAsEids) {
         eids = eids || bidRequest.userIdAsEids
@@ -31,8 +31,9 @@ export const spec = {
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
         bidFloor: getBidFloor(bidRequest, formatType),
-        width: alkimiSizes[0].width,
-        height: alkimiSizes[0].height,
+        sizes: sizes.length > 1 ? sizes : [],
+        width: sizes[0].width,
+        height: sizes[0].height,
         impMediaType: formatType,
         adUnitCode: bidRequest.adUnitCode
       })
@@ -130,7 +131,7 @@ export const spec = {
   }
 }
 
-function prepareAlkimiSizes(sizes) {
+function prepareSizes(sizes) {
   return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
 }
 
