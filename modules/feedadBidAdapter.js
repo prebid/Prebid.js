@@ -332,8 +332,8 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   })
     .flatMap(/** @param {FeedAdApiBidResponse} bidResponse */ bidResponse => {
       // extract user syncs from extension
-      const pixels = syncOptions.pixelEnabled && bidResponse?.ext?.pixels || [];
-      const iframes = syncOptions.iframeEnabled && bidResponse?.ext?.iframes || [];
+      const pixels = (syncOptions.pixelEnabled && bidResponse?.ext?.pixels) ? bidResponse.ext.pixels : [];
+      const iframes = (syncOptions.iframeEnabled && bidResponse?.ext?.iframes) ? bidResponse.ext.iframes : [];
       return pixels.concat(...iframes);
     })
     .reduce((syncs, sync) => {
