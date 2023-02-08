@@ -24,6 +24,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
@@ -208,7 +209,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const pixels = [];
-
+  
     if (isArray(responses)) {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) {
@@ -231,6 +232,13 @@ export const spec = {
       })
     }
 
+    if(!pixels.length) {
+      let syncUrl = SYNC_ENDPOINT;
+      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString;
+      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent;
+      if (syncOptions.iframeEnabled) pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
+      if (syncOptions.pixelEnabled) pixels.push({type: 'image', url: syncUrl + 'type=image'});
+    }
     return pixels;
   },
 
