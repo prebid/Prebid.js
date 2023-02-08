@@ -209,7 +209,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const pixels = [];
-  
+
     if (isArray(responses)) {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) {
@@ -232,7 +232,7 @@ export const spec = {
       })
     }
 
-    if(!pixels.length) {
+    if (!pixels.length) {
       let syncUrl = SYNC_ENDPOINT;
       if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString;
       if (uspConsent) syncUrl += 'us_privacy=' + uspConsent;
