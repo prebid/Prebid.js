@@ -23,13 +23,13 @@ export const spec = {
     { code: 'revenuemaker' },
     { code: 'first-id', gvlid: 1178 },
     { code: 'adwebone' },
+    { code: 'league-m', gvlid: 965 }
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
   getUserSyncs,
-  // onBidWon,
 };
 
 registerBidder(spec);
