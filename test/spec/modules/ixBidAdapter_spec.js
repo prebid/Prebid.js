@@ -750,7 +750,8 @@ describe('IndexexchangeAdapter', function () {
     // so structured because when calling createEidsArray, UID2's getValue func takes .id to set in uids
     uid2: { id: 'testuid2' }, // UID 2.0
     // similar to uid2, but id5's getValue takes .uid
-    id5id: { uid: 'testid5id' } // ID5
+    id5id: { uid: 'testid5id' }, // ID5
+    imuid: 'testimuid'
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -800,6 +801,11 @@ describe('IndexexchangeAdapter', function () {
       source: 'id5-sync.com',
       uids: [{
         id: DEFAULT_USERID_DATA.id5id.uid
+      }]
+    }, {
+      source: 'intimatemerger.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.imuid,
       }]
     }
   ];
@@ -1193,7 +1199,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(6);
+        expect(payload.user.eids).to.have.lengthOf(7);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1381,8 +1387,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-
-      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.have.lengthOf(7);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1515,7 +1520,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(9);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1557,7 +1562,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.lengthOf(8);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
