@@ -65,7 +65,11 @@ export function receiveMessage(ev) {
 
 function handleRenderRequest(reply, data, adObject) {
   if (adObject == null) {
-    // 他のWrpper起因で発生する可能性が高いためエラーログを出さずに終わらせる
+    emitAdRenderFail({
+      reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      message: `Cannot find ad '${data.adId}' for cross-origin render request`,
+      id: data.adId
+    });
     return;
   }
   if (adObject.status === constants.BID_STATUS.RENDERED) {
