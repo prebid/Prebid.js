@@ -47,7 +47,11 @@ describe.only('optidigitalAdapterTests', function () {
           'params': {
             'publisherId': 's123',
             'placementId': 'Billboard_Top',
-            'divId': 'Billboard_Top_3c5425'
+            'divId': 'Billboard_Top_3c5425',
+            'badv': ['example.com'],
+            'bcat': ['IAB1-1'],
+            'bapp': ['com.blocked'],
+            'battr': [1, 2]
           },
           'crumbs': {
             'pubcid': '7769fd03-574c-48fe-b512-8147f7c4023a'
@@ -182,7 +186,11 @@ describe.only('optidigitalAdapterTests', function () {
         'bidId': '51ef8751f9aead',
         'params': {
           'publisherId': 's123',
-          'placementId': 'Billboard_Top'
+          'placementId': 'Billboard_Top',
+          'badv': ['example.com'],
+          'bcat': ['IAB1-1'],
+          'bapp': ['com.blocked'],
+          'battr': [1, 2]
         },
         'adUnitCode': 'div-gpt-ad-1460505748561-0',
         'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
@@ -295,6 +303,75 @@ describe.only('optidigitalAdapterTests', function () {
       const payload = JSON.parse(request.data)
       payload.imp[0].pageTemplate = 'home'
       expect(payload.imp[0].pageTemplate).to.exist;
+    });
+
+    it('should use value for badv, bcat, bapp from params', function () {
+      bidderRequest.ortb2 = {
+        'site': {
+          'page': 'https://example.com',
+          'ref': 'https://example.com',
+          'domain': 'example.com',
+          'publisher': {
+            'domain': 'example.com'
+          }
+        },
+        'device': {
+          'w': 1507,
+          'h': 1329,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+          'language': 'pl',
+          'sua': {
+            'source': 2,
+            'platform': {
+              'brand': 'Windows',
+              'version': [
+                '10',
+                '0',
+                '0'
+              ]
+            },
+            'browsers': [
+              {
+                'brand': 'Not_A Brand',
+                'version': [
+                  '99',
+                  '0',
+                  '0',
+                  '0'
+                ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [
+                  '109',
+                  '0',
+                  '5414',
+                  '120'
+                ]
+              },
+              {
+                'brand': 'Chromium',
+                'version': [
+                  '109',
+                  '0',
+                  '5414',
+                  '120'
+                ]
+              }
+            ],
+            'mobile': 0,
+            'model': '',
+            'bitness': '64',
+            'architecture': 'x86'
+          }
+        }
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.badv).to.deep.equal(validBidRequests[0].params.badv);
+      expect(payload.bcat).to.deep.equal(validBidRequests[0].params.bcat);
+      expect(payload.bapp).to.deep.equal(validBidRequests[0].params.bapp);
     });
 
     it('should send empty GDPR consent and required set to false', function() {
