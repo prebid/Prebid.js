@@ -4,7 +4,7 @@ import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes.js';
 import {server} from 'test/mocks/xhr.js';
 
 const CODE = 'feedad';
-const EXPECTED_ADAPTER_VERSION = '1.0.5';
+const EXPECTED_ADAPTER_VERSION = '1.0.6';
 
 describe('FeedAdAdapter', function () {
   describe('Public API', function () {
