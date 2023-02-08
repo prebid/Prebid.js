@@ -13,6 +13,7 @@ import {
   getUniqueDealId,
   getNextDealId,
   getVidazooSessionId,
+  webSessionId
 } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
@@ -283,6 +284,7 @@ describe('VidazooBidAdapter', function () {
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
+          webSessionId: webSessionId,
           mediaTypes: {
             video: {
               api: [2],
@@ -350,7 +352,8 @@ describe('VidazooBidAdapter', function () {
           isStorageAllowed: true,
           gpid: '1234567890',
           cat: ['IAB2'],
-          pagecat: ['IAB2-2']
+          pagecat: ['IAB2-2'],
+          webSessionId: webSessionId
         }
       });
     });
