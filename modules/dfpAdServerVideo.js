@@ -8,7 +8,7 @@ import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, bui
 import { config } from '../src/config.js';
 import { getHook, submodule } from '../src/hook.js';
 import { auctionManager } from '../src/auctionManager.js';
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {getPPID} from '../src/adserver.js';
@@ -91,7 +91,7 @@ export function buildDfpVideoUrl(options) {
   };
 
   const urlSearchComponent = urlComponents.search;
-  const urlSzParam = urlSearchComponent && urlSearchComponent.sz
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz;
   if (urlSzParam) {
     derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
   }
@@ -118,6 +118,11 @@ export function buildDfpVideoUrl(options) {
 
   const uspConsent = uspDataHandler.getConsentData();
   if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    // TODO - need to know what to set here for queryParams...
+  }
 
   if (!queryParams.ppid) {
     const ppid = getPPID();
@@ -186,7 +191,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     let initialValue = {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
-    }
+    };
     let customParams = {};
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {

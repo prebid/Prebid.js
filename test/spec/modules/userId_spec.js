@@ -9,7 +9,7 @@ import {
   setSubmoduleRegistry,
   syncDelay,
   PBJS_USER_ID_OPTOUT_NAME,
-  findRootDomain,
+  findRootDomain, requestDataDeletion,
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
@@ -46,6 +46,7 @@ import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
 import {amxIdSubmodule} from '../../../modules/amxIdSystem.js';
 import {kinessoIdSubmodule} from 'modules/kinessoIdSystem.js';
 import {adqueryIdSubmodule} from 'modules/adqueryIdSystem.js';
+import {imuIdSubmodule} from 'modules/imuIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -402,7 +403,10 @@ describe('User ID', function () {
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
-      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule]);
+      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule, imuIdSubmodule]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
 
       config.setConfig({
         userSync: {
@@ -411,14 +415,68 @@ describe('User ID', function () {
             { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
             { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
             { name: 'identityLink', value: {'idl_env': 'identityLink-id-value-identityLink-id-value'} },
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
           ]
         }
       });
-      // before ppid should not be set
-      expect(window.googletag._ppid).to.equal(undefined);
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    it('should set PPID when the source needs to call out to the network', () => {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      const callback = sinon.stub();
+      setSubmoduleRegistry([{
+        name: 'sharedId',
+        getId: function () {
+          return {callback}
+        },
+        decode(d) {
+          return d
+        }
+      }]);
+      config.setConfig({
+        userSync: {
+          ppid: 'pubcid.org',
+          auctionDelay: 10,
+          userIds: [
+            {
+              name: 'sharedId',
+            }
+          ]
+        }
+      });
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        expect(window.googletag._ppid).to.be.undefined;
+        const uid = 'thismustbelongerthan32characters'
+        callback.yield({pubcid: uid});
+        expect(window.googletag._ppid).to.equal(uid);
+      });
+    });
+
+    it('should set googletag ppid correctly for imuIdSubmodule', function () {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      setSubmoduleRegistry([imuIdSubmodule]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'ppid.intimatemerger.com',
+          userIds: [
+            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
+          ]
+        }
+      });
+
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        // ppid should have been set without dashes and stuff
+        expect(window.googletag._ppid).to.equal('imppidvalueimppidvalueimppidvalue');
       });
     });
 
@@ -466,6 +524,7 @@ describe('User ID', function () {
     describe('refreshing before init is complete', () => {
       const MOCK_ID = {'MOCKID': '1111'};
       let mockIdCallback;
+      let startInit;
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
@@ -480,7 +539,7 @@ describe('User ID', function () {
         };
         init(config);
         setSubmoduleRegistry([mockIdSystem]);
-        config.setConfig({
+        startInit = () => config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
@@ -492,6 +551,7 @@ describe('User ID', function () {
       });
 
       it('should still resolve promises returned by getUserIdsAsync', () => {
+        startInit();
         let result = null;
         getGlobal().getUserIdsAsync().then((val) => { result = val; });
         return clearStack().then(() => {
@@ -506,6 +566,7 @@ describe('User ID', function () {
       it('should not stop auctions', (done) => {
         // simulate an infinite `auctionDelay`; refreshing should still allow the auction to continue
         // as soon as ID submodules have completed init
+        startInit();
         requestBidsHook(() => {
           done();
         }, {adUnits: [getAdUnitMock()]}, {delay: delay()});
@@ -513,12 +574,26 @@ describe('User ID', function () {
         clearStack().then(() => {
           // simulate init complete
           mockIdCallback.callArg(0, {id: {MOCKID: '1111'}});
-        })
+        });
       });
+
+      it('should continue the auction when init fails', (done) => {
+        startInit();
+        requestBidsHook(() => {
+          done();
+        },
+        {adUnits: [getAdUnitMock()]},
+        {
+          delay: delay(),
+          getIds: () => Promise.reject(new Error())
+        }
+        );
+      })
 
       it('should not get stuck when init fails', () => {
         const err = new Error();
         mockIdCallback.callsFake(() => { throw err; });
+        startInit();
         return getGlobal().getUserIdsAsync().catch((e) =>
           expect(e).to.equal(err)
         );
@@ -694,11 +769,15 @@ describe('User ID', function () {
       config.resetConfig();
     });
 
-    it('fails initialization if opt out cookie exists', function () {
+    it('does not fetch ids if opt out cookie exists', function () {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
-      config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie']));
-      expect(utils.logInfo.args[0][0]).to.exist.and.to.equal('User ID - opt-out cookie found, exit module');
+      const cfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
+      cfg.userSync.auctionDelay = 1; // to let init complete without an auction
+      config.setConfig(cfg);
+      return getGlobal().getUserIdsAsync().then((uid) => {
+        expect(uid).to.eql({});
+      })
     });
 
     it('initializes if no opt out cookie exists', function () {
@@ -818,7 +897,7 @@ describe('User ID', function () {
             storage: {name: 'intentIqId', type: 'cookie'}
           }, {
             name: 'hadronId',
-            storage: {name: 'hadronId', type: 'cookie'}
+            storage: {name: 'hadronId', type: 'html5'}
           }, {
             name: 'zeotapIdPlus'
           }, {
@@ -1793,8 +1872,8 @@ describe('User ID', function () {
 
       it('test hook from hadronId html5', function (done) {
         // simulate existing browser local storage values
-        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'random-ls-identifier'}));
-        localStorage.setItem('hadronId_exp', '');
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
 
         init(config);
         setSubmoduleRegistry([hadronIdSubmodule]);
@@ -1804,15 +1883,15 @@ describe('User ID', function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('random-ls-identifier');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'audigent.com',
-                uids: [{id: 'random-ls-identifier', atype: 1}]
+                uids: [{id: 'testHadronId1', atype: 1}]
               });
             });
           });
           localStorage.removeItem('hadronId');
-          localStorage.removeItem('hadronId_exp', '');
+          localStorage.removeItem('hadronId_exp');
           done();
         }, {adUnits});
       });
@@ -2046,7 +2125,9 @@ describe('User ID', function () {
         coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
-        coreStorage.setCookie('hadronId', JSON.stringify({'hadronId': 'testHadronId'}), (new Date(Date.now() + 5000).toUTCString()));
+        // hadronId only supports localStorage
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
         coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
@@ -2070,7 +2151,7 @@ describe('User ID', function () {
           ['netId', 'netId', 'cookie'],
           ['intentIqId', 'intentIqId', 'cookie'],
           ['zeotapIdPlus', 'IDP', 'cookie'],
-          ['hadronId', 'hadronId', 'cookie'],
+          ['hadronId', 'hadronId', 'html5'],
           ['criteo', 'storage_criteo', 'cookie'],
           ['mwOpenLinkId', 'mwol', 'cookie'],
           ['tapadId', 'tapad_id', 'cookie'],
@@ -2113,7 +2194,7 @@ describe('User ID', function () {
               expect(bid.userId.IDP).to.equal('zeotapId');
               // also check that hadronId id was copied to bid
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('testHadronId');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               // also check that criteo id was copied to bid
               expect(bid).to.have.deep.nested.property('userId.criteoId');
               expect(bid.userId.criteoId).to.equal('test_bidid');
@@ -2152,7 +2233,8 @@ describe('User ID', function () {
           coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
-          coreStorage.setCookie('hadronId', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('hadronId');
+          localStorage.removeItem('hadronId_exp');
           coreStorage.setCookie('storage_criteo', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
@@ -2205,7 +2287,8 @@ describe('User ID', function () {
         coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
-        coreStorage.setCookie('hadronId', JSON.stringify({'hadronId': 'testHadronId'}), (new Date(Date.now() + 5000).toUTCString()));
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
         coreStorage.setCookie('admixerId', 'testadmixerId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('deepintentId', 'testdeepintentId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
@@ -2241,7 +2324,7 @@ describe('User ID', function () {
             }, {
               name: 'zeotapIdPlus'
             }, {
-              name: 'hadronId', storage: {name: 'hadronId', type: 'cookie'}
+              name: 'hadronId', storage: {name: 'hadronId', type: 'html5'}
             }, {
               name: 'admixerId', storage: {name: 'admixerId', type: 'cookie'}
             }, {
@@ -2309,7 +2392,7 @@ describe('User ID', function () {
               expect(bid.userId.IDP).to.equal('zeotapId');
               // also check that hadronId id data was copied to bid
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('testHadronId');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               expect(bid.userId.uid2).to.deep.equal({
                 id: 'Sample_AD_Token'
               });
@@ -2341,7 +2424,8 @@ describe('User ID', function () {
           coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
-          coreStorage.setCookie('hadronId', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('hadronId');
+          localStorage.removeItem('hadronId_exp');
           coreStorage.setCookie('dmdId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('deepintentId', '', EXPIRED_COOKIE_DATE);
@@ -2531,7 +2615,6 @@ describe('User ID', function () {
 
         // init id system
         attachIdSystem(mockIdSystem);
-        config.setConfig(userIdConfig);
       });
 
       afterEach(function () {
@@ -2541,6 +2624,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data and refresh is not needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2555,6 +2640,8 @@ describe('User ID', function () {
       it('calls getId if no stored consent data but refresh is needed', function () {
         coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2572,6 +2659,8 @@ describe('User ID', function () {
 
         setStoredConsentData();
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2587,6 +2676,8 @@ describe('User ID', function () {
         coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
 
         setStoredConsentData({...consentData, consentString: 'different'});
+
+        config.setConfig(userIdConfig);
 
         let innerAdUnits;
         return runBidsHook((config) => {
@@ -2604,6 +2695,8 @@ describe('User ID', function () {
 
         setStoredConsentData({...consentData});
 
+        config.setConfig(userIdConfig);
+
         let innerAdUnits;
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2615,45 +2708,70 @@ describe('User ID', function () {
       });
     });
 
-    describe('findRootDomain', function () {
-      let sandbox;
-
-      beforeEach(function () {
-        init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        config.setConfig({
-          userSync: {
-            syncDelay: 0,
-            userIds: [
-              {
-                name: 'pubCommonId',
-                value: { pubcid: '11111' },
-              },
-            ],
+    describe('requestDataDeletion', () => {
+      function idMod(name, value) {
+        return {
+          name,
+          getId() {
+            return {id: value}
           },
+          decode(d) {
+            return {[name]: d}
+          },
+          onDataDeletionRequest: sinon.stub()
+        }
+      }
+      let mod1, mod2, mod3, cfg1, cfg2, cfg3;
+
+      beforeEach(() => {
+        init(config);
+        mod1 = idMod('id1', 'val1');
+        mod2 = idMod('id2', 'val2');
+        mod3 = idMod('id3', 'val3');
+        cfg1 = getStorageMock('id1', 'id1', 'cookie');
+        cfg2 = getStorageMock('id2', 'id2', 'html5');
+        cfg3 = {name: 'id3', value: {id3: 'val3'}};
+        setSubmoduleRegistry([mod1, mod2, mod3]);
+        config.setConfig({
+          auctionDelay: 1,
+          userSync: {
+            userIds: [cfg1, cfg2, cfg3]
+          }
         });
-        sandbox = sinon.createSandbox();
-        sandbox
-          .stub(coreStorage, 'getCookie')
-          .onFirstCall()
-          .returns(null) // .co.uk
-          .onSecondCall()
-          .returns('writeable'); // realdomain.co.uk;
+        return getGlobal().refreshUserIds();
       });
 
-      afterEach(function () {
-        sandbox.restore();
+      it('deletes stored IDs', () => {
+        expect(coreStorage.getCookie('id1')).to.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.exist;
+        requestDataDeletion(sinon.stub());
+        expect(coreStorage.getCookie('id1')).to.not.exist;
+        expect(coreStorage.getDataFromLocalStorage('id2')).to.not.exist;
       });
 
-      it('should just find the root domain', function () {
-        var domain = findRootDomain('sub.realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
+      it('invokes onDataDeletionRequest', () => {
+        requestDataDeletion(sinon.stub());
+        sinon.assert.calledWith(mod1.onDataDeletionRequest, cfg1, {id1: 'val1'});
+        sinon.assert.calledWith(mod2.onDataDeletionRequest, cfg2, {id2: 'val2'})
+        sinon.assert.calledWith(mod3.onDataDeletionRequest, cfg3, {id3: 'val3'})
       });
 
-      it('should find the full domain when no subdomain is present', function () {
-        var domain = findRootDomain('realdomain.co.uk');
-        expect(domain).to.be.eq('realdomain.co.uk');
-      });
+      describe('does not choke when onDataDeletionRequest', () => {
+        Object.entries({
+          'is missing': () => { delete mod1.onDataDeletionRequest },
+          'throws': () => { mod1.onDataDeletionRequest.throws(new Error()) }
+        }).forEach(([t, setup]) => {
+          it(t, () => {
+            setup();
+            const next = sinon.stub();
+            const arg = {random: 'value'};
+            requestDataDeletion(next, arg);
+            sinon.assert.calledOnce(mod2.onDataDeletionRequest);
+            sinon.assert.calledOnce(mod3.onDataDeletionRequest);
+            sinon.assert.calledWith(next, arg);
+          })
+        })
+      })
     });
   });
 

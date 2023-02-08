@@ -5,7 +5,7 @@ import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
-const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
+const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
@@ -69,31 +69,49 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const secure = 1; // treat all requests as secure
-    const request = validBidRequests[0];
-    const params = request.params;
-    const impData = {
-      id: request.bidId,
-      secure: secure
-    };
-    if (request.mediaTypes) {
-      for (const mediaType in request.mediaTypes) {
-        switch (mediaType) {
-          case BANNER:
-            impData.banner = buildBanner(request);
-            break;
-          case VIDEO:
-            impData.video = buildVideo(request);
-            break;
+    const params = validBidRequests[0].params;
+    const imps = validBidRequests.map(request => {
+      const impData = {
+        id: request.bidId,
+        secure: secure
+      };
+      if (request.mediaTypes) {
+        for (const mediaType in request.mediaTypes) {
+          switch (mediaType) {
+            case BANNER:
+              impData.banner = buildBanner(request);
+              break;
+            case VIDEO:
+              impData.video = buildVideo(request);
+              break;
+          }
         }
       }
-    }
-    if (!impData.banner && !impData.video) {
-      impData.banner = buildBanner(request);
-    }
+      if (!impData.banner && !impData.video) {
+        impData.banner = buildBanner(request);
+      }
+
+      if (typeof request.getFloor === 'function') {
+        const floorInfo = request.getFloor({
+          currency: 'USD',
+          mediaType: impData.video ? 'video' : 'banner',
+          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+        });
+        if (floorInfo && floorInfo.floor) {
+          impData.bidfloor = floorInfo.floor;
+        }
+      }
+      if (!impData.bidfloor && params.bidfloor) {
+        impData.bidfloor = params.bidfloor;
+      }
+
+      return impData;
+    });
+
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
-      imp: [impData],
+      imp: imps,
       site: params.site ? params.site : {},
       device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
       user: params.user ? params.user : {},
@@ -126,7 +144,11 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    provideEids(request, payload);
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout;
+    }
+
+    provideEids(validBidRequests[0], payload);
     const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {
       method: 'POST',

@@ -5,6 +5,25 @@ export const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // GrowthCode
+  'growthCodeId': {
+    getValue: function(data) {
+      return data.gc_id
+    },
+    source: 'growthcode.io',
+    atype: 1,
+    getUidExt: function(data) {
+      const extendedData = pick(data, [
+        'h1',
+        'h2',
+        'h3',
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
+  },
+
   // trustpid
   'trustpid': {
     source: 'trustpid.com',
@@ -68,12 +87,14 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      return data.uid
+      let value = '';
+      if (data && data.ext && data.ext.DeviceID) {
+        value = data.ext.DeviceID;
+      }
+      return value;
     },
     getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
+      return data && data.ext;
     }
   },
 
@@ -275,6 +296,11 @@ export const USER_IDS_CONFIG = {
     atype: 3
   },
 
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
+  },
+
   'imuid': {
     source: 'intimatemerger.com',
     atype: 1
@@ -323,6 +349,32 @@ export const USER_IDS_CONFIG = {
   'cpexId': {
     source: 'czechadid.cz',
     atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
   }
 };
 
@@ -332,7 +384,6 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
-
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -383,6 +434,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 

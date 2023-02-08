@@ -159,7 +159,7 @@ export const merkleIdSubmodule = {
 
     if (typeof configParams.endpoint !== 'string') {
       logWarn('User ID - merkleId submodule endpoint string is not defined');
-      configParams.endpoint = ID_URL
+      configParams.endpoint = ID_URL;
     }
 
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
@@ -188,7 +188,7 @@ export const merkleIdSubmodule = {
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
       if (refreshNeeded) {
         logInfo('User ID - merkleId needs refreshing id');
-        const resp = generateId(configParams, configStorage)
+        const resp = generateId(configParams, configStorage);
         return {callback: resp};
       }
     }

@@ -5,13 +5,13 @@
  * @requires module:modules/userId
  */
 
-import {buildUrl, generateUUID, hasDeviceAccess, logInfo, parseUrl, triggerPixel} from '../src/utils.js';
+import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import {coppaDataHandler} from '../src/adapterManager.js';
+import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
-const MODULE_TYPE = 'fpid-module';
-export const storage = getStorageManager({moduleName: 'pubCommonId', moduleType: MODULE_TYPE});
+export const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -74,6 +74,7 @@ export const sharedIdSystemSubmodule = {
    */
   name: 'sharedId',
   aliasName: 'pubCommonId',
+  gvlid: VENDORLESS_GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
@@ -88,7 +89,8 @@ export const sharedIdSystemSubmodule = {
       return undefined;
     }
     logInfo(' Decoded value PubCommonId ' + value);
-    return {'pubcid': value};
+    const idObj = {'pubcid': value};
+    return idObj;
   },
   /**
    * performs action to obtain id

@@ -11,6 +11,7 @@ const OUTSTREAM_REDNERER_URL = 'https://mtrx.go.sonobi.com/sbi_outstream_rendere
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 104,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -129,7 +130,7 @@ export const spec = {
     }
 
     if (validBidRequests[0].schain) {
-      payload.schain = JSON.stringify(validBidRequests[0].schain)
+      payload.schain = JSON.stringify(validBidRequests[0].schain);
     }
     if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
       const userIds = deepClone(validBidRequests[0].userId);
@@ -217,7 +218,7 @@ export const spec = {
         ] = bid.sbi_size.split('x');
         let aDomains = [];
         if (bid.sbi_adomain) {
-          aDomains = [bid.sbi_adomain]
+          aDomains = [bid.sbi_adomain];
         }
         const bids = {
           requestId: bidId,
@@ -255,7 +256,7 @@ export const spec = {
           ));
           let videoSize = deepAccess(bidRequest, 'params.sizes');
           if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
-            videoSize = videoSize[0] // Only take the first size for outstream
+            videoSize = videoSize[0]; // Only take the first size for outstream
           }
           if (videoSize) {
             bids.width = videoSize[0];
@@ -294,22 +295,29 @@ function _findBidderRequest(bidderRequests, bidId) {
   }
 }
 
+// This function takes all the possible sizes.
+// returns string csv.
 function _validateSize(bid) {
-  if (deepAccess(bid, 'mediaTypes.video')) {
-    return ''; // Video bids arent allowed to override sizes via the trinity request
+  let size = [];
+  if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
   }
-
-  if (bid.params.sizes) {
-    return parseSizesInput(bid.params.sizes).join(',');
+  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.sizes'))
+  }
+  if (deepAccess(bid, 'params.sizes')) {
+    size.push(deepAccess(bid, 'params.sizes'));
   }
   if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
+    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'))
   }
-
-  // Handle deprecated sizes definition
-  if (bid.sizes) {
-    return parseSizesInput(bid.sizes).join(',');
+  if (deepAccess(bid, 'sizes')) {
+    size.push(deepAccess(bid, 'sizes'))
   }
+  // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
+  // Then throw it into Set to uniquify it.
+  // Then spread it to an array again. Then join it into a csv of sizes.
+  return [...new Set(parseSizesInput(...size))].join(',');
 }
 
 function _validateSlot(bid) {

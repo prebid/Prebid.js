@@ -1,8 +1,8 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {find, includes} from '../src/polyfill.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { config } from '../src/config.js';
+import { find, includes } from '../src/polyfill.js';
 import {
   convertCamelToUnderscore,
   deepAccess,
@@ -13,14 +13,17 @@ import {
   isPlainObject,
   transformBidderParamKeywords
 } from '../src/utils.js';
-import {auctionManager} from '../src/auctionManager.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
 const USER_PARAMS = ['age', 'externalUid', 'segments', 'gender', 'dnt', 'language'];
+let pixID = '';
+const GVLID = 839;
+
 export const spec = {
   code: 'pixfuture',
+  gvlid: GVLID,
   hostname: 'https://gosrv.pixfuture.com',
 
   getHostname() {
@@ -41,6 +44,10 @@ export const spec = {
     const tags = validBidRequests.map(bidToTag);
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
+      if (bidRequest.params.pix_id) {
+        pixID = bidRequest.params.pix_id
+      }
+
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.page || '';
@@ -123,7 +130,7 @@ export const spec = {
       const ret = {
         url: `${hostname}/pixservices`,
         method: 'POST',
-        options: {withCredentials: false},
+        options: {withCredentials: true},
         data: {
           v: $$PREBID_GLOBAL$$.version,
           pageUrl: referer,
@@ -162,15 +169,39 @@ export const spec = {
 
     return bids;
   },
-  getUserSyncs: function (syncOptions, bid, gdprConsent) {
-    var pixid = '';
-    if (typeof bid[0] === 'undefined' || bid[0] === null) { pixid = '0'; } else { pixid = bid[0].body.pix_id; }
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
-      return [{
-        type: 'iframe',
-        url: 'https://gosrv.pixfuture.com/cookiesync?adsync=' + gdprConsent.consentString + '&pixid=' + pixid + '&gdprconcent=' + gdprConsent.gdprApplies
-      }];
+  getUserSyncs: function (syncOptions, bid, gdprConsent, uspConsent) {
+    const syncs = [];
+
+    let syncurl = 'pixid=' + pixID;
+    let gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
+    let consent = gdprConsent ? encodeURIComponent(gdprConsent.consentString || '') : '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    syncurl += '&gdprconcent=' + gdpr + '&adsync=' + consent;
+
+    // CCPA
+    if (uspConsent) {
+      syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
     }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      syncurl += '&coppa=1';
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: 'https://gosrv.pixfuture.com/cookiesync?f=b&' + syncurl
+      });
+    } else {
+      syncs.push({
+        type: 'image',
+        url: 'https://gosrv.pixfuture.com/cookiesync?f=i&' + syncurl
+      });
+    }
+
+    return syncs;
   }
 };
 
@@ -211,7 +242,7 @@ function bidToTag(bid) {
     tag.code = bid.params.invCode;
   }
   tag.allow_smaller_sizes = bid.params.allowSmallerSizes || false;
-  tag.use_pmt_rule = bid.params.usePaymentRule || false
+  tag.use_pmt_rule = bid.params.usePaymentRule || false;
   tag.prebid = true;
   tag.disable_psa = true;
   let bidFloor = getBidFloor(bid);
