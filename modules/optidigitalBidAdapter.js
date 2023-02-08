@@ -36,14 +36,23 @@ export const spec = {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
       return [];
     }
+
+    const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
+      badv: []
+    };
+
     const payload = {
       referrer: getReferrer(bidderRequest),
       hb_version: '$prebid.version$',
-      deviceWidth: screen.width,
+      deviceWidth: document.documentElement.clientWidth,
       auctionId: deepAccess(validBidRequests[0], 'auctionId'),
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
-      imp: validBidRequests.map(bidRequest => buildImp(bidRequest))
+      imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
+      badv: ortb2.badv || deepAccess(validBidRequests[0], 'params.badv') || [],
+      bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
+      bapp: deepAccess(validBidRequests[0], 'params.bapp') || []
     }
 
     if (validBidRequests[0].params.pageTemplate && validBidRequests[0].params.pageTemplate !== '') {
@@ -146,7 +155,7 @@ export const spec = {
   },
 };
 
-function buildImp(bidRequest) {
+function buildImp(bidRequest, ortb2) {
   let imp = {};
   imp = {
     sizes: checkSizes(bidRequest),
@@ -175,6 +184,11 @@ function buildImp(bidRequest) {
   let bidFloor = _getFloor(bidRequest, floorSizes, CUR);
   if (bidFloor) {
     imp.bidFloor = bidFloor;
+  }
+
+  let battr = ortb2.battr || deepAccess(bidRequest, 'params.battr');
+  if (battr && Array.isArray(battr) && battr.length) {
+    imp.battr = battr;
   }
 
   return imp;

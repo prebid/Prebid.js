@@ -22,8 +22,12 @@ Bidder Adapter for Prebid.js.
           params: {
             publisherId: 'p1234',
             placementId: 'Billboard_Top',
-            divId: 'Billboard_Top_3c5425', //optional parameter
-            pageTemplate: 'home', //optional parameter
+            divId: 'Billboard_Top_3c5425', // optional parameter
+            pageTemplate: 'home', // optional parameter
+            badv: ['example.com'], // optional parameter
+            bcat: ['IAB1-1'], // optional parameter
+            bapp: ['com.blocked'], // optional parameter 
+            battr: [1, 2] // optional parameter 
           }
       }]
     }];
