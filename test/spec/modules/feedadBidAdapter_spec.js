@@ -465,7 +465,7 @@ describe('FeedAdAdapter', function () {
         {body: {}},
         {body: [{}, 123]},
       ];
-      expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, responses)).not.to.throw;
+      expect(() => spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, responses)).to.not.throw();
     });
 
     it('should return empty array if the body extension is null', function () {
