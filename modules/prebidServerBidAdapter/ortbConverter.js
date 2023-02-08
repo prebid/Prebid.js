@@ -47,7 +47,7 @@ const PBS_CONVERTER = ortbConverter({
       request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', proxyBidderRequest.auctionId);
 
-      [request.app, request.site].forEach(section => {
+      [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
@@ -246,6 +246,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     impIds.add(impId)
     proxyBidRequests.push({
       ...adUnit,
+      adUnitCode: adUnit.code,
       ...getDefinedParams(actualBidRequests.values().next().value || {}, ['userId', 'userIdAsEids', 'schain']),
       pbsData: {impId, actualBidRequests, adUnit}
     });

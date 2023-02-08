@@ -29,7 +29,7 @@ export const tripleliftAdapterSpec = {
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page;
+      let referrer = bidderRequest.refererInfo.page;
       tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
@@ -153,6 +153,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
   if (!isEmpty(ext)) {
     data.ext = ext;
+  }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
   }
   return data;
 }
