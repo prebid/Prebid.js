@@ -1,9 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/smilewantedBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagement.js';
 
 const DISPLAY_REQUEST = [{
   adUnitCode: 'sw_300x250',
@@ -18,6 +15,37 @@ const DISPLAY_REQUEST = [{
   },
   requestId: 'request_abcd1234',
   transactionId: 'trans_abcd1234'
+}];
+
+const DISPLAY_REQUEST_WITH_EIDS = [{
+  adUnitCode: 'sw_300x250',
+  bidId: '12345',
+  sizes: [
+    [300, 250],
+    [300, 200]
+  ],
+  bidder: 'smilewanted',
+  params: {
+    zoneId: 1
+  },
+  requestId: 'request_abcd1234',
+  transactionId: 'trans_abcd1234',
+  userIdAsEids: [{
+    source: 'pubcid.org',
+    uids: [{
+      id: 'some-random-id-value',
+      atype: 1
+    }]
+  }, {
+    source: 'adserver.org',
+    uids: [{
+      id: 'some-random-id-value',
+      atype: 1,
+      ext: {
+        rtiPartner: 'TDID'
+      }
+    }]
+  }]
 }];
 
 const DISPLAY_REQUEST_WITH_POSITION_TYPE = [{
@@ -168,6 +196,29 @@ describe('smilewantedBidAdapterTests', function () {
     });
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('pageDomain').and.to.equal('https://localhost/Prebid.js/integrationExamples/gpt/hello_world.html');
+  });
+
+  it('Verify external ids in request and ids found', function () {
+    config.setConfig({
+      'currency': {
+        'adServerCurrency': 'EUR'
+      }
+    });
+    const request = spec.buildRequests(DISPLAY_REQUEST_WITH_EIDS, {});
+    const requestContent = JSON.parse(request[0].data);
+
+    expect(requestContent).to.have.property('eids');
+    expect(requestContent.eids).to.not.equal(null).and.to.not.be.undefined;
+    expect(requestContent.eids.length).to.greaterThan(0);
+    for (let index in requestContent.eids) {
+      let eid = requestContent.eids[index];
+      expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
+      expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
+      for (let uidsIndex in eid.uids) {
+        let uid = eid.uids[uidsIndex];
+        expect(uid.id).to.not.equal(null).and.to.not.be.undefined;
+      }
+    }
   });
 
   describe('gdpr tests', function () {
