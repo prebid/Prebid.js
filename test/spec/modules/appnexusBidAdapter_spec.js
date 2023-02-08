@@ -1318,9 +1318,33 @@ describe('AppNexusAdapter', function () {
             source: 'puburl2.com',
             uids: [{
               id: 'pubid2'
+            }, {
+              id: 'pubid2-123'
             }]
           }]
-        }
+        },
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: 'sample-userid' }]
+        }, {
+          source: 'criteo.com',
+          uids: [{ id: 'sample-criteo-userid' }]
+        }, {
+          source: 'netid.de',
+          uids: [{ id: 'sample-netId-userid' }]
+        }, {
+          source: 'liveramp.com',
+          uids: [{ id: 'sample-idl-userid' }]
+        }, {
+          source: 'uidapi.com',
+          uids: [{ id: 'sample-uid2-value' }]
+        }, {
+          source: 'puburl.com',
+          uids: [{ id: 'pubid1' }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+        }]
       });
 
       const request = spec.buildRequests([bidRequest]);
@@ -1360,6 +1384,10 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'puburl2.com',
         id: 'pubid2'
+      });
+      expect(payload.eids).to.deep.include({
+        source: 'puburl2.com',
+        id: 'pubid2-123'
       });
     });
 
