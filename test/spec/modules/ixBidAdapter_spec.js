@@ -3615,27 +3615,9 @@ describe('IndexexchangeAdapter', function () {
       expect(FEATURE_TOGGLES.featureToggles).to.deep.equal({});
     });
 
-    it('should set request size limit to 32KB when its feature enabled', () => {
+    it('6 ad units should generate only 1 request if buildRequestV2 FT is enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
-      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-      bid.bidderRequestId = Array(10000).join('#');
-
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], {});
-      const lsData = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
-      expect(lsData.features.pbjs_use_32kb_size_limit.activated).to.be.true;
-    });
-
-    it('6 ad units should generate only 2 requests if 32kb size limit FT is enabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      serverResponse.body.ext.features.pbjs_enable_post = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -3665,47 +3647,30 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests([bid1, bid2, bid3, bid4, bid5, bid6], DEFAULT_OPTION);
 
       expect(requests).to.be.an('array');
-      // 32KB size limit causes only 2 requests to get generated.
-      expect(requests).to.have.lengthOf(2);
+      // buildRequestv2 enabled causes only 1 requests to get generated.
+      expect(requests).to.have.lengthOf(1);
       for (let request of requests) {
         expect(request.method).to.equal('POST');
       }
     });
 
-    it('4 ad units should generate only 1 requests if 32kb size limit FT is enabled', function () {
+    it('1 request with 2 ad units, buildRequestV2 enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      serverResponse.body.ext.features.pbjs_enable_post = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
 
-      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
-      bid1.params.siteId = '121';
-      bid1.adUnitCode = 'div-gpt-1'
-      bid1.transactionId = 'tr1';
-      bid1.bidId = '2f6g5s5e';
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+      bid.params.siteId = '124';
+      bid.adUnitCode = 'div-gpt-1'
+      bid.transactionId = '152e36d1-1241-4242-t35e-y1dv34d12315';
+      bid.bidId = '2f6g5s5e';
 
-      const bid2 = utils.deepClone(bid1);
-      bid2.transactionId = 'tr2';
-
-      const bid3 = utils.deepClone(bid1);
-      bid3.transactionId = 'tr3';
-
-      const bid4 = utils.deepClone(bid1);
-      bid4.transactionId = 'tr4';
-
-      const requests = spec.buildRequests([bid1, bid2, bid3, bid4], DEFAULT_OPTION);
-
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
       expect(requests).to.be.an('array');
-      // 32KB size limit causes only 1 requests to get generated.
       expect(requests).to.have.lengthOf(1);
-      for (let request of requests) {
-        expect(request.method).to.equal('POST');
-      }
     });
   });
 
