@@ -348,7 +348,11 @@ export const spec = {
       // Add schain object
       var schain = currentBidRequest.schain;
       if (schain) {
-        requestParams.schain = schain;
+        try {
+          requestParams.schain = JSON.stringify(schain);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
+        }
       }
 
       var vastParams = currentBidRequest.params.vastUrlParams;

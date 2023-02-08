@@ -840,24 +840,6 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content.id).to.equal(contentId);
     });
 
-    it('should be right tmax when timeout in config is less then timeout in bidderRequest', function() {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'bidderTimeout' ? 2000 : null);
-      const [request] = spec.buildRequests([bidRequests[0]], bidderRequest);
-      expect(request.data).to.be.an('string');
-      const payload = parseRequest(request.data);
-      expect(payload.tmax).to.equal(2000);
-      getConfigStub.restore();
-    });
-    it('should be right tmax when timeout in bidderRequest is less then timeout in config', function() {
-      const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
-        arg => arg === 'bidderTimeout' ? 5000 : null);
-      const [request] = spec.buildRequests([bidRequests[0]], bidderRequest);
-      expect(request.data).to.be.an('string');
-      const payload = parseRequest(request.data);
-      expect(payload.tmax).to.equal(3000);
-      getConfigStub.restore();
-    });
     it('should contain regs.coppa if coppa is true in config', function () {
       const getConfigStub = sinon.stub(config, 'getConfig').callsFake(
         arg => arg === 'coppa' ? true : null);

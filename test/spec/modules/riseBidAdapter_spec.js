@@ -116,6 +116,13 @@ describe('riseAdapter', function () {
       expect(request.data.bids[0].placementId).to.equal(placementId);
     });
 
+    it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('is_wrapper');
+      expect(request.data.params.is_wrapper).to.equal(false);
+    });
+
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
