@@ -1,4 +1,4 @@
-import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError, logWarn } from '../src/utils.js';
+import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError, logWarn, deepAccess } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -62,6 +62,11 @@ export const spec = {
         queryString = tryAppendQueryString(queryString, 'eids', JSON.stringify({
           'eids': eids,
         }))
+      }
+
+      const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+      if (sua) {
+        queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
       }
 
       bidRequests.push({
