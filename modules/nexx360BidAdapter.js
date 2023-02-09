@@ -21,7 +21,8 @@ export const spec = {
   gvlid: GVLID,
   aliases: [
     { code: 'revenuemaker' },
-    { code: 'firstid-ssp' },
+    { code: 'first-id', gvlid: 1178 },
+    { code: 'adwebone' },
   ],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
@@ -257,14 +258,13 @@ function interpretResponse(response, req) {
         currency: respBody.cur || 'USD',
         netRevenue: true,
         ttl: 120,
-        bidderCode: allowAlternateBidderCodes ? `n360-${bid.ssp}` : 'nexx360',
         mediaType: bid.type === 'banner' ? 'banner' : 'video',
         meta: {
           advertiserDomains: bid.adomain,
           demandSource: ssp,
         },
       };
-      // if (bid.dealid) response.dealid = bid.dealid;
+      if (allowAlternateBidderCodes) response.bidderCode = `n360-${bid.ssp}`;
 
       if (response.mediaType === 'banner') {
         response.adUrl = bid.adUrl;

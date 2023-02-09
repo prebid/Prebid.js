@@ -556,6 +556,17 @@ describe('kargo adapter tests', function () {
           mediaType: 'video',
           metadata: {},
           currency: 'EUR'
+        },
+        6: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '',
+          admUrl: 'https://foobar.com/vast_adm',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
+          metadata: {},
+          currency: 'EUR'
         }
       }}, {
         currency: 'USD',
@@ -581,6 +592,11 @@ describe('kargo adapter tests', function () {
           }
         }, {
           bidId: 5,
+          params: {
+            placementId: 'bar'
+          }
+        }, {
+          bidId: 6,
           params: {
             placementId: 'bar'
           }
@@ -655,6 +671,22 @@ describe('kargo adapter tests', function () {
         height: 250,
         ad: '<VAST></VAST>',
         vastXml: '<VAST></VAST>',
+        ttl: 300,
+        creativeId: 'bar',
+        dealId: undefined,
+        netRevenue: true,
+        currency: 'EUR',
+        mediaType: 'video',
+        meta: {
+          mediaType: 'video'
+        }
+      }, {
+        requestId: '6',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        ad: '',
+        vastUrl: 'https://foobar.com/vast_adm',
         ttl: 300,
         creativeId: 'bar',
         dealId: undefined,
