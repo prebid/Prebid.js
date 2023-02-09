@@ -81,9 +81,6 @@ export const spec = {
       },
       ad: response.ad
     };
-    /* eslint-disable no-console */
-    console.log('testingResponse===>', responseBid);
-    /* eslint-enable no-console */
     bids.push(responseBid);
     return bids;
   }
