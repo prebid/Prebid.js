@@ -60,7 +60,7 @@
 import {
   _each,
   adUnitsFilter,
-  bind,
+  bind, callBurl,
   deepAccess,
   flatten,
   generateUUID,
@@ -362,6 +362,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 
   function addWinningBid(winningBid) {
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
   }
 

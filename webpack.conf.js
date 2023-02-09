@@ -53,6 +53,9 @@ module.exports = {
       },
       'debugging-standalone': {
         import: './modules/debugging/standalone.js'
+      },
+      'cross-domain-creative': {
+        import: './libraries/creativeRender/crossDomain.js',
       }
     };
     const selectedModules = new Set(helpers.getArgModules());
