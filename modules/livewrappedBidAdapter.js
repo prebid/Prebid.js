@@ -1,4 +1,4 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep} from '../src/utils.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
@@ -63,12 +63,14 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
+	let flrCur = find(bidRequests, hasFlrCur);
     let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-    var adRequests = bidRequests.map(bidToAdRequest);
+	flrCur = flrCur && flrCur.params.flrCur ? flrCur.params.flrCur : undefined;
+    var adRequests = bidRequests.map(b => bidToAdRequest(b, flrCur));
 
     if (eids) {
       ortb2 = mergeDeep(mergeDeep({}, ortb2 || {}), eids);
@@ -96,7 +98,8 @@ export const spec = {
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
       rtbData: ortb2,
-      schain: schain
+      schain: schain,
+      flrCur: flrCur
     };
 
     if (config.getConfig().debug) {
@@ -223,13 +226,18 @@ function hasPubcid(bid) {
   return !!bid.crumbs && !!bid.crumbs.pubcid;
 }
 
-function bidToAdRequest(bid) {
+function hasFlrCur(bid) {
+  return !!bid.params.flrCur;
+}
+
+function bidToAdRequest(bid, currency) {
   var adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
     formats: getSizes(bid).map(sizeToFormat),
+	flr: getBidFloor(bid, currency),
     options: bid.params.options
   };
 
@@ -262,6 +270,24 @@ function sizeToFormat(size) {
     width: size[0],
     height: size[1]
   }
+}
+
+function getBidFloor(bid, currency) {
+  if (!isFn(bid.getFloor) || !currency) {
+    return bid.params.flr
+		? bid.params.flr
+		: undefined;
+  }
+
+  const floor = bid.getFloor({
+    currency: currency,
+    mediaType: '*',
+    size: '*'
+  });
+
+  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency == currency
+    ? floor.floor
+	: undefined;
 }
 
 function getAdblockerRecovered() {
