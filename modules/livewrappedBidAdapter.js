@@ -68,7 +68,7 @@ export const spec = {
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-	const currency = config.getConfig('currency.adServerCurrency');
+	const currency = config.getConfig('currency.adServerCurrency') || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
 
     if (eids) {
@@ -273,7 +273,7 @@ function getBidFloor(bid, currency) {
   }
 
   const floor = bid.getFloor({
-    currency: currency || 'USD',
+    currency: currency,
     mediaType: '*',
     size: '*'
   });
