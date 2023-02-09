@@ -144,6 +144,7 @@ export const converter = ortbConverter({
   request(buildRequest, imps, bidderRequest, context) {
     const {bidRequests} = context;
     const data = buildRequest(imps, bidderRequest, context);
+    data.cur = ['USD'];
     data.test = config.getConfig('debug') ? 1 : 0;
     deepSetValue(data, 'ext.prebid.cache', {
       vastxml: {
@@ -222,7 +223,6 @@ export const converter = ortbConverter({
   context: {
     netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
     ttl: 300,
-    currency: 'USD'
   },
   processors: pbsExtensions
 });
