@@ -183,7 +183,7 @@ export const spec = {
           height: bid.h,
           creativeId: bid.adid,
           currency: response.cur,
-          netRevenue: false,
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
             advertiserDomains: bid.adomain || []
