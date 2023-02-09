@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "7.33.0-pre",
+  "version": "7.36.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -132,7 +132,7 @@
     "gulp-v4": "^4.0.0-alpha.5",
     "gutil": "^1.6.4",
     "just-clone": "^1.0.2",
-    "live-connect-js": "3.0.1",
+    "live-connect-js": "^4.0.0",
     "polyfill-object.fromentries": "^1.0.1"
   },
   "optionalDependencies": {
