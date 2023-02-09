@@ -1437,6 +1437,13 @@ export const spec = {
               //    submit the bid to Prebid as marketplace name
               if (bid.ext && !!bid.ext.marketplace) {
                 newBid.bidderCode = bid.ext.marketplace;
+                if (request && request.bidderRequest && request.bidderRequest.bids && request.bidderRequest.bids.length > 0) {
+                  request.bidderRequest.bids.forEach(function (bidData) {
+                    if (bidData.bidId === bid.impid && bidData.params) {
+                      newBid.params = bidData.params;
+                    }
+                  });
+                }
               }
 
               bidResponses.push(newBid);
