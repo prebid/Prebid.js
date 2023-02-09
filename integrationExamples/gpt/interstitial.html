@@ -20,24 +20,24 @@
 
       var adUnits = [
         {
-          code: "div-gpt-ad-1460505748561-0",
+          // code: "gpt_unit_/6355419/Travel/Europe/France/Paris_0",
+          code: "test",
           mediaTypes: {
             banner: {
-              sizes: [
-                [300, 250],
-                [300, 600],
-              ],
+              sizes: [[300, 250]],
             },
           },
-          // Replace this object to test a new Adapter!
+          ortb2Imp: {
+            instl: 1,
+          },
           bids: [
             {
               bidder: "pubmatic",
               params: {
-                publisherId: "156276", // required
-                adSlot: "pubmatic_test", // required
+                publisherId: "156276",
+                adSlot: "pubmatic_test"
               },
-            },
+            }
           ],
         },
       ];
@@ -49,6 +49,7 @@
     <script>
       var googletag = googletag || {};
       googletag.cmd = googletag.cmd || [];
+
       googletag.cmd.push(function () {
         googletag.pubads().disableInitialLoad();
       });
@@ -56,9 +57,12 @@
       pbjs.que.push(function () {
         pbjs.addAdUnits(adUnits);
         pbjs.setConfig({
-          targetingControls: {
-            addTargetingKeys: ["ACAT"],
-          },
+          interstitialVisibilityForBilling: {
+            enabled: true
+          }
+        });
+        pbjs.onEvent('billableEvent', billableBid => {
+          console.log('billable event occurred', { billableBid });
         });
         pbjs.requestBids({
           bidsBackHandler: sendAdserverRequest,
@@ -84,32 +88,60 @@
 
     <script>
       googletag.cmd.push(function () {
-        googletag
-          .defineSlot(
-            "/19968336/header-bid-tag-0",
-            [
-              [300, 250],
-              [300, 600],
-            ],
-            "div-gpt-ad-1460505748561-0"
-          )
-          .addService(googletag.pubads());
+        // GPT ad slots
+        var interstitialSlot;
 
+        // Define a web interstitial ad slot.
+        interstitialSlot = googletag.defineOutOfPageSlot("/6355419/Travel/Europe/France/Paris", googletag.enums.OutOfPageFormat.INTERSTITIAL);
+        // Slot returns null if the page or device does not support interstitials.
+        if (interstitialSlot) {
+          interstitialSlot.addService(googletag.pubads());
+          document.getElementById("status").innerText =
+            "Interstitial is loading...";
+        }
+
+        googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'test').addService(googletag.pubads());
+
+        // Enable SRA and services.
         googletag.pubads().enableSingleRequest();
         googletag.enableServices();
       });
     </script>
+    <style>
+      #link {
+        display: none;
+      }
+
+      div.content {
+        position: fixed;
+        top: 50%;
+      }
+    </style>
   </head>
 
   <body>
     <h2>Prebid.js Test</h2>
     <h5>Div-1</h5>
-    <div id="div-gpt-ad-1460505748561-0">
-      <script type="text/javascript">
-        googletag.cmd.push(function () {
-          googletag.display("div-gpt-ad-1460505748561-0");
-        });
+    <div id='test'>
+      <script type='text/javascript'>
+          googletag.cmd.push(function() { googletag.display('test'); });
       </script>
+    </div>
+    <div class="content">
+      <span id="status">Web interstitial is not supported on this page.</span>
+      <p>
+        <a id="link" href="https://www.example.com/">TRIGGER INTERSTITIAL</a>
+      </p>
+      <p>
+        <!--
+          You can prevent specific links from triggering GPT-managed web interstials by
+          adding a data-google-interstitial="false" attribute to the anchor element or
+          any ancestor of the anchor element.
+        -->
+        <a data-google-interstitial="false" href="https://www.example.com/">
+          This link will never trigger an interstitial
+        </a>
+      </p>
     </div>
   </body>
 </html>
