@@ -63,14 +63,13 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
-	let flrCur = find(bidRequests, hasFlrCur);
     let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-	flrCur = flrCur && flrCur.params.flrCur ? flrCur.params.flrCur : undefined;
-    var adRequests = bidRequests.map(b => bidToAdRequest(b, flrCur));
+	const currency = config.getConfig('currency.adServerCurrency');
+    var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
 
     if (eids) {
       ortb2 = mergeDeep(mergeDeep({}, ortb2 || {}), eids);
@@ -99,7 +98,7 @@ export const spec = {
       adRequests: [...adRequests],
       rtbData: ortb2,
       schain: schain,
-      flrCur: flrCur
+      flrCur: currency
     };
 
     if (config.getConfig().debug) {
@@ -226,10 +225,6 @@ function hasPubcid(bid) {
   return !!bid.crumbs && !!bid.crumbs.pubcid;
 }
 
-function hasFlrCur(bid) {
-  return !!bid.params.flrCur;
-}
-
 function bidToAdRequest(bid, currency) {
   var adRequest = {
     adUnitId: bid.params.adUnitId,
@@ -273,14 +268,12 @@ function sizeToFormat(size) {
 }
 
 function getBidFloor(bid, currency) {
-  if (!isFn(bid.getFloor) || !currency) {
-    return bid.params.flr
-		? bid.params.flr
-		: undefined;
+  if (!isFn(bid.getFloor)) {
+    return undefined;
   }
 
   const floor = bid.getFloor({
-    currency: currency,
+    currency: currency || 'USD',
     mediaType: '*',
     size: '*'
   });
