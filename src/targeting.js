@@ -262,7 +262,6 @@ export function newTargeting(auctionManager) {
       const keyring = adUnit[adUnitCode];
       return keyring.length > 0;
     });
-
     return filteredTargeting
   }
 
