@@ -29,7 +29,6 @@
     "mantisBidAdapter",
     "medianetBidAdapter",
     "openxBidAdapter",
-    "parrableIdSystem",
     "permutiveRtdProvider",
     "prebidServerBidAdapter",
     "pubCommonId",
