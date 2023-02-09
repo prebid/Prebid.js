@@ -759,6 +759,20 @@ describe('auctionmanager.js', function () {
       sinon.assert.calledWith(stubMakeBidRequests, ...anyArgs.slice(0, 5).concat([sinon.match.same(ortb2Fragments)]));
       sinon.assert.calledWith(stubCallAdapters, ...anyArgs.slice(0, 7).concat([sinon.match.same(ortb2Fragments)]));
     });
+
+    it('correctly adds nonbids when they are emitted', () => {
+      const ortb2Fragments = {
+        global: {},
+        bidder: {}
+      }
+      const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
+      expect(auction.getNonBids()[0]).to.equal(undefined);
+      events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['test']
+      });
+      expect(auction.getNonBids()[0]).to.equal('test');
+    });
   });
 
   describe('addBidResponse #1', function () {

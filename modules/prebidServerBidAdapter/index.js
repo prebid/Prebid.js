@@ -450,7 +450,7 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            response.ext.seatnonbid.forEach(seatnonbid => emitNoBids(seatnonbid))
+            emitNonBids(response.ext.seatnonbid, bidRequests[0].auctionId);
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
@@ -550,22 +550,11 @@ function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig.extPrebid && s2sConfig.extPrebid.seatnonbid && response && response.ext && response.ext.seatnonbid;
 }
 
-function emitNoBids(seatnonbid) {
-  seatnonbid.nonbid.forEach(nonbid => {
-    const status = nonbid.statuscode;
-    const payload = packageNonBid(seatnonbid, nonbid);
-    if (status > 0 && status < 100) {
-      events.emit(CONSTANTS.EVENTS.NO_BID, payload);
-    } else if (status > 99 && status < 400) {
-      events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, payload);
-    } else if (status === undefined) {
-      logError('No bid not emitted. No status defined');
-    }
+function emitNonBids(seatnonbid, auctionId) {
+  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+    seatnonbid,
+    auctionId
   });
-}
-
-function packageNonBid(seatnonbid, nonbid) {
-  return {...seatnonbid, nonbid}
 }
 
 /**
