@@ -311,16 +311,19 @@ export function isPermutiveOnPage () {
  * @return {Object}
  */
 export function getSegments (maxSegs) {
-  const legacySegs = readSegments('_psegs').map(Number).filter(seg => seg >= 1000000).map(String)
-  const _ppam = readSegments('_ppam')
-  const _pcrprs = readSegments('_pcrprs')
+  const legacySegs = readSegments('_psegs', []).map(Number).filter(seg => seg >= 1000000).map(String)
+  const _ppam = readSegments('_ppam', [])
+  const _pcrprs = readSegments('_pcrprs', [])
 
   const segments = {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
-    rubicon: readSegments('_prubicons'),
-    appnexus: readSegments('_papns'),
-    gam: readSegments('_pdfps'),
-    ssp: readSegments('_pssps'),
+    rubicon: readSegments('_prubicons', []),
+    appnexus: readSegments('_papns', []),
+    gam: readSegments('_pdfps', []),
+    ssp: readSegments('_pssps', {
+      cohorts: [],
+      ssps: []
+    }),
   }
 
   for (const bidder in segments) {
@@ -338,15 +341,17 @@ export function getSegments (maxSegs) {
 
 /**
  * Gets an array of segment IDs from LocalStorage
- * or returns an empty array
+ * or return the default value provided.
+ * @template A
  * @param {string} key
- * @return {string[]|number[]}
+ * @param {A} defaultValue
+ * @return {A}
  */
-function readSegments (key) {
+function readSegments (key, defaultValue) {
   try {
-    return JSON.parse(storage.getDataFromLocalStorage(key) || '[]')
+    return JSON.parse(storage.getDataFromLocalStorage(key)) || defaultValue
   } catch (e) {
-    return []
+    return defaultValue
   }
 }
 
