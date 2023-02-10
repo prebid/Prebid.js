@@ -28,6 +28,34 @@ describe('nextMillenniumBidAdapterTests', function() {
     }
   ];
 
+  const serverResponse = {
+    body: {
+      id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
+      seatbid: [
+        {
+          bid: [
+            {
+              id: '7457329903666272789',
+              price: 0.5,
+              adm: 'Hello! It\'s a test ad!',
+              adid: '96846035',
+              adomain: ['test.addomain.com'],
+              w: 300,
+              h: 250
+            }
+          ]
+        }
+      ],
+      cur: 'USD',
+      ext: {
+        sync: {
+          image: ['urlA?gdpr={{.GDPR}}'],
+          iframe: ['urlB'],
+        }
+      }
+    }
+  };
+
   const bidRequestDataGI = [
     {
       adUnitCode: 'test-banner-gi',
@@ -96,6 +124,36 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
   });
 
+  it('Test getUserSyncs function', function () {
+    const syncOptions = {
+      'iframeEnabled': false,
+      'pixelEnabled': true
+    }
+    let userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.equal('image');
+    expect(userSync[0].url).to.equal('urlA?gdpr=1');
+
+    syncOptions.iframeEnabled = true;
+    syncOptions.pixelEnabled = false;
+    userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.equal('iframe');
+    expect(userSync[0].url).to.equal('urlB');
+  });
+
+  it('Test getUserSyncs function if GDPR is undefined', function () {
+    const syncOptions = {
+      'iframeEnabled': false,
+      'pixelEnabled': true
+    }
+
+    let userSync = spec.getUserSyncs(syncOptions, [serverResponse], undefined, bidRequestData[0].uspConsent);
+    expect(userSync).to.be.an('array').with.lengthOf(1);
+    expect(userSync[0].type).to.equal('image');
+    expect(userSync[0].url).to.equal('urlA?gdpr=0');
+  });
+
   it('Request params check without GDPR Consent', function () {
     delete bidRequestData[0].gdprConsent
     const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
@@ -137,51 +195,16 @@ describe('nextMillenniumBidAdapterTests', function() {
   it('Check if imp object was added', function() {
     const request = spec.buildRequests(bidRequestData)
     expect(JSON.parse(request[0].data).imp).to.be.an('array')
-  })
+  });
 
   it('Check if imp prebid stored id is correct', function() {
     const request = spec.buildRequests(bidRequestData)
     const requestData = JSON.parse(request[0].data);
     const storedReqId = requestData.ext.prebid.storedrequest.id;
     expect(requestData.imp[0].ext.prebid.storedrequest.id).to.equal(storedReqId)
-  })
-
-  it('Test getUserSyncs function', function () {
-    const syncOptions = {
-      'iframeEnabled': false,
-      'pixelEnabled': true
-    }
-    const userSync = spec.getUserSyncs(syncOptions);
-    expect(userSync).to.be.an('array').with.lengthOf(1);
-    expect(userSync[0].type).to.exist;
-    expect(userSync[0].url).to.exist;
-    expect(userSync[0].type).to.be.equal('image');
-    expect(userSync[0].url).to.be.equal('https://cookies.nextmillmedia.com/sync?type=image');
   });
 
   it('validate_response_params', function() {
-    const serverResponse = {
-      body: {
-        id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
-        seatbid: [
-          {
-            bid: [
-              {
-                id: '7457329903666272789',
-                price: 0.5,
-                adm: 'Hello! It\'s a test ad!',
-                adid: '96846035',
-                adomain: ['test.addomain.com'],
-                w: 300,
-                h: 250
-              }
-            ]
-          }
-        ],
-        cur: 'USD'
-      }
-    };
-
     let bids = spec.interpretResponse(serverResponse, bidRequestData[0]);
     expect(bids).to.have.lengthOf(1);
 

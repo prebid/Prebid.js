@@ -2,7 +2,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/pulsepointBidAdapter.js';
 import {deepClone} from 'src/utils.js';
-import { config } from 'src/config.js';
 
 describe('PulsePoint Adapter Tests', function () {
   const slotConfigs = [{
@@ -225,6 +224,8 @@ describe('PulsePoint Adapter Tests', function () {
     expect(ortbRequest.imp[1].banner).to.not.equal(null);
     expect(ortbRequest.imp[1].banner.w).to.equal(728);
     expect(ortbRequest.imp[1].banner.h).to.equal(90);
+    // tmax
+    expect(ortbRequest.tmax).to.equal(500);
   });
 
   it('Verify parse response', function () {
@@ -917,5 +918,14 @@ describe('PulsePoint Adapter Tests', function () {
         adUnitSpecificAttribute: '123'
       }
     });
+  });
+
+  it('Verify bid request timeouts', function () {
+    const mkRequest = (bidderRequest) => spec.buildRequests(slotConfigs, bidderRequest).data;
+    // assert default is used when no bidderRequest.timeout value is available
+    expect(mkRequest(bidderRequest).tmax).to.equal(500)
+
+    // assert bidderRequest value is used when available
+    expect(mkRequest(Object.assign({}, { timeout: 6000 }, bidderRequest)).tmax).to.equal(6000)
   });
 });
