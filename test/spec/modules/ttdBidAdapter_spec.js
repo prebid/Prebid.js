@@ -547,6 +547,17 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.ref).to.equal('https://ref.example.com');
       expect(requestBody.site.keywords).to.equal('power tools, drills');
     });
+
+    it('should fallback to floor module if no bidfloor is sent ', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const bidfloor = 5.00;
+      clonedBannerRequests[0].getFloor = () => {
+        return { currency: 'USD', floor: bidfloor };
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.imp[0].bidfloor).to.equal(bidfloor);
+    });
   });
 
   describe('buildRequests-banner-multiple', function () {
