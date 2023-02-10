@@ -41,6 +41,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     app: {
       bundle: 'testBundle'
     },
+    bidfloor: 0.2,
     test: 1
   };
 
@@ -104,7 +105,8 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     uspConsent: 'someCCPAString',
     params: params,
-    userIdAsEids: eids
+    userIdAsEids: eids,
+    timeout: 500
   }];
 
   const videoRequest = [{
@@ -343,5 +345,26 @@ describe('Zeta Ssp Bid Adapter', function () {
 
     expect(payload.imp[1].banner.w).to.eql(600);
     expect(payload.imp[1].banner.h).to.eql(400);
+  });
+
+  it('Test provide tmax', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.tmax).to.eql(500);
+  });
+
+  it('Test provide tmax without value', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.tmax).to.be.undefined;
+  });
+
+  it('Test provide bidfloor', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
   });
 });

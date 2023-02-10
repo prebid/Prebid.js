@@ -15,6 +15,7 @@ import { getHook, hook } from '../hook.js';
 import { getCoreStorageManager } from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import { bidderSettings } from '../bidderSettings.js';
+import {useMetrics} from '../utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
 
@@ -196,9 +197,13 @@ export function newBidder(spec) {
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
+        const metrics = useMetrics(bid.metrics);
+        metrics.checkpoint('addBidResponse');
         adUnitCodesHandled[adUnitCode] = true;
-        if (isValid(adUnitCode, bid)) {
+        if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
+        } else {
+          addBidResponse.reject(adUnitCode, bid, CONSTANTS.REJECTION_REASON.INVALID)
         }
       }
 
@@ -209,11 +214,13 @@ export function newBidder(spec) {
         done();
         config.runWithBidder(spec.code, () => {
           events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
-          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent);
+          registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
         });
       }
 
-      const validBidRequests = bidderRequest.bids.filter(filterAndWarn);
+      const validBidRequests = adapterMetrics(bidderRequest)
+        .measureTime('validate', () => bidderRequest.bids.filter(filterAndWarn));
+
       if (validBidRequests.length === 0) {
         afterAllResponses();
         return;
@@ -257,6 +264,7 @@ export function newBidder(spec) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
+              addBidResponse.reject(bidRequest.adUnitCode, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
@@ -267,6 +275,7 @@ export function newBidder(spec) {
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
+            addBidResponse.reject(null, bid, CONSTANTS.REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -286,8 +295,8 @@ export function newBidder(spec) {
     return false;
   }
 
-  function registerSyncs(responses, gdprConsent, uspConsent) {
-    registerSyncInner(spec, responses, gdprConsent, uspConsent);
+  function registerSyncs(responses, gdprConsent, uspConsent, gppConsent) {
+    registerSyncInner(spec, responses, gdprConsent, uspConsent, gppConsent);
   }
 
   function filterAndWarn(bid) {
@@ -315,7 +324,11 @@ export function newBidder(spec) {
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
 export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onFledgeAuctionConfigs, onError, onBid, onCompletion}) {
-  let requests = spec.buildRequests(bids, bidderRequest);
+  const metrics = adapterMetrics(bidderRequest);
+  onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
+
+  let requests = metrics.measureTime('buildRequests', () => spec.buildRequests(bids, bidderRequest));
+
   if (!requests || requests.length === 0) {
     onCompletion();
     return;
@@ -327,10 +340,16 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   const requestDone = delayExecution(onCompletion, requests.length);
 
   requests.forEach((request) => {
+    const requestMetrics = metrics.fork();
+    function addBid(bid) {
+      if (bid != null) bid.metrics = requestMetrics.fork().renameWith();
+      onBid(bid);
+    }
     // If the server responds successfully, use the adapter code to unpack the Bids from it.
     // If the adapter code fails, no bids should be added. After all the bids have been added,
     // make sure to call the `requestDone` function so that we're one step closer to calling onCompletion().
     const onSuccess = wrapCallback(function(response, responseObj) {
+      networkDone();
       try {
         response = JSON.parse(response);
       } catch (e) { /* response might not be JSON... that's ok. */ }
@@ -343,7 +362,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       onResponse(response);
 
       try {
-        response = spec.interpretResponse(response, request);
+        response = requestMetrics.measureTime('interpretResponse', () => spec.interpretResponse(response, request));
       } catch (err) {
         logError(`Bidder ${spec.code} failed to interpret the server's response. Continuing without bids`, null, err);
         requestDone();
@@ -361,9 +380,9 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
 
       if (bids) {
         if (isArray(bids)) {
-          bids.forEach(onBid);
+          bids.forEach(addBid);
         } else {
-          onBid(bids);
+          addBid(bids);
         }
       }
       requestDone();
@@ -376,11 +395,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     });
 
     const onFailure = wrapCallback(function (errorMessage, error) {
+      networkDone();
       onError(errorMessage, error);
       requestDone();
     });
 
     onRequest(request);
+
+    const networkDone = requestMetrics.startTiming('net');
     switch (request.method) {
       case 'GET':
         ajax(
@@ -426,14 +448,14 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
   })
 }, 'processBidderRequests')
 
-export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent) {
+export const registerSyncInner = hook('async', function(spec, responses, gdprConsent, uspConsent, gppConsent) {
   const aliasSyncEnabled = config.getConfig('userSync.aliasSyncEnabled');
   if (spec.getUserSyncs && (aliasSyncEnabled || !adapterManager.aliasRegistry[spec.code])) {
     let filterConfig = config.getConfig('userSync.filterSettings');
     let syncs = spec.getUserSyncs({
       iframeEnabled: !!(filterConfig && (filterConfig.iframe || filterConfig.all)),
       pixelEnabled: !!(filterConfig && (filterConfig.image || filterConfig.all)),
-    }, responses, gdprConsent, uspConsent);
+    }, responses, gdprConsent, uspConsent, gppConsent);
     if (syncs) {
       if (!Array.isArray(syncs)) {
         syncs = [syncs];
@@ -587,4 +609,8 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
   }
 
   return true;
+}
+
+function adapterMetrics(bidderRequest) {
+  return useMetrics(bidderRequest.metrics).renameWith(n => [`adapter.client.${n}`, `adapters.client.${bidderRequest.bidderCode}.${n}`])
 }

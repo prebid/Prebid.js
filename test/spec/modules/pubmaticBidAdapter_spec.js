@@ -1,7 +1,7 @@
-import {expect} from 'chai';
-import {spec, checkVideoPlacement, _getDomainFromURL} from 'modules/pubmaticBidAdapter.js';
+import { expect } from 'chai';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
-import {config} from 'src/config.js';
+import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { bidderSettings } from 'src/bidderSettings.js';
 const constants = require('src/constants.json');
@@ -2607,6 +2607,21 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
 
+	  it('should pass device.sua if present in bidderRequest fpd ortb2 object', function () {
+        const suaObject = {'source': 2, 'platform': {'brand': 'macOS', 'version': ['12', '4', '0']}, 'browsers': [{'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']}, {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']}, {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}], 'mobile': 0, 'model': '', 'bitness': '64', 'architecture': 'x86'};
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              sua: suaObject
+            }
+		  }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.sua).to.exist.and.to.be.an('object');
+        expect(data.device.sua).to.deep.equal(suaObject);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
@@ -3406,7 +3421,7 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].cpm).to.equal(parseFloat((bidResponses.body.seatbid[0].bid[0].price).toFixed(2)));
         expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
         expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
         if (bidResponses.body.seatbid[0].bid[0].crid) {
@@ -3430,7 +3445,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
-        expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+        expect(response[1].cpm).to.equal(parseFloat((bidResponses.body.seatbid[1].bid[0].price).toFixed(2)));
         expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
         expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
         if (bidResponses.body.seatbid[1].bid[0].crid) {
@@ -4063,9 +4078,64 @@ describe('PubMatic adapter', function () {
       expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
       expect(data.imp[0]['video']['battr']).to.equal(undefined);
     });
+
+    describe('Assign Deal Tier (i.e. prebidDealPriority)', function () {
+      let videoSeatBid, request, newBid;
+      // let data = JSON.parse(request.data);
+      beforeEach(function () {
+        videoSeatBid = videoBidResponse.body.seatbid[0].bid[0];
+        // const adpodValidOutstreamBidRequest = validOutstreamBidRequest.bids[0].mediaTypes.video.context = 'adpod';
+        request = spec.buildRequests(bidRequests, validOutstreamBidRequest);
+        newBid = {
+          requestId: '47acc48ad47af5'
+        };
+        videoSeatBid.ext = videoSeatBid.ext || {};
+        videoSeatBid.ext.video = videoSeatBid.ext.video || {};
+        // videoBidRequests[0].mediaTypes.video = videoBidRequests[0].mediaTypes.video || {};
+      });
+
+      it('should not assign video object if deal priority is missing', function () {
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      it('should not assign video object if context is not a adpod', function () {
+        videoSeatBid.ext.prebiddealpriority = 5;
+        assignDealTier(newBid, videoSeatBid, request);
+        expect(newBid.video).to.equal(undefined);
+        expect(newBid.video).to.not.exist;
+      });
+
+      describe('when video deal tier object is present', function () {
+        beforeEach(function () {
+          videoSeatBid.ext.prebiddealpriority = 5;
+          request.bidderRequest.bids[0].mediaTypes.video = {
+            ...request.bidderRequest.bids[0].mediaTypes.video,
+            context: 'adpod',
+            maxduration: 50
+          };
+        });
+
+        it('should set video deal tier object, when maxduration is present in ext', function () {
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(50);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+
+        it('should set video deal tier object, when duration is present in ext', function () {
+          videoSeatBid.ext.video.duration = 20;
+          assignDealTier(newBid, videoSeatBid, request);
+          expect(newBid.video.durationSeconds).to.equal(20);
+          expect(newBid.video.context).to.equal('adpod');
+          expect(newBid.video.dealTier).to.equal(5);
+        });
+      });
+    });
   });
 
-  describe('Marketplace params', function() {
+  describe('Marketplace params', function () {
     let sandbox, utilsMock, newBidRequests, newBidResponses;
     beforeEach(() => {
       utilsMock = sinon.mock(utils);
@@ -4082,7 +4152,7 @@ describe('PubMatic adapter', function () {
       sandbox.restore();
     })
 
-    it('Should add bidder code as groupm for marketplace groupm response', function () {
+    it('Should add bidder code as groupm for marketplace groupm response ', function () {
       let request = spec.buildRequests(newBidRequests, {
         auctionId: 'new-auction-id'
       });

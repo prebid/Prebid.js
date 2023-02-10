@@ -1,6 +1,14 @@
 import {isStr, timestamp} from './utils.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 
+/**
+ * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr
+ * enforcement module will take it to mean "vendor consent was given".
+ *
+ * see https://github.com/prebid/Prebid.js/issues/8161
+ */
+export const VENDORLESS_GVLID = Object.freeze({});
+
 export class ConsentHandler {
   #enabled;
   #data;
@@ -95,6 +103,17 @@ export class GdprConsentHandler extends ConsentHandler {
         consentStringSize: (isStr(consentData.vendorData.tcString)) ? consentData.vendorData.tcString.length : 0,
         generatedAt: this.generatedTime,
         apiVersion: consentData.apiVersion
+      }
+    }
+  }
+}
+
+export class GppConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && this.generatedTime) {
+      return {
+        generatedAt: this.generatedTime,
       }
     }
   }

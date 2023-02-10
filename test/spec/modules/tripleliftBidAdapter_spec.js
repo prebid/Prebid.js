@@ -725,11 +725,11 @@ describe('triplelift adapter', function () {
 
     it('should add amxRtbId to the payload if included', function () {
       const id = 'Ok9JQkBM-UFlAXEZQ-UUNBQlZOQzgrUFhW-UUNBQkRQTUBPQVpVWVxNXlZUUF9AUFhAUF9PXFY/';
-      bidRequests[0].userIdAsEids = [{ source: 'amxrtb.com', uids: [{ id }] }];
+      bidRequests[0].userIdAsEids = [{ source: 'amxdt.net', uids: [{ id }] }];
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxrtb.com', uids: [{id, ext: {rtiPartner: 'amxrtb.com'}}]}]}});
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxdt.net', uids: [{id, ext: {rtiPartner: 'amxdt.net'}}]}]}});
     });
 
     it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
@@ -979,6 +979,13 @@ describe('triplelift adapter', function () {
       expect(url).to.match(new RegExp('(?:' + prebid.version + ')'))
       expect(url).to.match(/(?:referrer)/);
     });
+    it('should use refererInfo.page for referrer', function () {
+      bidderRequest.refererInfo.page = 'https://topmostlocation.com?foo=bar'
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)referrer=https%3A%2F%2Ftopmostlocation.com%3Ffoo%3Dbar/);
+      delete bidderRequest.refererInfo.page
+    });
     it('should return us_privacy param when CCPA info is available', function() {
       bidderRequest.uspConsent = '1YYY';
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -1159,6 +1166,19 @@ describe('triplelift adapter', function () {
             { 'name': 'dataprovider.com', 'ext': { 'segtax': 4 }, 'segment': [{ 'id': '1' }] },
           ]
         }
+      })
+    });
+    it('should add gpp consent data to bid request object if gpp data exists', function() {
+      bidderRequest.ortb2 = {
+        regs: {
+          'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'gpp_sid': [7]
+        }
+      }
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs).to.deep.equal({
+        'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'gpp_sid': [7]
       })
     });
   });

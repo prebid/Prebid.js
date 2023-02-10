@@ -1,17 +1,29 @@
-import {formatQS, deepAccess} from '../src/utils.js';
+import { formatQS, deepAccess, triggerPixel, isArray, isNumber } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
 
 const BIDDER_CODE = 'yandex';
-const BIDDER_URL = 'https://bs-metadsp.yandex.ru/metadsp';
+const BIDDER_URL = 'https://bs.yandex.ru/metadsp';
 const DEFAULT_TTL = 180;
+const DEFAULT_CURRENCY = 'EUR';
 const SSP_ID = 10500;
 
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code
+  supportedMediaTypes: [ BANNER ],
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.pageId && bid.params.impId);
+    const { params } = bid;
+    if (!params) {
+      return false;
+    }
+    const { pageId, impId } = extractPlacementIds(params);
+    if (!(pageId && impId)) {
+      return false;
+    }
+    const sizes = bid.mediaTypes?.banner?.sizes;
+    return isArray(sizes) && isArray(sizes[0]) && isNumber(sizes[0][0]) && isNumber(sizes[0][1]);
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -19,35 +31,56 @@ export const spec = {
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
 
     let referrer = '';
+    let domain = '';
+    let page = '';
+
     if (bidderRequest && bidderRequest.refererInfo) {
-      // TODO: is 'domain' the right value here?
-      referrer = bidderRequest.refererInfo.domain
+      referrer = bidderRequest.refererInfo.ref;
+      domain = bidderRequest.refererInfo.domain;
+      page = bidderRequest.refererInfo.page;
+    }
+
+    let timeout = null;
+    if (bidderRequest) {
+      timeout = bidderRequest.timeout;
     }
 
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { pageId, impId, targetRef, withCredentials = true } = params;
+      const { targetRef, withCredentials = true } = params;
+      const sizes = bidRequest.mediaTypes.banner.sizes;
+      const size = sizes[0];
+      const [ w, h ] = size;
+
+      const { pageId, impId } = extractPlacementIds(params);
 
       const queryParams = {
         'imp-id': impId,
-        'target-ref': targetRef || referrer,
+        'target-ref': targetRef || domain,
         'ssp-id': SSP_ID,
       };
       if (gdprApplies !== undefined) {
         queryParams['gdpr'] = 1;
         queryParams['tcf-consent'] = consentString;
       }
+
       const imp = {
         id: impId,
-      };
-
-      const bannerParams = deepAccess(bidRequest, 'mediaTypes.banner');
-      if (bannerParams) {
-        const [ w, h ] = bannerParams.sizes[0];
-        imp.banner = {
+        banner: {
+          format: sizes,
           w,
           h,
-        };
+        }
+      };
+
+      if (bidRequest.getFloor) {
+        const floorInfo = bidRequest.getFloor({
+          currency: DEFAULT_CURRENCY,
+          size
+        });
+
+        imp.bidfloor = floorInfo.floor;
+        imp.bidfloorcur = floorInfo.currency;
       }
 
       const queryParamsString = formatQS(queryParams);
@@ -58,8 +91,10 @@ export const spec = {
           id: bidRequest.bidId,
           imp: [imp],
           site: {
-            page: referrer,
+            ref_url: referrer,
+            page_url: page,
           },
+          tmax: timeout,
         },
         options: {
           withCredentials,
@@ -84,10 +119,11 @@ export const spec = {
       let prBid = {
         requestId: bidRequest.bidId,
         cpm: rtbBid.price,
-        currency: cur || 'USD',
+        currency: cur || DEFAULT_CURRENCY,
         width: rtbBid.w,
         height: rtbBid.h,
         creativeId: rtbBid.adid,
+        nurl: rtbBid.nurl,
 
         netRevenue: true,
         ttl: DEFAULT_TTL,
@@ -102,6 +138,59 @@ export const spec = {
       return prBid;
     });
   },
+
+  onBidWon: function (bid) {
+    let nurl = bid['nurl'];
+    if (!nurl) {
+      return;
+    }
+
+    const cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || '';
+    const curr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm'))
+      ? bid.originalCurrency
+      : bid.currency;
+
+    nurl = nurl
+      .replace(/\${AUCTION_PRICE}/, cpm)
+      .replace(/\${AUCTION_CURRENCY}/, curr)
+    ;
+
+    triggerPixel(nurl);
+  }
+}
+
+function extractPlacementIds(bidRequestParams) {
+  const { placementId } = bidRequestParams;
+  const result = { pageId: null, impId: null };
+
+  let pageId, impId;
+  if (placementId) {
+    /*
+     * Possible formats
+     * R-I-123456-2
+     * R-123456-1
+     * 123456-789
+     */
+    const num = placementId.lastIndexOf('-');
+    if (num === -1) {
+      return result;
+    }
+    const num2 = placementId.lastIndexOf('-', num - 1);
+    pageId = placementId.slice(num2 + 1, num);
+    impId = placementId.slice(num + 1);
+  } else {
+    pageId = bidRequestParams.pageId;
+    impId = bidRequestParams.impId;
+  }
+
+  if (!parseInt(pageId, 10) || !parseInt(impId, 10)) {
+    return result;
+  }
+
+  result.pageId = pageId;
+  result.impId = impId;
+
+  return result;
 }
 
 registerBidder(spec);
