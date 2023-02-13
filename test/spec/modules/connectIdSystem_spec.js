@@ -31,7 +31,11 @@ describe('Yahoo ConnectID Submodule', () => {
           gdprApplies: 1,
           consentString: 'GDPR_CONSENT_STRING'
         },
-        uspConsent: 'USP_CONSENT_STRING'
+        uspConsent: 'USP_CONSENT_STRING',
+        gppConsent: {
+          gppString: 'header~section6~section7',
+          applicableSections: [6, 7]
+        }
       };
     });
 
@@ -157,7 +161,9 @@ describe('Yahoo ConnectID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.uspConsent,
+        gpp: consentData.gppConsent.gppString,
+        gpp_sid: '6%2C7'
       };
       const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -178,7 +184,9 @@ describe('Yahoo ConnectID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.uspConsent,
+        gpp: consentData.gppConsent.gppString,
+        gpp_sid: '6%2C7'
       };
       const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -201,7 +209,9 @@ describe('Yahoo ConnectID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.uspConsent,
+        gpp: consentData.gppConsent.gppString,
+        gpp_sid: '6%2C7'
       };
       const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -221,7 +231,9 @@ describe('Yahoo ConnectID Submodule', () => {
         '1p': '0',
         gdpr: '1',
         gdpr_consent: consentData.gdpr.consentString,
-        us_privacy: consentData.uspConsent
+        us_privacy: consentData.uspConsent,
+        gpp: consentData.gppConsent.gppString,
+        gpp_sid: '6%2C7'
       };
       const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 

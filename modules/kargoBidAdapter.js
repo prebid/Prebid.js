@@ -116,7 +116,11 @@ export const spec = {
       };
 
       if (meta.mediaType == VIDEO) {
-        bidResponse.vastXml = adUnit.adm;
+        if (adUnit.admUrl) {
+          bidResponse.vastUrl = adUnit.admUrl;
+        } else {
+          bidResponse.vastXml = adUnit.adm;
+        }
       }
 
       bidResponses.push(bidResponse);
@@ -231,7 +235,7 @@ export const spec = {
   _getAllMetadata(bidderRequest, tdid) {
     return {
       userIDs: spec._getUserIds(tdid, bidderRequest.uspConsent, bidderRequest.gdprConsent),
-      pageURL: bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page,
+      pageURL: bidderRequest?.refererInfo?.page,
       rawCRB: storage.getCookie('krg_crb'),
       rawCRBLocalStorage: spec._getLocalStorageSafely('krg_crb')
     };
