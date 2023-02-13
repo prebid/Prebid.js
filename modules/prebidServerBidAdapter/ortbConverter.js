@@ -72,6 +72,15 @@ const PBS_CONVERTER = ortbConverter({
     // - overwrite context.bidRequest with the actual bid request for this seat / imp combination
 
     let bidRequest = context.actualBidRequests.get(context.seatbid.seat);
+
+    // OpenWrap code to support marketplace
+    if (bidRequest == null && context?.s2sBidRequest?.s2sConfig?.allowUnknownBidderCodes && context?.s2sBidRequest?.s2sConfig?.extPrebid?.alternatebiddercodes?.enabled) {
+      for (let originalbidder in context?.s2sBidRequest?.s2sConfig?.extPrebid?.alternatebiddercodes?.bidders) {
+        if (context.s2sBidRequest.s2sConfig.extPrebid.alternatebiddercodes.bidders[originalbidder].allowedbiddercodes.includes(context.seatbid.seat)) {
+          bidRequest = context.actualBidRequests.get(originalbidder);
+        }
+      }
+    }
     if (bidRequest == null) {
       // for stored impressions, a request was made with bidder code `null`. Pick it up here so that NO_BID, BID_WON, etc events
       // can work as expected (otherwise, the original request will always result in NO_BID).
