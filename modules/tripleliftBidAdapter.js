@@ -436,6 +436,10 @@ function _buildResponseObject(bidderRequest, bid) {
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
     }
+
+    if (bid.meta && bid.meta.networkId) {
+      bidResponse.meta.networkId = bid.meta.networkId;
+    }
   };
   return bidResponse;
 }

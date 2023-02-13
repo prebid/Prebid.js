@@ -1199,7 +1199,10 @@ describe('triplelift adapter', function () {
               tl_source: 'tlx',
               advertiser_name: 'fake advertiser name',
               adomain: ['basspro.com', 'internetalerts.org'],
-              media_type: 'banner'
+              media_type: 'banner',
+              meta: {
+                networkId: 1234
+              }
             },
             {
               imp_id: 1,
@@ -1436,6 +1439,11 @@ describe('triplelift adapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
       expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
       expect(result[1].meta).to.not.have.key('advertiserDomains');
+    });
+
+    it('should include networkId in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[0].meta.networkId).to.equal(1234);
     });
   });
 
