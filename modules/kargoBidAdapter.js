@@ -78,11 +78,13 @@ function buildRequests(validBidRequests, bidderRequest) {
   const firstBidRequest = validBidRequests[0];
   const tdidAdapter = deepAccess(firstBidRequest, REQUEST_KEYS.TDID_ADAPTER);
 
+  const metadata = getAllMetadata(bidderRequest);
+
   const krakenParams = Object.assign({}, {
     pbv: PREBID_VERSION,
     aid: firstBidRequest.auctionId,
     sid: _getSessionId(),
-    url: getAllMetadata(bidderRequest).pageURL,
+    url: metadata.pageURL,
     timeout: bidderRequest.timeout,
     ts: new Date().getTime(),
     device: {
@@ -92,7 +94,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids)
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids),
+    rawCRB: metadata.rawCRB,
+    rawCRBLocalStorage: metadata.rawCRBLocalStorage,
   });
 
   const reqCount = getRequestCount()
