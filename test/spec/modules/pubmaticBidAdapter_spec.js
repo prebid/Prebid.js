@@ -2638,6 +2638,21 @@ describe('PubMatic adapter', function () {
       expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
     });
 
+    it('should pass device.sua if present in bidderRequest fpd ortb2 object', function () {
+      const suaObject = {'source': 2, 'platform': {'brand': 'macOS', 'version': ['12', '4', '0']}, 'browsers': [{'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']}, {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']}, {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}], 'mobile': 0, 'model': '', 'bitness': '64', 'architecture': 'x86'};
+      let request = spec.buildRequests(multipleMediaRequests, {
+        auctionId: 'new-auction-id',
+        ortb2: {
+          device: {
+            sua: suaObject
+          }
+        }
+      });
+      let data = JSON.parse(request.data);
+      expect(data.device.sua).to.exist.and.to.be.an('object');
+      expect(data.device.sua).to.deep.equal(suaObject);
+    });
+
     it('Request params check for 1 banner and 1 video ad', function () {
       let request = spec.buildRequests(multipleMediaRequests, {
         auctionId: 'new-auction-id'
