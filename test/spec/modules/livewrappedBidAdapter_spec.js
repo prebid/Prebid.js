@@ -111,7 +111,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -149,7 +148,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -188,7 +186,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'caller id 1',
           bidId: '2ffb201a808da7',
@@ -220,7 +217,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -251,7 +247,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -286,7 +281,6 @@ describe('Livewrapped adapter tests', function () {
         deviceId: 'deviceid',
         ifa: 'ifa',
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -320,7 +314,6 @@ describe('Livewrapped adapter tests', function () {
         tid: 'tracking id',
         test: true,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -351,7 +344,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -384,7 +376,6 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         rcv: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -415,7 +406,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -447,7 +437,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -480,7 +469,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -528,7 +516,6 @@ describe('Livewrapped adapter tests', function () {
         ifa: 'ifa',
         bundle: 'bundle',
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -560,7 +547,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
@@ -597,7 +583,6 @@ describe('Livewrapped adapter tests', function () {
         cookieSupport: true,
         gdprApplies: true,
         gdprConsent: 'test',
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -633,7 +618,6 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         gdprApplies: false,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -667,7 +651,6 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         usPrivacy: '1---',
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -708,7 +691,6 @@ describe('Livewrapped adapter tests', function () {
         height: 100,
         cookieSupport: true,
         coppa: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -739,7 +721,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: false,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -770,7 +751,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: false,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -821,7 +801,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -854,7 +833,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -871,7 +849,7 @@ describe('Livewrapped adapter tests', function () {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
-	  config.resetConfig();
+      config.resetConfig();
 
       let testbidRequest = clone(bidderRequest);
       let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
@@ -889,49 +867,6 @@ describe('Livewrapped adapter tests', function () {
         width: window.innerWidth,
         height: window.innerHeight,
         cookieSupport: true,
-        flrCur: 'USD',
-        adRequests: [{
-          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
-          callerAdUnitId: 'panorama_d_1',
-          bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
-          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
-        }]
-      };
-
-      expect(data).to.deep.equal(expectedQuery);
-    });
-
-    it('should use adServerCurrency', function() {
-      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
-      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
-
-      let testbidRequest = clone(bidderRequest);
-
-      let origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'currency.adServerCurrency') {
-          return 'EUR';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
-      let data = JSON.parse(result.data);
-
-      expect(result.url).to.equal('https://lwadm.com/ad');
-
-      let expectedQuery = {
-        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
-        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
-        userId: 'user id',
-        url: 'https://www.domain.com',
-        seats: {'dsp': ['seat 1']},
-        version: '1.4',
-        width: 100,
-        height: 100,
-        cookieSupport: true,
-        flrCur: 'EUR',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -966,7 +901,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -984,10 +918,10 @@ describe('Livewrapped adapter tests', function () {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
       let testbidRequest = clone(bidderRequest);
-	  let bids = testbidRequest.bids.map(b => {
+      let bids = testbidRequest.bids.map(b => {
         b.getFloor = function () { return undefined; }
         return b;
-	  });
+      });
       let result = spec.buildRequests(bids, testbidRequest);
       let data = JSON.parse(result.data);
 
@@ -1003,7 +937,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -1021,10 +954,10 @@ describe('Livewrapped adapter tests', function () {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
       let testbidRequest = clone(bidderRequest);
-	  let bids = testbidRequest.bids.map(b => {
+      let bids = testbidRequest.bids.map(b => {
         b.getFloor = function () { return { floor: undefined }; }
         return b;
-	  });
+      });
       let result = spec.buildRequests(bids, testbidRequest);
       let data = JSON.parse(result.data);
 
@@ -1040,7 +973,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -1058,10 +990,10 @@ describe('Livewrapped adapter tests', function () {
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
       let testbidRequest = clone(bidderRequest);
-	  let bids = testbidRequest.bids.map(b => {
+      let bids = testbidRequest.bids.map(b => {
         b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
         return b;
-	  });
+      });
       let result = spec.buildRequests(bids, testbidRequest);
       let data = JSON.parse(result.data);
 
@@ -1077,7 +1009,6 @@ describe('Livewrapped adapter tests', function () {
         width: 100,
         height: 100,
         cookieSupport: true,
-        flrCur: 'USD',
         adRequests: [{
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
@@ -1090,15 +1021,61 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('getFloor returns valid floor', function() {
+    it('getFloor returns valid floor - ad server currency', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let origGetConfig = config.getConfig;
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'currency.adServerCurrency') {
+          return 'EUR';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        flrCur: 'EUR',
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          flr: 10
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor returns valid floor - default currency', function() {
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
       let testbidRequest = clone(bidderRequest);
-	  let bids = testbidRequest.bids.map(b => {
+      let bids = testbidRequest.bids.map(b => {
         b.getFloor = function () { return { floor: 10, currency: 'USD' }; }
         return b;
-	  });
+      });
       let result = spec.buildRequests(bids, testbidRequest);
       let data = JSON.parse(result.data);
 
@@ -1121,7 +1098,7 @@ describe('Livewrapped adapter tests', function () {
           bidId: '2ffb201a808da7',
           transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
-		  flr: 10
+          flr: 10
         }]
       };
 

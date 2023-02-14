@@ -70,6 +70,7 @@ export const spec = {
     test = test ? test.params.test : undefined;
     const currency = config.getConfig('currency.adServerCurrency') || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
+    const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
     if (eids) {
       ortb2 = mergeDeep(mergeDeep({}, ortb2 || {}), eids);
@@ -98,7 +99,7 @@ export const spec = {
       adRequests: [...adRequests],
       rtbData: ortb2,
       schain: schain,
-      flrCur: currency
+      flrCur: adRequestsContainFloors ? currency : undefined
     };
 
     if (config.getConfig().debug) {
