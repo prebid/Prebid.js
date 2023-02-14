@@ -1,4 +1,3 @@
-
 import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
@@ -109,7 +108,7 @@ export const spec = {
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        coppa: req.ortb2.regs ? req.ortb2.regs.coppa : 0,
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
         media_types: deepAccess(req, 'mediaTypes')
       });
     }
