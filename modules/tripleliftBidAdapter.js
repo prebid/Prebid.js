@@ -438,8 +438,7 @@ function _buildResponseObject(bidderRequest, bid) {
     }
 
     if (creativeId) {
-      let crid = creativeId.slice(0, creativeId.indexOf('_'));
-      bidResponse.meta.networkId = crid;
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;
