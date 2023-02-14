@@ -1,5 +1,5 @@
 
-import { timestamp, deepAccess } from '../src/utils.js';
+import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -50,6 +50,26 @@ export const spec = {
       payload.ccpa = bidderRequest.uspConsent;
     }
 
+    function getOrtb2Keywords(ortb2Obj) {
+      const fields = ['site.keywords', 'site.content.keywords', 'user.keywords', 'app.keywords', 'app.content.keywords'];
+      let result = [];
+
+      fields.forEach(path => {
+        let keyStr = deepAccess(ortb2Obj, path);
+        if (isStr(keyStr)) result.push(keyStr);
+      });
+      return result;
+    }
+
+    // get the ortb2 keywords data (if it exists)
+    let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
+    let ortb2KeywordsList = getOrtb2Keywords(ortb2);
+    // get meta keywords data (if it exists)
+    let metaKeywords = document.getElementsByTagName('meta')['keywords'];
+    if (metaKeywords && metaKeywords.content) {
+      metaKeywords = metaKeywords.content.split(',');
+    }
+
     for (let x = 0; x < validBidRequests.length; x++) {
       let req = validBidRequests[x];
 
@@ -68,6 +88,11 @@ export const spec = {
         }
       }
 
+      // get param kewords (if it exists)
+      let paramsKeywords = req.params.keywords ? req.params.keywords.split(',') : [];
+      // merge all keywords
+      let keywords = ortb2KeywordsList.concat(paramsKeywords).concat(metaKeywords);
+
       payload.imps.push({
         pub_id: req.params.pubId,
         site_id: req.params.siteID ? req.params.siteID : null,
@@ -78,7 +103,7 @@ export const spec = {
         lat_long: req.params.latLong ? req.params.latLong : null,
         inventory: req.params.inventory ? req.params.inventory : null,
         visitor: req.params.visitor ? req.params.visitor : null,
-        keywords: req.params.keywords ? req.params.keywords : null,
+        keywords: keywords.join(','),
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
         imp_id: req.transactionId,
