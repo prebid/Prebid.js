@@ -458,7 +458,7 @@ export const spec = {
                   native.impressionTrackers.push(tracker.url);
                   break;
                 // case 2:
-                //   native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+                //   native.javascriptTrackers = `<script src=\'${tracker.url}\'></script>`;
                 //   break;
               }
             });
