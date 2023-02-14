@@ -128,7 +128,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     it('should return a properly formatted request with schain defined', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload.schain).to.deep.equal(bidRequests[0].schain)
+      expect(payload.schain).to.deep.equal('{\"ver\":\"1.0\",\"complete\":1,\"nodes\":[{\"asi\":\"example.com\",\"sid\":\"0\",\"hp\":1,\"rid\":\"bidrequestid\",\"domain\":\"example.com\"}]}');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {

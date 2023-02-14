@@ -392,7 +392,7 @@ describe('eids array generation for known sub-modules', function() {
 
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
-      source: 'amxrtb.com',
+      source: 'amxdt.net',
       uids: [{
         atype: 1,
         id,

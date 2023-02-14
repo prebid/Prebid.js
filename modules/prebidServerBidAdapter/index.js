@@ -216,16 +216,29 @@ export function resetSyncedStatus() {
 /**
  * @param  {Array} bidderCodes list of bidders to request user syncs for.
  */
-function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
+function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) {
   if (_s2sConfigs.length === _syncCount) {
     return;
   }
   _syncCount++;
 
+  let filterSettings = {};
+  const userSyncFilterSettings = getConfig('userSync.filterSettings');
+
+  if (userSyncFilterSettings) {
+    const { all, iframe, image } = userSyncFilterSettings;
+    const ifrm = iframe || all;
+    const img = image || all;
+
+    if (ifrm) filterSettings = Object.assign({ iframe: ifrm }, filterSettings);
+    if (img) filterSettings = Object.assign({ image: img }, filterSettings);
+  }
+
   const payload = {
     uuid: generateUUID(),
     bidders: bidderCodes,
-    account: s2sConfig.accountId
+    account: s2sConfig.accountId,
+    filterSettings
   };
 
   let userSyncLimit = s2sConfig.userSyncLimit;
@@ -244,6 +257,15 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, s2sConfig) {
   // US Privacy (CCPA) support
   if (uspConsent) {
     payload.us_privacy = uspConsent;
+  }
+
+  if (gppConsent) {
+    // proposing the following formatting, can adjust if needed...
+    // update - leaving this param as an array, since it's part of a POST payload where the [] characters shouldn't matter too much
+    payload.gpp_sid = gppConsent.applicableSections
+    // should we add check if applicableSections was not equal to -1 (where user was out of scope)?
+    //   this would be similar to what was done above for TCF
+    payload.gpp = gppConsent.gppString;
   }
 
   if (typeof s2sConfig.coopSync === 'boolean') {
@@ -330,7 +352,7 @@ function doBidderSync(type, url, bidder, done, timeout) {
  *
  * @param {Array} bidders a list of bidder names
  */
-function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
+function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
   bidders.forEach(bidder => {
     let clientAdapter = adapterManager.getBidAdapter(bidder);
     if (clientAdapter && clientAdapter.registerSyncs) {
@@ -341,7 +363,8 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent) {
           clientAdapter,
           [],
           gdprConsent,
-          uspConsent
+          uspConsent,
+          gppConsent
         )
       );
     }
@@ -411,12 +434,13 @@ function getMatchingConsentUrl(urlProp, gdprConsent) {
 }
 
 function getConsentData(bidRequests) {
-  let gdprConsent, uspConsent;
+  let gdprConsent, uspConsent, gppConsent;
   if (Array.isArray(bidRequests) && bidRequests.length > 0) {
     gdprConsent = bidRequests[0].gdprConsent;
     uspConsent = bidRequests[0].uspConsent;
+    gppConsent = bidRequests[0].gppConsent;
   }
-  return { gdprConsent, uspConsent };
+  return { gdprConsent, uspConsent, gppConsent };
 }
 
 /**
@@ -433,7 +457,7 @@ export function PrebidServer() {
     done = adapterMetrics.startTiming('total').stopBefore(done);
     bidRequests.forEach(req => useMetrics(req.metrics).join(adapterMetrics, {continuePropagation: false}));
 
-    let { gdprConsent, uspConsent } = getConsentData(bidRequests);
+    let { gdprConsent, uspConsent, gppConsent } = getConsentData(bidRequests);
 
     if (Array.isArray(_s2sConfigs)) {
       if (s2sBidRequest.s2sConfig && s2sBidRequest.s2sConfig.syncEndpoint && getMatchingConsentUrl(s2sBidRequest.s2sConfig.syncEndpoint, gdprConsent)) {
@@ -441,7 +465,7 @@ export function PrebidServer() {
           .map(bidder => adapterManager.aliasRegistry[bidder] || bidder)
           .filter((bidder, index, array) => (array.indexOf(bidder) === index));
 
-        queueSync(syncBidders, gdprConsent, uspConsent, s2sBidRequest.s2sConfig);
+        queueSync(syncBidders, gdprConsent, uspConsent, gppConsent, s2sBidRequest.s2sConfig);
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
@@ -450,7 +474,7 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           done();
-          doClientSideSyncs(requestedBidders, gdprConsent, uspConsent);
+          doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
         onError: done,
         onBid: function ({adUnit, bid}) {

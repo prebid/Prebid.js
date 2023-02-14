@@ -33,30 +33,60 @@ function createInStreamSlotConfig(mediaType) {
   });
 }
 
+const createBannerSlotConfig = (placement, mediatypes) => {
+  return getSlotConfigs(mediatypes || { banner: {} }, {
+    publisherId: PUBLISHER_ID,
+    adUnitId: ADUNIT_ID,
+    placement,
+  });
+};
+
 describe('Seedtag Adapter', function () {
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and placement has the correct value', function () {
-          const createBannerSlotConfig = (placement) => {
-            return getSlotConfigs(
-              { banner: {} },
-              {
-                publisherId: PUBLISHER_ID,
-                adUnitId: ADUNIT_ID,
-                placement,
-              }
+        const placements = ['inBanner', 'inImage', 'inScreen', 'inArticle'];
+        placements.forEach((placement) => {
+          it(placement + 'should be valid', function () {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createBannerSlotConfig(placement)
             );
-          };
-          const placements = ['inBanner', 'inImage', 'inScreen', 'inArticle'];
-          placements.forEach((placement) => {
-            it('should be ' + placement, function () {
+            expect(isBidRequestValid).to.equal(true);
+          });
+
+          it(
+            placement +
+              ' should be valid when has display and video mediatypes, and video context is outstream',
+            function () {
               const isBidRequestValid = spec.isBidRequestValid(
-                createBannerSlotConfig(placement)
+                createBannerSlotConfig(placement, {
+                  banner: {},
+                  video: {
+                    context: 'outstream',
+                    playerSize: [[600, 200]],
+                  },
+                })
               );
               expect(isBidRequestValid).to.equal(true);
-            });
-          });
+            }
+          );
+
+          it(
+            placement +
+              " shouldn't be valid when has display and video mediatypes, and video context is instream",
+            function () {
+              const isBidRequestValid = spec.isBidRequestValid(
+                createBannerSlotConfig(placement, {
+                  banner: {},
+                  video: {
+                    context: 'instream',
+                    playerSize: [[600, 200]],
+                  },
+                })
+              );
+              expect(isBidRequestValid).to.equal(false);
+            }
+          );
         });
       });
       describe('when video slot has all mandatory params', function () {
@@ -70,7 +100,18 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
           expect(isBidRequestValid).to.equal(true);
         });
-        it('should return true, when video context is instream, but placement is not inStream', function () {
+        it('should return true, when video context is instream and mediatype is video and banner', function () {
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: 'instream',
+              playerSize: [[600, 200]],
+            },
+            banner: {},
+          });
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
+          expect(isBidRequestValid).to.equal(true);
+        });
+        it('should return false, when video context is instream, but placement is not inStream', function () {
           const slotConfig = getSlotConfigs(
             {
               video: {
@@ -395,6 +436,52 @@ describe('Seedtag Adapter', function () {
         expect(payload.schain).to.not.exist;
       });
     });
+
+    describe('GPP param', function () {
+      it('should be added to payload when bidderRequest has gppConsent param', function () {
+        const gppConsent = {
+          gppString: 'someGppString',
+          applicableSections: [7]
+        }
+        bidderRequest['gppConsent'] = gppConsent
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(gppConsent.gppString);
+        expect(data.gppConsent.applicableSections[0]).to.equal(gppConsent.applicableSections[0]);
+      });
+
+      it('should be undefined on payload when bidderRequest has not gppConsent param', function () {
+        bidderRequest.gppConsent = undefined
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
+      });
+
+      it('should be added to payload when bidderRequest has ortb2 param', function () {
+        const ortb2 = {
+          regs: {
+            gpp: 'someGppString',
+            gpp_sid: [7]
+          }
+        }
+        bidderRequest['gppConsent'] = undefined
+        bidderRequest['ortb2'] = ortb2;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(ortb2.regs.gpp);
+        expect(data.gppConsent.applicableSections[0]).to.equal(ortb2.regs.gpp_sid[0]);
+      });
+
+      it('should be added to payload when bidderRequest has neither gppConsent nor ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+        bidderRequest['gppConsent'] = undefined;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
+      });
+    });
   });
 
   describe('interpret response method', function () {
@@ -533,11 +620,11 @@ describe('Seedtag Adapter', function () {
       const timeoutUrl = getTimeoutUrl(timeoutData);
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-          params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
-          '&timeout=' +
-          timeout
+        params.publisherId +
+        '&adUnitId=' +
+        params.adUnitId +
+        '&timeout=' +
+        timeout
       );
     });
 
@@ -549,11 +636,11 @@ describe('Seedtag Adapter', function () {
       expect(
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-            params.publisherId +
-            '&adUnitId=' +
-            params.adUnitId +
-            '&timeout=' +
-            timeout
+          params.publisherId +
+          '&adUnitId=' +
+          params.adUnitId +
+          '&timeout=' +
+          timeout
         )
       ).to.equal(true);
     });

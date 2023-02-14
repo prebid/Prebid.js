@@ -93,6 +93,7 @@ import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {createBid} from './bidfactory.js';
+import {adjustCpm} from './utils/cpm.js';
 
 const { syncUsers } = userSync;
 
@@ -828,6 +829,16 @@ export const getAdvertiserDomain = () => {
   }
 }
 
+/**
+ * This function returns a function to get the primary category id from bid response meta
+ * @returns {function}
+ */
+export const getPrimaryCatId = () => {
+  return (bid) => {
+    return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
+  }
+}
+
 // factory for key value objs
 function createKeyVal(key, value) {
   return {
@@ -853,6 +864,7 @@ function defaultAdserverTargeting() {
     createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
+    createKeyVal(TARGETING_KEYS.ACAT, getPrimaryCatId()),
   ]
 }
 
@@ -865,7 +877,6 @@ function defaultAdserverTargeting() {
 export function getStandardBidderSettings(mediaType, bidderCode) {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
-
   if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
@@ -961,17 +972,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  let code = bid.bidderCode;
-  let bidPriceAdjusted = bid.cpm;
-  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment');
-
-  if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
-    try {
-      bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
-    } catch (e) {
-      logError('Error during bid adjustment', 'bidmanager.js', e);
-    }
-  }
+  let bidPriceAdjusted = adjustCpm(bid.cpm, bid);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;

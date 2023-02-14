@@ -148,7 +148,6 @@ import {
   logError,
   logInfo,
   logWarn,
-  timestamp,
   isEmpty, deepSetValue
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
@@ -156,6 +155,7 @@ import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
+import {findRootDomain} from '../../src/fpd/rootDomain.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = 'cookie';
@@ -383,60 +383,6 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
     storedConsentData !== null &&
     storedConsentData === makeStoredConsentDataHash(consentData)
   );
-}
-
-/**
-   * Find the root domain
-   * @param {string|undefined} fullDomain
-   * @return {string}
-   */
-export function findRootDomain(fullDomain = window.location.hostname) {
-  if (!coreStorage.cookiesAreEnabled()) {
-    return fullDomain;
-  }
-
-  const domainParts = fullDomain.split('.');
-  if (domainParts.length == 2) {
-    return fullDomain;
-  }
-  let rootDomain;
-  let continueSearching;
-  let startIndex = -2;
-  const TEST_COOKIE_NAME = `_rdc${Date.now()}`;
-  const TEST_COOKIE_VALUE = 'writeable';
-  do {
-    rootDomain = domainParts.slice(startIndex).join('.');
-    let expirationDate = new Date(timestamp() + 10 * 1000).toUTCString();
-
-    // Write a test cookie
-    coreStorage.setCookie(
-      TEST_COOKIE_NAME,
-      TEST_COOKIE_VALUE,
-      expirationDate,
-      'Lax',
-      rootDomain,
-      undefined
-    );
-
-    // See if the write was successful
-    const value = coreStorage.getCookie(TEST_COOKIE_NAME, undefined);
-    if (value === TEST_COOKIE_VALUE) {
-      continueSearching = false;
-      // Delete our test cookie
-      coreStorage.setCookie(
-        TEST_COOKIE_NAME,
-        '',
-        'Thu, 01 Jan 1970 00:00:01 GMT',
-        undefined,
-        rootDomain,
-        undefined
-      );
-    } else {
-      startIndex += -1;
-      continueSearching = Math.abs(startIndex) <= domainParts.length;
-    }
-  } while (continueSearching);
-  return rootDomain;
 }
 
 /**
