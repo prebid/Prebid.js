@@ -68,7 +68,7 @@ export const spec = {
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-	const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+    const currency = config.getConfig('currency.adServerCurrency') || 'USD';
     var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
 
     if (eids) {
@@ -232,7 +232,7 @@ function bidToAdRequest(bid, currency) {
     bidId: bid.bidId,
     transactionId: bid.transactionId,
     formats: getSizes(bid).map(sizeToFormat),
-	flr: getBidFloor(bid, currency),
+    flr: getBidFloor(bid, currency),
     options: bid.params.options
   };
 
@@ -280,7 +280,7 @@ function getBidFloor(bid, currency) {
 
   return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency == currency
     ? floor.floor
-	: undefined;
+    : undefined;
 }
 
 function getAdblockerRecovered() {
@@ -321,21 +321,13 @@ function getDeviceIfa() {
 }
 
 function getDeviceWidth() {
-  let device = config.getConfig('device');
-  if (typeof device === 'object' && device.width) {
-    return device.width;
-  }
-
-  return window.innerWidth;
+  const device = config.getConfig('device') || {};
+  return device.w || window.innerWidth;
 }
 
 function getDeviceHeight() {
-  let device = config.getConfig('device');
-  if (typeof device === 'object' && device.height) {
-    return device.height;
-  }
-
-  return window.innerHeight;
+  const device = config.getConfig('device') || {};
+  return device.h || window.innerHeight;
 }
 
 function getCoppa() {
