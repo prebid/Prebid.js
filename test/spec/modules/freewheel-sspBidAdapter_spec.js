@@ -144,7 +144,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -170,7 +170,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -190,7 +190,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -237,7 +237,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -257,7 +257,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -277,7 +277,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -363,7 +363,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'>' +
+    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
@@ -448,7 +448,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(formattedBidRequests);
-      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
+      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
@@ -529,7 +529,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'>' +
+    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
@@ -625,7 +625,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(formattedBidRequests);
-      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
+      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);

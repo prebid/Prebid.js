@@ -343,7 +343,7 @@ export const spec = {
 
       var requestParams = {
         reqType: 'AdsSetup',
-        protocolVersion: '2.0',
+        protocolVersion: '4.2',
         zoneId: zone,
         componentId: 'prebid',
         componentSubId: getComponentId(currentBidRequest.params.format),
