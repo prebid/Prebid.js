@@ -381,8 +381,8 @@ describe('Adagio bid adapter', () => {
               context: 'outstream',
               playerSize: [[300, 250]],
               mimes: ['video/mp4'],
-              api: 5, // will be removed because invalid
-              playbackmethod: [7], // will be removed because invalid
+              api: 'val', // will be removed because invalid
+              playbackmethod: ['val'], // will be removed because invalid
             }
           },
         }).withParams({
