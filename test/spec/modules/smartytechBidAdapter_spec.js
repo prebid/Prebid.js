@@ -19,20 +19,116 @@ describe('SmartyTechDSPAdapter: inherited functions', function () {
 
 describe('SmartyTechDSPAdapter: isBidRequestValid', function () {
   it('Invalid bid request. Should return false', function () {
-    const invalidBidFixture = {
+    const bidFixture = {
       params: {
         use_id: 13144375
       }
     }
-    expect(spec.isBidRequestValid(invalidBidFixture)).to.be.false
+
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
   });
   it('Valid bid request. Should return true', function () {
-    const validBidFixture = {
+    const bidFixture = {
       params: {
         endpointId: 13144375
       }
     }
-    expect(spec.isBidRequestValid(validBidFixture)).to.be.true
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true
+  });
+
+  it('Invalid bid request. Check video block', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        video: {}
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+  });
+
+  it('Invalid bid request. Check playerSize', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        video: {
+          playerSize: '300x250'
+        }
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+  });
+
+  it('Invalid bid request. Check context', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [300, 250]
+        }
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+  });
+
+  it('Valid bid request. valid video bid', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        video: {
+          playerSize: [300, 250],
+          context: 'instream'
+        }
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true
+  });
+
+  it('Invalid bid request. Check banner block', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        banner: {}
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+  });
+
+  it('Invalid bid request. Check banner sizes', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        banner: {
+          sizes: '300x250'
+        }
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.false
+  });
+
+  it('Valid bid request. valid banner bid', function () {
+    const bidFixture = {
+      params: {
+        endpointId: 1
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      }
+    }
+    expect(spec.isBidRequestValid(bidFixture)).to.be.true
   });
 });
 
@@ -42,12 +138,29 @@ function mockRandomSizeArray(len) {
   });
 }
 
-function mockBidRequestListData(size) {
+function mockBidRequestListData(mediaType, size) {
   return Array.apply(null, {length: size}).map((i, index) => {
     const id = Math.floor(Math.random() * 800) * (index + 1);
+    let mediaTypes;
+
+    if (mediaType == 'video') {
+      mediaTypes = {
+        video: {
+          playerSize: mockRandomSizeArray(1),
+          context: 'instream'
+        },
+      }
+    } else {
+      mediaTypes = {
+        banner: {
+          sizes: mockRandomSizeArray(index + 1)
+        }
+      }
+    }
+
     return {
       adUnitCode: `adUnitCode-${id}`,
-      sizes: mockRandomSizeArray(index + 1),
+      mediaTypes: mediaTypes,
       bidId: `bidId-${id}`,
       params: {
         endpointId: id
@@ -66,18 +179,27 @@ function mockRefererData() {
 
 function mockResponseData(requestData) {
   let data = {}
-
   requestData.data.forEach((request, index) => {
-    const sizeArrayIndex = Math.floor(Math.random() * (request.sizes.length - 1));
     const rndIndex = Math.floor(Math.random() * 800);
+    let width, height, mediaType;
+    if (request.video !== undefined) {
+      width = request.video.playerSize[0][0];
+      height = request.video.playerSize[0][1];
+      mediaType = 'video';
+    } else {
+      width = request.banner.sizes[0][0];
+      height = request.banner.sizes[0][1];
+      mediaType = 'banner';
+    }
 
     data[request.adUnitCode] = {
       ad: `ad-${rndIndex}`,
-      width: request.sizes[sizeArrayIndex][0],
-      height: request.sizes[sizeArrayIndex][1],
+      width: width,
+      height: height,
       creativeId: `creative-id-${index}`,
       cpm: Math.floor(Math.random() * 100),
-      currency: `UAH-${rndIndex}`
+      currency: `UAH-${rndIndex}`,
+      mediaType: mediaType
     };
   });
   return {
@@ -89,7 +211,7 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   let mockBidRequest;
   let mockReferer;
   beforeEach(() => {
-    mockBidRequest = mockBidRequestListData(8);
+    mockBidRequest = mockBidRequestListData('banner', 8);
     mockReferer = mockRefererData();
   });
   it('has return data', () => {
@@ -108,7 +230,7 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
     const data = spec.buildRequests(mockBidRequest, mockReferer).data;
     data.forEach((request, index) => {
       expect(request.adUnitCode).to.be.equal(mockBidRequest[index].adUnitCode);
-      expect(request.sizes).to.be.equal(mockBidRequest[index].sizes);
+      expect(request.banner).to.be.equal(mockBidRequest[index].mediaTypes.banner);
       expect(request.bidId).to.be.equal(mockBidRequest[index].bidId);
       expect(request.endpointId).to.be.equal(mockBidRequest[index].params.endpointId);
       expect(request.referer).to.be.equal(mockReferer.refererInfo.page);
@@ -122,7 +244,7 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
   let request;
   let mockResponse;
   beforeEach(() => {
-    const brData = mockBidRequestListData(2);
+    const brData = mockBidRequestListData('banner', 2);
     mockReferer = mockRefererData();
     request = spec.buildRequests(brData, mockReferer);
     mockBidRequest = {
@@ -157,6 +279,42 @@ describe('SmartyTechDSPAdapter: interpretResponse', () => {
       expect(responseItem.requestId).to.be.equal(mockBidRequest.data[index].bidId);
       expect(responseItem.width).to.be.equal(mockResponse.body[keys[index]].width);
       expect(responseItem.height).to.be.equal(mockResponse.body[keys[index]].height);
+      expect(responseItem.mediaType).to.be.equal(mockResponse.body[keys[index]].mediaType);
+    });
+  });
+});
+
+describe('SmartyTechDSPAdapter: interpretResponse video', () => {
+  let mockBidRequest;
+  let mockReferer;
+  let request;
+  let mockResponse;
+  beforeEach(() => {
+    const brData = mockBidRequestListData('video', 2);
+    mockReferer = mockRefererData();
+    request = spec.buildRequests(brData, mockReferer);
+    mockBidRequest = {
+      data: brData
+    }
+    mockResponse = mockResponseData(request);
+  });
+
+  it('interpretResponse: convert to correct data', () => {
+    const keys = Object.keys(mockResponse.body);
+    const data = spec.interpretResponse(mockResponse, mockBidRequest);
+
+    data.forEach((responseItem, index) => {
+      expect(responseItem.ad).to.be.equal(mockResponse.body[keys[index]].ad);
+      expect(responseItem.cpm).to.be.equal(mockResponse.body[keys[index]].cpm);
+      expect(responseItem.creativeId).to.be.equal(mockResponse.body[keys[index]].creativeId);
+      expect(responseItem.currency).to.be.equal(mockResponse.body[keys[index]].currency);
+      expect(responseItem.netRevenue).to.be.true;
+      expect(responseItem.ttl).to.be.equal(60);
+      expect(responseItem.requestId).to.be.equal(mockBidRequest.data[index].bidId);
+      expect(responseItem.width).to.be.equal(mockResponse.body[keys[index]].width);
+      expect(responseItem.height).to.be.equal(mockResponse.body[keys[index]].height);
+      expect(responseItem.mediaType).to.be.equal(mockResponse.body[keys[index]].mediaType);
+      expect(responseItem.vastXml).to.be.equal(mockResponse.body[keys[index]].ad);
     });
   });
 });

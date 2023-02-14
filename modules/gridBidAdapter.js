@@ -94,8 +94,7 @@ export const spec = {
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout || config.getConfig('bidderTimeout');
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -289,9 +288,11 @@ export const spec = {
         return;
       }
 
+      if (request.user) user = request.user;
+
       const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
       if (ortb2UserData && ortb2UserData.length) {
-        user = request.user || { data: [] };
+        if (!user) user = { data: [] };
         user = mergeDeep(user, {
           data: [...ortb2UserData]
         });
