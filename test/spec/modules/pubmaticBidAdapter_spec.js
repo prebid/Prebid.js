@@ -553,7 +553,8 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 6,
               'advid': 976,
-              'dspid': 123
+              'dspid': 123,
+              'dchain': 'dchain'
             }
           }]
         }, {
@@ -3436,6 +3437,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
         expect(response[0].meta.buyerId).to.equal(976);
+        expect(response[0].meta.dchain).to.equal('dchain');
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].meta.advertiserDomains[0]).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);

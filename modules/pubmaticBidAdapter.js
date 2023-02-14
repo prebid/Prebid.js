@@ -1304,6 +1304,9 @@ export const spec = {
               if (bid.ext && bid.ext.advid) {
                 newBid.meta.buyerId = bid.ext.advid;
               }
+              if (bid.ext && bid.ext.dchain) {
+                newBid.meta.dchain = bid.ext.dchain;
+              }
               if (bid.adomain && bid.adomain.length > 0) {
                 newBid.meta.advertiserDomains = bid.adomain;
                 newBid.meta.clickUrl = bid.adomain[0];
