@@ -46,7 +46,7 @@ let conversantAnalyticsEnabled = false;
 export const cnvrHelper = {
   // Turns on sampling for an instance of prebid analytics.
   doSample: true,
-  doSendErrorData: true,
+  doSendErrorData: false,
 
   /**
    * Used to hold data for RENDER FAILED events so we can send a payload back that will match our original auction data.
@@ -155,6 +155,11 @@ let conversantAnalytics = Object.assign(
 }
  */
 function onBidderError(args) {
+  if (!cnvrHelper.doSendErrorData) {
+    logWarn(CNVR_CONSTANTS.LOG_PREFIX + 'Skipping bidder error parsing due to config disabling error logging, bidder error status = ' + args.error.status + ', Message = ' + args.error.statusText);
+    return;
+  }
+
   let error = args.error;
   let bidRequest = args.bidderRequest;
   let auctionId = bidRequest.auctionId;
@@ -658,7 +663,7 @@ conversantAnalytics.enableAnalytics = function (config) {
   cnvrHelper.doSample = Math.random() < initOptions.cnvr_sample_rate;
 
   if (initOptions.send_error_data !== undefined && initOptions.send_error_data !== null) {
-    cnvrHelper.doSendErrorData = !!initOptions.send_error_data; //Forces data into boolean type
+    cnvrHelper.doSendErrorData = !!initOptions.send_error_data; // Forces data into boolean type
   }
 
   conversantAnalyticsEnabled = true;
