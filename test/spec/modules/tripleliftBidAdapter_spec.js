@@ -1199,10 +1199,7 @@ describe('triplelift adapter', function () {
               tl_source: 'tlx',
               advertiser_name: 'fake advertiser name',
               adomain: ['basspro.com', 'internetalerts.org'],
-              media_type: 'banner',
-              meta: {
-                networkId: 1234
-              }
+              media_type: 'banner'
             },
             {
               imp_id: 1,
@@ -1443,7 +1440,7 @@ describe('triplelift adapter', function () {
 
     it('should include networkId in the meta field if available', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
-      expect(result[0].meta.networkId).to.equal(1234);
+      expect(result[1].meta.networkId).to.equal('10092');
     });
   });
 

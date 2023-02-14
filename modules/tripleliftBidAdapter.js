@@ -437,8 +437,9 @@ function _buildResponseObject(bidderRequest, bid) {
       bidResponse.meta.mediaType = 'native';
     }
 
-    if (bid.meta && bid.meta.networkId) {
-      bidResponse.meta.networkId = bid.meta.networkId;
+    if (creativeId) {
+      let crid = creativeId.slice(0, creativeId.indexOf('_'));
+      bidResponse.meta.networkId = crid;
     }
   };
   return bidResponse;
