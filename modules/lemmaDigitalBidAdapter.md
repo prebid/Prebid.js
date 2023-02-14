@@ -28,11 +28,7 @@ var adUnits = [{
       adunitId: '3768', // required
       latitude: 37.3230,
       longitude: -122.0322,
-      device_type: 2,
-      banner: {
-        w: 300,
-        h: 250
-      }
+      device_type: 2
     }
   }]
 }];
