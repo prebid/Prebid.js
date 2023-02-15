@@ -2266,15 +2266,27 @@ describe('MavenDistributionAnalyticsAdapter', function () {
     })
   });
   describe('createSendOptionsFromBatch', () => {
-    it('should create batch json', () => {
-      const actual = createSendOptionsFromBatch([{
+    it('should create auctionInit batch json', () => {
+      const actual = createSendOptionsFromBatch({auctionInit: [{
+        auc: 'aaa',
+        zoneIndexes: [3],
+        zoneNames: ['sidebar']
+      }]})
+      const expected = {
+        auctionInit: '[{"auc":"aaa","zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        price: undefined,
+      }
+      assert.deepEqual(actual, expected)
+    })
+    it('should create auctionEnd batch json', () => {
+      const actual = createSendOptionsFromBatch({auctionEnd: [{
         auc: 'aaa',
         cpmms: [40],
         zoneIndexes: [3],
         zoneNames: ['sidebar']
-      }])
+      }]})
       const expected = {
-        batch: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        auctionEnd: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
         price: 40,
       }
       assert.deepEqual(actual, expected)
