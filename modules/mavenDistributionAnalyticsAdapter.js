@@ -8,13 +8,14 @@ import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code
 const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END
+const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT
 
 // Internal controls
 const BATCH_MESSAGE_FREQUENCY = 1000; // Send results batched on a 1s delay
 
 const PROVIDER_CODE = 'mavenDistributionAnalyticsAdapter'
 const MAVEN_DISTRIBUTION_GLOBAL = '$p'
-const MAX_BATCH_SIZE = 32
+const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
 
 /**
  * We may add more fields in the future
@@ -29,10 +30,12 @@ const MAX_BATCH_SIZE = 32
 
 /**
  * import {AUCTION_STARTED, AUCTION_IN_PROGRESS, AUCTION_COMPLETED} from '../src/auction';
+ * note: timestamp is _auctionStart in src/auction.js
+ * and auctionEnd is _auctionEnd in src/auction.js
  * @typedef {{
  *   auctionId: string
- *   timestamp: Date
- *   auctionEnd: Date
+ *   timestamp: number
+ *   auctionEnd: number
  *   auctionStatus: typeof AUCTION_STARTED | typeof AUCTION_IN_PROGRESS | typeof AUCTION_COMPLETED
  *   adUnits: any[]
  *   adUnitCodes: any[]
@@ -49,10 +52,10 @@ const MAX_BATCH_SIZE = 32
  * // cpmms, zoneIndexes, and zoneNames all have the same length
  * @typedef {{
  *   auc: string
- *   cpmms: number[]
- *   zoneIndexes: number[]
- *   zoneNames: string[]
- * }} AuctionEndSummary
+ *   codes?: string[]
+ *   zoneIndexes?: number[]
+ *   zoneNames?: string[]
+ * }} AuctionInitSummary
  */
 
 /**
@@ -60,9 +63,7 @@ const MAX_BATCH_SIZE = 32
  * @param {MavenDistributionAdapterConfig} adapterConfig
  * @return {AuctionEndSummary}
  */
-export function summarizeAuctionEnd(args, adapterConfig) {
-  /** @type {{[code: string]: number}} */
-  const cpmmsMap = {}
+export function summarizeAuctionInit(args, adapterConfig) {
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
@@ -71,7 +72,6 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
   args.adUnits.forEach(adUnit => {
-    cpmmsMap[adUnit.code] = 0
     adUnitCodes.push(adUnit.code)
 
     const zoneConfig = zoneMap[adUnit.code] || {}
@@ -85,15 +85,11 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
   })
-  args.bidsReceived.forEach(bid => {
-    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0))
-  })
-  const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
 
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
-    cpmms: cpmms,
+    ts: args.timestamp,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
@@ -102,17 +98,56 @@ export function summarizeAuctionEnd(args, adapterConfig) {
 }
 
 /**
+ * // cpmms, zoneIndexes, and zoneNames all have the same length
+ * @typedef {{
+ *   auc: string
+ *   cpmms: number[]
+ *   codes?: string[]
+ *   zoneIndexes?: number[]
+ *   zoneNames?: string[]
+ * }} AuctionEndSummary
+ */
+
+/**
+ * @param {AuctionEventArgs} args
+ * @param {MavenDistributionAdapterConfig} adapterConfig
+ * @return {AuctionEndSummary}
+ */
+export function summarizeAuctionEnd(args, adapterConfig) {
+  /** @type {{[code: string]: number}} */
+  const cpmmsMap = {}
+  /** @type {AuctionEndSummary} */
+  const eventToSend = summarizeAuctionInit(args, adapterConfig)
+  args.adUnits.forEach(adUnit => {
+    cpmmsMap[adUnit.code] = 0
+  })
+  args.bidsReceived.forEach(bid => {
+    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0))
+  })
+  const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
+  eventToSend.cpmms = cpmms
+  // args.timestamp is only the _auctionStart in src/auction.js
+  // so to get the time for this event we want args.auctionEnd
+  eventToSend.ts = args.auctionEnd
+  return eventToSend
+}
+
+/**
  * Price is in microdollars
- * @param {AuctionEndSummary[]} batch
- * @return {{batch: string, price: number}}
+ * @param {{auctionInit: AuctionInitSummary[], auctionEnd: AuctionEndSummary[]}} batch
+ * @return {{auctionInit?: string, auctionEnd?: string, price: number}}
  */
 export function createSendOptionsFromBatch(batch) {
-  const batchJson = JSON.stringify(batch)
-  let price = 0
-  batch.forEach(auctionEndSummary => {
-    auctionEndSummary.cpmms.forEach(cpmm => price += cpmm)
+  const price = batch[AUCTION_END]?.reduce(
+    (sum, auctionEndSummary) =>
+      sum + auctionEndSummary.cpmms.reduce((sum, cpmm) => sum + cpmm, 0),
+    0
+  )
+  const result = { price: price }
+  Object.keys(batch).forEach(eventType => {
+    result[eventType] = JSON.stringify(batch[eventType])
   })
-  return { batch: batchJson, price: price }
+  return result
 }
 
 const STATE_DOM_CONTENT_LOADING = 'wait-for-$p-to-be-defined'
@@ -173,13 +208,13 @@ LiftIgniterWrapper.prototype = {
 
 /**
  * @param {MavenDistributionAdapterConfig} adapterConfig
- * @property {object[] | null} batch
+ * @property { | null} batch
  * @property {number | null} batchTimeout
  * @property {MavenDistributionAdapterConfig} adapterConfig
  * @property {LiftIgniterWrapper} liftIgniterWrapper
  */
 function MavenDistributionAnalyticsAdapterInner(adapterConfig, liftIgniterWrapper) {
-  this.batch = []
+  this.batch = {}
   this.batchTimeout = null
   this.adapterConfig = adapterConfig
   this.liftIgniterWrapper = liftIgniterWrapper
@@ -190,13 +225,20 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
    */
   track(typeAndArgs) {
     const {eventType, args} = typeAndArgs
-    if (eventType === AUCTION_END) {
-      const eventToSend = summarizeAuctionEnd(args, this.adapterConfig)
+    let eventToSend
+    if (eventType === AUCTION_INIT) {
+      eventToSend = summarizeAuctionInit(args, this.adapterConfig)
+    } else if (eventType === AUCTION_END) {
+      eventToSend = summarizeAuctionEnd(args, this.adapterConfig)
+    }
+    if (eventToSend !== undefined) {
+      this.batch[eventType] ||= []
+      this.batch[eventType].push(eventToSend)
       if (this.timeout == null) {
         this.timeout = setTimeout(this._sendBatch.bind(this), BATCH_MESSAGE_FREQUENCY)
-        logInfo(`$p: added auctionEnd to new batch`)
+        logInfo(`$p: added ${eventType} to new batch`)
       } else {
-        logInfo(`$p: added auctionEnd to existing batch`)
+        logInfo(`$p: added ${eventType} to existing batch`)
       }
       this.batch.push(eventToSend)
     }
@@ -204,16 +246,19 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
 
   _sendBatch() {
     this.timeout = null
-    const countToDiscard = this.batch.length - MAX_BATCH_SIZE
-    if (countToDiscard > 0) {
-      logWarn(`$p: Discarding ${countToDiscard} old items`)
-      this.batch.splice(0, countToDiscard)
-    }
+    Object.keys(this.batch).forEach(eventType => {
+      const countToDiscard = this.batch[eventType].length - MAX_BATCH_SIZE_PER_EVENT_TYPE
+      if (countToDiscard > 0) {
+        logWarn(`$p: Discarding ${countToDiscard} old ${eventType}s`)
+        this.batch[eventType].splice(0, countToDiscard)
+      }
+    })
     if (this.liftIgniterWrapper.checkIsLoaded()) {
-      logInfo(`$p: Sending ${this.batch.length} items`)
+      const countsString = Object.keys(this.batch).map(eventType => `${this.batch[eventType].length} ${eventType}s`).join(', ')
+      logInfo(`$p: Sending ${countsString}`)
       const sendOptions = createSendOptionsFromBatch(this.batch)
       this.liftIgniterWrapper.sendPrebid(sendOptions)
-      this.batch.length = 0
+      this.batch = {}
     }
   },
 }

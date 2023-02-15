@@ -879,6 +879,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actualSummary = summarizeAuctionEnd(args, adapterConfig)
       const expectedSummary = {
         'auc': 'e0a2febe-dc05-4999-87ed-4c40022b6796',
+        ts: 1592017351705,
         cpmms: [0],
         zoneIndexes: [0],
         zoneNames: ['fixed_bottom'],
@@ -2259,6 +2260,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actual = summarizeAuctionEnd(mavenArgs, adapterConfig)
       const expected = {
         auc: 'd01409e4-580d-4107-8d92-3c5dec19b41a',
+        ts: 1592938047397,
         cpmms: [ 2604 ],
         codes: [ 'gpt-slot-channel-banner-top' ],
       }
@@ -2266,15 +2268,27 @@ describe('MavenDistributionAnalyticsAdapter', function () {
     })
   });
   describe('createSendOptionsFromBatch', () => {
-    it('should create batch json', () => {
-      const actual = createSendOptionsFromBatch([{
+    it('should create auctionInit batch json', () => {
+      const actual = createSendOptionsFromBatch({auctionInit: [{
+        auc: 'aaa',
+        zoneIndexes: [3],
+        zoneNames: ['sidebar']
+      }]})
+      const expected = {
+        auctionInit: '[{"auc":"aaa","zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        price: undefined,
+      }
+      assert.deepEqual(actual, expected)
+    })
+    it('should create auctionEnd batch json', () => {
+      const actual = createSendOptionsFromBatch({auctionEnd: [{
         auc: 'aaa',
         cpmms: [40],
         zoneIndexes: [3],
         zoneNames: ['sidebar']
-      }])
+      }]})
       const expected = {
-        batch: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        auctionEnd: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
         price: 40,
       }
       assert.deepEqual(actual, expected)
