@@ -91,7 +91,7 @@ describe('relevadRtdProvider', function() {
       expect(reqBids.adUnits[0].bids[1].ortb2.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
       expect(reqBids.adUnits[0].bids[3].params).to.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3');
       expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('segments', ['segment1', 'segment2']);
-      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('contextual_categories', {'0': 'category3'});
+      expect(reqBids.adUnits[0].bids[5].ortb2.user.ext.data).to.have.deep.property('contextual_categories', ['category3']);
       expect(reqBids.ortb2Fragments.bidder.rubicon.user.ext.data).to.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
       expect(config.getConfig('ix.firstPartyData')).to.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);
     });
@@ -118,6 +118,7 @@ describe('relevadRtdProvider', function() {
       expect(reqBids.adUnits[0].bids[1].ortb2?.user?.ext?.data || {}).to.not.have.property('relevad_rtd');
       expect(reqBids.adUnits[0].bids[3].params || {}).to.not.have.deep.property('target', 'relevad_rtd=segment1;relevad_rtd=segment2;relevad_rtd=category3');
       expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('segments', ['segment1', 'segment2']);
+      expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', ['category3']);
       expect(reqBids.adUnits[0].bids[5].ortb2?.user?.ext?.data || {}).to.not.have.deep.property('contextual_categories', {'0': 'category3'});
       expect(reqBids.ortb2Fragments?.bidder?.rubicon?.user?.ext?.data || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2']);
       expect(config.getConfig('ix.firstPartyData') || {}).to.not.have.deep.property('relevad_rtd', ['segment1', 'segment2', 'category3']);

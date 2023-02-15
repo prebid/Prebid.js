@@ -18,7 +18,7 @@ const SUBMODULE_NAME = 'RelevadRTDModule';
 
 const SEGTAX_IAB = 6; // IAB Content Taxonomy v2
 const CATTAX_IAB = 6; // IAB Contextual Taxonomy v2.2
-const RELEVAD_API_DOMAIN = 'https://prebid.relestar.com'
+const RELEVAD_API_DOMAIN = 'https://prebid.relestar.com';
 const entries = Object.entries;
 const AJAX_OPTIONS = {
   withCredentials: true,
@@ -250,28 +250,6 @@ export function addRtdData(reqBids, data, moduleConfig) {
       }) : false);
       const indexFound = !!(typeof bidderIndex == 'number' && bidderIndex >= 0);
       try {
-        /**
-         * Adds RTD to the bidder and calls a callback for more bidder-specific processing
-         *
-         * @param      {<type>}    bidderName  The bidder name
-         * @param      {Function}  callback    The budder specific callback
-         */
-        const processBidder = function(bidderName, callback) {
-          let wb = isEmpty(wl) || wl[bid.bidder] === true;
-          if (!wb && !isEmpty(wl[bid.bidder])) {
-            wb = true;
-            // match bidder parameters
-            for (const [key, value] of entries(wl[bid.bidder])) {
-              let params = bid?.params || {};
-              wb = wb && (key in params) && params[key] == value;
-            }
-          }
-          if (wb && !isEmpty(relevadList)) {
-            setBidderSiteAndContent(reqBids.ortb2Fragments?.bidder, bid.bidder, relevadData);
-            callback();
-          }
-        };
-
         if (
           !biddersParamsExist ||
             (indexFound &&
@@ -280,75 +258,25 @@ export function addRtdData(reqBids, data, moduleConfig) {
               )
             )
         ) {
-          switch (bid.bidder) {
-            case 'appnexus':
-            case 'appnexusAst':
-            case 'brealtime':
-            case 'emxdigital':
-            case 'pagescience':
-            case 'gourmetads':
-            case 'matomy':
-            case 'featureforward':
-            case 'oftmedia':
-            case 'districtm':
-            case 'adasta':
-            case 'beintoo':
-            case 'gravity':
-            case 'msq_classic':
-            case 'msq_max':
-            case '366_apx':
-              processBidder('appnexus', function() {
-                deepSetValue(bid, 'params.keywords.relevad_rtd', relevadList);
-              });
-              break;
-
-            case 'smart':
-            case 'smartadserver':
-              let target = [].concat(bid.params?.target ? [bid.params.target] : []);
-              processBidder('smart', function() {
-                target = target.concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; }));
-                deepSetValue(bid, 'params.target', target.join(';'));
-              });
-              break;
-
-            case 'ix':
-              let ixConfig = config.getConfig('ix.firstPartyData.relevad_rtd');
-              if (!ixConfig) {
-                processBidder(bid.bidder, function() {
-                  config.setConfig({ix: {firstPartyData: {relevad_rtd: relevadList}}});
-                });
-              }
-              break;
-
-            case 'proxistore':
-              processBidder(bid.bidder, function() {
-                let segments = relevadData.segments;
-                let contextualCategories = {...relevadData.categories.pagecat};
-                deepSetValue(bid, 'ortb2.user.ext.data', {segments: segments, contextual_categories: contextualCategories});
-              });
-              break;
-
-            case 'rubicon':
-            case 'criteo':
-            case 'triplelift':
-            case 'avct':
-            case 'avocet':
-            case 'smaato':
-            case 'yahoossp':
-            case 'openx':
-            case 'pubmatic':
-              // This empty callback must stay. It's called after mandatory common processing
-              processBidder(bid.bidder, function() {
-              });
-              break;
-            case 'generic':
-            default:
-              processBidder(bid.bidder, function() {
-                if (!biddersParamsExist || indexFound) {
-                  !isEmpty(relevadData.categories) && deepSetValue(bid, 'ortb2.site.ext.data.relevad_rtd', relevadData.categories.pagecat);
-                  !isEmpty(relevadData.segments) && deepSetValue(bid, 'ortb2.user.ext.data.relevad_rtd', relevadData.segments);
-                }
-              });
+          let wb = isEmpty(wl) || wl[bid.bidder] === true;
+          if (!wb && !isEmpty(wl[bid.bidder])) {
+            wb = true;
+            for (const [key, value] of entries(wl[bid.bidder])) {
+              let params = bid?.params || {};
+              wb = wb && (key in params) && params[key] == value;
+            }
+          }
+          if (wb && !isEmpty(relevadList)) {
+            setBidderSiteAndContent(reqBids.ortb2Fragments?.bidder, bid.bidder, relevadData);
+            deepSetValue(bid, 'params.keywords.relevad_rtd', relevadList);
+            deepSetValue(bid, 'params.target', [].concat(bid.params?.target ? [bid.params.target] : []).concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; })).join(';'));
+            let firstPartyData = {};
+            firstPartyData[bid.bidder] = { firstPartyData: { relevad_rtd: relevadList } };
+            config.setConfig(firstPartyData);
+            !isEmpty(relevadData.segments) && deepSetValue(bid, 'ortb2.user.ext.data.segments', relevadData.segments);
+            !isEmpty(relevadData.categories) && deepSetValue(bid, 'ortb2.user.ext.data.contextual_categories', relevadData.categories.pagecat);
+            !isEmpty(relevadData.categories) && deepSetValue(bid, 'ortb2.site.ext.data.relevad_rtd', relevadData.categories.pagecat);
+            !isEmpty(relevadData.segments) && deepSetValue(bid, 'ortb2.user.ext.data.relevad_rtd', relevadData.segments);
           }
         }
       } catch (e) {
@@ -419,9 +347,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     data.page = serverData.page;
   }
 
-  if (adunits.length > 0) {
-    sendBids(data, config);
-  }
+  sendBids(data, config);
 
   serverData = {};
   return data;
