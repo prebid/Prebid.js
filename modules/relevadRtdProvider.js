@@ -344,7 +344,7 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
     gdprc: encodeURIComponent(userConsent?.gdpr?.consentString || ''),
   }
   if (!config.dryrun) {
-    data.page = serverData.page;
+    data.page = serverData?.page || config?.params?.actualUrl || getRefererInfo().page || '';
   }
 
   sendBids(data, config);
