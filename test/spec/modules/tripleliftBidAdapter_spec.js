@@ -1441,6 +1441,8 @@ describe('triplelift adapter', function () {
     it('should include networkId in the meta field if available', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
       expect(result[1].meta.networkId).to.equal('10092');
+      expect(result[2].meta.networkId).to.equal('5989');
+      expect(result[3].meta.networkId).to.equal('5989');
     });
   });
 
