@@ -75,48 +75,48 @@ describe('admediaBidAdapter', function () {
       }
     };
     let serverResponse = {
-      body: [
+      body:
 			  {
-          'tags': [
+			    'tags': [
 				  {
-              'requestId': '2b8bf2ac497ae',
-              'ad': '<img src="https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia">',
-              'width': 300,
-              'height': 250,
-              'cpm': 0.71,
-              'currency': 'USD',
-              'ttl': 200,
-              'creativeId': 128,
-              'netRevenue': true,
-              'meta': {
+			        'requestId': '2b8bf2ac497ae',
+			        'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
+			        'width': 300,
+			        'height': 250,
+			        'cpm': 0.71,
+			        'currency': 'USD',
+			        'ttl': 200,
+			        'creativeId': 128,
+			        'netRevenue': true,
+			        'meta': {
 					  'advertiserDomains': [
-                  'https://www.test.com'
+			            'https://www.test.com'
 					  ]
-              }
+			        }
 				  }
-          ]
+			    ]
 			  }
-      ]
+
     };
     it('should get the correct bid response', function () {
       let expectedResponse = [
 		  {
           'tags': [
 			  {
-              'requestId': '2b8bf2ac497ae',
-              'ad': '<img src="https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia">',
-              'width': 300,
-              'height': 250,
-              'cpm': 0.71,
-              'currency': 'USD',
-              'ttl': 200,
-              'creativeId': 128,
-              'netRevenue': true,
-              'meta': {
+			    'requestId': '2b8bf2ac497ae',
+			    'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
+			    'width': 300,
+			    'height': 250,
+			    'cpm': 0.71,
+			    'currency': 'USD',
+			    'ttl': 200,
+			    'creativeId': 128,
+			    'netRevenue': true,
+			    'meta': {
 				  'advertiserDomains': [
-                  'https://www.test.com'
+			        'https://www.test.com'
 				  ]
-              }
+			    }
 			  }
           ]
 		  }
