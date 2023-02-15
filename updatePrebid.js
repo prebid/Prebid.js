@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Node script for doing the following:
 // 1. git checkout stable branch
 // 2. git pull
@@ -23,7 +24,7 @@
  * $ node updatePrebid.js --modules=modules.json --out=../my/lovely/path/prebid.js
  */
 const { execSync, spawnSync } = require('child_process');
-const fs = require("fs");
+const fs = require('fs');
 
 const argv = require('minimist')(process.argv.slice(2)); // cmd line args
 const validArgs = ['modules', 'out', 'tempest', 'hubpages', 'salish'];
@@ -99,7 +100,7 @@ const main = () => {
   } else {
     if (argv.tempest) {
       checkOutPath(tempestRepo);
-  
+
       buildPrebid(`${tempestRepo}/htdocs/js/prebid/modules.json`);
       copyPrebidToRepos(`${tempestRepo}/htdocs/js/prebid/prebid.min.js`);
       buildPrebid(`${tempestRepo}/htdocs/js/prebid/modules-next.json`);
@@ -111,7 +112,7 @@ const main = () => {
 
       const date = new Date();
       const dateFileStr = date.toJSON().split('T')[0];
-      out = `${salishRepo}/static/cdn/js/prebid-${dateFileStr}.js`;
+      const out = `${salishRepo}/static/cdn/js/prebid-${dateFileStr}.js`;
       copyPrebidToRepos(out);
     }
     if (argv.hubpages) {
