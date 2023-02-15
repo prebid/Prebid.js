@@ -87,6 +87,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
   /** @type {AuctionEndSummary} */
   const eventToSend = {
     auc: args.auctionId,
+    ts: args.timestamp,
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
