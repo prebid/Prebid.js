@@ -879,7 +879,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actualSummary = summarizeAuctionEnd(args, adapterConfig)
       const expectedSummary = {
         'auc': 'e0a2febe-dc05-4999-87ed-4c40022b6796',
-        ts: 1592017351705,
+        ts: 1592017352034,
         cpmms: [0],
         zoneIndexes: [0],
         zoneNames: ['fixed_bottom'],
@@ -2260,7 +2260,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actual = summarizeAuctionEnd(mavenArgs, adapterConfig)
       const expected = {
         auc: 'd01409e4-580d-4107-8d92-3c5dec19b41a',
-        ts: 1592938047397,
+        ts: 1592938048399,
         cpmms: [ 2604 ],
         codes: [ 'gpt-slot-channel-banner-top' ],
       }

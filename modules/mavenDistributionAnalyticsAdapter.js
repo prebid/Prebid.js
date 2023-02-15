@@ -240,7 +240,6 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
       } else {
         logInfo(`$p: added ${eventType} to existing batch`)
       }
-      this.batch.push(eventToSend)
     }
   },
 
