@@ -30,10 +30,12 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
 
 /**
  * import {AUCTION_STARTED, AUCTION_IN_PROGRESS, AUCTION_COMPLETED} from '../src/auction';
+ * note: timestamp is _auctionStart in src/auction.js
+ * and auctionEnd is _auctionEnd in src/auction.js
  * @typedef {{
  *   auctionId: string
- *   timestamp: Date
- *   auctionEnd: Date
+ *   timestamp: number
+ *   auctionEnd: number
  *   auctionStatus: typeof AUCTION_STARTED | typeof AUCTION_IN_PROGRESS | typeof AUCTION_COMPLETED
  *   adUnits: any[]
  *   adUnitCodes: any[]
@@ -124,6 +126,9 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   })
   const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
   eventToSend.cpmms = cpmms
+  // args.timestamp is only the _auctionStart in src/auction.js
+  // so to get the time for this event we want args.auctionEnd
+  eventToSend.ts = args.auctionEnd
   return eventToSend
 }
 
