@@ -14,26 +14,44 @@ Adagio require several params. These params must be set at Prebid.js BidderConfi
 
 Below, the list of Adagio params and where they can be set.
 
-| Param name | Global config | AdUnit config |
-| ---------- | ------------- | ------------- |
-| siteId | x |
-| organizationId * | | x
-| site * | | x
-| pagetype | x | x
-| category | x | x
-| useAdUnitCodeAsAdUnitElementId | x | x
-| useAdUnitCodeAsPlacement | x | x
-| placement | | x
-| adUnitElementId | | x
-| debug | | x
-| video | | x
-| native | | x
+| Param name                     | Global config | AdUnit config |
+| ------------------------------ | ------------- | ------------- |
+| siteId                         | x             |               |
+| organizationId *               |               | x             |
+| site *                         |               | x             |
+| pagetype                       | x             | x             |
+| category                       | x             | x             |
+| useAdUnitCodeAsAdUnitElementId | x             | x             |
+| useAdUnitCodeAsPlacement       | x             | x             |
+| placement                      |               | x             |
+| adUnitElementId                |               | x             |
+| debug                          |               | x             |
+| video                          |               | x             |
+| native                         |               | x             |
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 
-### Global configuration
+### User Sync
 
-The global configuration is used to store params once instead of duplicate them to each adUnit. The values will be used as "params" in the ad-request.
+Add the following code to enable user sync. Adagio strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the  bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    iframeEnabled: true,
+    filterSettings: {
+      iframe: {
+        bidders: ['adagio'],
+        filter: 'include'
+      }
+    }
+  }
+});
+```
+
+### Global Adagio configuration
+
+The global Adagio configuration is used to store params once instead of duplicate them to each adUnit. The values will be used as "params" in the ad-request. Be sure to call `pbjs.setConfig()` only once.
 
 ```javascript
 pbjs.setConfig({
@@ -52,7 +70,7 @@ pbjs.setConfig({
     category: 'sport', // Recommended. Category of the content displayed in the page.
     useAdUnitCodeAsAdUnitElementId: false, // Optional. Use it by-pass adUnitElementId and use the adUnit code as value
     useAdUnitCodeAsPlacement: false, // Optional. Use it to by-pass placement and use the adUnit code as value
-  },
+  }
 });
 ```
 
@@ -108,6 +126,14 @@ var adUnits = [
       category: 'sport',
       useAdUnitCodeAsAdUnitElementId: false,
       useAdUnitCodeAsPlacement: false,
+    },
+    userSync: {
+      filterSettings: {
+        iframe: {
+          bidders: ['adagio'],
+          filter: 'include'
+        }
+      }
     }
   });
 
