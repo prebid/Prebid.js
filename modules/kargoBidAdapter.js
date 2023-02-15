@@ -363,7 +363,7 @@ function getUserIds(tdidAdapter, usp, gdpr, eids) {
   }
 
   if (eids != null) {
-    userIds.eids = eids;
+    userIds.sharedIDEids = eids;
   }
 
   return userIds;
