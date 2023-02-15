@@ -234,8 +234,8 @@ export const spec = {
 
     if (!pixels.length) {
       let syncUrl = SYNC_ENDPOINT;
-      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString;
-      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent;
+      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString + '&';
+      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent + '&';
       if (syncOptions.iframeEnabled) pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
       if (syncOptions.pixelEnabled) pixels.push({type: 'image', url: syncUrl + 'type=image'});
     }
