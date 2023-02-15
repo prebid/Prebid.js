@@ -15,7 +15,7 @@ const BATCH_MESSAGE_FREQUENCY = 1000; // Send results batched on a 1s delay
 
 const PROVIDER_CODE = 'mavenDistributionAnalyticsAdapter'
 const MAVEN_DISTRIBUTION_GLOBAL = '$p'
-const MAX_BATCH_SIZE = 32
+const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
 
 /**
  * We may add more fields in the future
@@ -242,7 +242,7 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
   _sendBatch() {
     this.timeout = null
     Object.keys(this.batch).forEach(eventType => {
-      const countToDiscard = this.batch[eventType].length - MAX_BATCH_SIZE
+      const countToDiscard = this.batch[eventType].length - MAX_BATCH_SIZE_PER_EVENT_TYPE
       if (countToDiscard > 0) {
         logWarn(`$p: Discarding ${countToDiscard} old ${eventType}s`)
         this.batch[eventType].splice(0, countToDiscard)
