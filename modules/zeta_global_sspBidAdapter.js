@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isArray, isBoolean, isEmpty, isNumber, isStr, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
