@@ -213,6 +213,8 @@ function interpretResponse(response, bidRequest) {
       } else {
         bidResponse.vastXml = adUnit.adm;
       }
+    } else {
+      bidResponse.ad = adUnit.adm;
     }
 
     bidResponses.push(bidResponse);
