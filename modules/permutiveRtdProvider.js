@@ -8,12 +8,19 @@
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, logMessage} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
+const PREFIX = MODULE_NAME + 'RTD'
+
+const logger = {
+  message: (...a) => logMessage(PREFIX, ...a),
+}
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
+export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
@@ -109,7 +116,7 @@ export function getModuleConfig(customModuleConfig) {
 
 /**
  * Sets ortb2 config for ac bidders
- * @param {Object} bidderOrtb2
+ * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
  * @param {Object} customModuleConfig - Publisher config for module
  */
 export function setBidderRtb (bidderOrtb2, customModuleConfig) {
@@ -126,28 +133,35 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   bidders.forEach(function (bidder) {
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
 
-    const isAcBidder = acBidders.indexOf(bidder) > -1
-    const isSspBidder = ssps.indexOf(bidder) > -1
-
     let cohorts = []
-    if (isAcBidder) cohorts = segmentData.ac
-    if (isSspBidder) cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
 
-    const nextConfig = updateOrtbConfig(currConfig, cohorts, sspCohorts, transformationConfigs)
-    bidderOrtb2[bidder] = nextConfig.ortb2;
+    const isAcBidder = acBidders.indexOf(bidder) > -1
+    if (isAcBidder) {
+      cohorts = segmentData.ac
+    }
+
+    const isSspBidder = ssps.indexOf(bidder) > -1
+    if (isSspBidder) {
+      cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
+    }
+
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, transformationConfigs, segmentData)
+    bidderOrtb2[bidder] = nextConfig.ortb2
   })
 }
 
 /**
  * Updates `user.data` object in existing bidder config with Permutive segments
+ * @param string bidder - The bidder
  * @param {Object} currConfig - Current bidder config
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
+ * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformationConfigs) {
+function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
   const name = 'permutive.com'
 
   const permutiveUserData = {
@@ -173,6 +187,19 @@ function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformation
   const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
   const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
   deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
+
+  // Set bidder specific extensions
+  if (bidder === 'rubicon') {
+    if (segmentIDs.length > 0) {
+      deepSetValue(ortbConfig, 'ortb2.user.ext.data.' + PERMUTIVE_STANDARD_KEYWORD, segmentIDs)
+    }
+
+    if (segmentData?.rubicon?.length > 0) {
+      deepSetValue(ortbConfig, 'ortb2.user.ext.data.' + PERMUTIVE_CUSTOM_COHORTS_KEYWORD, segmentData.rubicon.map(String))
+    }
+
+    logger.message(`Extend rubicon 'ortb2.user.ext.data'`, deepAccess(ortbConfig, 'ortb2.user.ext.data'))
+  }
 
   return ortbConfig
 }
@@ -258,17 +285,6 @@ function getDefaultBidderFn (bidder) {
       }
       if (data.appnexus && data.appnexus.length) {
         deepSetValue(bid, 'params.keywords.permutive', data.appnexus)
-      }
-
-      return bid
-    },
-    rubicon: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.visitor.p_standard', segments)
-      }
-      if (data.rubicon && data.rubicon.length) {
-        deepSetValue(bid, 'params.visitor.permutive', data.rubicon.map(String))
       }
 
       return bid

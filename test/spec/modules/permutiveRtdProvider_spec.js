@@ -370,6 +370,90 @@ describe('permutiveRtdProvider', function () {
         segment: expectedOtherTargetingData
       }])
     })
+
+    describe('ortb2 rubicon extensions', function () {
+      it('should add standard and custom cohorts', function () {
+        const moduleConfig = getConfig()
+        expect(moduleConfig.params.acBidders).to.include('rubicon')
+
+        const bidderConfig = {}
+
+        const targetingData = transformedTargeting()
+
+        setBidderRtb(bidderConfig, moduleConfig)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          if (bidder === 'rubicon') {
+            expect(bidderConfig[bidder].user.ext.data).to.deep
+              .eq({
+                // Default targeting
+                p_standard: targetingData.ac,
+                // Custom cohort targetings
+                permutive: targetingData.rubicon,
+              })
+          } else {
+            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+          }
+        })
+      })
+
+      it('should add standard cohorts ONLY', function () {
+        const moduleConfig = getConfig()
+        expect(moduleConfig.params.acBidders).to.include('rubicon')
+
+        const bidderConfig = {}
+
+        const targetingData = transformedTargeting()
+        // Remove rubicon custom cohorts
+        storage.removeDataFromLocalStorage('_prubicons')
+
+        setBidderRtb(bidderConfig, moduleConfig)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          if (bidder === 'rubicon') {
+            expect(bidderConfig[bidder].user.ext.data).to.deep
+              .eq({
+                // Default targeting
+                p_standard: targetingData.ac,
+              })
+            expect(bidderConfig[bidder].user.ext.data).to.not.have
+              .property('permutive')
+          } else {
+            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+          }
+        })
+      })
+
+      it('should add custom cohorts ONLY', function () {
+        const moduleConfig = getConfig()
+        expect(moduleConfig.params.acBidders).to.include('rubicon')
+
+        const bidderConfig = {}
+
+        const targetingData = transformedTargeting()
+        // Remove standard cohorts (e.g targetingData.ac)
+        storage.removeDataFromLocalStorage('_psegs')
+        storage.removeDataFromLocalStorage('_ppam')
+        storage.removeDataFromLocalStorage('_pcrprs')
+        storage.removeDataFromLocalStorage('_pssps')
+
+        setBidderRtb(bidderConfig, moduleConfig)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          if (bidder === 'rubicon') {
+            expect(bidderConfig[bidder].user.ext.data).to.deep
+              .eq({
+                // custom cohort targeting
+                permutive: targetingData.rubicon,
+              })
+            expect(bidderConfig[bidder].user.ext.data).to.not.have
+              .property('p_standard')
+          } else {
+            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+          }
+        })
+      })
+    })
   })
 
   describe('Getting segments', function () {
@@ -413,58 +497,6 @@ describe('permutiveRtdProvider', function () {
       }
     })
 
-    it('sets segment targeting for Magnite', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(deepAccess(params, 'visitor.permutive')).to.eql(data.rubicon)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
-    })
-
-    it('sets segment targeting for Magnite video', function () {
-      const targetingData = getTargetingData()
-      targetingData._prubicons.push(321)
-
-      setLocalStorage(targetingData)
-
-      const data = transformedTargeting(targetingData)
-      const config = getConfig()
-
-      const adUnits = getAdUnits().filter(adUnit => adUnit.mediaTypes.video)
-      expect(adUnits).to.have.lengthOf(1)
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback() {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(
-                deepAccess(params, 'visitor.permutive'),
-                'Should map all targeting values to a string',
-              ).to.eql(data.rubicon.map(String))
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
-    })
-
     it('sets segment targeting for Ozone', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
@@ -479,40 +511,6 @@ describe('permutiveRtdProvider', function () {
 
             if (bidder === 'ozone') {
               expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
-    })
-  })
-
-  describe('Custom segment targeting', function () {
-    it('sets custom segment targeting for Magnite', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      config.params.overwrites = {
-        rubicon: function (bid, data, acEnabled, utils, defaultFn) {
-          if (defaultFn) {
-            bid = defaultFn(bid, data, acEnabled)
-          }
-          if (data.gam && data.gam.length) {
-            utils.deepSetValue(bid, 'params.visitor.permutive', data.gam)
-          }
-        }
-      }
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(deepAccess(params, 'visitor.permutive')).to.eql(data.gam)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
             }
           })
         })
