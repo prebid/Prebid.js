@@ -41,6 +41,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     app: {
       bundle: 'testBundle'
     },
+    bidfloor: 0.2,
     test: 1
   };
 
@@ -358,5 +359,12 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
 
     expect(payload.tmax).to.be.undefined;
+  });
+
+  it('Test provide bidfloor', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
   });
 });
