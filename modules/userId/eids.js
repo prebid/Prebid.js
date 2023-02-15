@@ -282,7 +282,7 @@ export const USER_IDS_CONFIG = {
   },
 
   amxId: {
-    source: 'amxrtb.com',
+    source: 'amxdt.net',
     atype: 1,
   },
 

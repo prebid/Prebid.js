@@ -288,9 +288,11 @@ export const spec = {
         return;
       }
 
+      if (request.user) user = request.user;
+
       const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
       if (ortb2UserData && ortb2UserData.length) {
-        user = request.user || { data: [] };
+        if (!user) user = { data: [] };
         user = mergeDeep(user, {
           data: [...ortb2UserData]
         });
