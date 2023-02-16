@@ -520,6 +520,9 @@ function bidResponseHandler(args) {
   }
 
   if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
+    if(!!bid.params){
+      args.params = bid.params;
+    }
     bid = copyRequiredBidDetails(args);
     bid.bidId = args.requestId;
     cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
