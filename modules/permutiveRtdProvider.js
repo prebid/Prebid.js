@@ -272,7 +272,12 @@ function getDefaultBidderFn (bidder) {
     }
   }
 
-  return bidderMap[bidder]
+  // On no default bidder just return the same bid as passed in
+  function bidIdentity(bid) {
+    return bid
+  }
+
+  return bidderMap[bidder] || bidIdentity
 }
 
 /**
