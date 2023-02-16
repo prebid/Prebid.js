@@ -643,19 +643,21 @@ describe('validate native openRTB', function () {
     // openRTB request is valid
     expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(true);
 
-    openRTBNativeRequest.assets.push({
-      id: 2,
-      required: 1,
-      video: {
-        mimes: [],
-        protocols: [],
-        minduration: 50,
-      },
-    });
-    // video asset should have all required properties
-    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
-    openRTBNativeRequest.assets[1].video.maxduration = 60;
-    expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(true);
+    if (FEATURES.VIDEO) {
+      openRTBNativeRequest.assets.push({
+        id: 2,
+        required: 1,
+        video: {
+          mimes: [],
+          protocols: [],
+          minduration: 50,
+        },
+      });
+      // video asset should have all required properties
+      expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(false);
+      openRTBNativeRequest.assets[1].video.maxduration = 60;
+      expect(isOpenRTBBidRequestValid(openRTBNativeRequest)).to.eq(true);
+    }
   });
 
   it('should validate openRTB native bid', function () {

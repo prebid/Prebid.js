@@ -174,7 +174,7 @@ function isOpenRTBAssetValid(asset) {
       logError(`for data asset 'type' property must be a number`);
       return false;
     }
-  } else if (asset.video) {
+  } else if (FEATURES.VIDEO && asset.video) {
     if (!Array.isArray(asset.video.mimes) || !Array.isArray(asset.video.protocols) ||
       !isNumber(asset.video.minduration) || !isNumber(asset.video.maxduration)) {
       logError('video asset is not properly configured');
