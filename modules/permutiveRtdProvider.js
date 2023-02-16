@@ -8,15 +8,13 @@
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, logMessage} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
 const PREFIX = MODULE_NAME + 'RTD'
 
-const logger = {
-  message: (...a) => logMessage(PREFIX, ...a),
-}
+const logger = prefixLog(PREFIX)
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
 export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
@@ -29,30 +27,6 @@ function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
   return true
-}
-
-/**
- * Set segment targeting from cache and then try to wait for Permutive
- * to initialise to get realtime segment targeting
- * @param {Object} reqBidsConfigObj
- * @param {function} callback - Called when submodule is done
- * @param {customModuleConfig} reqBidsConfigObj - Publisher config for module
- */
-export function initSegments (reqBidsConfigObj, callback, customModuleConfig) {
-  const permutiveOnPage = isPermutiveOnPage()
-  const moduleConfig = getModuleConfig(customModuleConfig)
-  const segmentData = getSegments(moduleConfig.params.maxSegs)
-
-  setSegments(reqBidsConfigObj, moduleConfig, segmentData)
-
-  if (moduleConfig.waitForIt && permutiveOnPage) {
-    window.permutive.ready(function () {
-      setSegments(reqBidsConfigObj, moduleConfig, segmentData)
-      callback()
-    }, 'realtime')
-  } else {
-    callback()
-  }
 }
 
 function liftIntoParams(params) {
@@ -119,12 +93,10 @@ export function getModuleConfig(customModuleConfig) {
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
  * @param {Object} customModuleConfig - Publisher config for module
  */
-export function setBidderRtb (bidderOrtb2, customModuleConfig) {
-  const moduleConfig = getModuleConfig(customModuleConfig)
+export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
-  const segmentData = getSegments(maxSegs)
 
   const ssps = segmentData?.ssp?.ssps ?? []
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
@@ -399,17 +371,57 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
   return iabIds[permutiveSegmentId] || unknownIabSegmentId
 }
 
+/**
+ * Pull the latest configuration and cohort information and update accordingly.
+ *
+ * @param reqBidsConfigObj - Bidder provided config for request
+ * @param customModuleConfig - Publisher provide config
+ */
+function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
+  const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
+
+  makeSafe(function () {
+    // Legacy route with custom parameters
+    // ACK policy violation, in process of removing
+    setSegments(reqBidsConfigObj, moduleConfig, segmentData)
+  });
+
+  makeSafe(function () {
+    // Route for bidders supporting ORTB2
+    setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, moduleConfig, segmentData)
+  })
+}
+
+let permutiveReadyCallbackRegistered = false
+
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
+    const completeBidRequestData = () => {
+      logger.logInfo(`Request data updated`)
+      callback()
+    }
+
+    const moduleConfig = getModuleConfig(customModuleConfig)
+
+    readAndSetCohorts(reqBidsConfigObj, moduleConfig)
+
     makeSafe(function () {
-      // Legacy route with custom parameters
-      initSegments(reqBidsConfigObj, callback, customModuleConfig)
-    });
-    makeSafe(function () {
-      // Route for bidders supporting ORTB2
-      setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, customModuleConfig)
+      if (!permutiveReadyCallbackRegistered && moduleConfig.waitForIt && isPermutiveOnPage()) {
+        // Prevent multiple calls to set cohorts
+        permutiveReadyCallbackRegistered = true
+
+        window.permutive.ready(function () {
+          logger.logInfo(`SDK is realtime, updating cohorts`)
+          readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig))
+          completeBidRequestData()
+        }, 'realtime')
+
+        logger.logInfo(`Registered cohort update when SDK is realtime`)
+      } else {
+        completeBidRequestData()
+      }
     })
   },
   init: init
