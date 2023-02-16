@@ -383,7 +383,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * @param reqBidsConfigObj - Bidder provided config for request
  * @param customModuleConfig - Publisher provide config
  */
-function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
+export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
   const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
 
   makeSafe(function () {
