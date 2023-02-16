@@ -472,51 +472,56 @@ export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfi
 }, 'addComponentAuction')
 
 export function preloadBidderMappingFile(fn, adUnits) {
-  if (!config.getConfig('adpod.brandCategoryExclusion')) {
-    return fn.call(this, adUnits);
-  }
-  let adPodBidders = adUnits
-    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
-    .reduce(flatten, [])
-    .filter(uniques);
+  if (FEATURES.VIDEO) {
+    if (!config.getConfig('adpod.brandCategoryExclusion')) {
+      return fn.call(this, adUnits);
+    }
 
-  adPodBidders.forEach(bidder => {
-    let bidderSpec = adapterManager.getBidAdapter(bidder);
-    if (bidderSpec.getSpec().getMappingFileInfo) {
-      let info = bidderSpec.getSpec().getMappingFileInfo();
-      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
-      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = storage.getDataFromLocalStorage(key);
-      try {
-        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
-        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-          ajax(info.url,
-            {
-              success: (response) => {
-                try {
-                  response = JSON.parse(response);
-                  let mapping = {
-                    lastUpdated: timestamp(),
-                    mapping: response.mapping
+    let adPodBidders = adUnits
+      .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+      .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
+      .reduce(flatten, [])
+      .filter(uniques);
+
+    adPodBidders.forEach(bidder => {
+      let bidderSpec = adapterManager.getBidAdapter(bidder);
+      if (bidderSpec.getSpec().getMappingFileInfo) {
+        let info = bidderSpec.getSpec().getMappingFileInfo();
+        let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
+        let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
+        let mappingData = storage.getDataFromLocalStorage(key);
+        try {
+          mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+          if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+            ajax(info.url,
+              {
+                success: (response) => {
+                  try {
+                    response = JSON.parse(response);
+                    let mapping = {
+                      lastUpdated: timestamp(),
+                      mapping: response.mapping
+                    }
+                    storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                  } catch (error) {
+                    logError(`Failed to parse ${bidder} bidder translation mapping file`);
                   }
-                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-                } catch (error) {
-                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
+                },
+                error: () => {
+                  logError(`Failed to load ${bidder} bidder translation file`)
                 }
               },
-              error: () => {
-                logError(`Failed to load ${bidder} bidder translation file`)
-              }
-            },
-          );
+            );
+          }
+        } catch (error) {
+          logError(`Failed to parse ${bidder} bidder translation mapping file`);
         }
-      } catch (error) {
-        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
-    }
-  });
-  fn.call(this, adUnits);
+    });
+    fn.call(this, adUnits);
+  } else {
+    return fn.call(this, adUnits)
+  }
 }
 
 getHook('checkAdUnitSetup').before(preloadBidderMappingFile);

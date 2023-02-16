@@ -1266,6 +1266,10 @@ describe('validate bid response: ', function () {
 });
 
 describe('preload mapping url hook', function() {
+  if (!FEATURES.VIDEO) {
+    return
+  }
+
   let fakeTranslationServer;
   let getLocalStorageStub;
   let adapterManagerStub;
