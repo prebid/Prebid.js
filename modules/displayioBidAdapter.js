@@ -67,18 +67,25 @@ export const spec = {
 
 function getPayload (bid, bidderRequest) {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-  const userSession = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
-    let r = Math.random() * 16 | 0;
-    let v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  const userSession = (() => {
+    let us = window.localStorage.getItem('dio-us')
+    if (!us) {
+      us = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
+        let r = Math.random() * 16 | 0;
+        let v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      window.localStorage.setItem('dio-us', us);
+    }
+    return us
+  })();
   const { params, adUnitCode, bidId } = bid;
   const { siteId, placementId, renderURL, pageCategory, keywords } = params;
   const { refererInfo, uspConsent, gdprConsent } = bidderRequest;
-  const mediation = {consent: '-1', gdpr: '-1'};
+  const mediation = {gdprConsent: '', gdpr: '-1'};
   if (gdprConsent && 'gdprApplies' in gdprConsent) {
     if (gdprConsent.consentString !== undefined) {
-      mediation.consent = gdprConsent.consentString;
+      mediation.gdprConsent = gdprConsent.consentString;
     }
     if (gdprConsent.gdprApplies !== undefined) {
       mediation.gdpr = gdprConsent.gdprApplies ? '1' : '0';
@@ -110,7 +117,7 @@ function getPayload (bid, bidderRequest) {
         dnt: window.doNotTrack === '1' || window.navigator.doNotTrack === '1' || false,
         iabConsent: {},
         mediation: {
-          consent: mediation.consent,
+          gdprConsent: mediation.gdprConsent,
           gdpr: mediation.gdpr,
         }
       },
