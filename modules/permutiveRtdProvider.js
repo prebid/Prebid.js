@@ -414,7 +414,7 @@ export const permutiveSubmodule = {
     readAndSetCohorts(reqBidsConfigObj, moduleConfig)
 
     makeSafe(function () {
-      if (permutiveSDKInRealTime || !moduleConfig.waitForIt || !isPermutiveOnPage()) {
+      if (permutiveSDKInRealTime || !(moduleConfig.waitForIt && isPermutiveOnPage())) {
         return completeBidRequestData()
       }
 
