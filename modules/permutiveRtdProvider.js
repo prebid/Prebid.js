@@ -398,7 +398,7 @@ export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
   })
 }
 
-let permutiveReadyCallbackRegistered = false
+let permutiveSDKInRealTime = false
 
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
@@ -414,20 +414,18 @@ export const permutiveSubmodule = {
     readAndSetCohorts(reqBidsConfigObj, moduleConfig)
 
     makeSafe(function () {
-      if (!permutiveReadyCallbackRegistered && moduleConfig.waitForIt && isPermutiveOnPage()) {
-        // Prevent multiple calls to set cohorts
-        permutiveReadyCallbackRegistered = true
-
-        window.permutive.ready(function () {
-          logger.logInfo(`SDK is realtime, updating cohorts`)
-          readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig))
-          completeBidRequestData()
-        }, 'realtime')
-
-        logger.logInfo(`Registered cohort update when SDK is realtime`)
-      } else {
-        completeBidRequestData()
+      if (permutiveSDKInRealTime || !moduleConfig.waitForIt || !isPermutiveOnPage()) {
+        return completeBidRequestData()
       }
+
+      window.permutive.ready(function () {
+        logger.logInfo(`SDK is realtime, updating cohorts`)
+        permutiveSDKInRealTime = true
+        readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig))
+        completeBidRequestData()
+      }, 'realtime')
+
+      logger.logInfo(`Registered cohort update when SDK is realtime`)
     })
   },
   init: init
