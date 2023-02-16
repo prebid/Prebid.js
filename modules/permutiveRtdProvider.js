@@ -12,9 +12,8 @@ import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safe
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
-const PREFIX = MODULE_NAME + 'RTD'
 
-const logger = prefixLog(PREFIX)
+const logger = prefixLog('[PermutiveRTD]')
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
 export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
@@ -170,8 +169,10 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
       deepSetValue(ortbConfig, 'ortb2.user.ext.data.' + PERMUTIVE_CUSTOM_COHORTS_KEYWORD, segmentData.rubicon.map(String))
     }
 
-    logger.message(`Extend rubicon 'ortb2.user.ext.data'`, deepAccess(ortbConfig, 'ortb2.user.ext.data'))
+    logger.logInfo(`Extending ortb2.user.ext.data for ${bidder}`, deepAccess(ortbConfig, 'ortb2.user.ext.data'))
   }
+
+  logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)
 
   return ortbConfig
 }
