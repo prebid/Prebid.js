@@ -142,6 +142,17 @@ describe('nextMillenniumBidAdapterTests', function() {
     expect(userSync[0].url).to.equal('urlB');
   });
 
+  it('Test getUserSyncs with no response', function () {
+    const syncOptions = {
+      'iframeEnabled': true,
+      'pixelEnabled': false
+    }
+    let userSync = spec.getUserSyncs(syncOptions, [], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    expect(userSync).to.be.an('array')
+    expect(userSync[0].type).to.equal('iframe')
+    expect(userSync[0].url).to.equal('https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&type=iframe')
+  })
+
   it('Test getUserSyncs function if GDPR is undefined', function () {
     const syncOptions = {
       'iframeEnabled': false,

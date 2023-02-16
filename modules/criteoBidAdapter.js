@@ -523,9 +523,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
     };
   };
-  request.user = {
-    ext: bidderRequest.userExt
-  };
+  request.user = bidderRequest.ortb2?.user || {};
+  request.site = bidderRequest.ortb2?.site || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
