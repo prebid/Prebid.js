@@ -523,6 +523,9 @@ function bidResponseHandler(args) {
     if(!!bid.params){
       args.params = bid.params;
     }
+    if(bid?.bidResponse?.partnerImpId){
+      args.partnerImpId = bid.bidResponse.partnerImpId;
+    }
     bid = copyRequiredBidDetails(args);
     bid.bidId = args.requestId;
     cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId].push(bid);
