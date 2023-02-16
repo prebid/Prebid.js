@@ -533,12 +533,14 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
     const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
     // video module
-    const adUnitCode = bid.adUnitCode;
-    const adUnit = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnit.code === adUnitCode);
-    const videoModule = $$PREBID_GLOBAL$$.videoModule;
-    if (adUnit.video && videoModule) {
-      videoModule.renderBid(adUnit.video.divId, bid);
-      return;
+    if (FEATURES.VIDEO) {
+      const adUnitCode = bid.adUnitCode;
+      const adUnit = $$PREBID_GLOBAL$$.adUnits.filter(adUnit => adUnit.code === adUnitCode);
+      const videoModule = $$PREBID_GLOBAL$$.videoModule;
+      if (adUnit.video && videoModule) {
+        videoModule.renderBid(adUnit.video.divId, bid);
+        return;
+      }
     }
 
     if (!doc) {
