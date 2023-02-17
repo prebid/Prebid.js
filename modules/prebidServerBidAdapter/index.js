@@ -547,7 +547,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 }, 'processPBSRequest');
 
 function shouldEmitNonbids(s2sConfig, response) {
-  return s2sConfig.extPrebid && s2sConfig.extPrebid.seatnonbid && response && response.ext && response.ext.seatnonbid;
+  return s2sConfig?.extPrebid?.seatnonbid && response?.ext?.seatnonbid;
 }
 
 function emitNonBids(seatnonbid, auctionId) {
