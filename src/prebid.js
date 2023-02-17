@@ -991,16 +991,16 @@ $$PREBID_GLOBAL$$.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
-/**
- * Mark the winning bid as used, should only be used in conjunction with video
- * @typedef {Object} MarkBidRequest
- * @property {string} adUnitCode The ad unit code
- * @property {string} adId The id representing the ad we want to mark
- *
- * @alias module:pbjs.markWinningBidAsUsed
- */
-$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
-  if (FEATURES.VIDEO) {
+if (FEATURES.VIDEO) {
+  /**
+   * Mark the winning bid as used, should only be used in conjunction with video
+   * @typedef {Object} MarkBidRequest
+   * @property {string} adUnitCode The ad unit code
+   * @property {string} adId The id representing the ad we want to mark
+   *
+   * @alias module:pbjs.markWinningBidAsUsed
+   */
+  $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
     let bids = [];
 
     if (markBidRequest.adUnitCode && markBidRequest.adId) {
@@ -1018,7 +1018,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
       bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
     }
   }
-};
+}
 
 /**
  * Get Prebid config options
