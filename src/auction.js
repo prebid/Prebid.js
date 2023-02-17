@@ -574,30 +574,28 @@ export function addBidToAuction(auctionInstance, bidResponse) {
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
 function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = auctionManager.index} = {}) {
-  if (FEATURES.VIDEO) {
-    let addBid = true;
+  let addBid = true;
 
-    const videoMediaType = deepAccess(
-      index.getMediaTypes({
-        requestId: bidResponse.originalRequestId || bidResponse.requestId,
-        transactionId: bidResponse.transactionId
-      }), 'video');
-    const context = videoMediaType && deepAccess(videoMediaType, 'context');
-    const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const videoMediaType = deepAccess(
+    index.getMediaTypes({
+      requestId: bidResponse.originalRequestId || bidResponse.requestId,
+      transactionId: bidResponse.transactionId
+    }), 'video');
+  const context = videoMediaType && deepAccess(videoMediaType, 'context');
+  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
 
-    if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
-      if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
-        addBid = false;
-        callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
-      } else if (!bidResponse.vastUrl) {
-        logError('videoCacheKey specified but not required vastUrl for video bid');
-        addBid = false;
-      }
+  if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
+    if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
+      addBid = false;
+      callPrebidCache(auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+    } else if (!bidResponse.vastUrl) {
+      logError('videoCacheKey specified but not required vastUrl for video bid');
+      addBid = false;
     }
-    if (addBid) {
-      addBidToAuction(auctionInstance, bidResponse);
-      afterBidAdded();
-    }
+  }
+  if (addBid) {
+    addBidToAuction(auctionInstance, bidResponse);
+    afterBidAdded();
   }
 }
 
