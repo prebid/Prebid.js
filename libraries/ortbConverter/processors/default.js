@@ -57,10 +57,6 @@ export const DEFAULT_PROCESSORS = {
       // populates imp.banner
       fn: fillBannerImp
     },
-    video: {
-      // populates imp.video
-      fn: fillVideoImp
-    },
     pbadslot: {
       // removes imp.ext.data.pbaslot if it's not a string
       // TODO: is this needed?
@@ -81,10 +77,6 @@ export const DEFAULT_PROCESSORS = {
     banner: {
       // sets banner response attributes if bidResponse.mediaType === BANNER
       fn: bannerResponseProcessor(),
-    },
-    video: {
-      // sets video response attributes if bidResponse.mediaType === VIDEO
-      fn: fillVideoResponse
     },
     props: {
       // sets base bidResponse properties common to all types of bids
@@ -123,6 +115,17 @@ if (FEATURES.NATIVE) {
   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
     // populates bidResponse.native if bidResponse.mediaType === NATIVE
     fn: fillNativeResponse
+  }
+}
+
+if (FEATURES.VIDEO) {
+  DEFAULT_PROCESSORS[IMP].video = {
+    // populates imp.video
+    fn: fillVideoImp
+  }
+  DEFAULT_PROCESSORS[BID_RESPONSE].video = {
+    // sets video response attributes if bidResponse.mediaType === VIDEO
+    fn: fillVideoResponse
   }
 }
 

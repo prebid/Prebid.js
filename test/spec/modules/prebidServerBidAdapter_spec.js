@@ -706,51 +706,53 @@ describe('S2S Adapter', function () {
       expect(server.requests.length).to.equal(0);
     });
 
-    it('should add outstream bc renderer exists on mediatype', function () {
-      config.setConfig({ s2sConfig: CONFIG });
+    if (FEATURES.VIDEO) {
+      it('should add outstream bc renderer exists on mediatype', function () {
+        config.setConfig({ s2sConfig: CONFIG });
 
-      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
 
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.imp[0].banner).to.exist;
-      expect(requestBid.imp[0].video).to.exist;
-    });
+        const requestBid = JSON.parse(server.requests[0].requestBody);
+        expect(requestBid.imp[0].banner).to.exist;
+        expect(requestBid.imp[0].video).to.exist;
+      });
 
-    it('should default video placement if not defined and instream', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      it('should default video placement if not defined and instream', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
-      config.setConfig({ s2sConfig: ortb2Config });
+        config.setConfig({ s2sConfig: ortb2Config });
 
-      let videoBid = utils.deepClone(VIDEO_REQUEST);
-      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
-      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+        let videoBid = utils.deepClone(VIDEO_REQUEST);
+        videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+        adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
 
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.imp[0].banner).to.not.exist;
-      expect(requestBid.imp[0].video).to.exist;
-      expect(requestBid.imp[0].video.placement).to.equal(1);
-    });
+        const requestBid = JSON.parse(server.requests[0].requestBody);
+        expect(requestBid.imp[0].banner).to.not.exist;
+        expect(requestBid.imp[0].video).to.exist;
+        expect(requestBid.imp[0].video.placement).to.equal(1);
+      });
 
-    it('converts video mediaType properties into openRTB format', function () {
-      let ortb2Config = utils.deepClone(CONFIG);
-      ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
+      it('converts video mediaType properties into openRTB format', function () {
+        let ortb2Config = utils.deepClone(CONFIG);
+        ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
 
-      config.setConfig({ s2sConfig: ortb2Config });
+        config.setConfig({ s2sConfig: ortb2Config });
 
-      let videoBid = utils.deepClone(VIDEO_REQUEST);
-      videoBid.ad_units[0].mediaTypes.video.context = 'instream';
-      adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
+        let videoBid = utils.deepClone(VIDEO_REQUEST);
+        videoBid.ad_units[0].mediaTypes.video.context = 'instream';
+        adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
 
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.imp[0].banner).to.not.exist;
-      expect(requestBid.imp[0].video).to.exist;
-      expect(requestBid.imp[0].video.placement).to.equal(1);
-      expect(requestBid.imp[0].video.w).to.equal(640);
-      expect(requestBid.imp[0].video.h).to.equal(480);
-      expect(requestBid.imp[0].video.playerSize).to.be.undefined;
-      expect(requestBid.imp[0].video.context).to.be.undefined;
-    });
+        const requestBid = JSON.parse(server.requests[0].requestBody);
+        expect(requestBid.imp[0].banner).to.not.exist;
+        expect(requestBid.imp[0].video).to.exist;
+        expect(requestBid.imp[0].video.placement).to.equal(1);
+        expect(requestBid.imp[0].video.w).to.equal(640);
+        expect(requestBid.imp[0].video.h).to.equal(480);
+        expect(requestBid.imp[0].video.playerSize).to.be.undefined;
+        expect(requestBid.imp[0].video.context).to.be.undefined;
+      });
+    }
 
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
@@ -2753,28 +2755,30 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('dealId', 'test-dealid');
     });
 
-    it('should pass through default adserverTargeting if present in bidObject for video request', function () {
-      config.setConfig({ s2sConfig: CONFIG });
-      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB);
-      const targetingTestData = {
-        hb_cache_path: '/cache',
-        hb_cache_host: 'prebid-cache.testurl.com'
-      };
+    if (FEATURES.VIDEO) {
+      it('should pass through default adserverTargeting if present in bidObject for video request', function () {
+        config.setConfig({ s2sConfig: CONFIG });
+        const cacheResponse = utils.deepClone(RESPONSE_OPENRTB);
+        const targetingTestData = {
+          hb_cache_path: '/cache',
+          hb_cache_host: 'prebid-cache.testurl.com'
+        };
 
-      cacheResponse.seatbid.forEach(item => {
-        item.bid[0].ext.prebid.targeting = targetingTestData
-      });
-      adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+        cacheResponse.seatbid.forEach(item => {
+          item.bid[0].ext.prebid.targeting = targetingTestData
+        });
+        adapter.callBids(VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('adserverTargeting');
-      expect(response.adserverTargeting).to.deep.equal({
-        'hb_cache_path': '/cache',
-        'hb_cache_host': 'prebid-cache.testurl.com'
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
+        expect(response).to.have.property('adserverTargeting');
+        expect(response.adserverTargeting).to.deep.equal({
+          'hb_cache_path': '/cache',
+          'hb_cache_host': 'prebid-cache.testurl.com'
+        });
       });
-    });
+    }
 
     it('should set the bidResponse currency to whats in the PBS response', function () {
       adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
@@ -2890,60 +2894,62 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 30);
     });
 
-    it('handles OpenRTB video responses', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: {
-          p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
-        }
-      });
-      config.setConfig({ s2sConfig });
-
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
-
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_VIDEO));
-
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('statusMessage', 'Bid available');
-      expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
-      expect(response).to.have.property('mediaType', 'video');
-      expect(response).to.have.property('bidderCode', 'appnexus');
-      expect(response).to.have.property('requestId', '123');
-      expect(response).to.have.property('cpm', 10);
-    });
-
-    it('handles response cache from ext.prebid.cache.vastXml', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: {
-          p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
-        }
-      });
-      config.setConfig({ s2sConfig });
-      const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
-      cacheResponse.seatbid.forEach(item => {
-        item.bid[0].ext.prebid.cache = {
-          vastXml: {
-            cacheId: 'abcd1234',
-            url: 'https://prebid-cache.net/cache?uuid=abcd1234'
+    if (FEATURES.VIDEO) {
+      it('handles OpenRTB video responses', function () {
+        const s2sConfig = Object.assign({}, CONFIG, {
+          endpoint: {
+            p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
           }
-        }
+        });
+        config.setConfig({ s2sConfig });
+
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
+
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB_VIDEO));
+
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
+        expect(response).to.have.property('statusMessage', 'Bid available');
+        expect(response).to.have.property('vastXml', RESPONSE_OPENRTB_VIDEO.seatbid[0].bid[0].adm);
+        expect(response).to.have.property('mediaType', 'video');
+        expect(response).to.have.property('bidderCode', 'appnexus');
+        expect(response).to.have.property('requestId', '123');
+        expect(response).to.have.property('cpm', 10);
       });
 
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
+      it('handles response cache from ext.prebid.cache.vastXml', function () {
+        const s2sConfig = Object.assign({}, CONFIG, {
+          endpoint: {
+            p1Consent: 'https://prebidserverurl/openrtb2/auction?querystring=param'
+          }
+        });
+        config.setConfig({ s2sConfig });
+        const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
+        cacheResponse.seatbid.forEach(item => {
+          item.bid[0].ext.prebid.cache = {
+            vastXml: {
+              cacheId: 'abcd1234',
+              url: 'https://prebid-cache.net/cache?uuid=abcd1234'
+            }
+          }
+        });
 
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
-      expect(response).to.have.property('statusMessage', 'Bid available');
-      expect(response).to.have.property('videoCacheKey', 'abcd1234');
-      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
-    });
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
+
+        expect(response).to.have.property('statusMessage', 'Bid available');
+        expect(response).to.have.property('videoCacheKey', 'abcd1234');
+        expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=abcd1234');
+      });
+    }
 
     it('add adserverTargeting object to bids when ext.prebid.targeting is defined', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
@@ -2962,20 +2968,22 @@ describe('S2S Adapter', function () {
         item.bid[0].ext.prebid.targeting = targetingTestData
       });
 
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
+      if (FEATURES.VIDEO) {
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
 
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
 
-      expect(response).to.have.property('adserverTargeting');
-      expect(response.adserverTargeting).to.deep.equal({
-        'hb_cache_path': '/cache',
-        'hb_cache_host': 'prebid-cache.testurl.com'
-      });
+        expect(response).to.have.property('adserverTargeting');
+        expect(response.adserverTargeting).to.deep.equal({
+          'hb_cache_path': '/cache',
+          'hb_cache_host': 'prebid-cache.testurl.com'
+        });
+      }
     });
 
     it('handles response cache from ext.prebid.targeting', function () {
@@ -2994,18 +3002,20 @@ describe('S2S Adapter', function () {
         }
       });
 
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
+      if (FEATURES.VIDEO) {
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
 
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
 
-      expect(response).to.have.property('statusMessage', 'Bid available');
-      expect(response).to.have.property('videoCacheKey', 'a5ad3993');
-      expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
+        expect(response).to.have.property('statusMessage', 'Bid available');
+        expect(response).to.have.property('videoCacheKey', 'a5ad3993');
+        expect(response).to.have.property('vastUrl', 'https://prebid-cache.net/cache?uuid=a5ad3993');
+      }
     });
 
     it('handles response cache from ext.prebid.targeting with wurl', function () {
@@ -3026,15 +3036,18 @@ describe('S2S Adapter', function () {
           hb_cache_path: '/cache'
         }
       });
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
 
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+      if (FEATURES.VIDEO) {
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
-      expect(response).to.have.property('pbsBidId', '654321');
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
+        expect(response).to.have.property('pbsBidId', '654321');
+      }
     });
 
     it('add request property pbsBidId with ext.prebid.bidid value', function () {
@@ -3046,16 +3059,18 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig });
       const cacheResponse = utils.deepClone(RESPONSE_OPENRTB_VIDEO);
 
-      const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
-      s2sVidRequest.s2sConfig = s2sConfig;
+      if (FEATURES.VIDEO) {
+        const s2sVidRequest = utils.deepClone(VIDEO_REQUEST);
+        s2sVidRequest.s2sConfig = s2sConfig;
 
-      adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
-      server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
+        adapter.callBids(s2sVidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(cacheResponse));
 
-      sinon.assert.calledOnce(addBidResponse);
-      const response = addBidResponse.firstCall.args[1];
+        sinon.assert.calledOnce(addBidResponse);
+        const response = addBidResponse.firstCall.args[1];
 
-      expect(response).to.have.property('pbsBidId', '654321');
+        expect(response).to.have.property('pbsBidId', '654321');
+      }
     });
 
     if (FEATURES.NATIVE) {
