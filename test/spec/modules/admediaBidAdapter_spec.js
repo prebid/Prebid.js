@@ -99,9 +99,9 @@ describe('admediaBidAdapter', function () {
 
     };
     it('should get the correct bid response', function () {
-      let expectedResponse = [
+      let expectedResponse =
 		  {
-          'tags': [
+		    'tags': [
 			  {
 			    'requestId': '2b8bf2ac497ae',
 			    'ad': "<img src='https://dummyimage.com/300x250/000150/fff.jpg&text=Admedia'>",
@@ -118,11 +118,13 @@ describe('admediaBidAdapter', function () {
 				  ]
 			    }
 			  }
-          ]
+		    ]
 		  }
-      ]
-      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
-      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+      let result = spec.interpretResponse(serverResponse, bidRequest);
+	  expect(result).to.be.an('array').that.is.not.empty;
+	  expect(Object.keys(result[0])).to.have.members(
+        Object.keys(expectedResponse.tags[0])
+      );
     });
   });
 });

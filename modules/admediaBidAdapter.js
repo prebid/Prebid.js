@@ -36,21 +36,15 @@ export const spec = {
       }
 
       var tagData = [];
-
-      var tagObjects = [];
-      tagObjects['tags'] = [];
       for (var i = 0, j = sizes.length; i < j; i++) {
         let tag = {};
         tag.sizes = [];
         tag.id = bidRequest.params.placementId;
         tag.aid = bidRequest.params.aid;
         tag.sizes.push(sizes[i].toString().replace(',', 'x'));
-        tagObjects.push(tag);
+        tagData.push(tag);
       }
 
-      Object.assign(tagData, tagObjects);
-
-      // console.log(bidRequest);
       const payload = {
         id: bidRequest.params.placementId,
         aid: bidRequest.params.aid,
@@ -58,7 +52,7 @@ export const spec = {
         bidId: bidRequest.bidId,
         referer: encodeURIComponent(bidderRequest.refererInfo.page)
       };
-      // console.log(payload);
+
       return {
         method: 'POST',
         url: ENDPOINT_URL,
@@ -75,10 +69,10 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidRequest) {
-    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta'];
     const validBidResponses = [];
     serverResponse = serverResponse.body.tags;
-    // console.log(serverResponse);
+
     if (serverResponse && (serverResponse.length > 0)) {
       serverResponse.forEach((bid) => {
         const bidResponse = {};
@@ -88,10 +82,12 @@ export const spec = {
           }
           bidResponse[requiredKey] = bid[requiredKey];
         }
+        if (!(typeof bid.meta.advertiserDomains !== 'undefined' && bid.meta.advertiserDomains.length > 0)) {
+          return [];
+        }
         validBidResponses.push(bidResponse);
       });
     }
-    // console.log(JSON.stringify(validBidResponses));
     return validBidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
