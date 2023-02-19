@@ -370,6 +370,6 @@ describe('Zeta Ssp Bid Adapter', function () {
 
   it('Timeout should exists and be a function', function () {
     expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    expect(spec.onTimeout({timeout:1000})).to.be.undefined;
+    expect(spec.onTimeout({ timeout: 1000 })).to.be.undefined;
   });
 });
