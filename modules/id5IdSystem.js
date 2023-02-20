@@ -119,7 +119,6 @@ export const id5IdSubmodule = {
     const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
       consentData.vendorData.vendor.consents[GVLID.toString()];
     if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
-      console.log('Does not have consent')
       return undefined;
     }
 
