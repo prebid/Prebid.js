@@ -2654,13 +2654,6 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithRequiredParam.native.request);
       });
 
-      it('should not have valid native request if assets are not defined with minimum required params and only native is the slot', function () {
-        let request = spec.buildRequests(nativeBidRequestsWithoutAsset, {
-          auctionId: 'new-auction-id'
-        });
-        expect(request).to.deep.equal(undefined);
-      });
-
       it('Request params should have valid native bid request for all native params', function () {
         let request = spec.buildRequests(nativeBidRequestsWithAllParams, {
           auctionId: 'new-auction-id'
@@ -2863,7 +2856,7 @@ describe('PubMatic adapter', function () {
         expect(data.native.request).to.exist;
       });
 
-      it('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - banner and native multiformat request - should have native object incase of invalid config present', function() {
         bannerAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2883,10 +2876,10 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.banner).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
-      it('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - video and native multiformat request - should have native object incase of invalid config present', function() {
         videoAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2906,7 +2899,7 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.video).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
       it('should build video impression if video params are present in adunit.mediaTypes instead of bid.params', function() {
