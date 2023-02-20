@@ -10,6 +10,39 @@ Connects to Adagio demand source to fetch bids.
 
 ## Configuration
 
+### User Sync
+
+Add the following code to enable user sync. Adagio strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the  bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    iframeEnabled: true,
+    filterSettings: {
+      iframe: {
+        bidders: ['adagio'],
+        filter: 'include'
+      }
+    }
+  }
+});
+```
+
+### Bidder Settings
+
+The Adagio bid adapter uses browser local storage. Since Prebid.js 7.x, the access to it must be explicitly set.
+
+```js
+// https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
+pbjs.bidderSettings = {
+  adagio: {
+    storageAllowed: true
+  }
+}
+```
+
+### Params configuration
+
 Adagio require several params. These params must be set at Prebid.js BidderConfig config level or at adUnit level.
 
 Below, the list of Adagio params and where they can be set.
@@ -31,25 +64,7 @@ Below, the list of Adagio params and where they can be set.
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 
-### User Sync
-
-Add the following code to enable user sync. Adagio strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the  bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
-
-```javascript
-pbjs.setConfig({
-  userSync: {
-    iframeEnabled: true,
-    filterSettings: {
-      iframe: {
-        bidders: ['adagio'],
-        filter: 'include'
-      }
-    }
-  }
-});
-```
-
-### Global Adagio configuration
+#### Global Adagio configuration
 
 The global Adagio configuration is used to store params once instead of duplicate them to each adUnit. The values will be used as "params" in the ad-request. Be sure to call `pbjs.setConfig()` only once.
 
@@ -74,16 +89,7 @@ pbjs.setConfig({
 });
 ```
 
-#### Note on FPD support
-
-Adagio will use FPD data as fallback for the params below:
-- pagetype
-- category
-
-If the FPD value is an array, the 1st value of this array will be used.
-
-### adUnit configuration
-
+#### Ad-unit configuration
 ```javascript
 var adUnits = [
   {
@@ -114,6 +120,14 @@ var adUnits = [
   }
 ];
 ```
+
+#### Note on FPD support
+
+Adagio will use FPD data as fallback for the params below:
+- pagetype
+- category
+
+If the FPD value is an array, the 1st value of this array will be used.
 
 ## Test Parameters
 
