@@ -113,6 +113,16 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
+      consentData.vendorData.purpose.consents[1];
+    const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
+      consentData.vendorData.vendor.consents[GVLID.toString()];
+    if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+      console.log('Does not have consent')
+      return undefined;
+    }
+
     const resp = function (cbFunction) {
       new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
         .then(response => {
@@ -138,6 +148,15 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
+    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+    const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
+      consentData.vendorData.purpose.consents[1];
+    const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
+      consentData.vendorData.vendor.consents[GVLID.toString()];
+    if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+      return cacheIdObj;
+    }
+
     hasRequiredConfig(config);
 
     const partnerId = (config && config.params && config.params.partner) || 0;
