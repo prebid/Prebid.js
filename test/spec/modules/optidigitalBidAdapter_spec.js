@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://pbs.optidigital.com/bidder';
 
-describe.only('optidigitalAdapterTests', function () {
+describe('optidigitalAdapterTests', function () {
   describe('isBidRequestValid', function () {
     it('bidRequest with publisherId and placementId', function () {
       expect(spec.isBidRequestValid({
@@ -175,7 +175,6 @@ describe.only('optidigitalAdapterTests', function () {
         }
       ],
       'refererInfo': {
-        'page': 'https://www.prebid.org',
         'canonicalUrl': 'https://www.prebid.org/the/link/to/the/page'
       }
     };
@@ -303,6 +302,13 @@ describe.only('optidigitalAdapterTests', function () {
       const payload = JSON.parse(request.data)
       payload.imp[0].pageTemplate = 'home'
       expect(payload.imp[0].pageTemplate).to.exist;
+    });
+
+    it('should add referrer to payload if it exsists in bidderRequest', function () {
+      bidderRequest.refererInfo.page = 'https://www.prebid.org';
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data)
+      expect(payload.referrer).to.equal('https://www.prebid.org');
     });
 
     it('should use value for badv, bcat, bapp from params', function () {

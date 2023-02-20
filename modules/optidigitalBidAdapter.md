@@ -20,7 +20,7 @@ Bidder Adapter for Prebid.js.
       bids: [{
           bidder: 'optidigital',
           params: {
-            publisherId: 'p1234',
+            publisherId: 'test',
             placementId: 'Billboard_Top',
             divId: 'Billboard_Top_3c5425', // optional parameter
             pageTemplate: 'home', // optional parameter

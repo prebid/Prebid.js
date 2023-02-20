@@ -1,6 +1,6 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, parseSizesInput, isArray, getAdUnitSizes } from '../src/utils.js';
+import { deepAccess, parseSizesInput, getAdUnitSizes } from '../src/utils.js';
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
@@ -43,7 +43,7 @@ export const spec = {
     };
 
     const payload = {
-      referrer: getReferrer(bidderRequest),
+      referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
       deviceWidth: document.documentElement.clientWidth,
       auctionId: deepAccess(validBidRequests[0], 'auctionId'),
@@ -158,7 +158,7 @@ export const spec = {
 function buildImp(bidRequest, ortb2) {
   let imp = {};
   imp = {
-    sizes: checkSizes(bidRequest),
+    sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),
     adUnitCode: deepAccess(bidRequest, 'adUnitCode'),
     transactionId: deepAccess(bidRequest, 'transactionId'),
@@ -192,39 +192,6 @@ function buildImp(bidRequest, ortb2) {
   }
 
   return imp;
-}
-
-function checkSizes(bid) {
-  return parseSizesInput(linkSizes(bid));
-}
-
-function linkSizes(bid) {
-  const bannerDimensions = deepAccess(bid, 'mediaTypes.banner.sizes');
-
-  if (isArray(bannerDimensions)) {
-    let mediaTypesArray = [bannerDimensions];
-    return mediaTypesArray
-      .reduce(function(item, size) {
-        if (isArray(size)) {
-          if (isArray(size[0])) {
-            size.forEach(function (nextSize) { item.push(nextSize) })
-          } else {
-            item.push(size);
-          }
-        }
-        return item;
-      }, [])
-  } else {
-    return bid.sizes;
-  }
-}
-
-function getReferrer(bidderRequest) {
-  let referrer = '';
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-    referrer = bidderRequest.refererInfo.page;
-  }
-  return referrer;
 }
 
 function getAdContainer(container) {
