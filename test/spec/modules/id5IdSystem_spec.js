@@ -255,6 +255,13 @@ describe('ID5 ID System', function () {
       expect(id5IdSubmodule.getId(config)).is.eq(undefined);
       expect(id5IdSubmodule.getId(config, noStorageConsent)).is.eq(undefined);
       expect(id5IdSubmodule.getId(config, noVendorConsent)).is.eq(undefined);
+
+      expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
+      expect(id5IdSubmodule.extendId(config, noStorageConsent)).is.eq(undefined);
+      expect(id5IdSubmodule.extendId(config, noVendorConsent)).is.eq(undefined);
+
+      let cacheIdObject = 'cacheIdObject';
+      expect(id5IdSubmodule.extendId(config, noVendorConsent, cacheIdObject)).is.eq(cacheIdObject);
     });
   });
 
