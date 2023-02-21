@@ -385,16 +385,14 @@ export function storeInLocalStorage(key, value, expDays) {
 }
 
 /**
- *
+ * Check to see if we can write to local storage based on purpose consent 1, and that we have vendor consent (ID5=131)
  * @param {ConsentData} consentData
  * @returns {boolean}
  */
 function hasWriteConsentToLocalStorage(consentData) {
-  const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-  const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
-    consentData.vendorData.purpose.consents[1];
-  const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
-    consentData.vendorData.vendor.consents[GVLID.toString()];
+  const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+  const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
+  const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`)
   if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
     return false;
   }
