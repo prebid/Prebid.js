@@ -113,12 +113,7 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
-    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
-      consentData.vendorData.purpose.consents[1];
-    const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
-      consentData.vendorData.vendor.consents[GVLID.toString()];
-    if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+    if (!hasWriteConsentToLocalStorage(consentData)) {
       return undefined;
     }
 
@@ -147,12 +142,7 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
-    const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
-    const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
-      consentData.vendorData.purpose.consents[1];
-    const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
-      consentData.vendorData.vendor.consents[GVLID.toString()];
-    if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+    if (!hasWriteConsentToLocalStorage(consentData)) {
       return cacheIdObj;
     }
 
@@ -392,6 +382,23 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ *
+ * @param {ConsentData} consentData
+ * @returns {boolean}
+ */
+function hasWriteConsentToLocalStorage(consentData) {
+  const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
+  const localstorageConsent = consentData && consentData.vendorData && consentData.vendorData.purpose && consentData.vendorData.purpose.consents &&
+    consentData.vendorData.purpose.consents[1];
+  const id5VendorConsent = consentData && consentData.vendorData && consentData.vendorData.vendor && consentData.vendorData.vendor.consents &&
+    consentData.vendorData.vendor.consents[GVLID.toString()];
+  if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+    return false;
+  }
+  return true;
 }
 
 submodule('userId', id5IdSubmodule);
