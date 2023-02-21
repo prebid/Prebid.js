@@ -28,10 +28,12 @@ function getNpmVersion(version) {
 
 module.exports = function(api, options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
+  const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
   const features = featureMap(options.disableFeatures);
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
+    '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
     '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`
   };
@@ -58,13 +60,34 @@ module.exports = function(api, options) {
     return null;
   }
 
+  function hasGetGlobalsImport(body) {
+    for (let i = 0; i < body.length; i++) {
+      if (body[i].type === 'ImportDeclaration' && body[i].source.value.match(/prebidGlobal(\.js)?$/)) {
+        for (let j = 0; j < body[i].specifiers.length; j++) {
+          if (body[i].specifiers[j].local.name === 'getGlobal') {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   return {
     visitor: {
       Program(path, state) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
           // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
-          path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+
+          if (defineGlobal) {
+            path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+          } else {
+            if (!hasGetGlobalsImport(path.node.body)) {
+              path.node.body.unshift(...api.parse(`import {getGlobal} from '../src/prebidGlobal.js';const ${pbGlobal} = getGlobal();`, {filename: state.filename}).program.body);
+            }
+            path.node.body.push(...api.parse(`${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+          }
         }
       },
       StringLiteral(path) {
@@ -72,7 +95,7 @@ module.exports = function(api, options) {
           if (path.node.value.includes(name)) {
             path.node.value = path.node.value.replace(
               new RegExp(escapeRegExp(name), 'g'),
-              replace[name]
+              replace[name].toString()
             );
           }
         });
@@ -102,7 +125,7 @@ module.exports = function(api, options) {
               );
             } else {
               path.replaceWith(
-                t.Identifier(replace[name])
+                t.Identifier(replace[name].toString())
               );
             }
           }

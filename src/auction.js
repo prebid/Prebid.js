@@ -94,6 +94,7 @@ import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {createBid} from './bidfactory.js';
 import {adjustCpm} from './utils/cpm.js';
+import {getGlobal} from './prebidGlobal.js';
 
 const { syncUsers } = userSync;
 
@@ -110,6 +111,8 @@ const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
+
+const $$PREBID_GLOBAL$$ = getGlobal();
 
 /**
  * Clear global state for tests

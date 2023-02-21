@@ -3,6 +3,9 @@ import {
   logError, logWarn, logMessage, deepAccess
 } from './utils.js';
 import {find} from './polyfill.js';
+import {getGlobal} from './prebidGlobal.js';
+
+const $$PREBID_GLOBAL$$ = getGlobal();
 const moduleCode = 'outstream';
 
 /**

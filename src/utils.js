@@ -3,6 +3,7 @@ import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { dset as deepSetValue } from 'dset';
 
@@ -20,6 +21,8 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+
+const $$PREBID_GLOBAL$$ = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports

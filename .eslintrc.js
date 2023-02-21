@@ -20,6 +20,7 @@ module.exports = {
   ],
   globals: {
     '$$PREBID_GLOBAL$$': false,
+    '$$DEFINE_PREBID_GLOBAL$$': false,
     'BROWSERSTACK_USERNAME': false,
     'BROWSERSTACK_KEY': false,
     'FEATURES': 'readonly',
