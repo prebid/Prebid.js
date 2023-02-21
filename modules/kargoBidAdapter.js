@@ -95,8 +95,6 @@ function buildRequests(validBidRequests, bidderRequest) {
     },
     imp: impressions,
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids),
-    rawCRB: metadata.rawCRB,
-    rawCRBLocalStorage: metadata.rawCRBLocalStorage,
   });
 
   const reqCount = getRequestCount()
@@ -106,6 +104,14 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
+  }
+
+  if(metadata.rawCRB != null) {
+    krakenParams.rawCRB = metadata.rawCRB
+  }
+
+  if(metadata.rawCRBLocalStorage != null) {
+    krakenParams.rawCRBLocalStorage = metadata.rawCRBLocalStorage
   }
 
   // Pull Social Canvas segments and embed URL
