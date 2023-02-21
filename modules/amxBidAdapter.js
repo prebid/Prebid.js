@@ -211,6 +211,15 @@ const SYNC_IFRAME = 2;
 
 function getSyncSettings() {
   const syncConfig = config.getConfig('userSync');
+  if (syncConfig == null) {
+    return {
+      d: 0,
+      l: 0,
+      t: 0,
+      e: true
+    };
+  }
+
   const settings = { d: syncConfig.syncDelay, l: syncConfig.syncsPerBidder, t: 0, e: syncConfig.syncEnabled }
   const all = isSyncEnabled(syncConfig.filterSettings, 'all')
 
