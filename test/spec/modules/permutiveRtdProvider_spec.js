@@ -8,6 +8,9 @@ import {
   getModuleConfig,
   PERMUTIVE_SUBMODULE_CONFIG_KEY,
   readAndSetCohorts,
+  PERMUTIVE_STANDARD_KEYWORD,
+  PERMUTIVE_STANDARD_AUD_KEYWORD,
+  PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
@@ -309,10 +312,32 @@ describe('permutiveRtdProvider', function () {
 
       setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
+      const getBidderKeywords = (bidder) => {
+        if (bidder === 'appnexus') {
+          return {
+            [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: segmentsData.appnexus
+          }
+        }
+        return {}
+      }
+
       acBidders.forEach(bidder => {
+        const keywordGroups = {
+          [PERMUTIVE_STANDARD_KEYWORD]: segmentsData.ac,
+          [PERMUTIVE_STANDARD_AUD_KEYWORD]: segmentsData.ssp.cohorts,
+          ...getBidderKeywords(bidder),
+        }
+
+        // Transform groups of key-values into a single array of strings
+        // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
+        const transformedKeywordGroups = Object.entries(keywordGroups)
+          .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
+
+        const keywords = `${sampleOrtbConfig.user.keywords},${transformedKeywordGroups.join(',')}`
+
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
         expect(bidderConfig[bidder].user.data).to.deep.include.members([sampleOrtbConfig.user.data[0]])
-        expect(bidderConfig[bidder].user.keywords).to.deep.equal('a,b,p_standard_aud=123,p_standard_aud=abc')
+        expect(bidderConfig[bidder].user.keywords).to.deep.equal(keywords)
       })
     })
     it('should merge ortb2 correctly for ac and ssps', function () {
