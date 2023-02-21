@@ -217,51 +217,34 @@ describe('ID5 ID System', function () {
     });
   });
 
-  describe('Check for valid consent', function () {
-    it('should fail with invalid consent', function () {
-      let noStorageConsent = {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          purpose: {
-            consents: {
-              1: false
-            }
-          },
-          vendor: {
-            consents: {
-              131: true
-            }
+  describe('Check for valid consent', function() {
+    const dataConsentVals = [
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}],
+      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}],
+      [undefined, {vendor: {consents: {131: true}}}],
+      [{purpose: {consents: {1: true}}}, {vendor: undefined}],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}]
+    ];
+
+    dataConsentVals.forEach(function([purposeConsent, vendorConsent]) {
+      it('should fail with invalid consent', function() {
+        let dataConsent = {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            purposeConsent, vendorConsent
           }
         }
-      }
-      let noVendorConsent = {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          purpose: {
-            consents: {
-              1: true
-            }
-          },
-          vendor: {
-            consents: {
-              131: false
-            }
-          }
-        }
-      }
-      // no consent
-      expect(id5IdSubmodule.getId(config)).is.eq(undefined);
-      expect(id5IdSubmodule.getId(config, noStorageConsent)).is.eq(undefined);
-      expect(id5IdSubmodule.getId(config, noVendorConsent)).is.eq(undefined);
+        expect(id5IdSubmodule.getId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.getId(config, dataConsent)).is.eq(undefined);
 
-      expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
-      expect(id5IdSubmodule.extendId(config, noStorageConsent)).is.eq(undefined);
-      expect(id5IdSubmodule.extendId(config, noVendorConsent)).is.eq(undefined);
-
-      let cacheIdObject = 'cacheIdObject';
-      expect(id5IdSubmodule.extendId(config, noVendorConsent, cacheIdObject)).is.eq(cacheIdObject);
+        let cacheIdObject = 'cacheIdObject';
+        expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.extendId(config, dataConsent, cacheIdObject)).is.eq(cacheIdObject);
+      });
     });
   });
 
