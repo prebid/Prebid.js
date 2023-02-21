@@ -233,12 +233,12 @@ describe('auctionmanager.js', function () {
     });
 
     it('should suppress acat if undefined', function () {
-      bid.meta.primaryCatId = ''
-      let expected = getDefaultExpected(bid);
+      const noAcatBid = deepClone(DEFAULT_BID);
+      noAcatBid.meta.primaryCatId = ''
+      let expected = getDefaultExpected(noAcatBid);
       delete expected.hb_acat;
-      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      let response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
       assert.deepEqual(response, expected);
-      bid.meta.primaryCatId = 'IAB-test';
     });
 
     it('No bidder level configuration defined - default for video', function () {
