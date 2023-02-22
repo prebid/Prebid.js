@@ -585,7 +585,7 @@ pbjsInstance.renderAd = hook('async', function (doc, id, options) {
 });
 
 /**
- * Remove adUnit from the pbjsInstance configuration, if there are no addUnitCode(s) it will remove all
+ * Remove adUnit from the $$PREBID_GLOBAL$$ configuration, if there are no addUnitCode(s) it will remove all
  * @param  {string| Array} adUnitCode the adUnitCode(s) to remove
  * @alias module:pbjs.removeAdUnit
  */
@@ -810,7 +810,7 @@ pbjsInstance.onEvent = function (event, handler, id) {
 /**
  * @param {string} event the name of the event
  * @param {Function} handler a callback to remove from the event
- * @param {string} id an identifier in the context of the event (see `pbjsInstance.onEvent`)
+ * @param {string} id an identifier in the context of the event (see `$$PREBID_GLOBAL$$.onEvent`)
  * @alias module:pbjs.offEvent
  */
 pbjsInstance.offEvent = function (event, handler, id) {
@@ -907,7 +907,7 @@ pbjsInstance.enableAnalytics = function (config) {
  * @alias module:pbjs.aliasBidder
  */
 pbjsInstance.aliasBidder = function (bidderCode, alias, options) {
-  logInfo('Invoking pbjsInstance.aliasBidder', arguments);
+  logInfo('Invoking $$PREBID_GLOBAL$$.aliasBidder', arguments);
   if (bidderCode && alias) {
     adapterManager.aliasBidAdapter(bidderCode, alias, options);
   } else {
