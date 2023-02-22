@@ -8,7 +8,16 @@ Maintainer: anna@relevad.com
 
 Relevad is a contextual semantic analytics company. Our privacy-first, cookieless contextual categorization, segmentation, and keyword generation platform is designed to help publishers and advertisers optimize targeting and increase ad inventory yield.
 
-This real-time data processing module provides quality contextual IAB categories and segments to prebid.js auction bidders. Every category and segment comes with a score measuring its relevance to the publisher’s web page. Publishers may configure their preferred minimum score setting with the module parameter “minscore”. Relevad service does not use browser cookies and is fully GDPR compliant.
+Our real-time data processing module provides quality contextual IAB categories and segments along with their relevancy scores to the publisher’s web page. It places them into auction bid requests as global and/or bidder-specific:
+
+| Attrubute Type | ORTB2 Attribute                                              |
+| -------------- | ------------------------------------------------------------ |
+| Contextual     | “site.cat”: [IAB category codes]<br/>“site.pagecat”: [IAB category codes],<br>“site.sectioncat”: [IAB category codes]<br>“site.cattax”: 6 |
+| Content        | “site.content.data”: {“name”: “relevad”, “ext”: …, “segment”: …} |
+| User Data      | “user.ext.data.relevad_rtd”: {segments}                      |
+
+Publisher may configre minimum relevancy score to restrict the categories and segments we pass to the bidders.
+Relevad service does not use browser cookies and is fully GDPR compliant.
 
 ### Publisher Integration
 
@@ -76,14 +85,14 @@ pbjs.setConfig(
 | adUnitCodes | Array of Strings | List of specific AdUnit codes you with to target | Optional. If empty or absent, all ad units are targeted. |
 | minscore | Integer | Bidder-specific minimum categorization relevancy score (0, 100) | Optional, defaults to global minscore above. |
 
-If you do not have your own `partnerid, publisherid, apikey` please reach out to [anna@relevad.com](mailto:anna@relevad,com).
+If you do not have your own `partnerid, publisherid, apikey` please reach out to [anna@relevad.com](mailto:anna@relevad.com).
 
 ### Testing
 
 To view an example of the on page setup required:
 
 ```bash
-gulp serve-fast --modules=rtdModule,relevadRtdProvider,appnexusBidAdapter
+gulp serve-fast --modules=rtdModule,relevadRtdProvider
 ```
 
 Then in your browser access:
