@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -131,15 +131,6 @@ export const spec = {
 
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain);
-    }
-    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      const userIds = deepClone(validBidRequests[0].userId);
-
-      if (userIds.id5id) {
-        userIds.id5id = deepAccess(userIds, 'id5id.uid');
-      }
-
-      payload.userid = JSON.stringify(userIds);
     }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
