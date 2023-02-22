@@ -1,165 +1,10 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import {logInfo, deepClone} from '../src/utils.js';
+import {logInfo} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 const MODULE = 'frvr';
-
-/**
- *
- * @param args
- */
-function handleAuctionInit(args) {
-  const o = {}
-  if (args.auctionId) {
-    o.auctionId = args.auctionId;
-  }
-  if (args.timestamp) {
-    o.timestamp = args.timestamp;
-  }
-  if (args.adUnits) {
-    o.adUnits = mapAdUnits(args.adUnits);
-  }
-
-  handleEvent('hb_auction_init', o);
-}
-
-/**
- *
- * @param args
- */
-function handleBidRequested(args) {
-  const o = {}
-  if (args.auctionId) {
-    o.auctionId = args.auctionId;
-  }
-  if (args.bidderCode) {
-    o.bidderCode = args.bidderCode;
-  }
-  if (args.start) {
-    o.start = args.start;
-  }
-  if (args.timeout) {
-    o.timeout = args.timeout;
-  }
-  if (args.bidderRequestId) {
-    o.bidderRequestId = args.bidderRequestId;
-  }
-
-  if (args.bids) {
-    o.bids = args.bids
-      .map(e => {
-        return {
-          bidder: e.bidder,
-          params: e.params,
-          bidId: e.bidId,
-          adUnitCode: e.adUnitCode,
-          transactionId: e.transactionId,
-          bidderRequestId: e.bidderRequestId
-        }
-      });
-  }
-
-  handleEvent('hb_bid_request', o);
-}
-
-/**
- *
- * @param args
- */
-function handleBidResponse(args) {
-  var o = deepClone(args);
-  if (o && o.ad) {
-    delete o['ad'];
-  }
-  handleEvent('hb_bid_response', o);
-}
-
-/**
- *
- * @param args
- */
-function handleBidAdjustment(args) {
-  var o = {};
-  if (args.bidderCode) {
-    o.bidderCode = args.bidderCode;
-  }
-  if (args.adId) {
-    o.adId = args.adId;
-  }
-  if (args.width) {
-    o.size = [args.width, args.height];
-  }
-  if (args.cpm) {
-    o.cpm = args.cpm;
-  }
-  if (args.creativeId) {
-    o.creativeId = args.creativeId;
-  }
-  if (args.currency) {
-    o.currency = args.currency;
-  }
-  if (args.auctionId) {
-    o.auctionId = args.auctionId;
-  }
-  if (args.adUnitCode) {
-    o.adUnitCode = args.adUnitCode;
-  }
-  if (args.timeToRespond) {
-    o.timeToRespond = args.timeToRespond;
-  }
-  if (args.requestTimestamp) {
-    o.requestTimestamp = args.requestTimestamp;
-  }
-  if (args.responseTimestamp) {
-    o.responseTimestamp = args.responseTimestamp;
-  }
-
-  handleEvent('hb_bid_adjustment', o);
-}
-
-/**
- *
- * @param args
- */
-function handleBidderDone(args) {
-  const o = {}
-  if (args.auctionId) {
-    o.auctionId = args.auctionId;
-  }
-  if (args.bidderCode) {
-    o.bidderCode = args.bidderCode;
-  }
-  if (args.start) {
-    o.start = args.start;
-  }
-  if (args.timeout) {
-    o.timeout = args.timeout;
-  }
-  if (args.bidderRequestId) {
-    o.bidderRequestId = args.bidderRequestId;
-  }
-  if (args.serverResponseTimeMs) {
-    o.serverResponseTimeMs = args.serverResponseTimeMs;
-  }
-
-  if (args.bids) {
-    o.bids = args.bids
-      .map(e => {
-        return {
-          bidder: e.bidder,
-          params: e.params,
-          bidId: e.bidId,
-          adUnitCode: e.adUnitCode,
-          transactionId: e.transactionId,
-          bidderRequestId: e.bidderRequestId
-        }
-      });
-  }
-
-  handleEvent('hb_bidder_done', o);
-}
 
 /**
  *
@@ -420,26 +265,11 @@ function mapBids(bids) {
 let frvrAdapter = Object.assign(adapter({analyticsType}), {
   track({eventType, args}) {
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
-        handleAuctionInit(args);
-        break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
-        handleBidRequested(args);
-        break;
-      case CONSTANTS.EVENTS.BID_ADJUSTMENT:
-        handleBidAdjustment(args);
-        break;
-      case CONSTANTS.EVENTS.BIDDER_DONE:
-        handleBidderDone(args);
-        break;
       case CONSTANTS.EVENTS.AUCTION_END:
         handleAuctionEnd(args);
         break;
       case CONSTANTS.EVENTS.BID_WON:
         handleBidWon(args);
-        break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
-        handleBidResponse(args);
         break;
       default:
         handleOtherEvents(eventType, args);
