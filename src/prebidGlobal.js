@@ -2,9 +2,9 @@
 // global defination should happen BEFORE imports to avoid global undefined errors.
 /* global $$DEFINE_PREBID_GLOBAL$$ */
 const scope = !$$DEFINE_PREBID_GLOBAL$$ ? {} : window;
-scope.$$PREBID_GLOBAL$$ = (scope.$$PREBID_GLOBAL$$ || {});
-scope.$$PREBID_GLOBAL$$.cmd = scope.$$PREBID_GLOBAL$$.cmd || [];
-scope.$$PREBID_GLOBAL$$.que = scope.$$PREBID_GLOBAL$$.que || [];
+const global = scope.$$PREBID_GLOBAL$$ = scope.$$PREBID_GLOBAL$$ || {};
+global.cmd = global.cmd || [];
+global.que = global.que || [];
 
 // create a pbjs global pointer
 if (scope === window) {
@@ -13,5 +13,9 @@ if (scope === window) {
 }
 
 export function getGlobal() {
-  return scope.$$PREBID_GLOBAL$$;
+  return global;
+}
+
+export function registerModule(name) {
+  global.installedModules.push(name);
 }
