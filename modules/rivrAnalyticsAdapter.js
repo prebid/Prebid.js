@@ -2,8 +2,7 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
-/* global $$PREBID_GLOBAL$$ */
-// module requires to the name of the global variable, instead of a reference to the instance
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const analyticsType = 'endpoint';
 
@@ -22,7 +21,7 @@ rivrAnalytics.originEnableAnalytics = rivrAnalytics.enableAnalytics;
 // override enableAnalytics so we can get access to the config passed in from the page
 rivrAnalytics.enableAnalytics = (config) => {
   if (window.rivraddon && window.rivraddon.analytics) {
-    window.rivraddon.analytics.enableAnalytics(config, {utils, ajax, pbjsGlobalVariable: $$PREBID_GLOBAL$$});
+    window.rivraddon.analytics.enableAnalytics(config, {utils, ajax, pbjsGlobalVariable: getGlobal()});
     rivrAnalytics.originEnableAnalytics(config);
   }
 };
