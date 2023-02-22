@@ -2,6 +2,8 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
+/* global $$PREBID_GLOBAL$$ */
+// module requires to the name of the global variable, instead of a reference to the instance
 
 const analyticsType = 'endpoint';
 

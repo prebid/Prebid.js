@@ -5,7 +5,7 @@ import {
 import {find} from './polyfill.js';
 import {getGlobal} from './prebidGlobal.js';
 
-const $$PREBID_GLOBAL$$ = getGlobal();
+const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
 
 /**
@@ -132,7 +132,7 @@ export function executeRenderer(renderer, bid, doc) {
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
-  const adUnits = $$PREBID_GLOBAL$$.adUnits;
+  const adUnits = pbjsInstance.adUnits;
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });

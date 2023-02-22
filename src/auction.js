@@ -112,7 +112,7 @@ const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
 
-const $$PREBID_GLOBAL$$ = getGlobal();
+const pbjsInstance = getGlobal();
 
 /**
  * Clear global state for tests
@@ -216,7 +216,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             const bids = _bidsReceived
               .filter(bind.call(adUnitsFilter, this, adUnitCodes))
               .reduce(groupByPlacement, {});
-            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut, _auctionId]);
+            _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;
           }
         } catch (e) {

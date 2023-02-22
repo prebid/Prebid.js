@@ -1,5 +1,6 @@
 // if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
 // global defination should happen BEFORE imports to avoid global undefined errors.
+/* global $$DEFINE_PREBID_GLOBAL$$ */
 const scope = !$$DEFINE_PREBID_GLOBAL$$ ? {} : window;
 scope.$$PREBID_GLOBAL$$ = (scope.$$PREBID_GLOBAL$$ || {});
 scope.$$PREBID_GLOBAL$$.cmd = scope.$$PREBID_GLOBAL$$.cmd || [];

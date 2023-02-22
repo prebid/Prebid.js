@@ -18,6 +18,7 @@ import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
 import {includes} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -37,7 +38,7 @@ const PRICE_GRANULARITY = {
 
 const MEDIANET_BIDDER_CODE = 'medianet';
 // eslint-disable-next-line no-undef
-const PREBID_VERSION = $$PREBID_GLOBAL$$.version;
+const PREBID_VERSION = getGlobal().version;
 const ERROR_CONFIG_JSON_PARSE = 'analytics_config_parse_fail';
 const ERROR_CONFIG_FETCH = 'analytics_config_ajax_fail';
 const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';
@@ -822,8 +823,8 @@ medianetAnalytics.enableAnalytics = function (configuration) {
     logError('Media.net Analytics adapter: cid is required.');
     return;
   }
-  $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
-  $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled = true;
+  getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
+  getGlobal().medianetGlobals.analyticsEnabled = true;
 
   pageDetails = new PageDetail();
 

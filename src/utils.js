@@ -22,7 +22,7 @@ let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
 
-const $$PREBID_GLOBAL$$ = getGlobal();
+const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -710,7 +710,7 @@ export function getKeyByValue(obj, value) {
   }
 }
 
-export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
+export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
     .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);

@@ -1,4 +1,3 @@
-
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
@@ -64,13 +63,25 @@ module.exports = function(api, options) {
     for (let i = 0; i < body.length; i++) {
       if (body[i].type === 'ImportDeclaration' && body[i].source.value.match(/prebidGlobal(\.js)?$/)) {
         for (let j = 0; j < body[i].specifiers.length; j++) {
-          if (body[i].specifiers[j].local.name === 'getGlobal') {
-            return true;
+          if (body[i].specifiers[j].imported.name === 'getGlobal') {
+            return body[i].specifiers[j].local.name;
           }
         }
       }
     }
     return false;
+  }
+  function getPathDepth(path) {
+    path = path.replace(/\\/g, '/');
+    let pathSegs = path.split('/');
+    let depth = 0;
+    for (let i = pathSegs.length - 2; i >= 0; i--) {
+      if (pathSegs[i] === 'modules') {
+        break;
+      }
+      depth++;
+    }
+    return depth;
   }
 
   return {
@@ -80,14 +91,12 @@ module.exports = function(api, options) {
         if (modName != null) {
           // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
 
-          if (defineGlobal) {
-            path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
-          } else {
-            if (!hasGetGlobalsImport(path.node.body)) {
-              path.node.body.unshift(...api.parse(`import {getGlobal} from '../src/prebidGlobal.js';const ${pbGlobal} = getGlobal();`, {filename: state.filename}).program.body);
-            }
-            path.node.body.push(...api.parse(`${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+          let getGlobalName = hasGetGlobalsImport(path.node.body);
+          if (getGlobalName === false) {
+            path.node.body.unshift(...api.parse(`import {getGlobal} from '${'../'.repeat(getPathDepth(state.filename) + 1)}src/prebidGlobal.js';`, {filename: state.filename}).program.body);
+            getGlobalName = 'getGlobal';
           }
+          path.node.body.push(...api.parse(`${getGlobalName}().installedModules.push('${modName}');`, {filename: state.filename}).program.body);
         }
       },
       StringLiteral(path) {
