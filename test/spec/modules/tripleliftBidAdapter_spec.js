@@ -1437,6 +1437,13 @@ describe('triplelift adapter', function () {
       expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
       expect(result[1].meta).to.not.have.key('advertiserDomains');
     });
+
+    it('should include networkId in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[1].meta.networkId).to.equal('10092');
+      expect(result[2].meta.networkId).to.equal('5989');
+      expect(result[3].meta.networkId).to.equal('5989');
+    });
   });
 
   describe('getUserSyncs', function() {
