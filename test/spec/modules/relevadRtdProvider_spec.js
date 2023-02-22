@@ -1,4 +1,4 @@
-import { addRtdData, getBidRequestData, relevadSubmodule } from 'modules/relevadRtdProvider.js';
+import { addRtdData, getBidRequestData, relevadSubmodule, serverData } from 'modules/relevadRtdProvider.js';
 import { server } from 'test/mocks/xhr.js';
 import {config} from 'src/config.js';
 import { deepClone, deepAccess, deepSetValue } from '../../../src/utils.js';
@@ -380,9 +380,8 @@ describe('Process auction end data', function() {
     let userConsent = auctionEndData['userConsent'];
     let moduleConfig = auctionEndData['config'];
 
-    let auctionData = relevadSubmodule.onAuctionEndEvent(auctionDetails, moduleConfig, userConsent);
-
-    expect(auctionData).to.deep.equal(
+    relevadSubmodule.onAuctionEndEvent(auctionDetails, moduleConfig, userConsent);
+    expect(serverData.clientdata).to.deep.equal(
       {
         'event': 'bids',
         'adunits': [

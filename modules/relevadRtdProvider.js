@@ -26,7 +26,7 @@ const AJAX_OPTIONS = {
   crossOrigin: true,
 };
 
-let serverData = {}; // Tracks data returned from Relevad RTD server
+export let serverData = {}; // Tracks data returned from Relevad RTD server
 
 /**
  * Provides contextual IAB categories and segments to the bidders.
@@ -110,7 +110,7 @@ function composeOrtb2Data(rtdData, prefix) {
   !isEmpty(categories.cat) && deepSetValue(addOrtb2, prefix + '.cat', categories.cat);
   !isEmpty(categories.pagecat) && deepSetValue(addOrtb2, prefix + '.pagecat', categories.pagecat);
   !isEmpty(categories.sectioncat) && deepSetValue(addOrtb2, prefix + '.sectioncat', categories.sectioncat);
-  categories.cattax && deepSetValue(addOrtb2, prefix + '.cattax', categories.cattax);
+  !isEmpty(categories.cattax) && deepSetValue(addOrtb2, prefix + '.cattax', categories.cattax);
 
   if (!isEmpty(content) && !isEmpty(content.segs) && content.segtax) {
     const contentSegments = {
@@ -301,6 +301,7 @@ function sendBids(data, config) {
   if (!config.dryrun) {
     ajax(RELEVAD_API_DOMAIN + '/apis/bids/', () => {}, dataJson, AJAX_OPTIONS);
   }
+  serverData = { clientdata: data };
 };
 
 /**
@@ -348,9 +349,6 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
   }
 
   sendBids(data, config);
-
-  serverData = {};
-  return data;
 }
 
 export function init(config) {
