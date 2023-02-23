@@ -11,6 +11,7 @@ import {
   BidRequestDataSource,
   RequestData,
   UserEIDs,
+  buildRequestUrl,
 } from '../../../modules/nativoBidAdapter'
 
 describe('bidDataMap', function () {
@@ -782,13 +783,13 @@ describe('UserEIDs', () => {
   const eids = [{ 'testId': 1111 }]
 
   describe('processBidRequestData', () => {
-    it("Processes bid request without eids", () => {
+    it('Processes bid request without eids', () => {
       userEids.processBidRequestData({})
 
       expect(userEids.values).to.be.empty
     })
 
-    it("Processed bid request with eids", () => {
+    it('Processed bid request with eids', () => {
       userEids.processBidRequestData({ userIdAsEids: eids })
 
       expect(userEids.values).to.not.be.empty
@@ -796,7 +797,7 @@ describe('UserEIDs', () => {
   })
 
   describe('getRequestQueryString', () => {
-    it("Correctly prints out QS param string", () => {
+    it('Correctly prints out QS param string', () => {
       const qs = userEids.getRequestQueryString()
       const value = qs.slice(11)
 
@@ -805,5 +806,28 @@ describe('UserEIDs', () => {
         expect(JSON.parse(value)).to.be.equal(eids)
       } catch (err) { }
     })
+  })
+})
+
+describe.only('buildRequestUrl', () => {
+  const baseUrl = 'https://www.testExchange.com'
+  it('Returns baseUrl if no QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl)
+    expect(url).to.be.equal(baseUrl)
+  })
+
+  it('Returns baseUrl if empty QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['', '', ''])
+    expect(url).to.be.equal(baseUrl)
+  })
+
+  it('Returns baseUrl + QS params if QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', 'ntv_foo=bar'])
+    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
+  })
+
+  it('Returns baseUrl + QS params if mixed QS strings passed', () => {
+    const url = buildRequestUrl(baseUrl, ['ntv_ptd=123456&ntv_test=true', '', '', 'ntv_foo=bar'])
+    expect(url).to.be.equal(`${baseUrl}?ntv_ptd=123456&ntv_test=true&ntv_foo=bar`)
   })
 })

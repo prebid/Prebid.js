@@ -726,7 +726,7 @@ function fireNativoError(errorMessage) {
       severityLevel: 'Error',
       errorStacktrace: []
     }))
-  } catch(err) {}
+  } catch (err) {}
 }
 
 /**
@@ -743,7 +743,7 @@ export function shouldBeSampled(percentage = 1) {
 /**
  * Build the final request url
  */
-function buildRequestUrl(baseUrl, qsParamStringArray) {
+export function buildRequestUrl(baseUrl, qsParamStringArray = []) {
   if (qsParamStringArray.length === 0 || !Array.isArray(qsParamStringArray)) return baseUrl
 
   const nonEmptyQSParamStrings = qsParamStringArray.filter(qsParamString => qsParamString.trim() !== '')
