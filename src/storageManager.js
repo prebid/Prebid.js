@@ -1,7 +1,7 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
-import {includes} from './polyfill.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
+import {VENDORLESS_GVLID} from './consentHandler.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
@@ -26,20 +26,20 @@ export let storageCallbacks = [];
  * @param {storageOptions} options
  */
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
-  function isBidderDisallowed() {
+  function isBidderAllowed() {
     if (bidderCode == null) {
-      return false;
+      return true;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-    return storageAllowed == null ? false : !storageAllowed;
+    return storageAllowed == null ? false : storageAllowed;
   }
+
+  if (moduleTypeWhiteList.includes(moduleType)) {
+    gvlid = gvlid || VENDORLESS_GVLID;
+  }
+
   function isValid(cb) {
-    if (includes(moduleTypeWhiteList, moduleType)) {
-      let result = {
-        valid: true
-      }
-      return cb(result);
-    } else if (isBidderDisallowed()) {
+    if (!isBidderAllowed()) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);
@@ -149,11 +149,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        if (checkCookieSupport()) {
-          return true;
-        }
-        window.document.cookie = 'prebid.cookieTest';
-        return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
+        return checkCookieSupport();
       }
       return false;
     }

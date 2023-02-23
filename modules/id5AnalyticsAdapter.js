@@ -1,4 +1,4 @@
-import buildAdapter from '../src/AnalyticsAdapter.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
@@ -141,7 +141,7 @@ const ENABLE_FUNCTION = (config) => {
     logInfo('id5Analytics: Tracking events', _this.eventsToTrack);
     if (sampling > 0 && _this.random() < (1 / sampling)) {
       // Init the module only if we got lucky
-      logInfo('id5Analytics: Selected by sampling. Starting up!')
+      logInfo('id5Analytics: Selected by sampling. Starting up!');
 
       // Clean start
       _this.eventBuffer = {};

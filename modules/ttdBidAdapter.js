@@ -4,7 +4,7 @@ import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2022.02.18';
+const BIDADAPTERVERSION = 'TTD-PREBID-2022.06.28';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -38,6 +38,10 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
@@ -58,7 +62,9 @@ function getBidFloor(bid) {
 }
 
 function getSource(validBidRequests) {
-  let source = {};
+  let source = {
+    tid: validBidRequests[0].auctionId
+  };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
   }
@@ -119,20 +125,28 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
+  // gather user.data
+  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
+  if (ortb2UserData && ortb2UserData.length) {
+    user = utils.mergeDeep(user, {
+      data: [...ortb2UserData]
+    });
+  };
   return user;
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = {
-    id: utils.deepAccess(bidderRequest, 'bids.0.params.siteId'),
-    page: utils.deepAccess(bidderRequest, 'refererInfo.referer'),
+  var site = utils.mergeDeep({
+    page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
+    ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
-    ...firstPartyData.site
-  };
+  },
+  firstPartyData.site
+  );
 
-  var publisherDomain = config.getConfig('publisherDomain');
+  var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
     utils.deepSetValue(site, 'publisher.domain', publisherDomain);
   }
@@ -141,15 +155,20 @@ function getSite(bidderRequest, firstPartyData) {
 
 function getImpression(bidRequest) {
   let impression = {
-    id: bidRequest.bidId,
-    tagid: bidRequest.params.placementId
+    id: bidRequest.bidId
   };
 
-  let gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
-  if (gpid) {
-    impression.ext = {
-      gpid: gpid
-    }
+  const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const tid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  if (gpid || tid) {
+    impression.ext = {}
+    if (gpid) { impression.ext.gpid = gpid }
+    if (tid) { impression.ext.tid = tid }
+  }
+
+  const tagid = gpid || bidRequest.params.placementId;
+  if (tagid) {
+    impression.tagid = tagid
   }
 
   const mediaTypesVideo = utils.deepAccess(bidRequest, 'mediaTypes.video');
@@ -212,6 +231,12 @@ function banner(bid) {
       format: sizes,
     },
     optionalParams);
+
+  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+  if (battr) {
+    banner.battr = battr;
+  }
+
   return banner;
 }
 
@@ -233,7 +258,7 @@ function video(bid) {
   const maxbitrate = utils.deepAccess(bid, 'mediaTypes.video.maxbitrate');
 
   if (!minduration || !utils.isInteger(minduration)) {
-    minduration = 0
+    minduration = 0;
   }
   let video = {
     minduration: minduration,
@@ -279,6 +304,11 @@ function video(bid) {
     video.maxbitrate = maxbitrate;
   }
 
+  const battr = utils.deepAccess(bid, 'ortb2Imp.battr');
+  if (battr) {
+    video.battr = battr;
+  }
+
   return video;
 }
 
@@ -318,20 +348,10 @@ export const spec = {
       utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
       return false;
     }
-    if (!bid.params.siteId) {
-      utils.logWarn(BIDDER_CODE + ': Missing required parameter params.siteId');
-      return false;
-    }
-    if (bid.params.siteId.length > 50) {
-      utils.logWarn(BIDDER_CODE + ': params.siteId must be 50 characters or less');
-      return false;
-    }
-    if (!bid.params.placementId) {
-      utils.logWarn(BIDDER_CODE + ': Missing required parameter params.placementId');
-      return false;
-    }
-    if (bid.params.placementId.length > 128) {
-      utils.logWarn(BIDDER_CODE + ': params.placementId must be 128 characters or less');
+
+    const gpid = utils.deepAccess(bid, 'ortb2Imp.ext.gpid');
+    if (!bid.params.placementId && !gpid) {
+      utils.logWarn(BIDDER_CODE + ': one of params.placementId or gpid (via the GPT module https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html) must be passed');
       return false;
     }
 
@@ -357,7 +377,7 @@ export const spec = {
         return false;
       }
       if (!mediaTypesVideo.protocols) {
-        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values')
+        utils.logWarn(BIDDER_CODE + ': mediaTypes.video.protocols should be an array of supported protocols. See the Open RTB v2.5 spec for valid values');
         return false;
       }
     }
@@ -373,7 +393,7 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
       id: bidderRequest.auctionId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
@@ -385,6 +405,14 @@ export const spec = {
       regs: getRegs(bidderRequest),
       source: getSource(validBidRequests),
       ext: getExt(firstPartyData)
+    }
+
+    if (firstPartyData && firstPartyData.bcat) {
+      topLevel.bcat = firstPartyData.bcat;
+    }
+
+    if (firstPartyData && firstPartyData.badv) {
+      topLevel.badv = firstPartyData.badv;
     }
 
     let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;

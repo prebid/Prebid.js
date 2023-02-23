@@ -101,7 +101,7 @@ describe('iqmAdapter', function () {
           bidfloor: 0.5},
         crumbs: {
           pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {'context': {'pbAdSlot': '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]}},
@@ -116,7 +116,41 @@ describe('iqmAdapter', function () {
         bidderRequestsCount: 1,
         bidderWinsCount: 0}];
 
-    let bidderRequest = {bidderCode: 'iqm', auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f', bidderRequestId: '13c05d264c7ffe', bids: [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5}, crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'}, fpd: {context: {pbAdSlot: '/19968336/header-bid-tag-0'}}, mediaTypes: {banner: {sizes: [[300, 250]]}}, adUnitCode: '/19968336/header-bid-tag-0', transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8', sizes: [[300, 250]], bidId: '266d810da21904', bidderRequestId: '13c05d264c7ffe', auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}], auctionStart: 1615205942159, timeout: 7000, refererInfo: {referer: 'http://test.localhost:9999/integrationExamples/gpt/hello_world.html', reachedTop: true, isAmp: false, numIframes: 0, stack: ['http://test.localhost:9999/integrationExamples/gpt/hello_world.html'], canonicalUrl: null}, start: 1615205942162};
+    let bidderRequest = {
+      bidderCode: 'iqm',
+      auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f',
+      bidderRequestId: '13c05d264c7ffe',
+      bids: [{
+        bidder: 'iqm',
+        params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5},
+        crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
+        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        adUnitCode: '/19968336/header-bid-tag-0',
+        transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8',
+        sizes: [[300, 250]],
+        bidId: '266d810da21904',
+        bidderRequestId: '13c05d264c7ffe',
+        auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      }],
+      auctionStart: 1615205942159,
+      timeout: 7000,
+      refererInfo: {
+        page: 'http://test.localhost:9999/integrationExamples/gpt/hello_world.html',
+        domain: 'test.localhost.com:9999',
+        ref: null,
+        reachedTop: true,
+        isAmp: false,
+        numIframes: 0,
+        stack: ['http://test.localhost:9999/integrationExamples/gpt/hello_world.html'],
+        canonicalUrl: null
+      },
+      start: 1615205942162
+    };
 
     it('should parse out  sizes', function () {
       let temp = [];
@@ -141,8 +175,80 @@ describe('iqmAdapter', function () {
       expect(request[0].method).to.equal('POST');
     });
     it('should attach valid video params to the tag', function () {
-      let validBidRequests_video = [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5, video: {placement: 2, mimes: ['video/mp4'], protocols: [2, 5], skipppable: true, playback_method: ['auto_play_sound_off']}}, crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'}, fpd: {context: {pbAdSlot: 'video1'}}, mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}}, adUnitCode: 'video1', transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541', sizes: [[640, 480]], bidId: '28bfb7e2d12897', bidderRequestId: '16e1ce8481bc6d', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}];
-      let bidderRequest_video = {bidderCode: 'iqm', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', bidderRequestId: '16e1ce8481bc6d', bids: [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5, video: {placement: 2, mimes: ['video/mp4'], protocols: [2, 5], skipppable: true, playback_method: ['auto_play_sound_off']}}, crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'}, fpd: {context: {pbAdSlot: 'video1'}}, mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}}, adUnitCode: 'video1', transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541', sizes: [[640, 480]], bidId: '28bfb7e2d12897', bidderRequestId: '16e1ce8481bc6d', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}], auctionStart: 1615271191985, timeout: 3000, refererInfo: {referer: 'http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html', reachedTop: true, isAmp: false, numIframes: 0, stack: ['http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html'], canonicalUrl: null}, start: 1615271191988};
+      let validBidRequests_video = [{
+        bidder: 'iqm',
+        params: {
+          publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a',
+          placementId: 23451,
+          bidfloor: 0.5,
+          video: {
+            placement: 2,
+            mimes: ['video/mp4'],
+            protocols: [2, 5],
+            skipppable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        },
+        crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'},
+        ortb2Imp: {ext: {data: {'pbadslot': 'video1'}}},
+        mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}},
+        adUnitCode: 'video1',
+        transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541',
+        sizes: [[640, 480]],
+        bidId: '28bfb7e2d12897',
+        bidderRequestId: '16e1ce8481bc6d',
+        auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      }];
+      let bidderRequest_video = {
+        bidderCode: 'iqm',
+        auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+        bidderRequestId: '16e1ce8481bc6d',
+        bids: [{
+          bidder: 'iqm',
+          params: {
+            publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a',
+            placementId: 23451,
+            bidfloor: 0.5,
+            video: {
+              placement: 2,
+              mimes: ['video/mp4'],
+              protocols: [2, 5],
+              skipppable: true,
+              playback_method: ['auto_play_sound_off']
+            }
+          },
+          crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'},
+          fpd: {context: {pbAdSlot: 'video1'}},
+          mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}},
+          adUnitCode: 'video1',
+          transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541',
+          sizes: [[640, 480]],
+          bidId: '28bfb7e2d12897',
+          bidderRequestId: '16e1ce8481bc6d',
+          auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+          src: 'client',
+          bidRequestsCount: 1,
+          bidderRequestsCount: 1,
+          bidderWinsCount: 0
+        }],
+        auctionStart: 1615271191985,
+        timeout: 3000,
+        refererInfo: {
+          page: 'http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html',
+          domain: 'test.localhost.com:9999',
+          ref: null,
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 0,
+          stack: ['http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html'],
+          canonicalUrl: null
+        },
+        start: 1615271191988
+      };
       const request = spec.buildRequests(validBidRequests_video, bidderRequest_video);
       const payload = request[0].data;
       expect(payload.imp.id).to.exist;
@@ -161,11 +267,13 @@ describe('iqmAdapter', function () {
     });
 
     it('should add referer info to payload', function () {
+      // TODO: this is wrong on multiple levels
+      // The payload contains everything in `bidderRequest`; that is sometimes not even serializable
+      // this should not be testing the validity of internal Prebid structures
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = request[0].data;
 
       expect(payload.bidderRequest.refererInfo).to.exist;
-      expect(payload.bidderRequest.refererInfo).to.deep.equal({referer: 'http://test.localhost:9999/integrationExamples/gpt/hello_world.html', reachedTop: true, isAmp: false, numIframes: 0, stack: ['http://test.localhost:9999/integrationExamples/gpt/hello_world.html'], canonicalUrl: null});
     });
   })
 
@@ -179,7 +287,7 @@ describe('iqmAdapter', function () {
           bidfloor: 0.5},
         crumbs: {
           pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
-        fpd: {'context': {'pbAdSlot': '/19968336/header-bid-tag-0'}},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
         mediaTypes: {
           banner: {
             sizes: [[300, 250]]}},
@@ -193,7 +301,41 @@ describe('iqmAdapter', function () {
         bidRequestsCount: 1,
         bidderRequestsCount: 1,
         bidderWinsCount: 0}];
-    let bidderRequest = {bidderCode: 'iqm', auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f', bidderRequestId: '13c05d264c7ffe', bids: [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5}, crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'}, fpd: {context: {pbAdSlot: '/19968336/header-bid-tag-0'}}, mediaTypes: {banner: {sizes: [[300, 250]]}}, adUnitCode: '/19968336/header-bid-tag-0', transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8', sizes: [[300, 250]], bidId: '266d810da21904', bidderRequestId: '13c05d264c7ffe', auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}], auctionStart: 1615205942159, timeout: 7000, refererInfo: {referer: 'http://test.localhost:9999/integrationExamples/gpt/hello_world.html', reachedTop: true, isAmp: false, numIframes: 0, stack: ['http://test.localhost:9999/integrationExamples/gpt/hello_world.html'], canonicalUrl: null}, start: 1615205942162};
+    let bidderRequest = {
+      bidderCode: 'iqm',
+      auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f',
+      bidderRequestId: '13c05d264c7ffe',
+      bids: [{
+        bidder: 'iqm',
+        params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5},
+        crumbs: {pubcid: 'a0f51f64-6d86-41d0-abaf-7ece71404d94'},
+        ortb2Imp: {ext: {data: {'pbadslot': '/19968336/header-bid-tag-0'}}},
+        mediaTypes: {banner: {sizes: [[300, 250]]}},
+        adUnitCode: '/19968336/header-bid-tag-0',
+        transactionId: '56fe8d92-ff6e-4c34-90ad-2f743cd0eae8',
+        sizes: [[300, 250]],
+        bidId: '266d810da21904',
+        bidderRequestId: '13c05d264c7ffe',
+        auctionId: '565ab569-ab95-40d6-8b42-b9707a92062f',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      }],
+      auctionStart: 1615205942159,
+      timeout: 7000,
+      refererInfo: {
+        page: 'http://test.localhost:9999/integrationExamples/gpt/hello_world.html',
+        domain: 'test.localhost.com:9999',
+        ref: null,
+        reachedTop: true,
+        isAmp: false,
+        numIframes: 0,
+        stack: ['http://test.localhost:9999/integrationExamples/gpt/hello_world.html'],
+        canonicalUrl: null
+      },
+      start: 1615205942162
+    };
     let response = {
 
       id: '5bdbab92aae961cfbdf7465d',
@@ -213,7 +355,52 @@ describe('iqmAdapter', function () {
 
     let validBidRequests_temp_video =
       [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5, video: {placement: 2, mimes: ['video/mp4'], protocols: [2, 5], skipppable: true, playback_method: ['auto_play_sound_off']}}, crumbs: {pubcid: 'cd86c3ff-d630-40e6-83ab-420e9e800594'}, fpd: {context: {pbAdSlot: 'video1'}}, mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}}, adUnitCode: 'video1', transactionId: '8335b266-7a41-45f9-86a2-92fdc7cf0cd9', sizes: [[640, 480]], bidId: '26274beff25455', bidderRequestId: '17c5d8c3168761', auctionId: '2c592dcf-7dfc-4823-8203-dd1ebab77fe0', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}];
-    let bidderRequest_video = {bidderCode: 'iqm', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', bidderRequestId: '16e1ce8481bc6d', bids: [{bidder: 'iqm', params: {publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a', placementId: 23451, bidfloor: 0.5, video: {placement: 2, mimes: ['video/mp4'], protocols: [2, 5], skipppable: true, playback_method: ['auto_play_sound_off']}}, crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'}, fpd: {context: {pbAdSlot: 'video1'}}, mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}}, adUnitCode: 'video1', transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541', sizes: [[640, 480]], bidId: '28bfb7e2d12897', bidderRequestId: '16e1ce8481bc6d', auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71', src: 'client', bidRequestsCount: 1, bidderRequestsCount: 1, bidderWinsCount: 0}], auctionStart: 1615271191985, timeout: 3000, refererInfo: {referer: 'http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html', reachedTop: true, isAmp: false, numIframes: 0, stack: ['http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html'], canonicalUrl: null}, start: 1615271191988};
+    let bidderRequest_video = {
+      bidderCode: 'iqm',
+      auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+      bidderRequestId: '16e1ce8481bc6d',
+      bids: [{
+        bidder: 'iqm',
+        params: {
+          publisherId: 'df5fd732-c5f3-11e7-abc4-cec278b6b50a',
+          placementId: 23451,
+          bidfloor: 0.5,
+          video: {
+            placement: 2,
+            mimes: ['video/mp4'],
+            protocols: [2, 5],
+            skipppable: true,
+            playback_method: ['auto_play_sound_off']
+          }
+        },
+        crumbs: {pubcid: '09b8f065-9d1b-4a36-bd0c-ea22e2dad807'},
+        ortb2Imp: {ext: {data: {'pbadslot': 'video1'}}},
+        mediaTypes: {video: {playerSize: [[640, 480]], context: 'instream'}},
+        adUnitCode: 'video1',
+        transactionId: '86795c66-acf9-4dd5-998f-6d5362aaa541',
+        sizes: [[640, 480]],
+        bidId: '28bfb7e2d12897',
+        bidderRequestId: '16e1ce8481bc6d',
+        auctionId: '3140a2ec-d567-4db0-9bbb-eb6fa20ccb71',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0
+      }],
+      auctionStart: 1615271191985,
+      timeout: 3000,
+      refererInfo: {
+        page: 'http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html',
+        domain: 'test.localhost.com:9999',
+        ref: '',
+        reachedTop: true,
+        isAmp: false,
+        numIframes: 0,
+        stack: ['http://test.localhost:9999/integrationExamples/gpt/pbjs_video_adUnit.html'],
+        canonicalUrl: null
+      },
+      start: 1615271191988
+    };
 
     it('handles non-banner media responses', function () {
       let response = {id: '2341234', seatbid: [{bid: [{id: 'bid-2341234-1', impid: '1', price: 9, nurl: 'https://frontend.stage.iqm.com/static/vast-01.xml', adm: 'http://cdn.iqm.com/pbd?raw=312730_203cf73dc83fb_2824348636878_pbd', adomain: ['app1.stage.iqm.com'], cid: '168900', crid: 'cr-304503', attr: []}]}], bidid: '2341234'};

@@ -85,6 +85,23 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.cur).to.equal('THX');
   });
+  it('validate default cur USD', function() {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112
+      },
+      sizes: [[240, 400]]
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.cur).to.equal('USD');
+  });
   it('validate subid param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',
@@ -283,12 +300,13 @@ describe('betweenBidAdapterTests', function () {
     let bids = spec.interpretResponse(serverResponse);
     expect(bids).to.have.lengthOf(1);
     let bid = bids[0];
-    expect(bid.currency).to.equal('RUB');
+    expect(bid.currency).to.equal('USD');
   });
   it('check getUserSyncs', function() {
     const syncs = spec.getUserSyncs({}, {});
-    expect(syncs).to.be.an('array').that.to.have.lengthOf(1);
+    expect(syncs).to.be.an('array').that.to.have.lengthOf(2);
     expect(syncs[0]).to.deep.equal({type: 'iframe', url: 'https://ads.betweendigital.com/sspmatch-iframe'});
+    expect(syncs[1]).to.deep.equal({type: 'image', url: 'https://ads.betweendigital.com/sspmatch'});
   });
 
   it('check sizes', function() {

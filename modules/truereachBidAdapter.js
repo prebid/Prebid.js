@@ -5,7 +5,7 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
 const BIDDER_CODE = 'truereach';
-const BIDDER_URL = 'https://ads.momagic.com/exchange/openrtb25/';
+const BIDDER_URL = 'https://ads-sg.momagic.com/exchange/openrtb25/';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -25,6 +25,7 @@ export const spec = {
 
     let siteId = deepAccess(validBidRequests[0], 'params.site_id');
 
+    // TODO: should this use auctionId? see #8573
     let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {
@@ -94,7 +95,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: 'http://ads.momagic.com/jsp/usersync.jsp' + gdprParams
+        url: 'https://ads-sg.momagic.com/jsp/usersync.jsp' + gdprParams
       });
     }
     return syncs;

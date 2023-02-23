@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'e_volution';
 const AD_URL = 'https://service.e-volution.ai/?c=o&m=multi';
@@ -41,6 +42,19 @@ function getBidFloor(bid) {
   }
 }
 
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
@@ -51,10 +65,14 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page);
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -75,7 +93,7 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
     }
     const len = validBidRequests.length;
@@ -86,7 +104,12 @@ export const spec = {
       const placement = {
         placementId: bid.params.placementId,
         bidId: bid.bidId,
-        bidfloor: getBidFloor(bid)
+        bidfloor: getBidFloor(bid),
+        eids: []
+      };
+
+      if (bid.userId) {
+        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
       }
 
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {

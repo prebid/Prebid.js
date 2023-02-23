@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import {userSync} from '../../../src/userSync.js';
+import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
 import * as utils from '../../../src/utils.js';
 
@@ -239,13 +239,13 @@ describe('SonobiBidAdapter', function () {
 
   describe('.buildRequests', function () {
     let sandbox;
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(userSync, 'canBidderRegisterSync');
       sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
-        .onFirstCall().returns({gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id'});
+        .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' });
       sandbox = sinon.createSandbox();
     });
-    afterEach(function() {
+    afterEach(function () {
       userSync.canBidderRegisterSync.restore();
       utils.getGptSlotInfoForAdUnitCode.restore();
       sandbox.restore();
@@ -284,6 +284,12 @@ describe('SonobiBidAdapter', function () {
             pbadslot: '/123123/gpt_publisher/adunit-code-1'
           }
         }
+      },
+      mediaTypes: {
+        video: {
+          sizes: [[300, 250], [300, 600]],
+          context: 'outstream'
+        }
       }
     },
     {
@@ -296,10 +302,15 @@ describe('SonobiBidAdapter', function () {
       'adUnitCode': 'adunit-code-3',
       'sizes': [[120, 600], [300, 600], [160, 600]],
       'bidId': '30b31c1838de1d',
-      'getFloor': ({currency, mediaType, size}) => {
+      'getFloor': ({ currency, mediaType, size }) => {
         return {
           currency: 'USD',
           floor: 0.42
+        }
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
         }
       }
     },
@@ -313,12 +324,17 @@ describe('SonobiBidAdapter', function () {
       'adUnitCode': 'adunit-code-2',
       'sizes': [[120, 600], [300, 600], [160, 600]],
       'bidId': '30b31c1838de1e',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      }
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25|gpid=/123123/gpt_publisher/adunit-code-1',
-      '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42|gpid=/123123/gpt_publisher/adunit-code-3',
-      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,',
+      '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
+      '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
 
     let bidderRequests = {
@@ -330,13 +346,13 @@ describe('SonobiBidAdapter', function () {
       'refererInfo': {
         'numIframes': 0,
         'reachedTop': true,
-        'referer': 'https://example.com',
+        'page': 'https://example.com',
         'stack': ['https://example.com']
       },
       uspConsent: 'someCCPAString'
     };
 
-    it('should set fpd if there is any data in ortb2', function() {
+    it('should set fpd if there is any data in ortb2', function () {
       const ortb2 = {
         site: {
           ext: {
@@ -355,26 +371,19 @@ describe('SonobiBidAdapter', function () {
           }
         }
       };
-
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          ortb2: ortb2
-        };
-        return utils.deepAccess(config, key);
-      });
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
+      const bidRequests = spec.buildRequests(bidRequest, { ...bidderRequests, ortb2 });
       expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
     });
 
     it('should populate coppa as 1 if set in config', function () {
-      config.setConfig({coppa: true});
+      config.setConfig({ coppa: true });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
       expect(bidRequests.data.coppa).to.equal(1);
     });
 
     it('should populate coppa as 0 if set in config', function () {
-      config.setConfig({coppa: false});
+      config.setConfig({ coppa: false });
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
 
       expect(bidRequests.data.coppa).to.equal(0);
@@ -427,7 +436,7 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'https://example.com',
+          'page': 'https://example.com',
           'stack': ['https://example.com']
         }
       };
@@ -447,7 +456,7 @@ describe('SonobiBidAdapter', function () {
         'refererInfo': {
           'numIframes': 0,
           'reachedTop': true,
-          'referer': 'https://example.com',
+          'page': 'https://example.com',
           'stack': ['https://example.com']
         }
       };
@@ -469,7 +478,7 @@ describe('SonobiBidAdapter', function () {
     })
 
     it('should return null if there is nothing to bid on', function () {
-      const bidRequests = spec.buildRequests([{params: {}}], bidderRequests)
+      const bidRequests = spec.buildRequests([{ params: {} }], bidderRequests)
       expect(bidRequests).to.equal(null);
     });
 
@@ -479,7 +488,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ius).to.equal(0);
     });
 
-    it('should set ius as 1 if Sonobi can drop iframe pixels', function() {
+    it('should set ius as 1 if Sonobi can drop iframe pixels', function () {
       userSync.canBidderRegisterSync.returns(true);
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.ius).to.equal(1);
@@ -531,50 +540,28 @@ describe('SonobiBidAdapter', function () {
       ]);
     });
 
-    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
-      bidRequest[0].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
-      bidRequest[1].userId = {'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': {'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': {'linkType': 2}}};
+    it('should return a properly formatted request with the userid value omitted when the userId object is present on the bidRequest. ', function () {
+      bidRequest[0].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
+      bidRequest[1].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(JSON.parse(bidRequests.data.userid)).to.eql({'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ'});
+      expect(bidRequests.data.userid).to.be.undefined;
     });
 
-    it('should return a properly formatted request with userid omitted if there are no userIds', function () {
-      bidRequest[0].userId = {};
-      bidRequest[1].userId = {};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
-      expect(bidRequests.data.ref).not.to.be.empty;
-      expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.userid).to.equal(undefined);
-    });
-
-    it('should return a properly formatted request with userid omitted', function () {
-      bidRequest[0].userId = undefined;
-      bidRequest[1].userId = undefined;
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
-      expect(bidRequests.data.ref).not.to.be.empty;
-      expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.userid).to.equal(undefined);
-    });
-
-    it('should return a properly formatted request with keywrods included as a csv of strings', function() {
+    it('should return a properly formatted request with keywrods included as a csv of strings', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.kw).to.equal('sports,news,some_other_keyword');
     });
 
-    it('should return a properly formatted request with us_privacy included', function() {
+    it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.us_privacy).to.equal('someCCPAString');
     });
 
-    it('should make a request to the url defined in the bidder param', function() {
+    it('should make a request to the url defined in the bidder param', function () {
       const bRequest = [
         {
           ...bidRequest[0],
@@ -762,7 +749,7 @@ describe('SonobiBidAdapter', function () {
         'dealId': 'dozerkey',
         'aid': 'force_1550072228_da1c5d030cb49150c5db8a2136175755',
         'mediaType': 'video',
-        renderer: () => {},
+        renderer: () => { },
         meta: {
           advertiserDomains: ['sonobi.com']
         }
@@ -835,13 +822,13 @@ describe('SonobiBidAdapter', function () {
   })
   describe('_getPlatform', function () {
     it('should return mobile', function () {
-      expect(_getPlatform({innerWidth: 767})).to.equal('mobile')
+      expect(_getPlatform({ innerWidth: 767 })).to.equal('mobile')
     })
     it('should return tablet', function () {
-      expect(_getPlatform({innerWidth: 800})).to.equal('tablet')
+      expect(_getPlatform({ innerWidth: 800 })).to.equal('tablet')
     })
     it('should return desktop', function () {
-      expect(_getPlatform({innerWidth: 1000})).to.equal('desktop')
+      expect(_getPlatform({ innerWidth: 1000 })).to.equal('desktop')
     })
   })
 })

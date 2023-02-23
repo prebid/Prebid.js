@@ -55,9 +55,9 @@ describe('ProxistoreBidAdapter', function () {
   });
   describe('buildRequests', function () {
     const url = {
-      cookieBase: 'https://abs.proxistore.com/v3/rtb/prebid/multi',
+      cookieBase: 'https://api.proxistore.com/v3/rtb/prebid/multi',
       cookieLess:
-        'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi',
+        'https://api.cookieless-proxistore.com/v3/rtb/prebid/multi',
     };
 
     let request = spec.buildRequests([bid], bidderRequest);
@@ -124,8 +124,6 @@ describe('ProxistoreBidAdapter', function () {
       bid.params['bidFloor'] = 1;
       let req = spec.buildRequests([bid], bidderRequest);
       data = JSON.parse(req.data);
-      // eslint-disable-next-line no-console
-      console.log(data.bids[0]);
       expect(data.bids[0].floor).equal(1);
       bid.getFloor = function () {
         return { currency: 'USD', floor: 1.0 };

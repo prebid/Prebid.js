@@ -39,7 +39,7 @@ describe('innityAdapterTest', () => {
 
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://refererExample.com'
+        page: 'https://refererExample.com'
       }
     };
 

@@ -311,16 +311,20 @@ export function newUserSync(userSyncDependencies) {
       }
     }
     return true;
-  }
+  };
   return publicApi;
 }
 
-const browserSupportsCookies = !isSafariBrowser() && storage.cookiesAreEnabled();
-
-export const userSync = newUserSync({
+export const userSync = newUserSync(Object.defineProperties({
   config: config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
+}, {
+  browserSupportsCookies: {
+    get: function() {
+      // call storage lazily to give time for consent data to be available
+      return !isSafariBrowser() && storage.cookiesAreEnabled();
+    }
+  }
+}));
 
 /**
  * @typedef {Object} UserSyncDependencies
