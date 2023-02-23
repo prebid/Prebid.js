@@ -133,6 +133,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const requestData = new RequestData()
+    requestData.addBidRequestDataSource(new UserEIDs())
+
     // Parse values from bid requests
     const placementIds = new Set()
     const bidDataMap = BidDataMap()
@@ -166,6 +169,8 @@ export const spec = {
       if (bidRequestFloorPriceData) {
         floorPriceData[bidRequest.adUnitCode] = bidRequestFloorPriceData
       }
+
+      requestData.processBidRequestData(bidRequest, bidderRequest)
     })
     bidRequestMap[bidderRequest.bidderRequestId] = bidDataMap
 
@@ -257,7 +262,7 @@ export const spec = {
 
     let serverRequest = {
       method: 'GET',
-      url: BIDDER_ENDPOINT + arrayToQS(params),
+      url: BIDDER_ENDPOINT + '?' + requestData.getRequestDataQueryString() + arrayToQS(params),
     }
 
     return serverRequest
@@ -451,6 +456,83 @@ export const spec = {
 registerBidder(spec)
 
 // Utils
+export class RequestData {
+  constructor() {
+    this.bidRequestDataSources = []
+  }
+
+  addBidRequestDataSource(bidRequestDataSource) {
+    this.bidRequestDataSources.push(bidRequestDataSource)
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    for (bidRequestDataSource of this.bidRequestDataSources) {
+      bidRequestDataSource.processBidRequestData(bidRequest, bidderRequest)
+    }
+  }
+
+  getRequestDataQueryString() {
+    if(this.bidRequestDataSources.length == 0) return
+
+    const queryString = this.bidRequestDataSources[0].getRequestQueryString()
+    for (let i=1; i<this.bidRequestDataSources.length; i++) {
+      queryString += this.bidRequestDataSources[i].getRequestQueryString()
+    }
+    return queryString
+  }
+}
+
+export class BidRequestDataSource {
+  constructor() {
+
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {}
+  getRequestQueryString() {}
+}
+
+export class UserEIDs extends BidRequestDataSource {
+  constructor() {
+    super()
+    this.qsParam = new QueryStringParam('ntv_pb_eid')
+    this.values = new Set()
+  }
+
+  processBidRequestData(bidRequest, bidderRequest) {
+    const eids = bidRequest.userIdAsEids 
+    for(let eid of eids) {
+      if(this.values.has(eid))
+        console.log("DUPLICATE")
+      
+      this.values.add(eid)
+    }
+  }
+
+  getRequestQueryString() {
+    const valueArray = Array.from(this.values)
+    const encodedValueArray = encodeToBase64(valueArray)
+    this.qsParam.value = encodedValueArray
+    return this.qsParam.toString()
+  }
+}
+
+export class QueryStringParam {
+  constructor(key, value) {
+    this.key = key
+    this.value = value
+  }
+}
+
+QueryStringParam.prototype.toString = function () {
+  return `${this.key}=${this.value}`
+}
+
+export function encodeToBase64(value) {
+  try {
+    return btoa(JSON.stringify(value))
+  } catch (err) {}
+}
+
 export function parseFloorPriceData(bidRequest) {
   if (typeof bidRequest.getFloor !== 'function') return
 
@@ -590,7 +672,7 @@ function appendQSParamString(str, key, value) {
  */
 function arrayToQS(arr) {
   return (
-    '?' +
+    '&' +
     arr.reduce((value, obj) => {
       return appendQSParamString(value, obj.key, obj.value)
     }, '')
