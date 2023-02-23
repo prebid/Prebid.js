@@ -8,6 +8,9 @@ import {
   getPageUrlFromBidRequest,
   hasProtocol,
   addProtocol,
+  BidRequestDataSource,
+  RequestData,
+  UserEIDs,
 } from '../../../modules/nativoBidAdapter'
 
 describe('bidDataMap', function () {
@@ -729,5 +732,78 @@ describe('getPageUrlFromBidRequest', () => {
     bidRequest.params.url = '//www.testpage.com'
     const url = getPageUrlFromBidRequest(bidRequest)
     expect(url).not.to.be.undefined
+  })
+})
+
+describe('RequestData', () => {
+  describe('addBidRequestDataSource', () => {
+    it('Adds a BidRequestDataSource', () => {
+      const requestData = new RequestData()
+      const testBidRequestDataSource = new BidRequestDataSource()
+
+      requestData.addBidRequestDataSource(testBidRequestDataSource)
+
+      expect(requestData.bidRequestDataSources.length == 1)
+    })
+
+    it("Doeasn't add a non BidRequestDataSource", () => {
+      const requestData = new RequestData()
+
+      requestData.addBidRequestDataSource({})
+      requestData.addBidRequestDataSource('test')
+      requestData.addBidRequestDataSource(1)
+      requestData.addBidRequestDataSource(true)
+
+      expect(requestData.bidRequestDataSources.length == 0)
+    })
+  })
+
+  describe('getRequestDataString', () => {
+    it("Doesn't append empty query strings", () => {
+      const requestData = new RequestData()
+      const testBidRequestDataSource = new BidRequestDataSource()
+
+      requestData.addBidRequestDataSource(testBidRequestDataSource)
+
+      let qs = requestData.getRequestDataQueryString()
+      expect(qs).to.be.empty
+
+      testBidRequestDataSource.getRequestQueryString = () => {
+        return 'ntv_test=true'
+      }
+      qs = requestData.getRequestDataQueryString()
+      expect(qs).to.be.equal('ntv_test=true')
+    })
+  })
+})
+
+describe('UserEIDs', () => {
+  const userEids = new UserEIDs()
+  const eids = [{ 'testId': 1111 }]
+
+  describe('processBidRequestData', () => {
+    it("Processes bid request without eids", () => {
+      userEids.processBidRequestData({})
+
+      expect(userEids.values).to.be.empty
+    })
+
+    it("Processed bid request with eids", () => {
+      userEids.processBidRequestData({ userIdAsEids: eids })
+
+      expect(userEids.values).to.not.be.empty
+    })
+  })
+
+  describe('getRequestQueryString', () => {
+    it("Correctly prints out QS param string", () => {
+      const qs = userEids.getRequestQueryString()
+      const value = qs.slice(11)
+
+      expect(qs).to.include('ntv_pb_eid=')
+      try {
+        expect(JSON.parse(value)).to.be.equal(eids)
+      } catch (err) { }
+    })
   })
 })
