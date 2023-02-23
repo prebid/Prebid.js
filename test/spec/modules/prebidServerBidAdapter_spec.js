@@ -2660,6 +2660,62 @@ describe('S2S Adapter', function () {
     });
   });
 
+  describe('Bidder-level ortb2Imp', () => {
+    beforeEach(() => {
+      config.setConfig({
+        s2sConfig: {
+          ...CONFIG,
+          bidders: ['A', 'B']
+        }
+      })
+    })
+    it('should be set on imp.ext.prebid.imp', () => {
+      const s2sReq = utils.deepClone(REQUEST);
+      s2sReq.ad_units[0].ortb2Imp = {l0: 'adUnit'};
+      s2sReq.ad_units[0].bids = [
+        {
+          bidder: 'A',
+          bid_id: 1,
+          ortb2Imp: {
+            l2: 'A'
+          }
+        },
+        {
+          bidder: 'B',
+          bid_id: 2,
+          ortb2Imp: {
+            l2: 'B'
+          }
+        }
+      ];
+      const bidderReqs = [
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'A',
+          bids: [{
+            bidId: 1,
+            bidder: 'A'
+          }]
+        },
+        {
+          ...BID_REQUESTS[0],
+          bidderCode: 'B',
+          bids: [{
+            bidId: 2,
+            bidder: 'B'
+          }]
+        }
+      ]
+      adapter.callBids(s2sReq, bidderReqs, addBidResponse, done, ajax);
+      const req = JSON.parse(server.requests[0].requestBody);
+      expect(req.imp[0].l0).to.eql('adUnit');
+      expect(req.imp[0].ext.prebid.imp).to.eql({
+        A: {l2: 'A'},
+        B: {l2: 'B'}
+      });
+    });
+  });
+
   describe('ext.prebid config', function () {
     it('should send \"imp.ext.prebid.storedrequest.id\" if \"ortb2Imp.ext.prebid.storedrequest.id\" is set', function () {
       const consentConfig = { s2sConfig: CONFIG };
