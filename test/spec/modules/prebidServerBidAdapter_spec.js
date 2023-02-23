@@ -2736,7 +2736,7 @@ describe('S2S Adapter', function () {
 
     it('handles seatnonbid responses and calls SEAT_NON_BID', function () {
       const original = CONFIG;
-      CONFIG.extPrebid = { seatnonbid: true };
+      CONFIG.extPrebid = { returnallbidstatus: true };
       const nonbidResponse = {...RESPONSE_OPENRTB, ext: {seatnonbid: [{}]}};
       config.setConfig({ CONFIG });
       CONFIG = original;
