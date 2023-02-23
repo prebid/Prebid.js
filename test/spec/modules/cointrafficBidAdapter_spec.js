@@ -3,7 +3,7 @@ import { spec } from 'modules/cointrafficBidAdapter.js';
 import { config } from 'src/config.js'
 import * as utils from 'src/utils.js'
 
-const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 
 describe('cointrafficBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -163,6 +163,55 @@ describe('cointrafficBidAdapter', function () {
           advertiserDomains: [
             'test.com',
           ]
+        }
+      }];
+
+      let result = spec.interpretResponse(serverResponse, bidRequest[0]);
+      expect(Object.keys(result)).to.deep.equal(Object.keys(expectedResponse));
+    });
+
+    it('should get the correct bid response without advertiser domains specified', function () {
+      let bidRequest = [{
+        method: 'POST',
+        url: ENDPOINT_URL,
+        data: {
+          placementId: 'testPlacementId',
+          device: 'desktop',
+          currency: 'EUR',
+          sizes: ['300x250'],
+          bidId: 'bidId12345',
+          referer: 'www.example.com'
+        }
+      }];
+
+      let serverResponse = {
+        body: {
+          requestId: 'bidId12345',
+          cpm: 3.9,
+          currency: 'EUR',
+          netRevenue: true,
+          width: 300,
+          height: 250,
+          creativeId: 'creativeId12345',
+          ttl: 90,
+          ad: '<html><h3>I am an ad</h3></html> ',
+          mediaType: 'banner',
+        }
+      };
+
+      let expectedResponse = [{
+        requestId: 'bidId12345',
+        cpm: 3.9,
+        currency: 'EUR',
+        netRevenue: true,
+        width: 300,
+        height: 250,
+        creativeId: 'creativeId12345',
+        ttl: 90,
+        ad: '<html><h3>I am an ad</h3></html>',
+        meta: {
+          mediaType: 'banner',
+          advertiserDomains: []
         }
       }];
 
