@@ -9,7 +9,7 @@ import {
 } from './constants.js';
 
 export function renderer(win = window) {
-  return function ({adId, publisherDomain, clickUrl}) {
+  return function ({adId, pubDomain, clickUrl}) {
     function cb(err) {
       const payload = {
         message: PREBID_EVENT,
@@ -17,7 +17,7 @@ export function renderer(win = window) {
         event: err == null ? AD_RENDER_SUCCEEDED : AD_RENDER_FAILED,
       }
       if (err != null) payload.info = err;
-      win.parent.postMessage(JSON.stringify(payload), publisherDomain)
+      win.parent.postMessage(JSON.stringify(payload), pubDomain)
     }
     function onMessage(ev) {
       let data = {};
@@ -50,7 +50,8 @@ export function renderer(win = window) {
     });
     const channel = new MessageChannel();
     channel.port1.onmessage = onMessage;
-    win.parent.postMessage(request, publisherDomain, [channel.port2]);
+    win.parent.postMessage(request, pubDomain, [channel.port2]);
     win.addEventListener('message', onMessage, false);
   }
 }
+window.renderAd = renderer();

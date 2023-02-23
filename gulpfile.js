@@ -158,6 +158,12 @@ function makeWebpackPkg(extraConfig = {}) {
   }
 }
 
+function buildCreative() {
+  return gulp.src(['**/*'])
+    .pipe(webpackStream(require('./webpack.creative.js')))
+    .pipe(gulp.dest('build/creative'))
+}
+
 function getModulesListToAddInBanner(modules) {
   if (!modules || modules.length === helpers.getModuleNames().length) {
     return 'All available modules for this version.'
@@ -457,7 +463,7 @@ gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', buildCreative));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
