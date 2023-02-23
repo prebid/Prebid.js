@@ -717,14 +717,16 @@ function fireNativoError(errorMessage) {
 
   if (!httpRequest) return
 
-  httpRequest.open('POST', 'https://jadserve.postrelease.com/clientErrorLogging')
-  httpRequest.setRequestHeader('Content-type', 'application/json')
-  httpRequest.send(JSON.stringify({
-    errorType: 'Prebid Adapter Error',
-    errorMessage,
-    severityLevel: 'Error',
-    errorStacktrace: []
-  }))
+  try {
+    httpRequest.open('POST', 'https://jadserve.postrelease.com/clientErrorLogging')
+    httpRequest.setRequestHeader('Content-type', 'application/json')
+    httpRequest.send(JSON.stringify({
+      errorType: 'Prebid Adapter Error',
+      errorMessage,
+      severityLevel: 'Error',
+      errorStacktrace: []
+    }))
+  } catch(err) {}
 }
 
 /**
