@@ -4,7 +4,8 @@ import * as neuwo from 'modules/neuwoRtdProvider';
 const PUBLIC_TOKEN = 'public_key_0000';
 const config = () => ({
   params: {
-    publicToken: PUBLIC_TOKEN
+    publicToken: PUBLIC_TOKEN,
+    apiUrl: 'https://testing-requirement.neuwo.api'
   }
 })
 
