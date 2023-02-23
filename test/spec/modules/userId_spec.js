@@ -3049,5 +3049,32 @@ describe('User ID', function () {
       expect(moduleToUpdate.params.e).to.exist;
       expect(moduleToUpdate.params.e).to.equal(emailHash);
     });
+
+    xit('should set the he param for connectId if connectId module is configured and email hashes are available', function() {
+		  var emailHash = '722b8c12e7991f0ebbcc2d7caebe8e12479d26d5dd9cb37f442a55ddc190817a';
+		  var moduleToUpdate = {
+          name: 'connectId',
+          storage: {
+            name: 'connectId',
+            type: 'html',
+            expires: 15
+          },
+          params: {
+            pixelId: '5976',
+          }
+		  };
+
+		  getGlobal().setUserIdentities(
+          {
+            'emailHash': {
+                'MD5': '1edeb32aa0ab4b329a41b431050dcf26',
+                'SHA256': '722b8c12e7991f0ebbcc2d7caebe8e12479d26d5dd9cb37f442a55ddc190817a'
+            }
+          }
+		  );
+		  updateModuleParams(moduleToUpdate);
+		  expect(moduleToUpdate.params.he).to.exist;
+		  expect(moduleToUpdate.params.he).to.equal(emailHash);
+    });
   });
 });
