@@ -179,10 +179,6 @@ export const converter = ortbConverter({
     if (haveFloorDataBidRequests.length > 0) {
       data.ext.prebid.floors = { enabled: false };
     }
-    // multibid
-    const multibid = config.getConfig('multibid');
-    addMultibid(data, multibid);
-
     return data;
   },
   imp(buildImp, bidRequest, context) {
@@ -205,9 +201,8 @@ export const converter = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = deepAccess(bid, 'ext.prebid.type');
     const bidResponse = buildBidResponse(bid, context);
-    bidResponse.meta.mediaType = context.mediaType;
+    bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
@@ -1188,23 +1183,6 @@ function setBidFloors(bidRequest, imp) {
       imp.bidfloorcur = 'USD';
     }
   }
-}
-
-function addMultibid(data, multibid) {
-  if (!multibid) {
-    return;
-  }
-  deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
-    let obj = {};
-
-    Object.keys(i).forEach(key => {
-      obj[key.toLowerCase()] = i[key];
-    });
-
-    result.push(obj);
-
-    return result;
-  }, []));
 }
 
 function addOrtbFirstPartyData(data, nonBannerRequests) {

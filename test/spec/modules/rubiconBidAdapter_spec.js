@@ -18,6 +18,7 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
+import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
