@@ -114,6 +114,7 @@ export const id5IdSubmodule = {
     }
 
     if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo('No consent given for ID5 local storage writing, skipping.')
       return undefined;
     }
 
@@ -142,11 +143,12 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
+    hasRequiredConfig(config);
+
     if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo('No consent given for ID5 local storage writing, skipping.')
       return cacheIdObj;
     }
-
-    hasRequiredConfig(config);
 
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);

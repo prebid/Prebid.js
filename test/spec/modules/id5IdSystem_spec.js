@@ -219,18 +219,18 @@ describe('ID5 ID System', function () {
 
   describe('Check for valid consent', function() {
     const dataConsentVals = [
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}],
-      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}],
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}],
-      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}],
-      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}],
-      [undefined, {vendor: {consents: {131: true}}}],
-      [{purpose: {consents: {1: true}}}, {vendor: undefined}],
-      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}]
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}, ' no purpose consent'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}, ' no vendor consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}, ' no purpose and vendor consent'],
+      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}, ' undefined purpose consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}], ' undefined vendor consent',
+      [undefined, {vendor: {consents: {131: true}}}, ' undefined purpose'],
+      [{purpose: {consents: {1: true}}}, {vendor: undefined}, ' undefined vendor'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}, ' incorrect vendor consent']
     ];
 
-    dataConsentVals.forEach(function([purposeConsent, vendorConsent]) {
-      it('should fail with invalid consent', function() {
+    dataConsentVals.forEach(function([purposeConsent, vendorConsent, caseName]) {
+      it('should fail with invalid consent because of ' + caseName, function() {
         let dataConsent = {
           gdprApplies: true,
           consentString: 'consentString',
