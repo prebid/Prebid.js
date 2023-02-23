@@ -1729,6 +1729,47 @@ describe('OpenxAdapter', function () {
           });
         });
       });
+      describe('with user agent client hints', function () {
+        it('should add json query param sua with BidRequest.device.sua if available', function () {
+          const bidderRequestWithUserAgentClientHints = { refererInfo: {},
+            ortb2: {
+              device: {
+                sua: {
+                  source: 2,
+                  platform: {
+                    brand: 'macOS',
+                    version: [ '12', '4', '0' ]
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: [ '99', '0', '0', '0' ]
+                    }],
+                  mobile: 0,
+                  model: 'Pro',
+                  bitness: '64',
+                  architecture: 'x86'
+                }
+              }
+            }};
+
+          let request = spec.buildRequests([bidRequest], bidderRequestWithUserAgentClientHints);
+          expect(request[0].data.sua).to.exist;
+          const payload = JSON.parse(request[0].data.sua);
+          expect(payload).to.deep.equal(bidderRequestWithUserAgentClientHints.ortb2.device.sua);
+          const bidderRequestWithoutUserAgentClientHints = {refererInfo: {}, ortb2: {}};
+          request = spec.buildRequests([bidRequest], bidderRequestWithoutUserAgentClientHints);
+          expect(request[0].data.sua).to.not.exist;
+        });
+      });
     });
   })
 
