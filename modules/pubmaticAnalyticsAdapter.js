@@ -236,7 +236,7 @@ function isEmptyObject(object) {
  * Prepare meta object to pass in logger call
  * @param {*} meta
  */
-function getMetadata(meta) {
+export function getMetadata(meta) {
   if (!meta || isEmptyObject(meta)) return;
   const metaObj = {};
   if (meta.networkId) metaObj.nwid = meta.networkId;
