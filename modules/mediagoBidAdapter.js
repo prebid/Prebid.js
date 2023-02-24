@@ -237,6 +237,7 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes,
         },
         ext: {
           //   gpid: gpid, // 加入后无法返回广告

@@ -255,6 +255,7 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes,
         },
         ext: {},
         tagid: globals['tagid'],
