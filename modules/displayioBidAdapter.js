@@ -2,12 +2,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {getWindowFromDocument, logWarn} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
 const BID_TTL = 300;
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const DEFAULT_CURRENCY = 'USD';
+const US_KEY = '_dio_us';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -67,15 +69,16 @@ export const spec = {
 
 function getPayload (bid, bidderRequest) {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const storage = getStorageManager({bidderCode: BIDDER_CODE});
   const userSession = (() => {
-    let us = window.localStorage.getItem('dio-us')
+    let us = storage.getDataFromLocalStorage(US_KEY);
     if (!us) {
       us = 'us_web_xxxxxxxxxxxx'.replace(/[x]/g, c => {
         let r = Math.random() * 16 | 0;
         let v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
-      window.localStorage.setItem('dio-us', us);
+      storage.setDataInLocalStorage(US_KEY, us);
     }
     return us
   })();
