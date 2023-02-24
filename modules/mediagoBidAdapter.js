@@ -216,8 +216,8 @@ function getItems(validBidRequests, bidderRequest) {
     }
     if (!matchSize) {
       matchSize = sizes[0]
-        ? { h: sizes[0].height || 0, w: sizes[0].width || 0}
-        : { h: 0, w: 0};
+        ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
+        : { h: 0, w: 0 };
     }
 
     const bidFloor = getBidFloor(req);
