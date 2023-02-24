@@ -1,5 +1,12 @@
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { pbsExtensions } from '../libraries/pbsExtensions/pbsExtensions.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { find } from '../src/polyfill.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { Renderer } from '../src/Renderer.js';
 import {
-  _each,
   convertTypes,
   deepAccess,
   deepSetValue,
@@ -11,14 +18,8 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput
+  parseSizesInput, _each
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {find} from '../src/polyfill.js';
-import {Renderer} from '../src/Renderer.js';
-import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -138,17 +139,101 @@ var sizeMap = {
   580: '505x656',
   622: '192x160'
 };
+
 _each(sizeMap, (item, key) => sizeMap[item] = key);
+
+export const converter = ortbConverter({
+  request(buildRequest, imps, bidderRequest, context) {
+    const {bidRequests} = context;
+    const data = buildRequest(imps, bidderRequest, context);
+    data.cur = ['USD'];
+    data.test = config.getConfig('debug') ? 1 : 0;
+    deepSetValue(data, 'ext.prebid.cache', {
+      vastxml: {
+        returnCreative: rubiConf.returnVast === true
+      }
+    });
+
+    deepSetValue(data, 'ext.prebid.bidders', {
+      rubicon: {
+        integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION,
+      }
+    });
+
+    deepSetValue(data, 'ext.prebid.targeting.pricegranularity', getPriceGranularity(config));
+
+    let modules = (getGlobal()).installedModules;
+    if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
+      deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
+    }
+
+    addOrtbFirstPartyData(data, bidRequests);
+
+    delete data?.ext?.prebid?.storedrequest;
+
+    // floors
+    if (rubiConf.disableFloors === true) {
+      delete data.ext.prebid.floors;
+    }
+
+    // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
+    const haveFloorDataBidRequests = bidRequests.filter(bidRequest => typeof bidRequest.floorData === 'object');
+    if (haveFloorDataBidRequests.length > 0) {
+      data.ext.prebid.floors = { enabled: false };
+    }
+    return data;
+  },
+  imp(buildImp, bidRequest, context) {
+    // skip banner-only requests
+    const bidRequestType = bidType(bidRequest);
+    if (bidRequestType.includes(BANNER) && bidRequestType.length == 1) return;
+
+    const imp = buildImp(bidRequest, context);
+    imp.id = bidRequest.adUnitCode;
+    delete imp.banner;
+    if (config.getConfig('s2sConfig.defaultTtl')) {
+      imp.exp = config.getConfig('s2sConfig.defaultTtl');
+    };
+    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    delete imp.ext?.prebid?.storedrequest;
+
+    setBidFloors(bidRequest, imp);
+
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
+    const {bidRequest} = context;
+    if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
+      bidResponse.renderer = outstreamRenderer(bidResponse);
+    }
+    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth');
+    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight');
+
+    if (deepAccess(bid, 'ext.bidder.rp.advid')) {
+      deepSetValue(bidResponse, 'meta.advertiserId', bid.ext.bidder.rp.advid);
+    }
+    return bidResponse;
+  },
+  context: {
+    netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
+    ttl: 300,
+  },
+  processors: pbsExtensions
+});
 
 export const spec = {
   code: 'rubicon',
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * @param {object} bid
    * @return boolean
    */
   isBidRequestValid: function (bid) {
+    let valid = true;
     if (typeof bid.params !== 'object') {
       return false;
     }
@@ -160,15 +245,16 @@ export const spec = {
         return false
       }
     }
-    let bidFormat = bidType(bid, true);
+    let bidFormats = bidType(bid, true);
     // bidType is undefined? Return false
-    if (!bidFormat) {
+    if (!bidFormats.length) {
       return false;
-    } else if (bidFormat === 'video') { // bidType is video, make sure it has required params
-      return hasValidVideoParams(bid);
+    } else if (bidFormats.includes(VIDEO)) { // bidType is video, make sure it has required params
+      valid = hasValidVideoParams(bid);
     }
-    // bidType is banner? return true
-    return true;
+    const hasBannerOrNativeMediaType = [BANNER, NATIVE].filter(mediaType => bidFormats.includes(mediaType)).length > 0;
+    if (!hasBannerOrNativeMediaType) return valid;
+    return valid && hasBannerOrNativeMediaType;
   },
   /**
    * @param {BidRequest[]} bidRequests
@@ -178,166 +264,57 @@ export const spec = {
   buildRequests: function (bidRequests, bidderRequest) {
     // separate video bids because the requests are structured differently
     let requests = [];
-    const videoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'video').map(bidRequest => {
-      bidRequest.startTime = new Date().getTime();
+    let filteredHttpRequest = [];
+    let filteredRequests;
 
-      const data = {
-        id: bidRequest.transactionId,
-        test: config.getConfig('debug') ? 1 : 0,
-        cur: ['USD'],
-        source: {
-          tid: bidRequest.transactionId
-        },
-        tmax: bidderRequest.timeout,
-        imp: [{
-          exp: config.getConfig('s2sConfig.defaultTtl'),
-          id: bidRequest.adUnitCode,
-          secure: 1,
-          ext: {
-            [bidRequest.bidder]: bidRequest.params
-          },
-          video: deepAccess(bidRequest, 'mediaTypes.video') || {}
-        }],
-        ext: {
-          prebid: {
-            channel: {
-              name: 'pbjs',
-              version: $$PREBID_GLOBAL$$.version
-            },
-            cache: {
-              vastxml: {
-                returnCreative: rubiConf.returnVast === true
-              }
-            },
-            targeting: {
-              includewinners: true,
-              // includebidderkeys always false for openrtb
-              includebidderkeys: false,
-              pricegranularity: getPriceGranularity(config)
-            },
-            bidders: {
-              rubicon: {
-                integration: rubiConf.int_type || DEFAULT_PBS_INTEGRATION
-              }
-            }
-          }
-        }
-      }
+    filteredRequests = bidRequests.filter(req => {
+      const mediaTypes = bidType(req) || [];
+      const { length } = mediaTypes;
+      const { bidonmultiformat, video } = req.params || {};
 
-      // Add alias if it is there
-      if (bidRequest.bidder !== 'rubicon') {
-        data.ext.prebid.aliases = {
-          [bidRequest.bidder]: 'rubicon'
-        }
-      }
+      return (
+        // if there's just one mediaType and it's video or native, just send it!
+        (length === 1 && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE))) ||
+        // if it's two mediaTypes, and they don't contain banner, send to PBS both native & video
+        (length === 2 && !mediaTypes.includes(BANNER)) ||
+        // if it contains the video param and the Video mediaType, send Video to PBS (not native!)
+        (video && mediaTypes.includes(VIDEO)) ||
+        // if bidonmultiformat is on, send everything to PBS
+        (bidonmultiformat && (mediaTypes.includes(VIDEO) || mediaTypes.includes(NATIVE)))
+      )
+    });
 
-      let modules = (getGlobal()).installedModules;
-      if (modules && (!modules.length || modules.indexOf('rubiconAnalyticsAdapter') !== -1)) {
-        deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
-      }
+    if (filteredRequests && filteredRequests.length) {
+      const data = converter.toORTB({bidRequests: filteredRequests, bidderRequest});
 
-      let bidFloor;
-      if (typeof bidRequest.getFloor === 'function' && !rubiConf.disableFloors) {
-        let floorInfo;
-        try {
-          floorInfo = bidRequest.getFloor({
-            currency: 'USD',
-            mediaType: 'video',
-            size: parseSizes(bidRequest, 'video')
-          });
-        } catch (e) {
-          logError('Rubicon: getFloor threw an error: ', e);
-        }
-        bidFloor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? parseFloat(floorInfo.floor) : undefined;
-      } else {
-        bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
-      }
-      if (!isNaN(bidFloor)) {
-        data.imp[0].bidfloor = bidFloor;
-      }
-
-      // If the price floors module is active, then we need to signal to PBS! If floorData obj is present is best way to check
-      if (typeof bidRequest.floorData === 'object') {
-        data.ext.prebid.floors = { enabled: false };
-      }
-
-      // if value is set, will overwrite with same value
-      data.imp[0].ext[bidRequest.bidder].video.size_id = determineRubiconVideoSizeId(bidRequest)
-
-      appendSiteAppDevice(data, bidRequest, bidderRequest);
-
-      addVideoParameters(data, bidRequest);
-
-      if (bidderRequest.gdprConsent) {
-        // note - gdprApplies & consentString may be undefined in certain use-cases for consentManagement module
-        let gdprApplies;
-        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
-          gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-        }
-
-        deepSetValue(data, 'regs.ext.gdpr', gdprApplies);
-        deepSetValue(data, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      }
-
-      if (bidderRequest.uspConsent) {
-        deepSetValue(data, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-      }
-
-      const eids = deepAccess(bidderRequest, 'bids.0.userIdAsEids');
-      if (eids && eids.length) {
-        deepSetValue(data, 'user.ext.eids', eids);
-      }
-
-      // set user.id value from config value
-      const configUserId = config.getConfig('user.id');
-      if (configUserId) {
-        deepSetValue(data, 'user.id', configUserId);
-      }
-
-      if (config.getConfig('coppa') === true) {
-        deepSetValue(data, 'regs.coppa', 1);
-      }
-
-      if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
-        deepSetValue(data, 'source.ext.schain', bidRequest.schain);
-      }
-
-      const multibid = config.getConfig('multibid');
-      if (multibid) {
-        deepSetValue(data, 'ext.prebid.multibid', multibid.reduce((result, i) => {
-          let obj = {};
-
-          Object.keys(i).forEach(key => {
-            obj[key.toLowerCase()] = i[key];
-          });
-
-          result.push(obj);
-
-          return result;
-        }, []));
-      }
-
-      applyFPD(bidRequest, VIDEO, data);
-
-      // set ext.prebid.auctiontimestamp using auction time
-      deepSetValue(data.imp[0], 'ext.prebid.auctiontimestamp', bidderRequest.auctionStart);
-
-      // set storedrequests to undefined so not sent to PBS
-      // top level and imp level both 'ext.prebid' objects are set above so no exception thrown here
-      data.ext.prebid.storedrequest = undefined;
-      data.imp[0].ext.prebid.storedrequest = undefined;
-
-      return {
+      filteredHttpRequest.push({
         method: 'POST',
         url: `https://${rubiConf.videoHost || 'prebid-server'}.rubiconproject.com/openrtb2/auction`,
         data,
-        bidRequest
-      }
-    });
+        bidRequest: filteredRequests
+      });
+    }
 
+    const bannerBidRequests = bidRequests.filter((req) => {
+      const mediaTypes = bidType(req) || [];
+      const {bidonmultiformat, video} = req.params || {};
+      return (
+        // Send to fastlane if: it must include BANNER and...
+        mediaTypes.includes(BANNER) && (
+          // if it's just banner
+          (mediaTypes.length === 1) ||
+          // if bidonmultiformat is true
+          bidonmultiformat ||
+          // if bidonmultiformat is false and there's no video parameter
+          (!bidonmultiformat && !video) ||
+          // if there's video parameter, but there's no video mediatype
+          (!bidonmultiformat && video && !mediaTypes.includes(VIDEO))
+        )
+      );
+    });
     if (config.getConfig('rubicon.singleRequest') !== true) {
       // bids are not grouped if single request mode is not enabled
-      requests = videoRequests.concat(bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner').map(bidRequest => {
+      requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
         return {
           method: 'GET',
@@ -352,8 +329,7 @@ export const spec = {
     } else {
       // single request requires bids to be grouped by site id into a single request
       // note: groupBy wasn't used because deep property access was needed
-      const nonVideoRequests = bidRequests.filter(bidRequest => bidType(bidRequest) === 'banner');
-      const groupedBidRequests = nonVideoRequests.reduce((groupedBids, bid) => {
+      const groupedBidRequests = bannerBidRequests.reduce((groupedBids, bid) => {
         (groupedBids[bid.params['siteId']] = groupedBids[bid.params['siteId']] || []).push(bid);
         return groupedBids;
       }, {});
@@ -362,7 +338,7 @@ export const spec = {
       const SRA_BID_LIMIT = 10;
 
       // multiple requests are used if bids groups have more than 10 bids
-      requests = videoRequests.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
+      requests = filteredHttpRequest.concat(Object.keys(groupedBidRequests).reduce((aggregate, bidGroupKey) => {
         // for each partioned bidGroup, append a bidRequest to requests list
         partitionArray(groupedBidRequests[bidGroupKey], SRA_BID_LIMIT).forEach(bidsInGroup => {
           const combinedSlotParams = spec.combineSlotUrlParams(bidsInGroup.map(bidRequest => {
@@ -615,106 +591,36 @@ export const spec = {
 
   /**
    * @param {*} responseObj
-   * @param {BidRequest|Object.<string, BidRequest[]>} bidRequest - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
+   * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
    * @return {Bid[]} An array of bids which
    */
-  interpretResponse: function (responseObj, {bidRequest}) {
+  interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
+    const {data} = request;
 
     // check overall response
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
 
-    // video response from PBS Java openRTB
+    // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
       if (Array.isArray(responseErrors) && responseErrors.length > 0) {
         logWarn('Rubicon: Error in video response');
       }
-      const bids = [];
-      responseObj.seatbid.forEach(seatbid => {
-        (seatbid.bid || []).forEach(bid => {
-          let bidObject = {
-            requestId: bidRequest.bidId,
-            currency: responseObj.cur || 'USD',
-            creativeId: bid.crid,
-            cpm: bid.price || 0,
-            bidderCode: seatbid.seat,
-            ttl: 300,
-            netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
-            width: bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth'),
-            height: bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight'),
-          };
-
-          if (bid.id) {
-            bidObject.seatBidId = bid.id;
-          }
-
-          if (bid.dealid) {
-            bidObject.dealId = bid.dealid;
-          }
-
-          if (bid.adomain) {
-            deepSetValue(bidObject, 'meta.advertiserDomains', Array.isArray(bid.adomain) ? bid.adomain : [bid.adomain]);
-          }
-
-          if (deepAccess(bid, 'ext.bidder.rp.advid')) {
-            deepSetValue(bidObject, 'meta.advertiserId', bid.ext.bidder.rp.advid);
-          }
-
-          let serverResponseTimeMs = deepAccess(responseObj, 'ext.responsetimemillis.rubicon');
-          if (bidRequest && serverResponseTimeMs) {
-            bidRequest.serverResponseTimeMs = serverResponseTimeMs;
-          }
-
-          if (deepAccess(bid, 'ext.prebid.type') === VIDEO) {
-            bidObject.mediaType = VIDEO;
-            deepSetValue(bidObject, 'meta.mediaType', VIDEO);
-            const extPrebidTargeting = deepAccess(bid, 'ext.prebid.targeting');
-
-            // If ext.prebid.targeting exists, add it as a property value named 'adserverTargeting'
-            if (extPrebidTargeting && typeof extPrebidTargeting === 'object') {
-              bidObject.adserverTargeting = extPrebidTargeting;
-            }
-
-            // try to get cache values from 'response.ext.prebid.cache.js'
-            // else try 'bid.ext.prebid.targeting' as fallback
-            if (bid.ext.prebid.cache && typeof bid.ext.prebid.cache.vastXml === 'object' && bid.ext.prebid.cache.vastXml.cacheId && bid.ext.prebid.cache.vastXml.url) {
-              bidObject.videoCacheKey = bid.ext.prebid.cache.vastXml.cacheId;
-              bidObject.vastUrl = bid.ext.prebid.cache.vastXml.url;
-            } else if (extPrebidTargeting && extPrebidTargeting.hb_uuid && extPrebidTargeting.hb_cache_host && extPrebidTargeting.hb_cache_path) {
-              bidObject.videoCacheKey = extPrebidTargeting.hb_uuid;
-              // build url using key and cache host
-              bidObject.vastUrl = `https://${extPrebidTargeting.hb_cache_host}${extPrebidTargeting.hb_cache_path}?uuid=${extPrebidTargeting.hb_uuid}`;
-            }
-
-            if (bid.adm) { bidObject.vastXml = bid.adm; }
-            if (bid.nurl) { bidObject.vastUrl = bid.nurl; }
-            if (!bidObject.vastUrl && bid.nurl) { bidObject.vastUrl = bid.nurl; }
-
-            const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
-            if (videoContext.toLowerCase() === 'outstream') {
-              bidObject.renderer = outstreamRenderer(bidObject);
-            }
-          } else {
-            logWarn('Rubicon: video response received non-video media type');
-          }
-
-          bids.push(bidObject);
-        });
-      });
-
+      const bids = converter.fromORTB({request: data, response: responseObj}).bids;
       return bids;
     }
 
     let ads = responseObj.ads;
     let lastImpId;
     let multibid = 0;
+    const {bidRequest} = request;
 
     // video ads array is wrapped in an object
-    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest) === 'video' && typeof ads === 'object') {
+    if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest).includes(VIDEO) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
     }
 
@@ -780,7 +686,6 @@ export const spec = {
       } else {
         logError(`Rubicon: bidRequest undefined at index position:${i}`, bidRequest, responseObj);
       }
-
       return bids;
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
@@ -919,7 +824,7 @@ function outstreamRenderer(rtbBid) {
 
 function parseSizes(bid, mediaType) {
   let params = bid.params;
-  if (mediaType === 'video') {
+  if (mediaType === VIDEO) {
     let size = [];
     if (params.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
@@ -947,65 +852,6 @@ function parseSizes(bid, mediaType) {
   }
 
   return masSizeOrdering(sizes);
-}
-
-/**
- * @param {Object} data
- * @param bidRequest
- * @param bidderRequest
- */
-function appendSiteAppDevice(data, bidRequest, bidderRequest) {
-  if (!data) return;
-
-  // ORTB specifies app OR site
-  if (typeof config.getConfig('app') === 'object') {
-    data.app = config.getConfig('app');
-  } else {
-    data.site = {
-      page: _getPageUrl(bidRequest, bidderRequest)
-    }
-  }
-  if (typeof config.getConfig('device') === 'object') {
-    data.device = config.getConfig('device');
-  }
-  // Add language to site and device objects if there
-  if (bidRequest.params.video.language) {
-    ['site', 'device'].forEach(function(param) {
-      if (data[param]) {
-        if (param === 'site') {
-          data[param].content = Object.assign({language: bidRequest.params.video.language}, data[param].content)
-        } else {
-          data[param] = Object.assign({language: bidRequest.params.video.language}, data[param])
-        }
-      }
-    });
-  }
-}
-
-/**
- * @param {Object} data
- * @param {BidRequest} bidRequest
- */
-function addVideoParameters(data, bidRequest) {
-  if (typeof data.imp[0].video === 'object' && data.imp[0].video.skip === undefined) {
-    data.imp[0].video.skip = bidRequest.params.video.skip;
-  }
-  if (typeof data.imp[0].video === 'object' && data.imp[0].video.skipafter === undefined) {
-    data.imp[0].video.skipafter = bidRequest.params.video.skipdelay;
-  }
-  // video.pos can already be specified by adunit.mediatypes.video.pos.
-  // but if not, it might be specified in the params
-  if (typeof data.imp[0].video === 'object' && data.imp[0].video.pos === undefined) {
-    if (bidRequest.params.position === 'atf') {
-      data.imp[0].video.pos = 1;
-    } else if (bidRequest.params.position === 'btf') {
-      data.imp[0].video.pos = 3;
-    }
-  }
-
-  const size = parseSizes(bidRequest, 'video')
-  data.imp[0].video.w = size[0]
-  data.imp[0].video.h = size[1]
 }
 
 function applyFPD(bidRequest, mediaType, data) {
@@ -1118,10 +964,14 @@ function mapSizes(sizes) {
 export function classifiedAsVideo(bidRequest) {
   let isVideo = typeof deepAccess(bidRequest, `mediaTypes.${VIDEO}`) !== 'undefined';
   let isBanner = typeof deepAccess(bidRequest, `mediaTypes.${BANNER}`) !== 'undefined';
+  let isBidOnMultiformat = typeof deepAccess(bidRequest, `params.bidonmultiformat`) !== 'undefined';
   let isMissingVideoParams = typeof deepAccess(bidRequest, 'params.video') !== 'object';
   // If an ad has both video and banner types, a legacy implementation allows choosing video over banner
   // based on whether or not there is a video object defined in the params
   // Given this legacy implementation, other code depends on params.video being defined
+
+  // if it's bidonmultiformat, we don't care of the video object
+  if (isVideo && isBidOnMultiformat) return true;
 
   if (isBanner && isMissingVideoParams) {
     isVideo = false;
@@ -1133,13 +983,14 @@ export function classifiedAsVideo(bidRequest) {
 }
 
 /**
- * Determine bidRequest mediaType
+ * Determine bidRequest mediaTypes. All mediaTypes must be correct. If one fails, all the others will fail too.
  * @param bid the bid to test
- * @param log whether we should log errors/warnings for invalid bids
- * @returns {string|undefined} Returns 'video' or 'banner' if resolves to a type, or undefined otherwise (invalid).
+ * @param log boolean. whether we should log errors/warnings for invalid bids
+ * @returns {string|undefined} Returns an array containing one of 'video' or 'banner' or 'native' if resolves to a type.
  */
 function bidType(bid, log = false) {
   // Is it considered video ad unit by rubicon
+  let bidTypes = [];
   if (classifiedAsVideo(bid)) {
     // Removed legacy mediaType support. new way using mediaTypes.video object is now required
     // We require either context as instream or outstream
@@ -1147,37 +998,43 @@ function bidType(bid, log = false) {
       if (log) {
         logError('Rubicon: mediaTypes.video.context must be outstream or instream');
       }
-      return;
+      return bidTypes;
     }
 
     // we require playerWidth and playerHeight to come from one of params.playerWidth/playerHeight or mediaTypes.video.playerSize or adUnit.sizes
-    if (parseSizes(bid, 'video').length < 2) {
+    if (parseSizes(bid, VIDEO).length < 2) {
       if (log) {
         logError('Rubicon: could not determine the playerSize of the video');
       }
-      return;
+      return bidTypes;
     }
 
     if (log) {
       logMessage('Rubicon: making video request for adUnit', bid.adUnitCode);
     }
-    return 'video';
-  } else {
+    bidTypes.push(VIDEO);
+  }
+  if (typeof deepAccess(bid, `mediaTypes.${NATIVE}`) !== 'undefined') {
+    bidTypes.push(NATIVE);
+  }
+
+  if (typeof deepAccess(bid, `mediaTypes.${BANNER}`) !== 'undefined') {
     // we require banner sizes to come from one of params.sizes or mediaTypes.banner.sizes or adUnit.sizes, in that order
     // if we cannot determine them, we reject it!
-    if (parseSizes(bid, 'banner').length === 0) {
+    if (parseSizes(bid, BANNER).length === 0) {
       if (log) {
         logError('Rubicon: could not determine the sizes for banner request');
       }
-      return;
+      return bidTypes;
     }
 
     // everything looks good for banner so lets do it
     if (log) {
       logMessage('Rubicon: making banner request for adUnit', bid.adUnitCode);
     }
-    return 'banner';
+    bidTypes.push(BANNER);
   }
+  return bidTypes;
 }
 
 export const resetRubiConf = () => rubiConf = {};
@@ -1305,6 +1162,66 @@ var hasSynced = false;
 
 export function resetUserSync() {
   hasSynced = false;
+}
+
+/**
+ * Sets the floor on the bidRequest. imp.bidfloor and imp.bidfloorcur
+ * should be already set by the conversion library. if they're not,
+ * or invalid, try to read from params.floor.
+ * @param {*} bidRequest
+ * @param {*} imp
+ */
+function setBidFloors(bidRequest, imp) {
+  if (imp.bidfloorcur != 'USD') {
+    delete imp.bidfloor;
+    delete imp.bidfloorcur;
+  }
+
+  if (!imp.bidfloor) {
+    let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+
+    if (!isNaN(bidFloor)) {
+      imp.bidfloor = bidFloor;
+      imp.bidfloorcur = 'USD';
+    }
+  }
+}
+
+function addOrtbFirstPartyData(data, nonBannerRequests) {
+  let fpd = {};
+  const keywords = new Set();
+  nonBannerRequests.forEach(bidRequest => {
+    const bidFirstPartyData = {
+      user: {ext: {data: {...bidRequest.params.visitor}}},
+      site: {ext: {data: {...bidRequest.params.inventory}}}
+    };
+
+    // add site.content.language
+    const impThatHasVideoLanguage = data.imp.find(imp => imp.ext?.prebid?.bidder?.rubicon?.video?.language);
+    if (impThatHasVideoLanguage) {
+      bidFirstPartyData.site.content = {
+        language: impThatHasVideoLanguage.ext?.prebid?.bidder?.rubicon?.video?.language
+      }
+    }
+
+    if (bidRequest.params.keywords) {
+      const keywordsArray = (!Array.isArray(bidRequest.params.keywords) ? bidRequest.params.keywords.split(',') : bidRequest.params.keywords);
+      keywordsArray.forEach(keyword => keywords.add(keyword));
+    }
+    fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);
+
+    // add user.id from config.
+    // NOTE: This is DEPRECATED. user.id should come from setConfig({ortb2}).
+    const configUserId = config.getConfig('user.id');
+    fpd.user.id = fpd.user.id || configUserId;
+  });
+
+  mergeDeep(data, fpd);
+
+  if (keywords && keywords.size) {
+    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  }
+  delete data?.ext?.prebid?.storedrequest;
 }
 
 registerBidder(spec);
