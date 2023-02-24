@@ -19,7 +19,6 @@ const storage = getStorageManager();
 let globals = {};
 let itemMaps = {};
 
-
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
 
@@ -215,10 +214,10 @@ function getItems(validBidRequests, bidderRequest) {
         break;
       }
     }
-	if (!matchSize) {
-        matchSize = sizes[0] ? 
-		{ h: sizes[0].height || 0, w: sizes[0].width || 0} : 
-		{ h: 0, w: 0};
+    if (!matchSize) {
+      matchSize = sizes[0]
+        ? { h: sizes[0].height || 0, w: sizes[0].width || 0}
+        : { h: 0, w: 0};
     }
 
     const bidFloor = getBidFloor(req);
