@@ -19,37 +19,6 @@ const storage = getStorageManager();
 let globals = {};
 let itemMaps = {};
 
-/**
- * 获取随机id
- * @param  {number} a random number from 0 to 15
- * @return {string}   random number or random string
- */
-// function getRandomId(
-//   a // placeholder
-// ) {
-//   // if the placeholder was passed, return
-//   // a random number from 0 to 15
-//   return a
-//     ? (
-//       a ^ // unless b is 8,
-//         ((Math.random() * // in which case
-//           16) >> // a random number from
-//           (a / 4))
-//     ) // 8 to 11
-//       .toString(16) // in hexadecimal
-//     : ( // or otherwise a concatenated string:
-//       [1e7] + // 10000000 +
-//         1e3 + // -1000 +
-//         4e3 + // -4000 +
-//         8e3 + // -80000000 +
-//         1e11
-//     ) // -100000000000,
-//       .replace(
-//         // replacing
-//         /[018]/g, // zeroes, ones, and eights with
-//         getRandomId // random hex digits
-//       );
-// }
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
@@ -246,8 +215,10 @@ function getItems(validBidRequests, bidderRequest) {
         break;
       }
     }
-    if (!matchSize) {
-      return {};
+	if (!matchSize) {
+        matchSize = sizes[0] ? 
+		{ h: sizes[0].height || 0, w: sizes[0].width || 0} : 
+		{ h: 0, w: 0};
     }
 
     const bidFloor = getBidFloor(req);
