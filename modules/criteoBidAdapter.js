@@ -11,7 +11,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 34;
+export const ADAPTER_VERSION = 35;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -27,7 +27,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 134;
+export const FAST_BID_VERSION_CURRENT = 135;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';

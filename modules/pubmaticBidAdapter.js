@@ -378,18 +378,14 @@ function _createNativeRequest(params) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
         switch (key) {
           case NATIVE_ASSETS.TITLE.KEY:
-            if (params[key].len || params[key].length) {
-              assetObj = {
-                id: NATIVE_ASSETS.TITLE.ID,
-                required: params[key].required ? 1 : 0,
-                title: {
-                  len: params[key].len || params[key].length,
-                  ext: params[key].ext
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
-            }
+            assetObj = {
+              id: NATIVE_ASSETS.TITLE.ID,
+              required: params[key].required ? 1 : 0,
+              title: {
+                len: params[key].len || params[key].length,
+                ext: params[key].ext
+              }
+            };
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
             assetObj = {
@@ -607,7 +603,7 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
-function _addJWPlayerSegmentData(imp, bid, isS2S) {
+function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
   const jwMark = 'jw-';
@@ -624,12 +620,8 @@ function _addJWPlayerSegmentData(imp, bid, isS2S) {
 
   var ext;
 
-  if (isS2S) {
-    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
-  } else {
-    ext = imp.ext;
-    ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
-  }
+  ext = imp.ext;
+  ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
 function _createImpressionObject(bid, conf) {
@@ -1375,7 +1367,6 @@ export const spec = {
    */
 
   transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    _addJWPlayerSegmentData(params, adUnit.bids[0], true);
     return convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'
