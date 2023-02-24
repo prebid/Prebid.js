@@ -17,6 +17,7 @@ import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 import { executeRenderer } from '../../../src/Renderer.js';
+import { userSync } from '../../../src/userSync.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -266,7 +267,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
-      'data'
+      'data',
+      'usIfr'
     ];
 
     it('groups requests by organizationId', function() {
@@ -561,15 +563,13 @@ describe('Adagio bid adapter', () => {
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
 
-        sinon.stub(config, 'getConfig')
-          .withArgs('coppa')
-          .returns(true);
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync').returns({ syncEnabled: true })
+          .withArgs('coppa').returns(true);
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
-
-        config.getConfig.restore();
       });
     });
 
@@ -734,6 +734,46 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
+      });
+    });
+
+    describe('with user-sync iframe enabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "true" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(true);
+      });
+    });
+
+    describe('with user-sync iframe disabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "false" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(false);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(false);
       });
     });
   });
