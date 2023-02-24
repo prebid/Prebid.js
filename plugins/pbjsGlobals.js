@@ -59,44 +59,19 @@ module.exports = function(api, options) {
     return null;
   }
 
-  function hasGetGlobalsImport(body) {
-    for (let i = 0; i < body.length; i++) {
-      if (body[i].type === 'ImportDeclaration' && body[i].source.value.match(/prebidGlobal(\.js)?$/)) {
-        for (let j = 0; j < body[i].specifiers.length; j++) {
-          if (body[i].specifiers[j].imported.name === 'getGlobal') {
-            return body[i].specifiers[j].local.name;
-          }
-        }
-      }
-    }
-    return false;
-  }
-  function getPathDepth(path) {
-    path = path.replace(/\\/g, '/');
-    let pathSegs = path.split('/');
-    let depth = 0;
-    for (let i = pathSegs.length - 2; i >= 0; i--) {
-      if (pathSegs[i] === 'modules') {
-        break;
-      }
-      depth++;
-    }
-    return depth;
-  }
-
   return {
     visitor: {
       Program(path, state) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
-          // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
-
-          let getGlobalName = hasGetGlobalsImport(path.node.body);
-          if (getGlobalName === false) {
-            path.node.body.unshift(...api.parse(`import {getGlobal} from '${'../'.repeat(getPathDepth(state.filename) + 1)}src/prebidGlobal.js';`, {filename: state.filename}).program.body);
-            getGlobalName = 'getGlobal';
-          }
-          path.node.body.push(...api.parse(`${getGlobalName}().installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+          // append "registration" of module file to getGlobal().installedModules
+          let i = 0;
+          let registerName;
+          do {
+            registerName = `__r${i++}`
+          } while (path.scope.hasBinding(registerName))
+          path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from 'src/prebidGlobal.js';`, {filename: state.filename}).program.body);
+          path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
       StringLiteral(path) {
