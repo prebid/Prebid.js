@@ -181,7 +181,7 @@ describe('viewabilityScoreGeneration', function() {
       sandbox.restore();
     });
 
-    xit('should append key/value pairings correctly', function() {
+    it('should append key/value pairings correctly', function() {
       const updateGptWithViewabilityTargetingSpy = sandbox.spy(viewabilityScoreGeneration, 'updateGptWithViewabilityTargeting');
 
       const config = {
