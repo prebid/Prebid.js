@@ -2638,6 +2638,21 @@ describe('PubMatic adapter', function () {
       expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
     });
 
+    it('should pass device.sua if present in bidderRequest fpd ortb2 object', function () {
+      const suaObject = {'source': 2, 'platform': {'brand': 'macOS', 'version': ['12', '4', '0']}, 'browsers': [{'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']}, {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']}, {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}], 'mobile': 0, 'model': '', 'bitness': '64', 'architecture': 'x86'};
+      let request = spec.buildRequests(multipleMediaRequests, {
+        auctionId: 'new-auction-id',
+        ortb2: {
+          device: {
+            sua: suaObject
+          }
+        }
+      });
+      let data = JSON.parse(request.data);
+      expect(data.device.sua).to.exist.and.to.be.an('object');
+      expect(data.device.sua).to.deep.equal(suaObject);
+    });
+
     it('Request params check for 1 banner and 1 video ad', function () {
       let request = spec.buildRequests(multipleMediaRequests, {
         auctionId: 'new-auction-id'
@@ -4631,7 +4646,7 @@ describe('PubMatic adapter', function () {
           // agencyName: 'agnm',
           // brandId: 'brid',
           // brandName: 'brnm',
-          // dchain: 'dc',
+          dchain: 'dc',
           // demandSource: 'ds',
           // secondaryCatIds: ['secondaryCatIds']
         }
@@ -4649,7 +4664,7 @@ describe('PubMatic adapter', function () {
       // expect(br.meta.agencyName).to.equal('agnm');
       expect(br.meta.brandId).to.equal('mystartab.com');
       // expect(br.meta.brandName).to.equal('brnm');
-      // expect(br.meta.dchain).to.equal('dc');
+      expect(br.meta.dchain).to.equal('dc');
       expect(br.meta.demandSource).to.equal(6);
       expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
       expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');

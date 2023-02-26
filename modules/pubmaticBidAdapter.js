@@ -13,6 +13,7 @@ const USER_SYNC_URL_IFRAME = 'https://ads.pubmatic.com/AdServer/js/user_sync.htm
 const USER_SYNC_URL_IMAGE = 'https://image8.pubmatic.com/AdServer/ImgSync?p=';
 const DEFAULT_CURRENCY = 'USD';
 const AUCTION_TYPE = 1;
+const PUBMATIC_ALIAS = 'pubmatic2';
 const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
@@ -1020,7 +1021,9 @@ export function prepareMetaObject(br, bid, seat) {
   // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
   // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
   // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
-  // if (bid.ext.dchain) br.meta.dchain = bid.ext.dchain;
+  if (bid.ext && bid.ext.dchain) {
+    br.meta.dchain = bid.ext.dchain;
+  }
 
   const advid = seat || (bid.ext && bid.ext.advid);
   if (advid) {
@@ -1061,6 +1064,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  aliases: [PUBMATIC_ALIAS],
   /**
   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
   *
@@ -1270,6 +1274,11 @@ export const spec = {
     }
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
+    }
+
+    // check if fpd ortb2 contains device property with sua object
+    if (commonFpd.device?.sua) {
+      payload.device.sua = commonFpd.device.sua;
     }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
