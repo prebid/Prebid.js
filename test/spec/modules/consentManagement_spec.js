@@ -707,6 +707,24 @@ describe('consentManagement', function () {
             }, 200)
           });
 
+          it('should still pick up consent data when actionTimeout is 0', (done) => {
+            mockTcfEvent({
+              eventStatus: 'tcloaded',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            setConsentConfig({
+              timeout: 1000,
+              actionTimeout: 0,
+              cmpApi: 'iab',
+              defaultGdprScope: true
+            });
+            requestBidsHook(() => {
+              expect(gdprDataHandler.getConsentData().consentString).to.eql('mock-consent-string');
+              done();
+            }, {})
+          })
+
           Object.entries({
             'null': null,
             'empty': '',
