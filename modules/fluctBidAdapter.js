@@ -141,6 +141,25 @@ export const spec = {
    *
    */
   getUserSyncs: (syncOptions, serverResponses) => {
+
+    const syncs = [];
+    const gdprApplies = gdprConsent.gdprApplies;
+    const res = serverResponses.body;
+
+    if (typeof gdprApplies === 'boolean') {
+      if (!gdprApplies) {
+        if (!isEmpty(res) && !isEmpty(res.sync_info) && !isEmpty(res.sync_info[0])) {
+          const sync = res.sync_info[0];
+          if (syncOptions.pixelEnabled && sync['type'] === 'pixel') {
+            syncs.push({
+              type: 'image',
+              url: sync['src']
+            });
+            return syncs;
+          }
+        }
+      }
+    }
     return [];
   },
 };
