@@ -33,5 +33,6 @@
   "seedtagBidAdapter",
   "userId",
   "id5IdSystem",
-  "intersectionRtdProvider"
+  "intersectionRtdProvider",
+  "mediasquareBidAdapter"
 ]
