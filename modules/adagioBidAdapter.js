@@ -15,6 +15,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isArrayOfNums,
   logError,
   logInfo,
   logWarn,
@@ -32,6 +33,7 @@ import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -48,33 +50,32 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation
-// of OpenRTB 2.5 options used by the Adagio SSP.
-// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
+// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].indexOf(v) !== -1),
+  'protocols': (value) => isArrayOfNums(value),
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => [1, 2, 3, 4, 5].indexOf(value) !== -1,
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
+  'placement': (value) => isInteger(value),
+  'linearity': (value) => isInteger(value),
+  'skip': (value) => isInteger(value),
   'skipmin': (value) => isInteger(value),
   'skipafter': (value) => isInteger(value),
   'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  'battr': (value) => isArrayOfNums(value),
   'maxextended': (value) => isInteger(value),
   'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  'api': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
+  'boxingallowed': (value) => isInteger(value),
+  'playbackmethod': (value) => isArrayOfNums(value),
+  'playbackend': (value) => isInteger(value),
+  'delivery': (value) => isInteger(value),
+  'pos': (value) => isInteger(value),
+  'api': (value) => isArrayOfNums(value)
 };
 
 let currentWindow;
@@ -912,6 +913,8 @@ export const spec = {
     const coppa = _getCoppa();
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
+    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
+    const usIfr = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
 
     const adUnits = _map(validBidRequests, (bidRequest) => {
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
@@ -1030,7 +1033,8 @@ export const spec = {
             eids: eids
           },
           prebidVersion: '$prebid.version$',
-          featuresVersion: FEATURES_VERSION
+          featuresVersion: FEATURES_VERSION,
+          usIfr: usIfr
         },
         options: {
           contentType: 'text/plain'
