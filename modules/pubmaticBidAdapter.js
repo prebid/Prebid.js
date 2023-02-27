@@ -1021,7 +1021,9 @@ export function prepareMetaObject(br, bid, seat) {
   // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
   // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
   // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
-  // if (bid.ext.dchain) br.meta.dchain = bid.ext.dchain;
+  if (bid.ext && bid.ext.dchain) {
+    br.meta.dchain = bid.ext.dchain;
+  }
 
   const advid = seat || (bid.ext && bid.ext.advid);
   if (advid) {
@@ -1272,6 +1274,11 @@ export const spec = {
     }
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
+    }
+
+    // check if fpd ortb2 contains device property with sua object
+    if (commonFpd.device?.sua) {
+      payload.device.sua = commonFpd.device.sua;
     }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
