@@ -114,7 +114,7 @@ export const id5IdSubmodule = {
     }
 
     if (!hasWriteConsentToLocalStorage(consentData)) {
-      logInfo('No consent given for ID5 local storage writing, skipping.')
+      logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.')
       return undefined;
     }
 
@@ -146,7 +146,7 @@ export const id5IdSubmodule = {
     hasRequiredConfig(config);
 
     if (!hasWriteConsentToLocalStorage(consentData)) {
-      logInfo('No consent given for ID5 local storage writing, skipping.')
+      logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.')
       return cacheIdObj;
     }
 
