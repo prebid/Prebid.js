@@ -9,7 +9,12 @@ import {
 } from './constants.js';
 
 export function renderer(win = window) {
-  return function ({adId, pubDomain, clickUrl}) {
+  return function ({adId, pubUrl, clickUrl}) {
+    const pubDomain = (() => {
+      const a = win.document.createElement('a');
+      a.href = pubUrl;
+      return a.protocol + '//' + a.hostname;
+    })();
     function cb(err) {
       const payload = {
         message: PREBID_EVENT,
