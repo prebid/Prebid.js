@@ -421,8 +421,8 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test, buildCreative))});
+const watchFast = watchTaskMaker({livereload: false, task: () => gulp.parallel('build-bundle-dev', buildCreative)});
 
 // support tasks
 gulp.task(lint);
@@ -467,7 +467,7 @@ gulp.task('build', gulp.series(clean, 'build-bundle-prod', buildCreative));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', buildCreative, watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
