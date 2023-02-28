@@ -22,6 +22,7 @@ import 'modules/debugging/index.js' // some tests look for debugging side effect
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import {expect} from 'chai';
 import {deepClone} from '../../src/utils.js';
+import { IMAGE as ortbNativeRequest } from 'src/native.js';
 
 var assert = require('assert');
 
@@ -185,7 +186,8 @@ describe('auctionmanager.js', function () {
       source: 'client',
       mediaType: 'banner',
       meta: {
-        advertiserDomains: ['adomain']
+        advertiserDomains: ['adomain'],
+        primaryCatId: 'IAB-test'
       }
     };
 
@@ -199,6 +201,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
+      expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -289,6 +292,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
               }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
+              }
             }
           ]
 
@@ -365,6 +374,12 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
               }
             }
           ]
@@ -451,6 +466,24 @@ describe('auctionmanager.js', function () {
       var expected = getDefaultExpected(bid);
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('Should set targeting as expecting when pbs is enabled', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1',
+          enabled: true,
+          defaultVendor: 'appnexus',
+          bidders: ['appnexus'],
+          timeout: 1000,
+          adapter: 'prebidServer'
+        }
+      });
+
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -955,6 +988,12 @@ describe('auctionmanager.js', function () {
         const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
         assert.equal(addedBid.renderer.url, 'renderer.js');
       });
+
+      it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
+        adUnits[0].ttlBuffer = 0;
+        auction.callBids();
+        expect(auction.getBidsReceived()[0].ttlBuffer).to.eql(0);
+      });
     });
 
     describe('when auction timeout is 20', function () {
@@ -1270,6 +1309,81 @@ describe('auctionmanager.js', function () {
     });
   });
 
+  if (FEATURES.NATIVE) {
+    describe('addBidResponse native', function () {
+      let makeRequestsStub;
+      let ajaxStub;
+      let spec;
+      let auction;
+
+      beforeEach(function () {
+        makeRequestsStub = sinon.stub(adapterManager, 'makeBidRequests');
+        ajaxStub = sinon.stub(ajaxLib, 'ajaxBuilder').callsFake(mockAjaxBuilder);
+
+        const adUnits = [{
+          code: ADUNIT_CODE,
+          transactionId: ADUNIT_CODE,
+          bids: [
+            {bidder: BIDDER_CODE, params: {placementId: 'id'}},
+          ],
+          nativeOrtbRequest: ortbNativeRequest.ortb,
+          mediaTypes: { native: { type: 'image' } }
+        }];
+        auction = auctionModule.newAuction({adUnits, adUnitCodes: [ADUNIT_CODE], callback: function() {}, cbTimeout: 3000});
+        indexAuctions = [auction];
+        const createAuctionStub = sinon.stub(auctionModule, 'newAuction');
+        createAuctionStub.returns(auction);
+
+        spec = mockBidder(BIDDER_CODE);
+        registerBidder(spec);
+      });
+
+      afterEach(function () {
+        ajaxStub.restore();
+        auctionModule.newAuction.restore();
+        adapterManager.makeBidRequests.restore();
+      });
+
+      it('should add legacy fields to native response', function () {
+        let nativeBid = mockBid();
+        nativeBid.mediaType = 'native';
+        nativeBid.native = {
+          ortb: {
+            ver: '1.2',
+            assets: [
+              { id: 2, title: { text: 'Sample title' } },
+              { id: 4, data: { value: 'Sample body' } },
+              { id: 3, data: { value: 'Sample sponsoredBy' } },
+              { id: 1, img: { url: 'https://www.example.com/image.png', w: 200, h: 200 } },
+              { id: 5, img: { url: 'https://www.example.com/icon.png', w: 32, h: 32 } }
+            ],
+            link: { url: 'http://www.click.com' },
+            eventtrackers: [
+              { event: 1, method: 1, url: 'http://www.imptracker.com' },
+              { event: 1, method: 2, url: 'http://www.jstracker.com/file.js' }
+            ]
+          }
+        }
+
+        let bidRequest = mockBidRequest(nativeBid, { mediaType: { native: ortbNativeRequest } });
+        makeRequestsStub.returns([bidRequest]);
+
+        spec.interpretResponse.returns(nativeBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.equal(addedBid.native.body, 'Sample body')
+        assert.equal(addedBid.native.title, 'Sample title')
+        assert.equal(addedBid.native.sponsoredBy, 'Sample sponsoredBy')
+        assert.equal(addedBid.native.clickUrl, 'http://www.click.com')
+        assert.equal(addedBid.native.image, 'https://www.example.com/image.png')
+        assert.equal(addedBid.native.icon, 'https://www.example.com/icon.png')
+        assert.equal(addedBid.native.impressionTrackers[0], 'http://www.imptracker.com')
+        assert.equal(addedBid.native.javascriptTrackers, '<script async src="http://www.jstracker.com/file.js"></script>')
+      });
+    });
+  }
+
   describe('getMediaTypeGranularity', function () {
     it('video', function () {
       let mediaTypes = { video: {id: '1'} };
@@ -1458,6 +1572,15 @@ describe('auctionmanager.js', function () {
       assert.equal(doneSpy.callCount, 1);
     });
 
+    it('should convert cpm to number', () => {
+      auction.addBidReceived = sinon.spy();
+      const cbs = auctionCallbacks(doneSpy, auction);
+      const bid = {...bids[0], cpm: '1.23'}
+      bidRequests = [mockBidRequest(bid)];
+      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bid);
+      sinon.assert.calledWith(auction.addBidReceived, sinon.match({cpm: 1.23}));
+    })
+
     describe('when addBidResponse hook returns promises', () => {
       let resolvers, callbacks, bids;
 
@@ -1599,6 +1722,7 @@ describe('auctionmanager.js', function () {
         ];
         cbs = auctionCallbacks(doneSpy, auction);
         expectedRejection = sinon.match(Object.assign({}, bid, {
+          cpm: parseFloat(bid.cpm),
           rejectionReason: REJECTION_REASON,
           adUnitCode: AU_CODE
         }));
@@ -1634,6 +1758,15 @@ describe('auctionmanager.js', function () {
           rejectionReason: undefined,
         });
       });
+
+      it('should return NO_BID replacement when rejected bid is not a "proper" bid', () => {
+        const noBid = cbs.addBidResponse.reject(AU_CODE, {});
+        sinon.assert.match(noBid, {
+          status: CONSTANTS.BID_STATUS.BID_REJECTED,
+          statusMessage: 'Bid returned empty or error response',
+          cpm: 0,
+        });
+      })
 
       it('addBidResponse hooks should not be able to reject the same bid twice', () => {
         cbs.addBidResponse(AU_CODE, bid);

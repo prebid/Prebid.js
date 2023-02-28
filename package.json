@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "7.23.0-pre",
+  "version": "7.36.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -35,13 +35,13 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
-    "@wdio/browserstack-service": "^7.16.0",
-    "@wdio/cli": "^7.5.2",
-    "@wdio/concise-reporter": "^7.5.2",
-    "@wdio/local-runner": "^7.5.2",
-    "@wdio/mocha-framework": "^7.5.2",
-    "@wdio/spec-reporter": "^7.19.0",
-    "@wdio/sync": "^7.5.2",
+    "@wdio/browserstack-service": "~7.16.0",
+    "@wdio/cli": "~7.5.2",
+    "@wdio/concise-reporter": "~7.5.2",
+    "@wdio/local-runner": "~7.5.2",
+    "@wdio/mocha-framework": "~7.5.2",
+    "@wdio/spec-reporter": "~7.19.0",
+    "@wdio/sync": "~7.5.2",
     "ajv": "6.12.3",
     "assert": "^2.0.0",
     "babel-loader": "^8.0.5",
@@ -130,7 +130,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
-    "live-connect-js": "2.4.0"
+    "live-connect-js": "^4.0.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
