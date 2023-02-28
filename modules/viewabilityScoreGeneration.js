@@ -118,26 +118,6 @@ const incrementViewCount = keyArr => {
       vsgObj[key].viewed = vsgObj[key].viewed + 1;
       vsgObj[key].updatedAt = Date.now();
     }
-    // if (vsgObj) {
-    //   if (vsgObj[key]) {
-    //     vsgObj[key].viewed = vsgObj[key].viewed + 1;
-    //     vsgObj[key].updatedAt = Date.now();
-    //   } else {
-    //     vsgObj[key] = {
-    //       rendered: 0,
-    //       viewed: 1,
-    //       createdAt: Date.now()
-    //     }
-    //   }
-    // } else {
-    //   vsgObj = {
-    //     [key]: {
-    //       rendered: 0,
-    //       viewed: 1,
-    //       createdAt: Date.now()
-    //     }
-    //   }
-    // }
   });
 };
 
