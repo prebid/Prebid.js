@@ -436,6 +436,10 @@ function _buildResponseObject(bidderRequest, bid) {
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
     }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
+    }
   };
   return bidResponse;
 }
