@@ -732,16 +732,15 @@ describe('E-Planning Adapter', function () {
     it('should return ur parameter without params query string when current window url length is greater than 255', function () {
       let bidderRequestParams = bidderRequest;
 
-      bidderRequestParams.refererInfo.page = refererUrl + "?param=" + "x".repeat(255);
+      bidderRequestParams.refererInfo.page = refererUrl + '?param=' + 'x'.repeat(255);
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
       expect(ur).to.equal(refererUrl);
     });
 
     it('should return ur parameter with a length of 255 when url length is greater than 255', function () {
-      let bidderRequestParams = bidderRequest,
-      url_255_characters = "https://localhost/abc" + "/subse".repeat(39),
-      refererUrl = url_255_characters + "/ext".repeat(5) + "?param=" + "x".repeat(15);
-
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
 
       bidderRequestParams.refererInfo.page = refererUrl;
       const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
@@ -756,16 +755,15 @@ describe('E-Planning Adapter', function () {
     it('should return fr parameter without params query string when ref length is greater than 255', function () {
       let bidderRequestParams = bidderRequest;
 
-      bidderRequestParams.refererInfo.ref = refererUrl + "?param=" + "x".repeat(255);
+      bidderRequestParams.refererInfo.ref = refererUrl + '?param=' + 'x'.repeat(255);
       const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
       expect(fr).to.equal(refererUrl);
     });
 
     it('should return fr parameter with a length of 255 when url length is greater than 255', function () {
-      let bidderRequestParams = bidderRequest,
-      url_255_characters = "https://localhost/abc" + "/subse".repeat(39),
-      refererUrl = url_255_characters + "/ext".repeat(5) + "?param=" + "x".repeat(15);
-
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
 
       bidderRequestParams.refererInfo.ref = refererUrl;
       const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
