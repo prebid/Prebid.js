@@ -264,10 +264,21 @@ function _validateVideo(bidRequest) {
     ...videoBidderParams // Bidder Specific overrides
   };
 
+  if (!Array.isArray(videoParams.mimes) || videoParams.mimes.length === 0) {
+    logError('Validation failed: mimes are invalid');
+    return false;
+  }
+
+  if (!Array.isArray(videoParams.protocols) || videoParams.protocols.length === 0) {
+    logError('Validation failed: protocols are invalid');
+    return false;
+  }
+
   if (!videoParams.context) {
     logError('Validation failed: context id not declared');
     return false;
   }
+
   if (videoParams.context !== 'instream') {
     logError('Validation failed: only context instream is supported ');
     return false;

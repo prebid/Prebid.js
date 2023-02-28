@@ -273,7 +273,7 @@ describe('kulturemediaBidAdapter:', function () {
           mediaTypes: {
             video: {
               playerSize: [[300, 50]],
-              context: 'outstream',
+              context: 'instream',
               mimes: ['foo', 'bar'],
               protocols: [1, 2]
             }
