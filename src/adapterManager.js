@@ -65,15 +65,21 @@ var _analyticsRegistry = {};
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}) {
   return adUnits.reduce((result, adUnit) => {
-    result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .reduce((bids, bid) => {
-        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-          'nativeParams',
-          'nativeOrtbRequest',
-          'ortb2Imp',
-          'mediaType',
-          'renderer'
-        ]));
+    const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
+    if (bidderCode == null && bids.length === 0 && adUnit.s2sBid != null) {
+      bids.push({bidder: null});
+    }
+    result.push(
+      bids.reduce((bids, bid) => {
+        bid = Object.assign({}, bid,
+          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
+          getDefinedParams(adUnit, [
+            'nativeParams',
+            'nativeOrtbRequest',
+            'mediaType',
+            'renderer'
+          ])
+        );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
 
@@ -128,9 +134,18 @@ export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBid
 
 function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
   let adUnitsCopy = deepClone(adUnits);
+  let hasModuleBids = false;
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
+    const s2sBids = adUnit.bids.filter((b) => b.module === 'pbsBidAdapter' && b.params?.configName === s2sConfig.configName);
+    if (s2sBids.length === 1) {
+      adUnit.s2sBid = s2sBids[0];
+      hasModuleBids = true;
+      adUnit.ortb2Imp = mergeDeep({}, adUnit.s2sBid.ortb2Imp, adUnit.ortb2Imp);
+    } else if (s2sBids.length > 1) {
+      logWarn('Multiple "module" bids for the same s2s configuration; all will be ignored', s2sBids);
+    }
     adUnit.bids = filterBidsForAdUnit(adUnit.bids, s2sConfig)
       .map((bid) => {
         bid.bid_id = getUniqueIdentifierStr();
@@ -140,9 +155,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   // don't send empty requests
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
-    return adUnit.bids.length !== 0;
+    return adUnit.bids.length !== 0 || adUnit.s2sBid != null;
   });
-  return adUnitsCopy;
+  return {adUnits: adUnitsCopy, hasModuleBids};
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
@@ -244,11 +259,12 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
-      let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
+      let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function
       let uniquePbsTid = generateUUID();
-      serverBidders.forEach(bidderCode => {
+
+      (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
         const bidderRequest = addOrtb2({
@@ -279,7 +295,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
       bidRequests.forEach(request => {
         if (request.adUnitsS2SCopy === undefined) {
-          request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
+          request.adUnitsS2SCopy = adUnitsS2SCopy.filter(au => au.bids.length > 0 || au.s2sBid != null);
         }
       });
     }

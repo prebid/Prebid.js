@@ -378,18 +378,14 @@ function _createNativeRequest(params) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
         switch (key) {
           case NATIVE_ASSETS.TITLE.KEY:
-            if (params[key].len || params[key].length) {
-              assetObj = {
-                id: NATIVE_ASSETS.TITLE.ID,
-                required: params[key].required ? 1 : 0,
-                title: {
-                  len: params[key].len || params[key].length,
-                  ext: params[key].ext
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
-            }
+            assetObj = {
+              id: NATIVE_ASSETS.TITLE.ID,
+              required: params[key].required ? 1 : 0,
+              title: {
+                len: params[key].len || params[key].length,
+                ext: params[key].ext
+              }
+            };
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
             assetObj = {
@@ -607,7 +603,7 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
-function _addJWPlayerSegmentData(imp, bid, isS2S) {
+function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
   const jwMark = 'jw-';
@@ -624,12 +620,8 @@ function _addJWPlayerSegmentData(imp, bid, isS2S) {
 
   var ext;
 
-  if (isS2S) {
-    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
-  } else {
-    ext = imp.ext;
-    ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
-  }
+  ext = imp.ext;
+  ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
 function _createImpressionObject(bid, conf) {
@@ -977,6 +969,49 @@ function isNonEmptyArray(test) {
   return false;
 }
 
+/**
+ * Prepare meta object to pass as params
+ * @param {*} br : bidResponse
+ * @param {*} bid : bids
+ */
+export function prepareMetaObject(br, bid, seat) {
+  br.meta = {};
+
+  if (bid.ext && bid.ext.dspid) {
+    br.meta.networkId = bid.ext.dspid;
+    br.meta.demandSource = bid.ext.dspid;
+  }
+
+  // NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
+  // when we needed we can add it back.
+  // New fields added, assignee fields name may change
+  // if (bid.ext.networkName) br.meta.networkName = bid.ext.networkName;
+  // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
+  // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
+  // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
+  if (bid.ext && bid.ext.dchain) {
+    br.meta.dchain = bid.ext.dchain;
+  }
+
+  const advid = seat || (bid.ext && bid.ext.advid);
+  if (advid) {
+    br.meta.advertiserId = advid;
+    br.meta.agencyId = advid;
+    br.meta.buyerId = advid;
+  }
+
+  if (bid.adomain && isNonEmptyArray(bid.adomain)) {
+    br.meta.advertiserDomains = bid.adomain;
+    br.meta.clickUrl = bid.adomain[0];
+    br.meta.brandId = bid.adomain[0];
+  }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    br.meta.secondaryCatIds = bid.cat;
+    br.meta.primaryCatId = bid.cat[0];
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1297,17 +1332,7 @@ export const spec = {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
 
-              newBid.meta = {};
-              if (bid.ext && bid.ext.dspid) {
-                newBid.meta.networkId = bid.ext.dspid;
-              }
-              if (bid.ext && bid.ext.advid) {
-                newBid.meta.buyerId = bid.ext.advid;
-              }
-              if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.advertiserDomains = bid.adomain;
-                newBid.meta.clickUrl = bid.adomain[0];
-              }
+              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {
@@ -1375,7 +1400,6 @@ export const spec = {
    */
 
   transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    _addJWPlayerSegmentData(params, adUnit.bids[0], true);
     return convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'
