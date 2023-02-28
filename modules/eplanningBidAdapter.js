@@ -24,6 +24,7 @@ const VAST_INSTREAM = 1;
 const VAST_OUTSTREAM = 2;
 const VAST_VERSION_DEFAULT = 3;
 const DEFAULT_SIZE_VAST = '640x480';
+const MAX_LEN_URL = 255;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -60,7 +61,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: pageUrl || FILE,
+        ur: cutUrl(pageUrl || FILE),
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -70,7 +71,7 @@ export const spec = {
       }
 
       if (referrerUrl) {
-        params.fr = referrerUrl;
+        params.fr = cutUrl(referrerUrl);
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -489,6 +490,17 @@ function visibilityHandler(obj) {
     registerAuction(STORAGE_RENDER_PREFIX + obj.name);
     getViewabilityTracker().onView(obj.div, registerAuction.bind(undefined, STORAGE_VIEW_PREFIX + obj.name));
   }
+}
+
+function cutUrl (url) {
+  if (url.length > MAX_LEN_URL) {
+    url = url.split('?')[0];
+    if (url.length > MAX_LEN_URL) {
+      url = url.slice(0, MAX_LEN_URL);
+    }
+  }
+
+  return url;
 }
 
 function registerAuction(storageID) {
