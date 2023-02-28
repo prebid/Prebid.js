@@ -4,7 +4,7 @@ Module Name: Bedigitech Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: tech@bedigitech.com
+Maintainer: yogesh@thebeglobal.com
 
 # Description
 
