@@ -285,6 +285,24 @@ describe('kargo adapter tests', function () {
       }
     }
 
+    function generateRawCRB(rawCRB, rawCRBLocalStorage) {
+      if(rawCRB == null && rawCRBLocalStorage == null) {
+        return null
+      }
+
+      let result = {}
+
+      if(rawCRB != null) {
+        result.rawCRB = rawCRB
+      }
+
+      if(rawCRBLocalStorage != null) {
+        result.rawCRBLocalStorage = rawCRBLocalStorage
+      }
+
+      return result
+    }
+
     function getKrgCrb() {
       return 'eyJzeW5jSWRzIjp7IjIiOiI4MmZhMjU1NS01OTY5LTQ2MTQtYjRjZS00ZGNmMTA4MGU5ZjkiLCIxNiI6IlZveElrOEFvSnowQUFFZENleUFBQUFDMiY1MDIiLCIyMyI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjI0IjoiVm94SWs4QW9KejBBQUVkQ2V5QUFBQUMyJjUwMiIsIjI1IjoiNWVlMjQxMzgtNWUwMy00YjlkLWE5NTMtMzhlODMzZjI4NDlmIiwiMl84MCI6ImQyYTg1NWE1LTFiMWMtNDMwMC05NDBlLWE3MDhmYTFmMWJkZSIsIjJfOTMiOiI1ZWUyNDEzOC01ZTAzLTRiOWQtYTk1My0zOGU4MzNmMjg0OWYifSwibGV4SWQiOiI1ZjEwODgzMS0zMDJkLTExZTctYmY2Yi00NTk1YWNkM2JmNmMiLCJjbGllbnRJZCI6IjI0MTBkOGYyLWMxMTEtNDgxMS04OGE1LTdiNWUxOTBlNDc1ZiIsIm9wdE91dCI6ZmFsc2UsImV4cGlyZVRpbWUiOjE0OTc0NDkzODI2NjgsImxhc3RTeW5jZWRBdCI6MTQ5NzM2Mjk3OTAxMn0=';
     }
@@ -370,7 +388,7 @@ describe('kargo adapter tests', function () {
       return spec._getSessionId();
     }
 
-    function getExpectedKrakenParams(excludeUserIds, expectedGDPR, expectedPage, currency) {
+    function getExpectedKrakenParams(expectedCRB, expectedPage, excludeUserIds, expectedGDPR, currency) {
       var base = {
         pbv: '$prebid.version$',
         aid: '1234098',
@@ -468,7 +486,7 @@ describe('kargo adapter tests', function () {
           },
           optOut: false,
           usp: '1---',
-          eids: [
+          sharedIDEids: [
             {
               source: 'adserver.org',
               uids: [
@@ -493,7 +511,7 @@ describe('kargo adapter tests', function () {
         base.user = {
           crbIDs: {},
           usp: '1---',
-          eids: [
+          sharedIDEids: [
             {
               source: 'adserver.org',
               uids: [
@@ -521,6 +539,15 @@ describe('kargo adapter tests', function () {
       const reqCount = requestCount++
       if (reqCount > 0) {
         base.requestCount = reqCount
+      }
+
+      if(expectedCRB != null) {
+        if(expectedCRB.rawCRB != null) {
+          base.rawCRB = expectedCRB.rawCRB
+        }
+        if(expectedCRB.rawCRBLocalStorage != null) {
+          base.rawCRBLocalStorage = expectedCRB.rawCRBLocalStorage
+        }
       }
 
       return base;
@@ -563,92 +590,92 @@ describe('kargo adapter tests', function () {
     it('works when all params and localstorage and cookies are correctly set', function() {
       initializeKrgCrb();
       initializePageView();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView()));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), generatePageView()));
     });
 
     it('works when all params and cookies are correctly set but no localstorage', function() {
       initializeKrgCrb(true);
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, undefined));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle())));
     });
 
     it('gracefully handles nothing being set', function() {
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, undefined));
+      testBuildRequests(true, getExpectedKrakenParams(undefined, undefined, true));
     });
 
     it('gracefully handles browsers without localStorage', function() {
       simulateNoLocalStorage();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, undefined));
+      testBuildRequests(true, getExpectedKrakenParams(undefined, undefined, true));
     });
 
     it('handles empty yet valid Kargo CRB', function() {
       initializeEmptyKrgCrb();
       initializeEmptyKrgCrbCookie();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(getEmptyKrgCrbOldStyle(), getEmptyKrgCrb()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where base64 encoding is invalid', function() {
       initializeInvalidKrgCrbType1();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(undefined, getInvalidKrgCrbType1()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where top level JSON is invalid on cookie', function() {
       initializeInvalidKrgCrbType1Cookie();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(getInvalidKrgCrbType1()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where decoded JSON is invalid', function() {
       initializeInvalidKrgCrbType2();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(undefined, getInvalidKrgCrbType2()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where inner base 64 is invalid on cookie', function() {
       initializeInvalidKrgCrbType2Cookie();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(getInvalidKrgCrbType2OldStyle()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where inner JSON is invalid on cookie', function() {
       initializeInvalidKrgCrbType3Cookie();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(getInvalidKrgCrbType3OldStyle()), generatePageView(), true));
     });
 
     it('handles broken Kargo CRBs where inner JSON is falsey', function() {
       initializeInvalidKrgCrbType4Cookie();
       initializePageView();
-      testBuildRequests(true, getExpectedKrakenParams(true, undefined, generatePageView()));
+      testBuildRequests(true, getExpectedKrakenParams(generateRawCRB(getInvalidKrgCrbType4OldStyle()), generatePageView(), true));
     });
 
     it('handles a non-existant currency object on the config', function() {
       simulateNoCurrencyObject();
       initializeKrgCrb();
       initializePageView();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView()));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), generatePageView()));
     });
 
     it('handles no ad server currency being set on the currency object in the config', function() {
       simulateNoAdServerCurrency();
       initializeKrgCrb();
       initializePageView();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView()));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), generatePageView()));
     });
 
     it('handles non-USD ad server currency being set on the currency object in the config', function() {
       simulateNonUSDAdServerCurrency();
       initializeKrgCrb();
       initializePageView();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, undefined, generatePageView(), 'EUR'));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), generatePageView(), undefined, undefined, 'EUR'));
     });
 
     it('sends gdpr consent', function () {
       initializeKrgCrb();
-      testBuildRequests(false, getExpectedKrakenParams(undefined, generateGDPRExpect(true, true)), generateGDPR(true, true));
-      testBuildRequests(false, getExpectedKrakenParams(undefined, generateGDPRExpect(false, true)), generateGDPR(false, true));
-      testBuildRequests(false, getExpectedKrakenParams(undefined, generateGDPRExpect(false, false)), generateGDPR(false, false));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), undefined, false, generateGDPRExpect(true, true)), generateGDPR(true, true));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), undefined, false, generateGDPRExpect(false, true)), generateGDPR(false, true));
+      testBuildRequests(false, getExpectedKrakenParams(generateRawCRB(getKrgCrbOldStyle(), getKrgCrb()), undefined, false, generateGDPRExpect(false, false)), generateGDPR(false, false));
     });
   });
 
@@ -747,6 +774,7 @@ describe('kargo adapter tests', function () {
         }]
       });
       var expectation = [{
+        ad: '<div id="1"></div>',
         requestId: '1',
         cpm: 3,
         width: 320,
@@ -762,6 +790,7 @@ describe('kargo adapter tests', function () {
         }
       }, {
         requestId: '2',
+        ad: '<div id="2"></div>',
         cpm: 2.5,
         width: 300,
         height: 250,
@@ -778,6 +807,7 @@ describe('kargo adapter tests', function () {
         }
       }, {
         requestId: '3',
+        ad: '<div id="2"></div>',
         cpm: 2.5,
         width: 300,
         height: 250,
@@ -792,6 +822,7 @@ describe('kargo adapter tests', function () {
         }
       }, {
         requestId: '4',
+        ad: '<div id="4"></div>',
         cpm: 2.5,
         width: 300,
         height: 250,
