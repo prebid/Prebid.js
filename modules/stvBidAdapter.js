@@ -33,7 +33,6 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id
-      // const auctionId = bidRequest.auctionId || false;
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
 
@@ -41,33 +40,20 @@ export const spec = {
       let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
       let sizes = mediaTypesInfo[type];
 
-      let payload = {};
-      if (isVideoRequest(bidRequest)) {
-        payload = {
-          _f: 'vast2',
-          alternative: 'prebid_js',
-          _ps: placementId,
-          srw: sizes ? sizes[0].width : 0,
-          srh: sizes ? sizes[0].height : 0,
-          idt: 100,
-          rnd: rnd,
-          ref: referrer,
-          bid_id: bidId,
-          pbver: '$prebid.version$',
-        };
-      } else {
-        payload = {
-          _f: 'html',
-          alternative: 'prebid_js',
-          _ps: placementId,
-          srw: sizes ? sizes[0].width : 0,
-          srh: sizes ? sizes[0].height : 0,
-          idt: 100,
-          rnd: rnd,
-          ref: referrer,
-          bid_id: bidId,
-          pbver: '$prebid.version$'
-        };
+      let payload = {
+	    _f: 'vast2',
+	    alternative: 'prebid_js',
+	    _ps: placementId,
+	    srw: sizes ? sizes[0].width : 0,
+	    srh: sizes ? sizes[0].height : 0,
+	    idt: 100,
+	    rnd: rnd,
+	    ref: referrer,
+	    bid_id: bidId,
+	    pbver: '$prebid.version$',
+	  };
+      if (!isVideoRequest(bidRequest)) {
+        payload._f = 'html';
       }
 
       payload.pfilter = { ...params };
@@ -75,6 +61,18 @@ export const spec = {
       if (params.bcat !== undefined) { delete payload.pfilter.bcat; }
       if (params.dvt !== undefined) { delete payload.pfilter.dvt; }
       if (params.devMode !== undefined) { delete payload.pfilter.devMode; }
+      
+      if (payload.pfilter === undefined || !payload.pfilter.floorprice) {
+        let bidFloor = getBidFloor(bidRequest);
+        if (bidFloor > 0) {
+          if (payload.pfilter !== undefined) {
+            payload.pfilter.floorprice = bidFloor;
+          } else {
+            payload.pfilter = { 'floorprice': bidFloor };
+          }
+          // payload.bidFloor = bidFloor;
+        }
+      }
 
       if (mediaTypesInfo[VIDEO] !== undefined) {
         let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
@@ -280,6 +278,28 @@ function convertMediaInfoForRequest(mediaTypesInfo) {
     }).join(',');
   });
   return requestData;
+}
+
+/**
+ * Get Bid Floor
+ * @param bid
+ * @returns {number|*}
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'EUR',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
 }
 
 /**
