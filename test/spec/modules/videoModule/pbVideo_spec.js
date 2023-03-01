@@ -334,6 +334,7 @@ describe('Prebid Video', function () {
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
       expect(pbGlobal.markWinningBidAsUsed.calledOnce).to.be.true;
+      expect(payload.bid.status).to.be.equal(CONSTANTS.BID_STATUS.RENDERED);
     });
 
     it('should trigger video bid error when the bid matched', function () {
@@ -349,6 +350,7 @@ describe('Prebid Video', function () {
       expect(payload.bid).to.be.equal(expectedBid);
       expect(payload.adEvent).to.be.equal(expectedAdEventPayload);
       expect(pbGlobal.markWinningBidAsUsed.calledOnce).to.be.true;
+      expect(payload.bid.status).to.be.equal(CONSTANTS.BID_STATUS.RENDERED);
     });
 
     it('should not trigger a bid impression when the bid did not match', function () {
