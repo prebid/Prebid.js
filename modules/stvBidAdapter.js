@@ -41,17 +41,17 @@ export const spec = {
       let sizes = mediaTypesInfo[type];
 
       let payload = {
-	    _f: 'vast2',
-	    alternative: 'prebid_js',
-	    _ps: placementId,
-	    srw: sizes ? sizes[0].width : 0,
-	    srh: sizes ? sizes[0].height : 0,
-	    idt: 100,
-	    rnd: rnd,
-	    ref: referrer,
-	    bid_id: bidId,
-	    pbver: '$prebid.version$',
-	  };
+        _f: 'vast2',
+        alternative: 'prebid_js',
+        _ps: placementId,
+        srw: sizes ? sizes[0].width : 0,
+        srh: sizes ? sizes[0].height : 0,
+        idt: 100,
+        rnd: rnd,
+        ref: referrer,
+        bid_id: bidId,
+        pbver: '$prebid.version$',
+      };
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
       }
@@ -61,7 +61,7 @@ export const spec = {
       if (params.bcat !== undefined) { delete payload.pfilter.bcat; }
       if (params.dvt !== undefined) { delete payload.pfilter.dvt; }
       if (params.devMode !== undefined) { delete payload.pfilter.devMode; }
-      
+
       if (payload.pfilter === undefined || !payload.pfilter.floorprice) {
         let bidFloor = getBidFloor(bidRequest);
         if (bidFloor > 0) {
@@ -160,7 +160,9 @@ export const spec = {
       }
     }
 
-    if (serverResponses.length > 0 && serverResponses[0].body.userSync) {
+    if (serverResponses.length > 0 && serverResponses[0].body !== undefined &&
+        serverResponses[0].body.userSync !== undefined && serverResponses[0].body.userSync.iframeUrl !== undefined &&
+        serverResponses[0].body.userSync.iframeUrl.length > 0) {
       if (syncOptions.iframeEnabled) {
         serverResponses[0].body.userSync.iframeUrl.forEach((url) => syncs.push({
           type: 'iframe',
@@ -286,7 +288,7 @@ function convertMediaInfoForRequest(mediaTypesInfo) {
  * @returns {number|*}
  */
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
+  if (typeof bid.getFloor !== 'function') {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
 
