@@ -93,7 +93,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
   ]
 ```
 
-## Instream Video adUnit with placement, nid and content params
+## Instream Video adUnit with placement, networkId and content params
 ```
   var adUnits = [
     {
@@ -122,7 +122,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
                     bidfloor: 0.5,
                     publisherId: '12345',
                     placementId: '6789',
-                    nid: '1234',
+                    networkId: '1234',
                     video: {
                       content:{
                         id: "uuid",
