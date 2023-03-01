@@ -12,6 +12,7 @@ import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';
+import {timedBidResponseHook} from '../../src/utils/perfMetrics.js';
 
 const MODULE_NAME = 'multibid';
 let hasMultibid = false;
@@ -98,7 +99,7 @@ export function adjustBidderRequestsHook(fn, bidderRequests) {
    * @param {String} ad unit code for bid
    * @param {Object} bid object
 */
-export function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('multibid', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   let floor = deepAccess(bid, 'floorData.floorValue');
 
   if (!config.getConfig('multibid')) resetMultiConfig();
@@ -106,7 +107,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
   // Else checks if multiconfig exists and bid bidderCode exists within config
   // Else continue with no modifications
   if (hasMultibid && multiConfig[bid.bidderCode] && deepAccess(bid, 'video.context') === 'adpod') {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   } else if (hasMultibid && multiConfig[bid.bidderCode]) {
     // Set property multibidPrefix on bid
     if (multiConfig[bid.bidderCode].prefix) bid.multibidPrefix = multiConfig[bid.bidderCode].prefix;
@@ -126,7 +127,7 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
         if (multiConfig[bid.bidderCode].prefix) bid.targetingBidder = multiConfig[bid.bidderCode].prefix + length;
         if (length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-        fn.call(this, adUnitCode, bid);
+        fn.call(this, adUnitCode, bid, reject);
       } else {
         logWarn(`Filtering multibid received from bidder ${bid.bidderCode}: ` + ((multibidUnits[adUnitCode][bid.bidderCode].maxReached) ? `Maximum bid limit reached for ad unit code ${adUnitCode}` : 'Bid cpm under floors value.'));
       }
@@ -136,12 +137,12 @@ export function addBidResponseHook(fn, adUnitCode, bid) {
       deepSetValue(multibidUnits, [adUnitCode, bid.bidderCode], {ads: [bid]});
       if (multibidUnits[adUnitCode][bid.bidderCode].ads.length === multiConfig[bid.bidderCode].maxbids) multibidUnits[adUnitCode][bid.bidderCode].maxReached = true;
 
-      fn.call(this, adUnitCode, bid);
+      fn.call(this, adUnitCode, bid, reject);
     }
   } else {
-    fn.call(this, adUnitCode, bid);
+    fn.call(this, adUnitCode, bid, reject);
   }
-}
+});
 
 /**
 * A descending sort function that will sort the list of objects based on the following:
@@ -227,6 +228,7 @@ export const resetMultibidUnits = () => multibidUnits = {};
 * Set up hooks on init
 */
 function init() {
+  // TODO: does this reset logic make sense - what about simultaneous auctions?
   events.on(CONSTANTS.EVENTS.AUCTION_INIT, resetMultibidUnits);
   setupBeforeHookFnOnce(addBidderRequests, adjustBidderRequestsHook);
   getHook('addBidResponse').before(addBidResponseHook, 3);
