@@ -530,7 +530,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
             emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
           } else if (bid.generateAd) {
-            utils.logInfo('winning bid : ' + JSON.stringify(bid, null, 2));
+            logInfo('winning bid : ' + JSON.stringify(bid, null, 2));
             const winner = typeof window.stroeer_ad_config === 'object' ? window.stroeer_ad_config : {firstBid: '2.0', secondBid: '3.0', thirdBid: '4.0'};
             winner.auctionPrice = bid.maxprice || bid.cpm;
             const ra = bid.generateAd(winner);
@@ -538,7 +538,7 @@ $$PREBID_GLOBAL$$.renderAd = hook('async', function (doc, id, options) {
             doc.close();
             setRenderSize(doc, width, height);
             reinjectNodeIfRemoved(creativeComment, doc, 'html');
-            utils.callBurl(bid);
+            callBurl(bid);
             emitAdRenderSucceeded({ doc, bid, id });
           } else if (ad) {
             doc.write(ad);

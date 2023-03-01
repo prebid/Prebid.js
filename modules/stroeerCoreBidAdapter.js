@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { ajax } from '../src/ajax.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {registerBidder} from '../src/adapters/bidderFactory.js'
+import {ajax} from '../src/ajax.js'
+import {BANNER, VIDEO} from '../src/mediaTypes.js'
 import * as utils from '../src/utils.js'
 
 // Do not import POLYFILLS from core-js. Most likely until next major update (v4).
@@ -295,18 +295,64 @@ export const spec = {
       return utils.deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes /* for prebid < 3 */ || [];
     }
 
-    function createVideoObject (bidRequest) {
+    function createVideoObject(bidRequest) {
       const video = utils.deepAccess(bidRequest, 'mediaTypes.video') || {};
       return {
         ctx: video.context,
         siz: video.playerSize,
-        mim: video.mimes
+        mim: video.mimes,
+        fp: createFloorPriceObject(VIDEO, [video.playerSize], bidRequest)
       };
     }
 
-    function createBannerObject (bidRequest) {
+    function createBannerObject(bidRequest) {
+      const sizes = bannerBidSizes(bidRequest);
       return {
-        siz: bannerBidSizes(bidRequest),
+        siz: sizes,
+        fp: createFloorPriceObject(BANNER, sizes, bidRequest)
+      };
+    }
+
+    function createFloorPriceObject (mediaType, sizes, bidRequest) {
+      if (!bidRequest.getFloor) {
+        return undefined;
+      }
+
+      const defaultFloor = bidRequest.getFloor({
+        currency: 'EUR',
+        mediaType: mediaType,
+        size: '*'
+      });
+
+      const sizeFloors = sizes.map(size => {
+        const floor = bidRequest.getFloor({
+          currency: 'EUR',
+          mediaType: mediaType,
+          size: [size[0], size[1]]
+        });
+        return Object.assign({}, floor, {size: size})
+      });
+
+      const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
+
+      if (!floorWithCurrency) {
+        return undefined;
+      }
+
+      const currency = floorWithCurrency.currency;
+      const defaultFloorPrice = defaultFloor.currency === currency ? defaultFloor.floor : undefined
+
+      return {
+        def: defaultFloorPrice,
+        cur: currency,
+        siz: sizeFloors
+          .filter(sizeFloor => sizeFloor.currency === currency)
+          .filter(sizeFloor => sizeFloor.floor !== defaultFloorPrice)
+          .map(sizeFloor => ({
+            w: sizeFloor.size[0],
+            h: sizeFloor.size[1],
+            p: sizeFloor.floor
+          }))
       };
     }
 

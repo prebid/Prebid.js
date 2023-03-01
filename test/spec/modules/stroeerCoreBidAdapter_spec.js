@@ -1009,6 +1009,136 @@ describe('stroeerCore bid adapter', function () {
           const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
           assert.deepEqual(serverRequestInfo.data.schain, schain);
         });
+
+        it('should add floor info to banner bid request if floor is available', () => {
+          const bidReq = buildBidderRequest();
+
+          const getFloorStub1 = sinon.stub();
+          const getFloorStub2 = sinon.stub();
+
+          getFloorStub1.onFirstCall().returns({currency: 'TRY', floor: 0.7});
+          getFloorStub1.onSecondCall().returns({currency: 'TRY', floor: 1.3});
+          getFloorStub1.onThirdCall().returns({currency: 'TRY', floor: 2.5});
+
+          getFloorStub2.onFirstCall().returns({currency: 'USD', floor: 1.2});
+          getFloorStub2.onSecondCall().returns({currency: 'USD', floor: 1.85});
+
+          bidReq.bids[0].getFloor = getFloorStub1;
+          bidReq.bids[1].getFloor = getFloorStub2;
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          const serverRequestBids = serverRequestInfo.data.bids;
+          const firstBid = serverRequestBids[0];
+          const secondBid = serverRequestBids[1];
+
+          assert.nestedPropertyVal(firstBid, 'ban.fp.def', 0.7);
+          assert.nestedPropertyVal(firstBid, 'ban.fp.cur', 'TRY');
+          assert.deepNestedPropertyVal(firstBid, 'ban.fp.siz', [{w: 300, h: 600, p: 1.3}, {w: 160, h: 60, p: 2.5}]);
+
+          assert.isTrue(getFloorStub1.calledWith({currency: 'EUR', mediaType: 'banner', size: '*'}));
+          assert.isTrue(getFloorStub1.calledWith({currency: 'EUR', mediaType: 'banner', size: [300, 600]}));
+          assert.isTrue(getFloorStub1.calledWith({currency: 'EUR', mediaType: 'banner', size: [160, 60]}));
+          assert.isTrue(getFloorStub1.calledThrice);
+
+          assert.nestedPropertyVal(secondBid, 'ban.fp.def', 1.2);
+          assert.nestedPropertyVal(secondBid, 'ban.fp.cur', 'USD');
+          assert.deepNestedPropertyVal(secondBid, 'ban.fp.siz', [{w: 728, h: 90, p: 1.85}]);
+
+          assert.isTrue(getFloorStub2.calledWith({currency: 'EUR', mediaType: 'banner', size: '*'}));
+          assert.isTrue(getFloorStub2.calledWith({currency: 'EUR', mediaType: 'banner', size: [728, 90]}));
+          assert.isTrue(getFloorStub2.calledTwice);
+        });
+
+        it('should add floor info to video bid request if floor is available', () => {
+          const bidReq = buildBidderRequest();
+
+          const getFloorStub1 = sinon.stub();
+          const getFloorStub2 = sinon.stub();
+
+          getFloorStub1.onFirstCall().returns({currency: 'NZD', floor: 3.25});
+          getFloorStub1.onSecondCall().returns({currency: 'NZD', floor: 4.10});
+          getFloorStub2.onFirstCall().returns({currency: 'GBP', floor: 4.75});
+          getFloorStub2.onSecondCall().returns({currency: 'GBP', floor: 6.50});
+
+          delete bidReq.bids[0].mediaTypes.banner;
+          bidReq.bids[0].mediaTypes.video = {
+            playerSize: [640, 480],
+            context: 'instream'
+          };
+
+          delete bidReq.bids[1].mediaTypes.banner;
+          bidReq.bids[1].mediaTypes.video = {
+            playerSize: [1280, 720],
+            context: 'outstream'
+          };
+
+          bidReq.bids[0].getFloor = getFloorStub1;
+          bidReq.bids[1].getFloor = getFloorStub2;
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          const serverRequestBids = serverRequestInfo.data.bids;
+          const firstBid = serverRequestBids[0];
+          const secondBid = serverRequestBids[1];
+
+          assert.nestedPropertyVal(firstBid, 'vid.fp.def', 3.25);
+          assert.nestedPropertyVal(firstBid, 'vid.fp.cur', 'NZD');
+          assert.deepNestedPropertyVal(firstBid, 'vid.fp.siz', [{w: 640, h: 480, p: 4.10}]);
+
+          assert.isTrue(getFloorStub1.calledWith({currency: 'EUR', mediaType: 'video', size: '*'}));
+          assert.isTrue(getFloorStub1.calledWith({currency: 'EUR', mediaType: 'video', size: [640, 480]}));
+          assert.isTrue(getFloorStub1.calledTwice);
+
+          assert.nestedPropertyVal(secondBid, 'vid.fp.def', 4.75);
+          assert.nestedPropertyVal(secondBid, 'vid.fp.cur', 'GBP');
+          assert.deepNestedPropertyVal(secondBid, 'vid.fp.siz', [{w: 1280, h: 720, p: 6.50}]);
+
+          assert.isTrue(getFloorStub2.calledWith({currency: 'EUR', mediaType: 'video', size: '*'}));
+          assert.isTrue(getFloorStub2.calledWith({currency: 'EUR', mediaType: 'video', size: [1280, 720]}));
+          assert.isTrue(getFloorStub2.calledTwice);
+        });
+
+        it('should not add floor info to bid request if floor is unavailable', () => {
+          const bidReq = buildBidderRequest();
+          const getFloorSpy = sinon.spy(() => ({}));
+
+          delete bidReq.bids[0].getFloor;
+          bidReq.bids[1].getFloor = getFloorSpy;
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          const serverRequestBids = serverRequestInfo.data.bids;
+          const firstBid = serverRequestBids[0];
+          const secondBid = serverRequestBids[1];
+
+          assert.nestedPropertyVal(firstBid, 'ban.fp', undefined);
+          assert.nestedPropertyVal(secondBid, 'ban.fp', undefined);
+
+          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'banner', size: '*'}));
+          assert.isTrue(getFloorSpy.calledWith({currency: 'EUR', mediaType: 'banner', size: [728, 90]}));
+          assert.isTrue(getFloorSpy.calledTwice);
+        });
+
+        it('should not add floor info for a size when it is the same as the default', () => {
+          const bidReq = buildBidderRequest();
+          const getFloorStub = sinon.stub();
+
+          getFloorStub.onFirstCall().returns({currency: 'EUR', floor: 1.9});
+          getFloorStub.onSecondCall().returns({currency: 'EUR', floor: 1.9});
+          getFloorStub.onThirdCall().returns({currency: 'EUR', floor: 2.7});
+
+          bidReq.bids[0].getFloor = getFloorStub;
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          const serverRequestBids = serverRequestInfo.data.bids;
+          const bid = serverRequestBids[0];
+
+          assert.nestedPropertyVal(bid, 'ban.fp.def', 1.9);
+          assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
+          assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
+        });
       });
 
       describe('Split bid requests', () => {
