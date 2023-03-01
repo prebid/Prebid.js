@@ -53,3 +53,118 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 - 'playbackmethod',
 - 'api',
 - 'linearity'
+
+
+## Instream Video adUnit using mediaTypes.video
+*Note:* By default, the adapter will read the mandatory parameters from mediaTypes.video.
+*Note:* The Video SSP ad server will respond with an VAST XML to load into your defined player.
+```
+  var adUnits = [
+    {
+        code: 'video1',
+          mediaTypes: {
+            video: {
+                  context: 'instream',
+                  playerSize: [640, 480],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
+                  position: 1,
+                  delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
+                  playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
+            }
+          },
+          bids: [
+            {
+              bidder: 'kulturemedia',
+              params: {
+                bidfloor: 0.5,
+                publisherId: '12345',
+                placementId: '6789'
+              }
+            }
+          ]
+      }
+  ]
+```
+
+## Instream Video adUnit with placement, nid and content params
+```
+  var adUnits = [
+    {
+        code: 'video1',
+          mediaTypes: {
+            video: {
+                  context: 'instream',
+                  playerSize: [640, 480],
+                  mimes: ['video/mp4', 'application/javascript'],
+                  protocols: [2,5],
+                  api: [2],
+                  position: 1,
+                  delivery: [2],
+                  minduration: 10,
+                  maxduration: 30,
+                  placement: 1,
+                  playbackmethod: [1,5],
+                  protocols: [2,5],
+                  api: [2],
+            }
+          },
+          bids: [
+            {
+                  bidder: 'kulturemedia',
+                  params: {
+                    bidfloor: 0.5,
+                    publisherId: '12345',
+                    placementId: '6789',
+                    nid: '1234',
+                    video: {
+                      content:{
+                        id: "uuid",
+                        url: "https://kulture.media/demo/demo.mp4",
+                        title: "Awesome video",
+                        genre: "Comedy",
+                        language: "en",
+                        season: "1",
+                        series: "1",
+        
+                      }
+                    }
+                  }
+                }
+          ]
+      }
+  ]
+```
+
+# End To End testing mode
+By passing bid.params.e2etest = true you will be able to receive a test creative
+
+```
+var adUnits = [
+    {
+      code: 'video1',
+      mediaTypes: {
+        video: {
+          context: "instream",
+          playerSize: [[640, 480]],
+          mimes: ['video/mp4'],
+          protocols: [2,5],
+        }
+      },
+      bids: [
+        {
+          bidder: 'kulturemedia',
+          params: {
+            e2etest: true
+          }
+        }
+      ]
+    }
+]
+```
