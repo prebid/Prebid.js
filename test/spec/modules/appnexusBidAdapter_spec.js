@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -35,14 +36,31 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let bid1 = deepClone(bid);
+      bid1.params = {
+        'placement_id': 123423
+      }
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      let bid1 = deepClone(bid);
+      bid1.params = {
         'member': '1234',
         'invCode': 'ABCD'
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      let bid1 = deepClone(bid);
+      bid1.params = {
+        'member': '1234',
+        'inv_code': 'ABCD'
+      };
+
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
@@ -50,6 +68,15 @@ describe('AppNexusAdapter', function () {
       delete bid.params;
       bid.params = {
         'placementId': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when required params are not passed', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'placement_id': 0
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -89,6 +116,24 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             privateSizes: [300, 250]
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].private_sizes).to.exist;
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 300, height: 250 }]);
+    });
+
+    it('should parse out private sizes', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            private_sizes: [300, 250]
           }
         }
       );
@@ -167,6 +212,24 @@ describe('AppNexusAdapter', function () {
       expect(payload.publisher_id).to.deep.equal(1231234);
     });
 
+    it('should add publisher_id in request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placement_id: '10433394',
+            publisher_id: '1231234'
+          }
+        });
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].publisher_id).to.exist;
+      expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
+      expect(payload.publisher_id).to.exist;
+      expect(payload.publisher_id).to.deep.equal(1231234);
+    });
+
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -188,7 +251,7 @@ describe('AppNexusAdapter', function () {
         bids: [{
           bidder: 'appnexus',
           params: {
-            placementId: '10433394'
+            placement_id: '10433394'
           }
         }],
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
@@ -350,7 +413,7 @@ describe('AppNexusAdapter', function () {
         bidRequests[0],
         {
           params: {
-            placementId: '10433394',
+            placement_id: '10433394',
             user: {
               externalUid: '123',
               segments: [123, { id: 987, value: 876 }],
@@ -370,6 +433,29 @@ describe('AppNexusAdapter', function () {
       });
     });
 
+    it('should add debug params from query', function () {
+      let getParamStub = sinon.stub(utils, 'getParameterByName').callsFake(function(par) {
+        if (par === 'apn_debug_dongle') return 'abcdef';
+        if (par === 'apn_debug_member_id') return '1234';
+        if (par === 'apn_debug_timeout') return '1000';
+
+        return '';
+      });
+
+      let bidRequest = deepClone(bidRequests[0]);
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.debug).to.exist.and.to.deep.equal({
+        'dongle': 'abcdef',
+        'enabled': true,
+        'member_id': 1234,
+        'debug_timeout': 1000
+      });
+
+      getParamStub.restore();
+    });
+
     it('should attach reserve param when either bid param or getFloor function exists', function () {
       let getFloorResponse = { currency: 'USD', floor: 3 };
       let request, payload = null;
@@ -383,7 +469,7 @@ describe('AppNexusAdapter', function () {
 
       // 2 -> reserve is defined, getFloor not defined > reserve is used
       bidRequest.params = {
-        'placementId': '10433394',
+        'placement_id': '10433394',
         'reserve': 0.5
       };
       request = spec.buildRequests([bidRequest]);
@@ -404,7 +490,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -437,7 +523,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -460,7 +546,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -502,7 +588,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -533,7 +619,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -561,7 +647,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -586,7 +672,7 @@ describe('AppNexusAdapter', function () {
           mediaType: 'banner',
           params: {
             sizes: [[300, 250], [300, 600]],
-            placementId: 13144370
+            placement_id: 13144370
           }
         }
       );
@@ -762,7 +848,7 @@ describe('AppNexusAdapter', function () {
         bidRequests[0],
         {
           params: {
-            placementId: '10433394',
+            placement_id: '10433394',
             keywords: {
               single: 'val',
               singleArr: ['val'],
@@ -907,6 +993,23 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
+    it('should add payment rules to the request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placement_id: '10433394',
+            use_payment_rule: true
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].use_pmt_rule).to.equal(true);
+    });
+
     it('should add gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
@@ -959,6 +1062,52 @@ describe('AppNexusAdapter', function () {
 
       expect(payload.us_privacy).to.exist;
       expect(payload.us_privacy).to.exist.and.to.equal(consentString);
+    });
+
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': [8]
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.privacy).to.exist;
+      expect(payload.privacy.gpp).to.equal(consentString);
+      expect(payload.privacy.gpp_sid).to.deep.equal([8]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.ortb2.regs', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'ortb2': {
+          'regs': {
+            'gpp': consentString,
+            'gpp_sid': [7]
+          }
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.privacy).to.exist;
+      expect(payload.privacy.gpp).to.equal(consentString);
+      expect(payload.privacy.gpp_sid).to.deep.equal([7]);
     });
 
     it('supports sending hybrid mobile app parameters', function () {
@@ -1169,9 +1318,33 @@ describe('AppNexusAdapter', function () {
             source: 'puburl2.com',
             uids: [{
               id: 'pubid2'
+            }, {
+              id: 'pubid2-123'
             }]
           }]
-        }
+        },
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: 'sample-userid' }]
+        }, {
+          source: 'criteo.com',
+          uids: [{ id: 'sample-criteo-userid' }]
+        }, {
+          source: 'netid.de',
+          uids: [{ id: 'sample-netId-userid' }]
+        }, {
+          source: 'liveramp.com',
+          uids: [{ id: 'sample-idl-userid' }]
+        }, {
+          source: 'uidapi.com',
+          uids: [{ id: 'sample-uid2-value' }]
+        }, {
+          source: 'puburl.com',
+          uids: [{ id: 'pubid1' }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+        }]
       });
 
       const request = spec.buildRequests([bidRequest]);
@@ -1211,6 +1384,10 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'puburl2.com',
         id: 'pubid2'
+      });
+      expect(payload.eids).to.deep.include({
+        source: 'puburl2.com',
+        id: 'pubid2-123'
       });
     });
 
@@ -1560,7 +1737,10 @@ describe('AppNexusAdapter', function () {
           'phone': '1234567890',
           'address': '28 W 23rd St, New York, NY 10010',
           'privacy_link': 'https://appnexus.com/?url=privacy_url',
-          'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
+          'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>',
+          'video': {
+            'content': '<?xml version=\"1.0\"></xml>'
+          }
         };
         let bidderRequest = {
           bids: [{
@@ -1574,6 +1754,7 @@ describe('AppNexusAdapter', function () {
         expect(result[0].native.body).to.equal('Cool description great stuff');
         expect(result[0].native.cta).to.equal('Do it');
         expect(result[0].native.image.url).to.equal('https://cdn.adnxs.com/img.png');
+        expect(result[0].native.video.content).to.equal('<?xml version=\"1.0\"></xml>');
       });
     }
 
@@ -1661,7 +1842,7 @@ describe('AppNexusAdapter', function () {
 
     it('should add advertiserDomains', function () {
       let responseAdvertiserId = deepClone(response);
-      responseAdvertiserId.tags[0].ads[0].adomain = ['123'];
+      responseAdvertiserId.tags[0].ads[0].adomain = '123';
 
       let bidderRequest = {
         bids: [{
@@ -1671,7 +1852,7 @@ describe('AppNexusAdapter', function () {
       }
       let result = spec.interpretResponse({ body: responseAdvertiserId }, { bidderRequest });
       expect(Object.keys(result[0].meta)).to.include.members(['advertiserDomains']);
-      expect(Object.keys(result[0].meta.advertiserDomains)).to.deep.equal([]);
+      expect(result[0].meta.advertiserDomains).to.deep.equal(['123']);
     });
   });
 

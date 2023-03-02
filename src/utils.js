@@ -710,7 +710,7 @@ export function getKeyByValue(obj, value) {
 export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -1375,6 +1375,27 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+/**
+ * Returns a memoized version of `fn`.
+ *
+ * @param fn
+ * @param key cache key generator, invoked with the same arguments passed to `fn`.
+ *        By default, the first argument is used as key.
+ * @return {function(): any}
+ */
+export function memoize(fn, key = function (arg) { return arg; }) {
+  const cache = new Map();
+  const memoized = function () {
+    const cacheKey = key.apply(this, arguments);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, fn.apply(this, arguments));
+    }
+    return cache.get(cacheKey);
+  }
+  memoized.clear = cache.clear.bind(cache);
+  return memoized;
 }
 
 /**

@@ -15,6 +15,7 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isArrayOfNums,
   logError,
   logInfo,
   logWarn,
@@ -48,33 +49,32 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation
-// of OpenRTB 2.5 options used by the Adagio SSP.
-// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
+// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].indexOf(v) !== -1),
+  'protocols': (value) => isArrayOfNums(value),
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5].indexOf(v) !== -1),
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
+  'placement': (value) => isInteger(value),
+  'linearity': (value) => isInteger(value),
+  'skip': (value) => isInteger(value),
   'skipmin': (value) => isInteger(value),
   'skipafter': (value) => isInteger(value),
   'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  'battr': (value) => isArrayOfNums(value),
   'maxextended': (value) => isInteger(value),
   'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  'api': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
+  'boxingallowed': (value) => isInteger(value),
+  'playbackmethod': (value) => isArrayOfNums(value),
+  'playbackend': (value) => isInteger(value),
+  'delivery': (value) => isInteger(value),
+  'pos': (value) => isInteger(value),
+  'api': (value) => isArrayOfNums(value)
 };
 
 let currentWindow;
@@ -669,10 +669,8 @@ function autoFillParams(bid) {
   }
 
   // extra params
-  setExtraParam(bid, 'environment');
   setExtraParam(bid, 'pagetype');
   setExtraParam(bid, 'category');
-  setExtraParam(bid, 'subcategory');
 }
 
 function getPageDimensions() {
@@ -761,46 +759,51 @@ function getSlotPosition(adUnitElementId) {
     position.x = Math.round(sfGeom.t);
     position.y = Math.round(sfGeom.l);
   } else if (canAccessTopWindow()) {
-    // window.top based computing
-    const wt = getWindowTop();
-    const d = wt.document;
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
 
-    let domElement;
+      let domElement;
 
-    if (inIframe() === true) {
-      const ws = getWindowSelf();
-      const currentElement = ws.document.getElementById(adUnitElementId);
-      domElement = internal.getElementFromTopWindow(currentElement, ws);
-    } else {
-      domElement = wt.document.getElementById(adUnitElementId);
-    }
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(adUnitElementId);
+        domElement = internal.getElementFromTopWindow(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(adUnitElementId);
+      }
 
-    if (!domElement) {
+      if (!domElement) {
+        return '';
+      }
+
+      let box = domElement.getBoundingClientRect();
+
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = d.clientTop || body.clientTop || 0;
+      const clientLeft = d.clientLeft || body.clientLeft || 0;
+      const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
+      const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+
+      const elComputedStyle = wt.getComputedStyle(domElement, null);
+      const elComputedDisplay = elComputedStyle.display || 'block';
+      const mustDisplayElement = elComputedDisplay === 'none';
+
+      if (mustDisplayElement) {
+        domElement.style = domElement.style || {};
+        const originalDisplay = domElement.style.display;
+        domElement.style.display = 'block';
+        box = domElement.getBoundingClientRect();
+        domElement.style.display = originalDisplay || null;
+      }
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(LOG_PREFIX, err);
       return '';
     }
-
-    let box = domElement.getBoundingClientRect();
-
-    const docEl = d.documentElement;
-    const body = d.body;
-    const clientTop = d.clientTop || body.clientTop || 0;
-    const clientLeft = d.clientLeft || body.clientLeft || 0;
-    const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
-    const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
-
-    const elComputedStyle = wt.getComputedStyle(domElement, null);
-    const elComputedDisplay = elComputedStyle.display || 'block';
-    const mustDisplayElement = elComputedDisplay === 'none';
-
-    if (mustDisplayElement) {
-      domElement.style = domElement.style || {};
-      const originalDisplay = domElement.style.display;
-      domElement.style.display = 'block';
-      box = domElement.getBoundingClientRect();
-      domElement.style.display = originalDisplay || null;
-    }
-    position.x = Math.round(box.left + scrollLeft - clientLeft);
-    position.y = Math.round(box.top + scrollTop - clientTop);
   } else {
     return '';
   }
@@ -1089,8 +1092,6 @@ export const spec = {
               bidObj.placement = bidReq.params.placement;
               bidObj.pagetype = bidReq.params.pagetype;
               bidObj.category = bidReq.params.category;
-              bidObj.subcategory = bidReq.params.subcategory;
-              bidObj.environment = bidReq.params.environment;
             }
             bidResponses.push(bidObj);
           });

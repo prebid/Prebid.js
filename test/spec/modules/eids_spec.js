@@ -392,7 +392,7 @@ describe('eids array generation for known sub-modules', function() {
 
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
-      source: 'amxrtb.com',
+      source: 'amxdt.net',
       uids: [{
         atype: 1,
         id,
@@ -444,11 +444,15 @@ describe('eids array generation for known sub-modules', function() {
 
   describe('ftrackId', () => {
     it('should return the correct EID schema', () => {
+      // This is the schema returned from the ftrack decode() method
       expect(createEidsArray({
         ftrackId: {
-          DeviceID: ['aaa', 'bbb'],
-          SingleDeviceID: ['ccc', 'ddd'],
-          HHID: ['eee', 'fff']
+          uid: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
         },
         foo: {
           bar: 'baz'
@@ -457,13 +461,16 @@ describe('eids array generation for known sub-modules', function() {
           ipsum: ''
         }
       })).to.deep.equal([{
-        atype: 1,
-        id: 'aaa|bbb',
-        ext: {
-          DeviceID: 'aaa|bbb',
-          SingleDeviceID: 'ccc|ddd',
-          HHID: 'eee|fff'
-        }
+        source: 'flashtalking.com',
+        uids: [{
+          atype: 1,
+          id: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        }]
       }]);
     });
   });

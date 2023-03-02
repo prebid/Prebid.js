@@ -79,7 +79,6 @@ export const spec = {
     {code: 'audiencemedia'},
     {code: 'waardex_ak'},
     {code: 'roqoon'},
-    {code: 'andbeyond'},
     {code: 'adbite'},
     {code: 'houseofpubs'},
     {code: 'torchad'},
@@ -97,7 +96,9 @@ export const spec = {
     {code: 'felixads'},
     {code: 'motionspots'},
     {code: 'sonic_twist'},
-    {code: 'displayioads'}
+    {code: 'displayioads'},
+    {code: 'rtbdemand_com'},
+    {code: 'bidbuddy'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

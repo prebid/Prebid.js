@@ -18,7 +18,7 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {location: referrerUrl, canonicalUrl, domain},
+    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
     ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
   const bidRequestWithEmptyPlacement = [
@@ -722,6 +722,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -736,6 +737,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -758,6 +760,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_1'].TransactionID).to.be.equal('bid_id_1_transaction_id');
       expect(payload.Bids['bid_id_3'].TransactionID).to.be.equal('bid_id_3_transaction_id');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
     });
 
     it('sends bid request to endpoint setted by parameters', function () {

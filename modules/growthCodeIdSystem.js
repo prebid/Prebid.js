@@ -10,7 +10,7 @@ import {ajax} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 
-const GCID_EXPIRY = 45;
+const GCID_EXPIRY = 7;
 const MODULE_NAME = 'growthCodeId';
 const GC_DATA_KEY = '_gc_data';
 const ENDPOINT_URL = 'https://p2.gcprivacy.com/v1/pb?'
@@ -24,11 +24,15 @@ export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_
  */
 export function readData(key) {
   try {
-    if (storage.hasLocalStorage()) {
-      return storage.getDataFromLocalStorage(key);
-    }
+    let payload
     if (storage.cookiesAreEnabled()) {
-      return storage.getCookie(key);
+      payload = tryParse(storage.getCookie(key))
+    }
+    if (storage.hasLocalStorage()) {
+      payload = tryParse(storage.getDataFromLocalStorage(key))
+    }
+    if ((payload.expire_at !== undefined) && (payload.expire_at > (Date.now() / 1000))) {
+      return payload
     }
   } catch (error) {
     logError(error);
@@ -122,7 +126,7 @@ export const growthCodeIdSubmodule = {
     }
 
     const resp = function(callback) {
-      let gcData = tryParse(readData(GC_DATA_KEY));
+      let gcData = readData(GC_DATA_KEY);
       if (gcData) {
         callback(gcData);
       } else {

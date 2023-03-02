@@ -1156,6 +1156,18 @@ describe('The Criteo bidding adapter', function () {
     it('should properly build a request with first party data', function () {
       const siteData = {
         keywords: ['power tools'],
+        content: {
+          data: [{
+            name: 'some_provider',
+            ext: {
+              segtax: 3
+            },
+            segment: [
+              { 'id': '1001' },
+              { 'id': '1002' }
+            ]
+          }]
+        },
         ext: {
           data: {
             pageType: 'article'
@@ -1164,6 +1176,16 @@ describe('The Criteo bidding adapter', function () {
       };
       const userData = {
         gender: 'M',
+        data: [{
+          name: 'some_provider',
+          ext: {
+            segtax: 3
+          },
+          segment: [
+            { 'id': '1001' },
+            { 'id': '1002' }
+          ]
+        }],
         ext: {
           data: {
             registered: true
@@ -1203,7 +1225,8 @@ describe('The Criteo bidding adapter', function () {
 
       const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
       expect(request.data.publisher.ext).to.deep.equal({ data: { pageType: 'article' } });
-      expect(request.data.user.ext).to.deep.equal({ data: { registered: true } });
+      expect(request.data.user).to.deep.equal(userData);
+      expect(request.data.site).to.deep.equal(siteData);
       expect(request.data.slots[0].ext).to.deep.equal({
         bidfloor: 0.75,
         data: {
@@ -1275,6 +1298,34 @@ describe('The Criteo bidding adapter', function () {
         'banner': {
           '300x250': { 'currency': 'USD', 'floor': 1 },
           '728x90': { 'currency': 'USD', 'floor': 2 }
+        }
+      });
+    });
+
+    it('should properly build a request with static floors', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          },
+        },
+      ];
+      const bidderRequest = {};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.floors).to.deep.equal({
+        'banner': {
+          '300x250': { 'currency': 'EUR', 'floor': 1 },
+          '728x90': { 'currency': 'EUR', 'floor': 1 }
         }
       });
     });

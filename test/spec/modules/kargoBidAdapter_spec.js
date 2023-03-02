@@ -69,7 +69,33 @@ describe('kargo adapter tests', function () {
           userId: {
             tdid: 'fake-tdid'
           },
-          sizes: [[320, 50], [300, 250], [300, 600]]
+          sizes: [[320, 50], [300, 250], [300, 600]],
+          ortb2: {
+            device: {
+              sua: {
+                platform: {
+                  brand: 'macOS',
+                  version: [ '12', '6', '0' ]
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: [ '106', '0', '5249', '119' ]
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: [ '106', '0', '5249', '119' ]
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: [ '99', '0', '0', '0' ]
+                  }
+                ],
+                mobile: 0,
+                model: ''
+              }
+            }
+          }
         },
         {
           params: {
@@ -259,6 +285,28 @@ describe('kargo adapter tests', function () {
         device: {
           width: screen.width,
           height: screen.height,
+          sua: {
+            platform: {
+              brand: 'macOS',
+              version: [ '12', '6', '0' ]
+            },
+            browsers: [
+              {
+                brand: 'Chromium',
+                version: [ '106', '0', '5249', '119' ]
+              },
+              {
+                brand: 'Google Chrome',
+                version: [ '106', '0', '5249', '119' ]
+              },
+              {
+                brand: 'Not;A=Brand',
+                version: [ '99', '0', '0', '0' ]
+              }
+            ],
+            mobile: 0,
+            model: '',
+          },
         },
         userIDs: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
@@ -280,13 +328,39 @@ describe('kargo adapter tests', function () {
         prebidRawBidRequests: [
           {
             bidId: 1,
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS',
+                    version: [ '12', '6', '0' ]
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: [ '99', '0', '0', '0' ]
+                    }
+                  ],
+                  mobile: 0,
+                  model: ''
+                }
+              }
+            },
             params: {
               placementId: 'foo'
             },
             userId: {
               tdid: 'fake-tdid'
             },
-            sizes: [[320, 50], [300, 250], [300, 600]]
+            sizes: [[320, 50], [300, 250], [300, 600]],
           },
           {
             bidId: 2,
@@ -330,7 +404,6 @@ describe('kargo adapter tests', function () {
       var payload = {
         timeout: 200,
         uspConsent: '1---',
-        foo: 'bar',
         refererInfo: {
           page: 'https://www.prebid.org',
         },
@@ -349,7 +422,6 @@ describe('kargo adapter tests', function () {
       expect(request.method).to.equal('GET');
       expect(request.currency).to.equal('USD');
       expect(request.timeout).to.equal(200);
-      expect(request.foo).to.equal('bar');
       expect(krakenParams).to.deep.equal(expected);
       // Make sure session ID stays the same across requests simulating multiple auctions on one page load
       for (let i in sessionIds) {
@@ -484,6 +556,17 @@ describe('kargo adapter tests', function () {
           mediaType: 'video',
           metadata: {},
           currency: 'EUR'
+        },
+        6: {
+          id: 'bar',
+          cpm: 2.5,
+          adm: '',
+          admUrl: 'https://foobar.com/vast_adm',
+          width: 300,
+          height: 250,
+          mediaType: 'video',
+          metadata: {},
+          currency: 'EUR'
         }
       }}, {
         currency: 'USD',
@@ -509,6 +592,11 @@ describe('kargo adapter tests', function () {
           }
         }, {
           bidId: 5,
+          params: {
+            placementId: 'bar'
+          }
+        }, {
+          bidId: 6,
           params: {
             placementId: 'bar'
           }
@@ -583,6 +671,22 @@ describe('kargo adapter tests', function () {
         height: 250,
         ad: '<VAST></VAST>',
         vastXml: '<VAST></VAST>',
+        ttl: 300,
+        creativeId: 'bar',
+        dealId: undefined,
+        netRevenue: true,
+        currency: 'EUR',
+        mediaType: 'video',
+        meta: {
+          mediaType: 'video'
+        }
+      }, {
+        requestId: '6',
+        cpm: 2.5,
+        width: 300,
+        height: 250,
+        ad: '',
+        vastUrl: 'https://foobar.com/vast_adm',
         ttl: 300,
         creativeId: 'bar',
         dealId: undefined,

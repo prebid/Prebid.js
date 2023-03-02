@@ -8,6 +8,7 @@ import {
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
+import {VENDORLESS_GVLID} from '../../../../src/consentHandler.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -73,7 +74,7 @@ describe('storage manager', function() {
 
     it('should respect (vendorless) consent enforcement', () => {
       storage.localStorageIsEnabled();
-      expect(validateHook.args[0][1]).to.eql(true); // isVendorless should be set to true
+      expect(validateHook.args[0][1]).to.equal(VENDORLESS_GVLID); // gvlid should be set to VENDORLESS_GVLID
     });
 
     it('should respect the deviceAccess flag', () => {

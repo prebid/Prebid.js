@@ -13,10 +13,13 @@ import {
   getUniqueDealId,
   getNextDealId,
   getVidazooSessionId,
+  webSessionId
 } from 'modules/vidazooBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -37,20 +40,78 @@ const BID = {
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
-  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '1234567890'
+    }
+  }
 };
+
+const VIDEO_BID = {
+  'bidId': '2d52001cabd527',
+  'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
+  'bidderRequestId': '12a8ae9ada9c13',
+  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
+  'params': {
+    'subDomain': SUB_DOMAIN,
+    'cId': '635509f7ff6642d368cb9837',
+    'pId': '59ac17c192832d0011283fe3',
+    'bidFloor': 0.1
+  },
+  'sizes': [[545, 307]],
+  'mediaTypes': {
+    'video': {
+      'playerSize': [[545, 307]],
+      'context': 'instream',
+      'mimes': [
+        'video/mp4',
+        'application/javascript'
+      ],
+      'protocols': [2, 3, 5, 6],
+      'maxduration': 60,
+      'minduration': 0,
+      'startdelay': 0,
+      'linearity': 1,
+      'api': [2],
+      'placement': 1
+    }
+  }
+}
 
 const BIDDER_REQUEST = {
   'gdprConsent': {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
+  'gppString': 'gpp_string',
+  'gppSid': [7],
   'uspConsent': 'consent_string',
   'refererInfo': {
     'page': 'https://www.greatsite.com',
     'ref': 'https://www.somereferrer.com'
-  }
+  },
+  'ortb2': {
+    'site': {
+      'cat': ['IAB2'],
+      'pagecat': ['IAB2-2']
+    },
+    'regs': {
+      'gpp': 'gpp_string',
+      'gpp_sid': [7]
+    }
+  },
 };
 
 const SERVER_RESPONSE = {
@@ -74,6 +135,23 @@ const SERVER_RESPONSE = {
     }]
   }
 };
+
+const VIDEO_SERVER_RESPONSE = {
+  body: {
+    'cid': '635509f7ff6642d368cb9837',
+    'results': [{
+      'ad': '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
+      'advertiserDomains': ['vidazoo.com'],
+      'exp': 60,
+      'width': 545,
+      'height': 307,
+      'mediaType': 'video',
+      'creativeId': '12610997325162499419',
+      'price': 2,
+      'cookies': []
+    }]
+  }
+}
 
 const REQUEST = {
   data: {
@@ -113,6 +191,11 @@ describe('VidazooBidAdapter', function () {
     it('exists and is a string', function () {
       expect(adapter.code).to.exist.and.to.be.a('string');
     });
+
+    it('exists and contains media types', function () {
+      expect(adapter.supportedMediaTypes).to.exist.and.to.be.an('array').with.length(2);
+      expect(adapter.supportedMediaTypes).to.contain.members([BANNER, VIDEO]);
+    });
   });
 
   describe('validate bid requests', function () {
@@ -150,14 +233,83 @@ describe('VidazooBidAdapter', function () {
     before(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {
         vidazoo: {
-          storageAllowed: true
+          storageAllowed: true,
         }
       };
       sandbox = sinon.sandbox.create();
       sandbox.stub(Date, 'now').returns(1000);
     });
 
-    it('should build request for each size', function () {
+    it('should build video request', function () {
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      config.setConfig({
+        bidderTimeout: 3000
+      });
+      const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+      expect(requests[0]).to.deep.equal({
+        method: 'POST',
+        url: `${createDomain(SUB_DOMAIN)}/prebid/multi/635509f7ff6642d368cb9837`,
+        data: {
+          adUnitCode: '63550ad1ff6642d368cba59dh5884270560',
+          bidFloor: 0.1,
+          bidId: '2d52001cabd527',
+          bidderVersion: adapter.version,
+          cat: ['IAB2'],
+          pagecat: ['IAB2-2'],
+          cb: 1000,
+          dealId: 1,
+          gdpr: 1,
+          gdprConsent: 'consent_string',
+          usPrivacy: 'consent_string',
+          gppString: 'gpp_string',
+          gppSid: [7],
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
+          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          bidderRequestId: '12a8ae9ada9c13',
+          gpid: '',
+          prebidVersion: version,
+          ptrace: '1000',
+          publisherId: '59ac17c192832d0011283fe3',
+          url: 'https%3A%2F%2Fwww.greatsite.com',
+          referrer: 'https://www.somereferrer.com',
+          res: `${window.top.screen.width}x${window.top.screen.height}`,
+          schain: VIDEO_BID.schain,
+          sessionId: '',
+          sizes: ['545x307'],
+          uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+          uqs: getTopWindowQueryParams(),
+          isStorageAllowed: true,
+          webSessionId: webSessionId,
+          mediaTypes: {
+            video: {
+              api: [2],
+              context: 'instream',
+              linearity: 1,
+              maxduration: 60,
+              mimes: [
+                'video/mp4',
+                'application/javascript'
+              ],
+              minduration: 0,
+              placement: 1,
+              playerSize: [[545, 307]],
+              protocols: [2, 3, 5, 6],
+              startdelay: 0
+            }
+          }
+        }
+      });
+    });
+
+    it('should build banner request for each size', function () {
+      config.setConfig({
+        bidderTimeout: 3000
+      });
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -168,6 +320,15 @@ describe('VidazooBidAdapter', function () {
           gdprConsent: 'consent_string',
           gdpr: 1,
           usPrivacy: 'consent_string',
+          gppString: 'gpp_string',
+          gppSid: [7],
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+          bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
@@ -176,16 +337,23 @@ describe('VidazooBidAdapter', function () {
           bidId: '2d52001cabd527',
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
-          dealId: 1,
+          dealId: 2,
           sessionId: '',
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
           schain: BID.schain,
+          ptrace: '1000',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
+          mediaTypes: [BANNER],
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          isStorageAllowed: true,
+          gpid: '1234567890',
+          cat: ['IAB2'],
+          pagecat: ['IAB2-2'],
+          webSessionId: webSessionId
         }
       });
     });
@@ -195,6 +363,7 @@ describe('VidazooBidAdapter', function () {
       sandbox.restore();
     });
   });
+
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
@@ -239,7 +408,7 @@ describe('VidazooBidAdapter', function () {
       expect(responses).to.be.empty;
     });
 
-    it('should return an array of interpreted responses', function () {
+    it('should return an array of interpreted banner responses', function () {
       const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0]).to.deep.equal({
@@ -254,6 +423,26 @@ describe('VidazooBidAdapter', function () {
         ad: '<iframe>console.log("hello world")</iframe>',
         meta: {
           advertiserDomains: ['securepubads.g.doubleclick.net']
+        }
+      });
+    });
+
+    it('should return an array of interpreted video responses', function () {
+      const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0]).to.deep.equal({
+        requestId: '2d52001cabd527',
+        cpm: 2,
+        width: 545,
+        height: 307,
+        mediaType: 'video',
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 60,
+        vastXml: '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
+        meta: {
+          advertiserDomains: ['vidazoo.com']
         }
       });
     });

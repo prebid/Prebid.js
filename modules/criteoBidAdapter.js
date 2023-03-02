@@ -11,7 +11,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 34;
+export const ADAPTER_VERSION = 35;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -27,7 +27,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 130;
+export const FAST_BID_VERSION_CURRENT = 135;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -523,9 +523,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
     };
   };
-  request.user = {
-    ext: bidderRequest.userExt
-  };
+  request.user = bidderRequest.ortb2?.user || {};
+  request.site = bidderRequest.ortb2?.site || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -644,26 +643,46 @@ for (var i = 0; i < 10; ++i) {
 </script>`;
 }
 
+function pickAvailableGetFloorFunc(bidRequest) {
+  if (bidRequest.getFloor) {
+    return bidRequest.getFloor;
+  }
+  if (bidRequest.params.bidFloor && bidRequest.params.bidFloorCur) {
+    try {
+      const floor = parseFloat(bidRequest.params.bidFloor);
+      return () => {
+        return {
+          currency: bidRequest.params.bidFloorCur,
+          floor: floor
+        };
+      };
+    } catch { }
+  }
+  return undefined;
+}
+
 function enrichSlotWithFloors(slot, bidRequest) {
   try {
     const slotFloors = {};
 
-    if (bidRequest.getFloor) {
+    const getFloor = pickAvailableGetFloorFunc(bidRequest);
+
+    if (getFloor) {
       if (bidRequest.mediaTypes?.banner) {
         slotFloors.banner = {};
         const bannerSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes'))
-        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
+        bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = getFloor.call(bidRequest, { size: bannerSize, mediaType: BANNER }));
       }
 
       if (bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
+        videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = getFloor.call(bidRequest, { size: videoSize, mediaType: VIDEO }));
       }
 
       if (bidRequest.mediaTypes?.native) {
         slotFloors.native = {};
-        slotFloors.native['*'] = bidRequest.getFloor({ size: '*', mediaType: NATIVE });
+        slotFloors.native['*'] = getFloor.call(bidRequest, { size: '*', mediaType: NATIVE });
       }
 
       if (Object.keys(slotFloors).length > 0) {
