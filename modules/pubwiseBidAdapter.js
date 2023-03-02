@@ -504,7 +504,8 @@ function _createOrtbTemplate(conf) {
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       h: screen.height,
       w: screen.width,
-      language: navigator.language
+      language: navigator.language,
+      devicetype: _getDeviceType()
     },
     user: {},
     ext: {
@@ -963,6 +964,41 @@ function _checkParamDataType(key, value, datatype) {
   }
   _logWarn(errMsg, key);
   return UNDEFINED;
+}
+
+function _isMobile() {
+  if (navigator.userAgentData && navigator.userAgentData.mobile) {
+    return true;
+  } else {
+    return (/(mobi)/i).test(navigator.userAgent);
+  }
+}
+
+function _isConnectedTV() {
+  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
+}
+
+function _isTablet() {
+  return (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()));
+}
+
+/**
+ * Very high level device detection, order matters
+ */
+function _getDeviceType() {
+  if (_isTablet()) {
+    return 5;
+  }
+
+  if (_isMobile()) {
+    return 4;
+  }
+
+  if (_isConnectedTV()) {
+    return 3;
+  }
+
+  return 2;
 }
 
 // function _decorateLog() {
