@@ -297,7 +297,6 @@ describe('BidWatch Analytics', function () {
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
-      sinon.assert.callCount(bidwatchAnalytics.track, 4);
     });
 
     it('test bidWon', function() {
@@ -318,7 +317,6 @@ describe('BidWatch Analytics', function () {
       expect(message).not.to.have.property('ad');
       expect(message).to.have.property('adId')
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
-      sinon.assert.callCount(bidwatchAnalytics.track, 1);
     });
   });
 });

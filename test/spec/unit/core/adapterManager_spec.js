@@ -20,6 +20,7 @@ import { setSizeConfig } from 'src/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
+import {auctionManager} from '../../../../src/auctionManager.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1756,6 +1757,153 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    it('should merge in bid-level ortb2Imp with adUnit-level ortb2Imp', () => {
+      const adUnit = {
+        ...adUnits[1],
+        ortb2Imp: {oneone: {twoone: 'val'}, onetwo: 'val'}
+      };
+      adUnit.bids[0].ortb2Imp = {oneone: {twotwo: 'val'}, onethree: 'val', onetwo: 'val2'};
+      const reqs = Object.fromEntries(
+        adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})
+          .map((req) => [req.bidderCode, req])
+      );
+      sinon.assert.match(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp, {
+        oneone: {
+          twoone: 'val',
+          twotwo: 'val',
+        },
+        onetwo: 'val2',
+        onethree: 'val'
+      })
+      sinon.assert.match(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp, adUnit.ortb2Imp)
+    })
+
+    it('picks ortb2Imp from "module" when only one s2sConfig is set', () => {
+      config.setConfig({
+        s2sConfig: [
+          {
+            enabled: true,
+            adapter: 'mockS2S1',
+          }
+        ]
+      });
+      const adUnit = {
+        code: 'mockau',
+        ortb2Imp: {
+          p1: 'adUnit'
+        },
+        bids: [
+          {
+            module: 'pbsBidAdapter',
+            ortb2Imp: {
+              p2: 'module'
+            }
+          }
+        ]
+      };
+      const req = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})[0];
+      [req.adUnitsS2SCopy[0].ortb2Imp, req.bids[0].ortb2Imp].forEach(imp => {
+        sinon.assert.match(imp, {
+          p1: 'adUnit',
+          p2: 'module'
+        });
+      });
+    });
+
+    describe('with named s2s configs', () => {
+      beforeEach(() => {
+        config.setConfig({
+          s2sConfig: [
+            {
+              enabled: true,
+              adapter: 'mockS2S1',
+              configName: 'one',
+              bidders: ['A']
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S2',
+              configName: 'two',
+              bidders: ['B']
+            }
+          ]
+        })
+      });
+
+      it('generates requests for "module" bids', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'two'},
+              ortb2Imp: {
+                p2: 'two'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        [reqs[0].adUnitsS2SCopy[0].ortb2Imp, reqs[0].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'one'
+          })
+        });
+        [reqs[1].adUnitsS2SCopy[0].ortb2Imp, reqs[1].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'two'
+          })
+        });
+      });
+
+      it('applies module-level ortb2Imp to "normal" s2s requests', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              bidder: 'A',
+              ortb2Imp: {
+                p3: 'bidderA'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs.length).to.equal(1);
+        sinon.assert.match(reqs[0].adUnitsS2SCopy[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one'
+        })
+        sinon.assert.match(reqs[0].bids[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one',
+          p3: 'bidderA'
+        })
+      });
+    });
+
     describe('when calling the s2s adapter', () => {
       beforeEach(() => {
         config.setConfig({
@@ -2542,5 +2690,106 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(getS2SBidders, sinon.match.same(s2sConfig));
       })
     });
+  });
+
+  describe('callDataDeletionRequest', () => {
+    function delMethodForBidder(bidderCode) {
+      const del = sinon.stub();
+      adapterManager.registerBidAdapter({
+        callBids: sinon.stub(),
+        getSpec() {
+          return {
+            onDataDeletionRequest: del
+          }
+        }
+      }, bidderCode);
+      return del;
+    }
+
+    function delMethodForAnalytics(provider) {
+      const del = sinon.stub();
+      adapterManager.registerAnalyticsAdapter({
+        code: provider,
+        adapter: {
+          enableAnalytics: sinon.stub(),
+          onDataDeletionRequest: del,
+        },
+      })
+      return del;
+    }
+
+    Object.entries({
+      'bid adapters': delMethodForBidder,
+      'analytics adapters': delMethodForAnalytics
+    }).forEach(([t, getDelMethod]) => {
+      describe(t, () => {
+        it('invokes onDataDeletionRequest', () => {
+          const del = getDelMethod('mockAdapter');
+          adapterManager.callDataDeletionRequest();
+          sinon.assert.calledOnce(del);
+        });
+
+        it('does not choke if onDeletionRequest throws', () => {
+          const del1 = getDelMethod('mockAdapter1');
+          const del2 = getDelMethod('mockAdapter2');
+          del1.throws(new Error());
+          adapterManager.callDataDeletionRequest();
+          sinon.assert.calledOnce(del1);
+          sinon.assert.calledOnce(del2);
+        });
+      })
+    })
+
+    describe('for bid adapters', () => {
+      let bidderRequests;
+
+      beforeEach(() => {
+        bidderRequests = [];
+        sinon.stub(auctionManager, 'getBidsRequested').callsFake(() => bidderRequests);
+      })
+      afterEach(() => {
+        auctionManager.getBidsRequested.restore();
+      })
+
+      it('does not invoke onDataDeletionRequest on aliases', () => {
+        const del = delMethodForBidder('mockBidder');
+        adapterManager.aliasBidAdapter('mockBidder', 'mockBidderAlias');
+        adapterManager.aliasBidAdapter('mockBidderAlias2', 'mockBidderAlias');
+        adapterManager.callDataDeletionRequest();
+        sinon.assert.calledOnce(del);
+      });
+
+      it('passes known bidder requests', () => {
+        const del1 = delMethodForBidder('mockBidder1');
+        const del2 = delMethodForBidder('mockBidder2');
+        adapterManager.aliasBidAdapter('mockBidder1', 'mockBidder1Alias');
+        adapterManager.aliasBidAdapter('mockBidder1Alias', 'mockBidder1Alias2')
+        bidderRequests = [
+          {
+            bidderCode: 'mockBidder1',
+            id: 0
+          },
+          {
+            bidderCode: 'mockBidder2',
+            id: 1,
+          },
+          {
+            bidderCode: 'mockBidder1Alias',
+            id: 2,
+          },
+          {
+            bidderCode: 'someOtherBidder',
+            id: 3
+          },
+          {
+            bidderCode: 'mockBidder1Alias2',
+            id: 4
+          }
+        ];
+        adapterManager.callDataDeletionRequest();
+        sinon.assert.calledWith(del1, [bidderRequests[0], bidderRequests[2], bidderRequests[4]]);
+        sinon.assert.calledWith(del2, [bidderRequests[1]]);
+      })
+    })
   });
 });

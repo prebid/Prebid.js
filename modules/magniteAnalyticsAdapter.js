@@ -254,9 +254,14 @@ export const parseBidResponse = (bid, previousBidResponse) => {
       const validAdomains = Array.isArray(adomains) && adomains.filter(domain => typeof domain === 'string');
       return validAdomains && validAdomains.length > 0 ? validAdomains.slice(0, 10) : undefined
     },
+    'networkId', () => {
+      const networkId = deepAccess(bid, 'meta.networkId');
+      // if not a valid after this, set to undefined so it gets filtered out
+      return (networkId && networkId.toString()) || undefined;
+    },
     'conversionError', conversionError => conversionError === true || undefined, // only pass if exactly true
     'ogCurrency',
-    'ogPrice'
+    'ogPrice',
   ]);
 }
 
@@ -298,6 +303,10 @@ const getTopLevelDetails = () => {
       eventTime: Date.now(),
       prebidLoaded: magniteAdapter.MODULE_INITIALIZED_TIME
     }
+  }
+
+  if (browser) {
+    deepSetValue(payload, rubiConf.pbaBrowserLocation || 'client.browser', browser);
   }
 
   // Add DM wrapper details
@@ -590,6 +599,28 @@ const subscribeToGamSlots = () => {
   });
 }
 
+/**
+ * Lazy parsing of UA to determine browser
+ * @param {string} userAgent string from prebid ortb ua or navigator
+ * @returns {string} lazily guessed browser name
+ */
+export const detectBrowserFromUa = userAgent => {
+  let normalizedUa = userAgent.toLowerCase();
+
+  if (normalizedUa.includes('edg')) {
+    return 'Edge';
+  } else if ((/opr|opera|opt/i).test(normalizedUa)) {
+    return 'Opera';
+  } else if ((/chrome|crios/i).test(normalizedUa)) {
+    return 'Chrome';
+  } else if ((/fxios|firefox/i).test(normalizedUa)) {
+    return 'Firefox';
+  } else if (normalizedUa.includes('safari') && !(/chromium|ucbrowser/i).test(normalizedUa)) {
+    return 'Safari';
+  }
+  return 'OTHER';
+}
+
 let accountId;
 let endpoint;
 
@@ -638,11 +669,20 @@ magniteAdapter.disableAnalytics = function () {
   accountId = undefined;
   resetConfs();
   magniteAdapter.originDisableAnalytics();
-}
+};
+
+magniteAdapter.onDataDeletionRequest = function () {
+  if (storage.localStorageIsEnabled()) {
+    storage.removeDataFromLocalStorage(COOKIE_NAME);
+  } else {
+    throw Error('Unable to access local storage, no data deleted');
+  }
+};
 
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
 
+let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
@@ -661,6 +701,12 @@ magniteAdapter.track = ({ eventType, args }) => {
         'timeout as clientTimeoutMillis',
       ]);
       auctionData.accountId = accountId;
+
+      // get browser
+      if (!browser) {
+        const userAgent = deepAccess(args, 'bidderRequests.0.ortb2.device.ua', navigator.userAgent) || '';
+        browser = detectBrowserFromUa(userAgent);
+      }
 
       // Order bidders were called
       auctionData.bidderOrder = args.bidderRequests.map(bidderRequest => bidderRequest.bidderCode);
@@ -701,7 +747,7 @@ magniteAdapter.track = ({ eventType, args }) => {
           'code as adUnitCode',
           'transactionId',
           'mediaTypes', mediaTypes => Object.keys(mediaTypes),
-          'sizes as dimensions', sizes => sizes.map(sizeToDimensions),
+          'sizes as dimensions', sizes => (sizes || [[1, 1]]).map(sizeToDimensions),
         ]);
         ad.pbAdSlot = deepAccess(adUnit, 'ortb2Imp.ext.data.pbadslot');
         ad.pattern = deepAccess(adUnit, 'ortb2Imp.ext.data.aupname');

@@ -157,3 +157,7 @@ const _public = (function () {
 utils._setEventEmitter(_public.emit.bind(_public));
 
 export const {on, off, get, getEvents, emit, addEvents} = _public;
+
+export function clearEvents() {
+  eventsFired.length = 0;
+}

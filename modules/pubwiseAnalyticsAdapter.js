@@ -304,11 +304,14 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
-  if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
+  let sessionId = userSessionID();
+  if (sessionExpired() === true || sessionId === null || sessionId === '') {
     let generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
+  } else if (sessionId != null) {
+    sessionData.sessionId = sessionId;
   }
   // eslint-disable-next-line
   // console.log('ensured session');

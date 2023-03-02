@@ -6,10 +6,10 @@
  */
 import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
-import {uspDataHandler} from '../src/adapterManager.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -100,6 +100,14 @@ function lookupUspConsent({onSuccess, onError}) {
     return onError('USP CMP not found.');
   }
 
+  function registerDataDelHandler(invoker, arg2) {
+    try {
+      invoker('registerDeletion', arg2, adapterManager.callDataDeletionRequest);
+    } catch (e) {
+      logError('Error invoking CMP `registerDeletion`:', e);
+    }
+  }
+
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
 
@@ -115,6 +123,7 @@ function lookupUspConsent({onSuccess, onError}) {
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
+    registerDataDelHandler(uspapiFunction, USPAPI_VERSION);
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
@@ -124,12 +133,13 @@ function lookupUspConsent({onSuccess, onError}) {
       uspapiFrame,
       callbackHandler.consentDataCallback
     );
+    registerDataDelHandler(callUspApiWhileInIframe, uspapiFrame);
   }
 
+  let listening = false;
+
   function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
-    /* Setup up a __uspapi function to do the postMessage and stash the callback.
-      This function behaves, from the caller's perspective, identicially to the in-frame __uspapi call (although it is not synchronous) */
-    window.__uspapi = function (cmd, ver, callback) {
+    function callUsp(cmd, ver, callback) {
       let callId = Math.random() + '';
       let msg = {
         __uspapiCall: {
@@ -144,10 +154,13 @@ function lookupUspConsent({onSuccess, onError}) {
     };
 
     /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
+    if (!listening) {
+      window.addEventListener('message', readPostMessageResponse, false);
+      listening = true;
+    }
 
     // call uspapi
-    window.__uspapi(commandName, USPAPI_VERSION, moduleCallback);
+    callUsp(commandName, USPAPI_VERSION, moduleCallback);
 
     function readPostMessageResponse(event) {
       const res = event && event.data && event.data.__uspapiReturn;
@@ -310,10 +323,14 @@ config.getConfig('consentManagement', config => setConsentConfig(config.consentM
 
 getHook('requestBids').before(requestBidsHook, 50);
 
-export function setOrtbUsp(ortbRequest, bidderRequest) {
-  if (bidderRequest.uspConsent) {
-    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-  }
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = uspDataHandler.getConsentData();
+    if (consent) {
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
+    }
+    return ortb2;
+  }))
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});
+enrichFPD.before(enrichFPDHook);
