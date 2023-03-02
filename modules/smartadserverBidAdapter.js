@@ -1,17 +1,22 @@
-import { deepAccess, deepClone, logError, isFn, isPlainObject } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {
+  deepAccess,
+  deepClone,
+  logError,
+  isFn,
+  isPlainObject,
+} from "../src/utils.js";
+import { BANNER, VIDEO } from "../src/mediaTypes.js";
+import { config } from "../src/config.js";
+import { registerBidder } from "../src/adapters/bidderFactory.js";
 
-const BIDDER_CODE = 'smartadserver';
+const BIDDER_CODE = "smartadserver";
 const GVL_ID = 45;
 const DEFAULT_FLOOR = 0.0;
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVL_ID,
-  aliases: ['smart'], // short code
+  aliases: ["smart"], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -21,7 +26,12 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.siteId && bid.params.pageId && bid.params.formatId);
+    return !!(
+      bid.params &&
+      bid.params.siteId &&
+      bid.params.pageId &&
+      bid.params.formatId
+    );
   },
 
   /**
@@ -29,14 +39,19 @@ export const spec = {
    *
    * @param {*} schain object
    */
-  serializeSupplyChain: function(schain) {
+  serializeSupplyChain: function (schain) {
     if (!schain || !schain.nodes) return null;
-    const nodesProperties = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
-    return `${schain.ver},${schain.complete}!` +
-      schain.nodes.map(node => nodesProperties.map(prop =>
-        node[prop] ? encodeURIComponent(node[prop]) : '')
-        .join(','))
-        .join('!');
+    const nodesProperties = ["asi", "sid", "hp", "rid", "name", "domain"];
+    return (
+      `${schain.ver},${schain.complete}!` +
+      schain.nodes
+        .map((node) =>
+          nodesProperties
+            .map((prop) => (node[prop] ? encodeURIComponent(node[prop]) : ""))
+            .join(",")
+        )
+        .join("!")
+    );
   },
 
   /**
@@ -45,10 +60,10 @@ export const spec = {
    * @param {*} bannerSizes Array of size array (ex. [[300, 250]]).
    * @returns
    */
-  adaptBannerSizes: function(bannerSizes) {
-    return bannerSizes.map(size => ({
+  adaptBannerSizes: function (bannerSizes) {
+    return bannerSizes.map((size) => ({
       w: size[0],
-      h: size[1]
+      h: size[1],
     }));
   },
 
@@ -58,15 +73,25 @@ export const spec = {
    * @param {*} payload Payload that will be sent in the ServerRequest
    * @param {*} videoMediaType Video media type.
    */
-  fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
+  fillPayloadForVideoBidRequest: function (
+    payload,
+    videoMediaType,
+    videoParams
+  ) {
     const playerSize = videoMediaType.playerSize[0];
-    payload.isVideo = videoMediaType.context === 'instream';
+    payload.isVideo = videoMediaType.context === "instream";
     payload.mediaType = VIDEO;
     payload.videoData = {
-      videoProtocol: this.getProtocolForVideoBidRequest(videoMediaType, videoParams),
+      videoProtocol: this.getProtocolForVideoBidRequest(
+        videoMediaType,
+        videoParams
+      ),
       playerWidth: playerSize[0],
       playerHeight: playerSize[1],
-      adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
+      adBreak: this.getStartDelayForVideoBidRequest(
+        videoMediaType,
+        videoParams
+      ),
     };
   },
 
@@ -76,7 +101,7 @@ export const spec = {
    * @param {*} videoParams
    * @returns protocol from either videoMediaType or videoParams
    */
-  getProtocolForVideoBidRequest: function(videoMediaType, videoParams) {
+  getProtocolForVideoBidRequest: function (videoMediaType, videoParams) {
     if (videoParams !== undefined && videoParams.protocol) {
       return videoParams.protocol;
     } else if (videoMediaType !== undefined) {
@@ -93,7 +118,7 @@ export const spec = {
    * @param {*} videoParams
    * @returns positive integer value of startdelay
    */
-  getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
+  getStartDelayForVideoBidRequest: function (videoMediaType, videoParams) {
     if (videoParams !== undefined && videoParams.startDelay) {
       return videoParams.startDelay;
     } else if (videoMediaType !== undefined) {
@@ -105,7 +130,7 @@ export const spec = {
         return 3;
       }
     }
-    return 2;// Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+    return 2; // Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
   },
 
   /**
@@ -115,10 +140,12 @@ export const spec = {
    * @param {string} domain Endpoint domain .
    * @returns {ServerRequest} Info describing the request to the server.
    */
-  createServerRequest: function(payload, domain) {
+  createServerRequest: function (payload, domain) {
     return {
-      method: 'POST',
-      url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
+      method: "POST",
+      url:
+        (domain !== undefined ? domain : "https://prg.smartadserver.com") +
+        "/prebid/v1",
       data: JSON.stringify(payload),
     };
   },
@@ -132,9 +159,17 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // use bidderRequest.bids[] to get bidder-dependent request info
-    const adServerCurrency = config.getConfig('currency.adServerCurrency');
-    const sellerDefinedAudience = deepAccess(bidderRequest, 'ortb2.user.data', config.getAnyConfig('ortb2.user.data'));
-    const sellerDefinedContext = deepAccess(bidderRequest, 'ortb2.site.content.data', config.getAnyConfig('ortb2.site.content.data'));
+    const adServerCurrency = config.getConfig("currency.adServerCurrency");
+    const sellerDefinedAudience = deepAccess(
+      bidderRequest,
+      "ortb2.user.data",
+      config.getAnyConfig("ortb2.user.data")
+    );
+    const sellerDefinedContext = deepAccess(
+      bidderRequest,
+      "ortb2.site.content.data",
+      config.getAnyConfig("ortb2.site.content.data")
+    );
 
     // pull requested transaction ID from bidderRequest.bids[].transactionId
     return validBidRequests.reduce((bidRequests, bid) => {
@@ -144,20 +179,34 @@ export const spec = {
         pageid: bid.params.pageId,
         formatid: bid.params.formatId,
         currencyCode: adServerCurrency,
-        targeting: bid.params.target && bid.params.target !== '' ? bid.params.target : undefined,
-        buid: bid.params.buId && bid.params.buId !== '' ? bid.params.buId : undefined,
-        appname: bid.params.appName && bid.params.appName !== '' ? bid.params.appName : undefined,
+        targeting:
+          bid.params.target && bid.params.target !== ""
+            ? bid.params.target
+            : undefined,
+        buid:
+          bid.params.buId && bid.params.buId !== ""
+            ? bid.params.buId
+            : undefined,
+        appname:
+          bid.params.appName && bid.params.appName !== ""
+            ? bid.params.appName
+            : undefined,
         ckid: bid.params.ckId || 0,
         tagId: bid.adUnitCode,
         // TODO: is 'page' the right value here?
-        pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : undefined,
+        pageDomain:
+          bidderRequest &&
+          bidderRequest.refererInfo &&
+          bidderRequest.refererInfo.page
+            ? bidderRequest.refererInfo.page
+            : undefined,
         transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
+        timeout: config.getConfig("bidderTimeout"),
         bidId: bid.bidId,
-        prebidVersion: '$prebid.version$',
+        prebidVersion: "$prebid.version$",
         schain: spec.serializeSupplyChain(bid.schain),
         sda: sellerDefinedAudience,
-        sdc: sellerDefinedContext
+        sdc: sellerDefinedContext,
       };
 
       if (bidderRequest) {
@@ -177,17 +226,20 @@ export const spec = {
         }
       }
 
-      if (bid && bid.userId) {
-        payload.eids = createEidsArray(bid.userId);
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {
         payload.us_privacy = bidderRequest.uspConsent;
       }
 
-      const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
-      const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-      const isSupportedVideoContext = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
+      const bannerMediaType = deepAccess(bid, "mediaTypes.banner");
+      const videoMediaType = deepAccess(bid, "mediaTypes.video");
+      const isSupportedVideoContext =
+        videoMediaType &&
+        (videoMediaType.context === "instream" ||
+          videoMediaType.context === "outstream");
 
       if (bannerMediaType || isSupportedVideoContext) {
         let type;
@@ -197,16 +249,29 @@ export const spec = {
 
           if (isSupportedVideoContext) {
             let videoPayload = deepClone(payload);
-            spec.fillPayloadForVideoBidRequest(videoPayload, videoMediaType, bid.params.video);
-            videoPayload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, VIDEO);
-            bidRequests.push(spec.createServerRequest(videoPayload, bid.params.domain));
+            spec.fillPayloadForVideoBidRequest(
+              videoPayload,
+              videoMediaType,
+              bid.params.video
+            );
+            videoPayload.bidfloor =
+              bid.params.bidfloor ||
+              spec.getBidFloor(bid, adServerCurrency, VIDEO);
+            bidRequests.push(
+              spec.createServerRequest(videoPayload, bid.params.domain)
+            );
           }
         } else {
           type = VIDEO;
-          spec.fillPayloadForVideoBidRequest(payload, videoMediaType, bid.params.video);
+          spec.fillPayloadForVideoBidRequest(
+            payload,
+            videoMediaType,
+            bid.params.video
+          );
         }
 
-        payload.bidfloor = bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, type);
+        payload.bidfloor =
+          bid.params.bidfloor || spec.getBidFloor(bid, adServerCurrency, type);
         bidRequests.push(spec.createServerRequest(payload, bid.params.domain));
       } else {
         bidRequests.push({});
@@ -241,7 +306,7 @@ export const spec = {
           netRevenue: response.isNetCpm,
           ttl: response.ttl,
           dspPixels: response.dspPixels,
-          meta: { advertiserDomains: response.adomain ? response.adomain : [] }
+          meta: { advertiserDomains: response.adomain ? response.adomain : [] },
         };
 
         if (bidRequest.mediaType === VIDEO) {
@@ -257,7 +322,7 @@ export const spec = {
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      logError('Error while parsing smart server response', error);
+      logError("Error while parsing smart server response", error);
     }
     return bidResponses;
   },
@@ -276,12 +341,14 @@ export const spec = {
     }
 
     const floor = bid.getFloor({
-      currency: currency || 'USD',
+      currency: currency || "USD",
       mediaType,
-      size: '*'
+      size: "*",
     });
 
-    return isPlainObject(floor) && !isNaN(floor.floor) ? floor.floor : DEFAULT_FLOOR;
+    return isPlainObject(floor) && !isNaN(floor.floor)
+      ? floor.floor
+      : DEFAULT_FLOOR;
   },
 
   /**
@@ -293,21 +360,29 @@ export const spec = {
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
-    if (syncOptions.iframeEnabled && serverResponses.length > 0 && serverResponses[0].body.cSyncUrl != null) {
+    if (
+      syncOptions.iframeEnabled &&
+      serverResponses.length > 0 &&
+      serverResponses[0].body.cSyncUrl != null
+    ) {
       syncs.push({
-        type: 'iframe',
-        url: serverResponses[0].body.cSyncUrl
+        type: "iframe",
+        url: serverResponses[0].body.cSyncUrl,
       });
-    } else if (syncOptions.pixelEnabled && serverResponses.length > 0 && serverResponses[0].body.dspPixels !== undefined) {
-      serverResponses[0].body.dspPixels.forEach(function(pixel) {
+    } else if (
+      syncOptions.pixelEnabled &&
+      serverResponses.length > 0 &&
+      serverResponses[0].body.dspPixels !== undefined
+    ) {
+      serverResponses[0].body.dspPixels.forEach(function (pixel) {
         syncs.push({
-          type: 'image',
-          url: pixel
+          type: "image",
+          url: pixel,
         });
       });
     }
     return syncs;
-  }
+  },
 };
 
 registerBidder(spec);
