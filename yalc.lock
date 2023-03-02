@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "live-connect-js": {
+      "signature": "ea78472c965971f235949414139fb5cb",
+      "file": true,
+      "replaced": "^4.0.0"
+    }
+  }
+}

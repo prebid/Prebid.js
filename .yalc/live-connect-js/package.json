@@ -1,0 +1,56 @@
+{
+  "author": "LiveIntent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/liveintent-berlin/live-connect"
+  },
+  "description": "LiveConnect, The first party identity provider",
+  "version": "4.0.1-alpha.0",
+  "versionPrefix": "live-connect-v",
+  "license": "Apache-2.0",
+  "private": false,
+  "name": "live-connect-js",
+  "engines": {
+    "node": ">=8"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/*",
+    "COLLECTOR_PARAMS.md",
+    "CONFIGURATION_OPTIONS.md"
+  ],
+  "scripts": {
+    "test:unit": "npm run lint && nyc ts-mocha --config test-config/mocha.unit.json",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "test:it:browserstack": "npm run build-test-resources && wdio test-config/wdio.browserstack.conf.js",
+    "test:it:docker:chrome": "npm run build-test-resources && wdio test-config/wdio.docker.chrome.conf.js",
+    "test:it:local:chrome": "npm run build-test-resources && wdio test-config/wdio.local.chrome.conf.js",
+    "build": "rollup -c ./rollup/dist.config.js",
+    "build-test-resources": "rollup -c ./rollup/test-resources.config.js",
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
+    "fix-js": "eslint --fix 'src/**/*.ts' 'test/**/*.ts' || exit 0",
+    "release:ci:prepatch": "release-it patch --preRelease=alpha --ci",
+    "release:ci:preminor": "release-it minor --preRelease=alpha --ci",
+    "release:ci:premajor": "release-it major --preRelease=alpha --ci",
+    "release:ci:bump-prerelease": "release-it --preRelease --ci",
+    "release:ci:alpha->beta": "release-it --preRelease=beta --ci",
+    "release:ci:beta->rc": "release-it --preRelease=rc --ci",
+    "release:ci:patch": "release-it patch --ci",
+    "release:ci:minor": "release-it minor --ci",
+    "release:ci:major": "release-it major --ci"
+  },
+  "dependencies": {
+    "live-connect-common": "^1.0.0",
+    "tiny-hashes": "1.0.1"
+  },
+  "yalcSig": "ea78472c965971f235949414139fb5cb"
+}
