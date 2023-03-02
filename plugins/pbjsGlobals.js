@@ -43,6 +43,10 @@ module.exports = function(api, options) {
 
   const PREBID_ROOT = path.resolve(__dirname, '..');
 
+  function relPath(from, toRelToProjectRoot) {
+    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot));
+  }
+
   function getModuleName(filename) {
     const modPath = path.parse(path.relative(PREBID_ROOT, filename));
     if (modPath.ext.toLowerCase() !== '.js') {
@@ -70,7 +74,7 @@ module.exports = function(api, options) {
           do {
             registerName = `__r${i++}`
           } while (path.scope.hasBinding(registerName))
-          path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from 'src/prebidGlobal.js';`, {filename: state.filename}).program.body);
+          path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
           path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
