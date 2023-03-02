@@ -7,10 +7,9 @@
 import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/esm/initializer.js';
+import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
@@ -140,7 +139,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
   },
 
   /**

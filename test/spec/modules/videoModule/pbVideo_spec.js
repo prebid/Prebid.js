@@ -14,12 +14,15 @@ let gamSubmoduleMock;
 let gamSubmoduleFactoryMock;
 let videoImpressionVerifierFactoryMock;
 let videoImpressionVerifierMock;
+let adQueueCoordinatorMock;
+let adQueueCoordinatorFactoryMock;
 
 function resetTestVars() {
   ortbVideoMock = {};
   ortbContentMock = {};
   videoCoreMock = {
     registerProvider: sinon.spy(),
+    initProvider: sinon.spy(),
     onEvents: sinon.spy(),
     getOrtbVideo: () => ortbVideoMock,
     getOrtbContent: () => ortbContentMock,
@@ -54,9 +57,16 @@ function resetTestVars() {
   };
 
   videoImpressionVerifierFactoryMock = () => videoImpressionVerifierMock;
+
+  adQueueCoordinatorMock = {
+    registerProvider: sinon.spy(),
+    queueAd: sinon.spy()
+  };
+
+  adQueueCoordinatorFactoryMock = () => adQueueCoordinatorMock;
 }
 
-let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory) => {
+let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, gamSubmoduleFactory, videoImpressionVerifierFactory, adQueueCoordinator) => {
   const pbVideo = PbVideo(
     videoCore || videoCoreMock,
     getConfig || getConfigMock,
@@ -64,7 +74,8 @@ let pbVideoFactory = (videoCore, getConfig, pbGlobal, pbEvents, videoEvents, gam
     pbEvents || pbEventsMock,
     videoEvents || videoEventsMock,
     gamSubmoduleFactory || gamSubmoduleFactoryMock,
-    videoImpressionVerifierFactory || videoImpressionVerifierFactoryMock
+    videoImpressionVerifierFactory || videoImpressionVerifierFactoryMock,
+    adQueueCoordinator || adQueueCoordinatorMock
   );
   pbVideo.init();
   return pbVideo;
@@ -207,6 +218,7 @@ describe('Prebid Video', function () {
     beforeEach(() => {
       gamSubmoduleMock.getAdTagUrl.resetHistory();
       videoCoreMock.setAdTagUrl.resetHistory();
+      adQueueCoordinatorMock.queueAd.resetHistory();
     });
 
     let beforeBidRequestCallback;
@@ -250,10 +262,10 @@ describe('Prebid Video', function () {
       pbVideoFactory(null, getConfig, pbGlobal, pbEvents, null, gamSubmoduleFactory);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
-      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedAdTag);
-      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedAdTag);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
     });
 
     it('should load ad tag from highest bid when ad server is not configured', function () {
@@ -275,11 +287,11 @@ describe('Prebid Video', function () {
       pbVideoFactory(null, () => ({ providers: [] }), pbGlobal, pbEvents);
       beforeBidRequestCallback(() => {}, {});
       auctionEndCallback(auctionResults);
-      expect(videoCoreMock.setAdTagUrl.calledOnce).to.be.true;
-      expect(videoCoreMock.setAdTagUrl.args[0][0]).to.be.equal(expectedVastUrl);
-      expect(videoCoreMock.setAdTagUrl.args[0][1]).to.be.equal(expectedDivId);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
-      expect(videoCoreMock.setAdTagUrl.args[0][2]).to.have.property('adXml', expectedVastXml);
+      expect(adQueueCoordinatorMock.queueAd.calledOnce).to.be.true;
+      expect(adQueueCoordinatorMock.queueAd.args[0][0]).to.be.equal(expectedVastUrl);
+      expect(adQueueCoordinatorMock.queueAd.args[0][1]).to.be.equal(expectedDivId);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adUnitCode', expectedAdUnitCode);
+      expect(adQueueCoordinatorMock.queueAd.args[0][2]).to.have.property('adXml', expectedVastXml);
     });
   });
 

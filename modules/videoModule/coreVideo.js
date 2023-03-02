@@ -127,6 +127,11 @@ export function VideoCore(parentModule_) {
     } catch (e) {}
   }
 
+  function initProvider(divId) {
+    const submodule = parentModule.getSubmodule(divId);
+    submodule && submodule.init && submodule.init();
+  }
+
   /**
    * @name VideoCore#getOrtbVideo
    * @summary Obtains the oRTB Video params for a player's current video session.
@@ -208,6 +213,7 @@ export function VideoCore(parentModule_) {
 
   return {
     registerProvider,
+    initProvider,
     getOrtbVideo,
     getOrtbContent,
     setAdTagUrl,

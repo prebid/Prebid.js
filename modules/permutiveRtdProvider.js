@@ -14,6 +14,7 @@ import {includes} from '../src/polyfill.js';
 const MODULE_NAME = 'permutive'
 
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
 
@@ -118,9 +119,21 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
   const segmentData = getSegments(maxSegs)
 
-  acBidders.forEach(function (bidder) {
+  const ssps = segmentData?.ssp?.ssps ?? []
+  const sspCohorts = segmentData?.ssp?.cohorts ?? []
+
+  const bidders = new Set([...acBidders, ...ssps])
+  bidders.forEach(function (bidder) {
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
-    const nextConfig = updateOrtbConfig(currConfig, segmentData.ac, transformationConfigs) // ORTB2 uses the `ac` segment IDs
+
+    const isAcBidder = acBidders.indexOf(bidder) > -1
+    const isSspBidder = ssps.indexOf(bidder) > -1
+
+    let cohorts = []
+    if (isAcBidder) cohorts = segmentData.ac
+    if (isSspBidder) cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
+
+    const nextConfig = updateOrtbConfig(currConfig, cohorts, sspCohorts, transformationConfigs)
     bidderOrtb2[bidder] = nextConfig.ortb2;
   })
 }
@@ -131,9 +144,10 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
+ * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
+function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformationConfigs) {
   const name = 'permutive.com'
 
   const permutiveUserData = {
@@ -153,6 +167,12 @@ function updateOrtbConfig (currConfig, segmentIDs, transformationConfigs) {
     .concat(permutiveUserData, transformedUserData)
 
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
+
+  // As of writing this, only used for AppNexus/Xandr in place of appnexusAuctionKeywords in config
+  const currentUserKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords') || ''
+  const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
+  const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
+  deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
 
   return ortbConfig
 }
@@ -222,10 +242,19 @@ function getCustomBidderFn (moduleConfig, bidder) {
  * @return {Object} Bidder function
  */
 function getDefaultBidderFn (bidder) {
+  const isPStandardTargetingEnabled = (data, acEnabled) => {
+    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.cohorts && data.ssp.cohorts.length)
+  }
+  const pStandardTargeting = (data, acEnabled) => {
+    const ac = (acEnabled) ? (data.ac ?? []) : []
+    const ssp = data?.ssp?.cohorts ?? []
+    return [...new Set([...ac, ...ssp])]
+  }
   const bidderMap = {
     appnexus: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.keywords.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.keywords.p_standard', segments)
       }
       if (data.appnexus && data.appnexus.length) {
         deepSetValue(bid, 'params.keywords.permutive', data.appnexus)
@@ -234,18 +263,20 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     rubicon: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.visitor.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.visitor.p_standard', segments)
       }
       if (data.rubicon && data.rubicon.length) {
-        deepSetValue(bid, 'params.visitor.permutive', data.rubicon)
+        deepSetValue(bid, 'params.visitor.permutive', data.rubicon.map(String))
       }
 
       return bid
     },
     ozone: function (bid, data, acEnabled) {
-      if (acEnabled && data.ac && data.ac.length) {
-        deepSetValue(bid, 'params.customData.0.targeting.p_standard', data.ac)
+      if (isPStandardTargetingEnabled(data, acEnabled)) {
+        const segments = pStandardTargeting(data, acEnabled)
+        deepSetValue(bid, 'params.customData.0.targeting.p_standard', segments)
       }
 
       return bid
@@ -280,19 +311,29 @@ export function isPermutiveOnPage () {
  * @return {Object}
  */
 export function getSegments (maxSegs) {
-  const legacySegs = readSegments('_psegs').map(Number).filter(seg => seg >= 1000000).map(String)
-  const _ppam = readSegments('_ppam')
-  const _pcrprs = readSegments('_pcrprs')
+  const legacySegs = readSegments('_psegs', []).map(Number).filter(seg => seg >= 1000000).map(String)
+  const _ppam = readSegments('_ppam', [])
+  const _pcrprs = readSegments('_pcrprs', [])
 
   const segments = {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
-    rubicon: readSegments('_prubicons'),
-    appnexus: readSegments('_papns'),
-    gam: readSegments('_pdfps'),
+    rubicon: readSegments('_prubicons', []),
+    appnexus: readSegments('_papns', []),
+    gam: readSegments('_pdfps', []),
+    ssp: readSegments('_pssps', {
+      cohorts: [],
+      ssps: []
+    }),
   }
 
   for (const bidder in segments) {
-    segments[bidder] = segments[bidder].slice(0, maxSegs)
+    if (bidder === 'ssp') {
+      if (segments[bidder].cohorts && Array.isArray(segments[bidder].cohorts)) {
+        segments[bidder].cohorts = segments[bidder].cohorts.slice(0, maxSegs)
+      }
+    } else {
+      segments[bidder] = segments[bidder].slice(0, maxSegs)
+    }
   }
 
   return segments
@@ -300,15 +341,17 @@ export function getSegments (maxSegs) {
 
 /**
  * Gets an array of segment IDs from LocalStorage
- * or returns an empty array
+ * or return the default value provided.
+ * @template A
  * @param {string} key
- * @return {string[]|number[]}
+ * @param {A} defaultValue
+ * @return {A}
  */
-function readSegments (key) {
+function readSegments (key, defaultValue) {
   try {
-    return JSON.parse(storage.getDataFromLocalStorage(key) || '[]')
+    return JSON.parse(storage.getDataFromLocalStorage(key)) || defaultValue
   } catch (e) {
-    return []
+    return defaultValue
   }
 }
 

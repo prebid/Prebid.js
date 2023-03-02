@@ -24,7 +24,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
@@ -277,6 +277,11 @@ function generateOpenRtbObject(bidderRequest, bid) {
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
+    };
+
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
     };
 
     if (bidderRequest.ortb2) {

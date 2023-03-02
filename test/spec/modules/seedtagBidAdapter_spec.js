@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { config } from '../../../src/config.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
@@ -24,48 +25,93 @@ function getSlotConfigs(mediaTypes, params) {
   };
 }
 
-function createVideoSlotConfig(mediaType) {
+function createInStreamSlotConfig(mediaType) {
   return getSlotConfigs(mediaType, {
     publisherId: PUBLISHER_ID,
     adUnitId: ADUNIT_ID,
-    placement: 'video',
+    placement: 'inStream',
   });
 }
+
+const createBannerSlotConfig = (placement, mediatypes) => {
+  return getSlotConfigs(mediatypes || { banner: {} }, {
+    publisherId: PUBLISHER_ID,
+    adUnitId: ADUNIT_ID,
+    placement,
+  });
+};
 
 describe('Seedtag Adapter', function () {
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
-        describe('and placement has the correct value', function () {
-          const createBannerSlotConfig = (placement) => {
-            return getSlotConfigs(
-              { banner: {} },
-              {
-                publisherId: PUBLISHER_ID,
-                adUnitId: ADUNIT_ID,
-                placement,
-              }
+        const placements = ['inBanner', 'inImage', 'inScreen', 'inArticle'];
+        placements.forEach((placement) => {
+          it(placement + 'should be valid', function () {
+            const isBidRequestValid = spec.isBidRequestValid(
+              createBannerSlotConfig(placement)
             );
-          };
-          const placements = [
-            'banner',
-            'video',
-            'inImage',
-            'inScreen',
-            'inArticle',
-          ];
-          placements.forEach((placement) => {
-            it('should be ' + placement, function () {
+            expect(isBidRequestValid).to.equal(true);
+          });
+
+          it(
+            placement +
+              ' should be valid when has display and video mediatypes, and video context is outstream',
+            function () {
               const isBidRequestValid = spec.isBidRequestValid(
-                createBannerSlotConfig(placement)
+                createBannerSlotConfig(placement, {
+                  banner: {},
+                  video: {
+                    context: 'outstream',
+                    playerSize: [[600, 200]],
+                  },
+                })
               );
               expect(isBidRequestValid).to.equal(true);
-            });
-          });
+            }
+          );
+
+          it(
+            placement +
+              " shouldn't be valid when has display and video mediatypes, and video context is instream",
+            function () {
+              const isBidRequestValid = spec.isBidRequestValid(
+                createBannerSlotConfig(placement, {
+                  banner: {},
+                  video: {
+                    context: 'instream',
+                    playerSize: [[600, 200]],
+                  },
+                })
+              );
+              expect(isBidRequestValid).to.equal(false);
+            }
+          );
         });
       });
       describe('when video slot has all mandatory params', function () {
         it('should return true, when video context is instream', function () {
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: 'instream',
+              playerSize: [[600, 200]],
+            },
+          });
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
+          expect(isBidRequestValid).to.equal(true);
+        });
+        it('should return true, when video context is instream and mediatype is video and banner', function () {
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: 'instream',
+              playerSize: [[600, 200]],
+            },
+            banner: {},
+          });
+          const isBidRequestValid = spec.isBidRequestValid(slotConfig);
+          expect(isBidRequestValid).to.equal(true);
+        });
+        it('should return false, when video context is instream, but placement is not inStream', function () {
           const slotConfig = getSlotConfigs(
             {
               video: {
@@ -76,29 +122,21 @@ describe('Seedtag Adapter', function () {
             {
               publisherId: PUBLISHER_ID,
               adUnitId: ADUNIT_ID,
-              placement: 'video',
+              placement: 'inBanner',
             }
           );
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(true);
+          expect(isBidRequestValid).to.equal(false);
         });
-
-        it('should return true, when video context is outstream', function () {
-          const slotConfig = getSlotConfigs(
-            {
-              video: {
-                context: 'outstream',
-                playerSize: [[600, 200]],
-              },
+        it('should return false, when video context is outstream', function () {
+          const slotConfig = createInStreamSlotConfig({
+            video: {
+              context: 'outstream',
+              playerSize: [[600, 200]],
             },
-            {
-              publisherId: PUBLISHER_ID,
-              adUnitId: ADUNIT_ID,
-              placement: 'video',
-            }
-          );
+          });
           const isBidRequestValid = spec.isBidRequestValid(slotConfig);
-          expect(isBidRequestValid).to.equal(true);
+          expect(isBidRequestValid).to.equal(false);
         });
       });
     });
@@ -111,7 +149,7 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               adUnitId: ADUNIT_ID,
-              placement: 'banner',
+              placement: 'inBanner',
             })
           );
           expect(isBidRequestValid).to.equal(false);
@@ -120,7 +158,7 @@ describe('Seedtag Adapter', function () {
           const isBidRequestValid = spec.isBidRequestValid(
             createSlotConfig({
               publisherId: PUBLISHER_ID,
-              placement: 'banner',
+              placement: 'inBanner',
             })
           );
           expect(isBidRequestValid).to.equal(false);
@@ -145,47 +183,41 @@ describe('Seedtag Adapter', function () {
           expect(isBidRequestValid).to.equal(false);
         });
       });
+
       describe('when video mediaType object is not correct', function () {
-        function createVideoSlotconfig(mediaType) {
-          return getSlotConfigs(mediaType, {
-            publisherId: PUBLISHER_ID,
-            adUnitId: ADUNIT_ID,
-            placement: 'video',
-          });
-        }
         it('is a void object', function () {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotConfig({ video: {} })
+            createInStreamSlotConfig({ video: {} })
           );
           expect(isBidRequestValid).to.equal(false);
         });
         it('does not have playerSize.', function () {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotConfig({ video: { context: 'instream' } })
+            createInStreamSlotConfig({ video: { context: 'instream' } })
           );
           expect(isBidRequestValid).to.equal(false);
         });
         it('is outstream ', function () {
           const isBidRequestValid = spec.isBidRequestValid(
-            createVideoSlotConfig({
+            createInStreamSlotConfig({
               video: {
                 context: 'outstream',
                 playerSize: [[600, 200]],
               },
             })
           );
-          expect(isBidRequestValid).to.equal(true);
+          expect(isBidRequestValid).to.equal(false);
         });
         describe('order does not matter', function () {
           it('when video is not the first slot', function () {
             const isBidRequestValid = spec.isBidRequestValid(
-              createVideoSlotConfig({ banner: {}, video: {} })
+              createInStreamSlotConfig({ banner: {}, video: {} })
             );
             expect(isBidRequestValid).to.equal(false);
           });
           it('when video is the first slot', function () {
             const isBidRequestValid = spec.isBidRequestValid(
-              createVideoSlotConfig({ video: {}, banner: {} })
+              createInStreamSlotConfig({ video: {}, banner: {} })
             );
             expect(isBidRequestValid).to.equal(false);
           });
@@ -199,21 +231,27 @@ describe('Seedtag Adapter', function () {
       refererInfo: { page: 'referer' },
       timeout: 1000,
     };
-    const mandatoryParams = {
+    const mandatoryDisplayParams = {
       publisherId: PUBLISHER_ID,
       adUnitId: ADUNIT_ID,
-      placement: 'banner',
+      placement: 'inBanner',
     };
-    const inStreamParams = Object.assign({}, mandatoryParams, {
-      video: {
-        mimes: 'mp4',
-      },
-    });
+    const mandatoryVideoParams = {
+      publisherId: PUBLISHER_ID,
+      adUnitId: ADUNIT_ID,
+      placement: 'inStream',
+    };
     const validBidRequests = [
-      getSlotConfigs({ banner: {} }, mandatoryParams),
+      getSlotConfigs({ banner: {} }, mandatoryDisplayParams),
       getSlotConfigs(
-        { video: { context: 'instream', playerSize: [[300, 200]] } },
-        inStreamParams
+        {
+          video: {
+            context: 'instream',
+            playerSize: [[300, 200]],
+            mimes: ['video/mp4'],
+          },
+        },
+        mandatoryVideoParams
       ),
     ];
     it('Url params should be correct ', function () {
@@ -236,26 +274,6 @@ describe('Seedtag Adapter', function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
-    });
-
-    describe('adPosition param', function () {
-      it('should sended when publisher set adPosition param', function () {
-        const params = Object.assign({}, mandatoryParams, {
-          adPosition: 1,
-        });
-        const validBidRequests = [getSlotConfigs({ banner: {} }, params)];
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.bidRequests[0].adPosition).to.equal(1);
-      });
-      it('should not sended when publisher has not set adPosition param', function () {
-        const validBidRequests = [
-          getSlotConfigs({ banner: {} }, mandatoryParams),
-        ];
-        const request = spec.buildRequests(validBidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.bidRequests[0].adPosition).to.equal(undefined);
-      });
     });
 
     describe('GDPR params', function () {
@@ -309,10 +327,7 @@ describe('Seedtag Adapter', function () {
 
           bidderRequest['uspConsent'] = uspConsent;
 
-          const request = spec.buildRequests(
-            validBidRequests,
-            bidderRequest
-          );
+          const request = spec.buildRequests(validBidRequests, bidderRequest);
           const payload = JSON.parse(request.data);
 
           expect(payload.uspConsent).to.not.exist;
@@ -346,7 +361,7 @@ describe('Seedtag Adapter', function () {
         );
         expect(videoBid.supplyTypes[0]).to.equal('video');
         expect(videoBid.adUnitId).to.equal('000000');
-        expect(videoBid.videoParams.mimes).to.equal('mp4');
+        expect(videoBid.videoParams.mimes).to.eql(['video/mp4']);
         expect(videoBid.videoParams.w).to.equal(300);
         expect(videoBid.videoParams.h).to.equal(200);
         expect(videoBid.sizes[0][0]).to.equal(300);
@@ -357,6 +372,29 @@ describe('Seedtag Adapter', function () {
       });
     });
 
+    describe('COPPA param', function () {
+      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
+        config.setConfig({ coppa: true });
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.equal(true);
+      });
+
+      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
+        config.setConfig({ coppa: false });
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      });
+
+      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      });
+    });
     describe('schain param', function () {
       it('should add schain to payload when exposed on validBidRequest', function () {
         // https://github.com/prebid/Prebid.js/blob/master/modules/schain.md#sample-code-for-passing-the-schain-object
@@ -396,6 +434,52 @@ describe('Seedtag Adapter', function () {
         const payload = JSON.parse(request.data);
 
         expect(payload.schain).to.not.exist;
+      });
+    });
+
+    describe('GPP param', function () {
+      it('should be added to payload when bidderRequest has gppConsent param', function () {
+        const gppConsent = {
+          gppString: 'someGppString',
+          applicableSections: [7]
+        }
+        bidderRequest['gppConsent'] = gppConsent
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(gppConsent.gppString);
+        expect(data.gppConsent.applicableSections[0]).to.equal(gppConsent.applicableSections[0]);
+      });
+
+      it('should be undefined on payload when bidderRequest has not gppConsent param', function () {
+        bidderRequest.gppConsent = undefined
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
+      });
+
+      it('should be added to payload when bidderRequest has ortb2 param', function () {
+        const ortb2 = {
+          regs: {
+            gpp: 'someGppString',
+            gpp_sid: [7]
+          }
+        }
+        bidderRequest['gppConsent'] = undefined
+        bidderRequest['ortb2'] = ortb2;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.exist;
+        expect(data.gppConsent.gppString).to.equal(ortb2.regs.gpp);
+        expect(data.gppConsent.applicableSections[0]).to.equal(ortb2.regs.gpp_sid[0]);
+      });
+
+      it('should be added to payload when bidderRequest has neither gppConsent nor ortb2', function () {
+        bidderRequest['ortb2'] = undefined;
+        bidderRequest['gppConsent'] = undefined;
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.gppConsent).to.be.undefined;
       });
     });
   });
@@ -536,11 +620,11 @@ describe('Seedtag Adapter', function () {
       const timeoutUrl = getTimeoutUrl(timeoutData);
       expect(timeoutUrl).to.equal(
         'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-          params.publisherId +
-          '&adUnitId=' +
-          params.adUnitId +
-          '&timeout=' +
-          timeout
+        params.publisherId +
+        '&adUnitId=' +
+        params.adUnitId +
+        '&timeout=' +
+        timeout
       );
     });
 
@@ -552,11 +636,11 @@ describe('Seedtag Adapter', function () {
       expect(
         utils.triggerPixel.calledWith(
           'https://s.seedtag.com/se/hb/timeout?publisherToken=' +
-            params.publisherId +
-            '&adUnitId=' +
-            params.adUnitId +
-            '&timeout=' +
-            timeout
+          params.publisherId +
+          '&adUnitId=' +
+          params.adUnitId +
+          '&timeout=' +
+          timeout
         )
       ).to.equal(true);
     });

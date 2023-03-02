@@ -88,13 +88,13 @@ export const USER_IDS_CONFIG = {
     atype: 1,
     getValue: function(data) {
       let value = '';
-      if (data.DeviceID) {
-        value = data.DeviceID.join(',');
+      if (data && data.ext && data.ext.DeviceID) {
+        value = data.ext.DeviceID;
       }
       return value;
     },
     getUidExt: function(data) {
-      return 'DeviceID';
+      return data && data.ext;
     }
   },
 
@@ -250,10 +250,13 @@ export const USER_IDS_CONFIG = {
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
-      return data.snowflake
+      if (data.snowflake.id === undefined) {
+        return data.snowflake;
+      }
+
+      return data.snowflake.id;
     },
     source: 'novatiq.com',
-    atype: 1
   },
 
   'uid2': {
@@ -282,7 +285,7 @@ export const USER_IDS_CONFIG = {
   },
 
   amxId: {
-    source: 'amxrtb.com',
+    source: 'amxdt.net',
     atype: 1,
   },
 
@@ -345,8 +348,8 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // cpexId
-  'cpexId': {
+  // czechAdId
+  'czechAdId': {
     source: 'czechadid.cz',
     atype: 1
   },
@@ -418,13 +421,6 @@ export function createEidsArray(bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
-      } else if (subModuleKey === 'ftrackId') {
-        // Schema based on the return value of ftrack decode() method
-        eids.push({
-          atype: 1,
-          ext: bidRequestUserId.ftrackId.ext,
-          id: bidRequestUserId.ftrackId.uid
-        });
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);

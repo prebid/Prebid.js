@@ -1,5 +1,5 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -131,15 +131,6 @@ export const spec = {
 
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain);
-    }
-    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      const userIds = deepClone(validBidRequests[0].userId);
-
-      if (userIds.id5id) {
-        userIds.id5id = deepAccess(userIds, 'id5id.uid');
-      }
-
-      payload.userid = JSON.stringify(userIds);
     }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
@@ -295,22 +286,29 @@ function _findBidderRequest(bidderRequests, bidId) {
   }
 }
 
+// This function takes all the possible sizes.
+// returns string csv.
 function _validateSize(bid) {
-  if (deepAccess(bid, 'mediaTypes.video')) {
-    return ''; // Video bids arent allowed to override sizes via the trinity request
+  let size = [];
+  if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
   }
-
-  if (bid.params.sizes) {
-    return parseSizesInput(bid.params.sizes).join(',');
+  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.sizes'))
+  }
+  if (deepAccess(bid, 'params.sizes')) {
+    size.push(deepAccess(bid, 'params.sizes'));
   }
   if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
+    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'))
   }
-
-  // Handle deprecated sizes definition
-  if (bid.sizes) {
-    return parseSizesInput(bid.sizes).join(',');
+  if (deepAccess(bid, 'sizes')) {
+    size.push(deepAccess(bid, 'sizes'))
   }
+  // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
+  // Then throw it into Set to uniquify it.
+  // Then spread it to an array again. Then join it into a csv of sizes.
+  return [...new Set(parseSizesInput(...size))].join(',');
 }
 
 function _validateSlot(bid) {

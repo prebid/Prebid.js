@@ -154,6 +154,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (!isEmpty(ext)) {
     data.ext = ext;
   }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
+  }
   return data;
 }
 
@@ -431,6 +435,10 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
+    }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;
