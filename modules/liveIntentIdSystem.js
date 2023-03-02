@@ -11,6 +11,7 @@ import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/val
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
@@ -39,8 +40,9 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
-  if (window && window.liQ) {
-    window.liQ = [];
+  if (window && window.liQ_instances) {
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
+    window.liQ_instances = [];
   }
   liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
@@ -100,6 +102,7 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  liveConnectConfig.defaultEventDelay = configParams.defaultEventDelay;
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -119,10 +122,20 @@ function initializeLiveConnect(configParams) {
   return liveConnect;
 }
 
+const setEventFiredFlag = function(_) {
+  eventFired = true
+}
+
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    liveConnect.fire();
-    eventFired = true;
+    const eventDelay = liveConnect.config.defaultEventDelay || 500
+    setTimeout(() => {
+      const instances = window.liQ_instances
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      if (!eventFired) {
+        liveConnect.fire();
+      }
+    }, eventDelay)
   }
 }
 
