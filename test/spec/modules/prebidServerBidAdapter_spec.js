@@ -2928,6 +2928,21 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 60);
     });
 
+    it('handles seatnonbid responses and calls SEAT_NON_BID', function () {
+      const original = CONFIG;
+      CONFIG.extPrebid = { returnallbidstatus: true };
+      const nonbidResponse = {...RESPONSE_OPENRTB, ext: {seatnonbid: [{}]}};
+      config.setConfig({ CONFIG });
+      CONFIG = original;
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      const responding = deepClone(nonbidResponse);
+      Object.assign(responding.ext.seatnonbid, [{auctionId: 2}])
+      server.requests[0].respond(200, {}, JSON.stringify(responding));
+      const event = events.emit.secondCall.args;
+      expect(event[0]).to.equal(CONSTANTS.EVENTS.SEAT_NON_BID);
+      expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
+    });
+
     it('respects defaultTtl', function () {
       const s2sConfig = Object.assign({}, CONFIG, {
         defaultTtl: 30
