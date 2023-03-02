@@ -202,7 +202,7 @@ export const spec = {
           prebid: {
             channel: {
               name: 'pbjs',
-              version: getGlobal().version
+              version: $$PREBID_GLOBAL$$.version
             },
             cache: {
               vastxml: {
