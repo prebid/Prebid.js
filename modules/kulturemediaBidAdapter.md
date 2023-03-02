@@ -75,8 +75,6 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
                   maxduration: 30,
                   placement: 1,
                   playbackmethod: [1,5],
-                  protocols: [2,5],
-                  api: [2],
             }
           },
           bids: [
@@ -93,58 +91,30 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
   ]
 ```
 
-## Instream Video adUnit with placement, networkId and content params
-```
-  var adUnits = [
-    {
-        code: 'video1',
-          mediaTypes: {
-            video: {
-                  context: 'instream',
-                  playerSize: [640, 480],
-                  mimes: ['video/mp4', 'application/javascript'],
-                  protocols: [2,5],
-                  api: [2],
-                  position: 1,
-                  delivery: [2],
-                  minduration: 10,
-                  maxduration: 30,
-                  placement: 1,
-                  playbackmethod: [1,5],
-                  protocols: [2,5],
-                  api: [2],
-            }
-          },
-          bids: [
-            {
-                  bidder: 'kulturemedia',
-                  params: {
-                    bidfloor: 0.5,
-                    publisherId: '12345',
-                    placementId: '6789',
-                    networkId: '1234',
-                    video: {
-                      content:{
-                        id: "uuid",
-                        url: "https://kulture.media/demo/demo.mp4",
-                        title: "Awesome video",
-                        genre: "Comedy",
-                        language: "en",
-                        season: "1",
-                        series: "1",
-        
-                      }
-                    }
-                  }
-                }
-          ]
-      }
-  ]
-```
-
 # End To End testing mode
 By passing bid.params.e2etest = true you will be able to receive a test creative
 
+## Banner
+```
+var adUnits = [
+    {
+        code: 'banner-ad-div',
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250], [300,600]]
+            }
+        },
+        bids: [{
+            bidder: 'kulturemedia',
+            params: {
+                e2etest: true
+            }
+        }]
+    }
+];
+```
+
+## Video
 ```
 var adUnits = [
     {
