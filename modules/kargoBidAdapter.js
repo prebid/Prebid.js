@@ -106,11 +106,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.cur = currency;
   }
 
-  if(metadata.rawCRB != null) {
+  if (metadata.rawCRB != null) {
     krakenParams.rawCRB = metadata.rawCRB
   }
 
-  if(metadata.rawCRBLocalStorage != null) {
+  if (metadata.rawCRBLocalStorage != null) {
     krakenParams.rawCRBLocalStorage = metadata.rawCRBLocalStorage
   }
 
@@ -236,6 +236,12 @@ function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
 
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
   var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
+<<<<<<< HEAD
+=======
+  var gppString = (gppConsent && gppConsent.consentString) ? gppConsent.consentString : '';
+  var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
+
+>>>>>>> f703768cc (Linting)
   // don't sync if opted out via usPrivacy
   if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
     return syncs;
