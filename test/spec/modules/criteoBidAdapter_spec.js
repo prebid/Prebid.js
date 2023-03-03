@@ -7,12 +7,9 @@ import {
   ADAPTER_VERSION,
   canFastBid, getFastBidUrl, FAST_BID_VERSION_CURRENT
 } from 'modules/criteoBidAdapter.js';
-import { createBid } from 'src/bidfactory.js';
-import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
 import { config } from '../../../src/config.js';
-import * as storageManager from 'src/storageManager.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
@@ -128,19 +125,13 @@ describe('The Criteo bidding adapter', function () {
     it('forwards ids from cookies', function () {
       const cookieData = {
         'cto_bundle': 'a',
-        'cto_sid': 'b',
-        'cto_lwid': 'c',
-        'cto_idcpy': 'd',
-        'cto_optout': 'e'
+        'cto_optout': 'b'
       };
 
       const expectedHashWithCookieData = {
         ...expectedHash,
         ...{
           bundle: cookieData['cto_bundle'],
-          localWebId: cookieData['cto_lwid'],
-          secureIdCookie: cookieData['cto_sid'],
-          uid: cookieData['cto_idcpy'],
           optoutCookie: cookieData['cto_optout']
         }
       };
@@ -158,19 +149,13 @@ describe('The Criteo bidding adapter', function () {
     it('forwards ids from local storage', function () {
       const localStorageData = {
         'cto_bundle': 'a',
-        'cto_sid': 'b',
-        'cto_lwid': 'c',
-        'cto_idcpy': 'd',
-        'cto_optout': 'e'
+        'cto_optout': 'b'
       };
 
       const expectedHashWithLocalStorageData = {
         ...expectedHash,
         ...{
           bundle: localStorageData['cto_bundle'],
-          localWebId: localStorageData['cto_lwid'],
-          secureIdCookie: localStorageData['cto_sid'],
-          uid: localStorageData['cto_idcpy'],
           optoutCookie: localStorageData['cto_optout']
         }
       };
