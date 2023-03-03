@@ -497,29 +497,18 @@ export class UserEIDs extends BidRequestDataSource {
     super()
     this.type = 'UserEIDs'
     this.qsParam = new QueryStringParam('ntv_pb_eid')
-    this.values = new Set()
+    this.eids = []
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
-    const eids = bidRequest.userIdAsEids
-
-    if (eids == undefined) return
-
-    for (let eid of eids) {
-      if (this.values.has(eid)) {
-        fireNativoError(`Duplicate eid value: ${JSON.stringify(eid)} in bidRequest for adUnitCode: ${bidRequest.adUnitCode} on url: ${bidderRequest.refererInfo.location}`)
-      }
-
-      this.values.add(eid)
-    }
+    if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
+    this.eids = bidRequest.userIdAsEids
   }
 
   getRequestQueryString() {
-    const valueArray = Array.from(this.values)
+    if (this.eids.length === 0) return ''
 
-    if (valueArray.length === 0) return ''
-
-    const encodedValueArray = encodeToBase64(valueArray)
+    const encodedValueArray = encodeToBase64(this.eids)
     this.qsParam.value = encodedValueArray
     return this.qsParam.toString()
   }
@@ -701,43 +690,6 @@ function getLargestSize(sizes, method = area) {
       return prev
     }
   })
-}
-
-/**
- * Fire a Nativo Error AJAX request to log errors
- * @param {String} errorMessage - The error message to send
- */
-function fireNativoError(errorMessage) {
-  if (!(typeof errorMessage === 'string') || errorMessage.trim() === '') return
-
-  // Sampling @ 1%
-  if (!shouldBeSampled()) return
-
-  const httpRequest = new XMLHttpRequest()
-
-  if (!httpRequest) return
-
-  try {
-    httpRequest.open('POST', 'https://jadserve.postrelease.com/clientErrorLogging')
-    httpRequest.setRequestHeader('Content-type', 'application/json')
-    httpRequest.send(JSON.stringify({
-      errorType: 'Prebid Adapter Error',
-      errorMessage,
-      severityLevel: 'Error',
-      errorStacktrace: []
-    }))
-  } catch (err) {}
-}
-
-/**
- * Randomly decided if sampling should occur
- * @param {Integer} percentage - The percantage it should be sampled
- * @returns {Boolean} - Should be sampled or not
- */
-export function shouldBeSampled(percentage = 1) {
-  const rand = Math.floor(Math.random() * 100)
-  if (rand < percentage) return true
-  return false
 }
 
 /**
