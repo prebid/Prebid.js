@@ -316,7 +316,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {
         eids,
-		firstPartyData,
+        firstPartyData,
       },
       user: {
         buyeruid: getUserID(),
