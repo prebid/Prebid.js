@@ -281,6 +281,8 @@ function getParam(validBidRequests, bidderRequest) {
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
 
   const timeout = bidderRequest.timeout || 2000;
+  
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
@@ -301,6 +303,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {
         eids,
+        firstPartyData,
       },
       user: {
         buyeruid: getUserID(),

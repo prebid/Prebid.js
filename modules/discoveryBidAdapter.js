@@ -297,6 +297,7 @@ function getParam(validBidRequests, bidderRequest) {
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
@@ -315,6 +316,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {
         eids,
+		firstPartyData,
       },
       user: {
         buyeruid: getUserID(),
