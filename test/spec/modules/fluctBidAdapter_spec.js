@@ -247,9 +247,15 @@ describe('fluctAdapter', function () {
               adm: '<!-- test creative -->',
               burl: 'https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99',
               crid: 'test_creative',
-              adomain: ['test_adomain']
+              adomain: ['test_adomain'],
             }]
-          }]
+          }],
+          usersyncs: [
+            {
+              'type': 'image',
+              'url': 'https://cs.adingo.jp/sync',
+            },
+          ],
         }
       };
 

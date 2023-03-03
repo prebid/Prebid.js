@@ -137,29 +137,27 @@ export const spec = {
    *
    * @params {syncOptions} syncOptions which user syncs are allowed?
    * @params {ServerResponse[]} serverResponses List of server's responses.
+   * @params {Object} GDPR consent metadata.
    * @return {UserSync[]} The user syncs which should be dropped.
    *
    */
-  getUserSyncs: (syncOptions, serverResponses) => {
-
-    const syncs = [];
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
     const gdprApplies = gdprConsent.gdprApplies;
-    const res = serverResponses.body;
 
-    if (typeof gdprApplies === 'boolean') {
-      if (!gdprApplies) {
-        if (!isEmpty(res) && !isEmpty(res.sync_info) && !isEmpty(res.sync_info[0])) {
-          const sync = res.sync_info[0];
-          if (syncOptions.pixelEnabled && sync['type'] === 'pixel') {
-            syncs.push({
-              type: 'image',
-              url: sync['src']
-            });
-            return syncs;
-          }
-        }
-      }
+    if (typeof gdprApplies === 'boolean' && !gdprApplies) {
+      const usersyncs = serverResponses.reduce((acc, serverResponse) => [
+        ...acc,
+        ...(serverResponse.body.res.usersyncs ?? []),
+      ], []);
+      const syncs = usersyncs.filter(
+        (sync) => sync['type'] === 'image' && syncOptions.pixelEnabled
+      ).map((sync) => ({
+        type: sync.type,
+        src: sync.src,
+      }));
+      return syncs.splice(0, 1);
     }
+
     return [];
   },
 };
