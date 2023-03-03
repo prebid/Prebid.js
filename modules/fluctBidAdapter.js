@@ -142,24 +142,26 @@ export const spec = {
    *
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
-    const gdprApplies = gdprConsent.gdprApplies;
-
-    if (typeof gdprApplies === 'boolean' && !gdprApplies) {
-      const usersyncs = serverResponses.reduce((acc, serverResponse) => [
-        ...acc,
-        ...(serverResponse.body.res.usersyncs ?? []),
-      ], []);
-      const syncs = usersyncs.filter(
-        (sync) => sync['type'] === 'image' && syncOptions.pixelEnabled
-      ).map((sync) => ({
-        type: sync.type,
-        src: sync.src,
-      }));
-      return syncs.splice(0, 1);
+    if (!isEmpty(gdprConsent)) {
+      const gdprApplies = gdprConsent.gdprApplies;
+      if (typeof gdprApplies === 'boolean' && gdprApplies) {
+        return [];
+      }
     }
 
-    return [];
-  },
+    const usersyncs = serverResponses.reduce((acc, serverResponse) => [
+      ...acc,
+      ...(serverResponse.body.usersyncs ?? []),
+    ], []);
+    const syncs = usersyncs.filter(
+      (sync) => sync['type'] === 'image' && syncOptions.pixelEnabled
+    ).map((sync) => ({
+      type: sync.type,
+      url: sync.url,
+    }));
+
+    return syncs.splice(0, 1);
+  }
 };
 
 registerBidder(spec);
