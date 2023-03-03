@@ -33,6 +33,7 @@ import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -912,6 +913,8 @@ export const spec = {
     const coppa = _getCoppa();
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
+    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
+    const usIfr = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
 
     const adUnits = _map(validBidRequests, (bidRequest) => {
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
@@ -1030,7 +1033,8 @@ export const spec = {
             eids: eids
           },
           prebidVersion: '$prebid.version$',
-          featuresVersion: FEATURES_VERSION
+          featuresVersion: FEATURES_VERSION,
+          usIfr: usIfr
         },
         options: {
           contentType: 'text/plain'
