@@ -160,7 +160,7 @@ export const spec = {
       url: sync.url,
     }));
 
-    return syncs.splice(0, 1);
+    return syncs;
   }
 };
 
