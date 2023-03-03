@@ -10,11 +10,11 @@ import {
   parseSizesInput,
   tryAppendQueryString
 } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
-import {parseDomain} from '../src/refererDetection.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
@@ -27,6 +27,9 @@ export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: [
+    {code: 'bcmint'}
+  ],
 
   isBidRequestValid: bid => {
     return !!bid.params && !!bid.params.zone;

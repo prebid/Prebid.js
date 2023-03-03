@@ -32,6 +32,12 @@ const PBS_CONVERTER = ortbConverter({
   imp(buildImp, proxyBidRequest, context) {
     Object.assign(context, proxyBidRequest.pbsData);
     const imp = buildImp(proxyBidRequest, context);
+    (proxyBidRequest.bids || []).forEach(bid => {
+      if (bid.ortb2Imp && Object.keys(bid.ortb2Imp).length > 0) {
+        // set bidder-level imp attributes; see https://github.com/prebid/prebid-server/issues/2335
+        deepSetValue(imp, `ext.prebid.imp.${bid.bidder}`, bid.ortb2Imp);
+      }
+    });
     if (Object.values(SUPPORTED_MEDIA_TYPES).some(mtype => imp[mtype])) {
       imp.secure = context.s2sBidRequest.s2sConfig.secure;
       return imp;
@@ -47,7 +53,7 @@ const PBS_CONVERTER = ortbConverter({
       request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', proxyBidderRequest.auctionId);
 
-      [request.app, request.site].forEach(section => {
+      [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
@@ -246,6 +252,7 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     impIds.add(impId)
     proxyBidRequests.push({
       ...adUnit,
+      adUnitCode: adUnit.code,
       ...getDefinedParams(actualBidRequests.values().next().value || {}, ['userId', 'userIdAsEids', 'schain']),
       pbsData: {impId, actualBidRequests, adUnit}
     });

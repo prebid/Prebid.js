@@ -305,6 +305,10 @@ const getTopLevelDetails = () => {
     }
   }
 
+  if (browser) {
+    deepSetValue(payload, rubiConf.pbaBrowserLocation || 'client.browser', browser);
+  }
+
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
     payload.wrapper = {
@@ -595,6 +599,28 @@ const subscribeToGamSlots = () => {
   });
 }
 
+/**
+ * Lazy parsing of UA to determine browser
+ * @param {string} userAgent string from prebid ortb ua or navigator
+ * @returns {string} lazily guessed browser name
+ */
+export const detectBrowserFromUa = userAgent => {
+  let normalizedUa = userAgent.toLowerCase();
+
+  if (normalizedUa.includes('edg')) {
+    return 'Edge';
+  } else if ((/opr|opera|opt/i).test(normalizedUa)) {
+    return 'Opera';
+  } else if ((/chrome|crios/i).test(normalizedUa)) {
+    return 'Chrome';
+  } else if ((/fxios|firefox/i).test(normalizedUa)) {
+    return 'Firefox';
+  } else if (normalizedUa.includes('safari') && !(/chromium|ucbrowser/i).test(normalizedUa)) {
+    return 'Safari';
+  }
+  return 'OTHER';
+}
+
 let accountId;
 let endpoint;
 
@@ -643,11 +669,20 @@ magniteAdapter.disableAnalytics = function () {
   accountId = undefined;
   resetConfs();
   magniteAdapter.originDisableAnalytics();
-}
+};
+
+magniteAdapter.onDataDeletionRequest = function () {
+  if (storage.localStorageIsEnabled()) {
+    storage.removeDataFromLocalStorage(COOKIE_NAME);
+  } else {
+    throw Error('Unable to access local storage, no data deleted');
+  }
+};
 
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
 
+let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
@@ -666,6 +701,12 @@ magniteAdapter.track = ({ eventType, args }) => {
         'timeout as clientTimeoutMillis',
       ]);
       auctionData.accountId = accountId;
+
+      // get browser
+      if (!browser) {
+        const userAgent = deepAccess(args, 'bidderRequests.0.ortb2.device.ua', navigator.userAgent) || '';
+        browser = detectBrowserFromUa(userAgent);
+      }
 
       // Order bidders were called
       auctionData.bidderOrder = args.bidderRequests.map(bidderRequest => bidderRequest.bidderCode);

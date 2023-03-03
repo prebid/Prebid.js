@@ -725,11 +725,11 @@ describe('triplelift adapter', function () {
 
     it('should add amxRtbId to the payload if included', function () {
       const id = 'Ok9JQkBM-UFlAXEZQ-UUNBQlZOQzgrUFhW-UUNBQkRQTUBPQVpVWVxNXlZUUF9AUFhAUF9PXFY/';
-      bidRequests[0].userIdAsEids = [{ source: 'amxrtb.com', uids: [{ id }] }];
+      bidRequests[0].userIdAsEids = [{ source: 'amxdt.net', uids: [{ id }] }];
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
       expect(payload).to.exist;
-      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxrtb.com', uids: [{id, ext: {rtiPartner: 'amxrtb.com'}}]}]}});
+      expect(payload.user).to.deep.equal({ext: {eids: [{source: 'amxdt.net', uids: [{id, ext: {rtiPartner: 'amxdt.net'}}]}]}});
     });
 
     it('should add tdid, idl_env and criteoId to the payload if both are included', function () {
@@ -1168,6 +1168,19 @@ describe('triplelift adapter', function () {
         }
       })
     });
+    it('should add gpp consent data to bid request object if gpp data exists', function() {
+      bidderRequest.ortb2 = {
+        regs: {
+          'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'gpp_sid': [7]
+        }
+      }
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.regs).to.deep.equal({
+        'gpp': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        'gpp_sid': [7]
+      })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1423,6 +1436,13 @@ describe('triplelift adapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
       expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
       expect(result[1].meta).to.not.have.key('advertiserDomains');
+    });
+
+    it('should include networkId in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[1].meta.networkId).to.equal('10092');
+      expect(result[2].meta.networkId).to.equal('5989');
+      expect(result[3].meta.networkId).to.equal('5989');
     });
   });
 

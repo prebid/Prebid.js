@@ -20,7 +20,9 @@ const _approvedLoadExternalJSList = [
   'hadron',
   'medianet',
   'improvedigital',
-  'aaxBlockmeter'
+  'aaxBlockmeter',
+  'confiant',
+  'arcspan'
 ]
 
 /**
