@@ -167,7 +167,8 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'instream',
-              playerSize: [640, 480]
+              playerSize: [640, 480],
+              playbackmethod: 5
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -292,7 +293,8 @@ describe('triplelift adapter', function () {
           mediaTypes: {
             video: {
               context: 'instream',
-              playerSize: [640, 480]
+              playerSize: [640, 480],
+              playbackmethod: [1, 2, 3]
             },
             banner: {
               sizes: [
@@ -1181,6 +1183,16 @@ describe('triplelift adapter', function () {
         'gpp_sid': [7]
       })
     });
+    it('should cast playbackmethod as an array if it is an integer and it exists', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[1].video.playbackmethod).to.be.a('array');
+      expect(request.data.imp[1].video.playbackmethod).to.deep.equal([5]);
+    });
+    it('should set playbackmethod as an array if it exists as an array', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[5].video.playbackmethod).to.be.a('array');
+      expect(request.data.imp[5].video.playbackmethod).to.deep.equal([1, 2, 3]);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1436,6 +1448,13 @@ describe('triplelift adapter', function () {
       expect(result[0].meta.advertiserDomains[0]).to.equal('basspro.com');
       expect(result[0].meta.advertiserDomains[1]).to.equal('internetalerts.org');
       expect(result[1].meta).to.not.have.key('advertiserDomains');
+    });
+
+    it('should include networkId in the meta field if available', function () {
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+      expect(result[1].meta.networkId).to.equal('10092');
+      expect(result[2].meta.networkId).to.equal('5989');
+      expect(result[3].meta.networkId).to.equal('5989');
     });
   });
 

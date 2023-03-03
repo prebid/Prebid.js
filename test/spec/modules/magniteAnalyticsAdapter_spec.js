@@ -3,6 +3,7 @@ import magniteAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
+  detectBrowserFromUa
 } from '../../../modules/magniteAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -101,6 +102,11 @@ const MOCK = {
             'startTime': 1658868383748
           }
         ],
+        'ortb2': {
+          'device': {
+            'ua': 'Mozilla/ 5.0(Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/ 537.36(KHTML, like Gecko) Chrome/ 109.0.0.0 Safari / 537.36'
+          }
+        },
         'refererInfo': {
           'page': 'http://a-test-domain.com:8000/test_pages/sanity/TEMP/prebidTest.html?pbjs_debug=true',
         },
@@ -208,6 +214,9 @@ const ANALYTICS_MESSAGE = {
     'pvid': '12345678',
     'start': 1519767013781,
     'expires': 1519788613781
+  },
+  'client': {
+    'browser': 'Chrome'
   },
   'auctions': [
     {
@@ -549,6 +558,29 @@ describe('magnite analytics adapter', function () {
         'appnexus'
       ]);
     });
+
+    [
+      {
+        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15',
+        expected: 'Safari'
+      },
+      {
+        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/109.0',
+        expected: 'Firefox'
+      },
+      {
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/109.0.1518.78',
+        expected: 'Edge'
+      },
+      {
+        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36 OPR/94.0.0.0',
+        expected: 'Opera'
+      }
+    ].forEach(testData => {
+      it(`should parse browser from ${testData.expected} user agent correctly`, function () {
+        expect(detectBrowserFromUa(testData.ua)).to.equal(testData.expected);
+      });
+    })
 
     it('should pass along 1x1 size if no sizes in adUnit', function () {
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
