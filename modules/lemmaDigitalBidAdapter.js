@@ -484,7 +484,7 @@ export var spec = {
   * get request ad sizes
   **/
   _getSizes: (request) => {
-    if (request.sizes && utils.isArray(request.sizes[0]) && request.sizes[0].length > 0) {
+    if (request && request.sizes && utils.isArray(request.sizes[0]) && request.sizes[0].length > 0) {
       return request.sizes[0];
     }
     return null;
@@ -537,12 +537,9 @@ export var spec = {
     var vObj;
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
       var params = bid ? bid.params : null;
-      var sizes = spec._getSizes(bid) || [];
-      if (sizes && sizes.length == 0) {
-        sizes = bid.mediaTypes && bid.mediaTypes.video ? bid.mediaTypes.video.playerSize : [];
-      }
+      var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
+      var sizes = spec._getSizes(videoData) || [];
       if (sizes && sizes.length > 0) {
-        var videoData = params.video;
         vObj = {};
         if (videoData) {
           vObj = utils.deepClone(videoData);
