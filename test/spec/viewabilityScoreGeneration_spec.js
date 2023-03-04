@@ -122,7 +122,7 @@ describe('viewabilityScoreGeneration', function() {
           viewed: 7,
           createdAt: 1677192128860,
           updatedAt: 1677193274595,
-          totalViewTime: 210,
+          totalViewTime: 1000000000,
           lastViewStarted: 1677193300470
         }
       };
@@ -133,7 +133,7 @@ describe('viewabilityScoreGeneration', function() {
 
       expect(lsObj.someAdSlotElementIdName.rendered).to.equal(5);
       expect(lsObj.someAdSlotElementIdName.viewed).to.equal(4);
-      expect(lsObj.someAdSlotElementIdName.totalViewTime).to.equal(105);
+      expect(lsObj.someAdSlotElementIdName.totalViewTime).to.equal(500000000);
     });
   });
 
@@ -154,19 +154,16 @@ describe('viewabilityScoreGeneration', function() {
       expect(bidderRequests[0].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
       expect(bidderRequests[0].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
       expect(bidderRequests[0].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
-      expect(bidderRequests[0].bids[0].bidViewability.hasOwnProperty('adDomain')).to.equal(true);
 
       expect(bidderRequests[1].bids[0].bidViewability).to.be.ok;
       expect(bidderRequests[1].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
       expect(bidderRequests[1].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
       expect(bidderRequests[1].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
-      expect(bidderRequests[1].bids[0].bidViewability.hasOwnProperty('adDomain')).to.equal(true);
 
       expect(bidderRequests[2].bids[0].bidViewability).to.be.ok;
       expect(bidderRequests[2].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
       expect(bidderRequests[2].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
       expect(bidderRequests[2].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
-      expect(bidderRequests[2].bids[0].bidViewability.hasOwnProperty('adDomain')).to.equal(true);
     });
   });
 

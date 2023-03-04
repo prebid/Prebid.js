@@ -1120,6 +1120,16 @@ describe('PubMatic adapter', function () {
         expect(data.ext.epoch).to.exist;
   		});
 
+      it('test mctest', function () {
+        let bidRequestsCopy = utils.deepClone(bidRequests);
+        bidRequestsCopy[0].bidViewability = {};
+        let request = spec.buildRequests(bidRequestsCopy, {
+          auctionId: 'new-auction-id'
+        });
+        let data = JSON.parse(request.data);
+        expect(data.ext.bidViewability.adDomain).to.equal('');
+  		});
+
 		  it('Set tmax from global config if not set by requestBids method', function() {
         let sandbox = sinon.sandbox.create();
         sandbox.stub(config, 'getConfig').callsFake((key) => {

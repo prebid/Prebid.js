@@ -11,7 +11,7 @@ const TARGETING = 'targeting';
 const GPT_SLOT_RENDER_ENDED_EVENT = 'slotRenderEnded';
 const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 const GPT_SLOT_VISIBILITY_CHANGED_EVENT = 'slotVisibilityChanged';
-const TOTAL_VIEW_TIME_LIMIT = 200;
+const TOTAL_VIEW_TIME_LIMIT = 1000000000;
 const domain = window.location.hostname;
 
 export const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
@@ -19,14 +19,13 @@ export const setAndStringifyToLocalStorage = (key, object) => { window.localStor
 
 let vsgObj = getAndParseFromLocalStorage('viewability-data');
 
-export const makeBidRequestsHook = (fn, bidderRequests, adDomain = domain) => {
+export const makeBidRequestsHook = (fn, bidderRequests) => {
   if (vsgObj) {
     bidderRequests.forEach(bidderRequest => {
       bidderRequest.bids.forEach(bid => {
         const bidViewabilityFields = {};
         const adSizes = {};
         const adUnit = vsgObj[bid.adUnitCode];
-        const addomain = vsgObj[adDomain];
 
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
@@ -44,11 +43,6 @@ export const makeBidRequestsHook = (fn, bidderRequests, adDomain = domain) => {
         if (adUnit) {
           removeUnwantedKeys(adUnit);
           bidViewabilityFields.adUnit = adUnit;
-        }
-
-        if (addomain) {
-          removeUnwantedKeys(addomain);
-          bidViewabilityFields.adDomain = addomain;
         }
 
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
@@ -92,20 +86,17 @@ const incrementRenderCount = keyArr => {
     if (vsgObj) {
       if (vsgObj[key]) {
         vsgObj[key].rendered = vsgObj[key].rendered + 1;
-        vsgObj[key].updatedAt = Date.now();
       } else {
         vsgObj[key] = {
           rendered: 1,
-          viewed: 0,
-          createdAt: Date.now()
+          viewed: 0
         }
       }
     } else {
       vsgObj = {
         [key]: {
           rendered: 1,
-          viewed: 0,
-          createdAt: Date.now()
+          viewed: 0
         }
       }
     }
@@ -116,7 +107,6 @@ const incrementViewCount = keyArr => {
   keyArr.forEach(key => {
     if (vsgObj[key]) {
       vsgObj[key].viewed = vsgObj[key].viewed + 1;
-      vsgObj[key].updatedAt = Date.now();
     }
   });
 };
@@ -137,7 +127,6 @@ const incrementTotalViewTime = (keyArr, inViewPercentage, setToLocalStorageCb) =
           updateTotalViewTime(diff, currentTime, lastViewStarted, key);
         }
         vsgObj[key].lastViewStarted = currentTime;
-        vsgObj[key].updatedAt = Date.now();
         setToLocalStorageCb('viewability-data', vsgObj);
       }
     }
