@@ -148,12 +148,12 @@ function isMobileAndTablet() {
  */
 // function getBidFloor(bid, mediaType, sizes) {
 //   var floor;
-//   var size = sizes.length === 1 ? sizes[0] : "*";
-//   if (typeof bid.getFloor === "function") {
-//     const floorInfo = bid.getFloor({ currency: "USD", mediaType, size });
+//   var size = sizes.length === 1 ? sizes[0] : '*';
+//   if (typeof bid.getFloor === 'function') {
+//     const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
 //     if (
-//       typeof floorInfo === "object" &&
-//       floorInfo.currency === "USD" &&
+//       typeof floorInfo === 'object' &&
+//       floorInfo.currency === 'USD' &&
 //       !isNaN(parseFloat(floorInfo.floor))
 //     ) {
 //       floor = parseFloat(floorInfo.floor);
@@ -255,7 +255,6 @@ function getItems(validBidRequests, bidderRequest) {
     //   utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
     //   utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
     //   utils.deepAccess(req, 'params.placementId', 0);
-    // console.log("wjh getItems:", req, bidFloor, gpid);
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -270,7 +269,7 @@ function getItems(validBidRequests, bidderRequest) {
           pos: 1,
         },
         ext: {
-        //   gpid: gpid, // 加入后无法返回广告
+          //   gpid: gpid, // 加入后无法返回广告
         },
       };
       itemMaps[id] = {
@@ -296,8 +295,11 @@ function getParam(validBidRequests, bidderRequest) {
   const sharedid =
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
     utils.deepAccess(validBidRequests[0], 'userId.pubcid');
+  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+
   let isMobile = isMobileAndTablet() ? 1 : 0;
-  let isTest = 0;
+  // input test status by Publisher. more frequently for test true req
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
@@ -317,19 +319,23 @@ function getParam(validBidRequests, bidderRequest) {
       cur: ['USD'],
       device: {
         connectiontype: 0,
-        // ip: '64.188.178.115',
+        // ip: '98.61.5.0',
         js: 1,
-        // language: "en",
-        // os: "Microsoft Windows",
-        // ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19043",
+        // language: 'en',
+        // os: 'Microsoft Windows',
+        // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
         os: navigator.platform || '',
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
-      ext: {},
-      user: {
-        id: sharedid || pubcid || getUserID(),
+      ext: {
+        eids,
       },
+      user: {
+        buyeruid: getUserID(),
+        id: sharedid || pubcid,
+      },
+      eids,
       site: {
         name: domain,
         domain: domain,
@@ -419,12 +425,12 @@ export const spec = {
           nurl: getProperty(bid, 'nurl'),
           //   adserverTargeting: {
           //     granularityMultiplier: 0.1,
-          //     priceGranularity: "pbHg",
-          //     pbMg: "0.01",
+          //     priceGranularity: 'pbHg',
+          //     pbMg: '0.01',
           //   },
-          //   pbMg: "0.01",
+          //   pbMg: '0.01',
           //   granularityMultiplier: 0.1,
-          //   priceGranularity: "pbHg",
+          //   priceGranularity: 'pbHg',
         };
         bidResponses.push(bidResponse);
       }

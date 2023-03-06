@@ -6,7 +6,7 @@ import CONSTANTS from '../src/constants.json';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.1.0';
+const pubxaiAnalyticsVersion = 'v1.2.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
@@ -154,7 +154,7 @@ function send(data, status) {
       search: location.search
     });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
+      data.pageDetail.adUnits = data.auctionInit.adUnitCodes;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 

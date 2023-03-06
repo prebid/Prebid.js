@@ -26,7 +26,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll'],
+  aliases: ['pll', 'iionads'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -158,7 +158,12 @@ function buildPlacement(bidRequest) {
       type: bidRequest.params.adUnitType.toUpperCase(),
       publisherId: bidRequest.params.publisherId,
       userIdAsEids: bidRequest.userIdAsEids,
-      supplyChain: bidRequest.schain
+      supplyChain: bidRequest.schain,
+      custom1: bidRequest.params.custom1,
+      custom2: bidRequest.params.custom2,
+      custom3: bidRequest.params.custom3,
+      custom4: bidRequest.params.custom4,
+      custom5: bidRequest.params.custom5
     }
   }
 }

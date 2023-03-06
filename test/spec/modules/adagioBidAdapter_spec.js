@@ -149,10 +149,8 @@ describe('Adagio bid adapter', () => {
         site: {
           ext: {
             data: {
-              environment: 'desktop',
               pagetype: 'abc',
-              category: ['cat1', 'cat2', 'cat3'],
-              subcategory: []
+              category: ['cat1', 'cat2', 'cat3']
             }
           }
         }
@@ -167,17 +165,11 @@ describe('Adagio bid adapter', () => {
         return utils.deepAccess(config, key);
       });
 
-      setExtraParam(bid, 'environment');
-      expect(bid.params.environment).to.equal('desktop');
-
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
 
       setExtraParam(bid, 'category');
       expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
-
-      setExtraParam(bid, 'subcategory');
-      expect(bid.params.subcategory).to.be.undefined;
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -389,8 +381,8 @@ describe('Adagio bid adapter', () => {
               context: 'outstream',
               playerSize: [[300, 250]],
               mimes: ['video/mp4'],
-              api: 5, // will be removed because invalid
-              playbackmethod: [7], // will be removed because invalid
+              api: 'val', // will be removed because invalid
+              playbackmethod: ['val'], // will be removed because invalid
             }
           },
         }).withParams({
@@ -400,7 +392,7 @@ describe('Adagio bid adapter', () => {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: [3],
+            placement: 3,
             protocols: [8]
           }
         }).build();
@@ -415,7 +407,7 @@ describe('Adagio bid adapter', () => {
           skipafter: 4,
           minduration: 10,
           maxduration: 30,
-          placement: [3],
+          placement: 3,
           protocols: [8],
           w: 300,
           h: 250
@@ -784,8 +776,6 @@ describe('Adagio bid adapter', () => {
             adUnitElementId: 'gpt-adunit-code',
             pagetype: 'ARTICLE',
             category: 'NEWS',
-            subcategory: 'SPORT',
-            environment: 'desktop',
             supportIObs: true
           },
           adUnitCode: 'adunit-code',
@@ -833,8 +823,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -868,8 +856,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -1392,19 +1378,6 @@ describe('Adagio bid adapter', () => {
   });
 
   describe.skip('optional params auto detection', function() {
-    it('should auto detect environment', function() {
-      const getDeviceStub = sandbox.stub(_features, 'getDevice');
-
-      getDeviceStub.returns(5);
-      expect(adagio.autoDetectEnvironment()).to.eq('tablet');
-
-      getDeviceStub.returns(4);
-      expect(adagio.autoDetectEnvironment()).to.eq('mobile');
-
-      getDeviceStub.returns(2);
-      expect(adagio.autoDetectEnvironment()).to.eq('desktop');
-    });
-
     it('should auto detect adUnitElementId when GPT is used', function() {
       sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
       expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');

@@ -2607,6 +2607,21 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
 
+	  it('should pass device.sua if present in bidderRequest fpd ortb2 object', function () {
+        const suaObject = {'source': 2, 'platform': {'brand': 'macOS', 'version': ['12', '4', '0']}, 'browsers': [{'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']}, {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']}, {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}], 'mobile': 0, 'model': '', 'bitness': '64', 'architecture': 'x86'};
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              sua: suaObject
+            }
+		  }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.sua).to.exist.and.to.be.an('object');
+        expect(data.device.sua).to.deep.equal(suaObject);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
@@ -2637,13 +2652,6 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithRequiredParam.native.request);
-      });
-
-      it('should not have valid native request if assets are not defined with minimum required params and only native is the slot', function () {
-        let request = spec.buildRequests(nativeBidRequestsWithoutAsset, {
-          auctionId: 'new-auction-id'
-        });
-        expect(request).to.deep.equal(undefined);
       });
 
       it('Request params should have valid native bid request for all native params', function () {
@@ -2848,7 +2856,7 @@ describe('PubMatic adapter', function () {
         expect(data.native.request).to.exist;
       });
 
-      it('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - banner and native multiformat request - should have native object incase of invalid config present', function() {
         bannerAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2868,10 +2876,10 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.banner).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
-      it('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - video and native multiformat request - should have native object incase of invalid config present', function() {
         videoAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2891,7 +2899,7 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.video).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
       it('should build video impression if video params are present in adunit.mediaTypes instead of bid.params', function() {
@@ -3406,7 +3414,7 @@ describe('PubMatic adapter', function () {
         let response = spec.interpretResponse(bidResponses, request);
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].requestId).to.equal(bidResponses.body.seatbid[0].bid[0].impid);
-        expect(response[0].cpm).to.equal((bidResponses.body.seatbid[0].bid[0].price).toFixed(2));
+        expect(response[0].cpm).to.equal(parseFloat((bidResponses.body.seatbid[0].bid[0].price).toFixed(2)));
         expect(response[0].width).to.equal(bidResponses.body.seatbid[0].bid[0].w);
         expect(response[0].height).to.equal(bidResponses.body.seatbid[0].bid[0].h);
         if (bidResponses.body.seatbid[0].bid[0].crid) {
@@ -3430,7 +3438,7 @@ describe('PubMatic adapter', function () {
         expect(response[0].partnerImpId).to.equal(bidResponses.body.seatbid[0].bid[0].id);
 
         expect(response[1].requestId).to.equal(bidResponses.body.seatbid[1].bid[0].impid);
-        expect(response[1].cpm).to.equal((bidResponses.body.seatbid[1].bid[0].price).toFixed(2));
+        expect(response[1].cpm).to.equal(parseFloat((bidResponses.body.seatbid[1].bid[0].price).toFixed(2)));
         expect(response[1].width).to.equal(bidResponses.body.seatbid[1].bid[0].w);
         expect(response[1].height).to.equal(bidResponses.body.seatbid[1].bid[0].h);
         if (bidResponses.body.seatbid[1].bid[0].crid) {

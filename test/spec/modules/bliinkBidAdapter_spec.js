@@ -130,7 +130,7 @@ const getConfigCreative = () => {
     creativeId: '34567erty',
     width: 300,
     height: 250,
-    ttl: 3600,
+    ttl: 300,
     netRevenue: true,
   }
 }
@@ -145,7 +145,7 @@ const getConfigCreativeVideo = (isNoVast) => {
     requestId: '6a204ce130280d',
     width: 300,
     height: 250,
-    ttl: 3600,
+    ttl: 300,
     netRevenue: true,
   }
 }
@@ -395,7 +395,7 @@ const testsInterpretResponse = [
       mediaType: 'video',
       netRevenue: true,
       requestId: '2def0c5b2a7f6e',
-      ttl: 3600,
+      ttl: 300,
       vastXml,
       vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(vastXml.replace(/\\"/g, '"'))
     }]
@@ -421,7 +421,7 @@ const testsInterpretResponse = [
       mediaType: 'banner',
       netRevenue: true,
       requestId: '2def0c5b2a7f6e',
-      ttl: 3600,
+      ttl: 300,
       width: 300
     }]
   },
@@ -505,7 +505,7 @@ const testsBuildBid = [
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
       vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
-      ttl: 3600,
+      ttl: 300,
     }
   },
   {
@@ -535,7 +535,7 @@ const testsBuildBid = [
       netRevenue: true,
       vastXml: getConfigCreativeVideo().vastXml,
       vastUrl: 'data:text/xml;charset=utf-8;base64,' + btoa(getConfigCreativeVideo().vastXml.replace(/\\"/g, '"')),
-      ttl: 3600,
+      ttl: 300,
     }
   },
   {
@@ -552,7 +552,7 @@ const testsBuildBid = [
       height: 250,
       creativeId: getConfigCreative().creativeId,
       ad: getConfigBannerBid().creative.banner.adm,
-      ttl: 3600,
+      ttl: 300,
       netRevenue: true,
     }
   }

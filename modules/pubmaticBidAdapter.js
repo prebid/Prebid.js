@@ -378,18 +378,14 @@ function _createNativeRequest(params) {
       if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
         switch (key) {
           case NATIVE_ASSETS.TITLE.KEY:
-            if (params[key].len || params[key].length) {
-              assetObj = {
-                id: NATIVE_ASSETS.TITLE.ID,
-                required: params[key].required ? 1 : 0,
-                title: {
-                  len: params[key].len || params[key].length,
-                  ext: params[key].ext
-                }
-              };
-            } else {
-              logWarn(LOG_WARN_PREFIX + 'Error: Title Length is required for native ad: ' + JSON.stringify(params));
-            }
+            assetObj = {
+              id: NATIVE_ASSETS.TITLE.ID,
+              required: params[key].required ? 1 : 0,
+              title: {
+                len: params[key].len || params[key].length,
+                ext: params[key].ext
+              }
+            };
             break;
           case NATIVE_ASSETS.IMAGE.KEY:
             assetObj = {
@@ -1189,6 +1185,10 @@ export const spec = {
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
     }
+    // check if fpd ortb2 contains device property with sua object
+    if (commonFpd.device?.sua) {
+      payload.device.sua = commonFpd.device?.sua;
+    }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
       const acatParams = commonFpd.ext.prebid.bidderparams[bidderRequest.bidderCode].acat;
@@ -1254,7 +1254,7 @@ export const spec = {
             seatbidder.bid.forEach(bid => {
               let newBid = {
                 requestId: bid.impid,
-                cpm: (parseFloat(bid.price) || 0).toFixed(2),
+                cpm: parseFloat((bid.price || 0).toFixed(2)),
                 width: bid.w,
                 height: bid.h,
                 creativeId: bid.crid || bid.id,
