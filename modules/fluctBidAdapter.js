@@ -1,4 +1,5 @@
-import { _each, isEmpty } from '../src/utils.js';
+import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
@@ -51,6 +52,21 @@ export const spec = {
       data.user = {
         eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };
+
+      if (bidderRequest.gdprConsent) {
+        deepSetValue(data, 'regs.gdpr', {
+          consent: bidderRequest.gdprConsent.consentString,
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        });
+      }
+      if (bidderRequest.uspConsent) {
+        deepSetValue(data, 'regs.us_privacy', {
+          consent: bidderRequest.uspConsent,
+        });
+      }
+      if (config.getConfig('coppa') === true) {
+        deepSetValue(data, 'regs.coppa', 1);
+      }
 
       data.sizes = [];
       _each(request.sizes, (size) => {
@@ -136,29 +152,24 @@ export const spec = {
    *
    * @params {syncOptions} syncOptions which user syncs are allowed?
    * @params {ServerResponse[]} serverResponses List of server's responses.
-   * @params {Object} GDPR consent metadata.
    * @return {UserSync[]} The user syncs which should be dropped.
    *
    */
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent) => {
-    if (!isEmpty(gdprConsent)) {
-      const gdprApplies = gdprConsent.gdprApplies;
-      if (typeof gdprApplies === 'boolean' && gdprApplies) {
-        return [];
-      }
-    }
-
+  getUserSyncs: (syncOptions, serverResponses) => {
+    // gdpr, us_privacy, and coppa params to be handled on the server end.
     const usersyncs = serverResponses.reduce((acc, serverResponse) => [
       ...acc,
       ...(serverResponse.body.usersyncs ?? []),
     ], []);
     const syncs = usersyncs.filter(
-      (sync) => sync['type'] === 'image' && syncOptions.pixelEnabled
+      (sync) => (
+        (sync['type'] === 'image' && syncOptions.pixelEnabled) ||
+        (sync['type'] === 'iframe' && syncOptions.iframeEnabled)
+      )
     ).map((sync) => ({
       type: sync.type,
       url: sync.url,
     }));
-
     return syncs;
   }
 };

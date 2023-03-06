@@ -54,6 +54,16 @@ describe('fluctAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let sb;
+
+    beforeEach(function () {
+      sb = sinon.sandbox.create();
+    });
+
+    afterEach(function () {
+      sb.restore();
+    });
+
     const bidRequests = [{
       bidder: 'fluct',
       params: {
@@ -102,6 +112,11 @@ describe('fluctAdapter', function () {
     it('includes no data.schain by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.schain).to.eql(undefined);
+    });
+
+    it('includes no data.regs by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs).to.eql(undefined);
     });
 
     it('includes filtered user.eids if any exist', function () {
@@ -215,6 +230,44 @@ describe('fluctAdapter', function () {
           }
         ]
       });
+    });
+
+    it('includes data.regs.gdpr if bidderRequest.gdprConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          gdprConsent: {
+            consentString: 'gdpr-consent-string',
+            gdprApplies: true,
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gdpr).to.eql({
+        consent: 'gdpr-consent-string',
+        gdprApplies: 1,
+      });
+    });
+
+    it('includes data.regs.us_privacy if bidderRequest.uspConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          uspConsent: 'usp-consent-string',
+        }),
+      )[0];
+      expect(request.data.regs.us_privacy).to.eql({
+        consent: 'usp-consent-string',
+      });
+    });
+
+    it('includes data.regs.coppa if config.getConfig("coppa") is true', function () {
+      const cfg = {
+        coppa: true,
+      };
+      sb.stub(config, 'getConfig').callsFake(key => cfg[key]);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs.coppa).to.eql(1);
     });
   });
 
@@ -347,6 +400,73 @@ describe('fluctAdapter', function () {
 
     it('should get empty response when bid server returns 204', function() {
       expect(spec.interpretResponse({})).to.be.empty;
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptions = {};
+    const serverResponse = {
+      body: {
+        usersyncs: [
+          {
+            type: 'image',
+            url: 'https://cs.adingo.jp/foo',
+          },
+          {
+            type: 'image',
+            url: 'https://cs.adingo.jp/bar',
+          },
+          {
+            type: 'iframe',
+            url: 'https://cs.adingo.jp/buz',
+          },
+        ],
+      },
+    };
+
+    it('returns no user syncs if syncOption.pixelEnabled !== true and syncOption.iframeEnabled !== true', function () {
+      const actual = spec.getUserSyncs(
+        syncOptions,
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([]);
+    });
+
+    it('returns user syncs if syncOption.pixelEnabled === true', function () {
+      const actual = spec.getUserSyncs(
+        Object.assign({}, syncOptions, {
+          pixelEnabled: true,
+        }),
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([
+        {
+          type: 'image',
+          url: 'https://cs.adingo.jp/foo',
+        },
+        {
+          type: 'image',
+          url: 'https://cs.adingo.jp/bar',
+        },
+      ]);
+    });
+
+    it('returns user syncs if syncOption.iframeEnabled === true', function () {
+      const actual = spec.getUserSyncs(
+        Object.assign({}, syncOptions, {
+          iframeEnabled: true,
+        }),
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([
+        {
+          type: 'iframe',
+          url: 'https://cs.adingo.jp/buz',
+        },
+      ]);
     });
   });
 });
