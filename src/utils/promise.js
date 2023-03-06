@@ -82,9 +82,9 @@ export class GreedyPromise {
     let cnt = promises.length;
     function clt() {
       collector.apply(this, arguments);
-      if (--cnt === 0 && done) done();
+      if (--cnt <= 0 && done) done();
     }
-    promises.forEach((p, i) => this.resolve(p).then(
+    promises.length === 0 && done ? done() : promises.forEach((p, i) => this.resolve(p).then(
       (val) => clt(true, val, i),
       (err) => clt(false, err, i)
     ));
