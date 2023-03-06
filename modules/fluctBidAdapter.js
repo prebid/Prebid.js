@@ -39,13 +39,12 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
-    // TODO: is 'page' the right value here?
-    const referer = bidderRequest.refererInfo.page;
+    const page = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = Object();
 
-      data.referer = referer;
+      data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
