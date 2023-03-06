@@ -115,15 +115,15 @@ const converter = ortbConverter({
  * @return boolean True if this is a valid bid, and false otherwise.
  */
 function isBidRequestValid(bid) {
-  if (bid.params.adUnitName && typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '') {
+  if (bid.params.adUnitName && (typeof bid.params.adUnitName !== 'string' || bid.params.adUnitName === '')) {
     logError('bid.params.adUnitName needs to be a string');
     return false;
   }
-  if (bid.params.adUnitPath && typeof bid.params.adUnitPath !== 'string' || bid.params.adUnitPath === '') {
+  if (bid.params.adUnitPath && (typeof bid.params.adUnitPath !== 'string' || bid.params.adUnitPath === '')) {
     logError('bid.params.adUnitPath needs to be a string');
     return false;
   }
-  if (bid.params.divId && typeof bid.params.divId !== 'string' || bid.params.divId === '') {
+  if (bid.params.divId && (typeof bid.params.divId !== 'string' || bid.params.divId === '')) {
     logError('bid.params.divId needs to be a string');
     return false;
   }
