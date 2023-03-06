@@ -18,7 +18,7 @@ export const setAndStringifyToLocalStorage = (key, object) => { window.localStor
 let vsgObj = getAndParseFromLocalStorage('viewability-data');
 
 export const makeBidRequestsHook = (fn, bidderRequests) => {
-  if (vsgObj) {
+  if (vsgObj && config.getConfig(MODULE_NAME)?.enabled) {
     bidderRequests.forEach(bidderRequest => {
       bidderRequest.bids.forEach(bid => {
         const bidViewabilityFields = { ...vsgObj[bid.adUnitCode] };
@@ -90,7 +90,7 @@ export const gptImpressionViewableHandler = (adSlotElementId, setToLocalStorageC
 
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentage, setToLocalStorageCb) => {
   const currentTime = Date.now();
-  const lastViewStarted = vsgObj[adSlotElementId].lastViewStarted;
+  const lastViewStarted = vsgObj[adSlotElementId]?.lastViewStarted;
   let diff;
   if (inViewPercentage < 50) {
     if (lastViewStarted) {
