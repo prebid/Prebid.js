@@ -75,5 +75,3 @@ workflows:
 
 experimental:
   pipelines: true
-store_test_results:
-    path: test-results
