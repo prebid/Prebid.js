@@ -538,7 +538,7 @@ export var spec = {
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
       var params = bid ? bid.params : null;
       var videoData = utils.mergeDeep(utils.deepAccess(bid.mediaTypes, 'video'), params.video);
-      var sizes = spec._getSizes(videoData) || [];
+      var sizes = bid.mediaTypes.video ? bid.mediaTypes.video.playerSize : []
       if (sizes && sizes.length > 0) {
         vObj = {};
         if (videoData) {
