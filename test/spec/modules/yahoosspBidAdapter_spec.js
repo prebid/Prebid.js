@@ -177,6 +177,16 @@ describe('YahooSSP Bid Adapter:', () => {
     expect(obj).to.be.an('object');
   });
 
+  describe('Validate basic properties', () => {
+    it('should define the correct bidder code', () => {
+      expect(spec.code).to.equal('yahoossp')
+    });
+
+    it('should define the correct vendor ID', () => {
+      expect(spec.gvlid).to.equal(25)
+    });
+  });
+
   describe('getUserSyncs()', () => {
     const IMAGE_PIXEL_URL = 'http://image-pixel.com/foo/bar?1234&baz=true';
     const IFRAME_ONE_URL = 'http://image-iframe.com/foo/bar?1234&baz=true';
@@ -321,6 +331,19 @@ describe('YahooSSP Bid Adapter:', () => {
   });
 
   describe('Schain module support:', () => {
+    it('should not include schain data when schain array is empty', function () {
+      const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const globalSchain = {
+        ver: '1.0',
+        complete: 1,
+        nodes: []
+      };
+      bidRequest.schain = globalSchain;
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+      const schain = data.source.ext.schain;
+      expect(schain).to.be.undefined;
+    });
+
     it('should send Global or Bidder specific schain', function () {
       const { bidRequest, validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const globalSchain = {
@@ -1353,6 +1376,14 @@ describe('YahooSSP Bid Adapter:', () => {
         bidderRequest.bids[0].params.ttl = 400;
         const response = spec.interpretResponse(serverResponse, {bidderRequest});
         expect(response[0].ttl).to.equal(500);
+      });
+    });
+
+    describe('Aliasing support', () => {
+      it('should return undefined as the bidder code value', () => {
+        const { serverResponse, bidderRequest } = generateResponseMock('banner');
+        const response = spec.interpretResponse(serverResponse, {bidderRequest});
+        expect(response[0].bidderCode).to.be.undefined;
       });
     });
   });

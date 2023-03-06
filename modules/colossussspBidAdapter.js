@@ -2,10 +2,11 @@ import { getWindowTop, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'colossusssp';
 const G_URL = 'https://colossusssp.com/?c=o&m=multi';
-const G_URL_SYNC = 'https://colossusssp.com/?c=o&m=cookie';
+const G_URL_SYNC = 'https://sync.colossusssp.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
@@ -60,12 +61,33 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
-    const winTop = getWindowTop();
-    const location = winTop.location;
+    let deviceWidth = 0;
+    let deviceHeight = 0;
+    let winLocation;
+
+    try {
+      const winTop = getWindowTop();
+      deviceWidth = winTop.screen.width;
+      deviceHeight = winTop.screen.height;
+      winLocation = winTop.location;
+    } catch (e) {
+      logMessage(e);
+      winLocation = window.location;
+    }
+
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    let refferLocation;
+    try {
+      refferLocation = refferUrl && new URL(refferUrl);
+    } catch (e) {
+      logMessage(e);
+    }
+
+    const location = refferLocation || winLocation;
     let placements = [];
     let request = {
-      deviceWidth: winTop.screen.width,
-      deviceHeight: winTop.screen.height,
+      deviceWidth,
+      deviceHeight,
       language: (navigator && navigator.language) ? navigator.language : '',
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
@@ -85,29 +107,16 @@ export const spec = {
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+      let traff = bid.params.traffic || BANNER;
       let placement = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        sizes: bid.mediaTypes[traff].sizes,
         traffic: traff,
         eids: [],
         floor: {}
       };
-      if (typeof bid.getFloor === 'function') {
-        let tmpFloor = {};
-        for (let size of placement.sizes) {
-          tmpFloor = bid.getFloor({
-            currency: 'USD',
-            mediaType: traff,
-            size: size
-          });
-          if (tmpFloor) {
-            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
-          }
-        }
-      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
@@ -124,7 +133,10 @@ export const spec = {
           rtiPartner: 'TDID'
         });
       }
-      if (traff === VIDEO) {
+      if (traff === BANNER) {
+        placement.sizes = bid.mediaTypes[BANNER].sizes
+      } else if (traff === VIDEO) {
+        placement.sizes = bid.mediaTypes[VIDEO].playerSize;
         placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
         placement.minduration = bid.mediaTypes[VIDEO].minduration;
         placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
@@ -141,6 +153,20 @@ export const spec = {
         placement.api = bid.mediaTypes[VIDEO].api;
         placement.linearity = bid.mediaTypes[VIDEO].linearity;
       }
+      if (typeof bid.getFloor === 'function') {
+        let tmpFloor = {};
+        for (let size of placement.sizes) {
+          tmpFloor = bid.getFloor({
+            currency: 'USD',
+            mediaType: traff,
+            size: size
+          });
+          if (tmpFloor) {
+            placement.floor[`${size[0]}x${size[1]}`] = tmpFloor.floor;
+          }
+        }
+      }
+
       placements.push(placement);
     }
     return {
@@ -175,10 +201,26 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: () => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncType = syncOptions.iframeEnabled ? 'html' : 'hms.gif';
+    let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+
     return [{
-      type: 'image',
-      url: G_URL_SYNC
+      type: syncType,
+      url: syncUrl
     }];
   },
 

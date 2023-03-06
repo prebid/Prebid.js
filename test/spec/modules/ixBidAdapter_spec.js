@@ -7,7 +7,7 @@ import { createEidsArray } from 'modules/userId/eids.js';
 import { deepAccess } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
-  const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/cygnus';
+  const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
   const VIDEO_ENDPOINT_VERSION = 8.1;
   const BANNER_ENDPOINT_VERSION = 7.2;
 
@@ -173,6 +173,55 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '456'
+      },
+      sizes: [400, 100],
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          playerSize: [[400, 100]],
+          mimes: [
+            'video/mp4',
+            'video/webm'
+          ],
+          minduration: 0,
+          maxduration: 60,
+          protocols: [2]
+        }
+      },
+      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47230',
+      bidId: '1a2b3c4e',
+      bidderRequestId: '11a22b33c44e',
+      auctionId: '1aa2bb3cc4de',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_VIDEO_VALID_BID = [
     {
       bidder: 'ix',
@@ -216,7 +265,7 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         video: {
           context: 'outstream',
-          playerSize: [600, 700]
+          playerSize: [[600, 700]]
         },
         banner: {
           sizes: [[300, 250], [300, 600], [400, 500]]
@@ -251,7 +300,7 @@ describe('IndexexchangeAdapter', function () {
       mediaTypes: {
         video: {
           context: 'outstream',
-          playerSize: [300, 250]
+          playerSize: [[300, 250]]
         },
         banner: {
           sizes: [[300, 250], [300, 600]]
@@ -351,7 +400,10 @@ describe('IndexexchangeAdapter', function () {
         ],
         seat: '3971'
       }
-    ]
+    ],
+    ext: {
+      videoplayerurl: 'https://test.com/video-renderer.js'
+    }
   };
 
   const DEFAULT_VIDEO_BID_RESPONSE_WITH_MTYPE_SET = {
@@ -544,6 +596,24 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
+    it('should return false if outstream player size is less than 300x250 and IX renderer is preferred', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.playerSize = [[300, 249]];
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return true if outstream player size is less than 300x250 and IX renderer is not preferred', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.mediaTypes.video.renderer = {
+        url: 'test',
+        render: () => {}
+      };
+      bid.mediaTypes.video.context = 'outstream';
+      bid.mediaTypes.video.playerSize = [[300, 249]];
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
     it('should return true when required params found for a banner or video ad', function () {
       expect(spec.isBidRequestValid(DEFAULT_BANNER_VALID_BID[0])).to.equal(true);
       expect(spec.isBidRequestValid(DEFAULT_VIDEO_VALID_BID[0])).to.equal(true);
@@ -604,7 +674,7 @@ describe('IndexexchangeAdapter', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.mediaTypes = {
         video: {
-          playerSize: [300, 250]
+          playerSize: [[300, 250]]
         }
       };
       bid.params.size = [100, 200];
@@ -1230,7 +1300,7 @@ describe('IndexexchangeAdapter', function () {
       const r = JSON.parse(request.data.r);
 
       expect(r.ext.ixdiag.userIds).to.be.an('array');
-      expect(r.ext.ixdiag.userIds.should.include('lotamePanoramaId'));
+      expect(r.ext.ixdiag.userIds.should.not.include('lotamePanoramaId'));
       expect(r.ext.ixdiag.userIds.should.not.include('merkleId'));
       expect(r.ext.ixdiag.userIds.should.not.include('parrableId'));
     });
@@ -1375,6 +1445,7 @@ describe('IndexexchangeAdapter', function () {
     delete bidWithoutSchain[0].schain;
     const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
     const queryWithoutSchain = requestWithoutSchain.data;
+    const GPID = '/19968336/some-adunit-path';
 
     it('request should be made to IX endpoint with GET method', function () {
       expect(requestMethod).to.equal('GET');
@@ -1414,8 +1485,19 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('should send gpid in request if ortb2Imp.ext.gpid exists', function () {
-      const GPID = '/19968336/some-adunit-path';
       const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          gpid: GPID
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
+    });
+
+    it('should send gpid in request if ortb2Imp.ext.gpid exists when no size present', function () {
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE);
       validBids[0].ortb2Imp = {
         ext: {
           gpid: GPID
@@ -1488,6 +1570,14 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
+    });
+
+    it('payload should set site.page to pageUrl when it exists in config object', function () {
+      const url = 'https://example.com/index.html';
+      config.setConfig({ pageUrl: url });
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0].data;
+      const payload = JSON.parse(request.r);
+      expect(payload.site.page).to.contains(url);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1699,6 +1789,10 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('first party data', () => {
+      beforeEach(() => {
+        config.resetConfig();
+      });
+
       it('should add first party data to page url in bid request if it exists in config', function () {
         config.setConfig({
           ix: {
@@ -1775,7 +1869,6 @@ describe('IndexexchangeAdapter', function () {
 
     describe('request should contain both banner and video requests', function () {
       const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]]);
-
       it('should have banner request', () => {
         const bannerImpression = JSON.parse(request[0].data.r).imp[0];
 
@@ -2104,6 +2197,29 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.api).to.equal(2);
       expect(impression.video.mimes[0]).to.equal('video/mp4');
     });
+
+    it('should send gpid in request if ortb2Imp.ext.gpid exists', function () {
+      const GPID = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          gpid: GPID
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const { ext: { gpid } } = JSON.parse(requests[0].data.r).imp[0];
+      expect(gpid).to.equal(GPID);
+    });
+
+    it('should build video request when if video obj is not provided at params level', () => {
+      const request = spec.buildRequests([DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0]]);
+      const videoImpression = JSON.parse(request[0].data.r).imp[0];
+
+      expect(JSON.parse(request[0].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
+      expect(videoImpression.id).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].bidId);
+      expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][0]);
+      expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID_NO_VIDEO_PARAMS[0].mediaTypes.video.playerSize[0][1]);
+    });
   });
 
   describe('buildRequestMultiFormat', function () {
@@ -2173,8 +2289,8 @@ describe('IndexexchangeAdapter', function () {
         expect(JSON.parse(request[1].data.r).imp).to.have.lengthOf(1);
         expect(JSON.parse(request[1].data.v)).to.equal(VIDEO_ENDPOINT_VERSION);
         expect(videoImpression.id).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].bidId);
-        expect(videoImpression.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0]);
-        expect(videoImpression.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[1]);
+        expect(videoImpression.video.w).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][0]);
+        expect(videoImpression.video.h).to.equal(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0].mediaTypes.video.playerSize[0][1]);
       });
 
       it('should contain all correct IXdiag properties', function () {
@@ -2182,10 +2298,11 @@ describe('IndexexchangeAdapter', function () {
         expect(diagObj.iu).to.equal(0);
         expect(diagObj.nu).to.equal(0);
         expect(diagObj.ou).to.equal(2);
-        expect(diagObj.ren).to.equal(false);
+        expect(diagObj.ren).to.equal(true);
         expect(diagObj.mfu).to.equal(2);
         expect(diagObj.allu).to.equal(2);
         expect(diagObj.version).to.equal('$prebid.version$');
+        expect(diagObj.url).to.equal('http://localhost:9876/context.html')
       });
     });
   });
@@ -2416,6 +2533,68 @@ describe('IndexexchangeAdapter', function () {
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 
+    it('should set bid[].renderer if renderer not defined at mediaType.video level', function () {
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: DEFAULT_MULTIFORMAT_BANNER_VALID_BID
+      });
+      expect(bid[0].renderer).to.exist;
+    });
+
+    it('should set renderer URL by parsing video response', function () {
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: DEFAULT_MULTIFORMAT_BANNER_VALID_BID
+      });
+      expect(bid[0].renderer.url).to.equal(DEFAULT_VIDEO_BID_RESPONSE.ext.videoplayerurl);
+    });
+
+    it('should not set bid[].renderer if renderer defined at mediaType.video level', function () {
+      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      outstreamAdUnit[0].mediaTypes.video.renderer = {
+        url: 'test',
+        render: function() {}
+      };
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: outstreamAdUnit
+      });
+      expect(bid[0].renderer).to.be.undefined;
+    });
+
+    it('should not set bid[].renderer if renderer defined at the ad unit level', function () {
+      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      outstreamAdUnit[0].renderer = {
+        url: 'test',
+        render: function() {}
+      };
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: outstreamAdUnit
+      });
+      expect(bid[0].renderer).to.be.undefined;
+    });
+
+    it('should set bid[].renderer if ad unit renderer is invalid', function () {
+      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      outstreamAdUnit[0].mediaTypes.video.renderer = {
+        url: 'test'
+      };
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: outstreamAdUnit
+      });
+      expect(bid[0].renderer).to.exist;
+    });
+
+    it('should set bid[].renderer if ad unit renderer is a backup', function () {
+      let outstreamAdUnit = utils.deepClone(DEFAULT_MULTIFORMAT_BANNER_VALID_BID);
+      outstreamAdUnit[0].mediaTypes.video.renderer = {
+        url: 'test',
+        render: function() {},
+        backupOnly: true
+      };
+      const bid = spec.interpretResponse({ body: DEFAULT_VIDEO_BID_RESPONSE }, {
+        data: DEFAULT_BIDDER_REQUEST_DATA, validBidRequests: outstreamAdUnit
+      });
+      expect(bid[0].renderer).to.exist;
+    });
+
     it('should get correct bid response for video ad and set bid.vastXml when mtype is 2 (video)', function () {
       const expectedParse = [
         {
@@ -2637,7 +2816,7 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
-  describe('LocalStorage ixdiag', () => {
+  describe('LocalStorage error codes', () => {
     let TODAY = new Date().toISOString().slice(0, 10);
     const key = 'ixdiag';
 
@@ -2764,7 +2943,7 @@ describe('IndexexchangeAdapter', function () {
 
       expect(spec.isBidRequestValid(bid)).to.be.true;
       spec.buildRequests([bid]);
-      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.VIDEO_DURATION_INVALID]: 2 } });
+      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.VIDEO_DURATION_INVALID]: 3 } });
     });
 
     it('should increment errors for errorCode', () => {

@@ -12,10 +12,9 @@ import {
   deepClone,
   isGptPubadsDefined,
 } from '../src/utils.js';
-import * as _find from 'core-js-pure/features/array/find.js';
+import find from 'core-js-pure/features/array/find.js';
 import $$PREBID_GLOBAL$$ from '../src/prebid.js';
 /** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
-const find = _find;
 
 const url = 'https://an.adingo.jp';
 

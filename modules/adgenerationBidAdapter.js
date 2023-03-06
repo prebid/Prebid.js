@@ -25,7 +25,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.2.0';
+    const ADGENE_PREBID_VERSION = '1.3.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -50,6 +50,12 @@ export const spec = {
         data = tryAppendQueryString(data, 'imark', '1');
       }
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+      if (isIos()) {
+        const hyperId = getHyperId(validReq);
+        if (hyperId != null) {
+          data = tryAppendQueryString(data, 'hyper_id', hyperId);
+        }
+      }
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -261,6 +267,22 @@ function getSizes(validReq) {
 function getCurrencyType() {
   if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
   return 'JPY';
+}
+
+/**
+ *
+ * @param validReq request
+ * @return {null|string}
+ */
+function getHyperId(validReq) {
+  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
+    return validReq.userId.novatiq.snowflake.id;
+  }
+  return null;
+}
+
+function isIos() {
+  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);

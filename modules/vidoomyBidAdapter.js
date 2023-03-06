@@ -12,13 +12,9 @@ const GVLID = 380;
 const COOKIE_SYNC_FALLBACK_URLS = [
   'https://x.bidswitch.net/sync?ssp=vidoomy',
   'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
-  'https://sync.1rx.io/usersync2/vidoomy?redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DUN%26uid%3D%5BRX_UUID%5D',
-  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
-  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D',
+  'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
   'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}',
-  'https://ap.lijit.com/pixel?redir=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dsovrn%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID'
+  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'
 ];
 
 const isBidRequestValid = bid => {
@@ -39,6 +35,11 @@ const isBidRequestValid = bid => {
 
   if (bid.params && bid.params.mediaTypes && bid.params.mediaTypes.video && bid.params.mediaTypes.video.context === INSTREAM && !bid.params.mediaTypes.video.playerSize) {
     logError(BIDDER_CODE + ': bid.params.mediaType.video should have a playerSize property to tell player size when is INSTREAM');
+    return false;
+  }
+
+  if (bid.params.bidfloor && (isNaN(bid.params.bidfloor) || bid.params.bidfloor < 0)) {
+    logError(BIDDER_CODE + ': bid.params.bidfloor should be a number equal or greater than zero');
     return false;
   }
 
@@ -77,6 +78,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const hostname = aElement.hostname
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+    const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
 
     const queryParams = {
       id: bid.params.id,
@@ -90,6 +92,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
+      schain: bid.schain || '',
+      bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       sp: encodeURIComponent(aElement.href),
       usp: bidderRequest.uspConsent || '',

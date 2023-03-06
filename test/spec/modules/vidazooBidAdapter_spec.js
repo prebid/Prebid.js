@@ -37,7 +37,8 @@ const BID = {
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
-  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a'
+  'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
+  'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc'
 };
 
 const BIDDER_REQUEST = {
@@ -163,6 +164,7 @@ describe('VidazooBidAdapter', function () {
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
+          schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
@@ -320,7 +322,9 @@ describe('VidazooBidAdapter', function () {
   describe('unique deal id', function () {
     const key = 'myKey';
     let uniqueDealId;
-    uniqueDealId = getUniqueDealId(key);
+    beforeEach(() => {
+      uniqueDealId = getUniqueDealId(key, 0);
+    })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
@@ -331,9 +335,12 @@ describe('VidazooBidAdapter', function () {
       }, 200);
     });
 
-    it('should get new unique deal id on expiration', function () {
-      const current = getUniqueDealId(key, 100);
-      expect(current).to.not.be.equal(uniqueDealId);
+    it('should get new unique deal id on expiration', function (done) {
+      setTimeout(() => {
+        const current = getUniqueDealId(key, 100);
+        expect(current).to.not.be.equal(uniqueDealId);
+        done();
+      }, 200)
     });
   });
 

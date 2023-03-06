@@ -395,6 +395,7 @@ describe('SSPBC adapter', function () {
             'ext': {
               'siteid': '8816',
               'slotid': '150',
+              'cache': 'https://video.tag.cache'
             },
           }],
           'seat': 'dsp1',
@@ -514,8 +515,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send gdpr data', function () {
-      expect(payload.regs).to.be.an('object').and.to.have.property('[ortb_extensions.gdpr]', 1);
-      expect(payload.user).to.be.an('object').and.to.have.property('[ortb_extensions.consent]', bidRequest.gdprConsent.consentString);
+      expect(payload.regs).to.be.an('object').and.to.have.property('gdpr', 1);
+      expect(payload.user).to.be.an('object').and.to.have.property('consent', bidRequest.gdprConsent.consentString);
     });
 
     it('should send net info and pvid', function () {
@@ -631,6 +632,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.contain('window.mcad');
       expect(adcode).to.contain('window.gdpr');
       expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -639,11 +641,12 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       let videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml');
+      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
       expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
     });
 
     it('should create a correct native bid', function () {
@@ -653,7 +656,7 @@ describe('SSPBC adapter', function () {
 
       let nativeBid = resultNative[0];
       expect(nativeBid).to.have.keys('bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native');
-      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers');
+      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers');
     });
   });
 
@@ -668,8 +671,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.be.undefined;
-      expect(syncResultNone).to.be.undefined;
+      expect(syncResultImage).to.have.length(0); ;
+      expect(syncResultNone).to.have.length(0); ;
     });
   });
 
@@ -686,7 +689,7 @@ describe('SSPBC adapter', function () {
       let notificationPayload = spec.onBidWon(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidWon');
       expect(notificationPayload).to.have.property('requestId').that.equals(bid.auctionId);
-      expect(notificationPayload).to.have.property('adUnit').that.deep.equals([bid.adUnitCode]);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
       expect(notificationPayload).to.have.property('slotId').that.is.an('array');
     });
@@ -707,7 +710,7 @@ describe('SSPBC adapter', function () {
 
       expect(notificationPayload).to.have.property('event').that.equals('timeout');
       expect(notificationPayload).to.have.property('requestId').that.equals(bids_timeouted[0].auctionId);
-      expect(notificationPayload).to.have.property('adUnit').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
+      expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
     });
   });
 });

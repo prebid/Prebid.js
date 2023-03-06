@@ -6,6 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahoossp';
+const GVLID = 25;
 const ADAPTER_VERSION = '1.0.2';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
@@ -56,7 +57,7 @@ const SUPPORTED_USER_ID_SOURCES = [
 function hasPurpose1Consent(bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      return !!false;
+      return deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true;
     }
   }
   return true;
@@ -287,7 +288,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -481,7 +483,6 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
       });
     }
   };
-  logWarn('yahoossp adapter endpoint override enabled. Pointing requests to: ', sspEndpoint);
 
   return {
     url: sspEndpoint,
@@ -515,6 +516,7 @@ function createRenderer(bidderRequest, bidResponse) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: [],
   supportedMediaTypes: [BANNER, VIDEO],
 
@@ -588,7 +590,6 @@ export const spec = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
         adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
-        bidderCode: spec.code,
         cpm: cpm,
         width: bid.w,
         height: bid.h,

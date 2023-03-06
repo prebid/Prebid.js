@@ -12,7 +12,6 @@ export const GOOGLE_CONSENT = { consented_providers: ['3', '7', '11', '12', '15'
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 165,
-  aliases: ['spotx'],
   supportedMediaTypes: [VIDEO],
 
   /**
