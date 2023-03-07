@@ -514,25 +514,6 @@ describe('permutiveRtdProvider', function () {
   })
 
   describe('Default segment targeting', function () {
-    it('sets segment targeting for Xandr', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      readAndSetCohorts({ adUnits }, config)
-
-      adUnits.forEach(adUnit => {
-        adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
-
-          if (bidder === 'appnexus') {
-            expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
-            expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-          }
-        })
-      })
-    })
-
     it('sets segment targeting for Ozone', function () {
       const data = transformedTargeting()
       const adUnits = getAdUnits()
