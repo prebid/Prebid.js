@@ -44,16 +44,17 @@ describe('fledgeForGpt module', function() {
 });
 
 describe('fledgeEnabled', function () {
-  const origRunAdAuction = navigator?.runAdAuction;
+  const navProps = Object.fromEntries(['runAdAuction', 'joinAdInterestGroup'].map(p => [p, navigator[p]]))
+
   before(function () {
-    // navigator.runAdAuction doesn't exist, so we can't stub it normally with
+    // navigator.runAdAuction & co may not exist, so we can't stub it normally with
     // sinon.stub(navigator, 'runAdAuction') or something
-    navigator.runAdAuction = sinon.stub();
+    Object.keys(navProps).forEach(p => { navigator[p] = sinon.stub() });
     hook.ready();
   });
 
   after(function() {
-    navigator.runAdAuction = origRunAdAuction;
+    Object.entries(navProps).forEach(([p, orig]) => navigator[p] = orig);
   })
 
   afterEach(function () {
