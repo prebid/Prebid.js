@@ -467,6 +467,31 @@ describe('permutiveRtdProvider', function () {
         })
       })
     })
+
+    describe('ortb2 ozone extensions', function () {
+      it('should add ac and ssp cohorts to "p_standard"', function () {
+        const moduleConfig = getConfig()
+        expect(moduleConfig.params.acBidders).to.include('ozone')
+
+        const bidderConfig = {}
+
+        const segmentsData = transformedTargeting()
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          if (bidder === 'ozone') {
+            expect(bidderConfig[bidder].site.ext.permutive).to.deep
+              .eq({
+                // Default targeting
+                p_standard: segmentsData.ac,
+              })
+          } else {
+            expect(bidderConfig[bidder]).to.not.have.property('site')
+          }
+        })
+      })
+    })
   })
 
   describe('Getting segments', function () {
@@ -503,24 +528,6 @@ describe('permutiveRtdProvider', function () {
           if (bidder === 'appnexus') {
             expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
             expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-          }
-        })
-      })
-    })
-
-    it('sets segment targeting for Ozone', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      readAndSetCohorts({ adUnits }, config)
-
-      adUnits.forEach(adUnit => {
-        adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
-
-          if (bidder === 'ozone') {
-            expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
           }
         })
       })
