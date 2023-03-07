@@ -90,13 +90,12 @@ export const spec = {
         auctionId = bid.auctionId;
       }
       const {
-        params: { floorcpm, pubdata, source, secid, pubid, content, video },
+        params: { floorcpm, source, secid, pubid, content, video },
         mediaTypes, bidId, adUnitCode, rtd, ortb2Imp, sizes
       } = bid;
 
       const bidFloor = _getFloor(mediaTypes || {}, bid, isNumber(floorcpm) && floorcpm);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
-      const jwpseg = (pubdata && pubdata.jwpseg) || (jwTargeting && jwTargeting.segments);
 
       const siteContent = content || (jwTargeting && jwTargeting.content);
 
@@ -154,15 +153,6 @@ export const spec = {
 
       if (siteContent) {
         request.site.content = siteContent;
-      }
-
-      if (jwpseg && jwpseg.length) {
-        user = {
-          data: [{
-            name: 'iow_labs_pub_data',
-            segment: segmentProcessing(jwpseg, 'jwpseg'),
-          }]
-        };
       }
 
       if (gdprConsent && gdprConsent.consentString) {
@@ -427,22 +417,6 @@ export function resetUserSync() {
 
 export function getSyncUrl() {
   return SYNC_URL;
-}
-
-function segmentProcessing(segment, forceSegName) {
-  return segment
-    .map((seg) => {
-      const value = seg && (seg.id || seg);
-      if (typeof value === 'string' || typeof value === 'number') {
-        return {
-          value: value.toString(),
-          ...(forceSegName && { name: forceSegName }),
-          ...(seg.name && { name: seg.name }),
-        };
-      }
-      return null;
-    })
-    .filter((seg) => !!seg);
 }
 
 registerBidder(spec);
