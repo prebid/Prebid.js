@@ -37,7 +37,7 @@ describe('fledgeForGpt module', function() {
     });
 
     it('should call next() when a proper bidrequest and fledgeAuctionConfig are provided', function() {
-      fledge.addComponentAuctionHook(nextFnSpy, bidRequest, fledgeAuctionConfig);
+      fledge.addComponentAuctionHook(nextFnSpy, bidRequest.adUnitCode, fledgeAuctionConfig);
       expect(nextFnSpy.called).to.be.true;
     });
   });
