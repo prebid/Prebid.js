@@ -51,7 +51,7 @@ export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig
 }
 
 export function markBidsForFledge(next, bidderRequests) {
-  if (navigator.runAdAuction) {
+  if ('runAdAuction' in navigator && 'joinAdInterestGroup' in navigator) {
     bidderRequests.forEach((req) => {
       req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
     })
