@@ -264,7 +264,8 @@ function getEids(userId) {
   const idProperties = [
     'uid',
     'eid',
-    'lipbid'
+    'lipbid',
+    'envelope'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
