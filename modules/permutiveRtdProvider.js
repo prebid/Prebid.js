@@ -172,6 +172,14 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
+  if (bidder === 'ozone') {
+    if (segmentIDs.length > 0) {
+      deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    }
+
+    logger.logInfo(`Extending ortb2.site.ext.permutive for ${bidder}`, deepAccess(ortbConfig, 'ortb2.site.ext.permutive'))
+  }
+
   logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)
 
   return ortbConfig
@@ -258,14 +266,6 @@ function getDefaultBidderFn (bidder) {
       }
       if (data.appnexus && data.appnexus.length) {
         deepSetValue(bid, 'params.keywords.permutive', data.appnexus)
-      }
-
-      return bid
-    },
-    ozone: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.customData.0.targeting.p_standard', segments)
       }
 
       return bid
