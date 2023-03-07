@@ -369,6 +369,16 @@ export const spec = {
           }
         };
       }
+      const ortb2Regs = deepAccess(bidderRequest, 'ortb2.regs') || {};
+      if (gppConsent || ortb2Regs?.gpp) {
+        const gpp = {
+          ext: {
+            gpp: gppConsent?.gppString ?? ortb2Regs?.gpp,
+            gpp_sid: gppConsent?.applicableSections ?? ortb2Regs?.gpp_sid
+          }
+        };
+        request.regs = mergeDeep(request?.regs ?? {}, gpp);
+      }
 
       if (uspConsent) {
         if (!request.regs) {
