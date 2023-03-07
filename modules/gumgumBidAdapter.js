@@ -1,15 +1,13 @@
-import * as utils from '../src/utils.js'
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {_each, deepAccess, logError, logWarn, parseSizesInput} from '../src/utils.js';
 
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
-import includes from 'core-js-pure/features/array/includes';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-
-const storage = getStorageManager();
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {includes} from '../src/polyfill.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'gumgum'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg']
 const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
@@ -18,32 +16,48 @@ const TIME_TO_LIVE = 60
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
 let invalidRequestIds = {};
-let browserParams = {};
 let pageViewId = null;
 
 // TODO: potential 0 values for browserParams sent to ad server
 function _getBrowserParams(topWindowUrl) {
-  let topWindow
-  let topScreen
-  let topUrl
-  let ggad
-  let ns
-  function getNetworkSpeed() {
-    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection)
-    const Mbps = connection && (connection.downlink || connection.bandwidth)
-    return Mbps ? Math.round(Mbps * 1024) : null
+  const paramRegex = paramName => new RegExp(`[?#&](${paramName}=(.*?))($|&)`, 'i');
+
+  let browserParams = {};
+  let topWindow;
+  let topScreen;
+  let topUrl;
+  let ggad;
+  let ggdeal;
+  let ns;
+
+  function getNetworkSpeed () {
+    const connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
+    const Mbps = connection && (connection.downlink || connection.bandwidth);
+    return Mbps ? Math.round(Mbps * 1024) : null;
   }
-  function getOgURL() {
-    let ogURL = ''
-    const ogURLSelector = "meta[property='og:url']"
-    const head = document && document.getElementsByTagName('head')[0]
-    const ogURLElement = head.querySelector(ogURLSelector)
-    ogURL = ogURLElement ? ogURLElement.content : null
-    return ogURL
+
+  function getOgURL () {
+    let ogURL = '';
+    const ogURLSelector = "meta[property='og:url']";
+    const head = document && document.getElementsByTagName('head')[0];
+    const ogURLElement = head.querySelector(ogURLSelector);
+    ogURL = ogURLElement ? ogURLElement.content : null;
+    return ogURL;
   }
-  if (browserParams.vw) {
-    // we've already initialized browserParams, just return it.
-    return browserParams
+
+  function stripGGParams (url) {
+    const params = [
+      'ggad',
+      'ggdeal'
+    ];
+
+    return params.reduce((result, param) => {
+      const matches = url.match(paramRegex(param));
+      if (!matches) return result;
+      matches[1] && (result = result.replace(matches[1], ''));
+      matches[3] && (result = result.replace(matches[3], ''));
+      return result;
+    }, url);
   }
 
   try {
@@ -51,8 +65,8 @@ function _getBrowserParams(topWindowUrl) {
     topScreen = topWindow.screen;
     topUrl = topWindowUrl || '';
   } catch (error) {
-    utils.logError(error);
-    return browserParams
+    logError(error);
+    return browserParams;
   }
 
   browserParams = {
@@ -60,23 +74,25 @@ function _getBrowserParams(topWindowUrl) {
     vh: topWindow.innerHeight,
     sw: topScreen.width,
     sh: topScreen.height,
-    pu: topUrl,
+    pu: stripGGParams(topUrl),
     ce: storage.cookiesAreEnabled(),
     dpr: topWindow.devicePixelRatio || 1,
     jcsi: JSON.stringify(JCSI),
     ogu: getOgURL()
-  }
+  };
 
-  ns = getNetworkSpeed()
+  ns = getNetworkSpeed();
   if (ns) {
-    browserParams.ns = ns
+    browserParams.ns = ns;
   }
 
-  ggad = (topUrl.match(/#ggad=(\w+)$/) || [0, 0])[1]
-  if (ggad) {
-    browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad
-  }
-  return browserParams
+  ggad = (topUrl.match(paramRegex('ggad')) || [0, 0, 0])[2];
+  if (ggad) browserParams[isNaN(ggad) ? 'eAdBuyId' : 'adBuyId'] = ggad;
+
+  ggdeal = (topUrl.match(paramRegex('ggdeal')) || [0, 0, 0])[2];
+  if (ggdeal) browserParams.ggdeal = ggdeal;
+
+  return browserParams;
 }
 
 function getWrapperCode(wrapper, data) {
@@ -131,7 +147,7 @@ function isBidRequestValid(bid) {
   const id = legacyParamID || params.slot || params.native || params.zone || params.pubID;
 
   if (invalidRequestIds[id]) {
-    utils.logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
+    logWarn(`[GumGum] Please check the implementation for ${id} for the placement ${adUnitCode}`);
     return false;
   }
 
@@ -146,12 +162,12 @@ function isBidRequestValid(bid) {
     case !!(params.inVideo): break;
     case !!(params.videoPubID): break;
     default:
-      utils.logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
+      logWarn(`[GumGum] No product selected for the placement ${adUnitCode}, please check your implementation.`);
       return false;
   }
 
   if (params.bidfloor && !(typeof params.bidfloor === 'number' && isFinite(params.bidfloor))) {
-    utils.logWarn('[GumGum] bidfloor must be a Number');
+    logWarn('[GumGum] bidfloor must be a Number');
     return false;
   }
 
@@ -173,7 +189,7 @@ function _getVidParams(attributes) {
     protocols = [],
     playerSize = []
   } = attributes;
-  const sizes = utils.parseSizesInput(playerSize);
+  const sizes = parseSizesInput(playerSize);
   const [viw, vih] = sizes[0] && sizes[0].split('x');
   let pr = '';
 
@@ -277,9 +293,11 @@ function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const gppConsent = bidderRequest && bidderRequest.gppConsent;
   const timeout = config.getConfig('bidderTimeout');
-  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  utils._each(validBidRequests, bidRequest => {
+  const coppa = config.getConfig('coppa') === true ? 1 : 0;
+  const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
+  _each(validBidRequests, bidRequest => {
     const {
       bidId,
       mediaTypes = {},
@@ -287,21 +305,31 @@ function buildRequests(validBidRequests, bidderRequest) {
       schain,
       transactionId,
       userId = {},
-      ortb2Imp
+      ortb2Imp,
+      adUnitCode = ''
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
+    const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
     let sizes = [1, 1];
     let data = {};
-    let gpid = '';
+
+    const date = new Date();
+    const lt = date.getTime();
+    const to = date.getTimezoneOffset();
+
+    // ADTS-174 Removed unnecessary checks to fix failing test
+    data.lt = lt;
+    data.to = to;
+
+    // ADTS-169 add adUnitCode to requests
+    if (adUnitCode) data.aun = adUnitCode;
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024
-    if (utils.deepAccess(ortb2Imp, 'ext.data.adserver.name')) {
-      gpid = ortb2Imp.ext.data.adserver.adslot
-    }
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -344,9 +372,11 @@ function buildRequests(validBidRequests, bidderRequest) {
         data.pi = 5;
       } else if (mediaTypes.video) {
         data.pi = mediaTypes.video.linearity === 2 ? 6 : 7; // invideo : video
+      } else if (params.product && params.product.toLowerCase() === 'skins') {
+        data.pi = 8;
       }
     } else { // legacy params
-      data = { ...data, ...handleLegacyParams(params, sizes) }
+      data = { ...data, ...handleLegacyParams(params, sizes) };
     }
 
     if (gdprConsent) {
@@ -357,6 +387,20 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (uspConsent) {
       data.uspConsent = uspConsent;
+    }
+    if (gppConsent) {
+      data.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        applicableSections: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
+      data.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+      };
+    }
+    if (coppa) {
+      data.coppa = coppa;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
@@ -371,8 +415,8 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId), { gpid })
-    })
+      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
+    });
   });
   return bids;
 }
@@ -433,7 +477,7 @@ function interpretResponse(serverResponse, bidRequest) {
     setTimeout(() => {
       !!invalidRequestIds[id] && delete invalidRequestIds[id];
     }, delayTime);
-    utils.logWarn(`[GumGum] Please check the implementation for ${id}`);
+    logWarn(`[GumGum] Please check the implementation for ${id}`);
   }
 
   const defaultResponse = {
@@ -481,14 +525,19 @@ function interpretResponse(serverResponse, bidRequest) {
     advertiserDomains: advertiserDomains || [],
     mediaType: type || mediaType
   };
-  let sizes = utils.parseSizesInput(bidRequest.sizes);
+  let sizes = parseSizesInput(bidRequest.sizes);
 
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
   } else if (product === 2 && includes(sizes, '1x1')) {
-    sizes = responseWidth && responseHeight ? [`${responseWidth}x${responseHeight}`] : utils.parseSizesInput(bidRequest.sizes)
+    const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
+      const [ width, height ] = current;
+      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      return result
+    }, [])) || [];
+    sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)
   }
 
   let [width, height] = sizes[0].split('x');

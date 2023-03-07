@@ -21,9 +21,10 @@
 
 import { uniques, flatten, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import find from 'core-js-pure/features/array/find.js';
-
-const CONSTANTS = require('./constants.json');
+import {find} from './polyfill.js';
+import {AuctionIndex} from './auctionIndex.js';
+import CONSTANTS from './constants.json';
+import {useMetrics} from './utils/perfMetrics.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -36,6 +37,10 @@ export function newAuctionManager() {
   const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
+    const metrics = useMetrics(bid.metrics);
+    metrics.checkpoint('bidWon');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;
@@ -87,8 +92,8 @@ export function newAuctionManager() {
       .filter(uniques);
   };
 
-  auctionManager.createAuction = function({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId }) {
-    const auction = newAuction({ adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId });
+  auctionManager.createAuction = function(opts) {
+    const auction = newAuction(opts);
     _addAuction(auction);
     return auction;
   };
@@ -122,6 +127,8 @@ export function newAuctionManager() {
   function _addAuction(auction) {
     _auctions.push(auction);
   }
+
+  auctionManager.index = new AuctionIndex(() => _auctions);
 
   return auctionManager;
 }

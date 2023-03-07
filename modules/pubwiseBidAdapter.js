@@ -1,8 +1,8 @@
-import * as utils from '../src/utils.js';
+import { _each, isStr, deepClone, isArray, deepSetValue, inIframe, logMessage, logInfo, logWarn, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 const GVLID = 842;
 const NET_REVENUE = true;
 const UNDEFINED = undefined;
@@ -81,9 +81,9 @@ let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 
 // together allows traversal of NATIVE_ASSETS_LIST in any direction
 // id -> key
-utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
+_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // key -> asset
-utils._each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
+_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -99,7 +99,7 @@ export const spec = {
     // siteId is required
     if (bid.params && bid.params.siteId) {
       // it must be a string
-      if (!utils.isStr(bid.params.siteId)) {
+      if (!isStr(bid.params.siteId)) {
         _logWarn('siteId is required for bid', bid);
         return false;
       }
@@ -127,7 +127,7 @@ export const spec = {
     var blockedIabCategories = [];
 
     validBidRequests.forEach(originalBid => {
-      bid = utils.deepClone(originalBid);
+      bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
 
@@ -136,7 +136,7 @@ export const spec = {
       bidCurrency = bid.params.currency || UNDEFINED;
       bid.params.currency = bidCurrency;
 
-      if (bid.params.hasOwnProperty('bcat') && utils.isArray(bid.params.bcat)) {
+      if (bid.params.hasOwnProperty('bcat') && isArray(bid.params.bcat)) {
         blockedIabCategories = blockedIabCategories.concat(bid.params.bcat);
       }
 
@@ -157,7 +157,7 @@ export const spec = {
     }
 
     if (bid.params.isTest) {
-      payload.test = Number(bid.params.isTest) // should be 1 or 0
+      payload.test = Number(bid.params.isTest); // should be 1 or 0
     }
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
@@ -166,7 +166,7 @@ export const spec = {
     payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
     payload.device.geo = payload.user.geo;
-    payload.site.page = payload.site.page.trim();
+    payload.site.page = payload.site?.page?.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
     // add the content object from config in request
@@ -180,30 +180,30 @@ export const spec = {
     }
 
     // passing transactionId in source.tid
-    utils.deepSetValue(payload, 'source.tid', conf.transactionId);
+    deepSetValue(payload, 'source.tid', bidderRequest?.auctionId);
 
     // schain
     if (validBidRequests[0].schain) {
-      utils.deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
     }
 
     // gdpr consent
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // ccpa on the root object
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
     // if coppa is in effect then note it
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(payload, 'regs.coppa', 1);
+      deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    var options = {contentType: 'text/plain'}
+    var options = {contentType: 'text/plain'};
 
     _logInfo('buildRequests payload', payload);
     _logInfo('buildRequests bidderRequest', bidderRequest);
@@ -230,12 +230,12 @@ export const spec = {
     // let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
 
     // try {
-    if (response.body && response.body.seatbid && utils.isArray(response.body.seatbid)) {
+    if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
       // Supporting multiple bid responses for same adSize
       respCur = response.body.cur || respCur;
       response.body.seatbid.forEach(seatbidder => {
         seatbidder.bid &&
-            utils.isArray(seatbidder.bid) &&
+            isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
               let newBid = {
                 requestId: bid.impid,
@@ -388,7 +388,7 @@ function _handleCustomParams(params, conf) {
           value = entry.f(value, conf);
         }
 
-        if (utils.isStr(value)) {
+        if (isStr(value)) {
           conf[key] = value;
         } else {
           _logWarn('Ignoring param : ' + key + ' with value : ' + CUSTOM_PARAMS[key] + ', expects string-value, found ' + typeof value);
@@ -436,7 +436,10 @@ function _createImpressionObject(bid, conf) {
     tagid: bid.params.adUnit || undefined,
     bidfloor: _parseSlotParam('bidFloor', bid.params.bidFloor), // capitalization dicated by 3.2.4 spec
     secure: 1,
-    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY // capitalization dicated by 3.2.4 spec
+    bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY, // capitalization dicated by 3.2.4 spec
+    ext: {
+      tid: (bid.transactionId ? bid.transactionId : '')
+    }
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -459,7 +462,7 @@ function _createImpressionObject(bid, conf) {
       }
     }
   } else {
-    _logWarn('MediaTypes are Required for all Adunit Configs', bid)
+    _logWarn('MediaTypes are Required for all Adunit Configs', bid);
   }
 
   _addFloorFromFloorModule(impObj, bid);
@@ -469,7 +472,7 @@ function _createImpressionObject(bid, conf) {
 }
 
 function _parseSlotParam(paramName, paramValue) {
-  if (!utils.isStr(paramValue)) {
+  if (!isStr(paramValue)) {
     paramValue && _logWarn('Ignoring param key: ' + paramName + ', expects string-value, found ' + typeof paramValue);
     return UNDEFINED;
   }
@@ -490,7 +493,11 @@ function _parseSlotParam(paramName, paramValue) {
 
 function _parseAdSlot(bid) {
   _logInfo('parseAdSlot bid', bid)
-  bid.params.adUnit = '';
+  if (bid.adUnitCode) {
+    bid.params.adUnit = bid.adUnitCode;
+  } else {
+    bid.params.adUnit = '';
+  }
   bid.params.width = 0;
   bid.params.height = 0;
   bid.params.adSlot = _cleanSlotName(bid.params.adSlot);
@@ -520,7 +527,7 @@ function _parseAdSlot(bid) {
 }
 
 function _cleanSlotName(slotName) {
-  if (utils.isStr(slotName)) {
+  if (isStr(slotName)) {
     return slotName.replace(/^\s+/g, '').replace(/\s+$/g, '');
   }
   return '';
@@ -528,8 +535,8 @@ function _cleanSlotName(slotName) {
 
 function _initConf(refererInfo) {
   return {
-    pageURL: (refererInfo && refererInfo.referer) ? refererInfo.referer : window.location.href,
-    refURL: window.document.referrer
+    pageURL: refererInfo?.page,
+    refURL: refererInfo?.ref
   };
 }
 
@@ -705,7 +712,7 @@ function _createBannerRequest(bid) {
   var sizes = bid.mediaTypes.banner.sizes;
   var format = [];
   var bannerObj;
-  if (sizes !== UNDEFINED && utils.isArray(sizes)) {
+  if (sizes !== UNDEFINED && isArray(sizes)) {
     bannerObj = {};
     if (!bid.params.width && !bid.params.height) {
       if (sizes.length === 0) {
@@ -734,7 +741,7 @@ function _createBannerRequest(bid) {
       }
     }
     bannerObj.pos = 0;
-    bannerObj.topframe = utils.inIframe() ? 0 : 1;
+    bannerObj.topframe = inIframe() ? 0 : 1;
   } else {
     _logWarn('Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
     bannerObj = UNDEFINED;
@@ -745,22 +752,22 @@ function _createBannerRequest(bid) {
 // various error levels are not always used
 // eslint-disable-next-line no-unused-vars
 function _logMessage(textValue, objectValue) {
-  utils.logMessage('PubWise: ' + textValue, objectValue);
+  logMessage('PubWise: ' + textValue, objectValue);
 }
 
 // eslint-disable-next-line no-unused-vars
 function _logInfo(textValue, objectValue) {
-  utils.logInfo('PubWise: ' + textValue, objectValue);
+  logInfo('PubWise: ' + textValue, objectValue);
 }
 
 // eslint-disable-next-line no-unused-vars
 function _logWarn(textValue, objectValue) {
-  utils.logWarn('PubWise: ' + textValue, objectValue);
+  logWarn('PubWise: ' + textValue, objectValue);
 }
 
 // eslint-disable-next-line no-unused-vars
 function _logError(textValue, objectValue) {
-  utils.logError('PubWise: ' + textValue, objectValue);
+  logError('PubWise: ' + textValue, objectValue);
 }
 
 // function _decorateLog() {

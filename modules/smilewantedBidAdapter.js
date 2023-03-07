@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { isArray, logError, logWarn, isFn, isPlainObject } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -37,6 +37,11 @@ export const spec = {
         transactionId: bid.transactionId,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
+        /** positionType is undocumented
+        It is unclear what this parameter means.
+        If it means the same as pos in openRTB,
+        It should read from openRTB object
+        or from mediaTypes.banner.pos */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
@@ -51,13 +56,18 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.pageDomain = bidderRequest.refererInfo.referer || '';
+        payload.pageDomain = bidderRequest.refererInfo.page || '';
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
+
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',
@@ -108,13 +118,13 @@ export const spec = {
         }
 
         bidResponse.meta = {};
-        if (response.meta && response.meta.advertiserDomains && utils.isArray(response.meta.advertiserDomains)) {
+        if (response.meta && response.meta.advertiserDomains && isArray(response.meta.advertiserDomains)) {
           bidResponse.meta.advertiserDomains = response.meta.advertiserDomains;
         }
         bidResponses.push(bidResponse);
       }
     } catch (error) {
-      utils.logError('Error while parsing smilewanted response', error);
+      logError('Error while parsing smilewanted response', error);
     }
     return bidResponses;
   },
@@ -170,7 +180,7 @@ function newRenderer(bidRequest, bidResponse) {
   try {
     renderer.setRender(outstreamRender);
   } catch (err) {
-    utils.logWarn('Prebid Error calling setRender on newRenderer', err);
+    logWarn('Prebid Error calling setRender on newRenderer', err);
   }
   return renderer;
 }
@@ -197,13 +207,13 @@ function outstreamRender(bid) {
  * @returns {*|number} floor price
  */
 function getBidFloor(bid) {
-  if (utils.isFn(bid.getFloor)) {
+  if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
       mediaType: 'banner',
       size: bid.sizes.map(size => ({ w: size[0], h: size[1] }))
     });
-    if (utils.isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
+    if (isPlainObject(floorInfo) && !isNaN(floorInfo.floor) && floorInfo.currency === 'USD') {
       return parseFloat(floorInfo.floor);
     }
   }

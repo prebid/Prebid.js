@@ -1,25 +1,70 @@
 /**
  * This module adds Sirdata provider to the real time data module
+ * and now supports Seller Defined Audience
  * The {@link module:modules/realTimeData} module is required
  * The module will fetch segments (user-centric) and categories (page-centric) from Sirdata server
  * The module will automatically handle user's privacy and choice in California (IAB TL CCPA Framework) and in Europe (IAB EU TCF FOR GDPR)
  * @module modules/sirdataRtdProvider
  * @requires module:modules/realTimeData
  */
-import {getGlobal} from '../src/prebidGlobal.js';
-import * as utils from '../src/utils.js';
+import {deepAccess, deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
-import findIndex from 'core-js-pure/features/array/find-index.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { config } from '../src/config.js';
+import {findIndex} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {config} from '../src/config.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'SirdataRTDModule';
+const ORTB2_NAME = 'sirdata.com';
+
+const partnerIds = {
+  'criteo': 27443,
+  'openx': 30342,
+  'pubmatic': 30345,
+  'smaato': 27520,
+  'triplelift': 27518,
+  'yahoossp': 30339,
+  'rubicon': 27452,
+  'appnexus': 27446,
+  'appnexusAst': 27446,
+  'brealtime': 27446,
+  'emxdigital': 27446,
+  'pagescience': 27446,
+  'gourmetads': 33394,
+  'matomy': 27446,
+  'featureforward': 27446,
+  'oftmedia': 27446,
+  'districtm': 27446,
+  'adasta': 27446,
+  'beintoo': 27446,
+  'gravity': 27446,
+  'msq_classic': 27878,
+  'msq_max': 27878,
+  '366_apx': 27878,
+  'mediasquare': 27878,
+  'smartadserver': 27440,
+  'smart': 27440,
+  'proxistore': 27484,
+  'ix': 27248,
+  'sdRtdForGpt': 27449,
+  'smilewanted': 28690,
+  'taboola': 33379,
+  'ttd': 33382,
+  'zeta_global': 33385,
+  'teads': 33388,
+  'conversant': 33391,
+  'improvedigital': 33397,
+  'invibes': 33400,
+  'sublime': 33403,
+  'rtbhouse': 33406,
+  'zeta_global_ssp': 33385,
+};
+
+let CONTEXT_ONLY = true;
 
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
-  const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
   moduleConfig.params = moduleConfig.params || {};
 
   var tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
@@ -37,161 +82,257 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     sendWithCredentials = false;
     gdprApplies = null;
     tcString = '';
-  } else if (getGlobal().getConfig('consentManagement.gdpr')) {
-  // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
+  } else if (config.getConfig('consentManagement.gdpr')) {
+    // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
   }
 
   // default global endpoint is cookie-based if no rules falls into cookieless or consent has been given or GDPR doesn't apply
-  if (!sirdataDomain || !gdprApplies || (utils.deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
+
+  if (!sirdataDomain || !gdprApplies || (deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
     sirdataDomain = 'sddan.com';
     sendWithCredentials = true;
+    CONTEXT_ONLY = false;
   }
 
-  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().referer;
+  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().stack.pop() || getRefererInfo().page;
 
-  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + actualUrl : '');
-  ajax(url, {
-    success: function (response, req) {
-      if (req.status === 200) {
-        try {
-          const data = JSON.parse(response);
-          if (data && data.segments) {
-            addSegmentData(adUnits, data, moduleConfig, onDone);
-          } else {
+  const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
+
+  ajax(url,
+    {
+      success: function (response, req) {
+        if (req.status === 200) {
+          try {
+            const data = JSON.parse(response);
+            if (data && data.segments) {
+              addSegmentData(reqBidsConfigObj, data, moduleConfig, onDone);
+            } else {
+              onDone();
+            }
+          } catch (e) {
             onDone();
+            logError('unable to parse Sirdata data' + e);
           }
-        } catch (e) {
+        } else if (req.status === 204) {
           onDone();
-          utils.logError('unable to parse Sirdata data' + e);
         }
-      } else if (req.status === 204) {
+      },
+      error: function () {
         onDone();
+        logError('unable to get Sirdata data');
       }
     },
-    error: function () {
-      onDone();
-      utils.logError('unable to get Sirdata data');
-    }
-  },
-  null,
-  {
-    contentType: 'text/plain',
-    method: 'GET',
-    withCredentials: sendWithCredentials,
-    referrerPolicy: 'unsafe-url',
-    crossOrigin: true
-  });
+    null,
+    {
+      contentType: 'text/plain',
+      method: 'GET',
+      withCredentials: sendWithCredentials,
+      referrerPolicy: 'unsafe-url',
+      crossOrigin: true
+    });
 }
 
-export function setGlobalOrtb2(segments, categories) {
+export function setGlobalOrtb2Sda(ortb2Fragments, data, segtaxid, cattaxid) {
   try {
-    let addOrtb2 = {};
-    let testGlobal = getGlobal().getConfig('ortb2') || {};
-    if (!utils.deepAccess(testGlobal, 'user.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.user.ext.data.sd_rtd, segments)) {
-      utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
+    if (!isEmpty(data.segments)) {
+      applyGlobalOrtb2Sda(ortb2Fragments, 'user', data.segments, segtaxid);
     }
-    if (!utils.deepAccess(testGlobal, 'site.ext.data.sd_rtd') || !utils.deepEqual(testGlobal.site.ext.data.sd_rtd, categories)) {
-      utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
-    }
-    if (!utils.isEmpty(addOrtb2)) {
-      let ortb2 = {ortb2: utils.mergeDeep({}, testGlobal, addOrtb2)};
-      getGlobal().setConfig(ortb2);
+    if (!isEmpty(data.categories)) {
+      applyGlobalOrtb2Sda(ortb2Fragments, 'site', data.categories, cattaxid);
     }
   } catch (e) {
-    utils.logError(e)
+    logError(e)
+  }
+  return true;
+}
+
+export function applyGlobalOrtb2Sda(ortb2Fragments, type, segments, segtaxValue) {
+  try {
+    let ortb2Data = [{
+      name: ORTB2_NAME,
+      segment: segments.map((segmentId) => ({ id: segmentId })),
+    }];
+    if (segtaxValue) {
+      ortb2Data[0].ext = { segtax: segtaxValue };
+    }
+    let ortb2Conf = (type == 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
+    mergeDeep(ortb2Fragments, ortb2Conf);
+  } catch (e) {
+    logError(e)
+  }
+  return true;
+}
+
+export function setBidderOrtb2Sda(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
+  try {
+    if (!isEmpty(data.segments)) {
+      applyBidderOrtb2Sda(ortb2Fragments, bidder, 'user', data.segments, segtaxid);
+    }
+    if (!isEmpty(data.categories)) {
+      applyBidderOrtb2Sda(ortb2Fragments, bidder, 'site', data.categories, cattaxid);
+    }
+  } catch (e) {
+    logError(e)
+  }
+  return true;
+}
+
+export function applyBidderOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue) {
+  try {
+    let ortb2Data = [{
+      name: ORTB2_NAME,
+      segment: segments.map((segmentId) => ({ id: segmentId })),
+    }];
+    if (segtaxValue) {
+      ortb2Data[0].ext = { segtax: segtaxValue };
+    }
+    let ortb2Conf = (type == 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
+    mergeDeep(ortb2Fragments, {[bidder]: ortb2Conf});
+  } catch (e) {
+    logError(e)
+  }
+  return true;
+}
+
+export function setBidderOrtb2(bidderOrtb2Fragments, bidder, path, segments) {
+  try {
+    if (isEmpty(segments)) { return; }
+    let ortb2Conf = {};
+    deepSetValue(ortb2Conf, path, segments || {});
+    mergeDeep(bidderOrtb2Fragments, {[bidder]: ortb2Conf});
+  } catch (e) {
+    logError(e)
   }
 
   return true;
 }
 
-export function setBidderOrtb2(bidder, segments, categories) {
-  try {
-    let addOrtb2 = {};
-    let testBidder = utils.deepAccess(config.getBidderConfig(), bidder + '.ortb2') || {};
-    if (!utils.deepAccess(testBidder, 'user.ext.data.sd_rtd') || !utils.deepEqual(testBidder.user.ext.data.sd_rtd, segments)) {
-      utils.deepSetValue(addOrtb2, 'user.ext.data.sd_rtd', segments || {});
-    }
-    if (!utils.deepAccess(testBidder, 'site.ext.data.sd_rtd') || !utils.deepEqual(testBidder.site.ext.data.sd_rtd, categories)) {
-      utils.deepSetValue(addOrtb2, 'site.ext.data.sd_rtd', categories || {});
-    }
-    if (!utils.isEmpty(addOrtb2)) {
-      let ortb2 = {ortb2: utils.mergeDeep({}, testBidder, addOrtb2)};
-      getGlobal().setBidderConfig({ bidders: [bidder], config: ortb2 });
-    }
-  } catch (e) {
-    utils.logError(e)
-  }
-
-  return true;
-}
-
-export function loadCustomFunction (todo, adUnit, list, data, bid) {
+export function loadCustomFunction(todo, adUnit, list, data, bid) {
   try {
     if (typeof todo == 'function') {
       todo(adUnit, list, data, bid);
     }
-  } catch (e) { utils.logError(e); }
+  } catch (e) {
+    logError(e);
+  }
   return true;
 }
 
-export function getSegAndCatsArray(data, minScore) {
-  var sirdataData = {'segments': [], 'categories': []};
+export function getSegAndCatsArray(data, minScore, pid) {
+  let sirdataData = {'segments': [], 'categories': []};
   minScore = minScore && typeof minScore == 'number' ? minScore : 30;
   try {
     if (data && data.contextual_categories) {
       for (let catId in data.contextual_categories) {
-        let value = data.contextual_categories[catId];
-        if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
-          sirdataData.categories.push(catId.toString());
+        if (data.contextual_categories.hasOwnProperty(catId) && data.contextual_categories[catId]) {
+          let value = data.contextual_categories[catId];
+          if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
+            sirdataData.categories.push((pid ? pid.toString() + 'cc' : '') + catId.toString());
+          }
         }
       }
     }
-  } catch (e) { utils.logError(e); }
+  } catch (e) {
+    logError(e);
+  }
   try {
     if (data && data.segments) {
       for (let segId in data.segments) {
-        sirdataData.segments.push(data.segments[segId].toString());
+        if (data.segments.hasOwnProperty(segId) && data.segments[segId]) {
+          sirdataData.segments.push((pid ? pid.toString() + 'us' : '') + data.segments[segId].toString());
+          if (pid && CONTEXT_ONLY) {
+            sirdataData.categories.push(pid.toString() + 'uc' + data.segments[segId].toString());
+          }
+        }
       }
     }
-  } catch (e) { utils.logError(e); }
+  } catch (e) {
+    logError(e);
+  }
   return sirdataData;
 }
 
-export function addSegmentData(adUnits, data, moduleConfig, onDone) {
+export function applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
+  // only share SDA data if whitelisted
+  if (!biddersParamsExist || indexFound) {
+    // SDA Publisher
+    let sirdataDataForSDA = getSegAndCatsArray(data, minScore, moduleConfig.params.partnerId);
+    setBidderOrtb2Sda(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
+  }
+
+  // always share SDA for curation
+  let curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : (partnerIds[bid.bidder] ? partnerIds[bid.bidder] : null));
+  if (curationId) {
+    // seller defined audience & bidder specific data
+    if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
+      // Get Bidder Specific Data
+      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, null);
+      sirdataList = sirdataList.concat(curationData.segments).concat(curationData.categories);
+
+      // SDA Partners
+      let curationDataForSDA = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, curationId);
+      setBidderOrtb2Sda(reqBids.ortb2Fragments?.bidder, bid.bidder, curationDataForSDA, data.shared_taxonomy[curationId].segtaxid, data.shared_taxonomy[curationId].cattaxid);
+    }
+  }
+
+  // Apply custom function or return Bidder Specific Data if publisher is ok
+  if (sirdataList && sirdataList.length > 0 && (!biddersParamsExist || indexFound)) {
+    if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
+      return loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList, data, bid);
+    } else {
+      return sirdataList;
+    }
+  }
+}
+
+export function applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
+  let specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+  if (specificData && specificData.length > 0) {
+    setBidderOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {sd_rtd: specificData});
+  }
+}
+
+export function addSegmentData(reqBids, data, moduleConfig, onDone) {
+  const adUnits = reqBids.adUnits;
   moduleConfig = moduleConfig || {};
   moduleConfig.params = moduleConfig.params || {};
   const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
-  var sirdataData = getSegAndCatsArray(data, globalMinScore);
-
-  if (!sirdataData || (sirdataData.segments.length < 1 && sirdataData.categories.length < 1)) { utils.logError('no cats'); onDone(); return adUnits; }
+  var sirdataData = getSegAndCatsArray(data, globalMinScore, null);
 
   const sirdataList = sirdataData.segments.concat(sirdataData.categories);
 
-  var curationData = {'segments': [], 'categories': []};
-  var curationId = '1';
   const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
 
-  // Global ortb2
-  if (!biddersParamsExist) {
-    setGlobalOrtb2(sirdataData.segments, sirdataData.categories);
+  // Global ortb2 SDA
+  if (data.global_taxonomy && !isEmpty(data.global_taxonomy)) {
+    let globalData = {'segments': [], 'categories': []};
+    for (let i in data.global_taxonomy) {
+      if (!isEmpty(data.global_taxonomy[i])) {
+        globalData = getSegAndCatsArray(data.global_taxonomy[i], globalMinScore, null);
+        setGlobalOrtb2Sda(reqBids.ortb2Fragments?.global, globalData, data.global_taxonomy[i].segtaxid, data.global_taxonomy[i].cattaxid);
+      }
+    }
   }
 
   // Google targeting
   if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
     try {
-      // For curation Google is pid 27449
-      curationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : '27449');
-      if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-        curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], globalMinScore);
+      let gptCurationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : (partnerIds['sdRtdForGpt'] ? partnerIds['sdRtdForGpt'] : null));
+      let sirdataMergedList = sirdataList;
+      if (gptCurationId && data.shared_taxonomy && data.shared_taxonomy[gptCurationId]) {
+        let gamCurationData = getSegAndCatsArray(data.shared_taxonomy[gptCurationId], globalMinScore, null);
+        sirdataMergedList = sirdataMergedList.concat(gamCurationData.segments).concat(gamCurationData.categories);
       }
-      window.googletag.pubads().getSlots().forEach(function(n) {
-        if (typeof n.setTargeting !== 'undefined') {
-          n.setTargeting('sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
+      window.googletag.pubads().getSlots().forEach(function (n) {
+        if (typeof n.setTargeting !== 'undefined' && sirdataMergedList && sirdataMergedList.length > 0) {
+          n.setTargeting('sd_rtd', sirdataMergedList);
         }
-      })
-    } catch (e) { utils.logError(e); }
+      });
+    } catch (e) {
+      logError(e);
+    }
   }
 
   // Bid targeting level for FPD non-generic biders
@@ -199,189 +340,122 @@ export function addSegmentData(adUnits, data, moduleConfig, onDone) {
   var indexFound = false;
 
   adUnits.forEach(adUnit => {
-    if (!biddersParamsExist && !utils.deepAccess(adUnit, 'ortb2Imp.ext.data.sd_rtd')) {
-      utils.deepSetValue(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataList);
+    if (!biddersParamsExist && !deepAccess(adUnit, 'ortb2Imp.ext.data.sd_rtd')) {
+      deepSetValue(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataList);
     }
 
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
-      bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function(i) { return i.bidder === bid.bidder; }) : false);
+      bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function (i) {
+        return i.bidder === bid.bidder;
+      }) : false);
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
-        curationData = {'segments': [], 'categories': []};
-        let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore)
+        let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore);
+        let specificData = null;
 
-        if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
-          switch (bid.bidder) {
-            case 'appnexus':
-            case 'appnexusAst':
-            case 'brealtime':
-            case 'emxdigital':
-            case 'pagescience':
-            case 'gourmetads':
-            case 'matomy':
-            case 'featureforward':
-            case 'oftmedia':
-            case 'districtm':
-            case 'adasta':
-            case 'beintoo':
-            case 'gravity':
-            case 'msq_classic':
-            case 'msq_max':
-            case '366_apx':
-              // For curation Xandr is pid 27446
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27446');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                utils.deepSetValue(bid, 'params.keywords.sd_rtd', sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
+        switch (bid.bidder) {
+          case 'appnexus':
+          case 'appnexusAst':
+          case 'brealtime':
+          case 'emxdigital':
+          case 'pagescience':
+          case 'gourmetads':
+          case 'matomy':
+          case 'featureforward':
+          case 'oftmedia':
+          case 'districtm':
+          case 'adasta':
+          case 'beintoo':
+          case 'gravity':
+          case 'msq_classic':
+          case 'msq_max':
+          case '366_apx':
+            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            if (specificData && specificData.length > 0) {
+              deepSetValue(bid, 'params.keywords.sd_rtd', specificData);
+            }
+            break;
 
-            case 'smartadserver':
-            case 'smart':
+          case 'smartadserver':
+          case 'smart':
+            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            if (specificData && specificData.length > 0) {
               var target = [];
               if (bid.hasOwnProperty('params') && bid.params.hasOwnProperty('target')) {
                 target.push(bid.params.target);
               }
-              // For curation Smart is pid 27440
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27440');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                  if (target.indexOf('sd_rtd=' + entry) === -1) {
-                    target.push('sd_rtd=' + entry);
-                  }
-                });
-                utils.deepSetValue(bid, 'params.target', target.join(';'));
-              }
-              break;
-
-            case 'rubicon':
-              // For curation Magnite is pid 27518
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27452');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
-
-            case 'ix':
-              var ixConfig = getGlobal().getConfig('ix.firstPartyData.sd_rtd');
-              if (!ixConfig) {
-                // For curation index is pid 27248
-                curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27248');
-                if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                  curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
+              specificData.forEach(function (entry) {
+                if (target.indexOf('sd_rtd=' + entry) === -1) {
+                  target.push('sd_rtd=' + entry);
                 }
-                if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                  loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-                } else {
-                  var cappIxCategories = [];
-                  var ixLength = 0;
-                  var ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
-                  // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
-                  sirdataList.concat(curationData.segments).concat(curationData.categories).forEach(function(entry) {
-                    if (ixLength < ixLimit) {
-                      cappIxCategories.push(entry);
-                      ixLength += entry.toString().length;
-                    }
-                  });
-                  getGlobal().setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+              });
+              deepSetValue(bid, 'params.target', target.join(';'));
+            }
+            break;
+
+          case 'ix':
+            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            let ixConfig = config.getConfig('ix.firstPartyData.sd_rtd');
+            if (!ixConfig && specificData && specificData.length > 0) {
+              let cappIxCategories = [];
+              let ixLength = 0;
+              let ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
+              // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
+              specificData.forEach(function (entry) {
+                if (ixLength < ixLimit) {
+                  cappIxCategories.push(entry);
+                  ixLength += entry.toString().length;
                 }
-              }
-              break;
+              });
+              config.setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
+            }
+            break;
 
-            case 'proxistore':
-              // For curation Proxistore is pid 27484
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27484');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              } else {
-                data.shared_taxonomy[curationId] = {contextual_categories: {}};
+          case 'proxistore':
+            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            if (specificData && specificData.length > 0) {
+              let psCurationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : (partnerIds[bid.bidder] ? partnerIds[bid.bidder] : null));
+              if (!data.shared_taxonomy || !data.shared_taxonomy[psCurationId]) {
+                data.shared_taxonomy[psCurationId] = {segments: [], contextual_categories: {}, segtaxid: null, cattaxid: null};
               }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                utils.deepSetValue(bid, 'ortb2.user.ext.data', {segments: sirdataData.segments.concat(curationData.segments), contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[curationId].contextual_categories}});
-              }
-              break;
+              let psCurationData = getSegAndCatsArray(data.shared_taxonomy[psCurationId], minScore, null);
+              setBidderOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {
+                segments: sirdataData.segments.concat(psCurationData.segments),
+                contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[psCurationId].contextual_categories}
+              });
+            }
+            break;
 
-            case 'criteo':
-              // For curation Smart is pid 27443
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27443');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, sirdataList.concat(curationData.segments).concat(curationData.categories), sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
+          case 'rubicon':
+          case 'criteo':
+          case 'triplelift':
+          case 'smaato':
+          case 'yahoossp':
+          case 'openx':
+          case 'pubmatic':
+          case 'smilewanted':
+          case 'taboola':
+          case 'ttd':
+          case 'zeta_global':
+          case 'zeta_global_ssp':
+          case 'teads':
+          case 'conversant':
+          case 'improvedigital':
+          case 'invibes':
+          case 'sublime':
+          case 'rtbhouse':
+          case 'mediasquare':
+            applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            break;
 
-            case 'triplelift':
-              // For curation Triplelift is pid 27518
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27518');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
-
-            case 'avct':
-            case 'avocet':
-              // For curation Avocet is pid 27522
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27522');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
-
-            case 'smaato':
-              // For curation Smaato is pid 27520
-              curationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : '27520');
-              if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
-                curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore);
-              }
-              if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-                loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList.concat(curationData.segments).concat(curationData.categories), data, bid);
-              } else {
-                setBidderOrtb2(bid.bidder, data.segments.concat(curationData.segments), sirdataList.concat(curationData.segments).concat(curationData.categories));
-              }
-              break;
-
-            default:
-              if (!biddersParamsExist || indexFound) {
-                if (!utils.deepAccess(bid, 'ortb2.site.ext.data.sd_rtd')) {
-                  utils.deepSetValue(bid, 'ortb2.site.ext.data.sd_rtd', sirdataData.categories);
-                }
-                if (!utils.deepAccess(bid, 'ortb2.user.ext.data.sd_rtd')) {
-                  utils.deepSetValue(bid, 'ortb2.user.ext.data.sd_rtd', sirdataData.segments);
-                }
-              }
-          }
+          default:
+            if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
+              applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            }
         }
-      } catch (e) { utils.logError(e) }
+      } catch (e) {
+        logError(e);
+      }
     })
   });
 

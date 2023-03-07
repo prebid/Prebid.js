@@ -1,6 +1,7 @@
-import * as utils from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -72,10 +73,43 @@ function getPricing(xmlNode) {
       price: priceNode.textContent || priceNode.innerText
     };
   } else {
-    utils.logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
   }
 
   return princingData;
+}
+
+/*
+* Read the StickyBrand extension with this format:
+* <Extension type='StickyBrand'>
+*   <Domain><![CDATA[minotaur.com]]></Domain>
+*   <Sector><![CDATA[BEAUTY & HYGIENE]]></Sector>
+*   <Advertiser><![CDATA[James Bond Trademarks]]></Advertiser>
+*   <Brand><![CDATA[007 Seven]]></Brand>
+* </Extension>
+* @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
+*/
+function getAdvertiserDomain(xmlNode) {
+  var domain = [];
+  var brandExtNode;
+  var extensions = xmlNode.querySelectorAll('Extension');
+  // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+  Array.prototype.forEach.call(extensions, function(node) {
+    if (node.getAttribute('type') === 'StickyBrand') {
+      brandExtNode = node;
+    }
+  });
+
+  // Currently we only return one Domain
+  if (brandExtNode) {
+    var domainNode = brandExtNode.querySelector('Domain');
+    domain.push(domainNode.textContent || domainNode.innerText);
+  } else {
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
+  }
+
+  return domain;
 }
 
 function hashcode(inputString) {
@@ -180,6 +214,27 @@ function getAPIName(componentId) {
   return componentId.replace('-', '');
 }
 
+function getBidFloor(bid, config) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: getFloorCurrency(config),
+      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (e) {
+    return -1;
+  }
+}
+
+function getFloorCurrency(config) {
+  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+}
+
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
@@ -189,7 +244,7 @@ function formatAdHTML(bid, size) {
   var libUrl = '';
   if (integrationType && integrationType !== 'inbanner') {
     libUrl = PRIMETIME_URL + getComponentId(bid.params.format) + '.min.js';
-    script = getOutstreamScript(bid, size);
+    script = getOutstreamScript(bid);
   } else {
     libUrl = MUSTANG_URL;
     script = getInBannerScript(bid, size);
@@ -260,7 +315,7 @@ var getOutstreamScript = function(bid) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv'], //  former name for freewheel-ssp
+  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -284,13 +339,17 @@ export const spec = {
       var zone = currentBidRequest.params.zoneId;
       var timeInMillis = new Date().getTime();
       var keyCode = hashcode(zone + '' + timeInMillis);
+      var bidfloor = getBidFloor(currentBidRequest, config);
+
       var requestParams = {
         reqType: 'AdsSetup',
-        protocolVersion: '2.0',
+        protocolVersion: '4.2',
         zoneId: zone,
         componentId: 'prebid',
         componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
+        _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
+        _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
         pKey: keyCode
       };
 
@@ -312,6 +371,16 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add schain object
+      var schain = currentBidRequest.schain;
+      if (schain) {
+        try {
+          requestParams.schain = JSON.stringify(schain);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
+        }
+      }
+
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {
@@ -321,7 +390,7 @@ export const spec = {
         }
       }
 
-      var location = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : getTopMostWindow().location.href;
+      var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
       }
@@ -329,7 +398,7 @@ export const spec = {
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-        if (utils.isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
+        if (isArray(currentBidRequest.mediaTypes.video.playerSize[0])) {
           playerSize = currentBidRequest.mediaTypes.video.playerSize[0];
         } else {
           playerSize = currentBidRequest.mediaTypes.video.playerSize;
@@ -371,7 +440,7 @@ export const spec = {
     var playerSize = [];
     if (bidrequest.mediaTypes.video && bidrequest.mediaTypes.video.playerSize) {
       // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
-      if (utils.isArray(bidrequest.mediaTypes.video.playerSize[0])) {
+      if (isArray(bidrequest.mediaTypes.video.playerSize[0])) {
         playerSize = bidrequest.mediaTypes.video.playerSize[0];
       } else {
         playerSize = bidrequest.mediaTypes.video.playerSize;
@@ -393,7 +462,7 @@ export const spec = {
       var parser = new DOMParser();
       xmlDoc = parser.parseFromString(serverResponse, 'application/xml');
     } catch (err) {
-      utils.logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
+      logWarn('Prebid.js - ' + BIDDER_CODE + ' : ' + err);
       return;
     }
 
@@ -403,6 +472,8 @@ export const spec = {
     const campaignId = getCampaignId(xmlDoc);
     const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
+    const advertiserDomains = getAdvertiserDomain(xmlDoc);
+
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
     }
@@ -420,7 +491,7 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        meta: { advertiserDomains: princingData.adomain && utils.isArray(princingData.adomain) ? princingData.adomain : [] },
+        meta: { advertiserDomains: advertiserDomains },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId
@@ -448,14 +519,20 @@ export const spec = {
       }
     }
 
+    const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
-      return [{
+      syncs.push({
         type: 'image',
         url: USER_SYNC_URL + gdprParams
-      }];
-    } else {
-      return [];
+      });
+    } else if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: USER_SYNC_URL + gdprParams
+      });
     }
+
+    return syncs;
   },
 };
 

@@ -1,8 +1,20 @@
-import { resetData, getCoreStorageManager, storageCallbacks, getStorageManager } from 'src/storageManager.js';
+import {
+  resetData,
+  getCoreStorageManager,
+  storageCallbacks,
+  getStorageManager,
+  newStorageManager, validateStorageEnforcement
+} from 'src/storageManager.js';
 import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
+import {hook} from '../../../../src/hook.js';
+import {VENDORLESS_GVLID} from '../../../../src/consentHandler.js';
 
 describe('storage manager', function() {
+  before(() => {
+    hook.ready();
+  });
+
   beforeEach(function() {
     resetData();
   });
@@ -43,6 +55,33 @@ describe('storage manager', function() {
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
   });
+
+  describe(`core storage`, () => {
+    let storage, validateHook;
+
+    beforeEach(() => {
+      storage = getCoreStorageManager();
+      validateHook = sinon.stub().callsFake(function (next, ...args) {
+        next.apply(this, args);
+      });
+      validateStorageEnforcement.before(validateHook, 99);
+    });
+
+    afterEach(() => {
+      validateStorageEnforcement.getHooks({hook: validateHook}).remove();
+      config.resetConfig();
+    })
+
+    it('should respect (vendorless) consent enforcement', () => {
+      storage.localStorageIsEnabled();
+      expect(validateHook.args[0][1]).to.equal(VENDORLESS_GVLID); // gvlid should be set to VENDORLESS_GVLID
+    });
+
+    it('should respect the deviceAccess flag', () => {
+      config.setConfig({deviceAccess: false});
+      expect(storage.localStorageIsEnabled()).to.be.false
+    })
+  })
 
   describe('localstorage forbidden access in 3rd-party context', function() {
     let errorLogSpy;
@@ -95,4 +134,62 @@ describe('storage manager', function() {
       expect(localStorage.getItem('unrelated')).to.be.eq('dummy');
     });
   });
+
+  describe('when bidderSettings.allowStorage is defined', () => {
+    const ALLOWED_BIDDER = 'allowed-bidder';
+    const ALLOW_KEY = 'storageAllowed';
+
+    const COOKIE = 'test-cookie';
+    const LS_KEY = 'test-localstorage';
+
+    function mockBidderSettings() {
+      return {
+        get(bidder, key) {
+          if (bidder === ALLOWED_BIDDER && key === ALLOW_KEY) {
+            return true;
+          } else {
+            return undefined;
+          }
+        }
+      }
+    }
+
+    Object.entries({
+      disallowed: ['denied_bidder', false],
+      allowed: [ALLOWED_BIDDER, true]
+    }).forEach(([test, [bidderCode, shouldWork]]) => {
+      describe(`for ${test} bidders`, () => {
+        let mgr;
+
+        beforeEach(() => {
+          mgr = newStorageManager({bidderCode: bidderCode}, {bidderSettings: mockBidderSettings()});
+        })
+
+        afterEach(() => {
+          mgr.setCookie(COOKIE, 'delete', new Date().toUTCString());
+          mgr.removeDataFromLocalStorage(LS_KEY);
+        })
+
+        const testDesc = (desc) => `should ${shouldWork ? '' : 'not'} ${desc}`;
+
+        it(testDesc('allow cookies'), () => {
+          mgr.setCookie(COOKIE, 'value');
+          expect(mgr.getCookie(COOKIE)).to.equal(shouldWork ? 'value' : null);
+        });
+
+        it(testDesc('allow localStorage'), () => {
+          mgr.setDataInLocalStorage(LS_KEY, 'value');
+          expect(mgr.getDataFromLocalStorage(LS_KEY)).to.equal(shouldWork ? 'value' : null);
+        });
+
+        it(testDesc('report localStorage as available'), () => {
+          expect(mgr.hasLocalStorage()).to.equal(shouldWork);
+        });
+
+        it(testDesc('report cookies as available'), () => {
+          expect(mgr.cookiesAreEnabled()).to.equal(shouldWork);
+        });
+      });
+    });
+  })
 });

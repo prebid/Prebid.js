@@ -34,19 +34,21 @@ When tracking video you have two options:
 
 To view an [example of an Adloox integration](../integrationExamples/gpt/adloox.html):
 
-    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
+    gulp serve --nolint --notest --modules=gptPreAuction,categoryTranslation,dfpAdServerVideo,intersectionRtdProvider,rtdModule,instreamTracking,rubiconBidAdapter,spotxBidAdapter,adlooxAnalyticsAdapter,adlooxAdServerVideo,adlooxRtdProvider
 
 **N.B.** `categoryTranslation` is required by `dfpAdServerVideo` that otherwise causes a JavaScript console warning
+
+**N.B.** `intersectionRtdProvider` is used by `adlooxRtdProvider` to provide (above-the-fold) ATF measurement, if not enabled the `atf` segment will not be available
 
 Now point your browser at: http://localhost:9999/integrationExamples/gpt/adloox.html?pbjs_debug=true
 
 ### Public Example
 
-The example is published publically at: https://storage.googleapis.com/adloox-ads-js-test/prebid.html?pbjs_debug=true
+The example is published publicly at: https://storage.googleapis.com/adloox-ads-js-test/prebid.html?pbjs_debug=true
 
 **N.B.** this will show a [CORS error](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors) for the request `https://p.adlooxtracking.com/q?...` that is safe to ignore on the public example page; it is related to the [RTD integration](./adlooxRtdProvider.md) which requires pre-registration of your sites
 
-It is recommended you use [Google Chrome's 'Local Overrides' located in the Developer Tools panel](https://www.trysmudford.com/blog/chrome-local-overrides/) to explore the example without the inconvience of having to run your own web server.
+It is recommended you use [Google Chrome's 'Local Overrides' located in the Developer Tools panel](https://www.trysmudford.com/blog/chrome-local-overrides/) to explore the example without the inconvenience of having to run your own web server.
 
 #### Pre-built `prebid.js`
 
@@ -106,7 +108,7 @@ For example, you have a number of reporting breakdown slots available in the for
         tagid: 0,
         params: {
           id1: function(b) { return b.adUnitCode },  // do not change when using the Adloox RTD Provider
-          id2: '%%pbadslot%%',                       // do not change when using the Adloox RTD Provider
+          id2: '%%gpid%%',                           // do not change when using the Adloox RTD Provider
           id3: function(b) { return b.bidder },
           id4: function(b) { return b.adId },
           id5: function(b) { return b.dealId },
@@ -125,8 +127,9 @@ For example, you have a number of reporting breakdown slots available in the for
 
 The following macros are available
 
- * `%%pbadslot%%`: [Prebid Ad Slot](https://docs.prebid.org/features/pbAdSlot.html) returns [`AdUnit.code`](https://docs.prebid.org/features/pbAdSlot.html) if set otherwise returns [`AdUnit.code`](https://docs.prebid.org/dev-docs/adunit-reference.html#adunit)
+ * **`%%gpid%%` (alias `%%pbadslot%%`**): [Prebid Ad Slot](https://docs.prebid.org/features/pbAdSlot.html) returns [`AdUnit.code`](https://docs.prebid.org/features/pbAdSlot.html) if set otherwise returns [`AdUnit.code`](https://docs.prebid.org/dev-docs/adunit-reference.html#adunit)
      * it is recommended you read the [Prebid Ad Slot section in the Adloox RTD Provider documentation](./adlooxRtdProvider.md#prebid-ad-slot)
+ * **`%%pageurl%%`**: [`canonicalUrl`](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-Page-URL) from the [`refererInfo` object](https://docs.prebid.org/dev-docs/bidder-adaptor.html#referrers) otherwise uses `referer`
 
 ### Functions
 

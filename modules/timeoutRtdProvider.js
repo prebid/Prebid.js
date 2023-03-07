@@ -1,7 +1,7 @@
 
 import { submodule } from '../src/hook.js';
 import * as ajax from '../src/ajax.js';
-import * as utils from '../src/utils.js';
+import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'timeout';
@@ -70,14 +70,14 @@ function getConnectionSpeed() {
  * @return {int}
  */
 function calculateTimeoutModifier(adUnits, rules) {
-  utils.logInfo('Timeout rules', rules);
+  logInfo('Timeout rules', rules);
   let timeoutModifier = 0;
   let toAdd = 0;
 
   if (rules.includesVideo) {
     const hasVideo = timeoutRtdFunctions.checkVideo(adUnits);
     toAdd = rules.includesVideo[hasVideo] || 0;
-    utils.logInfo(`Adding ${toAdd} to timeout for includesVideo ${hasVideo}`)
+    logInfo(`Adding ${toAdd} to timeout for includesVideo ${hasVideo}`)
     timeoutModifier += toAdd;
   }
 
@@ -89,7 +89,7 @@ function calculateTimeoutModifier(adUnits, rules) {
       for (const [rangeStr, timeoutVal] of entries(rules.numAdUnits)) {
         const [lowerBound, upperBound] = rangeStr.split('-');
         if (parseInt(lowerBound) <= numAdUnits && numAdUnits <= parseInt(upperBound)) {
-          utils.logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`)
+          logInfo(`Adding ${timeoutVal} to timeout for numAdUnits ${numAdUnits}`)
           timeoutModifier += timeoutVal;
           break;
         }
@@ -100,18 +100,18 @@ function calculateTimeoutModifier(adUnits, rules) {
   if (rules.deviceType) {
     const deviceType = timeoutRtdFunctions.getDeviceType();
     toAdd = rules.deviceType[deviceType] || 0;
-    utils.logInfo(`Adding ${toAdd} to timeout for deviceType ${deviceType}`)
+    logInfo(`Adding ${toAdd} to timeout for deviceType ${deviceType}`)
     timeoutModifier += toAdd;
   }
 
   if (rules.connectionSpeed) {
     const connectionSpeed = timeoutRtdFunctions.getConnectionSpeed();
     toAdd = rules.connectionSpeed[connectionSpeed] || 0;
-    utils.logInfo(`Adding ${toAdd} to timeout for connectionSpeed ${connectionSpeed}`)
+    logInfo(`Adding ${toAdd} to timeout for connectionSpeed ${connectionSpeed}`)
     timeoutModifier += toAdd;
   }
 
-  utils.logInfo('timeout Modifier calculated', timeoutModifier);
+  logInfo('timeout Modifier calculated', timeoutModifier);
   return timeoutModifier;
 }
 
@@ -123,30 +123,30 @@ function calculateTimeoutModifier(adUnits, rules) {
  * @param {Object} userConsent
  */
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  utils.logInfo('Timeout rtd config', config);
-  const timeoutUrl = utils.deepAccess(config, 'params.endpoint.url');
+  logInfo('Timeout rtd config', config);
+  const timeoutUrl = deepAccess(config, 'params.endpoint.url');
   if (timeoutUrl) {
-    utils.logInfo('Timeout url', timeoutUrl);
+    logInfo('Timeout url', timeoutUrl);
     ajax.ajaxBuilder()(timeoutUrl, {
       success: function(response) {
         try {
           const rules = JSON.parse(response);
           timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, rules);
         } catch (e) {
-          utils.logError('Error parsing json response from timeout provider.')
+          logError('Error parsing json response from timeout provider.')
         }
         callback();
       },
       error: function(errorStatus) {
-        utils.logError('Timeout request error!', errorStatus);
+        logError('Timeout request error!', errorStatus);
         callback();
       }
     });
-  } else if (utils.deepAccess(config, 'params.rules')) {
-    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, utils.deepAccess(config, 'params.rules'));
+  } else if (deepAccess(config, 'params.rules')) {
+    timeoutRtdFunctions.handleTimeoutIncrement(reqBidsConfigObj, deepAccess(config, 'params.rules'));
     callback();
   } else {
-    utils.logInfo('No timeout endpoint or timeout rules found. Exiting timeout rtd module');
+    logInfo('No timeout endpoint or timeout rules found. Exiting timeout rtd module');
     callback();
   }
 }

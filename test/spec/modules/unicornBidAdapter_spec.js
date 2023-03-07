@@ -270,7 +270,7 @@ const bidderRequest = {
   auctionStart: 1581064124172,
   timeout: 1000,
   refererInfo: {
-    referer: 'https://uni-corn.net/',
+    ref: 'https://uni-corn.net/',
     reachedTop: true,
     numIframes: 0,
     stack: ['https://uni-corn.net/']
@@ -332,14 +332,14 @@ const openRTBRequest = {
       tagid: 'rectangle-ad-2'
     }
   ],
-  cur: 'JPY',
+  cur: ['JPY'],
   ext: {
     accountId: 12345
   },
   site: {
     id: 'example',
     publisher: {
-      id: 99999
+      id: '99999'
     },
     domain: 'uni-corn.net',
     page: 'https://uni-corn.net/',
@@ -357,7 +357,7 @@ const openRTBRequest = {
     ext: {
       stype: 'prebid_uncn',
       bidder: 'unicorn',
-      prebid_version: '1.0'
+      prebid_version: '1.1'
     }
   }
 };
@@ -444,7 +444,7 @@ const serverResponse = {
 const request = {
   method: 'POST',
   url: 'https://ds.uncn.jp/pb/0/bid.json',
-  data: '{"id":"5ebea288-f13a-4754-be6d-4ade66c68877","at":1,"imp":[{"id":"216255f234b602","banner":{"w":300,"h":250},"format":[{"w":300,"h":250},{"w":336,"h":280}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-0"},{"id":"31e2b28ced2475","banner":{"w":"300","h":"250"},"format":[{"w":"300","h":"250"}],"secure":1,"bidfloor":0"tagid":"/19968336/header-bid-tag-1"},{"id":"40a333e047a9bd","banner":{"w":300,"h":250},"format":[{"w":300,"h":250}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-2"}],"cur":"JPY","site":{"id":"uni-corn.net","publisher":{"id":12345},"domain":"uni-corn.net","page":"https://uni-corn.net/","ref":"https://uni-corn.net/"},"device":{"language":"ja","ua":"Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36"},"user":{"id":"69d9e1c2-801e-4901-a665-fad467550fec"},"bcat":[],"source":{"ext":{"stype":"prebid_uncn","bidder":"unicorn","prebid_version":"1.0"}}}'
+  data: '{"id":"5ebea288-f13a-4754-be6d-4ade66c68877","at":1,"imp":[{"id":"216255f234b602","banner":{"w":300,"h":250},"format":[{"w":300,"h":250},{"w":336,"h":280}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-0"},{"id":"31e2b28ced2475","banner":{"w":"300","h":"250"},"format":[{"w":"300","h":"250"}],"secure":1,"bidfloor":0"tagid":"/19968336/header-bid-tag-1"},{"id":"40a333e047a9bd","banner":{"w":300,"h":250},"format":[{"w":300,"h":250}],"secure":1,"bidfloor":0,"tagid":"/19968336/header-bid-tag-2"}],"cur":"JPY","site":{"id":"uni-corn.net","publisher":{"id":12345},"domain":"uni-corn.net","page":"https://uni-corn.net/","ref":"https://uni-corn.net/"},"device":{"language":"ja","ua":"Mozilla/5.0 (Linux; Android 8.0.0; ONEPLUS A5000) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36"},"user":{"id":"69d9e1c2-801e-4901-a665-fad467550fec"},"bcat":[],"source":{"ext":{"stype":"prebid_uncn","bidder":"unicorn","prebid_version":"1.1"}}}'
 };
 
 const interpretedBids = [
@@ -496,6 +496,16 @@ describe('unicornBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        unicorn: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
       const removeUntestableAttrs = data => {

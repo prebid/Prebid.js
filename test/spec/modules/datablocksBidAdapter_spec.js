@@ -96,8 +96,8 @@ const bidderRequest = {
   refererInfo: {
     numIframes: 0,
     reachedTop: true,
-    referer: 'https://v5demo.datablocks.net/test',
-    stack: ['https://v5demo.datablocks.net/test']
+    referer: 'https://7560.v5demo.datablocks.net/test',
+    stack: ['https://7560.v5demo.datablocks.net/test']
   },
   start: Date.now(),
   timeout: 10000
@@ -305,6 +305,15 @@ let bid_request = {
 }
 
 describe('DatablocksAdapter', function() {
+  before(() => {
+    // stub out queue metric to avoid it polluting the global xhr mock during other tests
+    sinon.stub(spec, 'queue_metric').callsFake(() => null);
+  });
+
+  after(() => {
+    spec.queue_metric.restore();
+  });
+
   describe('All needed functions are available', function() {
     it(`isBidRequestValid is present and type function`, function () {
       expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
@@ -377,14 +386,6 @@ describe('DatablocksAdapter', function() {
     });
   })
 
-  describe('queue / send metrics', function() {
-    it('Should return true', function() {
-      expect(spec.queue_metric({type: 'test'})).to.be.true;
-      expect(spec.queue_metric('string')).to.be.false;
-      expect(spec.send_metrics()).to.be.true;
-    });
-  })
-
   describe('get_viewability', function() {
     it('Should return undefined', function() {
       expect(spec.get_viewability()).to.equal(undefined);
@@ -452,7 +453,7 @@ describe('DatablocksAdapter', function() {
 
     it('Returns valid URL', function() {
       expect(request.url).to.exist;
-      expect(request.url).to.equal('https://7560.v5demo.datablocks.net/openrtb/?sid=7560');
+      expect(request.url).to.equal('https://v5demo.datablocks.net/openrtb/?sid=7560');
     });
 
     it('Creates an array of request objects', function() {

@@ -1,11 +1,23 @@
-import adapter from '../src/AnalyticsAdapter.js';
+import {
+  _map,
+  deepAccess,
+  getWindowTop,
+  groupBy,
+  isEmpty,
+  isPlainObject,
+  logError,
+  logInfo,
+  triggerPixel,
+  uniques,
+  getHighestCpm
+} from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity } from '../src/auction.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {ajax} from '../src/ajax.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {AUCTION_COMPLETED, AUCTION_IN_PROGRESS, getPriceGranularity} from '../src/auction.js';
+import {includes} from '../src/polyfill.js';
 
 const analyticsType = 'endpoint';
 const ENDPOINT = 'https://pb-logs.media.net/log?logid=kfk&evtid=prebid_analytics_events_client';
@@ -28,6 +40,7 @@ const MEDIANET_BIDDER_CODE = 'medianet';
 const PREBID_VERSION = $$PREBID_GLOBAL$$.version;
 const ERROR_CONFIG_JSON_PARSE = 'analytics_config_parse_fail';
 const ERROR_CONFIG_FETCH = 'analytics_config_ajax_fail';
+const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';
 const BID_SUCCESS = 1;
 const BID_NOBID = 2;
 const BID_TIMEOUT = 3;
@@ -39,7 +52,7 @@ const CONFIG_PASS = 1;
 const CONFIG_ERROR = 3;
 
 const VALID_URL_KEY = ['canonical_url', 'og_url', 'twitter_url'];
-const DEFAULT_URL_KEY = 'page';
+const DEFAULT_URL_KEY = 'topmostLocation';
 
 const LOG_TYPE = {
   APPR: 'APPR',
@@ -50,6 +63,7 @@ let auctions = {};
 let config;
 let pageDetails;
 let logsQueue = [];
+let errorQueue = [];
 
 class ErrorLogger {
   constructor(event, additionalData) {
@@ -66,7 +80,8 @@ class ErrorLogger {
 
   send() {
     let url = EVENT_PIXEL_URL + '?' + formatQS(this);
-    utils.triggerPixel(url);
+    errorQueue.push(url);
+    triggerPixel(url);
   }
 }
 
@@ -126,7 +141,7 @@ class Configure {
   }
 
   overrideDomainLevelData(response) {
-    const domain = utils.deepAccess(response, 'domain.' + pageDetails.domain);
+    const domain = deepAccess(response, 'domain.' + pageDetails.domain);
     if (domain) {
       this.setDataFromResponse(domain);
     }
@@ -148,15 +163,15 @@ class Configure {
 
   init() {
     // Forces Logging % to 100%
-    let urlObj = URL.parseUrl(pageDetails.page);
-    if (utils.deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
+    let urlObj = URL.parseUrl(pageDetails.topmostLocation);
+    if (deepAccess(urlObj, 'search.medianet_test') || urlObj.hostname === 'localhost') {
       this.loggingPercent = 100;
       this.ajaxState = CONFIG_PASS;
       this.debug = true;
       return;
     }
-    if (utils.deepAccess(urlObj, 'search.mnet_setconfig')) {
-      this.mnetDebugConfig = utils.deepAccess(urlObj, 'search.mnet_setconfig');
+    if (deepAccess(urlObj, 'search.mnet_setconfig')) {
+      this.mnetDebugConfig = deepAccess(urlObj, 'search.mnet_setconfig');
     }
     ajax(
       this._configURL(),
@@ -170,27 +185,20 @@ class Configure {
 
 class PageDetail {
   constructor () {
-    const canonicalUrl = this._getUrlFromSelector('link[rel="canonical"]', 'href');
     const ogUrl = this._getUrlFromSelector('meta[property="og:url"]', 'content');
     const twitterUrl = this._getUrlFromSelector('meta[name="twitter:url"]', 'content');
     const refererInfo = getRefererInfo();
 
-    this.domain = URL.parseUrl(refererInfo.referer).hostname;
-    this.page = refererInfo.referer;
+    // TODO: are these the right refererInfo values?
+    this.domain = refererInfo.domain;
+    this.page = refererInfo.page;
     this.is_top = refererInfo.reachedTop;
-    this.referrer = this._getTopWindowReferrer();
-    this.canonical_url = canonicalUrl;
+    this.referrer = refererInfo.ref || window.document.referrer;
+    this.canonical_url = refererInfo.canonicalUrl;
     this.og_url = ogUrl;
     this.twitter_url = twitterUrl;
+    this.topmostLocation = refererInfo.topmostLocation;
     this.screen = this._getWindowSize();
-  }
-
-  _getTopWindowReferrer() {
-    try {
-      return window.top.document.referrer;
-    } catch (e) {
-      return document.referrer;
-    }
   }
 
   _getWindowSize() {
@@ -201,7 +209,7 @@ class PageDetail {
 
   _getAttributeFromSelector(selector, attribute) {
     try {
-      let doc = utils.getWindowTop().document;
+      let doc = getWindowTop().document;
       let element = doc.querySelector(selector);
       if (element !== null && element[attribute]) {
         return element[attribute];
@@ -210,7 +218,7 @@ class PageDetail {
   }
 
   _getAbsoluteUrl(url) {
-    let aTag = utils.getWindowTop().document.createElement('a');
+    let aTag = getWindowTop().document.createElement('a');
     aTag.href = url;
 
     return aTag.href;
@@ -223,7 +231,7 @@ class PageDetail {
 
   getLoggingData() {
     return {
-      requrl: this[config.urlToConsume] || this.page,
+      requrl: this[config.urlToConsume] || this.topmostLocation,
       dn: this.domain,
       ref: this.referrer,
       screen: this.screen
@@ -358,8 +366,8 @@ class Auction {
       flrdata: this._mergeFieldsToLog({
         ln: this.floorData.location,
         skp: this.floorData.skipped,
-        enfj: utils.deepAccess(this.floorData, 'enforcements.enforceJS'),
-        enfd: utils.deepAccess(this.floorData, 'enforcements.floorDeals'),
+        enfj: deepAccess(this.floorData, 'enforcements.enforceJS'),
+        enfd: deepAccess(this.floorData, 'enforcements.floorDeals'),
         sr: this.floorData.skipRate,
         fs: this.floorData.fetchStatus
       }),
@@ -390,10 +398,6 @@ class Auction {
       .map((bid) => bid.getLoggingData());
   }
 
-  getWinnerAdslotBid(adslot) {
-    return this.getAdslotBids(adslot).filter((bid) => bid.winner);
-  }
-
   _mergeFieldsToLog(objParams) {
     let logParams = [];
     let value;
@@ -411,7 +415,7 @@ function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderReque
     auctions[auctionId].auctionInitTime = timestamp;
   }
   addAddSlots(auctionId, adUnits, timeout);
-  const floorData = utils.deepAccess(bidderRequests, '0.bids.0.floorData');
+  const floorData = deepAccess(bidderRequests, '0.bids.0.floorData');
   if (floorData) {
     auctions[auctionId].floorData = {...floorData};
   }
@@ -419,10 +423,10 @@ function auctionInitHandler({auctionId, adUnits, timeout, timestamp, bidderReque
 
 function addAddSlots(auctionId, adUnits, tmax) {
   adUnits = adUnits || [];
-  const groupedAdUnits = utils.groupBy(adUnits, 'code');
+  const groupedAdUnits = groupBy(adUnits, 'code');
   Object.keys(groupedAdUnits).forEach((adUnitCode) => {
     const adUnits = groupedAdUnits[adUnitCode];
-    const supplyAdCode = utils.deepAccess(adUnits, '0.adUnitCode') || adUnitCode;
+    const supplyAdCode = deepAccess(adUnits, '0.adUnitCode') || adUnitCode;
     let context = '';
     let adext = {};
 
@@ -430,17 +434,17 @@ function addAddSlots(auctionId, adUnits, tmax) {
     const oSizes = {banner: [], video: []};
     adUnits.forEach(({mediaTypes, sizes, ext}) => {
       mediaTypes = mediaTypes || {};
-      adext = Object.assign(adext, ext || utils.deepAccess(mediaTypes, 'banner.ext'));
-      context = utils.deepAccess(mediaTypes, 'video.context') || context;
+      adext = Object.assign(adext, ext || deepAccess(mediaTypes, 'banner.ext'));
+      context = deepAccess(mediaTypes, 'video.context') || context;
       Object.keys(mediaTypes).forEach((mediaType) => mediaTypeMap[mediaType] = 1);
       const sizeObject = _getSizes(mediaTypes, sizes);
       sizeObject.banner.forEach(size => oSizes.banner.push(size));
       sizeObject.video.forEach(size => oSizes.video.push(size));
     });
 
-    adext = utils.isEmpty(adext) ? undefined : adext;
-    oSizes.banner = oSizes.banner.filter(utils.uniques);
-    oSizes.video = oSizes.video.filter(utils.uniques);
+    adext = isEmpty(adext) ? undefined : adext;
+    oSizes.banner = oSizes.banner.filter(uniques);
+    oSizes.video = oSizes.video.filter(uniques);
     oSizes.native = mediaTypeMap.native === 1 ? [[1, 1].join('x')] : [];
     const allMediaTypeSizes = [].concat(oSizes.banner, oSizes.native, oSizes.video);
     const mediaTypes = Object.keys(mediaTypeMap).join('|');
@@ -468,17 +472,17 @@ function bidRequestedHandler({ auctionId, auctionStart, bids, start, uspConsent,
     const bidObj = new Bid(bidId, bidder, src, start, adUnitCode, mediaTypes && Object.keys(mediaTypes).join('|'), requestSizes);
     auctions[auctionId].addBid(bidObj);
     if (bidder === MEDIANET_BIDDER_CODE) {
-      bidObj.crid = utils.deepAccess(bid, 'params.crid');
-      bidObj.pubcrid = utils.deepAccess(bid, 'params.crid');
+      bidObj.crid = deepAccess(bid, 'params.crid');
+      bidObj.pubcrid = deepAccess(bid, 'params.crid');
       auctions[auctionId].adSlots[adUnitCode].medianetPresent = 1;
     }
   });
 }
 
 function _getSizes(mediaTypes, sizes) {
-  const banner = utils.deepAccess(mediaTypes, 'banner.sizes') || sizes || [];
-  const native = utils.deepAccess(mediaTypes, 'native') ? [[1, 1]] : [];
-  const playerSize = utils.deepAccess(mediaTypes, 'video.playerSize') || [];
+  const banner = deepAccess(mediaTypes, 'banner.sizes') || sizes || [];
+  const native = deepAccess(mediaTypes, 'native') ? [[1, 1]] : [];
+  const playerSize = deepAccess(mediaTypes, 'video.playerSize') || [];
   let video = [];
   if (playerSize.length === 2) {
     video = [playerSize]
@@ -490,6 +494,27 @@ function _getSizes(mediaTypes, sizes) {
   }
 }
 
+/*
+  - The code is used to determine if the current bid is higher than the previous bid.
+  - If it is, then the code will return true and if not, it will return false.
+  */
+function canSelectCurrentBid(previousBid, currentBid) {
+  if (!(previousBid instanceof Bid)) return false;
+
+  // For first bid response the previous bid will be containing bid request obj
+  // in which the cpm would be undefined so the current bid can directly be selected.
+  const isFirstBidResponse = previousBid.cpm === undefined && currentBid.cpm !== undefined;
+  if (isFirstBidResponse) return true;
+
+  // if there are 2 bids, get the highest bid
+  const selectedBid = getHighestCpm(previousBid, currentBid);
+
+  // Return true if selectedBid is currentBid,
+  // The timeToRespond field is used as an identifier for distinguishing
+  // between the current iterating bid and the previous bid.
+  return selectedBid.timeToRespond === currentBid.timeToRespond;
+}
+
 function bidResponseHandler(bid) {
   const { width, height, mediaType, cpm, requestId, timeToRespond, auctionId, dealId } = bid;
   const {originalCpm, bidderCode, creativeId, adId, currency} = bid;
@@ -498,7 +523,7 @@ function bidResponseHandler(bid) {
     return;
   }
   let bidObj = auctions[auctionId].findBid('bidId', requestId);
-  if (!(bidObj instanceof Bid)) {
+  if (!canSelectCurrentBid(bidObj, bid)) {
     return;
   }
   Object.assign(
@@ -506,12 +531,12 @@ function bidResponseHandler(bid) {
     { cpm, width, height, mediaType, timeToRespond, dealId, creativeId },
     { adId, currency }
   );
-  bidObj.floorPrice = utils.deepAccess(bid, 'floorData.floorValue');
-  bidObj.floorRule = utils.deepAccess(bid, 'floorData.floorRule');
+  bidObj.floorPrice = deepAccess(bid, 'floorData.floorValue');
+  bidObj.floorRule = deepAccess(bid, 'floorData.floorRule');
   bidObj.originalCpm = originalCpm || cpm;
-  let dfpbd = utils.deepAccess(bid, 'adserverTargeting.hb_pb');
+  let dfpbd = deepAccess(bid, 'adserverTargeting.hb_pb');
   if (!dfpbd) {
-    let priceGranularity = getPriceGranularity(mediaType, bid);
+    let priceGranularity = getPriceGranularity(bid);
     let priceGranularityKey = PRICE_GRANULARITY[priceGranularity];
     dfpbd = bid[priceGranularityKey] || cpm;
   }
@@ -598,8 +623,8 @@ function setTargetingHandler(params) {
       auctionObj.bids.forEach(bid => {
         if (bid.bidder === DUMMY_BIDDER && bid.adUnitCode === adunit) {
           bid.iwb = bidAdIds.length === 0 ? 0 : 1;
-          bid.width = utils.deepAccess(winningBid, 'width');
-          bid.height = utils.deepAccess(winningBid, 'height');
+          bid.width = deepAccess(winningBid, 'width');
+          bid.height = deepAccess(winningBid, 'height');
         }
       });
       sendEvent(auctionId, adunit, LOG_TYPE.APPR);
@@ -608,17 +633,22 @@ function setTargetingHandler(params) {
 }
 
 function bidWonHandler(bid) {
-  const { requestId, auctionId, adUnitCode } = bid;
+  const { auctionId, adUnitCode, adId } = bid;
   if (!(auctions[auctionId] instanceof Auction)) {
     return;
   }
-  let bidObj = auctions[auctionId].findBid('bidId', requestId);
+  let bidObj = auctions[auctionId].findBid('adId', adId);
   if (!(bidObj instanceof Bid)) {
+    new ErrorLogger(ERROR_WINNING_BID_ABSENT, {
+      adId: adId,
+      acid: auctionId,
+      adUnitCode,
+    }).send();
     return;
   }
   auctions[auctionId].bidWonTime = Date.now();
   bidObj.winner = 1;
-  sendEvent(auctionId, adUnitCode, LOG_TYPE.RA);
+  sendEvent(auctionId, adUnitCode, LOG_TYPE.RA, bidObj.adId);
 }
 
 function isSampled() {
@@ -629,12 +659,12 @@ function isValidAuctionAdSlot(acid, adtag) {
   return (auctions[acid] instanceof Auction) && (auctions[acid].adSlots[adtag] instanceof AdSlot);
 }
 
-function sendEvent(id, adunit, logType) {
+function sendEvent(id, adunit, logType, adId) {
   if (!isValidAuctionAdSlot(id, adunit)) {
     return;
   }
   if (logType === LOG_TYPE.RA) {
-    fireAuctionLog(id, adunit, logType);
+    fireAuctionLog(id, adunit, logType, adId);
   } else {
     fireApPrLog(id, adunit, logType)
   }
@@ -655,10 +685,10 @@ function getCommonLoggingData(acid, adtag) {
   return Object.assign(commonParams, adunitParams, auctionParams);
 }
 
-function fireAuctionLog(acid, adtag, logType) {
+function fireAuctionLog(acid, adtag, logType, adId) {
   let commonParams = getCommonLoggingData(acid, adtag);
   commonParams.lgtp = logType;
-  let targeting = utils.deepAccess(commonParams, 'targ');
+  let targeting = deepAccess(commonParams, 'targ');
 
   Object.keys(commonParams).forEach((key) => (commonParams[key] == null) && delete commonParams[key]);
   delete commonParams.targ;
@@ -666,7 +696,10 @@ function fireAuctionLog(acid, adtag, logType) {
   let bidParams;
 
   if (logType === LOG_TYPE.RA) {
-    bidParams = auctions[acid].getWinnerAdslotBid(adtag);
+    const winningBidObj = auctions[acid].findBid('adId', adId);
+    if (!winningBidObj) return;
+    const winLogData = winningBidObj.getLoggingData();
+    bidParams = [winLogData];
     commonParams.lper = 1;
   } else {
     bidParams = auctions[acid].getAdslotBids(adtag).map(({winner, ...restParams}) => restParams);
@@ -686,11 +719,11 @@ function fireAuctionLog(acid, adtag, logType) {
 }
 
 function formatQS(data) {
-  return utils._map(data, (value, key) => {
+  return _map(data, (value, key) => {
     if (value === undefined) {
       return key + '=';
     }
-    if (utils.isPlainObject(value)) {
+    if (isPlainObject(value)) {
       value = JSON.stringify(value);
     }
     return key + '=' + encodeURIComponent(value);
@@ -699,7 +732,7 @@ function formatQS(data) {
 
 function firePixel(qs) {
   logsQueue.push(ENDPOINT + '&' + qs);
-  utils.triggerPixel(ENDPOINT + '&' + qs);
+  triggerPixel(ENDPOINT + '&' + qs);
 }
 
 class URL {
@@ -734,13 +767,17 @@ let medianetAnalytics = Object.assign(adapter({URL, analyticsType}), {
   getlogsQueue() {
     return logsQueue;
   },
+  getErrorQueue() {
+    return errorQueue;
+  },
   clearlogsQueue() {
     logsQueue = [];
+    errorQueue = [];
     auctions = {};
   },
   track({ eventType, args }) {
     if (config.debug) {
-      utils.logInfo(eventType, args);
+      logInfo(eventType, args);
     }
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT: {
@@ -782,7 +819,7 @@ medianetAnalytics.originEnableAnalytics = medianetAnalytics.enableAnalytics;
 
 medianetAnalytics.enableAnalytics = function (configuration) {
   if (!configuration || !configuration.options || !configuration.options.cid) {
-    utils.logError('Media.net Analytics adapter: cid is required.');
+    logError('Media.net Analytics adapter: cid is required.');
     return;
   }
   $$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};

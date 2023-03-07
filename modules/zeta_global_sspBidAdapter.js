@@ -1,15 +1,20 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {parseDomain} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
-const ENDPOINT_URL = 'https://ssp.disqus.com/bid';
+const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
+const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 200;
 const NET_REV = true;
+
+const VIDEO_REGEX = new RegExp(/VAST\s+version/);
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -51,7 +56,7 @@ export const spec = {
     if (!(bid &&
       bid.bidId &&
       bid.params)) {
-      utils.logWarn('Invalid bid request - missing required bid data');
+      logWarn('Invalid bid request - missing required bid data');
       return false;
     }
     return true;
@@ -66,34 +71,51 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const secure = 1; // treat all requests as secure
-    const request = validBidRequests[0];
-    const params = request.params;
-    const impData = {
-      id: request.bidId,
-      secure: secure
-    };
-    if (request.mediaTypes) {
-      for (const mediaType in request.mediaTypes) {
-        switch (mediaType) {
-          case BANNER:
-            impData.banner = buildBanner(request);
-            break;
-          case VIDEO:
-            impData.video = buildVideo(request);
-            break;
+    const params = validBidRequests[0].params;
+    const imps = validBidRequests.map(request => {
+      const impData = {
+        id: request.bidId,
+        secure: secure
+      };
+      if (request.mediaTypes) {
+        for (const mediaType in request.mediaTypes) {
+          switch (mediaType) {
+            case BANNER:
+              impData.banner = buildBanner(request);
+              break;
+            case VIDEO:
+              impData.video = buildVideo(request);
+              break;
+          }
         }
       }
-    }
-    if (!impData.banner && !impData.video) {
-      impData.banner = buildBanner(request);
-    }
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2')) || {};
+      if (!impData.banner && !impData.video) {
+        impData.banner = buildBanner(request);
+      }
+
+      if (typeof request.getFloor === 'function') {
+        const floorInfo = request.getFloor({
+          currency: 'USD',
+          mediaType: impData.video ? 'video' : 'banner',
+          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+        });
+        if (floorInfo && floorInfo.floor) {
+          impData.bidfloor = floorInfo.floor;
+        }
+      }
+      if (!impData.bidfloor && params.bidfloor) {
+        impData.bidfloor = params.bidfloor;
+      }
+
+      return impData;
+    });
+
     let payload = {
       id: bidderRequest.auctionId,
       cur: [DEFAULT_CUR],
-      imp: [impData],
+      imp: imps,
       site: params.site ? params.site : {},
-      device: {...fpd.device, ...params.device},
+      device: {...(bidderRequest.ortb2?.device || {}), ...params.device},
       user: params.user ? params.user : {},
       app: params.app ? params.app : {},
       ext: {
@@ -102,12 +124,12 @@ export const spec = {
       }
     };
     const rInfo = bidderRequest.refererInfo;
-    payload.site.page = config.getConfig('pageUrl') || ((rInfo && rInfo.referer) ? rInfo.referer.trim() : window.location.href);
-    payload.site.domain = config.getConfig('publisherDomain') || getDomainFromURL(payload.site.page);
+    // TODO: do the fallbacks make sense here?
+    payload.site.page = rInfo.page || rInfo.topmostLocation;
+    payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
 
     payload.device.ua = navigator.userAgent;
-    payload.device.devicetype = isMobile() ? 1 : isConnectedTV() ? 3 : 2;
-    payload.site.mobile = payload.device.devicetype === 1 ? 1 : 0;
+    payload.device.language = navigator.language;
 
     if (params.test) {
       payload.test = params.test;
@@ -115,19 +137,24 @@ export const spec = {
 
     // Attaching GDPR Consent Params
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-      utils.deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
-      utils.deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
-    provideEids(request, payload);
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout;
+    }
+
+    provideEids(validBidRequests[0], payload);
+    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: url,
       data: JSON.stringify(payload),
     };
   },
@@ -161,6 +188,7 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
+          provideMediaType(zetaBid, bid);
           bidResponses.push(bid);
         })
       })
@@ -201,6 +229,18 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
+  },
+
+  onTimeout: function(timeoutData) {
+    if (timeoutData) {
+      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
+        method: 'POST',
+        options: {
+          withCredentials: false,
+          contentType: 'application/json'
+        }
+      });
+    }
   }
 }
 
@@ -219,17 +259,17 @@ function buildBanner(request) {
 
 function buildVideo(request) {
   let video = {};
-  const videoParams = utils.deepAccess(request, 'mediaTypes.video', {});
+  const videoParams = deepAccess(request, 'mediaTypes.video', {});
   for (const key in VIDEO_CUSTOM_PARAMS) {
     if (videoParams.hasOwnProperty(key)) {
       video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
     }
   }
   if (videoParams.playerSize) {
-    if (utils.isArray(videoParams.playerSize[0])) {
+    if (isArray(videoParams.playerSize[0])) {
       video.w = parseInt(videoParams.playerSize[0][0], 10);
       video.h = parseInt(videoParams.playerSize[0][1], 10);
-    } else if (utils.isNumber(videoParams.playerSize[0])) {
+    } else if (isNumber(videoParams.playerSize[0])) {
       video.w = parseInt(videoParams.playerSize[0], 10);
       video.h = parseInt(videoParams.playerSize[1], 10);
     }
@@ -241,47 +281,47 @@ function checkParamDataType(key, value, datatype) {
   let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
-      functionToExecute = utils.isBoolean;
+      functionToExecute = isBoolean;
       break;
     case DATA_TYPES.NUMBER:
-      functionToExecute = utils.isNumber;
+      functionToExecute = isNumber;
       break;
     case DATA_TYPES.STRING:
-      functionToExecute = utils.isStr;
+      functionToExecute = isStr;
       break;
     case DATA_TYPES.ARRAY:
-      functionToExecute = utils.isArray;
+      functionToExecute = isArray;
       break;
   }
   if (functionToExecute(value)) {
     return value;
   }
-  utils.logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
+  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
   return undefined;
 }
 
 function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
-    utils.deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+    deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
   }
 }
 
-function getDomainFromURL(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  let hostname = anchor.hostname;
-  if (hostname.indexOf('www.') === 0) {
-    return hostname.substring(4);
+function provideMediaType(zetaBid, bid) {
+  if (zetaBid.ext && zetaBid.ext.bidtype) {
+    if (zetaBid.ext.bidtype === VIDEO) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
+  } else {
+    if (VIDEO_REGEX.test(bid.ad)) {
+      bid.mediaType = VIDEO;
+      bid.vastXml = bid.ad;
+    } else {
+      bid.mediaType = BANNER;
+    }
   }
-  return hostname;
-}
-
-function isMobile() {
-  return /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent);
-}
-
-function isConnectedTV() {
-  return /(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i.test(navigator.userAgent);
 }
 
 registerBidder(spec);

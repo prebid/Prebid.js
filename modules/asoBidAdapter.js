@@ -1,19 +1,35 @@
-import { _each, deepAccess, logWarn, tryAppendQueryString, inIframe, getWindowTop, parseUrl, parseSizesInput, isFn, getDNT, deepSetValue } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {Renderer} from '../src/Renderer.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isArray,
+  isFn,
+  logWarn,
+  parseSizesInput,
+  tryAppendQueryString
+} from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+import { parseDomain } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
 const DEFAULT_SERVER_PATH = '/prebid/bidder';
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const VERSION = '$prebid.version$_1.1';
 const TTL = 300;
 
 export const spec = {
 
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: [
+    {code: 'bcmint'}
+  ],
 
   isBidRequestValid: bid => {
     return !!bid.params && !!bid.params.zone;
@@ -48,7 +64,7 @@ export const spec = {
 
       serverRequests.push({
         method: 'POST',
-        url: getEnpoint(bidRequest),
+        url: getEndpoint(bidRequest),
         data: payload,
         options: {
           withCredentials: true,
@@ -167,28 +183,13 @@ function createRenderer(bid, url) {
 }
 
 function getUrlsInfo(bidderRequest) {
-  let page = '';
-  let referrer = '';
-
-  const {refererInfo} = bidderRequest;
-
-  if (inIframe()) {
-    page = refererInfo.referer;
-  } else {
-    const w = getWindowTop();
-    page = w.location.href;
-    referrer = w.document.referrer || '';
-  }
-
-  page = config.getConfig('pageUrl') || page;
-  const url = parseUrl(page);
-  const domain = url.hostname;
-
+  const {page, domain, ref} = bidderRequest.refererInfo;
   return {
-    domain,
-    page,
-    referrer
-  };
+    // TODO: do the fallbacks make sense here?
+    page: page || bidderRequest.refererInfo?.topmostLocation,
+    referrer: ref || '',
+    domain: domain || parseDomain(bidderRequest?.refererInfo?.topmostLocation)
+  }
 }
 
 function getSize(paramSizes) {
@@ -276,11 +277,9 @@ function createVideoImp(bidRequest, videoParams) {
   return imp;
 }
 
-function getEnpoint(bidRequest) {
-  const serverUrl = bidRequest.params.serverUrl || DEFAULT_SERVER_URL;
-  const serverPath = bidRequest.params.serverPath || DEFAULT_SERVER_PATH;
-
-  return serverUrl + serverPath + '?zid=' + bidRequest.params.zone + '&pbjs=$prebid.version$';
+function getEndpoint(bidRequest) {
+  const serverUrl = bidRequest.params.server || DEFAULT_SERVER_URL;
+  return serverUrl + DEFAULT_SERVER_PATH + '?zid=' + bidRequest.params.zone + '&pbjs=' + VERSION;
 }
 
 function getConsentsIds(gdprConsent) {
@@ -343,6 +342,11 @@ function createBasePayload(bidRequest, bidderRequest) {
   const eids = deepAccess(bidRequest, 'userIdAsEids');
   if (eids && eids.length) {
     deepSetValue(payload, 'user.ext.eids', eids);
+  }
+
+  const schainData = deepAccess(bidRequest, 'schain.nodes');
+  if (isArray(schainData) && schainData.length > 0) {
+    deepSetValue(payload, 'source.ext.schain', bidRequest.schain);
   }
 
   return payload;

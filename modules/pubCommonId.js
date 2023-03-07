@@ -3,13 +3,15 @@
  * stored in the page's domain.  When the module is included, an id is generated if needed,
  * persisted as a cookie, and automatically appended to all the bidRequest as bid.crumbs.pubcid.
  */
-import * as utils from '../src/utils.js';
+import { logMessage, parseUrl, buildUrl, triggerPixel, generateUUID, isArray } from '../src/utils.js';
 import { config } from '../src/config.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 
 const ID_NAME = '_pubcid';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -44,7 +46,7 @@ export function setStorageItem(key, val, expires) {
 
     storage.setDataInLocalStorage(key, val);
   } catch (e) {
-    utils.logMessage(e);
+    logMessage(e);
   }
 }
 
@@ -74,7 +76,7 @@ export function getStorageItem(key) {
       }
     }
   } catch (e) {
-    utils.logMessage(e);
+    logMessage(e);
   }
 
   return val;
@@ -89,7 +91,7 @@ export function removeStorageItem(key) {
     storage.removeDataFromLocalStorage(key + EXP_SUFFIX);
     storage.removeDataFromLocalStorage(key);
   } catch (e) {
-    utils.logMessage(e);
+    logMessage(e);
   }
 }
 
@@ -141,13 +143,13 @@ function queuePixelCallback(pixelUrl, id) {
   id = id || '';
 
   // Use pubcid as a cache buster
-  const urlInfo = utils.parseUrl(pixelUrl);
+  const urlInfo = parseUrl(pixelUrl);
   urlInfo.search.id = encodeURIComponent('pubcid:' + id);
-  const targetUrl = utils.buildUrl(urlInfo);
+  const targetUrl = buildUrl(urlInfo);
 
   events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
     events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
-    utils.triggerPixel(targetUrl);
+    triggerPixel(targetUrl);
   });
 
   return true;
@@ -165,7 +167,7 @@ export function getPubcidConfig() { return pubcidConfig; }
  * @param {function} next The next function in the chain
  */
 
-export function requestBidHook(next, config) {
+export const requestBidHook = timedAuctionHook('pubCommonId', function requestBidHook(next, config) {
   let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
   let pubcid = null;
 
@@ -177,7 +179,7 @@ export function requestBidHook(next, config) {
   if (typeof window[PUB_COMMON] === 'object') {
     // If the page includes its own pubcid object, then use that instead.
     pubcid = window[PUB_COMMON].getId();
-    utils.logMessage(PUB_COMMON + ': pubcid = ' + pubcid);
+    logMessage(PUB_COMMON + ': pubcid = ' + pubcid);
   } else {
     // Otherwise get the existing cookie
     pubcid = readValue(ID_NAME);
@@ -190,7 +192,7 @@ export function requestBidHook(next, config) {
         }
         // Generate a new id
         if (!pubcid) {
-          pubcid = utils.generateUUID();
+          pubcid = generateUUID();
         }
         // Update the cookie/storage with the latest expiration date
         writeValue(ID_NAME, pubcid, pubcidConfig.interval);
@@ -205,14 +207,14 @@ export function requestBidHook(next, config) {
       }
     }
 
-    utils.logMessage('pbjs: pubcid = ' + pubcid);
+    logMessage('pbjs: pubcid = ' + pubcid);
   }
 
   // Append pubcid to each bid object, which will be incorporated
   // into bid requests later.
   if (adUnits && pubcid) {
     adUnits.forEach((unit) => {
-      if (unit.bids && utils.isArray(unit.bids)) {
+      if (unit.bids && isArray(unit.bids)) {
         unit.bids.forEach((bid) => {
           Object.assign(bid, {crumbs: {pubcid}});
         });
@@ -221,7 +223,7 @@ export function requestBidHook(next, config) {
   }
 
   return next.call(this, config);
-}
+});
 
 // Helper to set a cookie
 export function setCookie(name, value, expires, sameSite) {

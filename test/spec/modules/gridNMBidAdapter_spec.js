@@ -184,9 +184,9 @@ describe('TheMediaGridNM Adapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       timeout: 3000,
-      refererInfo: { referer: 'https://example.com' }
+      refererInfo: { page: 'https://example.com' }
     };
-    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
       {
         'bidder': 'gridNM',
@@ -225,6 +225,30 @@ describe('TheMediaGridNM Adapter', function () {
         'auctionId': '1d1a030790a475',
       }
     ];
+
+    it('if content and segment is present in jwTargeting, payload must have right params', function () {
+      const jsContent = {id: 'test_jw_content_id'};
+      const jsSegments = ['test_seg_1', 'test_seg_2'];
+      const bidRequestsWithJwTargeting = bidRequests.map((bid) => {
+        return Object.assign({
+          rtd: {
+            jwplayer: {
+              targeting: {
+                segments: jsSegments,
+                content: jsContent
+              }
+            }
+          }
+        }, bid);
+      });
+      const requests = spec.buildRequests(bidRequestsWithJwTargeting, bidderRequest);
+      requests.forEach((req, i) => {
+        const payload = req.data;
+        expect(req).to.have.property('data');
+        expect(payload).to.have.property('site');
+        expect(payload.site.content).to.deep.equal(jsContent);
+      });
+    });
 
     it('should attach valid params to the tag', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
@@ -341,6 +365,7 @@ describe('TheMediaGridNM Adapter', function () {
     const responses = [
       {'bid': [{'price': 1.15, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341234\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 250, 'w': 300, 'dealid': 11}], 'seat': '2'},
       {'bid': [{'price': 0.5, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>', 'content_type': 'video', 'h': 600, 'w': 300, adomain: ['my_domain.ru']}], 'seat': '2'},
+      {'bid': [{'price': 2.00, 'nurl': 'https://some_test_vast_url.com', 'content_type': 'video', 'adomain': ['example.com'], 'w': 300, 'h': 600}], 'seat': '2'},
       {'bid': [{'price': 0, 'h': 250, 'w': 300}], 'seat': '2'},
       {'bid': [{'price': 0, 'adm': '<VAST version=\"3.0\">\n<Ad id=\"21341237\"><\/Ad>\n<\/VAST>', 'h': 250, 'w': 300}], 'seat': '2'},
       undefined,
@@ -394,6 +419,28 @@ describe('TheMediaGridNM Adapter', function () {
               'context': 'instream'
             }
           }
+        },
+        {
+          'bidder': 'gridNM',
+          'params': {
+            'source': 'jwp',
+            'secid': '11',
+            'pubid': '22',
+            'video': {
+              'mimes': ['video/mp4'],
+              'protocols': [1, 2, 3],
+            }
+          },
+          'adUnitCode': 'adunit-code-1',
+          'sizes': [[300, 250], [300, 600]],
+          'bidId': '127f4b12a432c',
+          'bidderRequestId': 'a75bc868f32',
+          'auctionId': '1cbd2feafe5e8b',
+          'mediaTypes': {
+            'video': {
+              'context': 'instream'
+            }
+          }
         }
       ];
       const requests = spec.buildRequests(bidRequests);
@@ -435,6 +482,22 @@ describe('TheMediaGridNM Adapter', function () {
           'adResponse': {
             'content': '<VAST version=\"3.0\">\n<Ad id=\"21341235\"><\/Ad>\n<\/VAST>'
           }
+        },
+        {
+          'requestId': '127f4b12a432c',
+          'cpm': 2.00,
+          'creativeId': 'a75bc868f32',
+          'dealId': undefined,
+          'width': 300,
+          'height': 600,
+          'currency': 'USD',
+          'mediaType': 'video',
+          'netRevenue': true,
+          'ttl': 360,
+          'meta': {
+            advertiserDomains: ['example.com']
+          },
+          'vastUrl': 'https://some_test_vast_url.com',
         }
       ];
 
@@ -445,7 +508,7 @@ describe('TheMediaGridNM Adapter', function () {
     });
 
     it('handles wrong and nobid responses', function () {
-      responses.slice(2).forEach((resp) => {
+      responses.slice(3).forEach((resp) => {
         const request = spec.buildRequests([{
           'bidder': 'gridNM',
           'params': {

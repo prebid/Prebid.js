@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import * as utils from '../src/utils.js';
+import { logError, getWindowLocation } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 
@@ -46,7 +46,7 @@ export const dmdIdSubmodule = {
       !configParams.api_key ||
       typeof configParams.api_key !== 'string'
     ) {
-      utils.logError('dmd submodule requires an api_key.');
+      logError('dmd submodule requires an api_key.');
       return;
     }
     // If cahceIdObj is null or undefined - calling AIX-API
@@ -59,7 +59,7 @@ export const dmdIdSubmodule = {
       // Setting headers
       const headers = {};
       headers['x-api-key'] = configParams.api_key;
-      headers['x-domain'] = utils.getWindowLocation();
+      headers['x-domain'] = getWindowLocation();
       // Response callbacks
       const resp = function (callback) {
         const callbacks = {
@@ -72,12 +72,12 @@ export const dmdIdSubmodule = {
                 responseId = responseObj.dgid;
               }
             } catch (error) {
-              utils.logError(error);
+              logError(error);
             }
             callback(responseId);
           },
           error: error => {
-            utils.logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+            logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
             callback();
           }
         };

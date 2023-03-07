@@ -1,7 +1,7 @@
-import { logMessage, groupBy, uniques } from '../src/utils.js';
+import { logMessage, groupBy, flatten, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {ajax} from '../src/ajax.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'limelightDigital';
 
@@ -26,7 +26,7 @@ function isBidResponseValid(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['pll'],
+  aliases: ['pll', 'iionads'],
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -92,6 +92,23 @@ export const spec = {
     }
     return bidResponses;
   },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    const iframeSyncs = [];
+    const imageSyncs = [];
+    for (let i = 0; i < serverResponses.length; i++) {
+      const serverResponseHeaders = serverResponses[i].headers;
+      const imgSync = (serverResponseHeaders != null && syncOptions.pixelEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Image') : null
+      const iframeSync = (serverResponseHeaders != null && syncOptions.iframeEnabled) ? serverResponseHeaders.get('X-PLL-UserSync-Iframe') : null
+      if (iframeSync != null) {
+        iframeSyncs.push(iframeSync)
+      } else if (imgSync != null) {
+        imageSyncs.push(imgSync)
+      }
+    }
+    return [iframeSyncs.filter(uniques).map(it => { return { type: 'iframe', url: it } }),
+      imageSyncs.filter(uniques).map(it => { return { type: 'image', url: it } })].reduce(flatten, []).filter(uniques);
+  }
 };
 
 registerBidder(spec);
@@ -125,7 +142,7 @@ function buildPlacement(bidRequest) {
         break;
     }
   }
-  sizes = (sizes || []).concat(bidRequest.sizes || []).filter(uniques);
+  sizes = (sizes || []).concat(bidRequest.sizes || []);
   return {
     host: bidRequest.params.host,
     adUnit: {
@@ -138,7 +155,15 @@ function buildPlacement(bidRequest) {
           height: size[1]
         }
       }),
-      type: bidRequest.params.adUnitType.toUpperCase()
+      type: bidRequest.params.adUnitType.toUpperCase(),
+      publisherId: bidRequest.params.publisherId,
+      userIdAsEids: bidRequest.userIdAsEids,
+      supplyChain: bidRequest.schain,
+      custom1: bidRequest.params.custom1,
+      custom2: bidRequest.params.custom2,
+      custom3: bidRequest.params.custom3,
+      custom4: bidRequest.params.custom4,
+      custom5: bidRequest.params.custom5
     }
   }
 }
