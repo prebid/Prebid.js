@@ -34,9 +34,6 @@ const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
-const SID_COOKIE_NAME = 'cto_sid';
-const IDCPY_COOKIE_NAME = 'cto_idcpy';
-const LWID_COOKIE_NAME = 'cto_lwid';
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
@@ -78,15 +75,12 @@ export const spec = {
       const jsonHash = {
         bundle: readFromAllStorages(BUNDLE_COOKIE_NAME),
         cw: storage.cookiesAreEnabled(),
-        localWebId: readFromAllStorages(LWID_COOKIE_NAME),
         lsw: storage.localStorageIsEnabled(),
         optoutCookie: readFromAllStorages(OPTOUT_COOKIE_NAME),
         origin: origin,
         requestId: requestId,
-        secureIdCookie: readFromAllStorages(SID_COOKIE_NAME),
         tld: refererInfo.domain,
         topUrl: refererInfo.domain,
-        uid: readFromAllStorages(IDCPY_COOKIE_NAME),
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
@@ -106,25 +100,12 @@ export const spec = {
         const response = event.data;
 
         if (response.optout) {
-          deleteFromAllStorages(IDCPY_COOKIE_NAME);
-          deleteFromAllStorages(SID_COOKIE_NAME);
           deleteFromAllStorages(BUNDLE_COOKIE_NAME);
-          deleteFromAllStorages(LWID_COOKIE_NAME);
 
           saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR);
         } else {
-          if (response.uid) {
-            saveOnAllStorages(IDCPY_COOKIE_NAME, response.uid, GUID_RETENTION_TIME_HOUR);
-          }
-
           if (response.bundle) {
             saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
-          }
-
-          if (response.removeSid) {
-            deleteFromAllStorages(SID_COOKIE_NAME);
-          } else if (response.sid) {
-            saveOnAllStorages(SID_COOKIE_NAME, response.sid, GUID_RETENTION_TIME_HOUR);
           }
         }
       }, true);
@@ -405,16 +386,6 @@ function buildCdbUrl(context) {
   const optout = readFromAllStorages(OPTOUT_COOKIE_NAME);
   if (optout) {
     url += `&optout=1`;
-  }
-
-  const sid = readFromAllStorages(SID_COOKIE_NAME);
-  if (sid) {
-    url += `&sid=${sid}`;
-  }
-
-  const idcpy = readFromAllStorages(IDCPY_COOKIE_NAME);
-  if (idcpy) {
-    url += `&idcpy=${idcpy}`;
   }
 
   return url;
