@@ -94,7 +94,7 @@ var adUnits = [
           params: {
    
             // ID of the supply partner you created in the CleanMedia dashboard
-            supplyPartnerId: '1253',
+            supplyPartnerId: '1253', 
    
             // OPTIONAL: if you have a whitelabel account on CleanMedia, specify it here
             //rtbEndpoint: 'https://my.custom-whitelabel-domain.io',
