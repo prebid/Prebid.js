@@ -372,7 +372,6 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].bidderCode).to.be.eql('nexx360');
       expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].adUrl);
       expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].type);
       expect(output[0].currency).to.be.eql(response.body.cur);
@@ -411,7 +410,6 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].bidderCode).to.be.eql('nexx360');
       expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].vastXml);
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);
@@ -454,7 +452,6 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].bidderCode).to.be.eql('nexx360');
       expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].adUrl);
       expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].type);
       expect(output[0].currency).to.be.eql(response.body.cur);
@@ -490,7 +487,6 @@ describe('Nexx360 bid adapter tests', function () {
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].bidderCode).to.be.eql('nexx360');
       expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].vastXml);
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);

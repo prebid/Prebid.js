@@ -9,6 +9,7 @@ import {
   triggerPixel,
   isFn,
   logError,
+  isArray,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -192,6 +193,51 @@ function resolveSize(bid, request, bidId) {
   return [bidRequest.aw, bidRequest.ah];
 }
 
+function isSyncEnabled(syncConfigP, syncType) {
+  const syncConfig = syncConfigP[syncType];
+  if (syncConfig == null) {
+    return false;
+  }
+
+  if (syncConfig.bidders === '*' || (isArray(syncConfig.bidders) && syncConfig.bidders.indexOf('amx') !== -1)) {
+    return syncConfig.filter == null || syncConfig.filter === 'include';
+  }
+
+  return false;
+}
+
+const SYNC_IMAGE = 1;
+const SYNC_IFRAME = 2;
+
+function getSyncSettings() {
+  const syncConfig = config.getConfig('userSync');
+  if (syncConfig == null) {
+    return {
+      d: 0,
+      l: 0,
+      t: 0,
+      e: true
+    };
+  }
+
+  const settings = { d: syncConfig.syncDelay, l: syncConfig.syncsPerBidder, t: 0, e: syncConfig.syncEnabled }
+  const all = isSyncEnabled(syncConfig.filterSettings, 'all')
+
+  if (all) {
+    settings.t = SYNC_IMAGE & SYNC_IFRAME;
+    return settings;
+  }
+
+  if (isSyncEnabled(syncConfig.filterSettings, 'iframe')) {
+    settings.t |= SYNC_IFRAME;
+  }
+  if (isSyncEnabled(syncConfig.filterSettings, 'image')) {
+    settings.t |= SYNC_IMAGE;
+  }
+
+  return settings;
+}
+
 function values(source) {
   if (Object.values != null) {
     return Object.values(source);
@@ -200,6 +246,30 @@ function values(source) {
   return Object.keys(source).map((key) => {
     return source[key];
   });
+}
+
+function getGpp(bidderRequest) {
+  if (bidderRequest?.gppConsent != null) {
+    return bidderRequest.gppConsent;
+  }
+
+  return bidderRequest?.ortb2?.regs?.gpp ?? {gppString: '', applicableSections: ''};
+}
+
+function buildReferrerInfo(bidderRequest) {
+  if (bidderRequest.refererInfo == null) {
+    return {r: '', t: false, c: '', l: 0, s: []}
+  }
+
+  const re = bidderRequest.refererInfo;
+
+  return {
+    r: re.topmostLocation,
+    t: re.reachedTop,
+    l: re.numIframes,
+    s: re.stack,
+    c: re.canonicalUrl,
+  }
 }
 
 const isTrue = (boolValue) =>
@@ -249,6 +319,7 @@ export const spec = {
       w: screen.width,
       gs: deepAccess(bidderRequest, 'gdprConsent.gdprApplies', ''),
       gc: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
+      gpp: getGpp(bidderRequest),
       u: refInfo(bidderRequest, 'page', loc.href),
       do: refInfo(bidderRequest, 'site', loc.hostname),
       re: refInfo(bidderRequest, 'ref'),
@@ -261,6 +332,8 @@ export const spec = {
       fpd2: bidderRequest.ortb2,
       tmax: config.getConfig('bidderTimeout'),
       amp: refInfo(bidderRequest, 'isAmp', null),
+      ri: buildReferrerInfo(bidderRequest),
+      sync: getSyncSettings(),
       eids: values(
         bidRequests.reduce((all, bid) => {
           // we only want unique ones in here
@@ -287,17 +360,38 @@ export const spec = {
     };
   },
 
-  getUserSyncs(syncOptions, serverResponses) {
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    const qp = {
+      gdpr_consent: enc(gdprConsent?.consentString || ''),
+      gdpr: enc(gdprConsent?.gdprApplies ? 1 : 0),
+      us_privacy: enc(uspConsent || ''),
+      gpp: enc(gppConsent?.gppString || ''),
+      gpp_sid: enc(gppConsent?.applicableSections || '')
+    };
+
+    const iframeSync = {
+      url: `https://prebid.a-mo.net/isyn?${formatQS(qp)}`,
+      type: 'iframe'
+    };
+
     if (serverResponses == null || serverResponses.length === 0) {
+      if (syncOptions.iframeEnabled) {
+        return [iframeSync]
+      }
+
       return [];
     }
+
     const output = [];
+    let hasFrame = false;
+
     _each(serverResponses, function ({ body: response }) {
       if (response != null && response.p != null && response.p.hreq) {
         _each(response.p.hreq, function (syncPixel) {
           const pixelType =
             syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
           if (syncOptions.iframeEnabled || pixelType === 'image') {
+            hasFrame = hasFrame || (pixelType === 'iframe') || (syncPixel.indexOf('cchain') !== -1)
             output.push({
               url: syncPixel,
               type: pixelType,
@@ -306,6 +400,11 @@ export const spec = {
         });
       }
     });
+
+    if (!hasFrame && output.length < 2) {
+      output.push(iframeSync)
+    }
+
     return output;
   },
 

@@ -1757,6 +1757,153 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    it('should merge in bid-level ortb2Imp with adUnit-level ortb2Imp', () => {
+      const adUnit = {
+        ...adUnits[1],
+        ortb2Imp: {oneone: {twoone: 'val'}, onetwo: 'val'}
+      };
+      adUnit.bids[0].ortb2Imp = {oneone: {twotwo: 'val'}, onethree: 'val', onetwo: 'val2'};
+      const reqs = Object.fromEntries(
+        adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})
+          .map((req) => [req.bidderCode, req])
+      );
+      sinon.assert.match(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp, {
+        oneone: {
+          twoone: 'val',
+          twotwo: 'val',
+        },
+        onetwo: 'val2',
+        onethree: 'val'
+      })
+      sinon.assert.match(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp, adUnit.ortb2Imp)
+    })
+
+    it('picks ortb2Imp from "module" when only one s2sConfig is set', () => {
+      config.setConfig({
+        s2sConfig: [
+          {
+            enabled: true,
+            adapter: 'mockS2S1',
+          }
+        ]
+      });
+      const adUnit = {
+        code: 'mockau',
+        ortb2Imp: {
+          p1: 'adUnit'
+        },
+        bids: [
+          {
+            module: 'pbsBidAdapter',
+            ortb2Imp: {
+              p2: 'module'
+            }
+          }
+        ]
+      };
+      const req = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})[0];
+      [req.adUnitsS2SCopy[0].ortb2Imp, req.bids[0].ortb2Imp].forEach(imp => {
+        sinon.assert.match(imp, {
+          p1: 'adUnit',
+          p2: 'module'
+        });
+      });
+    });
+
+    describe('with named s2s configs', () => {
+      beforeEach(() => {
+        config.setConfig({
+          s2sConfig: [
+            {
+              enabled: true,
+              adapter: 'mockS2S1',
+              configName: 'one',
+              bidders: ['A']
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S2',
+              configName: 'two',
+              bidders: ['B']
+            }
+          ]
+        })
+      });
+
+      it('generates requests for "module" bids', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'two'},
+              ortb2Imp: {
+                p2: 'two'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        [reqs[0].adUnitsS2SCopy[0].ortb2Imp, reqs[0].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'one'
+          })
+        });
+        [reqs[1].adUnitsS2SCopy[0].ortb2Imp, reqs[1].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'two'
+          })
+        });
+      });
+
+      it('applies module-level ortb2Imp to "normal" s2s requests', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              bidder: 'A',
+              ortb2Imp: {
+                p3: 'bidderA'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs.length).to.equal(1);
+        sinon.assert.match(reqs[0].adUnitsS2SCopy[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one'
+        })
+        sinon.assert.match(reqs[0].bids[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one',
+          p3: 'bidderA'
+        })
+      });
+    });
+
     describe('when calling the s2s adapter', () => {
       beforeEach(() => {
         config.setConfig({
