@@ -582,9 +582,9 @@ describe('TheMediaGrid Adapter', function () {
       const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.regs.ext).to.exist;
-      expect(payload.regs.ext.gpp).to.equal(consentString);
-      expect(payload.regs.ext.gpp_sid).to.deep.equal([8]);
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
     });
 
     it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
@@ -594,9 +594,9 @@ describe('TheMediaGrid Adapter', function () {
       const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.regs.ext).to.exist;
-      expect(payload.regs.ext.gpp).to.equal(consentString);
-      expect(payload.regs.ext.gpp_sid).to.deep.equal([8]);
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
     });
 
     it('if userId is present payload must have user.ext param with right keys', function () {
