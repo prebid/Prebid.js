@@ -36,7 +36,7 @@ describe('fledgeForGpt module', function() {
       nextFnSpy = sinon.spy();
     });
 
-    it('should call next() when a proper bidrequest and fledgeAuctionConfig are provided', function() {
+    it('should call next() when a proper adUnitCode and fledgeAuctionConfig are provided', function() {
       fledge.addComponentAuctionHook(nextFnSpy, bidRequest.adUnitCode, fledgeAuctionConfig);
       expect(nextFnSpy.called).to.be.true;
     });
