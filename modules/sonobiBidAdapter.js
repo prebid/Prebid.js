@@ -398,39 +398,18 @@ export function _getPlatform(context = window) {
  */
 function loadOrCreateFirstPartyData() {
   var localStorageEnabled;
-  // var wasDebugCheck = false;
-  // var isDebugMode = false;
+
   var FIRST_PARTY_KEY = '_iiq_fdata';
-  // var isDebug = function () {
-  //   if (!wasDebugCheck) {
-  //     if (hasLocalStorage()) {
-  //       var dbgValue = readData('_iiq_debug_level');
-  //       if (dbgValue !== null) {
-  //         isDebugMode = true;
-  //       }
-  //     }
-  //     wasDebugCheck = true;
-  //   }
-  //   return isDebugMode;
-  // };
-  var logger = function (msg) {
-    // if (isDebug()) { console.log('IIQ  ' + '%c' + msg, 'color: yellow ; background-color: blue; border-radius: 3px'); }
-  };
   var tryParse = function (data) {
     try {
       return JSON.parse(data);
     } catch (err) {
-      logger(err);
+      return null;
     }
-    return null;
   };
   var readData = function (key) {
-    try {
-      if (hasLocalStorage()) {
-        return window.localStorage.getItem(key);
-      }
-    } catch (error) {
-      logger(error);
+    if (hasLocalStorage()) {
+      return window.localStorage.getItem(key);
     }
     return null;
   };
@@ -441,7 +420,6 @@ function loadOrCreateFirstPartyData() {
         return localStorageEnabled;
       } catch (e) {
         localStorageEnabled = false;
-        logger('Local storage api disabled');
       }
     }
     return false;
@@ -457,22 +435,19 @@ function loadOrCreateFirstPartyData() {
   var storeData = function (key, value) {
     try {
       if (typeof key === 'string' && key.startsWith('_iiq_fdata')) {
-        logger('IntentIQ: storing data: key=' + key + ' value=' + value);
         if (value && hasLocalStorage()) {
           window.localStorage.setItem(key, value);
         }
       }
     } catch (error) {
-      logger(error);
+
     }
   };
   var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
   if (!firstPartyData || !firstPartyData.pcid) {
-    logger('Generetaing new key.');
     var firstPartyId = generateGUID();
     firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
   } else if (firstPartyData && !firstPartyData.pcidDate) {
-    logger('Key retreived. Adding timestamp.');
     firstPartyData.pcidDate = Date.now();
   }
   storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
