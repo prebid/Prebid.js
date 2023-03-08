@@ -238,6 +238,13 @@ describe('SonobiBidAdapter', function () {
   });
 
   describe('.buildRequests', function () {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        sonobi: {
+          storageAllowed: true
+        }
+      };
+    });
     let sandbox;
     beforeEach(function () {
       sinon.stub(userSync, 'canBidderRegisterSync');
@@ -398,6 +405,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.pv).to.equal(bidRequestsPageViewID.data.pv)
+      expect(bidRequests.data.iqid).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
       expect(bidRequests.data.hfa).to.not.exist
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
       expect(bidRequests.data.ref).to.equal('overrides_top_window_location');

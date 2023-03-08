@@ -4,6 +4,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -49,6 +50,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -93,7 +95,7 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
-
+      'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? (loadOrCreateFirstPartyData()).pcid : null,
     };
 
     const fpd = bidderRequest.ortb2;
@@ -388,6 +390,94 @@ export function _getPlatform(context = window) {
   }
   return 'desktop';
 }
+/**
+ * Check for local storage
+ * Generate a UUID for the user if one does not exist in local storage
+ * Store the UUID in local storage for future use
+ * @return {object} firstPartyData - Data object containing first party information
+ */
+function loadOrCreateFirstPartyData() {
+  var localStorageEnabled;
+  // var wasDebugCheck = false;
+  // var isDebugMode = false;
+  var FIRST_PARTY_KEY = '_iiq_fdata';
+  // var isDebug = function () {
+  //   if (!wasDebugCheck) {
+  //     if (hasLocalStorage()) {
+  //       var dbgValue = readData('_iiq_debug_level');
+  //       if (dbgValue !== null) {
+  //         isDebugMode = true;
+  //       }
+  //     }
+  //     wasDebugCheck = true;
+  //   }
+  //   return isDebugMode;
+  // };
+  var logger = function (msg) {
+    // if (isDebug()) { console.log('IIQ  ' + '%c' + msg, 'color: yellow ; background-color: blue; border-radius: 3px'); }
+  };
+  var tryParse = function (data) {
+    try {
+      return JSON.parse(data);
+    } catch (err) {
+      logger(err);
+    }
+    return null;
+  };
+  var readData = function (key) {
+    try {
+      if (hasLocalStorage()) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (error) {
+      logger(error);
+    }
+    return null;
+  };
+  var hasLocalStorage = function () {
+    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
+      try {
+        localStorageEnabled = !!window.localStorage;
+        return localStorageEnabled;
+      } catch (e) {
+        localStorageEnabled = false;
+        logger('Local storage api disabled');
+      }
+    }
+    return false;
+  };
+  var generateGUID = function () {
+    var d = new Date().getTime();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  };
+  var storeData = function (key, value) {
+    try {
+      if (typeof key === 'string' && key.startsWith('_iiq_fdata')) {
+        logger('IntentIQ: storing data: key=' + key + ' value=' + value);
+        if (value && hasLocalStorage()) {
+          window.localStorage.setItem(key, value);
+        }
+      }
+    } catch (error) {
+      logger(error);
+    }
+  };
+  var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+  if (!firstPartyData || !firstPartyData.pcid) {
+    logger('Generetaing new key.');
+    var firstPartyId = generateGUID();
+    firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
+  } else if (firstPartyData && !firstPartyData.pcidDate) {
+    logger('Key retreived. Adding timestamp.');
+    firstPartyData.pcidDate = Date.now();
+  }
+  storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+  return firstPartyData;
+};
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
