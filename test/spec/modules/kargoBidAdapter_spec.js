@@ -325,6 +325,7 @@ describe('kargo adapter tests', function () {
           usp: '1---'
         },
         pageURL: 'https://www.prebid.org',
+        prebidVersion: '$prebid.version$',
         prebidRawBidRequests: [
           {
             bidId: 1,

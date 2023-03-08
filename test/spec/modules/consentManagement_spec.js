@@ -685,6 +685,46 @@ describe('consentManagement', function () {
             });
           });
 
+          it('should timeout after actionTimeout from the first CMP event', (done) => {
+            mockTcfEvent({
+              eventStatus: 'cmpuishown',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            setConsentConfig({
+              timeout: 1000,
+              actionTimeout: 100,
+              cmpApi: 'iab',
+              defaultGdprScope: true
+            });
+            let hookRan = false;
+            requestBidsHook(() => {
+              hookRan = true;
+            }, {});
+            setTimeout(() => {
+              expect(hookRan).to.be.true;
+              done();
+            }, 200)
+          });
+
+          it('should still pick up consent data when actionTimeout is 0', (done) => {
+            mockTcfEvent({
+              eventStatus: 'tcloaded',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            setConsentConfig({
+              timeout: 1000,
+              actionTimeout: 0,
+              cmpApi: 'iab',
+              defaultGdprScope: true
+            });
+            requestBidsHook(() => {
+              expect(gdprDataHandler.getConsentData().consentString).to.eql('mock-consent-string');
+              done();
+            }, {})
+          })
+
           Object.entries({
             'null': null,
             'empty': '',
@@ -735,43 +775,6 @@ describe('consentManagement', function () {
           expect(consent.apiVersion).to.equal(2);
         });
       });
-    });
-  });
-
-  describe('actionTimeout', function () {
-    afterEach(function () {
-      config.resetConfig();
-      resetConsentData();
-    });
-
-    it('should set actionTimeout if present', () => {
-      setConsentConfig({
-        gdpr: { timeout: 5000, actionTimeout: 5500 }
-      });
-
-      expect(userCMP).to.be.equal('iab');
-      expect(consentTimeout).to.be.equal(5000);
-      expect(actionTimeout).to.be.equal(5500);
-    });
-
-    it('should utilize actionTimeout duration on initial user visit when user action is pending', () => {
-      const cb = () => {};
-      const cmpCallMap = {
-        'iab': () => {},
-        'static': () => {}
-      };
-      const timeout = sinon.spy();
-
-      setConsentConfig({
-        gdpr: { timeout: 5000, actionTimeout: 5500 }
-      });
-      loadConsentData(cb, cmpCallMap, timeout);
-
-      sinon.assert.calledWith(timeout, sinon.match.any, 5000);
-
-      setActionTimeout();
-
-      timeout.lastCall.lastArg === 5500;
     });
   });
 });
