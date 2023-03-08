@@ -366,9 +366,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     }
   }
 
-  function addWinningBid(winningBid) {
+  function addWinningBid(winningBid, aUnits = adUnits, am = adapterManager) {
+    const { adUnitCode } = winningBid;
+    const winningAd = aUnits.find(adUnit => adUnit.code === adUnitCode);
     _winningBids = _winningBids.concat(winningBid);
-    adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
+    am.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, aUnits);
+    if (winningAd && !winningAd.deferBilling) am.callBidBillableBidder(winningBid.adapterCode || winningBid.bidder, winningBid, aUnits);
   }
 
   function setBidTargeting(bid) {

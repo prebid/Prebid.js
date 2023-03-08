@@ -2485,7 +2485,6 @@ describe('Unit: Prebid Module', function () {
         }];
         let adUnitCodes = ['adUnit-code'];
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-
         adUnits[0]['mediaTypes'] = { native: {} };
         adUnitCodes = ['adUnit-code'];
         let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
@@ -3528,6 +3527,52 @@ describe('Unit: Prebid Module', function () {
 
       expect(bids.length).to.equal(1);
       expect(bids[0].adId).to.equal('adid-1');
+    });
+  });
+
+  describe('deferred billing', function () {
+    let adUnits = [{
+      code: 'adUnit-code',
+      mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+      bids: [
+        { bidder: 'appnexus', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code' }
+      ]
+    }];
+
+    let winningBid = { adapterCode: 'appnexus', bidder: 'appnexus', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code' }
+    let adUnitCodes = ['adUnit-code'];
+    let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+
+    let adapterManager = {
+      callBidWonBidder: () => {},
+      callBidBillableBidder: () => {}
+    };
+
+    const spy1 = sinon.spy(adapterManager, 'callBidWonBidder');
+    const spy2 = sinon.spy(adapterManager, 'callBidBillableBidder');
+
+    afterEach(function () {
+      spy1.resetHistory();
+      spy2.resetHistory();
+    });
+
+    it('should by default invoke callBidWonBidder and callBidBillableBidder', function () {
+      auction.addWinningBid(winningBid, adUnits, adapterManager);
+      sinon.assert.calledOnce(spy1);
+      sinon.assert.calledOnce(spy2);
+    });
+
+    it('should only invoke callBidWonBidder and NOT callBidBillableBidder if deferBilling is present and true within the winning adUnit object', function () {
+      const adUnitsClone = structuredClone(adUnits);
+      adUnitsClone[0].deferBilling = true;
+      auction.addWinningBid(winningBid, adUnitsClone, adapterManager);
+      sinon.assert.calledOnce(spy1);
+      sinon.assert.notCalled(spy2);
+    });
+    it('should invoke callBidBillableBidder when pbjs.triggerBilling is invoked', function () {
+      $$PREBID_GLOBAL$$.triggerBilling(winningBid.bidder, winningBid, adUnits, adapterManager);
+      sinon.assert.notCalled(spy1);
+      sinon.assert.calledOnce(spy2);
     });
   });
 });
