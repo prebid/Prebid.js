@@ -375,62 +375,78 @@ describe('permutiveRtdProvider', function () {
       }])
     })
 
-    describe('ortb2 rubicon extensions', function () {
-      it('should add standard and custom cohorts', function () {
+    describe('ortb2.user.ext tests', function () {
+      it('should add nothing if there are no cohorts data', function () {
+        // Empty module config means we default
         const moduleConfig = getConfig()
-        expect(moduleConfig.params.acBidders).to.include('rubicon')
 
         const bidderConfig = {}
 
-        const segmentsData = transformedTargeting()
+        // Passing empty values means there is no segment data
+        const segmentsData = transformedTargeting({
+          _pdfps: [],
+          _prubicons: [],
+          _papns: [],
+          _psegs: [],
+          _ppam: [],
+          _pcrprs: [],
+          _pssps: { ssps: [], cohorts: [] }
+        })
 
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          if (bidder === 'rubicon') {
-            expect(bidderConfig[bidder].user.ext.data).to.deep
-              .eq({
-                // Default targeting
-                p_standard: segmentsData.ac,
-                // Custom cohort targetings
-                permutive: segmentsData.rubicon,
-              })
-          } else {
-            expect(bidderConfig[bidder].user).to.not.have.property('ext')
-          }
+          expect(bidderConfig[bidder].user).to.not.have.property('ext')
         })
       })
 
-      it('should add standard cohorts ONLY', function () {
+      it('should add standard and custom cohorts', function () {
         const moduleConfig = getConfig()
-        expect(moduleConfig.params.acBidders).to.include('rubicon')
 
         const bidderConfig = {}
 
         const segmentsData = transformedTargeting()
-        // Remove rubicon custom cohorts
-        delete segmentsData['rubicon']
 
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          if (bidder === 'rubicon') {
-            expect(bidderConfig[bidder].user.ext.data).to.deep
-              .eq({
-                // Default targeting
-                p_standard: segmentsData.ac,
-              })
-            expect(bidderConfig[bidder].user.ext.data).to.not.have
-              .property('permutive')
-          } else {
-            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+          const userExtData = {
+            // Default targeting
+            p_standard: segmentsData.ac,
           }
+
+          const customCohorts = segmentsData[bidder] || []
+          if (customCohorts.length > 0) {
+            deepSetValue(userExtData, 'permutive', customCohorts)
+          }
+
+          expect(bidderConfig[bidder].user.ext.data).to.deep
+            .eq(userExtData)
+        })
+      })
+
+      it('should add ac cohorts ONLY', function () {
+        const moduleConfig = getConfig()
+
+        const bidderConfig = {}
+
+        const segmentsData = transformedTargeting()
+        moduleConfig.params.acBidders.forEach((bidder) => {
+          // Remove custom cohorts
+          delete segmentsData[bidder]
+        })
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach((bidder) => {
+          expect(bidderConfig[bidder].user.ext.data).to.deep.equal({
+            p_standard: segmentsData.ac
+          })
         })
       })
 
       it('should add custom cohorts ONLY', function () {
         const moduleConfig = getConfig()
-        expect(moduleConfig.params.acBidders).to.include('rubicon')
 
         const bidderConfig = {}
 
@@ -441,14 +457,10 @@ describe('permutiveRtdProvider', function () {
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          if (bidder === 'rubicon') {
+          const customCohorts = segmentsData[bidder] || []
+          if (customCohorts.length > 0) {
             expect(bidderConfig[bidder].user.ext.data).to.deep
-              .eq({
-                // custom cohort targeting
-                permutive: segmentsData.rubicon,
-              })
-            expect(bidderConfig[bidder].user.ext.data).to.not.have
-              .property('p_standard')
+              .eq({ permutive: customCohorts })
           } else {
             expect(bidderConfig[bidder].user).to.not.have.property('ext')
           }

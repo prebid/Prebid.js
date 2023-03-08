@@ -133,6 +133,8 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * @return {Object} Merged ortb2 object
  */
 function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
+  const customCohortsData = deepAccess(segmentData, bidder) || []
+
   const name = 'permutive.com'
 
   const permutiveUserData = {
@@ -159,17 +161,15 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
   const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
   deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
 
-  // Set bidder specific extensions
-  if (bidder === 'rubicon') {
-    if (segmentIDs.length > 0) {
-      deepSetValue(ortbConfig, 'ortb2.user.ext.data.' + PERMUTIVE_STANDARD_KEYWORD, segmentIDs)
-    }
+  // Set user extensions
+  if (segmentIDs.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+  }
 
-    if (segmentData?.rubicon?.length > 0) {
-      deepSetValue(ortbConfig, 'ortb2.user.ext.data.' + PERMUTIVE_CUSTOM_COHORTS_KEYWORD, segmentData.rubicon.map(String))
-    }
-
-    logger.logInfo(`Extending ortb2.user.ext.data for ${bidder}`, deepAccess(ortbConfig, 'ortb2.user.ext.data'))
+  if (customCohortsData.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}`, customCohortsData.map(String))
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
   logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)
