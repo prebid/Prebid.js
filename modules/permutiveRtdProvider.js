@@ -172,12 +172,10 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
-  if (bidder === 'ozone') {
-    if (segmentIDs.length > 0) {
-      deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
-    }
-
-    logger.logInfo(`Extending ortb2.site.ext.permutive for ${bidder}`, deepAccess(ortbConfig, 'ortb2.site.ext.permutive'))
+  // Set site extensions
+  if (segmentIDs.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
   }
 
   logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)

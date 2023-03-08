@@ -468,7 +468,7 @@ describe('permutiveRtdProvider', function () {
       })
     })
 
-    describe('ortb2 ozone extensions', function () {
+    describe('ortb2.site.ext tests', function () {
       it('should add ac and ssp cohorts to "p_standard"', function () {
         const moduleConfig = getConfig()
         expect(moduleConfig.params.acBidders).to.include('ozone')
@@ -480,15 +480,11 @@ describe('permutiveRtdProvider', function () {
         setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
         moduleConfig.params.acBidders.forEach(bidder => {
-          if (bidder === 'ozone') {
-            expect(bidderConfig[bidder].site.ext.permutive).to.deep
-              .eq({
-                // Default targeting
-                p_standard: segmentsData.ac,
-              })
-          } else {
-            expect(bidderConfig[bidder]).to.not.have.property('site')
-          }
+          expect(bidderConfig[bidder].site.ext.permutive).to.deep
+            .eq({
+              // Default targeting
+              p_standard: segmentsData.ac,
+            })
         })
       })
     })
