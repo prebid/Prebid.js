@@ -312,20 +312,12 @@ describe('permutiveRtdProvider', function () {
 
       setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
-      const getBidderKeywords = (bidder) => {
-        if (bidder === 'appnexus') {
-          return {
-            [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: segmentsData.appnexus
-          }
-        }
-        return {}
-      }
-
       acBidders.forEach(bidder => {
+        const customCohortsData = segmentsData[bidder] || []
         const keywordGroups = {
           [PERMUTIVE_STANDARD_KEYWORD]: segmentsData.ac,
           [PERMUTIVE_STANDARD_AUD_KEYWORD]: segmentsData.ssp.cohorts,
-          ...getBidderKeywords(bidder),
+          [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData
         }
 
         // Transform groups of key-values into a single array of strings

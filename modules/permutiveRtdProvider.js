@@ -159,25 +159,11 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
   // Set ortb2.user.keywords
-  const getBidderSpecificKeywordGroups = () => {
-    if (bidder === 'appnexus') {
-      const keywords = {
-        [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: segmentData.appnexus
-      }
-      logger.logInfo(`Bidder specific ortb2.user.keywords`, {
-        bidder,
-        keywords,
-      })
-      return keywords
-    }
-
-    return {}
-  }
   const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords')
   const keywordGroups = {
     [PERMUTIVE_STANDARD_KEYWORD]: segmentIDs,
     [PERMUTIVE_STANDARD_AUD_KEYWORD]: sspSegmentIDs,
-    ...getBidderSpecificKeywordGroups(),
+    [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData,
   }
 
   // Transform groups of key-values into a single array of strings
