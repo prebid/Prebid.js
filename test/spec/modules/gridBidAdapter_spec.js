@@ -667,14 +667,6 @@ describe('TheMediaGrid Adapter', function () {
       const [request] = spec.buildRequests(bidRequestsWithJwTargeting, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('user');
-      expect(payload.user.data).to.deep.equal([{
-        name: 'iow_labs_pub_data',
-        segment: [
-          {name: 'jwpseg', value: jsSegments[0]},
-          {name: 'jwpseg', value: jsSegments[1]}
-        ]
-      }]);
       expect(payload).to.have.property('site');
       expect(payload.site.content).to.deep.equal(jsContent);
     });
@@ -793,7 +785,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content.data).to.deep.equal(contentData);
     });
 
-    it('should have right value in user.data when jwpsegments are present', function () {
+    it('should have right value in user.data', function () {
       const userData = [
         {
           name: 'someName',
@@ -823,13 +815,7 @@ describe('TheMediaGrid Adapter', function () {
       });
       const [request] = spec.buildRequests([bidRequestsWithJwTargeting], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
-      expect(payload.user.data).to.deep.equal([{
-        name: 'iow_labs_pub_data',
-        segment: [
-          {name: 'jwpseg', value: jsSegments[0]},
-          {name: 'jwpseg', value: jsSegments[1]}
-        ]
-      }, ...userData]);
+      expect(payload.user.data).to.deep.equal(userData);
     });
 
     it('should have site.content.id filled from config ortb2.site.content.id', function () {

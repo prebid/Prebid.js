@@ -382,6 +382,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
   const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
+    tmax: bidderRequest.timeout || 400,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),

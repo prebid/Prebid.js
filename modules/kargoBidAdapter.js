@@ -7,6 +7,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'kargo';
 const HOST = 'https://krk.kargo.com';
 const SYNC = 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}';
+const PREBID_VERSION = '$prebid.version$';
 const SYNC_COUNT = 5;
 const GVLID = 972;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
@@ -58,7 +59,8 @@ export const spec = {
         width: window.screen.width,
         height: window.screen.height
       },
-      prebidRawBidRequests: validBidRequests
+      prebidRawBidRequests: validBidRequests,
+      prebidVersion: PREBID_VERSION
     }, spec._getAllMetadata(bidderRequest, tdid));
 
     // User Agent Client Hints / SUA

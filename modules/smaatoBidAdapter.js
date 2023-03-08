@@ -8,7 +8,7 @@ import CONSTANTS from '../src/constants.json';
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.7'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
@@ -61,6 +61,11 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
 
   if (bidderRequest.uspConsent !== undefined) {
     deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+  }
+
+  if (ortb2.regs?.gpp !== undefined) {
+    deepSetValue(requestTemplate, 'regs.ext.gpp', ortb2.regs.gpp);
+    deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
   }
 
   if (deepAccess(bidRequest, 'params.app')) {
