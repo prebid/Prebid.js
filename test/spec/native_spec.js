@@ -1303,5 +1303,24 @@ describe('toOrtbNativeResponse', () => {
         text: 'vtitle'
       }
     })
+  });
+
+  it('should accept objects as legacy assets', () => {
+    const legacyResponse = {
+      icon: {
+        url: 'image-url'
+      }
+    }
+    const request = toOrtbNativeRequest({
+      icon: {
+        required: true
+      }
+    });
+    const response = toOrtbNativeResponse(legacyResponse, request);
+    sinon.assert.match(response.assets[0], {
+      img: {
+        url: 'image-url'
+      }
+    })
   })
 })

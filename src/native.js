@@ -698,7 +698,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
   }
 
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
-    const value = legacyResponse[key];
+    const value = getAssetValue(legacyResponse[key]);
     switch (key) {
       // process titles
       case 'title':
