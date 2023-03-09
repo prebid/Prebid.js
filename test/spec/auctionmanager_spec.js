@@ -232,6 +232,15 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
+    it('should suppress acat if undefined', function () {
+      const noAcatBid = deepClone(DEFAULT_BID);
+      noAcatBid.meta.primaryCatId = ''
+      let expected = getDefaultExpected(noAcatBid);
+      delete expected.hb_acat;
+      let response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
+      assert.deepEqual(response, expected);
+    });
+
     it('No bidder level configuration defined - default for video', function () {
       config.setConfig({
         cache: {

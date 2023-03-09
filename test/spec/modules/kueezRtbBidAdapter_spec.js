@@ -98,6 +98,24 @@ const BIDDER_REQUEST = {
     'regs': {
       'gpp': 'gpp_string',
       'gpp_sid': [7]
+    },
+    'device': {
+      'sua': {
+        'source': 2,
+        'platform': {
+          'brand': 'Android',
+          'version': ['8', '0', '0']
+        },
+        'browsers': [
+          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+        ],
+        'mobile': 1,
+        'model': 'SM-G955U',
+        'bitness': '64',
+        'architecture': ''
+      }
     }
   }
 };
@@ -263,6 +281,22 @@ describe('KueezRtbBidAdapter', function () {
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           mediaTypes: {
@@ -310,6 +344,22 @@ describe('KueezRtbBidAdapter', function () {
           bidderTimeout: 3000,
           bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,

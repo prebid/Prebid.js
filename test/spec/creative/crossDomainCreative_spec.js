@@ -121,7 +121,6 @@ describe('cross-domain creative', () => {
           mkIframe.callsFake(() => iframe);
         });
 
-
         it('renders adUrl as iframe src', (done) => {
           renderAd({adId: '123'});
           reply({message: PREBID_RESPONSE, adId: '123', adUrl: 'some-url'});
