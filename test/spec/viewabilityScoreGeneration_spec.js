@@ -112,6 +112,11 @@ describe('viewabilityScoreGeneration', function() {
 
   describe('bidder requests', function() {
     it('should add the bidViewability key onto all bidder requests', function() {
+	config.setConfig({
+		viewabilityScoreGeneration: {
+			enabled: true
+		}
+	});
       const adSlotElementId = 'someElementIdName';
       const fakeCb = () => {};
       viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, fakeCb);
