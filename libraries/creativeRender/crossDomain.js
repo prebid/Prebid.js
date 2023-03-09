@@ -13,7 +13,7 @@ export function renderer(win = window) {
     const pubDomain = (() => {
       const a = win.document.createElement('a');
       a.href = pubUrl;
-      return a.protocol + '//' + a.hostname;
+      return a.protocol + '//' + a.host;
     })();
     function cb(err) {
       const payload = {
@@ -35,7 +35,7 @@ export function renderer(win = window) {
         try {
           let doc = win.document
           if (data.ad) {
-            doc = mkFrame(doc, data).contentDocument;
+            doc = mkFrame(doc, {width: data.width, height: data.height}).contentDocument;
             doc.open();
           }
           writeAd(data, cb, doc);

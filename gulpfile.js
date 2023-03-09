@@ -411,6 +411,7 @@ function watchTaskMaker(options = {}) {
   return function watch(done) {
     var mainWatcher = gulp.watch([
       'src/**/*.js',
+      'libraries/**/*.js',
       'modules/**/*.js',
     ].concat(options.alsoWatch));
 
