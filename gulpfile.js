@@ -164,6 +164,14 @@ function buildCreative() {
     .pipe(gulp.dest('build/creative'))
 }
 
+function updateCreativeExample(cb) {
+  const CREATIVE_EXAMPLE = 'integrationExamples/gpt/x-domain/creative.html';
+  const root = require('node-html-parser').parse(fs.readFileSync(CREATIVE_EXAMPLE));
+  root.querySelectorAll('script')[0].textContent = fs.readFileSync('build/creative/creative.js')
+  fs.writeFileSync(CREATIVE_EXAMPLE, root.toString())
+  cb();
+}
+
 function getModulesListToAddInBanner(modules) {
   if (!modules || modules.length === helpers.getModuleNames().length) {
     return 'All available modules for this version.'
@@ -454,17 +462,19 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
   }
 }), gulpBundle.bind(null, false)));
 
+gulp.task('build-creative', gulp.series(buildCreative, updateCreativeExample));
+
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, gulp.series('test-all-features-disabled', 'test-only')));
+gulp.task('test', gulp.series(clean, lint, gulp.parallel('build-creative', gulp.series('test-all-features-disabled', 'test-only'))));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', buildCreative));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', 'build-creative'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
