@@ -208,6 +208,9 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
 function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
   const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits
   const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
+  const aliasMap = {
+    appnexusAst: 'appnexus'
+  }
 
   if (!adUnits) {
     return
@@ -216,6 +219,9 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
   adUnits.forEach(adUnit => {
     adUnit.bids.forEach(bid => {
       let { bidder } = bid
+      if (typeof aliasMap[bidder] !== 'undefined') {
+        bidder = aliasMap[bidder]
+      }
       const acEnabled = isAcEnabled(moduleConfig, bidder)
       const customFn = getCustomBidderFn(moduleConfig, bidder)
       const defaultFn = getDefaultBidderFn(bidder)
