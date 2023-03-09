@@ -1,9 +1,11 @@
-import { formatQS, logInfo } from '../src/utils.js';
+import { buildUrl, formatQS, logInfo, triggerPixel } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
+const EVENTS_DOMAIN = 'events.missena.io';
+const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const spec = {
   aliases: [BIDDER_CODE],
@@ -30,6 +32,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map((bidRequest) => {
       const payload = {
+        adunit: bidRequest.adUnitCode,
         request_id: bidRequest.bidId,
         timeout: bidderRequest.timeout,
       };
@@ -47,6 +50,15 @@ export const spec = {
       const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
       if (bidRequest.params.test) {
         payload.test = bidRequest.params.test;
+      }
+      if (bidRequest.params.placement) {
+        payload.placement = bidRequest.params.placement;
+      }
+      if (bidRequest.params.formats) {
+        payload.formats = bidRequest.params.formats;
+      }
+      if (bidRequest.params.isInternal) {
+        payload.is_internal = bidRequest.params.isInternal;
       }
       return {
         method: 'POST',
@@ -109,6 +121,15 @@ export const spec = {
    * @param {Bid} The bid that won the auction
    */
   onBidWon: function (bid) {
+    const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
+    triggerPixel(
+      buildUrl({
+        protocol: 'https',
+        hostname,
+        pathname: '/v1/bidsuccess',
+        search: { t: bid.params[0].apiKey },
+      })
+    );
     logInfo('Missena - Bid won', bid);
   },
 };
