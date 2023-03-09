@@ -14,7 +14,7 @@ import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
-import {_sendAdToCreative, resizeRemoteCreative} from 'src/secureCreatives.js';
+import {resizeRemoteCreative} from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';

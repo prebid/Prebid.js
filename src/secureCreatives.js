@@ -140,9 +140,6 @@ function handleEventRequest(reply, data, adObject) {
   }
 }
 
-export function _sendAdToCreative(adObject, reply, options) {
-}
-
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
