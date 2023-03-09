@@ -27,9 +27,6 @@ var adUnits = [
          // ID of the supply partner you created in the CleanMedia dashboard
          supplyPartnerId: '1253',
 
-         // OPTIONAL: if you have a whitelabel account on CleanMedia, specify it here
-         //rtbEndpoint: 'https://my.custom-whitelabel-domain.io',
-
          // OPTIONAL: custom bid floor
          bidfloor: 0.01,
 
@@ -59,9 +56,6 @@ var adUnits = [
 
          // ID of the supply partner you created in the dashboard
          supplyPartnerId: '1254',
-
-         // OPTIONAL: if you have a whitelabel account on CleanMedia, specify it here
-         //rtbEndpoint: 'https://my.custom-whitelabel-domain.io',
 
          // OPTIONAL: custom bid floor
          bidfloor: 0.01,
@@ -94,11 +88,8 @@ var adUnits = [
           params: {
    
             // ID of the supply partner you created in the CleanMedia dashboard
-            supplyPartnerId: '1253', 
-   
-            // OPTIONAL: if you have a whitelabel account on CleanMedia, specify it here
-            //rtbEndpoint: 'https://my.custom-whitelabel-domain.io',
-   
+            supplyPartnerId: '1253',
+      
             // OPTIONAL: custom bid floor
             bidfloor: 0.01,
    
