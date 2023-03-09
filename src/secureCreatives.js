@@ -73,7 +73,7 @@ function handleRenderRequest(reply, message, bidResponse) {
     reply(Object.assign({
       message: PREBID_RESPONSE,
     }, adData));
-  }, {options: message.option, adId: message.adId, bidResponse});
+  }, {options: message.options, adId: message.adId, bidResponse});
 }
 
 function handleNativeRequest(reply, data, adObject) {

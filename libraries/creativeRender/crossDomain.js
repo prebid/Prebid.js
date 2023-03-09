@@ -10,19 +10,19 @@ import {
 
 export function renderer(win = window) {
   return function ({adId, pubUrl, clickUrl}) {
-    const pubDomain = (() => {
+    const pubDomain = (function() {
       const a = win.document.createElement('a');
       a.href = pubUrl;
       return a.protocol + '//' + a.host;
     })();
+    function sendMessage(type, payload, transfer) {
+      win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
+    }
     function cb(err) {
-      const payload = {
-        message: PREBID_EVENT,
-        adId,
+      sendMessage(PREBID_EVENT, {
         event: err == null ? AD_RENDER_SUCCEEDED : AD_RENDER_FAILED,
-      }
-      if (err != null) payload.info = err;
-      win.parent.postMessage(JSON.stringify(payload), pubDomain)
+        info: err
+      });
     }
     function onMessage(ev) {
       let data = {};
@@ -46,16 +46,11 @@ export function renderer(win = window) {
       }
     }
 
-    const request = JSON.stringify({
-      message: PREBID_REQUEST,
-      adId,
-      options: {
-        clickUrl
-      }
-    });
     const channel = new MessageChannel();
     channel.port1.onmessage = onMessage;
-    win.parent.postMessage(request, pubDomain, [channel.port2]);
+    sendMessage(PREBID_REQUEST, {
+      options: {clickUrl}
+    }, [channel.port2]);
     win.addEventListener('message', onMessage, false);
   }
 }
