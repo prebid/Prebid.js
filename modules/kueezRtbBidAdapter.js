@@ -116,6 +116,12 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
 
   appendUserIdsToRequestPayload(data, userId);
 
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
+
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
       data.gdprConsent = bidderRequest.gdprConsent.consentString;
