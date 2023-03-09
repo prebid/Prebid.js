@@ -20,6 +20,7 @@ import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
 import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -1556,7 +1557,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.auctionStart + 100
           );
 
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
           let post = request.data;
 
           expect(post).to.have.property('imp');
@@ -2074,8 +2075,7 @@ describe('the rubicon adapter', function () {
             };
             return config[key];
           });
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          const [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
           expect(request.data.regs.coppa).to.equal(1);
         });
 
@@ -2213,7 +2213,7 @@ describe('the rubicon adapter', function () {
             bidderRequest.auctionStart + 100
           );
 
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+          let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
           let post = request.data;
 
           expect(post).to.have.property('imp')

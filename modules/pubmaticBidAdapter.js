@@ -969,6 +969,49 @@ function isNonEmptyArray(test) {
   return false;
 }
 
+/**
+ * Prepare meta object to pass as params
+ * @param {*} br : bidResponse
+ * @param {*} bid : bids
+ */
+export function prepareMetaObject(br, bid, seat) {
+  br.meta = {};
+
+  if (bid.ext && bid.ext.dspid) {
+    br.meta.networkId = bid.ext.dspid;
+    br.meta.demandSource = bid.ext.dspid;
+  }
+
+  // NOTE: We will not recieve below fields from the translator response also not sure on what will be the key names for these in the response,
+  // when we needed we can add it back.
+  // New fields added, assignee fields name may change
+  // if (bid.ext.networkName) br.meta.networkName = bid.ext.networkName;
+  // if (bid.ext.advertiserName) br.meta.advertiserName = bid.ext.advertiserName;
+  // if (bid.ext.agencyName) br.meta.agencyName = bid.ext.agencyName;
+  // if (bid.ext.brandName) br.meta.brandName = bid.ext.brandName;
+  if (bid.ext && bid.ext.dchain) {
+    br.meta.dchain = bid.ext.dchain;
+  }
+
+  const advid = seat || (bid.ext && bid.ext.advid);
+  if (advid) {
+    br.meta.advertiserId = advid;
+    br.meta.agencyId = advid;
+    br.meta.buyerId = advid;
+  }
+
+  if (bid.adomain && isNonEmptyArray(bid.adomain)) {
+    br.meta.advertiserDomains = bid.adomain;
+    br.meta.clickUrl = bid.adomain[0];
+    br.meta.brandId = bid.adomain[0];
+  }
+
+  if (bid.cat && isNonEmptyArray(bid.cat)) {
+    br.meta.secondaryCatIds = bid.cat;
+    br.meta.primaryCatId = bid.cat[0];
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 76,
@@ -1289,17 +1332,7 @@ export const spec = {
                 newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
               }
 
-              newBid.meta = {};
-              if (bid.ext && bid.ext.dspid) {
-                newBid.meta.networkId = bid.ext.dspid;
-              }
-              if (bid.ext && bid.ext.advid) {
-                newBid.meta.buyerId = bid.ext.advid;
-              }
-              if (bid.adomain && bid.adomain.length > 0) {
-                newBid.meta.advertiserDomains = bid.adomain;
-                newBid.meta.clickUrl = bid.adomain[0];
-              }
+              prepareMetaObject(newBid, bid, seatbidder.seat);
 
               // adserverTargeting
               if (seatbidder.ext && seatbidder.ext.buyid) {

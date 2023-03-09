@@ -250,10 +250,13 @@ export const USER_IDS_CONFIG = {
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
-      return data.snowflake
+      if (data.snowflake.id === undefined) {
+        return data.snowflake;
+      }
+
+      return data.snowflake.id;
     },
     source: 'novatiq.com',
-    atype: 1
   },
 
   'uid2': {
