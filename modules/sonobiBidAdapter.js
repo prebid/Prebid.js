@@ -440,7 +440,7 @@ function loadOrCreateFirstPartyData() {
         }
       }
     } catch (error) {
-
+      return;
     }
   };
   var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
