@@ -1,44 +1,45 @@
-import { buildUrl, deepAccess, parseSizesInput } from "../src/utils.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { find } from "../src/polyfill.js";
-import { BANNER, NATIVE, VIDEO } from "../src/mediaTypes.js";
-import { convertOrtbRequestToProprietaryNative } from "../src/native.js";
+import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {createEidsArray} from './userId/eids.js';
+import {find} from '../src/polyfill.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const VERSION = "1.0";
-const BIDDER_CODE = "adyoulike";
-const DEFAULT_DC = "hb-api";
-const CURRENCY = "USD";
+const VERSION = '1.0';
+const BIDDER_CODE = 'adyoulike';
+const DEFAULT_DC = 'hb-api';
+const CURRENCY = 'USD';
 const GVLID = 259;
 
 const NATIVE_IMAGE = {
   image: {
-    required: true,
+    required: true
   },
   title: {
-    required: true,
+    required: true
   },
   sponsoredBy: {
-    required: true,
+    required: true
   },
   clickUrl: {
-    required: true,
+    required: true
   },
   body: {
-    required: false,
+    required: false
   },
   icon: {
-    required: false,
+    required: false
   },
   cta: {
-    required: false,
-  },
+    required: false
+  }
 };
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
-  aliases: ["ayl"], // short code
+  aliases: ['ayl'], // short code
   /**
    * Determines whether or not the given bid request is valid.
    *
@@ -50,11 +51,8 @@ export const spec = {
     const sizeValid = sizes.width > 0 && sizes.height > 0;
 
     // allows no size for native only
-    return (
-      bid.params &&
-      bid.params.placement &&
-      (sizeValid || (bid.mediaTypes && bid.mediaTypes.native))
-    );
+    return (bid.params && bid.params.placement &&
+            (sizeValid || (bid.mediaTypes && bid.mediaTypes.native)));
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -77,8 +75,8 @@ export const spec = {
         accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
-        accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(",");
-        if (typeof bidReq.getFloor === "function") {
+        accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
+        if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
         }
         if (bidReq.schain) {
@@ -86,12 +84,12 @@ export const spec = {
         }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
-          if (nativeReq.type === "image") {
+          if (nativeReq.type === 'image') {
             nativeReq = Object.assign({}, NATIVE_IMAGE, nativeReq);
           }
           // click url is always mandatory even if not specified by publisher
           nativeReq.clickUrl = {
-            required: true,
+            required: true
           };
           accumulator[bidReq.bidId].Native = nativeReq;
         }
@@ -106,16 +104,13 @@ export const spec = {
         }
         return accumulator;
       }, {}),
-      PageRefreshed: getPageRefreshed(),
+      PageRefreshed: getPageRefreshed()
     };
 
     if (bidderRequest.gdprConsent) {
       payload.gdprConsent = {
         consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired:
-          typeof bidderRequest.gdprConsent.gdprApplies === "boolean"
-            ? bidderRequest.gdprConsent.gdprApplies
-            : null,
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : null
       };
     }
 
@@ -127,22 +122,22 @@ export const spec = {
       payload.ortb2 = bidderRequest.ortb2;
     }
 
-    if (deepAccess(bidderRequest, "userIdAsEids")) {
-      payload.userId = bidderRequest.bid.userIdAsEids;
+    if (deepAccess(bidderRequest, 'userId')) {
+      payload.userId = createEidsArray(bidderRequest.userId);
     }
 
-    payload.pbjs_version = "$prebid.version$";
+    payload.pbjs_version = '$prebid.version$';
 
     const data = JSON.stringify(payload);
     const options = {
-      withCredentials: true,
+      withCredentials: true
     };
 
     return {
-      method: "POST",
+      method: 'POST',
       url: createEndpoint(bidRequests, bidderRequest, hasVideo),
       data,
-      options,
+      options
     };
   },
   /**
@@ -162,34 +157,34 @@ export const spec = {
     }
 
     // For this adapter, serverResponse is a list
-    serverResponse.body.forEach((response) => {
+    serverResponse.body.forEach(response => {
       const bid = createBid(response, bidRequests);
       if (bid) {
         bidResponses.push(bid);
       }
     });
     return bidResponses;
-  },
-};
+  }
+}
 
 /* Get hostname from bids */
 function getHostname(bidderRequest) {
-  let dcHostname = find(bidderRequest, (bid) => bid.params.DC);
+  let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
-    return "-" + dcHostname.params.DC;
+    return ('-' + dcHostname.params.DC);
   }
-  return "";
+  return '';
 }
 
 /* Get mediatype from bidRequest */
 function getMediatype(bidRequest) {
-  if (deepAccess(bidRequest, "mediaTypes.banner")) {
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     return BANNER;
   }
-  if (deepAccess(bidRequest, "mediaTypes.video")) {
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
     return VIDEO;
   }
-  if (deepAccess(bidRequest, "mediaTypes.native")) {
+  if (deepAccess(bidRequest, 'mediaTypes.native')) {
     return NATIVE;
   }
 }
@@ -199,10 +194,10 @@ function getFloor(bidRequest, size, mediaType) {
   const bidFloors = bidRequest.getFloor({
     currency: CURRENCY,
     mediaType,
-    size: [size.width, size.height],
+    size: [ size.width, size.height ]
   });
 
-  if (!isNaN(bidFloors.floor) && bidFloors.currency === CURRENCY) {
+  if (!isNaN(bidFloors.floor) && (bidFloors.currency === CURRENCY)) {
     return bidFloors.floor;
   }
 }
@@ -213,19 +208,19 @@ function getPageRefreshed() {
     if (performance && performance.navigation) {
       return performance.navigation.type === performance.navigation.TYPE_RELOAD;
     }
-  } catch (e) {}
+  } catch (e) { }
   return false;
 }
 
 /* Create endpoint url */
 function createEndpoint(bidRequests, bidderRequest, hasVideo) {
   let host = getHostname(bidRequests);
-  const endpoint = hasVideo ? "/hb-api/prebid-video/v1" : "/hb-api/prebid/v1";
+  const endpoint = hasVideo ? '/hb-api/prebid-video/v1' : '/hb-api/prebid/v1';
   return buildUrl({
-    protocol: "https",
+    protocol: 'https',
     host: `${DEFAULT_DC}${host}.omnitagjs.com`,
     pathname: endpoint,
-    search: createEndpointQS(bidderRequest),
+    search: createEndpointQS(bidderRequest)
   });
 }
 
@@ -274,7 +269,7 @@ function getSizeArray(bid) {
   if (bid.params && Array.isArray(bid.params.size)) {
     inputSize = bid.params.size;
     if (!Array.isArray(inputSize[0])) {
-      inputSize = [inputSize];
+      inputSize = [inputSize]
     }
   }
 
@@ -287,11 +282,11 @@ function getSize(sizesArray) {
   // the main requested size is the first one
   const size = sizesArray[0];
 
-  if (typeof size !== "string") {
+  if (typeof size !== 'string') {
     return parsed;
   }
 
-  const parsedSize = size.toUpperCase().split("X");
+  const parsedSize = size.toUpperCase().split('X');
   const width = parseInt(parsedSize[0], 10);
   if (width) {
     parsed.width = width;
@@ -306,37 +301,30 @@ function getSize(sizesArray) {
 }
 
 function getInternalImgUrl(uid) {
-  if (!uid) return "";
-  return (
-    "https://blobs.omnitagjs.com/blobs/" +
-    uid.substr(16, 2) +
-    "/" +
-    uid.substr(16) +
-    "/" +
-    uid
-  );
+  if (!uid) return '';
+  return 'https://blobs.omnitagjs.com/blobs/' + uid.substr(16, 2) + '/' + uid.substr(16) + '/' + uid;
 }
 
 function getImageUrl(config, resource, width, height) {
-  let url = "";
+  let url = '';
   if (resource && resource.Kind) {
     switch (resource.Kind) {
-      case "INTERNAL":
+      case 'INTERNAL':
         url = getInternalImgUrl(resource.Data.Internal.BlobReference.Uid);
 
         break;
 
-      case "EXTERNAL":
+      case 'EXTERNAL':
         const dynPrefix = config.DynamicPrefix;
         let extUrl = resource.Data.External.Url;
-        extUrl = extUrl.replace(/\[height\]/i, "" + height);
-        extUrl = extUrl.replace(/\[width\]/i, "" + width);
+        extUrl = extUrl.replace(/\[height\]/i, '' + height);
+        extUrl = extUrl.replace(/\[width\]/i, '' + width);
 
         if (extUrl.indexOf(dynPrefix) >= 0) {
-          const urlmatch = /.*url=([^&]*)/gm.exec(extUrl);
-          url = urlmatch ? urlmatch[1] : "";
+          const urlmatch = (/.*url=([^&]*)/gm).exec(extUrl);
+          url = urlmatch ? urlmatch[1] : '';
           if (!url) {
-            url = getInternalImgUrl(/.*key=([^&]*)/gm.exec(extUrl)[1]);
+            url = getInternalImgUrl((/.*key=([^&]*)/gm).exec(extUrl)[1]);
           }
         } else {
           url = extUrl;
@@ -355,10 +343,8 @@ function getTrackers(eventsArray, jsTrackers) {
   if (!eventsArray) return result;
 
   eventsArray.map((item, index) => {
-    if (
-      (jsTrackers && item.Kind === "JAVASCRIPT_URL") ||
-      (!jsTrackers && item.Kind === "PIXEL_URL")
-    ) {
+    if ((jsTrackers && item.Kind === 'JAVASCRIPT_URL') ||
+        (!jsTrackers && item.Kind === 'PIXEL_URL')) {
       result.push(item.Url);
     }
   });
@@ -366,49 +352,34 @@ function getTrackers(eventsArray, jsTrackers) {
 }
 
 function getNativeAssets(response, nativeConfig) {
-  if (typeof response.Native === "object") {
+  if (typeof response.Native === 'object') {
     return response.Native;
   }
   const native = {};
 
   var adJson = {};
   var textsJson = {};
-  if (typeof response.Ad === "string") {
-    adJson = JSON.parse(
-      response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]
-    );
+  if (typeof response.Ad === 'string') {
+    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
     textsJson = adJson.Content.Preview.Text;
 
-    var impressionUrl =
-      adJson.TrackingPrefix +
-      "/pixel?event_kind=IMPRESSION&attempt=" +
-      adJson.Attempt;
-    var insertionUrl =
-      adJson.TrackingPrefix +
-      "/pixel?event_kind=INSERTION&attempt=" +
-      adJson.Attempt;
+    var impressionUrl = adJson.TrackingPrefix +
+            '/pixel?event_kind=IMPRESSION&attempt=' + adJson.Attempt;
+    var insertionUrl = adJson.TrackingPrefix +
+            '/pixel?event_kind=INSERTION&attempt=' + adJson.Attempt;
 
     if (adJson.Campaign) {
-      impressionUrl += "&campaign=" + adJson.Campaign;
-      insertionUrl += "&campaign=" + adJson.Campaign;
+      impressionUrl += '&campaign=' + adJson.Campaign;
+      insertionUrl += '&campaign=' + adJson.Campaign;
     }
 
-    native.clickUrl =
-      adJson.TrackingPrefix +
-      "/ar?event_kind=CLICK&attempt=" +
-      adJson.Attempt +
-      "&campaign=" +
-      adJson.Campaign +
-      "&url=" +
-      encodeURIComponent(adJson.Content.Landing.Url);
+    native.clickUrl = adJson.TrackingPrefix + '/ar?event_kind=CLICK&attempt=' + adJson.Attempt +
+      '&campaign=' + adJson.Campaign + '&url=' + encodeURIComponent(adJson.Content.Landing.Url);
 
     if (adJson.OnEvents) {
-      native.clickTrackers = getTrackers(adJson.OnEvents["CLICK"]);
-      native.impressionTrackers = getTrackers(adJson.OnEvents["IMPRESSION"]);
-      native.javascriptTrackers = getTrackers(
-        adJson.OnEvents["IMPRESSION"],
-        true
-      );
+      native.clickTrackers = getTrackers(adJson.OnEvents['CLICK']);
+      native.impressionTrackers = getTrackers(adJson.OnEvents['IMPRESSION']);
+      native.javascriptTrackers = getTrackers(adJson.OnEvents['IMPRESSION'], true);
     } else {
       native.impressionTrackers = [];
     }
@@ -416,21 +387,21 @@ function getNativeAssets(response, nativeConfig) {
     native.impressionTrackers.push(impressionUrl, insertionUrl);
   }
 
-  Object.keys(nativeConfig).map(function (key, index) {
+  Object.keys(nativeConfig).map(function(key, index) {
     switch (key) {
-      case "title":
+      case 'title':
         native[key] = textsJson.TITLE;
         break;
-      case "body":
+      case 'body':
         native[key] = textsJson.DESCRIPTION;
         break;
-      case "cta":
+      case 'cta':
         native[key] = textsJson.CALLTOACTION;
         break;
-      case "sponsoredBy":
+      case 'sponsoredBy':
         native[key] = adJson.Content.Preview.Sponsor.Name;
         break;
-      case "image":
+      case 'image':
         // main image requested size
         const imgSize = nativeConfig.image.sizes || [];
         if (!imgSize.length) {
@@ -438,22 +409,17 @@ function getNativeAssets(response, nativeConfig) {
           imgSize[1] = response.Height || 250;
         }
 
-        const url = getImageUrl(
-          adJson,
-          deepAccess(adJson, "Content.Preview.Thumbnail.Image"),
-          imgSize[0],
-          imgSize[1]
-        );
+        const url = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Thumbnail.Image'), imgSize[0], imgSize[1]);
         if (url) {
           native[key] = {
             url,
             width: imgSize[0],
-            height: imgSize[1],
+            height: imgSize[1]
           };
         }
 
         break;
-      case "icon":
+      case 'icon':
         // icon requested size
         const iconSize = nativeConfig.icon.sizes || [];
         if (!iconSize.length) {
@@ -461,31 +427,21 @@ function getNativeAssets(response, nativeConfig) {
           iconSize[1] = 50;
         }
 
-        const icurl = getImageUrl(
-          adJson,
-          deepAccess(adJson, "Content.Preview.Sponsor.Logo.Resource"),
-          iconSize[0],
-          iconSize[1]
-        );
+        const icurl = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Sponsor.Logo.Resource'), iconSize[0], iconSize[1]);
 
         if (icurl) {
           native[key] = {
             url: icurl,
             width: iconSize[0],
-            height: iconSize[1],
+            height: iconSize[1]
           };
         }
         break;
-      case "privacyIcon":
-        native[key] = getImageUrl(
-          adJson,
-          deepAccess(adJson, "Content.Preview.Credit.Logo.Resource"),
-          25,
-          25
-        );
+      case 'privacyIcon':
+        native[key] = getImageUrl(adJson, deepAccess(adJson, 'Content.Preview.Credit.Logo.Resource'), 25, 25);
         break;
-      case "privacyLink":
-        native[key] = deepAccess(adJson, "Content.Preview.Credit.Url");
+      case 'privacyLink':
+        native[key] = deepAccess(adJson, 'Content.Preview.Credit.Url');
         break;
     }
   });
@@ -503,11 +459,11 @@ function createBid(response, bidRequests) {
 
   // In case we don't retreive the size from the adserver, use the given one.
   if (request) {
-    if (!response.Width || response.Width === "0") {
+    if (!response.Width || response.Width === '0') {
       response.Width = request.Width;
     }
 
-    if (!response.Height || response.Height === "0") {
+    if (!response.Height || response.Height === '0') {
       response.Height = request.Height;
     }
   }
@@ -519,7 +475,7 @@ function createBid(response, bidRequests) {
     cpm: response.Price,
     netRevenue: true,
     currency: CURRENCY,
-    meta: response.Meta || { advertiserDomains: [] },
+    meta: response.Meta || { advertiserDomains: [] }
   };
 
   // retreive video response if present
@@ -528,11 +484,11 @@ function createBid(response, bidRequests) {
     bid.width = response.Width;
     bid.height = response.Height;
     bid.vastXml = window.atob(vast64);
-    bid.mediaType = "video";
+    bid.mediaType = 'video';
   } else if (request.Native) {
     // format Native response if Native was requested
     bid.native = getNativeAssets(response, request.Native);
-    bid.mediaType = "native";
+    bid.mediaType = 'native';
   } else {
     bid.width = response.Width;
     bid.height = response.Height;

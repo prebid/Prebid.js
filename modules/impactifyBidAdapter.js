@@ -1,34 +1,27 @@
-import { deepAccess, deepSetValue, generateUUID } from "../src/utils.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { config } from "../src/config.js";
-import { ajax } from "../src/ajax.js";
+import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { ajax } from '../src/ajax.js';
+import { createEidsArray } from './userId/eids.js';
 
-const BIDDER_CODE = "impactify";
-const BIDDER_ALIAS = ["imp"];
-const DEFAULT_CURRENCY = "USD";
+const BIDDER_CODE = 'impactify';
+const BIDDER_ALIAS = ['imp'];
+const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
-const ORIGIN = "https://sonic.impactify.media";
-const LOGGER_URI = "https://logger.impactify.media";
-const AUCTIONURI = "/bidder";
-const COOKIESYNCURI = "/static/cookie_sync.html";
+const ORIGIN = 'https://sonic.impactify.media';
+const LOGGER_URI = 'https://logger.impactify.media';
+const AUCTIONURI = '/bidder';
+const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
 const GETCONFIG = config.getConfig;
 
 const getDeviceType = () => {
   // OpenRTB Device type
-  if (
-    /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) {
+  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
     return 5;
   }
-  if (
-    /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) {
+  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
     return 4;
   }
   return 2;
@@ -37,18 +30,14 @@ const getDeviceType = () => {
 const getFloor = (bid) => {
   const floorInfo = bid.getFloor({
     currency: DEFAULT_CURRENCY,
-    mediaType: "*",
-    size: "*",
+    mediaType: '*',
+    size: '*'
   });
-  if (
-    typeof floorInfo === "object" &&
-    floorInfo.currency === DEFAULT_CURRENCY &&
-    !isNaN(parseFloat(floorInfo.floor))
-  ) {
+  if (typeof floorInfo === 'object' && floorInfo.currency === DEFAULT_CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
     return parseFloat(floorInfo.floor);
   }
   return null;
-};
+}
 
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
@@ -57,27 +46,27 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: { tid: bidderRequest.auctionId },
+    source: {tid: bidderRequest.auctionId}
   };
 
   // Get the url parameters
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
-  const checkPrebid = urlParams.get("_checkPrebid");
+  const checkPrebid = urlParams.get('_checkPrebid');
   // Force impactify debugging parameter
   if (checkPrebid != null) {
     request.test = Number(checkPrebid);
   }
 
   // Set Schain in request
-  let schain = deepAccess(validBidRequests, "0.schain");
+  let schain = deepAccess(validBidRequests, '0.schain');
   if (schain) request.source.ext = { schain: schain };
 
   // Set eids
-  let bidUserId = deepAccess(validBidRequests[0], "userIdAsEids");
-  let eids = bidUserId;
+  let bidUserId = deepAccess(validBidRequests, '0.userId');
+  let eids = createEidsArray(bidUserId);
   if (eids.length) {
-    deepSetValue(request, "user.ext.eids", eids);
+    deepSetValue(request, 'user.ext.eids', eids);
   }
 
   // Set device/user/site
@@ -89,44 +78,32 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     devicetype: getDeviceType(),
     ua: navigator.userAgent,
     js: 1,
-    dnt:
-      navigator.doNotTrack == "yes" ||
-      navigator.doNotTrack == "1" ||
-      navigator.msDoNotTrack == "1"
-        ? 1
-        : 0,
-    language:
-      (navigator.language || navigator.userLanguage || "").split("-")[0] ||
-      "en",
+    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
-  request.site = { page: bidderRequest.refererInfo.page };
+  request.site = {page: bidderRequest.refererInfo.page};
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;
   if (bidderRequest.gdprConsent) {
-    if (typeof bidderRequest.gdprConsent.gdprApplies === "boolean")
-      gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    deepSetValue(
-      request,
-      "user.ext.consent",
-      bidderRequest.gdprConsent.consentString
-    );
+    if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') gdprApplies = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
-  deepSetValue(request, "regs.ext.gdpr", gdprApplies);
+  deepSetValue(request, 'regs.ext.gdpr', gdprApplies);
 
   if (bidderRequest.uspConsent) {
-    deepSetValue(request, "regs.ext.us_privacy", bidderRequest.uspConsent);
+    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
-  if (GETCONFIG("coppa") == true) deepSetValue(request, "regs.coppa", 1);
+  if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
-    deepSetValue(request, "regs.ext.us_privacy", bidderRequest.uspConsent);
+    deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
   // Set buyer uid
-  deepSetValue(request, "user.buyeruid", generateUUID());
+  deepSetValue(request, 'user.buyeruid', generateUUID());
 
   // Create imps with bids
   validBidRequests.forEach((bid) => {
@@ -137,19 +114,19 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
         impactify: {
           appId: bid.params.appId,
           format: bid.params.format,
-          style: bid.params.style,
+          style: bid.params.style
         },
       },
       video: {
         playerSize: [DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT],
-        context: "outstream",
-        mimes: ["video/mp4"],
+        context: 'outstream',
+        mimes: ['video/mp4'],
       },
     };
     if (bid.params.container) {
       imp.ext.impactify.container = bid.params.container;
     }
-    if (typeof bid.getFloor === "function") {
+    if (typeof bid.getFloor === 'function') {
       const floor = getFloor(bid);
       if (floor) {
         imp.bidfloor = floor;
@@ -164,7 +141,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: ["video", "banner"],
+  supportedMediaTypes: ['video', 'banner'],
   aliases: BIDDER_ALIAS,
 
   /**
@@ -174,24 +151,13 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (
-      !bid.params.appId ||
-      typeof bid.params.appId != "string" ||
-      !bid.params.format ||
-      typeof bid.params.format != "string" ||
-      !bid.params.style ||
-      typeof bid.params.style != "string"
-    ) {
+    if (!bid.params.appId || typeof bid.params.appId != 'string' || !bid.params.format || typeof bid.params.format != 'string' || !bid.params.style || typeof bid.params.style != 'string') {
       return false;
     }
-    if (bid.params.format != "screen" && bid.params.format != "display") {
+    if (bid.params.format != 'screen' && bid.params.format != 'display') {
       return false;
     }
-    if (
-      bid.params.style != "inline" &&
-      bid.params.style != "impact" &&
-      bid.params.style != "static"
-    ) {
+    if (bid.params.style != 'inline' && bid.params.style != 'impact' && bid.params.style != 'static') {
       return false;
     }
 
@@ -210,7 +176,7 @@ export const spec = {
     let request = createOpenRtbRequest(validBidRequests, bidderRequest);
 
     return {
-      method: "POST",
+      method: 'POST',
       url: ORIGIN + AUCTIONURI,
       data: JSON.stringify(request),
     };
@@ -254,9 +220,8 @@ export const spec = {
               hash: bid.hash,
               expiry: bid.expiry,
               meta: {
-                advertiserDomains:
-                  bid.adomain && bid.adomain.length ? bid.adomain : [],
-              },
+                advertiserDomains: bid.adomain && bid.adomain.length ? bid.adomain : []
+              }
             })),
         ];
       }
@@ -286,42 +251,35 @@ export const spec = {
       return [];
     }
 
-    let params = "";
-    if (gdprConsent && typeof gdprConsent.consentString === "string") {
-      if (typeof gdprConsent.gdprApplies === "boolean") {
-        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
-          gdprConsent.consentString
-        }`;
+    let params = '';
+    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
       } else {
         params += `?gdpr_consent=${gdprConsent.consentString}`;
       }
     }
 
     if (uspConsent) {
-      params += `${params ? "&" : "?"}us_privacy=${encodeURIComponent(
-        uspConsent
-      )}`;
+      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
     }
 
-    if (document.location.search.match(/pbs_debug=true/))
-      params += `&pbs_debug=true`;
+    if (document.location.search.match(/pbs_debug=true/)) params += `&pbs_debug=true`;
 
-    return [
-      {
-        type: "iframe",
-        url: ORIGIN + COOKIESYNCURI + params,
-      },
-    ];
+    return [{
+      type: 'iframe',
+      url: ORIGIN + COOKIESYNCURI + params
+    }];
   },
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
-   */
-  onBidWon: function (bid) {
+  */
+  onBidWon: function(bid) {
     ajax(`${LOGGER_URI}/log/bidder/won`, null, JSON.stringify(bid), {
-      method: "POST",
-      contentType: "application/json",
+      method: 'POST',
+      contentType: 'application/json'
     });
 
     return true;
@@ -330,14 +288,14 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
-   */
-  onTimeout: function (data) {
+  */
+  onTimeout: function(data) {
     ajax(`${LOGGER_URI}/log/bidder/timeout`, null, JSON.stringify(data[0]), {
-      method: "POST",
-      contentType: "application/json",
+      method: 'POST',
+      contentType: 'application/json'
     });
 
     return true;
-  },
+  }
 };
 registerBidder(spec);
