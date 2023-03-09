@@ -81,7 +81,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
       const {adUnitCode, auctionId, mediaTypes, params, sizes, transactionId} = bidRequest;
-      const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['cleanmedianet'];
+      const baseEndpoint = ENDPOINTS['cleanmedianet'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
         id: auctionId,
