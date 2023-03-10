@@ -382,6 +382,9 @@ export const spec = {
         if (!request.regs) {
           request.regs = {ext: {}};
         }
+        if (!request.regs.ext) {
+          request.regs.ext = {};
+        }
         request.regs.ext.us_privacy = uspConsent;
       }
 
