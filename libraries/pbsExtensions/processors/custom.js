@@ -11,6 +11,17 @@ let defaultAliases = {
 
 let iidValue;
 let firstBidRequest;
+const vsgDomain = window.location.hostname;
+const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
+const removeUnwantedKeys = obj => {
+	// Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
+	delete obj.lastViewStarted;
+	// Deleteing totalTimeView incase value is less than 1 sec.
+	if (obj.totalViewTime == 0) {
+	  delete obj.totalViewTime;
+	}
+	return obj;
+};
 
 /**
  * Checks if window.location.search(i.e. string of query params on the page URL)
@@ -52,6 +63,10 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
     listOfPubMaticBidders.forEach(function(bidder) {
       if (ortbRequest.ext.prebid.bidderparams[bidder]) {
         ortbRequest.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
+		if(firstBidRequest.bids[0]?.bidViewability) {
+			let vsgObj = getAndParseFromLocalStorage('viewability-data');
+			ortbRequest.ext.prebid.bidderparams[bidder]['adDomain'] = removeUnwantedKeys(vsgObj[vsgDomain]);
+		}
       }
     })
   }
