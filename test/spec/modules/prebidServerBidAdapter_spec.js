@@ -2459,7 +2459,7 @@ describe('S2S Adapter', function () {
       };
       const bcat = ['IAB25', 'IAB7-39'];
       const badv = ['blockedAdv-1.com', 'blockedAdv-2.com'];
-      const allowedBidders = ['rubicon', 'appnexus'];
+      const allowedBidders = ['appnexus'];
 
       const expected = allowedBidders.map(bidder => ({
         bidders: [bidder],
