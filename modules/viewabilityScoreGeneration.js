@@ -233,7 +233,7 @@ export const setGptEventHandlers = () => {
     window.googletag.cmd.push(() => {
       window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const currentAdSlotSize = event.size.toString().replace(',', 'x');
+        const currentAdSlotSize = event.size?.toString().replace(',', 'x');
         gptSlotRenderEndedHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 

@@ -183,7 +183,7 @@ const allBiddersList = ['all'];
 
 const vsgDomain = window.location.hostname;
 const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
-let vsgObj = getAndParseFromLocalStorage('viewability-data') || { [vsgDomain]: '' }; // OR condition is for testing
+let vsgObj = { [vsgDomain]: '' };
 
 const removeUnwantedKeys = obj => {
   // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
@@ -1219,6 +1219,7 @@ export const spec = {
     }
 
     if (bid.bidViewability) {
+	  vsgObj =  getAndParseFromLocalStorage('viewability-data');
       removeUnwantedKeys(vsgObj[vsgDomain]);
       payload.ext.bidViewability = {
         adDomain: vsgObj[vsgDomain]
