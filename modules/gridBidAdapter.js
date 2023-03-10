@@ -90,7 +90,7 @@ export const spec = {
     let userExt = null;
     let endpoint = null;
     let forceBidderName = false;
-    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
+    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
     const tmax = timeout || config.getConfig('bidderTimeout');
@@ -340,10 +340,21 @@ export const spec = {
           }
         };
       }
+      const ortb2Regs = deepAccess(bidderRequest, 'ortb2.regs') || {};
+      if (gppConsent || ortb2Regs?.gpp) {
+        const gpp = {
+          gpp: gppConsent?.gppString ?? ortb2Regs?.gpp,
+          gpp_sid: gppConsent?.applicableSections ?? ortb2Regs?.gpp_sid
+        };
+        request.regs = mergeDeep(request?.regs ?? {}, gpp);
+      }
 
       if (uspConsent) {
         if (!request.regs) {
           request.regs = {ext: {}};
+        }
+        if (!request.regs.ext) {
+          request.regs.ext = {};
         }
         request.regs.ext.us_privacy = uspConsent;
       }
