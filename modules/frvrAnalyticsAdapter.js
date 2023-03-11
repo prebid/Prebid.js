@@ -15,12 +15,6 @@ function handleAuctionEnd(args) {
   if (args.auctionId) {
     o.auctionId = args.auctionId;
   }
-  if (args.timestamp) {
-    o.timestamp = args.timestamp;
-  }
-  if (args.auctionEnd) {
-    o.auctionEnd = args.auctionEnd;
-  }
   if (args.adUnits) {
     o.adUnits = mapAdUnits(args.adUnits);
   }
@@ -149,24 +143,9 @@ function mapAdUnits(adUnits) {
   }
   return adUnits.map(e => {
     return {
-      code: e.code,
-      sizes: e.sizes,
-      bidders: mapBidders(e.bids)
+      code: e.code
     }
   });
-}
-
-function mapBidders(bids) {
-  if (!bids) {
-    return [];
-  }
-
-  return bids.map(e => {
-    return {
-      bidder: e.bidder,
-      params: e.params
-    }
-  })
 }
 
 function mapBidderRequests(bidsReqs) {
@@ -179,20 +158,7 @@ function mapBidderRequests(bidsReqs) {
       bidderCode: e.bidderCode,
       auctionId: e.auctionId,
       bidderRequestId: e.bidderRequestId,
-      bids: e.bids.map(b => {
-        return {
-          bidder: b.bidder,
-          params: b.params,
-          bidId: b.bidId,
-          adUnitCode: b.adUnitCode,
-          bidderRequestId: b.bidderRequestId,
-          serverResponseTimeMs: b.serverResponseTimeMs
-        }
-      }),
-      auctionStart: e.auctionStart,
-      timeout: e.timeout,
-      start: e.start,
-      serverResponseTimeMs: e.serverResponseTimeMs
+      timeout: e.timeout
     }
   })
 }
@@ -207,20 +173,11 @@ function mapBids(bids) {
     if (b.bidderCode) {
       r.bidderCode = b.bidderCode;
     }
-    if (b.bidder) {
-      r.bidder = b.bidder;
-    }
-    if (b.params) {
-      r.params = b.params;
-    }
     if (b.transactionId) {
       r.transactionId = b.transactionId;
     }
     if (b.width) {
       r.size = [b.width, b.height];
-    }
-    if (b.adId) {
-      r.adId = b.adId;
     }
     if (b.requestId) {
       r.requestId = b.requestId;
@@ -228,20 +185,11 @@ function mapBids(bids) {
     if (b.cpm) {
       r.cpm = b.cpm;
     }
-    if (b.creativeId) {
-      r.creativeId = b.creativeId;
-    }
     if (b.currency) {
       r.currency = b.currency;
     }
     if (b.auctionId) {
       r.auctionId = b.auctionId;
-    }
-    if (b.responseTimestamp) {
-      r.responseTimestamp = b.responseTimestamp;
-    }
-    if (b.requestTimestamp) {
-      r.requestTimestamp = b.requestTimestamp;
     }
     if (b.adUnitCode) {
       r.adUnitCode = b.adUnitCode;
