@@ -381,6 +381,14 @@ export const spec = {
         }
       }
 
+      if (currentBidRequest.userId && currentBidRequest.userIdAsEids) {
+        try {
+          requestParams._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error);
+        }
+      }
+
       var vastParams = currentBidRequest.params.vastUrlParams;
       if (typeof vastParams === 'object') {
         for (var key in vastParams) {
