@@ -1,6 +1,7 @@
-import {onlyOneClientSection} from '../../../libraries/ortbConverter/processors/default.js';
+import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
 
 describe('onlyOneClientSection', () => {
+  const oneClient = clientSectionChecker();
   [
     [['app'], 'app'],
     [['site'], 'site'],
@@ -11,13 +12,13 @@ describe('onlyOneClientSection', () => {
   ].forEach(([sections, winner]) => {
     it(`should leave only ${winner} in request when it contains ${sections.join(', ')}`, () => {
       const req = Object.fromEntries(sections.map(s => [s, {foo: 'bar'}]));
-      onlyOneClientSection(req);
+      oneClient(req);
       expect(Object.keys(req)).to.eql([winner]);
     })
   });
   it('should not choke if none of the sections are in the request', () => {
     const req = {};
-    onlyOneClientSection(req);
+    oneClient(req);
     expect(req).to.eql({});
   });
 });
