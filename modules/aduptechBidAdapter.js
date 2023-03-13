@@ -4,6 +4,7 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 export const BIDDER_CODE = 'aduptech';
+export const GVLID = 647;
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
 export const ENDPOINT_URL = 'https://rtb.d.adup-tech.com/prebid/' + ENDPOINT_URL_PUBLISHER_PLACEHOLDER + '_bid';
 export const ENDPOINT_METHOD = 'POST';
@@ -190,6 +191,7 @@ export const internal = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
+  gvlid: GVLID,
 
   /**
    * Validate given bid request
