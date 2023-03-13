@@ -8,12 +8,16 @@
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'permutive'
 
+const logger = prefixLog('[PermutiveRTD]')
+
 export const PERMUTIVE_SUBMODULE_CONFIG_KEY = 'permutive-prebid-rtd'
+export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
+export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
 export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
@@ -22,30 +26,6 @@ function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
 
   return true
-}
-
-/**
- * Set segment targeting from cache and then try to wait for Permutive
- * to initialise to get realtime segment targeting
- * @param {Object} reqBidsConfigObj
- * @param {function} callback - Called when submodule is done
- * @param {customModuleConfig} reqBidsConfigObj - Publisher config for module
- */
-export function initSegments (reqBidsConfigObj, callback, customModuleConfig) {
-  const permutiveOnPage = isPermutiveOnPage()
-  const moduleConfig = getModuleConfig(customModuleConfig)
-  const segmentData = getSegments(moduleConfig.params.maxSegs)
-
-  setSegments(reqBidsConfigObj, moduleConfig, segmentData)
-
-  if (moduleConfig.waitForIt && permutiveOnPage) {
-    window.permutive.ready(function () {
-      setSegments(reqBidsConfigObj, moduleConfig, segmentData)
-      callback()
-    }, 'realtime')
-  } else {
-    callback()
-  }
 }
 
 function liftIntoParams(params) {
@@ -109,15 +89,13 @@ export function getModuleConfig(customModuleConfig) {
 
 /**
  * Sets ortb2 config for ac bidders
- * @param {Object} bidderOrtb2
+ * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
  * @param {Object} customModuleConfig - Publisher config for module
  */
-export function setBidderRtb (bidderOrtb2, customModuleConfig) {
-  const moduleConfig = getModuleConfig(customModuleConfig)
+export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
   const maxSegs = deepAccess(moduleConfig, 'params.maxSegs')
   const transformationConfigs = deepAccess(moduleConfig, 'params.transformations') || []
-  const segmentData = getSegments(maxSegs)
 
   const ssps = segmentData?.ssp?.ssps ?? []
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
@@ -126,28 +104,37 @@ export function setBidderRtb (bidderOrtb2, customModuleConfig) {
   bidders.forEach(function (bidder) {
     const currConfig = { ortb2: bidderOrtb2[bidder] || {} }
 
-    const isAcBidder = acBidders.indexOf(bidder) > -1
-    const isSspBidder = ssps.indexOf(bidder) > -1
-
     let cohorts = []
-    if (isAcBidder) cohorts = segmentData.ac
-    if (isSspBidder) cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
 
-    const nextConfig = updateOrtbConfig(currConfig, cohorts, sspCohorts, transformationConfigs)
-    bidderOrtb2[bidder] = nextConfig.ortb2;
+    const isAcBidder = acBidders.indexOf(bidder) > -1
+    if (isAcBidder) {
+      cohorts = segmentData.ac
+    }
+
+    const isSspBidder = ssps.indexOf(bidder) > -1
+    if (isSspBidder) {
+      cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
+    }
+
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, transformationConfigs, segmentData)
+    bidderOrtb2[bidder] = nextConfig.ortb2
   })
 }
 
 /**
  * Updates `user.data` object in existing bidder config with Permutive segments
+ * @param string bidder - The bidder
  * @param {Object} currConfig - Current bidder config
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
+ * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformationConfigs) {
+function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
+  const customCohortsData = deepAccess(segmentData, bidder) || []
+
   const name = 'permutive.com'
 
   const permutiveUserData = {
@@ -173,6 +160,19 @@ function updateOrtbConfig (currConfig, segmentIDs, sspSegmentIDs, transformation
   const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
   const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
   deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
+
+  // Set user extensions
+  if (segmentIDs.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+  }
+
+  if (customCohortsData.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.user.ext.data.${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}`, customCohortsData.map(String))
+    logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
+  }
+
+  logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)
 
   return ortbConfig
 }
@@ -262,17 +262,6 @@ function getDefaultBidderFn (bidder) {
 
       return bid
     },
-    rubicon: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.visitor.p_standard', segments)
-      }
-      if (data.rubicon && data.rubicon.length) {
-        deepSetValue(bid, 'params.visitor.permutive', data.rubicon.map(String))
-      }
-
-      return bid
-    },
     ozone: function (bid, data, acEnabled) {
       if (isPStandardTargetingEnabled(data, acEnabled)) {
         const segments = pStandardTargeting(data, acEnabled)
@@ -283,7 +272,12 @@ function getDefaultBidderFn (bidder) {
     }
   }
 
-  return bidderMap[bidder]
+  // On no default bidder just return the same bid as passed in
+  function bidIdentity(bid) {
+    return bid
+  }
+
+  return bidderMap[bidder] || bidIdentity
 }
 
 /**
@@ -383,17 +377,55 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
   return iabIds[permutiveSegmentId] || unknownIabSegmentId
 }
 
+/**
+ * Pull the latest configuration and cohort information and update accordingly.
+ *
+ * @param reqBidsConfigObj - Bidder provided config for request
+ * @param customModuleConfig - Publisher provide config
+ */
+export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
+  const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
+
+  makeSafe(function () {
+    // Legacy route with custom parameters
+    // ACK policy violation, in process of removing
+    setSegments(reqBidsConfigObj, moduleConfig, segmentData)
+  });
+
+  makeSafe(function () {
+    // Route for bidders supporting ORTB2
+    setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, moduleConfig, segmentData)
+  })
+}
+
+let permutiveSDKInRealTime = false
+
 /** @type {RtdSubmodule} */
 export const permutiveSubmodule = {
   name: MODULE_NAME,
   getBidRequestData: function (reqBidsConfigObj, callback, customModuleConfig) {
+    const completeBidRequestData = () => {
+      logger.logInfo(`Request data updated`)
+      callback()
+    }
+
+    const moduleConfig = getModuleConfig(customModuleConfig)
+
+    readAndSetCohorts(reqBidsConfigObj, moduleConfig)
+
     makeSafe(function () {
-      // Legacy route with custom parameters
-      initSegments(reqBidsConfigObj, callback, customModuleConfig)
-    });
-    makeSafe(function () {
-      // Route for bidders supporting ORTB2
-      setBidderRtb(reqBidsConfigObj.ortb2Fragments?.bidder, customModuleConfig)
+      if (permutiveSDKInRealTime || !(moduleConfig.waitForIt && isPermutiveOnPage())) {
+        return completeBidRequestData()
+      }
+
+      window.permutive.ready(function () {
+        logger.logInfo(`SDK is realtime, updating cohorts`)
+        permutiveSDKInRealTime = true
+        readAndSetCohorts(reqBidsConfigObj, getModuleConfig(customModuleConfig))
+        completeBidRequestData()
+      }, 'realtime')
+
+      logger.logInfo(`Registered cohort update when SDK is realtime`)
     })
   },
   init: init

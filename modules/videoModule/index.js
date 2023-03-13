@@ -139,13 +139,15 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    const video = Object.assign({}, adUnit.mediaTypes.video, ortbVideo);
+    const video = Object.assign({}, ortbVideo, adUnit.mediaTypes.video);
 
-    video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    if (!video.context) {
+      video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    }
 
     const width = ortbVideo.w;
     const height = ortbVideo.h;
-    if (width && height) {
+    if (!video.playerSize && width && height) {
       video.playerSize = [width, height];
     }
 
