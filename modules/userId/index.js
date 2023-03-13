@@ -133,13 +133,15 @@ import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {hook, module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
-import {getCoreStorageManager} from '../../src/storageManager.js';
+import {getCoreStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE} from '../../src/storageManager.js';
 import {
   cyrb53Hash,
   deepAccess,
+  deepSetValue,
   delayExecution,
   getPrebidInternal,
   isArray,
+  isEmpty,
   isEmptyStr,
   isFn,
   isGptPubadsDefined,
@@ -147,8 +149,7 @@ import {
   isPlainObject,
   logError,
   logInfo,
-  logWarn,
-  isEmpty, deepSetValue
+  logWarn
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
@@ -158,8 +159,8 @@ import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetr
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 
 const MODULE_NAME = 'User ID';
-const COOKIE = 'cookie';
-const LOCAL_STORAGE = 'html5';
+const COOKIE = STORAGE_TYPE_COOKIES;
+const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
 const DEFAULT_SYNC_DELAY = 500;
 const NO_AUCTION_DELAY = 0;
 const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
