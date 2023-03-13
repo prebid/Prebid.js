@@ -192,7 +192,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   gvlid: GVLID,
-  
+
   /**
    * Validate given bid request
    *
