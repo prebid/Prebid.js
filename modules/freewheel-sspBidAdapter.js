@@ -381,7 +381,7 @@ export const spec = {
         }
       }
 
-      if (currentBidRequest.userId && currentBidRequest.userIdAsEids) {
+      if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
         try {
           requestParams._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
         } catch (error) {
