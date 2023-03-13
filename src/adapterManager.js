@@ -609,10 +609,8 @@ adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
-adapterManager.callBidBillableBidder = function(bidder, bid, adUnits) {
-  // Adding user configured params to bidWon event data
-  bid.params = getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
-  tryCallBidderMethod(bidder, 'onBidBillable', bid);
+adapterManager.callBidBillableBidder = function(bid) {
+  tryCallBidderMethod(bid.adapterCode || bid.bidder, 'onBidBillable', bid);
 };
 
 adapterManager.callSetTargetingBidder = function(bidder, bid) {

@@ -366,12 +366,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     }
   }
 
-  function addWinningBid(winningBid, aUnits = adUnits, am = adapterManager) {
-    const { adUnitCode } = winningBid;
-    const winningAd = aUnits.find(adUnit => adUnit.code === adUnitCode);
+  function addWinningBid(winningBid) {
+    const { transactionId } = winningBid;
+    const winningAd = adUnits.find(adUnit => adUnit.transactionId === transactionId);
     _winningBids = _winningBids.concat(winningBid);
-    am.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, aUnits);
-    if (winningAd && !winningAd.deferBilling) am.callBidBillableBidder(winningBid.adapterCode || winningBid.bidder, winningBid, aUnits);
+    adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
+    if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
 
   function setBidTargeting(bid) {
