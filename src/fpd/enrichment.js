@@ -3,7 +3,7 @@ import {getRefererInfo, parseDomain} from '../refererDetection.js';
 import {findRootDomain} from './rootDomain.js';
 import {deepSetValue, getDefinedParams, getDNT, getWindowSelf, getWindowTop, mergeDeep} from '../utils.js';
 import {config} from '../config.js';
-import {getHighEntropySUA, getLowEntropySUA} from '../../libraries/fpd/sua.js';
+import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {GreedyPromise} from '../utils/promise.js';
 
 export const dep = {
