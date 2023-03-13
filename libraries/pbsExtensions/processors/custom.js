@@ -65,7 +65,7 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
         ortbRequest.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
 		if(firstBidRequest.bids[0]?.bidViewability) {
 			let vsgObj = getAndParseFromLocalStorage('viewability-data');
-			ortbRequest.ext.prebid.bidderparams[bidder]['adDomain'] = removeUnwantedKeys(vsgObj[vsgDomain]);
+			ortbRequest.ext.prebid.bidderparams[bidder]["bidViewability"] = {'adDomain' : removeUnwantedKeys(vsgObj[vsgDomain])};
 		}
       }
     })
