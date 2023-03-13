@@ -170,6 +170,16 @@ describe('storage manager', function() {
               cookie: true
             }
           },
+          'none': {
+            configValues: [
+              false,
+              []
+            ],
+            shouldWork: {
+              html5: false,
+              cookie: false
+            }
+          },
           'localStorage': {
             configValues: [
               'html5',
