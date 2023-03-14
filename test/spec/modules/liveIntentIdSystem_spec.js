@@ -292,6 +292,11 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar'}});
   });
 
+  it('should decode a bidswitch to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', bidswitch: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'bidswitch': {'id': 'bar'}});
+  });
+
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
     expect(result).to.eql({'uid2': {'id': 'bar'}});
