@@ -6,9 +6,6 @@
         <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
         <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
         <script>
-            var helper = document.getElementById('need-help');
-            if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
-
             /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
             var div_1_sizes = [
                 [300, 250],
@@ -197,4 +194,8 @@
         </div>
 
     </body>
+    <script type="text/javascript">
+        var helper = document.getElementById('need-help');
+        if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
+    </script>
 </html>
