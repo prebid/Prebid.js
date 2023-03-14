@@ -22,13 +22,13 @@ export function init(cfg) {
       getHook('addComponentAuction').before(addComponentAuctionHook);
       isEnabled = true;
     }
-    logInfo(MODULE, `isEnabled`, cfg);
+    logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
   } else {
     if (isEnabled) {
       getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
       isEnabled = false;
     }
-    logInfo(MODULE, `isDisabled`, cfg);
+    logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
@@ -50,8 +50,12 @@ export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig
   next(adUnitCode, componentAuctionConfig);
 }
 
+function isFledgeSupported() {
+  return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator
+}
+
 export function markBidsForFledge(next, bidderRequests) {
-  if ('runAdAuction' in navigator && 'joinAdInterestGroup' in navigator) {
+  if (isFledgeSupported()) {
     bidderRequests.forEach((req) => {
       req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
     })

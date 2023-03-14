@@ -260,6 +260,8 @@ export function newBidder(spec) {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
               addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+            } else {
+              logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
           });
         },
