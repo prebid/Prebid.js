@@ -146,6 +146,15 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // bidswitchId
+  'bidswitch': {
+    source: 'bidswitch.com',
+    atype: 508,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',

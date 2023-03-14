@@ -171,6 +171,10 @@ export const liveIntentIdSubmodule = {
         result.uid2 = { 'id': value.uid2 }
       }
 
+      if (value.bidswitch) {
+        result.bidswitch = { 'id': value.bidswitch }
+      }
+
       return result
     }
 
