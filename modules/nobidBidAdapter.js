@@ -8,7 +8,7 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.3.2';
+window.nobidVersion = '1.3.3';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -175,6 +175,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (adunitObject.div) {
       a.d = adunitObject.div;
     }
+    if (adunitObject.floor) {
+      a.floor = adunitObject.floor;
+    }
     if (adunitObject.targeting) {
       a.g = adunitObject.targeting;
     } else {
@@ -200,6 +203,12 @@ function nobidBuildRequests(bids, bidderRequest) {
     }
     adunits.push(a);
     return adunits;
+  }
+  function getFloor (bid) {
+    if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+      return bid.getFloor().floor;
+    }
+    return null;
   }
   if (typeof window.nobid.refreshLimit !== 'undefined') {
     if (window.nobid.refreshLimit < window.nobid.refreshCount) return false;
@@ -227,6 +236,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
+    const floor = getFloor(bid);
 
     if (siteId) {
       newAdunit({
@@ -235,7 +245,8 @@ function nobidBuildRequests(bids, bidderRequest) {
         siteId: siteId,
         placementId: placementId,
         ad_type: adType,
-        params: bid.params
+        params: bid.params,
+        floor: floor
       },
       adunits);
     }
