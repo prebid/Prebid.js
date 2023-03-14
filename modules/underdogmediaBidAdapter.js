@@ -145,7 +145,7 @@ export const spec = {
     if (!data.gdpr || !data.gdpr.gdprApplies || data.gdpr.consentGiven) {
       return {
         method: 'POST',
-        url: 'https://udmserve.net/udm/img.fetch',
+        url: `https://udmserve.net/udm/img.fetch?sid=${siteId}`,
         data: data,
         bidParams: validBidRequests
       };
