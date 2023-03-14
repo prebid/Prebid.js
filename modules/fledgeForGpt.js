@@ -54,7 +54,7 @@ function isFledgeSupported() {
   return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator
 }
 
-export function markBidsForFledge(next, bidderRequests) {
+export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((req) => {
       req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
@@ -62,7 +62,7 @@ export function markBidsForFledge(next, bidderRequests) {
   }
   next(bidderRequests);
 }
-getHook('makeBidRequests').after(markBidsForFledge);
+getHook('makeBidRequests').after(markForFledge);
 
 export function setImpExtAe(imp, bidRequest, context) {
   if (!context.bidderRequest.fledgeEnabled) {
