@@ -226,7 +226,7 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
 }
 
 export const setGptEventHandlers = () => {
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
+  // events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
     // add the GPT event listeners
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
@@ -249,7 +249,7 @@ export const setGptEventHandlers = () => {
         gptSlotVisibilityChangedHandler(currentAdSlotElement, currentAdSlotSizes, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
       });
     });
-  });
+  // });
 };
 
 const initConfigDefaults = config => {
