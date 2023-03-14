@@ -11,7 +11,7 @@ const CATTAX_IAB = 6 // IAB Tech Lab Content Taxonomy 2.2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
 
-function init(config = {}, userConsent = '') {
+function init(config = {}, userConsent) {
   config.params = config.params || {}
   // ignore module if publicToken is missing (module setup failure)
   if (!config.params.publicToken) {
