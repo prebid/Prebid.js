@@ -38,7 +38,7 @@ export const spec = {
     const requests = [];
     const {refererInfo, bidderRequestId, gdprConsent, uspConsent} = bidderRequest;
     validBidRequests.forEach(bidRequest => {
-      const {bidId, adUnitCode, auctionId, transactionId, schain, params, sizes} = bidRequest;
+      const {bidId, adUnitCode, auctionId, transactionId, schain, params} = bidRequest;
       const video = getVideoMediaType(bidRequest);
 
       const request = {
@@ -52,7 +52,7 @@ export const spec = {
           referer: refererInfo.page || refererInfo,
           gdpr: gdprConsent,
           ccpa: uspConsent,
-          sizes: sizes,
+          sizes: video.playerSize,
           video: video,
           aUCode: adUnitCode,
           aID: auctionId,
@@ -157,7 +157,7 @@ const getValidUrl = function (url, gdprConsent, uspConsent) {
 }
 
 const validateBrowsiIds = function (pubId, tagId) {
-  return isStr(pubId) && isStr(tagId);
+  return pubId && tagId && isStr(pubId) && isStr(tagId);
 }
 const getData = function () {
   return window[DATA]?.[ADAPTER];
