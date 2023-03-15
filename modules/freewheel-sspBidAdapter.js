@@ -350,8 +350,11 @@ export const spec = {
         timestamp: timeInMillis,
         _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
         _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
+        pbjs_version: '$prebid.version$',
         pKey: keyCode
       };
+
+      logWarn('wx test pbjs_version = ' + requestParams.pbjs_version);
 
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
