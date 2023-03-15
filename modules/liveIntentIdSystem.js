@@ -132,7 +132,7 @@ function tryFireEvent() {
     setTimeout(() => {
       const instances = window.liQ_instances
       instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
-      if (!eventFired) {
+      if (!eventFired && liveConnect) {
         liveConnect.fire();
       }
     }, eventDelay)
