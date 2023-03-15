@@ -93,15 +93,107 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
-          userIdAsEids: [{
-            'source': 'pubcid.org',
-            'uids': [
-              {
-                'atype': 1,
-                'id': 'fake-pubcid'
-              }
-            ]
-          }],
+          userIdAsEids: [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-pubcid'
+                },
+              ]
+            },
+            {
+              'source': 'liveramp.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-identity-link'
+                }
+              ]
+            },
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-id5id'
+                }
+              ]
+            },
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-tdid'
+                }
+              ]
+            },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-criteo'
+                }
+              ]
+            },
+            {
+              'source': 'britepool.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-britepool'
+                }
+              ]
+            },
+            {
+              'source': 'liveintent.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lipbid'
+                }
+              ]
+            },
+            {
+              'source': 'intentiq.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-intentiq'
+                }
+              ]
+            },
+            {
+              'source': 'crwdcntrl.net',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lotame'
+                }
+              ]
+            },
+            {
+              'source': 'parrable.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-parrable'
+                }
+              ]
+            },
+            {
+              'source': 'netid.de',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-netid'
+                }
+              ]
+            }
+          ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
@@ -196,7 +288,17 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.site.ref).to.equal('https://referer.com');
 
             const expectedEids = {
+              'liveramp.com': { id: 'fake-identity-link' },
+              'id5-sync.com': { id: 'fake-id5id' },
               'pubcid.org': { id: 'fake-pubcid' },
+              'adserver.org': { id: 'fake-tdid' },
+              'criteo.com': { id: 'fake-criteo' },
+              'britepool.com': { id: 'fake-britepool' },
+              'liveintent.com': { id: 'fake-lipbid' },
+              'intentiq.com': { id: 'fake-intentiq' },
+              'crwdcntrl.net': { id: 'fake-lotame' },
+              'parrable.com': { id: 'fake-parrable' },
+              'netid.de': { id: 'fake-netid' },
             };
             expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
             for (const eid of openRtbReq.user.ext.eids) {
