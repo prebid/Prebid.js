@@ -139,26 +139,13 @@ export const gptSlotRenderEndedHandler = (adSlotElementId, adSlotSize, adDomain,
 };
 
 export const gptImpressionViewableHandler = (adSlotElementId, adSlotSizes, adDomain, setToLocalStorageCb) => {
-  const keyArr = [adDomain, adSlotElementId];
-  if (adSlotSizes) {
-    adSlotSizes.forEach(adSlotSize => {
-      const adSlotKey = `${adSlotSize.width}x${adSlotSize.height}`;
-      keyArr.push(adSlotKey);
-    });
-  }
+  const keyArr = [adDomain, adSlotElementId, adSlotSizes];
   incrementViewCount(keyArr);
   setToLocalStorageCb('viewability-data', vsgObj);
 };
 
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, adSlotSizes, adDomain, inViewPercentage, setToLocalStorageCb) => {
-  const keyArr = [adDomain, adSlotElementId];
-
-  if (adSlotSizes) {
-    adSlotSizes.forEach(adSlotSize => {
-      const adSlotKey = `${adSlotSize.width}x${adSlotSize.height}`;
-      keyArr.push(adSlotKey);
-    });
-  }
+  const keyArr = [adDomain, adSlotElementId, adSlotSizes];
   incrementTotalViewTime(keyArr, inViewPercentage, setToLocalStorageCb);
 };
 
@@ -226,30 +213,31 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
 }
 
 export const setGptEventHandlers = () => {
-  // events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
     // add the GPT event listeners
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => {
       window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const currentAdSlotSize = event.size?.toString().replace(',', 'x');
+		const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+        const currentAdSlotSize = creativeSize?.[0];
         gptSlotRenderEndedHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const currentAdSlotSizes = event.slot.getSizes();
-        gptImpressionViewableHandler(currentAdSlotElement, currentAdSlotSizes, domain, setAndStringifyToLocalStorage);
+        const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+	    const currentAdSlotSize = creativeSize?.[0];
+        gptImpressionViewableHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const currentAdSlotSizes = event.slot.getSizes();
-        gptSlotVisibilityChangedHandler(currentAdSlotElement, currentAdSlotSizes, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
+        const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+	    const currentAdSlotSize = creativeSize?.[0];
+        gptSlotVisibilityChangedHandler(currentAdSlotElement, currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
       });
     });
-  // });
 };
 
 const initConfigDefaults = config => {
