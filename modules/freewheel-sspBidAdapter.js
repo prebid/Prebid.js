@@ -354,8 +354,6 @@ export const spec = {
         pKey: keyCode
       };
 
-      logWarn('wx test pbjs_version = ' + requestParams.pbjs_version);
-
       // Add GDPR flag and consent string
       if (bidderRequest && bidderRequest.gdprConsent) {
         requestParams._fw_gdpr_consent = bidderRequest.gdprConsent.consentString;
