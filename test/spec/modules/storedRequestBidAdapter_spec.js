@@ -107,7 +107,7 @@ function onModifyPBSRequest(fn, ...args) {
   fn.call(this, ...args);
 }
 
-const findReq = (str) => server.requests.findLast((r) => r.url.includes(str));
+const findReq = (str) => server.requests.find((r) => r.url.includes(str));
 
 describe('Stored Request Bid Adaper', function () {
   before(function() {

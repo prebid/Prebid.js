@@ -197,14 +197,14 @@ class StoredRequestBidAdapterBase {
     req.imp = req.imp.reduce((acc, imp) => {
       const { prebid = {} } = imp.ext || {};
       const params = prebid.bidder?.[info.bidder] || {};
-      const adUnitFiedName = this.nameMap.adUnitCode || 'adUnitCode';
-      const adUnitCode = params[adUnitFiedName];
+      const adUnitFieldName = this.nameMap.adUnitCode || 'adUnitCode';
+      const adUnitCode = params[adUnitFieldName];
       if (adUnitCode) {
         // Use params.adUnitCode as stored request id
         deepSetValue(imp, 'ext.prebid.storedrequest.id', adUnitCode);
         acc.push(imp);
       } else {
-        logWarn(`${info.bidder} is skipping '${imp.id}' as '${adUnitFiedName}' is missing`);
+        logWarn(`${info.bidder} is skipping '${imp.id}' as '${adUnitFieldName}' is missing`);
       }
       delete prebid.bidder; // Delete prebid.bidder as we're using a stored request instead
       return acc;
