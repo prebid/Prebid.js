@@ -5,7 +5,7 @@ import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
-const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, defaultEventDelay: 50} };
+const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, defaultEventDelay: 1} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('LiveIntentId', function() {
@@ -69,7 +69,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should fire an event when getId and a hash is provided', function(done) {
@@ -80,7 +80,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should initialize LiveConnect with the config params when decode and emit an event', function (done) {
@@ -97,7 +97,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should initialize LiveConnect and emit an event with a privacy string when decode', function(done) {
@@ -110,7 +110,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*/);
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should fire an event when decode and a hash is provided', function(done) {
@@ -121,7 +121,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
@@ -134,7 +134,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.be.not.null
       done();
-    }, 100);
+    }, 200);
   });
 
   it('should initialize LiveConnect and send data only once', function(done) {
