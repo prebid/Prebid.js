@@ -389,6 +389,14 @@ describe('Conversant adapter tests', function() {
     expect(payload.device).to.have.property('ua', navigator.userAgent);
 
     expect(payload).to.not.have.property('user'); // there should be no user by default
+    expect(payload).to.not.have.property('tmax'); // there should be no user by default
+  });
+
+  it('Verify timeout', () => {
+    const bidderRequest = { timeout: 9999 };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const payload = request.data;
+    expect(payload.tmax).equals(bidderRequest.timeout);
   });
 
   it('Verify first party data', () => {
