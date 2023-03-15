@@ -63,7 +63,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
     let url = bidderRequest.refererInfo.referer;
 

@@ -1,6 +1,6 @@
 import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
@@ -295,7 +295,7 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
   if (eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON) {
     flushEvents();
   }
-}
+};
 
 pubwiseAnalytics.storeSessionID = function (userSessID) {
   storage.setDataInLocalStorage(localStorageSessName(), userSessID);
@@ -304,11 +304,14 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
-  if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
+  let sessionId = userSessionID();
+  if (sessionExpired() === true || sessionId === null || sessionId === '') {
     let generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
+  } else if (sessionId != null) {
+    sessionData.sessionId = sessionId;
   }
   // eslint-disable-next-line
   // console.log('ensured session');

@@ -71,7 +71,7 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
-      let pos = parseInt(bid.params.pos, 10);
+      let pos = parseInt(bid.params.pos || deepAccess(bid.mediaTypes, 'video.pos'), 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;
@@ -101,7 +101,7 @@ export const spec = {
     });
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
+    if (bidderRequest.uspConsent) {
       deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 

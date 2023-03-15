@@ -1,11 +1,14 @@
-import { deepAccess, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import { deepAccess, isNumber, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import CONSTANTS from '../src/constants.json';
 
+const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.6'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
@@ -60,10 +63,15 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  if (ortb2.regs?.gpp !== undefined) {
+    deepSetValue(requestTemplate, 'regs.ext.gpp', ortb2.regs.gpp);
+    deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
     const geo = deepAccess(bidRequest, 'params.app.geo');
     deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa')
+    const ifa = deepAccess(bidRequest, 'params.app.ifa');
     deepSetValue(requestTemplate, 'device.ifa', ifa);
   }
 
@@ -91,6 +99,12 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   }
 
+  const nativeOrtbRequest = bidRequest.nativeOrtbRequest;
+  if (nativeOrtbRequest) {
+    const nativeRequest = Object.assign({}, requestTemplate, createNativeImp(bidRequest, nativeOrtbRequest));
+    requests.push(nativeRequest);
+  }
+
   return requests;
 }
 
@@ -109,11 +123,11 @@ const buildServerRequest = (validBidRequest, data) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   gvlid: 82,
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -171,6 +185,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, bidRequest) => {
@@ -210,7 +225,7 @@ export const spec = {
           }
         };
 
-        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context');
         if (videoContext === ADPOD) {
           resultingBid.vastXml = bid.adm;
           resultingBid.mediaType = VIDEO;
@@ -237,6 +252,11 @@ export const spec = {
             case 'Video':
               resultingBid.vastXml = bid.adm;
               resultingBid.mediaType = VIDEO;
+              bids.push(resultingBid);
+              break;
+            case 'Native':
+              resultingBid.native = createNativeAd(bid.adm);
+              resultingBid.mediaType = NATIVE;
               bids.push(resultingBid);
               break;
             default:
@@ -297,6 +317,13 @@ const createRichmediaAd = (adm) => {
   return markup + '</div>';
 };
 
+const createNativeAd = (adm) => {
+  const nativeResponse = JSON.parse(adm).native;
+  return {
+    ortb: nativeResponse
+  }
+};
+
 function createBannerImp(bidRequest) {
   const adUnitSizes = getAdUnitSizes(bidRequest);
   const sizes = adUnitSizes.map((size) => ({w: size[0], h: size[1]}));
@@ -340,6 +367,33 @@ function createVideoImp(bidRequest, videoMediaType) {
       }
     }]
   };
+}
+
+function createNativeImp(bidRequest, nativeRequest) {
+  return {
+    imp: [{
+      id: bidRequest.bidId,
+      tagid: deepAccess(bidRequest, 'params.adspaceId'),
+      bidfloor: getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(nativeRequest)),
+      native: {
+        request: JSON.stringify(nativeRequest),
+        ver: '1.2'
+      }
+    }]
+  };
+}
+
+function getNativeMainImageSize(nativeRequest) {
+  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  if (mainImage) {
+    if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
+      return [[mainImage.img.w, mainImage.img.h]]
+    }
+    if (isNumber(mainImage.img.wmin) && isNumber(mainImage.img.hmin)) {
+      return [[mainImage.img.wmin, mainImage.img.hmin]]
+    }
+  }
+  return []
 }
 
 function createAdPodImp(bidRequest, videoMediaType) {

@@ -232,7 +232,7 @@ function buildImp(bid, id) {
       w: sizes[0][0],
       h: sizes[0][1],
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
-    }
+    };
   } else if (nativeReq) {
     const assets = _map(bid.nativeParams, (bidParams, key) => {
       const props = NATIVE_PARAMS[key];

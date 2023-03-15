@@ -102,7 +102,7 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
-            name: "cpexId"
+            name: "czechAdId"
         }, {
             name: 'mwOpenLinkId',
             params: {
@@ -151,7 +151,7 @@ pbjs.setConfig({
                   },
         {
              name: "dacId"
-        }, 
+        },
         {
             name: "gravitompId"
         }

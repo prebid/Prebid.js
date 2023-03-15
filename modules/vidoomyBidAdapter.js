@@ -110,7 +110,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       method: 'GET',
       url: ENDPOINT,
       data: queryParams
-    }
+    };
   });
   return serverRequests;
 };

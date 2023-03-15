@@ -132,7 +132,7 @@ function createVideoTag(bid) {
   tag.ad_types = [VIDEO];
   tag.uuid = bid.bidId;
   tag.allow_smaller_sizes = false;
-  tag.use_pmt_rule = false
+  tag.use_pmt_rule = false;
   tag.prebid = true;
   tag.disable_psa = true;
   tag.hb_source = 1;
@@ -157,7 +157,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const sizes = getSizes(bidRequest);
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm * MARGIN,
+    cpm: rtbBid.cpm / MARGIN,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',

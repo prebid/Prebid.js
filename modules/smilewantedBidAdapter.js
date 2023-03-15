@@ -63,6 +63,11 @@ export const spec = {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
+
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',

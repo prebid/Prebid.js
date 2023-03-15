@@ -293,8 +293,8 @@ describe('Digital Garage Keyword Module', function () {
         moduleConfig,
         null
       );
+      const request = server.requests[0];
       setTimeout(() => {
-        const request = server.requests[0];
         if (request) {
           request.respond(
             200,
@@ -302,7 +302,7 @@ describe('Digital Garage Keyword Module', function () {
             JSON.stringify(DUMMY_RESPONSE)
           );
         }
-      }, 1000);
+      }, 50);
     });
     it('should get profiles ok(200).', function (done) {
       let pbjs = cloneDeep(config);
@@ -335,6 +335,88 @@ describe('Digital Garage Keyword Module', function () {
               dg: SUCCESS_ORTB2,
             });
           }
+          done();
+        },
+        moduleConfig,
+        null
+      );
+      const request = server.requests[0];
+      request.respond(
+        200,
+        DUMMY_RESPONSE_HEADER,
+        JSON.stringify(DUMMY_RESPONSE)
+      );
+    });
+    it('change url.', function (done) {
+      const dummyUrl = 'https://www.test.com/test'
+      let pbjs = cloneDeep(config);
+      pbjs.adUnits = cloneDeep(AD_UNITS);
+      if (IGNORE_SET_ORTB2) {
+        pbjs._ignoreSetOrtb2 = true;
+      }
+      let moduleConfig = cloneDeep(DEF_CONFIG);
+      moduleConfig.params.url = dummyUrl;
+      dgRtd.getDgKeywordsAndSet(
+        pbjs,
+        () => {
+          const url = dgRtd.getProfileApiUrl(dummyUrl);
+          expect(url.indexOf('?fpid=') === -1).to.equal(true);
+          expect(url).to.equal(server.requests[0].url);
+          done();
+        },
+        moduleConfig,
+        null
+      );
+      const request = server.requests[0];
+      request.respond(
+        200,
+        DUMMY_RESPONSE_HEADER,
+        JSON.stringify(DUMMY_RESPONSE)
+      );
+    });
+    it('add fpid stored in local strage.', function (done) {
+      const uuid = 'uuid_abcdefghijklmnopqrstuvwxyz';
+      let pbjs = cloneDeep(config);
+      pbjs.adUnits = cloneDeep(AD_UNITS);
+      if (IGNORE_SET_ORTB2) {
+        pbjs._ignoreSetOrtb2 = true;
+      }
+      let moduleConfig = cloneDeep(DEF_CONFIG);
+      window.localStorage.setItem('ope_fpid', uuid);
+      moduleConfig.params.enableReadFpid = true;
+      dgRtd.getDgKeywordsAndSet(
+        pbjs,
+        () => {
+          const url = dgRtd.getProfileApiUrl(null, moduleConfig.params.enableReadFpid);
+          expect(url.indexOf(uuid) > 0).to.equal(true);
+          expect(url).to.equal(server.requests[0].url);
+          done();
+        },
+        moduleConfig,
+        null
+      );
+      const request = server.requests[0];
+      request.respond(
+        200,
+        DUMMY_RESPONSE_HEADER,
+        JSON.stringify(DUMMY_RESPONSE)
+      );
+    });
+    it('disable fpid stored in local strage.', function (done) {
+      const uuid = 'uuid_abcdefghijklmnopqrstuvwxyz';
+      let pbjs = cloneDeep(config);
+      pbjs.adUnits = cloneDeep(AD_UNITS);
+      if (IGNORE_SET_ORTB2) {
+        pbjs._ignoreSetOrtb2 = true;
+      }
+      let moduleConfig = cloneDeep(DEF_CONFIG);
+      window.localStorage.setItem('ope_fpid', uuid);
+      dgRtd.getDgKeywordsAndSet(
+        pbjs,
+        () => {
+          const url = dgRtd.getProfileApiUrl(null);
+          expect(url.indexOf(uuid) > 0).to.equal(false);
+          expect(url).to.equal(server.requests[0].url);
           done();
         },
         moduleConfig,

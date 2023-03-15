@@ -1,12 +1,12 @@
 import { deepAccess, getGptSlotInfoForAdUnitCode, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.1.0';
+const pubxaiAnalyticsVersion = 'v1.2.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
@@ -140,7 +140,7 @@ export function getOS() {
 // add sampling rate
 pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
   return (Math.floor((Math.random() * samplingRate + 1)) === parseInt(samplingRate));
-}
+};
 
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
@@ -154,11 +154,11 @@ function send(data, status) {
       search: location.search
     });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
+      data.pageDetail.adUnits = data.auctionInit.adUnitCodes;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 
-      data.pmcDetail = {}
+      data.pmcDetail = {};
       Object.assign(data.pmcDetail, {
         bidDensity: storage ? storage.getItem('pbx:dpbid') : null,
         maxBid: storage ? storage.getItem('pbx:mxbid') : null,

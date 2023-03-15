@@ -1,4 +1,15 @@
-import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, staticConsentData, gdprScope } from 'modules/consentManagement.js';
+import {
+  setConsentConfig,
+  requestBidsHook,
+  resetConsentData,
+  userCMP,
+  consentTimeout,
+  actionTimeout,
+  staticConsentData,
+  gdprScope,
+  loadConsentData,
+  setActionTimeout
+} from 'modules/consentManagement.js';
 import { gdprDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -673,6 +684,46 @@ describe('consentManagement', function () {
               expect(gdprDataHandler.ready).to.be.true;
             });
           });
+
+          it('should timeout after actionTimeout from the first CMP event', (done) => {
+            mockTcfEvent({
+              eventStatus: 'cmpuishown',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            setConsentConfig({
+              timeout: 1000,
+              actionTimeout: 100,
+              cmpApi: 'iab',
+              defaultGdprScope: true
+            });
+            let hookRan = false;
+            requestBidsHook(() => {
+              hookRan = true;
+            }, {});
+            setTimeout(() => {
+              expect(hookRan).to.be.true;
+              done();
+            }, 200)
+          });
+
+          it('should still pick up consent data when actionTimeout is 0', (done) => {
+            mockTcfEvent({
+              eventStatus: 'tcloaded',
+              tcString: 'mock-consent-string',
+              vendorData: {}
+            });
+            setConsentConfig({
+              timeout: 1000,
+              actionTimeout: 0,
+              cmpApi: 'iab',
+              defaultGdprScope: true
+            });
+            requestBidsHook(() => {
+              expect(gdprDataHandler.getConsentData().consentString).to.eql('mock-consent-string');
+              done();
+            }, {})
+          })
 
           Object.entries({
             'null': null,

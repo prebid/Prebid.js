@@ -19,94 +19,6 @@ describe('GreedyPromise', () => {
     })
   });
 
-  describe('unhandled rejections', () => {
-    let unhandled, done, stop;
-
-    function reset(expectUnhandled) {
-      let pending = expectUnhandled;
-      let resolver;
-      unhandled.reset();
-      unhandled.callsFake(() => {
-        pending--;
-        if (pending === 0) {
-          resolver();
-        }
-      })
-      done = new Promise((resolve) => {
-        resolver = resolve;
-        stop = function () {
-          if (expectUnhandled === 0) {
-            resolve()
-          } else {
-            resolver = resolve;
-          }
-        }
-      })
-    }
-
-    before(() => {
-      unhandled = sinon.stub();
-      window.addEventListener('unhandledrejection', unhandled);
-    });
-
-    after(() => {
-      window.removeEventListener('unhandledrejection', unhandled);
-    });
-
-    function getUnhandledErrors() {
-      return unhandled.args.map((args) => args[0].reason);
-    }
-
-    Object.entries({
-      'simple reject': [1, (P) => { P.reject('err'); stop() }],
-      'caught reject': [0, (P) => P.reject('err').catch((e) => { stop(); return e })],
-      'unhandled reject with finally': [1, (P) => P.reject('err').finally(() => 'finally')],
-      'error handler that throws': [1, (P) => P.reject('err').catch((e) => { stop(); throw e })],
-      'rejection handled later in the chain': [0, (P) => P.reject('err').then((v) => v).catch((e) => { stop(); return e })],
-      'multiple errors in one chain': [1, (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => { stop(); return P.reject(v) })],
-      'multiple errors in one chain, all handled': [0, (P) => P.reject('err').then((v) => v).catch((e) => e).then((v) => P.reject(v)).catch((e) => { stop(); return e })],
-      'separate chains for rejection and handling': [1, (P) => {
-        const p = P.reject('err');
-        p.catch((e) => { stop(); return e; })
-        p.then((v) => v);
-      }],
-      'separate rejections merged without handling': [2, (P) => {
-        const p1 = P.reject('err1');
-        const p2 = P.reject('err2');
-        p1.then(() => p2).finally(stop);
-      }],
-      'separate rejections merged for handling': [0, (P) => {
-        const p1 = P.reject('err1');
-        const p2 = P.reject('err2');
-        P.all([p1, p2]).catch((e) => { stop(); return e });
-      }],
-      // eslint-disable-next-line no-throw-literal
-      'exception in resolver': [1, (P) => new P(() => { stop(); throw 'err'; })],
-      // eslint-disable-next-line no-throw-literal
-      'exception in resolver, caught': [0, (P) => new P(() => { throw 'err' }).catch((e) => { stop(); return e })],
-      'errors from nested promises': [1, (P) => new P((resolve) => setTimeout(() => { resolve(P.reject('err')); stop(); }))],
-      'errors from nested promises, caught': [0, (P) => new P((resolve) => setTimeout(() => resolve(P.reject('err')))).catch((e) => { stop(); return e })],
-    }).forEach(([t, [expectUnhandled, op]]) => {
-      describe(`on ${t}`, () => {
-        it('should match vanilla Promises', () => {
-          let vanillaUnhandled;
-          reset(expectUnhandled);
-          op(Promise);
-          return done.then(() => {
-            vanillaUnhandled = getUnhandledErrors();
-            reset(expectUnhandled);
-            op(GreedyPromise);
-            return done;
-          }).then(() => {
-            const actualUnhandled = getUnhandledErrors();
-            expect(actualUnhandled.length).to.eql(expectUnhandled);
-            expect(actualUnhandled).to.eql(vanillaUnhandled);
-          })
-        })
-      })
-    });
-  });
-
   describe('idioms', () => {
     let makePromise, pendingFailure, pendingSuccess;
 
@@ -172,9 +84,11 @@ describe('GreedyPromise', () => {
       'chained Promise.reject': (P) => P.reject(pendingSuccess),
       'chained Promise.reject on failure': (P) => P.reject(pendingFailure),
       'simple Promise.all': (P) => P.all([makePromise(P, 'one'), makePromise(P, 'two')]),
+      'empty Promise.all': (P) => P.all([]),
       'Promise.all with scalars': (P) => P.all([makePromise(P, 'one'), 'two']),
       'Promise.all with errors': (P) => P.all([makePromise(P, 'one'), makePromise(P, 'two'), makePromise(P, 'err', true)]),
       'Promise.allSettled': (P) => P.allSettled([makePromise(P, 'one', true), makePromise(P, 'two'), makePromise(P, 'three', true)]),
+      'empty Promise.allSettled': (P) => P.allSettled([]),
       'Promise.allSettled with scalars': (P) => P.allSettled([makePromise(P, 'value'), 'scalar']),
       'Promise.race that succeeds': (P) => P.race([makePromise(P, 'error', true, 10), makePromise(P, 'success')]),
       'Promise.race that fails': (P) => P.race([makePromise(P, 'success', false, 10), makePromise(P, 'error', true)]),

@@ -1,16 +1,18 @@
-import { logWarn, createTrackPixelHtml, deepAccess, isArray, deepSetValue } from '../src/utils.js';
+import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
 import {config} from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'consumable';
 
-const BASE_URI = 'https://e.serverbid.com/api/v2'
+const BASE_URI = 'https://e.serverbid.com/api/v2';
 
 let siteId = 0;
 let bidder = 'consumable';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -81,6 +83,12 @@ export const spec = {
         divName: bid.bidId,
         adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
+
+      placement.bidfloor = getBidFloor(bid, sizes);
+
+      if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+        placement.video = bid.mediaTypes.video;
+      }
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
         data.placements.push(placement);
@@ -155,6 +163,13 @@ export const spec = {
 
           if (decision.mediaType) {
             bid.meta.mediaType = decision.mediaType;
+
+            if (decision.mediaType === 'video') {
+              bid.mediaType = 'video';
+              bid.vastUrl = decision.vastUrl || undefined;
+              bid.vastXml = decision.vastXml || undefined;
+              bid.videoCacheKey = decision.uuid || undefined;
+            }
           }
 
           bidResponses.push(bid);
@@ -165,12 +180,26 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
+
     if (syncOptions.iframeEnabled) {
+      if (gdprConsent && gdprConsent.consentString) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+        } else {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+
+      if (uspConsent && uspConsent.consentString) {
+        syncUrl = appendUrlParam(syncUrl, `us_privacy=${uspConsent.consentString}`);
+      }
+
       if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
         return [{
           type: 'iframe',
-          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+          url: syncUrl
         }];
       }
     }
@@ -240,8 +269,13 @@ function getSize(sizes) {
 }
 
 function retrieveAd(decision, unitId, unitName) {
-  let ad = decision.contents && decision.contents[0] && decision.contents[0].body + createTrackPixelHtml(decision.impressionUrl);
-
+  let ad;
+  if (decision.contents && decision.contents[0]) {
+    ad = decision.contents[0].body;
+  }
+  if (decision.vastXml) {
+    ad = decision.vastXml;
+  }
   return ad;
 }
 
@@ -252,6 +286,30 @@ function handleEids(data, validBidRequests) {
   } else {
     deepSetValue(data, 'user.eids', undefined);
   }
+}
+
+function getBidFloor(bid, sizes) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidFloor ? bid.params.bidFloor : null;
+  }
+
+  let floor;
+
+  let floorInfo = bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+    size: sizes.length === 1 ? sizes[0] : '*'
+  });
+
+  if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    floor = parseFloat(floorInfo.floor);
+  }
+
+  return floor;
+}
+
+function appendUrlParam(url, queryString) {
+  return `${url}${url.indexOf('?') > -1 ? '&' : '?'}${queryString}`;
 }
 
 registerBidder(spec);
