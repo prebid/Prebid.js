@@ -120,8 +120,8 @@ export function newAuctionManager() {
     return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
   };
 
-  auctionManager.clearAllAuctions = function() {
-    _auctions.length = 0;
+  auctionManager.clearAllAuctions = function(shouldRemoveCondition = () => true) {
+    _auctions.splice(0, Infinity, ..._auctions.filter((auction) => !shouldRemoveCondition(auction)));
   }
 
   function _addAuction(auction) {

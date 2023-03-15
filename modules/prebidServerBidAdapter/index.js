@@ -29,7 +29,7 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
-
+import {GreedyPromise} from '../../src/utils/promise.js';
 const getConfig = config.getConfig;
 
 const TYPE = CONSTANTS.S2S.SRC;
@@ -37,6 +37,19 @@ let _syncCount = 0;
 let _s2sConfigs;
 
 let eidPermissions;
+
+/** Modification hooks: functions (p => p) used to modify the parameter p from outside by using hooks  */
+const modHooks = Object.fromEntries([
+  // For modifying the BidRequest sent to PBS
+  'modifyPBSRequest',
+
+  // For modifying the BidResponse received from PBS
+  'modifyPBSResult',
+
+  // For modifying the payload sent to the /cookie_sync endpoint. Wrapped in a promise allows to delay the call.
+  // @note Promise is used instead of an 'async' hook due to issues in fun-hooks)
+  'processPBSCookieSync',
+].map((name) => [name, hook('sync', (p) => p, name)]));
 
 /**
  * @typedef {Object} AdapterOptions
@@ -179,7 +192,7 @@ function setS2sConfig(options) {
 
   const activeBidders = [];
   const optionsValid = normalizedOptions.every((option, i, array) => {
-    formatUrlParams(options);
+    formatUrlParams(option);
     const updateSuccess = updateConfigDefaultVendor(option);
     if (updateSuccess !== false) {
       const valid = validateConfigRequiredProps(option);
@@ -272,21 +285,24 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
     payload.coopSync = s2sConfig.coopSync;
   }
 
-  const jsonPayload = JSON.stringify(payload);
-  ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
-    (response) => {
-      try {
-        response = JSON.parse(response);
-        doAllSyncs(response.bidder_status, s2sConfig);
-      } catch (e) {
-        logError(e);
-      }
-    },
-    jsonPayload,
-    {
-      contentType: 'text/plain',
-      withCredentials: true
-    });
+  // Wrap payload in a promise to give 'processPBSCookieSync'-hooks chance to modify the payload and/or delay the call.
+  modHooks.processPBSCookieSync(GreedyPromise.resolve({ payload, s2sConfig })).then(({ payload: finalPayload }) => {
+    const jsonPayload = JSON.stringify(finalPayload);
+    ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
+      (response) => {
+        try {
+          response = JSON.parse(response);
+          doAllSyncs(response.bidder_status, s2sConfig);
+        } catch (e) {
+          logError(e);
+        }
+      },
+      jsonPayload,
+      {
+        contentType: 'text/plain',
+        withCredentials: true
+      });
+  }).catch((e) => logError(e));
 }
 
 function doAllSyncs(bidders, s2sConfig) {
@@ -532,7 +548,9 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     .filter(uniques);
 
   const request = s2sBidRequest.metrics.measureTime('buildRequests', () => buildPBSRequest(s2sBidRequest, bidRequests, adUnits, requestedBidders, eidPermissions));
-  const requestJson = request && JSON.stringify(request);
+
+  // Give 'modifyPBSRequest'-hooks a chance to modify the final BidRequest before stringifying
+  const requestJson = request && JSON.stringify(modHooks.modifyPBSRequest(request, s2sBidRequest));
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
   if (request && requestJson && endpointUrl) {
@@ -544,7 +562,8 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           networkDone();
           let result;
           try {
-            result = JSON.parse(response);
+            // Give 'modifyPBSResult'-hooks a chance to modify the BidResponse just after parsing it
+            result = modHooks.modifyPBSResult(JSON.parse(response), s2sBidRequest);
             const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
             bids.forEach(onBid);
           } catch (error) {
