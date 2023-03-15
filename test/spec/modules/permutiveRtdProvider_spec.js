@@ -196,12 +196,67 @@ describe('permutiveRtdProvider', function () {
       setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
-          name: 'permutive.com',
-          segment: expectedTargetingData
-        }])
+        const customCohorts = segmentsData[bidder] || []
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([
+          {
+            name: 'permutive.com',
+            segment: expectedTargetingData,
+          },
+          // Should have custom cohorts specific for that bidder
+          {
+            name: 'permutive',
+            segment: customCohorts.map(seg => {
+              return { id: seg }
+            }),
+          },
+        ])
       })
     })
+
+    it('should override existing ortb2.user.data reserved by permutive RTD', function () {
+      const reservedPermutiveStandardName = 'permutive.com'
+      const reservedPermutiveCustomCohortName = 'permutive'
+
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
+      const sampleOrtbConfig = {
+        user: {
+          data: [
+            {
+              name: reservedPermutiveCustomCohortName,
+              segment: [{ id: 'remove-me' }, { id: 'remove-me-also' }]
+            },
+            {
+              name: reservedPermutiveStandardName,
+              segment: [{ id: 'remove-me-also-also' }, { id: 'remove-me-also-also-also' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+      acBidders.forEach(bidder => {
+        const customCohorts = segmentsData[bidder] || []
+
+        expect(bidderConfig[bidder].user.data).to.not.deep.include.members([...sampleOrtbConfig.user.data])
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([
+          {
+            name: reservedPermutiveCustomCohortName,
+            segment: customCohorts.map(id => ({ id })),
+          },
+          {
+            name: reservedPermutiveStandardName,
+            segment: segmentsData.ac.map(id => ({ id })),
+          },
+        ])
+      })
+    })
+
     it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
       const moduleConfig = getConfig()
       const bidderConfig = {}
@@ -647,6 +702,7 @@ function transformedTargeting (data = getTargetingData()) {
   return {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
+    ix: data._pindexs,
     rubicon: data._prubicons,
     gam: data._pdfps,
     ssp: data._pssps,
@@ -660,6 +716,7 @@ function getTargetingData () {
     _papns: ['appnexus1', 'appnexus2'],
     _psegs: ['1234', '1000001', '1000002'],
     _ppam: ['ppam1', 'ppam2'],
+    _pindexs: ['pindex1', 'pindex2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
     _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
   }

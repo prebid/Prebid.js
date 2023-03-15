@@ -146,12 +146,17 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
     .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config))
 
+  const customCohortsUserData = {
+    name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
+    segment: customCohortsData.map(cohortID => ({ id: cohortID })),
+  }
+
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
   const updatedUserData = currentUserData
-    .filter(el => el.name !== name)
-    .concat(permutiveUserData, transformedUserData)
+    .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
+    .concat(permutiveUserData, transformedUserData, customCohortsUserData)
 
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
@@ -311,6 +316,7 @@ export function getSegments (maxSegs) {
 
   const segments = {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
+    ix: readSegments('_pindexs', []),
     rubicon: readSegments('_prubicons', []),
     appnexus: readSegments('_papns', []),
     gam: readSegments('_pdfps', []),
