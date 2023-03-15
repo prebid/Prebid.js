@@ -5,7 +5,7 @@ import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
-const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, defaultEventDelay: 1} };
+const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, fireEventDelay: 1} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('LiveIntentId', function() {

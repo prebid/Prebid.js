@@ -102,7 +102,7 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  liveConnectConfig.defaultEventDelay = configParams.defaultEventDelay;
+  liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -128,7 +128,7 @@ const setEventFiredFlag = function(_) {
 
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    const eventDelay = liveConnect.config.defaultEventDelay || 500
+    const eventDelay = liveConnect.config.fireEventDelay || 500
     setTimeout(() => {
       const instances = window.liQ_instances
       instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
