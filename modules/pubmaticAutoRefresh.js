@@ -21,7 +21,7 @@ import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotM
 import { getGlobal } from '../src/prebidGlobal.js';
 import { find } from '../src/polyfill.js';
 // import find from 'core-js-pure/features/array/find.js';
-let PWT = window.PWT || {};
+
 const MODULE_NAME = 'pubmaticAutoRefresh';
 const isOpenWrapSetup = true;
 
