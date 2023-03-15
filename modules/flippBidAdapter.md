@@ -28,6 +28,7 @@ var adUnits = [
             {
                 bidder: 'flipp',
                 params: {
+                    creativeType: 'NativeX', // Optional, can be one of 'NativeX' (default) or 'DTX' 
                     publisherNameIdentifier: 'wishabi-test-publisher', // Required
                     siteId: 1192075, // Required
                     zoneIds: [260678], // Optional

@@ -3,11 +3,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const NETWORK_ID = 11090;
 const AD_TYPES = [4309, 641];
+const DTX_TYPES = [5061];
 const TARGET_NAME = 'inline';
 const BIDDER_CODE = 'flipp';
 const ENDPOINT = 'https://gateflipp.flippback.com/flyer-locator-service/prebid_campaigns';
 const DEFAULT_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_CREATIVE_TYPE = 'NativeX';
+const VALID_CREATIVE_TYPES = ['DTX', 'NativeX'];
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -16,6 +19,27 @@ const generateUUID = () => {
     return v.toString(16);
   });
 };
+
+/**
+ * Determines if a creativeType is valid
+ *
+ * @param {string} creativeType The Creative Type to validate.
+ * @return string creativeType if this is a valid Creative Type, and 'NativeX' otherwise.
+ */
+const validateCreativeType = (creativeType) => {
+  if (creativeType && VALID_CREATIVE_TYPES.includes(creativeType)) {
+    return creativeType;
+  } else {
+    return DEFAULT_CREATIVE_TYPE;
+  }
+};
+
+const getAdTypes = (creativeType) => {
+  if (creativeType === 'DTX') {
+    return DTX_TYPES;
+  }
+  return AD_TYPES;
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -45,13 +69,14 @@ export const spec = {
         divName: TARGET_NAME,
         networkId: NETWORK_ID,
         siteId: bid.params.siteId,
-        adTypes: AD_TYPES,
+        adTypes: getAdTypes(bid.params.creativeType),
         count: 1,
         ...(!isEmpty(bid.params.zoneIds) && {zoneIds: bid.params.zoneIds}),
         properties: {
           ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
         },
         prebid: {
+          creativeType: validateCreativeType(bid.params.creativeType),
           requestId: bid.bidId,
           publisherNameIdentifier: bid.params.publisherNameIdentifier,
           height: bid.mediaTypes.banner.sizes[index][0],
