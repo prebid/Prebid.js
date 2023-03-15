@@ -66,7 +66,7 @@ describe('browsi Bid Adapter Test', function () {
           'requestId': '1234567-3456-4562-7689-98765434A',
           'transactionId': '1234567-3456-4562-7689-98765434B',
           'schain': {},
-          'mediaTypes': {video: {}}
+          'mediaTypes': {video: {playerSize: [640, 480]}}
         }
       ];
       bidderRequest = {
@@ -109,7 +109,7 @@ describe('browsi Bid Adapter Test', function () {
           gdpr: bidderRequest.gdprConsent,
           ccpa: bidderRequest.uspConsent,
           sizes: inputRequest.sizes,
-          video: {},
+          video: {playerSize: [640, 480]},
           aUCode: inputRequest.adUnitCode,
           aID: inputRequest.auctionId,
           tID: inputRequest.transactionId,
