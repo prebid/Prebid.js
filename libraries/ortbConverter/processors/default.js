@@ -2,7 +2,7 @@ import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
-import {fillNativeImp, fillNativeResponse} from './native.js';
+// import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
 import {config} from '../../../src/config.js';
 
@@ -115,16 +115,16 @@ export const DEFAULT_PROCESSORS = {
   }
 }
 
-if (FEATURES.NATIVE) {
-  DEFAULT_PROCESSORS[IMP].native = {
-    // populates imp.native
-    fn: fillNativeImp
-  }
-  DEFAULT_PROCESSORS[BID_RESPONSE].native = {
-    // populates bidResponse.native if bidResponse.mediaType === NATIVE
-    fn: fillNativeResponse
-  }
-}
+// if (FEATURES.NATIVE) {
+//   DEFAULT_PROCESSORS[IMP].native = {
+//     // populates imp.native
+//     fn: fillNativeImp
+//   }
+//   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
+//     // populates bidResponse.native if bidResponse.mediaType === NATIVE
+//     fn: fillNativeResponse
+//   }
+// }
 
 function fpdFromTopLevelConfig(prop) {
   return {
@@ -150,4 +150,15 @@ export function onlyOneClientSection(ortbRequest) {
     }
     return found;
   }, null);
+
+  // NOTE: As Prebid(from 7.39) is not allowing to overwriting page, domain and ref, so we don't need below code changes.
+  // // We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
+  // const { page, domain } = bidderRequest.refererInfo;
+  // const ref = window.document.referrer;
+  // if (bidderRequest?.src === 's2s') {
+  //   ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
+  //   if (ref.length) {
+  //     ortbRequest.site.ref = ref;
+  //   }
+  // }
 }

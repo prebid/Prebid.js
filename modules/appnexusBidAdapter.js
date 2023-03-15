@@ -110,6 +110,9 @@ export const spec = {
     { code: 'oftmedia' },
     { code: 'adasta' },
     { code: 'beintoo', gvlid: 618 },
+    { code: 'dg' },
+    { code: 'gps' },
+    { code: 'appnexus2' }
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 

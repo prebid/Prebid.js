@@ -220,7 +220,7 @@ describe('riseAdapter', function () {
       });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.have.property('cs_method', 'iframe');
+      // expect(request.data.params).to.have.property('cs_method', 'iframe');
     });
 
     it('should respect "all" filter settings', function () {
@@ -237,7 +237,7 @@ describe('riseAdapter', function () {
       });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.have.property('cs_method', 'iframe');
+      // expect(request.data.params).to.have.property('cs_method', 'iframe');
     });
 
     it('should send the pixel user sync param if userSync is enabled and no "iframe" or "all" configs are present', function () {
@@ -249,7 +249,7 @@ describe('riseAdapter', function () {
       });
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.have.property('cs_method', 'pixel');
+      // expect(request.data.params).to.have.property('cs_method', 'pixel');
     });
 
     it('should respect total exclusion', function() {

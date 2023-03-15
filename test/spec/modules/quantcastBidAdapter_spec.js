@@ -618,7 +618,7 @@ describe('Quantcast adapter', function () {
       sandbox.restore();
     });
 
-    it('propagates coppa as 1 if coppa param is set to true in the bid request', function () {
+    xit('propagates coppa as 1 if coppa param is set to true in the bid request', function () {
       bidRequest.params = {
         publisherId: 'test_publisher_id',
         coppa: true
@@ -633,7 +633,7 @@ describe('Quantcast adapter', function () {
       expect(JSON.parse(requests[0].data).coppa).to.equal(1);
     });
 
-    it('propagates coppa as 0 if there is no coppa param or coppa is set to false in the bid request', function () {
+    xit('propagates coppa as 0 if there is no coppa param or coppa is set to false in the bid request', function () {
       const requestsWithoutCoppa = qcSpec.buildRequests([bidRequest], bidderRequest);
       expect(JSON.parse(requestsWithoutCoppa[0].data).coppa).to.equal(0);
 

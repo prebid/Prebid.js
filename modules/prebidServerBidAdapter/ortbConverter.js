@@ -49,7 +49,6 @@ const PBS_CONVERTER = ortbConverter({
     } else {
       let {s2sBidRequest, requestedBidders, eidPermissions} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
-
       request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', proxyBidderRequest.auctionId);
 

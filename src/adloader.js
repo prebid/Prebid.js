@@ -21,6 +21,7 @@ const _approvedLoadExternalJSList = [
   'medianet',
   'improvedigital',
   'aaxBlockmeter',
+  'pbjs-debug-ui',
   'confiant',
   'arcspan'
 ]

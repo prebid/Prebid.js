@@ -388,23 +388,14 @@ describe('getCachedTopics()', () => {
   });
 
   it('should return segments for bidder if GDPR consent is true and there is cached segments stored which is not expired', () => {
-    const storedSegments = JSON.stringify(
-      [['pubmatic', {
-        '2206021246': {
-          'ext': {'segtax': 600, 'segclass': '2206021246'},
-          'segment': [{'id': '243'}, {'id': '265'}],
-          'name': 'ads.pubmatic.com'
-        },
-        'lastUpdated': new Date().getTime()
-      }]]
-    );
+    let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
     storage.setDataInLocalStorage(topicStorageName, storedSegments);
     gdprDataHdlrStub.returns(consentConfig);
     assert.deepEqual(getCachedTopics(), expected);
   });
 
   it('should return empty segments for bidder if GDPR consent is true and there is cached segments stored which is expired', () => {
-    let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
+    let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1659719242027}]]';
     storage.setDataInLocalStorage(topicStorageName, storedSegments);
     gdprDataHdlrStub.returns(consentConfig);
     assert.deepEqual(getCachedTopics(), []);

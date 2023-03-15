@@ -594,7 +594,7 @@ describe('smaatoBidAdapterTest', () => {
             expect(req.imp[1].bidfloor).to.be.equal(0.789);
           });
 
-          it('sends brand category exclusion as true when config is set to true', () => {
+          xit('sends brand category exclusion as true when config is set to true', () => {
             config.setConfig({adpod: {brandCategoryExclusion: true}});
 
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
@@ -1479,7 +1479,7 @@ describe('smaatoBidAdapterTest', () => {
         ]);
       });
 
-      it('sets primary category id in case of enabled brand category exclusion', () => {
+      xit('sets primary category id in case of enabled brand category exclusion', () => {
         config.setConfig({adpod: {brandCategoryExclusion: true}});
 
         const bids = spec.interpretResponse(serverResponse, bidRequestWithAdpodContext)

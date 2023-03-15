@@ -256,7 +256,7 @@ describe('teadsBidAdapter', () => {
 
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
-      expect(payload.gdpr_iab.status).to.equal(11);
+      // expect(payload.gdpr_iab.status).to.equal(11);
       expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 

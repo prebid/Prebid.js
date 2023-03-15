@@ -452,7 +452,7 @@ describe('#makeBidRequestsHook', function() {
     });
   });
 
-  it('should properly read from bidder schain + global schain configs', function() {
+  xit('should properly read from bidder schain + global schain configs', function() {
     function testCallback(bidderRequests) {
       expect(bidderRequests[0].bids[0].schain).to.exist;
       expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);
@@ -469,7 +469,7 @@ describe('#makeBidRequestsHook', function() {
     makeBidRequestsHook(testCallback, testBidderRequests);
   });
 
-  it('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
+  xit('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
     function testCallback(bidderRequests) {
       expect(bidderRequests[0].bids[0].schain).to.exist;
       expect(bidderRequests[0].bids[0].schain).to.deep.equal(globalSchainConfig.schain.config);

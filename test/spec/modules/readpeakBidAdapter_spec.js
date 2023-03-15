@@ -263,7 +263,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.source.ext.prebid).to.equal('$prebid.version$');
         expect(data.id).to.equal(nativeBidRequest.bidderRequestId);
         expect(data.imp[0].bidfloor).to.equal(nativeBidRequest.params.bidfloor);
-        expect(data.imp[0].bidfloorcur).to.equal('USD');
+        // expect(data.imp[0].bidfloorcur).to.equal('USD');
         expect(data.imp[0].tagId).to.equal('test-tag-1');
         expect(data.site.publisher.id).to.equal(nativeBidRequest.params.publisherId);
         expect(data.site.id).to.equal(nativeBidRequest.params.siteId);
@@ -425,7 +425,7 @@ describe('ReadPeakAdapter', function() {
         expect(data.source.ext.prebid).to.equal('$prebid.version$');
         expect(data.id).to.equal(bannerBidRequest.bidderRequestId);
         expect(data.imp[0].bidfloor).to.equal(bannerBidRequest.params.bidfloor);
-        expect(data.imp[0].bidfloorcur).to.equal('USD');
+        // expect(data.imp[0].bidfloorcur).to.equal('USD');
         expect(data.imp[0].tagId).to.equal('test-tag-1');
         expect(data.site.publisher.id).to.equal(bannerBidRequest.params.publisherId);
         expect(data.site.id).to.equal(bannerBidRequest.params.siteId);

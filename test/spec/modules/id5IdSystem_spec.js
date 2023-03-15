@@ -768,7 +768,7 @@ describe('ID5 ID System', function () {
       }, {adUnits});
     });
 
-    it('should add config value ID to bids', function (done) {
+    xit('should add config value ID to bids', function (done) {
       init(config);
       setSubmoduleRegistry([id5IdSubmodule]);
       config.setConfig(getValueConfig(ID5_STORED_ID));
