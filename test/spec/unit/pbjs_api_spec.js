@@ -23,6 +23,8 @@ import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 import {resetAuctionState} from 'src/auction.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
+import {enrichFPD} from '../../../src/fpd/enrichment.js';
+import {mockFpdEnrichments} from '../../helpers/fpd.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -195,7 +197,7 @@ window.apntag = {
 }
 
 describe('Unit: Prebid Module', function () {
-  let bidExpiryStub
+  let bidExpiryStub, sandbox;
 
   before(() => {
     hook.ready();
@@ -205,12 +207,15 @@ describe('Unit: Prebid Module', function () {
   });
 
   beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    mockFpdEnrichments(sandbox);
     bidExpiryStub = sinon.stub(filters, 'isBidNotExpired').callsFake(() => true);
     configObj.setConfig({ useBidCache: true });
     resetAuctionState();
   });
 
   afterEach(function() {
+    sandbox.restore();
     $$PREBID_GLOBAL$$.adUnits = [];
     bidExpiryStub.restore();
     configObj.setConfig({ useBidCache: false });
@@ -1749,39 +1754,72 @@ describe('Unit: Prebid Module', function () {
         configObj.resetConfig();
       });
 
-      it('passing global and auction-level FPD as ortb2Fragments.global', () => {
-        configObj.setConfig({
-          ortb2: {
+      describe('with FPD', () => {
+        let globalFPD, auctionFPD, mergedFPD;
+        beforeEach(() => {
+          globalFPD = {
             'k1': 'v1',
             'k2': {
               'k3': 'v3',
               'k4': 'v4'
             }
-          }
-        });
-        $$PREBID_GLOBAL$$.requestBids({
-          ortb2: {
+          };
+          auctionFPD = {
             'k5': 'v5',
             'k2': {
               'k3': 'override',
               'k7': 'v7'
             }
+          };
+          mergedFPD = {
+            'k1': 'v1',
+            'k5': 'v5',
+            'k2': {
+              'k3': 'override',
+              'k4': 'v4',
+              'k7': 'v7'
+            }
+          };
+        });
+
+        it('merged from setConfig and requestBids', () => {
+          configObj.setConfig({ortb2: globalFPD});
+          $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+          sinon.assert.calledWith(startAuctionStub, sinon.match({
+            ortb2Fragments: {global: mergedFPD}
+          }));
+        });
+
+        it('enriched through enrichFPD', () => {
+          function enrich(next, fpd) {
+            next.bail(fpd.then(ortb2 => {
+              ortb2.enrich = true;
+              return ortb2;
+            }))
           }
+          enrichFPD.before(enrich);
+          try {
+            configObj.setConfig({ortb2: globalFPD});
+            $$PREBID_GLOBAL$$.requestBids({ortb2: auctionFPD});
+            sinon.assert.calledWith(startAuctionStub, sinon.match({
+              ortb2Fragments: {global: {...mergedFPD, enrich: true}}
+            }));
+          } finally {
+            enrichFPD.getHooks({hook: enrich}).remove();
+          }
+        })
+      });
+
+      it('filtering adUnits by adUnitCodes', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [{code: 'one'}, {code: 'two'}],
+          adUnitCodes: 'two'
         });
         sinon.assert.calledWith(startAuctionStub, sinon.match({
-          ortb2Fragments: {
-            global: {
-              'k1': 'v1',
-              'k5': 'v5',
-              'k2': {
-                'k3': 'override',
-                'k4': 'v4',
-                'k7': 'v7'
-              }
-            }
-          }
-        }))
+          adUnits: [{code: 'two'}]
+        }));
       });
+
       it('passing bidder-specific FPD as ortb2Fragments.bidder', () => {
         configObj.setBidderConfig({
           bidders: ['bidderA', 'bidderC'],
@@ -1841,6 +1879,7 @@ describe('Unit: Prebid Module', function () {
           mediaTypes: {banner: {sizes: [[300, 250]]}},
           bids: [{bidder: 'bd'}]
         }],
+        adUnitCodes: ['au'],
         ortb2Fragments
       });
       sinon.assert.calledWith(newAuctionStub, sinon.match({
@@ -2975,6 +3014,20 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.aliasBidder();
       assert.ok(logErrorSpy.calledWith(error), 'expected error was logged');
       utils.logError.restore();
+    });
+  });
+
+  describe('aliasRegistry', function () {
+    it('should return the same value as adapterManager.aliasRegistry by default', function () {
+      const adapterManagerAliasRegistry = adapterManager.aliasRegistry;
+      const pbjsAliasRegistry = $$PREBID_GLOBAL$$.aliasRegistry;
+      assert.equal(adapterManagerAliasRegistry, pbjsAliasRegistry);
+    });
+
+    it('should return undefined if the aliasRegistry config option is set to private', function () {
+      configObj.setConfig({ aliasRegistry: 'private' });
+      const pbjsAliasRegistry = $$PREBID_GLOBAL$$.aliasRegistry;
+      assert.equal(pbjsAliasRegistry, undefined);
     });
   });
 

@@ -71,6 +71,7 @@ describe('jixie Adapter', function () {
 
     const clientIdTest1_ = '1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const sessionIdTest1_ = '1594782644-1aba6a40-f711-11e9-868c-53a2ae972xxx';
+    const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -199,6 +200,9 @@ describe('jixie Adapter', function () {
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
+        .withArgs('_jxtoko')
+        .returns(jxtokoTest1_);
+      getCookieStub
         .withArgs('_jxx')
         .returns(clientIdTest1_);
       getCookieStub
@@ -227,6 +231,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('client_id_ls', clientIdTest1_);
       expect(payload).to.have.property('session_id_c', sessionIdTest1_);
       expect(payload).to.have.property('session_id_ls', sessionIdTest1_);
+      expect(payload).to.have.property('jxtoko_id', jxtokoTest1_);
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);

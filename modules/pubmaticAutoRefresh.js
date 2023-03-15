@@ -21,7 +21,7 @@ import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotM
 import { getGlobal } from '../src/prebidGlobal.js';
 import { find } from '../src/polyfill.js';
 // import find from 'core-js-pure/features/array/find.js';
-
+let PWT = window.PWT || {};
 const MODULE_NAME = 'pubmaticAutoRefresh';
 const isOpenWrapSetup = true;
 
@@ -97,7 +97,7 @@ let openWrapSetup = {
     }
 
     let isGptSlotPresent = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(gptSlot.getAdUnitPath()));
-    if(!!isGptSlotPresent){
+    if (isGptSlotPresent) {
       if (isFn(PWT.requestBids) == true) {
         PWT.requestBids(
           PWT.generateConfForGPT([gptSlot]),
@@ -109,13 +109,12 @@ let openWrapSetup = {
       } else {
         sendAdserverRequest();
       }
-    }else{
+    } else {
       logMessage(MODULE_NAME, 'Slot not found for', gptSlotName);
     }
 
     // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
     setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100)
-
   },
 
   gptSlotToPbjsAdUnitMapFunction: function(gptSlotName, gptSlot, pbjsAU) {

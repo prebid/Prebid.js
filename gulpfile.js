@@ -103,6 +103,7 @@ viewCoverage.displayName = 'view-coverage';
 
 // View the reviewer tools page
 function viewReview(done) {
+  var opens = require('opn');
   var mylocalhost = (argv.host) ? argv.host : 'localhost';
   var reviewUrl = 'http://' + mylocalhost + ':' + port + '/integrationExamples/reviewerTools/index.html'; // reuse the main port from 9999
 

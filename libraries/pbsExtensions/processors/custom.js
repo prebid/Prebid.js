@@ -157,6 +157,6 @@ export function setResponseParams(bidResponse, bid, context) {
     // check if bid contains ext prebid bidid and add it to bidObject for logger and tracker purpose
     if (bid.ext && bid.ext.prebid && bid.ext.prebid.bidid) {
       bidResponse.prebidBidId = bid.ext.prebid.bidid;
-    }    
+    }
   }
 }

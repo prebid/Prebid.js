@@ -266,7 +266,7 @@ function isEmptyObject(object) {
  * Prepare meta object to pass in logger call
  * @param {*} meta
  */
-function getMetadata(meta) {
+export function getMetadata(meta) {
   if (!meta || isEmptyObject(meta)) return;
   const metaObj = {};
   if (meta.networkId) metaObj.nwid = meta.networkId;
@@ -316,7 +316,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
-        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined
       });
     });
     return partnerBids;
@@ -335,7 +335,7 @@ function getSizesForAdUnit(adUnit, adUnitId) {
 }
 
 function getAdUnitAdFormats(adUnit) {
-  var af = adUnit ? Object.keys(adUnit.mediaTypes).map(format => MEDIATYPE[format.toUpperCase()]) : [];
+  var af = adUnit ? Object.keys(adUnit.mediaTypes || {}).map(format => MEDIATYPE[format.toUpperCase()]) : [];
   return af;
 }
 
@@ -363,9 +363,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
-  let outputObj = {
-    s: []
-  };
+  let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
   if (!auctionCache) {
@@ -409,7 +407,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
 
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
-    let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId);
+    let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
     let slotObject = {
       'sn': adUnitId,
       'au': origAdUnit.adUnitId || adUnitId,
@@ -490,8 +488,8 @@ function auctionInitHandler(args) {
     'bidderDonePendingCount', () => args.bidderRequests.length,
   ]);
   cacheEntry.adUnitCodes = {};
-  cacheEntry.origAdUnits = args.adUnits;
   cacheEntry.floorData = {};
+  cacheEntry.origAdUnits = args.adUnits;
   cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
   cache.auctions[args.auctionId] = cacheEntry;
 }
@@ -662,4 +660,4 @@ adapterManager.registerAnalyticsAdapter({
 });
 
 // export default pubmaticAdapter;
-export { pubmaticAdapter as default, getMetadata };
+export { pubmaticAdapter as default };

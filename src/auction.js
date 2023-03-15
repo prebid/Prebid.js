@@ -76,7 +76,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting} from './native.js';
+import {getNativeTargeting, toLegacyResponse} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -93,6 +93,7 @@ import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {createBid} from './bidfactory.js';
+import {adjustCpm} from './utils/cpm.js';
 
 const { syncUsers } = userSync;
 
@@ -150,11 +151,13 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _auctionEnd;
   let _timer;
   let _auctionStatus;
+  let _nonBids = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
   function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
+  function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
 
   function getProperties() {
     return {
@@ -171,7 +174,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsRejected: _bidsRejected,
       winningBids: _winningBids,
       timeout: _timeout,
-      metrics: metrics
+      metrics: metrics,
+      seatNonBids: _nonBids
     };
   }
 
@@ -368,6 +372,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     adapterManager.callSetTargetingBidder(bid.adapterCode || bid.bidder, bid);
   }
 
+  events.on(CONSTANTS.EVENTS.SEAT_NON_BID, (event) => {
+    if (event.auctionId === _auctionId) {
+      addNonBids(event.seatnonbid)
+    }
+  });
+
   return {
     addBidReceived,
     addBidRejected,
@@ -386,6 +396,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getBidRequests: () => _bidderRequests,
     getBidsReceived: () => _bidsReceived,
     getNoBids: () => _noBids,
+    getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
   };
@@ -462,9 +473,14 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === 'video') {
+      if (bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
+        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
+          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
+          // to treat banner responses as native
+          addLegacyFieldsIfNeeded(bidResponse);
+        }
         addBidToAuction(auctionInstance, bidResponse);
         done();
       }
@@ -596,6 +612,17 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
+// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
+const addLegacyFieldsIfNeeded = (bidResponse) => {
+  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
+  const nativeOrtbResponse = bidResponse.native?.ortb
+
+  if (nativeOrtbRequest && nativeOrtbResponse) {
+    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
+    Object.assign(bidResponse.native, legacyResponse);
+  }
+}
+
 const storeInCache = (batch) => {
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
@@ -675,7 +702,7 @@ function addCommonResponseProperties(bidResponse, adUnitCode, {index = auctionMa
   Object.assign(bidResponse, {
     responseTimestamp: bidResponse.responseTimestamp || timestamp(),
     requestTimestamp: bidResponse.requestTimestamp || start,
-    cpm: bidResponse.cpm || parseFloat(bidResponse.cpm) || 0,
+    cpm: parseFloat(bidResponse.cpm) || 0,
     bidder: bidResponse.bidder || bidResponse.bidderCode,
     adUnitCode
   });
@@ -815,6 +842,16 @@ export const getAdvertiserDomain = () => {
   }
 }
 
+/**
+ * This function returns a function to get the primary category id from bid response meta
+ * @returns {function}
+ */
+export const getPrimaryCatId = () => {
+  return (bid) => {
+    return (bid.meta && bid.meta.primaryCatId) ? bid.meta.primaryCatId : '';
+  }
+}
+
 // factory for key value objs
 function createKeyVal(key, value) {
   return {
@@ -840,6 +877,7 @@ function defaultAdserverTargeting() {
     createKeyVal(TARGETING_KEYS.SOURCE, 'source'),
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
+    createKeyVal(TARGETING_KEYS.ACAT, getPrimaryCatId()),
   ]
 }
 
@@ -852,7 +890,6 @@ function defaultAdserverTargeting() {
 export function getStandardBidderSettings(mediaType, bidderCode) {
   const TARGETING_KEYS = CONSTANTS.TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
-
   if (!standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING]) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
@@ -880,6 +917,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
       }
     }
   }
+
   return standardSettings;
 }
 
@@ -931,7 +969,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 
     if (
       ((typeof bidderSettings.suppressEmptyKeys !== 'undefined' && bidderSettings.suppressEmptyKeys === true) ||
-      key === CONSTANTS.TARGETING_KEYS.DEAL) && // hb_deal is suppressed automatically if not set
+      key === CONSTANTS.TARGETING_KEYS.DEAL || key === CONSTANTS.TARGETING_KEYS.ACAT) && // hb_deal & hb_acat are suppressed automatically if not set
       (
         isEmptyStr(value) ||
         value === null ||
@@ -948,17 +986,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
 }
 
 export function adjustBids(bid) {
-  let code = bid.bidderCode;
-  let bidPriceAdjusted = bid.cpm;
-  const bidCpmAdjustment = bidderSettings.get(code || null, 'bidCpmAdjustment');
-
-  if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
-    try {
-      bidPriceAdjusted = bidCpmAdjustment(bid.cpm, Object.assign({}, bid));
-    } catch (e) {
-      logError('Error during bid adjustment', 'bidmanager.js', e);
-    }
-  }
+  let bidPriceAdjusted = adjustCpm(bid.cpm, bid);
 
   if (bidPriceAdjusted >= 0) {
     bid.cpm = bidPriceAdjusted;

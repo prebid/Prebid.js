@@ -18,7 +18,7 @@ export function ortbConverter({
   let firstBidRequest;
   window.partnersWithoutErrorAndBids = {};
   window.matchedimpressions = {};
-  
+
   function builder(slot, wrapperFn, builderFn, errorHandler) {
     let build;
     return function () {
@@ -93,7 +93,7 @@ export function ortbConverter({
       'startTime': timestamp()
     };
   }
-  
+
   // Get list of all errored partners
   function getErroredPartners(responseExt) {
     if (responseExt && responseExt.errors) {
@@ -121,7 +121,6 @@ export function ortbConverter({
         const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
         let resultCopy = deepClone(result);
-
         if (resultCopy?.ext?.prebid?.bidder) {
           for (let bidderCode in resultCopy.ext.prebid.bidder) {
             let bid = resultCopy.ext.prebid.bidder[bidderCode];
@@ -148,10 +147,10 @@ export function ortbConverter({
       // check if isPrebidPubMaticAnalyticsEnabled in s2sConfig and if it is then get auctionId from adUnit
       const s2sConfig = ctx.req?.s2sBidRequest?.s2sConfig;
       let isAnalyticsEnabled = s2sConfig?.extPrebid?.isPrebidPubMaticAnalyticsEnabled;
-	  if(firstBidRequest) {
-		const iidValue = isAnalyticsEnabled ? firstBidRequest.auctionId : firstBidRequest.bids[0].params.wiid;
-      	createLatencyMap(iidValue, firstBidRequest.auctionId);
-	  }
+      if (firstBidRequest) {
+        const iidValue = isAnalyticsEnabled ? firstBidRequest.auctionId : firstBidRequest.bids[0].params.wiid;
+        createLatencyMap(iidValue, firstBidRequest.auctionId);
+      }
       return request;
     },
     fromORTB({request, response}) {
@@ -185,20 +184,20 @@ export function ortbConverter({
       }
 
       const bidResponses = (response.seatbid || []).flatMap(seatbid => {
-          if (seatbid.hasOwnProperty('bid')) {
-            partnerBidsForslots = seatbid.bid.length;
-          }
-          window.partnersWithoutErrorAndBids[impValue] = window.partnersWithoutErrorAndBids[impValue].filter((partner) => {
-            return ((partner !== seatbid.seat) || (impForSlots !== partnerBidsForslots));
-          });
-
-          return (seatbid.bid || []).map((bid) => {
-            if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
-              return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
-            }
-            logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
-          })
+        if (seatbid.hasOwnProperty('bid')) {
+          partnerBidsForslots = seatbid.bid.length;
         }
+        window.partnersWithoutErrorAndBids[impValue] = window.partnersWithoutErrorAndBids[impValue].filter((partner) => {
+          return ((partner !== seatbid.seat) || (impForSlots !== partnerBidsForslots));
+        });
+
+        return (seatbid.bid || []).map((bid) => {
+          if (impsById.hasOwnProperty(bid.impid) && ctx.imp.hasOwnProperty(bid.impid)) {
+            return buildBidResponse(bid, augmentContext(ctx.imp[bid.impid], {imp: impsById[bid.impid], seatbid, ortbResponse: response}));
+          }
+          logError('ORTB response seatbid[].bid[].impid does not match any imp in request; ignoring bid', bid);
+        })
+      }
       ).filter(Boolean);
       return buildResponse(bidResponses, response, augmentContext(ctx.req));
     }

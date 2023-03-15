@@ -90,7 +90,7 @@ export const gptImpressionViewableHandler = (adSlotElementId, setToLocalStorageC
 
 export const gptSlotVisibilityChangedHandler = (adSlotElementId, inViewPercentage, setToLocalStorageCb) => {
   const currentTime = Date.now();
-  const lastViewStarted = vsgObj[adSlotElementId].lastViewStarted;
+  const lastViewStarted = vsgObj[adSlotElementId] ? vsgObj[adSlotElementId].lastViewStarted : undefined;
   let diff;
   if (inViewPercentage < 50) {
     if (lastViewStarted) {

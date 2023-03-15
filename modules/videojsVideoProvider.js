@@ -11,7 +11,7 @@ import {
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
-import { PLAYBACK_MODE } from '../libraries/video/constants/enums.js';
+import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 
 /*
@@ -35,7 +35,7 @@ https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module
 const setupFailMessage = 'Failed to instantiate the player';
 const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
-export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
+export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
@@ -46,7 +46,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   let player = null;
   let playerVersion = null;
   let playerIsSetup = false;
-  const {playerConfig, divId} = config;
+  const {playerConfig, divId} = providerConfig;
   let isMuted;
   let previousLastTimePosition = 0;
   let lastTimePosition = 0;
@@ -521,7 +521,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
-    const adConfig = utils.getAdConfig(config);
+    const adConfig = utils.getAdConfig(playerConfig);
     player.ima(adConfig);
   }
 
