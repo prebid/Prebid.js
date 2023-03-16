@@ -380,7 +380,7 @@ describe('SmartXSP Adapter', function () {
 
     it('should have an url that match the default endpoint', function () {
       const request = spec.buildRequests(bidRequests);
-      expect(request[0].url).to.equal('https://tag.smartxsp.io/bid');
+      expect(request[0].url).to.equal('https://tag.smartxsp.io/pbjs/bid');
     });
   });
 
