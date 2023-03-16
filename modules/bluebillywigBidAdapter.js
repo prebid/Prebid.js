@@ -51,8 +51,7 @@ const BB_HELPERS = {
     else if (Array.isArray(adServerCur) && adServerCur.length) request.cur = [adServerCur[0]];
   },
   addUserIds: function(request, validBidRequests) {
-    const bidUserId = deepAccess(validBidRequests, '0.userIdAsEids');
-    const eids = bidUserId;
+    const eids = deepAccess(validBidRequests, '0.userIdAsEids');
 
     if (eids != null && eids.length) {
       deepSetValue(request, 'user.ext.eids', eids);
