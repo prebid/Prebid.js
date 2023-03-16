@@ -50,9 +50,9 @@ export function reset() {
 }
 
 /**
- * This function is used in tests
+ * This function is also used in tests
  */
-export function doNotFireEvent() {
+export function setEventFiredFlag() {
   eventFired = true;
 }
 
@@ -127,10 +127,6 @@ function initializeLiveConnect(configParams) {
     liveConnect.push({ hash: configParams.emailHash })
   }
   return liveConnect;
-}
-
-const setEventFiredFlag = function(_) {
-  eventFired = true
 }
 
 function tryFireEvent() {
