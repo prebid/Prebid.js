@@ -111,7 +111,7 @@ export function sendEvent(eventName, sspName) {
   log('Sending pixel for event: ' + eventName, eventObject);
 
   const queryString = formatQS(eventObject);
-  triggerPixel('https://' + SMARTXSP_ANTENNA + '/?' + queryString);
+  triggerPixel('https://' + SMARTXSP_ANTENNA + '/pbjs/event?' + queryString);
 }
 
 /**
@@ -197,7 +197,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     return {
       method: 'POST',
-      url: protocol + '://' + bidHost + '/bid',
+      url: protocol + '://' + bidHost + '/pbjs/bid',
       data: JSON.stringify(payload),
       options: {
         contentType: 'text/plain',
