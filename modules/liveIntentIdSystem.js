@@ -49,6 +49,13 @@ export function reset() {
   liveConnect = null;
 }
 
+/**
+ * This function is used in tests
+ */
+export function doNotFireEvent() {
+  eventFired = true;
+}
+
 function parseLiveIntentCollectorConfig(collectConfig) {
   const config = {};
   collectConfig = collectConfig || {}
