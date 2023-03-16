@@ -194,6 +194,14 @@ describe('PubMatic adapter', function () {
         image: { required: true, sizes: [300, 250] },
         sponsoredBy: { required: true }
       },
+      nativeOrtbRequest: {
+        ver: '1.2',
+        assets: [
+          { id: 0, required: 1, title: {len: 140} },
+          { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+          { id: 2, required: 1, data: { type: 1 } }
+        ]
+      },
       bidder: 'pubmatic',
       params: {
         publisherId: '5670',
@@ -242,6 +250,22 @@ describe('PubMatic adapter', function () {
         address: {required: true, len: 10, ext: {'address1': 'address2'}},
         desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
         displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+      },
+      nativeOrtbRequest: {
+        'ver': '1.2',
+        'assets': [
+          {'id': 0, 'required': 1, 'title': {'len': 80}},
+          {'id': 1, 'required': 1, 'img': {'type': 1, 'w': 50, 'h': 50}},
+          {'id': 2, 'required': 1, 'img': {'type': 3, 'w': 728, 'h': 90}},
+          {'id': 3, 'required': 1, 'data': {'type': 1, 'len': 10}},
+          {'id': 4, 'required': 1, 'data': {'type': 2, 'len': 10}},
+          {'id': 5, 'required': 1, 'data': {'type': 3, 'len': 10}},
+          {'id': 6, 'required': 1, 'data': {'type': 4, 'len': 10}},
+          {'id': 7, 'required': 1, 'data': {'type': 5, 'len': 10}},
+          {'id': 8, 'required': 1, 'data': {'type': 6, 'len': 10}},
+          {'id': 9, 'required': 1, 'data': {'type': 8, 'len': 10}},
+          {'id': 10, 'required': 1, 'data': {'type': 9, 'len': 10}}
+        ]
       },
       bidder: 'pubmatic',
       params: {
@@ -300,6 +324,14 @@ describe('PubMatic adapter', function () {
         title: { required: false, length: 80 },
         image: { required: false, sizes: [300, 250] },
         sponsoredBy: { required: true }
+      },
+      nativeOrtbRequest: {
+        ver: '1.2',
+        assets: [
+          { id: 0, required: 0, title: {len: 140} },
+          { id: 1, required: 0, img: {type: 3, w: 300, h: 250} },
+          { id: 2, required: 1, data: {type: 1} }
+        ]
       },
       bidder: 'pubmatic',
       params: {
@@ -389,6 +421,14 @@ describe('PubMatic adapter', function () {
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
         },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            {id: 0, required: 1, title: {len: 140}},
+            {id: 1, required: 1, img: {type: 3, w: 300, h: 250}},
+            {id: 2, required: 1, data: {type: 1}}
+          ]
+        },
         bidder: 'pubmatic',
         params: {
           publisherId: '301',
@@ -441,6 +481,14 @@ describe('PubMatic adapter', function () {
           title: { required: true, length: 80 },
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            { id: 0, required: 1, title: {len: 140} },
+            { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+            { id: 2, required: 1, data: { type: 1 } }
+          ]
         },
         bidder: 'pubmatic',
         params: {
@@ -502,6 +550,14 @@ describe('PubMatic adapter', function () {
           title: { required: true, length: 80 },
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            { id: 0, required: 1, title: {len: 80} },
+            { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+            { id: 2, required: 1, data: { type: 1 } }
+          ]
         },
         bidder: 'pubmatic',
         params: {
@@ -603,7 +659,7 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpression = {
       'native': {
-        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":140}},{"id":1,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
@@ -615,13 +671,13 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpressionWithRequiredParam = {
       'native': {
-        'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":0,"title":{"len":140}},{"id":1,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
     validnativeBidImpressionWithAllParams = {
       native: {
-        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80}},{"id":1,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90}},{"id":3,"required":1,"data":{"type":1,"len":10}},{"id":4,"required":1,"data":{"type":2,"len":10}},{"id":5,"required":1,"data":{"type":3,"len":10}},{"id":6,"required":1,"data":{"type":4,"len":10}},{"id":7,"required":1,"data":{"type":5,"len":10}},{"id":8,"required":1,"data":{"type":6,"len":10}},{"id":9,"required":1,"data":{"type":8,"len":10}},{"id":10,"required":1,"data":{"type":9,"len":10}}]}'
       }
     }
 
@@ -3495,16 +3551,17 @@ describe('PubMatic adapter', function () {
         data.imp[0].id = '2a5571261281d4';
         request.data = JSON.stringify(data);
         let response = spec.interpretResponse(nativeBidResponse, request);
+        let assets = response[0].native.ortb.assets;
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].native).to.exist.and.to.be.an('object');
         expect(response[0].mediaType).to.exist.and.to.equal('native');
-        expect(response[0].native.title).to.exist.and.to.be.an('string');
-        expect(response[0].native.image).to.exist.and.to.be.an('object');
-        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
-        expect(response[0].native.image.height).to.exist;
-        expect(response[0].native.image.width).to.exist;
-        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
-        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
+        expect(assets).to.be.an('array').with.length.above(0);
+        expect(assets[0].title).to.exist.and.to.be.an('object');
+        expect(assets[1].img).to.exist.and.to.be.an('object');
+        expect(assets[1].img.url).to.exist.and.to.be.an('string');
+        expect(assets[1].img.h).to.exist;
+        expect(assets[1].img.w).to.exist;
+        expect(assets[2].data).to.exist.and.to.be.an('object');
       });
 
       it('should check for valid banner mediaType in case of multiformat request', function() {

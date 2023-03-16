@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -303,34 +303,36 @@ function _checkParamDataType(key, value, datatype) {
 }
 
 function _createNativeRequest(params) {
-  var nativeRequestObject = { ...params, assets: [] };
+  var nativeRequestObject = { ver: "1.2", ...params, assets: [] };
   const { assets } = params;
-  
+
   const isValidAsset = (asset) => asset.title || asset.img || asset.data || asset.video;
 
-  if(assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
+  if (assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
     isInvalidNativeRequest = true;
     return nativeRequestObject;
+  } else {
+    isInvalidNativeRequest = false;
   }
 
   assets.forEach(asset => {
-      var assetObj = asset;
-      if(assetObj.img) {
-        if(assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.IMAGE) {
-          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
-          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
-          assetObj.wmin = assetObj.wmin || assetObj.minimumWidth || (assetObj.minsizes ? assetObj.minsizes[0] : UNDEFINED);
-          assetObj.hmin = assetObj.hmin || assetObj.minimumHeight || (assetObj.minsizes ? assetObj.minsizes[1] : UNDEFINED);
-        } else if(assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.ICON) {
-          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
-          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
-        }
-      }
-
-      if (assetObj && assetObj.id !== undefined && isValidAsset(assetObj)) {
-        nativeRequestObject.assets.push(assetObj);
+    var assetObj = asset;
+    if (assetObj.img) {
+      if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.IMAGE) {
+        assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+        assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+        assetObj.wmin = assetObj.wmin || assetObj.minimumWidth || (assetObj.minsizes ? assetObj.minsizes[0] : UNDEFINED);
+        assetObj.hmin = assetObj.hmin || assetObj.minimumHeight || (assetObj.minsizes ? assetObj.minsizes[1] : UNDEFINED);
+      } else if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.ICON) {
+        assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+        assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
       }
     }
+
+    if (assetObj && assetObj.id !== undefined && isValidAsset(assetObj)) {
+      nativeRequestObject.assets.push(assetObj);
+    }
+  }
   );
 
   return nativeRequestObject;
