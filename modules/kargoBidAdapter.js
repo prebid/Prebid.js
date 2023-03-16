@@ -98,7 +98,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
 
   const reqCount = getRequestCount()
-  if (reqCount != null && reqCount > 0) {
+  if (reqCount != null) {
     krakenParams.requestCount = reqCount;
   }
 
