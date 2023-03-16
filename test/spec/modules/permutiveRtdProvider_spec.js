@@ -2,12 +2,12 @@ import {
   permutiveSubmodule,
   storage,
   getSegments,
-  initSegments,
   isAcEnabled,
   isPermutiveOnPage,
   setBidderRtb,
   getModuleConfig,
   PERMUTIVE_SUBMODULE_CONFIG_KEY,
+  readAndSetCohorts,
 } from 'modules/permutiveRtdProvider.js'
 import { deepAccess, deepSetValue, mergeDeep } from '../../../src/utils.js'
 import { config } from 'src/config.js'
@@ -188,24 +188,81 @@ describe('permutiveRtdProvider', function () {
       const moduleConfig = getConfig()
       const bidderConfig = {};
       const acBidders = moduleConfig.params.acBidders
-      const expectedTargetingData = transformedTargeting().ac.map(seg => {
+      const segmentsData = transformedTargeting()
+      const expectedTargetingData = segmentsData.ac.map(seg => {
         return { id: seg }
       })
 
-      setBidderRtb(bidderConfig, moduleConfig)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
-        expect(bidderConfig[bidder].user.data).to.deep.include.members([{
-          name: 'permutive.com',
-          segment: expectedTargetingData
-        }])
+        const customCohorts = segmentsData[bidder] || []
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([
+          {
+            name: 'permutive.com',
+            segment: expectedTargetingData,
+          },
+          // Should have custom cohorts specific for that bidder
+          {
+            name: 'permutive',
+            segment: customCohorts.map(seg => {
+              return { id: seg }
+            }),
+          },
+        ])
       })
     })
+
+    it('should override existing ortb2.user.data reserved by permutive RTD', function () {
+      const reservedPermutiveStandardName = 'permutive.com'
+      const reservedPermutiveCustomCohortName = 'permutive'
+
+      const moduleConfig = getConfig()
+      const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
+      const sampleOrtbConfig = {
+        user: {
+          data: [
+            {
+              name: reservedPermutiveCustomCohortName,
+              segment: [{ id: 'remove-me' }, { id: 'remove-me-also' }]
+            },
+            {
+              name: reservedPermutiveStandardName,
+              segment: [{ id: 'remove-me-also-also' }, { id: 'remove-me-also-also-also' }]
+            }
+          ]
+        }
+      }
+
+      const bidderConfig = Object.fromEntries(acBidders.map(bidder => [bidder, sampleOrtbConfig]))
+
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+      acBidders.forEach(bidder => {
+        const customCohorts = segmentsData[bidder] || []
+
+        expect(bidderConfig[bidder].user.data).to.not.deep.include.members([...sampleOrtbConfig.user.data])
+        expect(bidderConfig[bidder].user.data).to.deep.include.members([
+          {
+            name: reservedPermutiveCustomCohortName,
+            segment: customCohorts.map(id => ({ id })),
+          },
+          {
+            name: reservedPermutiveStandardName,
+            segment: segmentsData.ac.map(id => ({ id })),
+          },
+        ])
+      })
+    })
+
     it('should include ortb2 user data transformation for IAB audience taxonomy', function() {
       const moduleConfig = getConfig()
       const bidderConfig = {}
       const acBidders = moduleConfig.params.acBidders
-      const expectedTargetingData = transformedTargeting().ac.map(seg => {
+      const segmentsData = transformedTargeting()
+      const expectedTargetingData = segmentsData.ac.map(seg => {
         return { id: seg }
       })
 
@@ -225,7 +282,7 @@ describe('permutiveRtdProvider', function () {
         }
       )
 
-      setBidderRtb(bidderConfig, moduleConfig)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].user.data).to.deep.include.members([
@@ -244,6 +301,8 @@ describe('permutiveRtdProvider', function () {
     it('should not overwrite ortb2 config', function () {
       const moduleConfig = getConfig()
       const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
       const sampleOrtbConfig = {
         site: {
           name: 'example'
@@ -267,10 +326,7 @@ describe('permutiveRtdProvider', function () {
         segment: [1, 2, 3]
       }
 
-      setBidderRtb(bidderConfig, moduleConfig, {
-        // TODO: this argument is unused, is the test still valid / needed?
-        testTransformation: userData => transformedUserData
-      })
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
@@ -280,6 +336,8 @@ describe('permutiveRtdProvider', function () {
     it('should update user.keywords and not override existing values', function () {
       const moduleConfig = getConfig()
       const acBidders = moduleConfig.params.acBidders
+      const segmentsData = transformedTargeting()
+
       const sampleOrtbConfig = {
         site: {
           name: 'example'
@@ -304,10 +362,7 @@ describe('permutiveRtdProvider', function () {
         segment: [1, 2, 3]
       }
 
-      setBidderRtb(bidderConfig, moduleConfig, {
-        // TODO: this argument is unused, is the test still valid / needed?
-        testTransformation: userData => transformedUserData
-      })
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       acBidders.forEach(bidder => {
         expect(bidderConfig[bidder].site.name).to.equal(sampleOrtbConfig.site.name)
@@ -316,7 +371,8 @@ describe('permutiveRtdProvider', function () {
       })
     })
     it('should merge ortb2 correctly for ac and ssps', function () {
-      setLocalStorage({
+      const customTargetingData = {
+        ...getTargetingData(),
         '_ppam': [],
         '_psegs': [],
         '_pcrprs': ['abc', 'def', 'xyz'],
@@ -324,7 +380,10 @@ describe('permutiveRtdProvider', function () {
           ssps: ['foo', 'bar'],
           cohorts: ['xyz', 'uvw'],
         }
-      })
+      }
+      const segmentsData = transformedTargeting(customTargetingData)
+      setLocalStorage(customTargetingData)
+
       const moduleConfig = {
         name: 'permutive',
         waitForIt: true,
@@ -335,7 +394,7 @@ describe('permutiveRtdProvider', function () {
       }
       const bidderConfig = {};
 
-      setBidderRtb(bidderConfig, moduleConfig)
+      setBidderRtb(bidderConfig, moduleConfig, segmentsData)
 
       // include both ac and ssp cohorts, as foo is both in ac bidders and ssps
       const expectedFooTargetingData = [
@@ -370,6 +429,99 @@ describe('permutiveRtdProvider', function () {
         segment: expectedOtherTargetingData
       }])
     })
+
+    describe('ortb2.user.ext tests', function () {
+      it('should add nothing if there are no cohorts data', function () {
+        // Empty module config means we default
+        const moduleConfig = getConfig()
+
+        const bidderConfig = {}
+
+        // Passing empty values means there is no segment data
+        const segmentsData = transformedTargeting({
+          _pdfps: [],
+          _prubicons: [],
+          _papns: [],
+          _psegs: [],
+          _ppam: [],
+          _pcrprs: [],
+          _pssps: { ssps: [], cohorts: [] }
+        })
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          expect(bidderConfig[bidder].user).to.not.have.property('ext')
+        })
+      })
+
+      it('should add standard and custom cohorts', function () {
+        const moduleConfig = getConfig()
+
+        const bidderConfig = {}
+
+        const segmentsData = transformedTargeting()
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          const userExtData = {
+            // Default targeting
+            p_standard: segmentsData.ac,
+          }
+
+          const customCohorts = segmentsData[bidder] || []
+          if (customCohorts.length > 0) {
+            deepSetValue(userExtData, 'permutive', customCohorts)
+          }
+
+          expect(bidderConfig[bidder].user.ext.data).to.deep
+            .eq(userExtData)
+        })
+      })
+
+      it('should add ac cohorts ONLY', function () {
+        const moduleConfig = getConfig()
+
+        const bidderConfig = {}
+
+        const segmentsData = transformedTargeting()
+        moduleConfig.params.acBidders.forEach((bidder) => {
+          // Remove custom cohorts
+          delete segmentsData[bidder]
+        })
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach((bidder) => {
+          expect(bidderConfig[bidder].user.ext.data).to.deep.equal({
+            p_standard: segmentsData.ac
+          })
+        })
+      })
+
+      it('should add custom cohorts ONLY', function () {
+        const moduleConfig = getConfig()
+
+        const bidderConfig = {}
+
+        const segmentsData = transformedTargeting()
+        // Empty the AC cohorts
+        segmentsData['ac'] = []
+
+        setBidderRtb(bidderConfig, moduleConfig, segmentsData)
+
+        moduleConfig.params.acBidders.forEach(bidder => {
+          const customCohorts = segmentsData[bidder] || []
+          if (customCohorts.length > 0) {
+            expect(bidderConfig[bidder].user.ext.data).to.deep
+              .eq({ permutive: customCohorts })
+          } else {
+            expect(bidderConfig[bidder].user).to.not.have.property('ext')
+          }
+        })
+      })
+    })
   })
 
   describe('Getting segments', function () {
@@ -397,72 +549,18 @@ describe('permutiveRtdProvider', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'appnexus') {
-              expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
-              expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
+          if (bidder === 'appnexus') {
+            expect(deepAccess(params, 'keywords.permutive')).to.eql(data.appnexus)
+            expect(deepAccess(params, 'keywords.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
+          }
         })
-      }
-    })
-
-    it('sets segment targeting for Magnite', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(deepAccess(params, 'visitor.permutive')).to.eql(data.rubicon)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
-    })
-
-    it('sets segment targeting for Magnite video', function () {
-      const targetingData = getTargetingData()
-      targetingData._prubicons.push(321)
-
-      setLocalStorage(targetingData)
-
-      const data = transformedTargeting(targetingData)
-      const config = getConfig()
-
-      const adUnits = getAdUnits().filter(adUnit => adUnit.mediaTypes.video)
-      expect(adUnits).to.have.lengthOf(1)
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback() {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(
-                deepAccess(params, 'visitor.permutive'),
-                'Should map all targeting values to a string',
-              ).to.eql(data.rubicon.map(String))
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
+      })
     })
 
     it('sets segment targeting for Ozone', function () {
@@ -470,53 +568,17 @@ describe('permutiveRtdProvider', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'ozone') {
-              expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
-        })
-      }
-    })
-  })
-
-  describe('Custom segment targeting', function () {
-    it('sets custom segment targeting for Magnite', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      config.params.overwrites = {
-        rubicon: function (bid, data, acEnabled, utils, defaultFn) {
-          if (defaultFn) {
-            bid = defaultFn(bid, data, acEnabled)
+          if (bidder === 'ozone') {
+            expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
           }
-          if (data.gam && data.gam.length) {
-            utils.deepSetValue(bid, 'params.visitor.permutive', data.gam)
-          }
-        }
-      }
-
-      initSegments({ adUnits }, callback, config)
-
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
-
-            if (bidder === 'rubicon') {
-              expect(deepAccess(params, 'visitor.permutive')).to.eql(data.gam)
-              expect(deepAccess(params, 'visitor.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-            }
-          })
         })
-      }
+      })
     })
   })
 
@@ -525,73 +587,65 @@ describe('permutiveRtdProvider', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'appnexus') {
-              expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
-            }
-          })
+          if (bidder === 'appnexus') {
+            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+          }
         })
-      }
+      })
     })
     it('doesn\'t overwrite existing key-values for Magnite', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'rubicon') {
-              expect(deepAccess(params, 'visitor.test_kv')).to.eql(['true'])
-            }
-          })
+          if (bidder === 'rubicon') {
+            expect(deepAccess(params, 'visitor.test_kv')).to.eql(['true'])
+          }
         })
-      }
+      })
     })
     it('doesn\'t overwrite existing key-values for Ozone', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'ozone') {
-              expect(deepAccess(params, 'customData.0.targeting.test_kv')).to.eql(['true'])
-            }
-          })
+          if (bidder === 'ozone') {
+            expect(deepAccess(params, 'customData.0.targeting.test_kv')).to.eql(['true'])
+          }
         })
-      }
+      })
     })
     it('doesn\'t overwrite existing key-values for TrustX', function () {
       const adUnits = getAdUnits()
       const config = getConfig()
 
-      initSegments({ adUnits }, callback, config)
+      readAndSetCohorts({ adUnits }, config)
 
-      function callback () {
-        adUnits.forEach(adUnit => {
-          adUnit.bids.forEach(bid => {
-            const { bidder, params } = bid
+      adUnits.forEach(adUnit => {
+        adUnit.bids.forEach(bid => {
+          const { bidder, params } = bid
 
-            if (bidder === 'trustx') {
-              expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
-            }
-          })
+          if (bidder === 'trustx') {
+            expect(deepAccess(params, 'keywords.test_kv')).to.eql(['true'])
+          }
         })
-      }
+      })
     })
   })
 
@@ -648,6 +702,7 @@ function transformedTargeting (data = getTargetingData()) {
   return {
     ac: [...data._pcrprs, ...data._ppam, ...data._psegs.filter(seg => seg >= 1000000)],
     appnexus: data._papns,
+    ix: data._pindexs,
     rubicon: data._prubicons,
     gam: data._pdfps,
     ssp: data._pssps,
@@ -661,6 +716,7 @@ function getTargetingData () {
     _papns: ['appnexus1', 'appnexus2'],
     _psegs: ['1234', '1000001', '1000002'],
     _ppam: ['ppam1', 'ppam2'],
+    _pindexs: ['pindex1', 'pindex2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
     _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
   }

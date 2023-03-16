@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -27,6 +27,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
+export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
 const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
@@ -131,10 +132,17 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     bidRequestsCount: bidRequestsCount,
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
-    bidderTimeout: bidderTimeout
+    bidderTimeout: bidderTimeout,
+    webSessionId: webSessionId
   };
 
   appendUserIdsToRequestPayload(data, userId);
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
 
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
