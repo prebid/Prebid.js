@@ -38,10 +38,19 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
 function getBidFloor(bid) {
+  // value from params takes precedance over value set by Floor Module
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+
   if (!utils.isFn(bid.getFloor)) {
     return null;
   }
@@ -342,6 +351,11 @@ export const spec = {
     }
     if (bid.params.publisherId.length > 32) {
       utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
+      return false;
+    }
+
+    // optional parameters
+    if (bid.params.bidfloor && isNaN(parseFloat(bid.params.bidfloor))) {
       return false;
     }
 

@@ -1,7 +1,9 @@
-import { _each, deepAccess, parseSizesInput, parseUrl, uniques, isFn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {bidderSettings} from '../src/bidderSettings.js';
+import {config} from '../src/config.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -25,11 +27,12 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
+const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    const parsedUrl = parseUrl(window.top.document.URL, {decodeSearchAsString: true});
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -57,10 +60,23 @@ function isBidRequestValid(bid) {
   return !!(extractCID(params) && extractPID(params));
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
-  const { params, bidId, userId, adUnitCode, schain } = bid;
-  const { ext } = params;
-  let { bidFloor } = params;
+function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+  const {
+    params,
+    bidId,
+    userId,
+    adUnitCode,
+    schain,
+    mediaTypes,
+    auctionId,
+    transactionId,
+    bidderRequestId,
+    bidRequestsCount,
+    bidderRequestsCount,
+    bidderWinsCount
+  } = bid;
+  const {ext} = params;
+  let {bidFloor} = params;
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
@@ -69,6 +85,11 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
+  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -99,10 +120,29 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
     prebidVersion: '$prebid.version$',
     res: `${screen.width}x${screen.height}`,
     schain: schain,
-    ptrace: ptrace
+    mediaTypes: mediaTypes,
+    ptrace: ptrace,
+    isStorageAllowed: isStorageAllowed,
+    gpid: gpid,
+    cat: cat,
+    pagecat: pagecat,
+    auctionId: auctionId,
+    transactionId: transactionId,
+    bidderRequestId: bidderRequestId,
+    bidRequestsCount: bidRequestsCount,
+    bidderRequestsCount: bidderRequestsCount,
+    bidderWinsCount: bidderWinsCount,
+    bidderTimeout: bidderTimeout,
+    webSessionId: webSessionId
   };
 
   appendUserIdsToRequestPayload(data, userId);
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
 
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
@@ -114,6 +154,14 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest) {
   }
   if (bidderRequest.uspConsent) {
     data.usPrivacy = bidderRequest.uspConsent;
+  }
+
+  if (bidderRequest.gppConsent) {
+    data.gppString = bidderRequest.gppConsent.gppString;
+    data.gppSid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    data.gppString = bidderRequest.ortb2.regs.gpp;
+    data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   const dto = {
@@ -158,10 +206,11 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+  const bidderTimeout = config.getConfig('bidderTimeout');
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);
-    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest);
+    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
     requests.push(request);
   });
   return requests;
@@ -171,18 +220,19 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const { bidId } = request.data;
-  const { results } = serverResponse.body;
+  const {bidId} = request.data;
+  const {results} = serverResponse.body;
 
   let output = [];
 
   try {
     results.forEach(result => {
-      const { creativeId, ad, price, exp, width, height, currency, advertiserDomains } = result;
+      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER} = result;
       if (!ad || !price) {
         return;
       }
-      output.push({
+
+      const response = {
         requestId: bidId,
         cpm: price,
         width: width,
@@ -191,11 +241,22 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        ad: ad,
         meta: {
           advertiserDomains: advertiserDomains || []
         }
-      })
+      };
+
+      if (mediaType === BANNER) {
+        Object.assign(response, {
+          ad: ad,
+        });
+      } else {
+        Object.assign(response, {
+          vastXml: ad,
+          mediaType: VIDEO
+        });
+      }
+      output.push(response);
     });
     return output;
   } catch (e) {
@@ -205,8 +266,8 @@ function interpretResponse(serverResponse, request) {
 
 function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
   let syncs = [];
-  const { iframeEnabled, pixelEnabled } = syncOptions;
-  const { gdprApplies, consentString = '' } = gdprConsent;
+  const {iframeEnabled, pixelEnabled} = syncOptions;
+  const {gdprApplies, consentString = ''} = gdprConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
   const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
@@ -230,7 +291,9 @@ export function hashCode(s, prefix = '_') {
   let h = 0
   let i = 0;
   if (l > 0) {
-    while (i < l) { h = (h << 5) - h + s.charCodeAt(i++) | 0; }
+    while (i < l) {
+      h = (h << 5) - h + s.charCodeAt(i++) | 0;
+    }
   }
   return prefix + h;
 }
@@ -287,7 +350,8 @@ export function getCacheOpt() {
 export function getStorageItem(key) {
   try {
     return tryParseJSON(storage.getDataFromLocalStorage(key));
-  } catch (e) { }
+  } catch (e) {
+  }
 
   return null;
 }
@@ -295,9 +359,10 @@ export function getStorageItem(key) {
 export function setStorageItem(key, value, timestamp) {
   try {
     const created = timestamp || Date.now();
-    const data = JSON.stringify({ value, created });
+    const data = JSON.stringify({value, created});
     storage.setDataInLocalStorage(key, data);
-  } catch (e) { }
+  } catch (e) {
+  }
 }
 
 export function tryParseJSON(value) {
@@ -312,7 +377,7 @@ export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
   gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,

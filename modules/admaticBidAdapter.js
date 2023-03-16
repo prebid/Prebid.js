@@ -1,7 +1,8 @@
 import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
 export const spec = {
   code: BIDDER_CODE,
@@ -35,7 +36,7 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
-    const currency = getValue(validBidRequests[0].params, 'currency') || 'TRY';
+    const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -59,6 +60,15 @@ export const spec = {
     };
 
     if (payload) {
+      switch (bidderName) {
+        case 'pixad':
+          SYNC_URL = 'https://static.pixad.com.tr/sync.html';
+          break;
+        default:
+          SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+          break;
+      }
+
       return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
     }
   },
