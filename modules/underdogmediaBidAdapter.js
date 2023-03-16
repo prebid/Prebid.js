@@ -80,6 +80,7 @@ export const spec = {
       ref: deepAccess(bidderRequest, 'refererInfo.ref') ? bidderRequest.refererInfo.ref : undefined,
       usp: {},
       userIds: {
+        '33acrossId': deepAccess(validBidRequests[0], 'userId.33acrossId.envelope') ? validBidRequests[0].userId['33acrossId'].envelope : undefined,
         pubcid: deepAccess(validBidRequests[0], 'crumbs.pubcid') ? validBidRequests[0].crumbs.pubcid : undefined,
         unifiedId: deepAccess(validBidRequests[0], 'userId.tdid') ? validBidRequests[0].userId.tdid : undefined
       },
