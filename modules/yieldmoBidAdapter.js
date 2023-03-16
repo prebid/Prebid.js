@@ -17,7 +17,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
@@ -370,7 +369,7 @@ function getPageDescription() {
  * @returns an id if there is one, or undefined
  */
 function getId(request, idType) {
-  return (typeof deepAccess(request, 'userId') === 'object') ? request.userId[idType] : undefined;
+  return (typeof deepAccess(request, 'userIdAsEids') === 'object') ? request.userIdAsEids[idType] : undefined;
 }
 
 /**
@@ -652,8 +651,8 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId) || [];
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids || [];
   }
 };
 

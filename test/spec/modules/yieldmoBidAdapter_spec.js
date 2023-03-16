@@ -31,7 +31,7 @@ describe('YieldmoAdapter', function () {
     crumbs: {
       pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da',
     },
-    userId: {
+    userIdAsEids: {
       tdid: '8d146286-91d4-4958-aff4-7e489dd1abd6'
     },
     transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
@@ -218,7 +218,7 @@ describe('YieldmoAdapter', function () {
 
       it('should add pubcid as parameter of request', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
-        const pubcidBid = mockBannerBid({crumbs: undefined, userId: {pubcid}});
+        const pubcidBid = mockBannerBid({crumbs: undefined, userIdAsEids: {pubcid}});
         expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
       });
 
@@ -242,12 +242,12 @@ describe('YieldmoAdapter', function () {
 
       it('should add unified id as parameter of request', function () {
         const unifiedIdBid = mockBannerBid({crumbs: undefined});
-        expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
+        expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userIdAsEids.tdid);
       });
 
       it('should add CRITEO RTUS id as parameter of request', function () {
         const criteoId = 'aff4';
-        const criteoIdBid = mockBannerBid({crumbs: undefined, userId: { criteoId }});
+        const criteoIdBid = mockBannerBid({crumbs: undefined, userIdAsEids: { criteoId }});
         expect(buildAndGetData([criteoIdBid]).cri_prebid).to.deep.equal(criteoId);
       });
 
@@ -371,7 +371,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the banner bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
@@ -532,7 +540,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the video bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
