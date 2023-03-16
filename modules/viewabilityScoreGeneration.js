@@ -219,21 +219,21 @@ export const setGptEventHandlers = () => {
     window.googletag.cmd.push(() => {
       window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-		const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+		const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
         const currentAdSlotSize = creativeSize?.[0];
         gptSlotRenderEndedHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+        const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
 	    const currentAdSlotSize = creativeSize?.[0];
         gptImpressionViewableHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
         const currentAdSlotElement = event.slot.getSlotElementId();
-        const creativeSize = event.slot.getTargeting('pwtsz') || event.slot.getTargeting('hb_size');
+        const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
 	    const currentAdSlotSize = creativeSize?.[0];
         gptSlotVisibilityChangedHandler(currentAdSlotElement, currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
       });
