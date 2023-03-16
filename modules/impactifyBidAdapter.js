@@ -62,8 +62,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   if (schain) request.source.ext = { schain: schain };
 
   // Set eids
-  let bidUserId = deepAccess(validBidRequests, '0.userIdAsEids');
-  let eids = bidUserId;
+  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
   if (eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
