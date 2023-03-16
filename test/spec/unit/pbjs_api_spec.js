@@ -3553,7 +3553,7 @@ describe('Unit: Prebid Module', function () {
       }
     ];
 
-    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', transactionId: '1234567890' }
+    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', transactionId: '1234567890', adId: 'abcdefg' }
     let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', transactionId: '0987654321' }
     let adUnitCodes = ['adUnit-code-1', 'adUnit-code-2'];
     let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
@@ -3561,6 +3561,7 @@ describe('Unit: Prebid Module', function () {
     beforeEach(function () {
       sandbox.spy(adapterManager, 'callBidWonBidder');
       sandbox.spy(adapterManager, 'callBidBillableBidder');
+      sandbox.stub(auctionManager, 'getBidsReceived').returns([winningBid1]);
     });
 
     afterEach(function () {
@@ -3582,6 +3583,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should invoke callBidBillableBidder when pbjs.triggerBilling is invoked', function () {
       $$PREBID_GLOBAL$$.triggerBilling(winningBid1);
+      sinon.assert.calledOnce(auctionManager.getBidsReceived);
       sinon.assert.notCalled(adapterManager.callBidWonBidder);
       sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
     });
