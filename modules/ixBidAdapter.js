@@ -833,7 +833,7 @@ function applyRegulations(r, bidderRequest) {
 
         if (gdprConsent.hasOwnProperty('addtlConsent') && gdprConsent.addtlConsent) {
           r.user.ext.consented_providers_settings = {
-            consented_providers: gdprConsent.addtlConsent
+            addtl_consent: gdprConsent.addtlConsent
           };
         }
       }
