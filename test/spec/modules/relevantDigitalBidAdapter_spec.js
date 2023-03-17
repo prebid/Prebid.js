@@ -1,28 +1,36 @@
 import 'src/prebid.js';
-import {spec} from 'modules/relevantDigitalBidAdapter.js';
+import {spec, resetBidderConfigs} from 'modules/relevantDigitalBidAdapter.js';
 import {server} from 'test/mocks/xhr.js';
 import { config } from 'src/config.js';
-import { generateUUID, parseUrl } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import {newAuctionManager, auctionManager} from 'src/auctionManager.js';
 import { userSync } from 'src/userSync.js';
+import * as events from '../../../src/events';
+import CONSTANTS from 'src/constants.json';
+
+const { BID_WON } = CONSTANTS.EVENTS;
+const { generateUUID, parseUrl } = utils;
 
 const expect = require('chai').expect;
 
-const HOST = 'dev-api.relevant-digital.com';
-const IMP_ID = '/12345/stored/request/test';
+const HOST = 'pbs-domain-1.relevant-digital.com';
+const HOST2 = 'pbs-domain-2.relevant-digital.com'; // Notice: Must be alphabetically ordered after HOST for some tests
+const TEST_ALIAS = 'test_alias_of_relevantdigital';
+const AD_UNIT_CODE = '/12345/stored/request/test-1';
+const AD_UNIT_CODE2 = '/12345/stored/request/test-2';
 
 const BID = {
-  bid_id: IMP_ID,
+  bid_id: AD_UNIT_CODE,
   bidder: spec.code,
   params: {
-    adUnitCode: '620525862d7518bfd4bbb81e_620523b5d1dbed6b0fbbb817',
+    placementId: '620525862d7518bfd4bbb81e_620523b5d1dbed6b0fbbb817',
     accountId: '620523ae7f4bbe1691bbb815',
     pbsHost: HOST,
   },
 };
 
 const AD_UNIT = {
-  code: IMP_ID,
+  code: AD_UNIT_CODE,
   mediaTypes: {
     banner: {
       sizes: [[300, 250], [300, 600], [320, 320]],
@@ -37,7 +45,7 @@ const makeResponse = ({ host = HOST } = {}) => ({
       'bid': [
         {
           'id': '613673EF-A07C-4486-8EE9-3FC71A7DC73D',
-          'impid': IMP_ID,
+          'impid': AD_UNIT_CODE,
           'price': 10.76091063668997,
           'adm': '<html><a href="http://www.pubmatic.com" target="_blank"><img src ="https://stagingva.pubmatic.com:8443/image/300x250.jpg" /></a></html>',
           'adomain': [
@@ -99,12 +107,20 @@ const makeResponse = ({ host = HOST } = {}) => ({
   }
 });
 
-const findReq = (str) => server.requests.find((r) => r.url.includes(str));
+const STUBS = [
+  [userSync, 'registerSync'],
+  [utils, 'triggerPixel'],
+];
+
+const restoreStubs = () => STUBS.forEach(([k, v]) => k[v].restore?.());
+const initStubs = () => {
+  restoreStubs();
+  STUBS.forEach(([k, v]) => sinon.stub(k, v));
+};
 
 describe('Relevant Digital Bid Adaper', function () {
   let oldIndex;
   let myAuctionManager;
-  let userSyncStub;
 
   const runAuction = async ({ adUnits, response }) => {
     let cb;
@@ -118,12 +134,14 @@ describe('Relevant Digital Bid Adaper', function () {
       callback: cb,
     });
     auction.callBids();
-    const req = findReq('/openrtb2/auction');
-    const { id } = JSON.parse(req.requestBody);
-    req.respond(200, {}, JSON.stringify({
-      ...response,
-      id,
-    }));
+    Object.entries(response).forEach(([host, resp]) => {
+      const req = server.requests.find(({ url }) => url.includes(host) && url.includes('/openrtb2/auction'))
+      const { id } = JSON.parse(req.requestBody);
+      req.respond(200, {}, JSON.stringify({
+        ...resp,
+        id,
+      }));
+    });
     return promise;
   };
 
@@ -131,9 +149,10 @@ describe('Relevant Digital Bid Adaper', function () {
     oldIndex = auctionManager.index;
     myAuctionManager = newAuctionManager();
     auctionManager.index = myAuctionManager.index;
-    userSyncStub = sinon.stub(userSync, 'registerSync')
+    $$PREBID_GLOBAL$$.aliasBidder(spec.code, TEST_ALIAS);
     config.setConfig({
       userSync: {
+        aliasSyncEnabled: true,
         filterSettings: {
           iframe: {
             bidders: '*',
@@ -145,35 +164,88 @@ describe('Relevant Digital Bid Adaper', function () {
   });
   after(() => {
     auctionManager.index = oldIndex;
-    userSyncStub.restore();
+    restoreStubs();
     config.resetConfig();
+    delete $$PREBID_GLOBAL$$.aliasRegistry[TEST_ALIAS];
   });
-  afterEach(() => {
-    userSyncStub.resetHistory();
-  });
-  describe('a basic auction with cookie-syncing', () => {
+  const beforeEachDescribe = () => {
+    resetBidderConfigs();
+    initStubs();
+  };
+  describe('a basic auction', () => {
     let bidResponses;
+    let pbsResponse;
     before(async () => {
+      beforeEachDescribe();
+      pbsResponse = makeResponse();
       bidResponses = await runAuction({
         adUnits: [AD_UNIT],
-        response: makeResponse(),
+        response: { [HOST]: pbsResponse },
       });
     });
-    after(() => {
-    });
     it('should return a correct bid', () => {
-      const bids = bidResponses[AD_UNIT.code].bids;
+      const bids = bidResponses[AD_UNIT_CODE].bids;
       expect(bids.length).to.equal(1);
       const bid = bids[0];
-      expect(bid.bidderCode).to.be.equal(spec.code);
+      expect(bid.bidderCode).to.equal(spec.code);
     });
     it('should use S2S-bidders for cookie-syncing', () => {
-      expect(userSyncStub.args.length).to.equal(1);
-      const [type, bidder, url] = userSyncStub.args;
+      const { args } = userSync.registerSync;
+      expect(args.length).to.equal(1);
+      const [type, bidder, url] = args[0];
       expect(type).to.equal('iframe');
       expect(bidder).to.equal(spec.code);
-      const x = parseUrl(url);
-      console.info(x);
+      const { bidders, endpoint } = parseUrl(url).search;
+      expect(bidders.split(',').sort()).to.deep.equal(['appnexus', 'pubmatic']);
+      expect(endpoint).to.equal(`https://${HOST}/cookie_sync`);
+    });
+    it('should trigger the correct impression-pixel when rendering', async () => {
+      events.emit(BID_WON, bidResponses[AD_UNIT_CODE].bids[0]);
+      const { args } = utils.triggerPixel;
+      expect(args.length).to.equal(1);
+      const [url] = args[0];
+      expect(url).to.equal(pbsResponse.seatbid[0].bid[0].ext.prebid.events.win);
+    });
+  });
+  describe('an auction with 2 bidders', () => {
+    let bidResponses;
+    let pbsResponse;
+    const fix = (obj) => JSON.parse(JSON.stringify(obj)
+      .replaceAll(AD_UNIT_CODE, AD_UNIT_CODE2)
+      .replaceAll(HOST, HOST2)
+      .replaceAll(spec.code, TEST_ALIAS));
+    before(async () => {
+      beforeEachDescribe();
+      pbsResponse = makeResponse();
+      bidResponses = await runAuction({
+        adUnits: [AD_UNIT, fix(AD_UNIT)],
+        response: {
+          [HOST]: pbsResponse,
+          [HOST2]: fix(pbsResponse),
+        },
+      });
+    });
+    it('should return 2 correct bids', () => {
+      const [bid1] = bidResponses[AD_UNIT_CODE].bids;
+      const [bid2] = bidResponses[AD_UNIT_CODE2].bids;
+      expect(bid1.bidderCode).to.equal(spec.code);
+      expect(bid2.bidderCode).to.equal(TEST_ALIAS);
+    });
+    it('should cookie-sync to the right hosts', () => {
+      const { args } = userSync.registerSync;
+      expect(args.length).to.equal(2);
+      const [url1, url2] = args.map(([,, url]) => url).sort();
+      expect(parseUrl(url1).search.endpoint).to.equal(`https://${HOST}/cookie_sync`);
+      expect(parseUrl(url2).search.endpoint).to.equal(`https://${HOST2}/cookie_sync`);
+    });
+    it('should trigger impression-pixels to the right hosts when rendering', async () => {
+      events.emit(BID_WON, bidResponses[AD_UNIT_CODE].bids[0]);
+      events.emit(BID_WON, bidResponses[AD_UNIT_CODE2].bids[0]);
+      const { args } = utils.triggerPixel;
+      expect(args.length).to.equal(2);
+      const [url1, url2] = args.map(([url]) => url).sort();
+      expect(url1).to.include(HOST);
+      expect(url2).to.include(HOST2);
     });
   });
 });

@@ -8,7 +8,7 @@ Maintainer: support@relevant-digital.com
 
 # Description
 
-This adapter is used for integration with providers using the **[Relevant Yield](https://www.relevant-digital.com/relevantyield)** platform. The provider will supply the necessary **pbsHost** and **accountId** settings along with the **adUnitCode** bid parameters per ad unit.
+This adapter is used for integration with providers using the **[Relevant Yield](https://www.relevant-digital.com/relevantyield)** platform. The provider will supply the necessary **pbsHost** and **accountId** settings along with the **placementId** bid parameters per ad unit.
 
 # Example setup using pbjs.setConfig()
 This is the recommended method to set the global configuration parameters.
@@ -28,7 +28,7 @@ var adUnits = [
       {
         bidder: 'relevantdigital',
         params: {
-          adUnitCode: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
+          placementId: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
         }
       }
    ],
@@ -46,7 +46,7 @@ var adUnits = [
       {
         bidder: 'relevantdigital',
         params: {
-          adUnitCode: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
+          placementId: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
           pbsHost: 'pbs-example.relevant-digital.com',
           accountId: '620533ae7f5bbe1691bbb815',
         }
@@ -81,13 +81,13 @@ var adUnits = [
       {
         bidder: 'providerA',
         params: {
-          adUnitCode: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
+          placementId: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
         }
       },
       {
         bidder: 'providerB',
         params: {
-          adUnitCode: '990525862d7517bfd4bbb81e_770523b7d1dbed6b0fbbb817',
+          placementId: '990525862d7517bfd4bbb81e_770523b7d1dbed6b0fbbb817',
         }
       },      
    ],
@@ -99,7 +99,7 @@ var adUnits = [
 
 | Name          | Scope    | Description                                             | Example                    | Type         |
 |---------------|----------|---------------------------------------------------------|----------------------------|--------------|
-| `adUnitCode`       | required | The placement id.  | `'610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817'`      | `String`     |
+| `placementId`       | required | The placement id.  | `'610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817'`      | `String`     |
 | `pbsHost` | required if not set in config | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
 | `accountId`        | required if not set in config | The account id.  | `620533ae7f5bbe1691bbb815`               | `String`      |
 

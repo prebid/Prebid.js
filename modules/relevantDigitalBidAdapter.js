@@ -16,16 +16,24 @@ const converter = ortbConverter({
   },
   processors: pbsExtensions,
   imp(buildImp, bidRequest, context) {
+    // Set stored request id from placementId
     const imp = buildImp(bidRequest, context);
-    const { adUnitCode } = bidRequest.params;
-    deepSetValue(imp, 'ext.prebid.storedrequest.id', adUnitCode);
+    const { placementId } = bidRequest.params;
+    deepSetValue(imp, 'ext.prebid.storedrequest.id', placementId);
     delete imp.ext.prebid.bidder;
     return imp;
   },
 });
 
-const configByBidder = {};
+/** Global settings per bidder-code for this adapter (which might be > 1 if using aliasing) */
+let configByBidder = {};
 
+/** Used by the tests */
+export const resetBidderConfigs = () => {
+  configByBidder = {};
+};
+
+/** Settings ber bidder-code. checkParams === true means that it can optionally be set in bid-params   */
 const FIELDS = [
   { name: 'pbsHost', checkParams: true, required: true },
   { name: 'accountId', checkParams: true, required: true },
@@ -33,19 +41,22 @@ const FIELDS = [
 ];
 
 const SYNC_HTML = 'https://cdn.relevant-digital.com/resources/load-cookie.html';
-const MAX_SYNC_COUNT = 10;
+const MAX_SYNC_COUNT = 10; // Max server-side bidder to sync at once via the iframe
 
+/** Get settings for a bidder-code via config and, if needed, bid parameters */
 const getBidderConfig = (bids) => {
   const { bidder } = bids[0];
   const cfg = configByBidder[bidder] || {
     ...Object.fromEntries(FIELDS.filter((f) => 'default' in f).map((f) => [f.name, f.default])),
-    syncedBidders: {},
+    syncedBidders: {}, // To keep track of S2S-bidders we already (started to) synced
   };
   if (cfg.complete) {
-    return cfg;
+    return cfg; // Most common case, we already have the settings we need (and we won't re-read them)
   }
   configByBidder[bidder] = cfg;
   const bidderConfiguration = config.getConfig(bidder) || {};
+
+  // Read settings set by setConfig({ [bidder]: { ... }}) and if not available - from bid params
   FIELDS.forEach(({ name, checkParams }) => {
     cfg[name] = bidderConfiguration[name] || cfg[name];
     if (!cfg[name] && checkParams) {
@@ -64,6 +75,7 @@ const getBidderConfig = (bids) => {
   return cfg;
 }
 
+/** Trigger impression-pixels for all bidder-codes belonging to this adapter */
 events.on(CONSTANTS.EVENTS.BID_WON, (bid) => {
   const { pbsWurl, bidder } = bid;
   if (pbsWurl && configByBidder[bidder]) {
@@ -72,27 +84,32 @@ events.on(CONSTANTS.EVENTS.BID_WON, (bid) => {
 });
 
 export const spec = {
-  // ... rest of your spec goes here ...
   code: BIDDER_CODE,
   gvlid: 1100,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  isBidRequestValid: (bid) => bid.params?.adUnitCode && getBidderConfig([bid]).complete,
+
+  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue **/
+  isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
+
+  /** Build BidRequest for PBS */
   buildRequests(bidRequests, bidderRequest) {
     const { bidder } = bidRequests[0];
     const cfg = getBidderConfig(bidRequests);
     const data = converter.toORTB({bidRequests, bidderRequest});
 
+    /** Set tmax, in general this will be timeout - pbsBufferMs */
     const pbjsTimeout = bidderRequest.timeout || 1000;
     data.tmax = Math.min(Math.max(pbjsTimeout - cfg.pbsBufferMs, cfg.pbsBufferMs), pbjsTimeout);
-    delete data.ext?.prebid?.aliases;
+
+    delete data.ext?.prebid?.aliases; // We don't need/want to send aliases to PBS
     deepSetValue(data, 'ext.relevant', {
       ...data.ext?.relevant,
-      adapter: true,
+      adapter: true, // For internal analytics
     });
     deepSetValue(data, 'ext.prebid.storedrequest.id', cfg.accountId);
     data.ext.prebid.passthrough = {
       ...data.ext.prebid.passthrough,
-      relevant: { bidder },
+      relevant: { bidder }, // to find config for the right bidder-code in interpretResponse / getUserSyncs
     };
     return [{
       method: 'POST',
@@ -100,6 +117,8 @@ export const spec = {
       data
     }];
   },
+
+  /** Read BidResponse from PBS and make necessary adjustments to not make it appear to come from unknown bidders */
   interpretResponse(response, request) {
     const resp = deepClone(response.body);
     const { bidder } = request.data.ext.prebid.passthrough.relevant;
@@ -131,6 +150,8 @@ export const spec = {
     const bids = converter.fromORTB({response: resp, request: request.data}).bids;
     return bids;
   },
+
+  /** Do syncing, but avoid running the sync > 1 time for S2S bidders */
   getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
@@ -150,15 +171,15 @@ export const spec = {
         }
         return acc;
       }, []);
-      bidders = shuffle(bidders).slice(0, MAX_SYNC_COUNT);
+      bidders = shuffle(bidders).slice(0, MAX_SYNC_COUNT); // Shuffle to not always leave out the same bidders
       if (!bidders.length) {
-        return;
+        return; // All bidders already synced
       }
       if (syncOptions.iframeEnabled) {
         const params = {
           endpoint: `${pbsHost}/cookie_sync`,
           max_sync_count: bidders.length,
-          gdpr: typeof gdprApplies === 'boolean' ? Number(gdprApplies) : null,
+          gdpr: gdprApplies ? 1 : 0,
           gdpr_consent: consentString,
           us_privacy: uspConsent,
           bidders: bidders.join(','),
