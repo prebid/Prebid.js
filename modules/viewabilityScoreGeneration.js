@@ -3,7 +3,7 @@ import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import { isAdUnitCodeMatchingSlot } from '../src/utils.js';
+import { isAdUnitCodeMatchingSlot, deepClone } from '../src/utils.js';
 
 const MODULE_NAME = 'viewabilityScoreGeneration';
 const ENABLED = 'enabled';
@@ -26,25 +26,23 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         const bidViewabilityFields = {};
         const adSizes = {};
         const adUnit = vsgObj[bid.adUnitCode];
-
+		let copyVsgObj = {};
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
-
             if (vsgObj[key]) {
-              removeUnwantedKeys(vsgObj[key]);
-              adSizes[key] = vsgObj[key];
+			  copyVsgObj = deepClone(vsgObj[key]);
+              removeUnwantedKeys(copyVsgObj);
+              adSizes[key] = copyVsgObj;
             }
           });
         }
-
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
-
         if (adUnit) {
-          removeUnwantedKeys(adUnit);
-          bidViewabilityFields.adUnit = adUnit;
+		  copyVsgObj = deepClone(adUnit);
+          removeUnwantedKeys(copyVsgObj);
+          bidViewabilityFields.adUnit = copyVsgObj;
         }
-
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
       });
     });
