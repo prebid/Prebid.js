@@ -262,6 +262,9 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
       const sendOptions = createSendOptionsFromBatch(this.batch)
       this.liftIgniterWrapper.sendPrebid(sendOptions)
       this.batch = {}
+    } else if (this.timeout == null) {
+      this.timeout = setTimeout(this._sendBatch.bind(this), BATCH_MESSAGE_FREQUENCY);
+      logInfo(`$p: LiftIgniter not loaded during run of _sendBatch; will retry after ${BATCH_MESSAGE_FREQUENCY}ms`);
     }
   },
 }
