@@ -32,7 +32,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
             const key = bidSize.toString().replace(',', 'x');
             if (vsgObj[key]) {
 			  copyVsgObj = deepClone(vsgObj[key]);
-              removeUnwantedKeys(copyVsgObj);
+              removeLastViewStarted(copyVsgObj);
               adSizes[key] = copyVsgObj;
             }
           });
@@ -40,7 +40,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) {
 		  copyVsgObj = deepClone(adUnit);
-          removeUnwantedKeys(copyVsgObj);
+          removeLastViewStarted(copyVsgObj);
           bidViewabilityFields.adUnit = copyVsgObj;
         }
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
@@ -51,7 +51,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
   fn(bidderRequests);
 };
 
-const removeUnwantedKeys = obj => {
+const removeLastViewStarted = obj => {
   // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
   delete obj.lastViewStarted;
   // Deleteing totalTimeView incase value is less than 1 sec.

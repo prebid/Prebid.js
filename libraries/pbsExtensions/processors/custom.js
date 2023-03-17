@@ -13,7 +13,7 @@ let iidValue;
 let firstBidRequest;
 const vsgDomain = window.location.hostname;
 const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
-const removeUnwantedKeys = obj => {
+const removeViewTimeForZeroValue = obj => {
 	// Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
 	delete obj.lastViewStarted;
 	// Deleteing totalTimeView incase value is less than 1 sec.
@@ -65,7 +65,7 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
         ortbRequest.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
 		if(firstBidRequest.bids[0]?.bidViewability) {
 			let vsgObj = getAndParseFromLocalStorage('viewability-data');
-			ortbRequest.ext.prebid.bidderparams[bidder]["bidViewability"] = {'adDomain' : removeUnwantedKeys(vsgObj[vsgDomain])};
+			ortbRequest.ext.prebid.bidderparams[bidder]["bidViewability"] = {'adDomain' : removeViewTimeForZeroValue(vsgObj[vsgDomain])};
 		}
       }
     })
