@@ -61,15 +61,21 @@ export const spec = {
       }
     }
 
+    var bid_url = SMARTXSP_CONFIG.bidRequestUrl;
+    if(bid.params.bid_url != undefined) {
+      bid_url = bid.params.bid_url;
+    }
+
     var ServerRequestObjects = {
       method: SMARTXSP_CONFIG.method,
-      url: SMARTXSP_CONFIG.bidRequestUrl,
+      url: bid_url,
       bids: validBidRequests,
       data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
+    console.log("SmartXSP : interpretResponse",serverResponse );
     var i
     var bid
     var bidObject
@@ -96,11 +102,7 @@ export const spec = {
           netRevenue: !!ad.netRevenue,
           currency: ad.currency,
           ttl: ad.ttl,
-          ad: ad.ad,
-          meta: {
-            advertiserDomains: ad.domains,
-            advertiserName: ad.title
-          }
+          ad: ad.ad
         }
         bidResponses.push(bidObject);
       }
