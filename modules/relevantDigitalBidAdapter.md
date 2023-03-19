@@ -16,19 +16,19 @@ This is the recommended method to set the global configuration parameters.
 pbjs.setConfig({
   relevantdigital: {
     pbsHost: 'pbs-example.relevant-digital.com',
-    accountId: '620533ae7f5bbe1691bbb815',
+    accountId: '6204e5fa70e3ad10821b84ff',
   },
 });
 
 var adUnits = [
   {
     code: 'test-div',
-    mediaTypes: { banner: { sizes: [[728, 90]] }},
+    mediaTypes: { banner: { sizes: [[300, 250], [320, 320]] }},
     bids: [
       {
         bidder: 'relevantdigital',
         params: {
-          placementId: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
+          placementId: '6204e83a077c5825441b8508_620f9e8e4fe67c1f87cd30ed',
         }
       }
    ],
@@ -41,14 +41,14 @@ This method to set the global configuration parameters (like **pbsHost**) in **p
 var adUnits = [
   {
     code: 'test-div',
-    mediaTypes: { banner: { sizes: [[728, 90]] }},
+    mediaTypes: { banner: { sizes: [[300, 250], [320, 320]] }},
     bids: [
       {
         bidder: 'relevantdigital',
         params: {
-          placementId: '610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817',
+          placementId: '6204e83a077c5825441b8508_620f9e8e4fe67c1f87cd30ed',
           pbsHost: 'pbs-example.relevant-digital.com',
-          accountId: '620533ae7f5bbe1691bbb815',
+          accountId: '6204e5fa70e3ad10821b84ff',
         }
       }
    ],
@@ -57,6 +57,7 @@ var adUnits = [
 ```
 
 # Example setup with multiple providers
+**Notice:** Placements below are _not_ live test placements  
 ```javascript
 
 pbjs.aliasBidder('relevantdigital', 'providerA');
@@ -76,7 +77,7 @@ pbjs.setConfig({
 var adUnits = [
   {
     code: 'test-div',
-    mediaTypes: { banner: { sizes: [[728, 90]] }},
+    mediaTypes: { banner: { sizes: [[300, 250], [320, 320]] }},
     bids: [
       {
         bidder: 'providerA',

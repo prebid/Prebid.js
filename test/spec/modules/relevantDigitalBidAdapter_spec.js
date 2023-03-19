@@ -200,7 +200,7 @@ describe('Relevant Digital Bid Adaper', function () {
       expect(endpoint).to.equal(`https://${HOST}/cookie_sync`);
     });
     it('should trigger the correct impression-pixel when rendering', async () => {
-      events.emit(BID_WON, bidResponses[AD_UNIT_CODE].bids[0]);
+      myAuctionManager.addWinningBid(bidResponses[AD_UNIT_CODE].bids[0]);
       const { args } = utils.triggerPixel;
       expect(args.length).to.equal(1);
       const [url] = args[0];
@@ -239,8 +239,8 @@ describe('Relevant Digital Bid Adaper', function () {
       expect(parseUrl(url2).search.endpoint).to.equal(`https://${HOST2}/cookie_sync`);
     });
     it('should trigger impression-pixels to the right hosts when rendering', async () => {
-      events.emit(BID_WON, bidResponses[AD_UNIT_CODE].bids[0]);
-      events.emit(BID_WON, bidResponses[AD_UNIT_CODE2].bids[0]);
+      myAuctionManager.addWinningBid(bidResponses[AD_UNIT_CODE].bids[0]);
+      myAuctionManager.addWinningBid(bidResponses[AD_UNIT_CODE2].bids[0]);
       const { args } = utils.triggerPixel;
       expect(args.length).to.equal(2);
       const [url1, url2] = args.map(([url]) => url).sort();

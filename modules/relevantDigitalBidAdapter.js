@@ -1,8 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import * as events from '../src/events.js'
-import CONSTANTS from '../src/constants.json';
 import {config} from '../src/config.js';
 import {pbsExtensions} from '../libraries/pbsExtensions/pbsExtensions.js'
 import {deepSetValue, isEmpty, deepClone, shuffle, triggerPixel, deepAccess} from '../src/utils.js';
@@ -75,14 +73,6 @@ const getBidderConfig = (bids) => {
   return cfg;
 }
 
-/** Trigger impression-pixels for all bidder-codes belonging to this adapter */
-events.on(CONSTANTS.EVENTS.BID_WON, (bid) => {
-  const { pbsWurl, bidder } = bid;
-  if (pbsWurl && configByBidder[bidder]) {
-    triggerPixel(pbsWurl);
-  }
-});
-
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 1100,
@@ -90,6 +80,9 @@ export const spec = {
 
   /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue **/
   isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
+
+  /** Trigger impression-pixel */
+  onBidWon: ({pbsWurl}) => pbsWurl && triggerPixel(pbsWurl),
 
   /** Build BidRequest for PBS */
   buildRequests(bidRequests, bidderRequest) {
