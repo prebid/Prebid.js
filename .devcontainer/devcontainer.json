@@ -16,7 +16,8 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"nickdodd79.gulptasks"
+		"nickdodd79.gulptasks",
+		"dbaeumer.vscode-eslint"
 	],
 
 	// 9999 is web server, 9876 is karma

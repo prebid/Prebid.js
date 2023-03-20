@@ -17,6 +17,7 @@ import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 import { executeRenderer } from '../../../src/Renderer.js';
+import { userSync } from '../../../src/userSync.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -149,10 +150,8 @@ describe('Adagio bid adapter', () => {
         site: {
           ext: {
             data: {
-              environment: 'desktop',
               pagetype: 'abc',
-              category: ['cat1', 'cat2', 'cat3'],
-              subcategory: []
+              category: ['cat1', 'cat2', 'cat3']
             }
           }
         }
@@ -167,17 +166,11 @@ describe('Adagio bid adapter', () => {
         return utils.deepAccess(config, key);
       });
 
-      setExtraParam(bid, 'environment');
-      expect(bid.params.environment).to.equal('desktop');
-
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
 
       setExtraParam(bid, 'category');
       expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
-
-      setExtraParam(bid, 'subcategory');
-      expect(bid.params.subcategory).to.be.undefined;
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -274,7 +267,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
-      'data'
+      'data',
+      'usIfr'
     ];
 
     it('groups requests by organizationId', function() {
@@ -389,8 +383,8 @@ describe('Adagio bid adapter', () => {
               context: 'outstream',
               playerSize: [[300, 250]],
               mimes: ['video/mp4'],
-              api: 5, // will be removed because invalid
-              playbackmethod: [7], // will be removed because invalid
+              api: 'val', // will be removed because invalid
+              playbackmethod: ['val'], // will be removed because invalid
             }
           },
         }).withParams({
@@ -569,15 +563,13 @@ describe('Adagio bid adapter', () => {
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
 
-        sinon.stub(config, 'getConfig')
-          .withArgs('coppa')
-          .returns(true);
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync').returns({ syncEnabled: true })
+          .withArgs('coppa').returns(true);
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
-
-        config.getConfig.restore();
       });
     });
 
@@ -744,6 +736,46 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
+
+    describe('with user-sync iframe enabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "true" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(true);
+      });
+    });
+
+    describe('with user-sync iframe disabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "false" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(false);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(false);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
@@ -784,8 +816,6 @@ describe('Adagio bid adapter', () => {
             adUnitElementId: 'gpt-adunit-code',
             pagetype: 'ARTICLE',
             category: 'NEWS',
-            subcategory: 'SPORT',
-            environment: 'desktop',
             supportIObs: true
           },
           adUnitCode: 'adunit-code',
@@ -833,8 +863,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -868,8 +896,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -1392,19 +1418,6 @@ describe('Adagio bid adapter', () => {
   });
 
   describe.skip('optional params auto detection', function() {
-    it('should auto detect environment', function() {
-      const getDeviceStub = sandbox.stub(_features, 'getDevice');
-
-      getDeviceStub.returns(5);
-      expect(adagio.autoDetectEnvironment()).to.eq('tablet');
-
-      getDeviceStub.returns(4);
-      expect(adagio.autoDetectEnvironment()).to.eq('mobile');
-
-      getDeviceStub.returns(2);
-      expect(adagio.autoDetectEnvironment()).to.eq('desktop');
-    });
-
     it('should auto detect adUnitElementId when GPT is used', function() {
       sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
       expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');

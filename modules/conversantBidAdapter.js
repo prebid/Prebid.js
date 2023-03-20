@@ -142,6 +142,10 @@ export const spec = {
     }
 
     if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        deepSetValue(payload, 'tmax', bidderRequest.timeout);
+      }
+
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;

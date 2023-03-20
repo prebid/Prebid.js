@@ -84,7 +84,7 @@ describe('AolAdapter', function () {
     'admixer.net': '100',
     'adserver.org': '200',
     'adtelligent.com': '300',
-    'amxrtb.com': '500',
+    'amxdt.net': '500',
     'audigent.com': '600',
     'britepool.com': '700',
     'criteo.com': '800',
@@ -110,7 +110,7 @@ describe('AolAdapter', function () {
   const USER_ID_DATA = {
     admixerId: SUPPORTED_USER_ID_SOURCES['admixer.net'],
     adtelligentId: SUPPORTED_USER_ID_SOURCES['adtelligent.com'],
-    amxId: SUPPORTED_USER_ID_SOURCES['amxrtb.com'],
+    amxId: SUPPORTED_USER_ID_SOURCES['amxdt.net'],
     britepoolid: SUPPORTED_USER_ID_SOURCES['britepool.com'],
     criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
     connectid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],
@@ -488,6 +488,20 @@ describe('AolAdapter', function () {
         expect(request.url).to.contain(NEXAGE_URL + 'dcn=2c9d2b50015c5ce9db6aeeed8b9500d6&pos=header');
       });
 
+      it('should return One Mobile url with configured GPP data', function () {
+        let bidRequest = createCustomBidRequest({
+          params: getNexageGetBidParams()
+        });
+        bidRequest.ortb2 = {
+          regs: {
+            gpp: 'testgpp',
+            gpp_sid: [8]
+          }
+        }
+        let [request] = spec.buildRequests(bidRequest.bids, bidRequest);
+        expect(request.url).to.contain('gpp=testgpp&gpp_sid=8');
+      });
+
       it('should return One Mobile url with cmd=bid option', function () {
         let bidRequest = createCustomBidRequest({
           params: getNexageGetBidParams()
@@ -792,6 +806,14 @@ describe('AolAdapter', function () {
       });
       expect(spec.formatMarketplaceDynamicParams()).to.be.equal(
         'euconsent=test-consent;gdpr=1;us_privacy=test-usp-consent;');
+    });
+
+    it('should return formatted gpp privacy params when formatConsentData returns GPP data', function () {
+      formatConsentDataStub.returns({
+        gpp: 'gppstring',
+        gpp_sid: [6, 7]
+      });
+      expect(spec.formatMarketplaceDynamicParams()).to.be.equal('gpp=gppstring;gpp_sid=6%2C7;');
     });
 
     it('should return formatted params when formatKeyValues returns data', function () {
