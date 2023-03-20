@@ -17,7 +17,7 @@
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotMatchingAdUnitCode } from '../src/utils.js';
+import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotMatchingAdUnitCode, getGptSlotForAdUnitCode } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { find } from '../src/polyfill.js';
 // import find from 'core-js-pure/features/array/find.js';
@@ -368,7 +368,21 @@ function setDefaultSlotConfig() {
   ]);
 }
 
-function init() {
+function markRefreshedAdUnit(adUnit){
+  let slot = getGptSlotForAdUnitCode(adUnit.adUnitId || adUnit.code);
+  if(!!slot){
+    let isRefreshed = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh) && slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh)[0];
+    let refreshCount = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount) && slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount)[0];
+    adUnit.isRefreshed = !!isRefreshed ? true : false;
+    adUnit.refreshCount = !!refreshCount ? refreshCount : 0;
+  }
+  else{
+    logWarn(MODULE_NAME, 'No slot found for : ', (adUnit.adUnitId || adUnit.code));
+  }
+}
+
+function init(adUnits) {
+  adUnits.forEach(adUnit => markRefreshedAdUnit(adUnit))
   if (beforeRequestBidsHandlerAdded === true) {
     // BEFORE_REQUEST_BIDS event listener already added, no need to add again
     return;

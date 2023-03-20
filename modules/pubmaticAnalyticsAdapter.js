@@ -421,6 +421,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
       'rc': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.slotCnt,
       'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
+      'rf': origAdUnit?.isRefreshed ? 1 : 0,
+      'rfc': origAdUnit?.refreshCount || 0
     };
     slotsArray.push(slotObject);
     return slotsArray;
