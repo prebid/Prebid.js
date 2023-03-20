@@ -5,10 +5,7 @@ import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {newAuctionManager, auctionManager} from 'src/auctionManager.js';
 import { userSync } from 'src/userSync.js';
-import * as events from '../../../src/events';
-import CONSTANTS from 'src/constants.json';
 
-const { BID_WON } = CONSTANTS.EVENTS;
 const { generateUUID, parseUrl } = utils;
 
 const expect = require('chai').expect;

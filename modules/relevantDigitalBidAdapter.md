@@ -100,13 +100,13 @@ var adUnits = [
 
 | Name          | Scope    | Description                                             | Example                    | Type         |
 |---------------|----------|---------------------------------------------------------|----------------------------|--------------|
-| `placementId`       | required | The placement id.  | `'610525862d7517bfd4bbb81e_620523b7d1dbed6b0fbbb817'`      | `String`     |
+| `placementId`       | required | The placement id.  | `'6204e83a077c5825441b8508_620f9e8e4fe67c1f87cd30ed'`      | `String`     |
 | `pbsHost` | required if not set in config | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
-| `accountId`        | required if not set in config | The account id.  | `620533ae7f5bbe1691bbb815`               | `String`      |
+| `accountId`        | required if not set in config | The account id.  | `'6204e5fa70e3ad10821b84ff'`               | `String`      |
 
 # Config Parameters
 
 | Name          | Scope    | Description                                             | Example                    | Type         |
 |---------------|----------|---------------------------------------------------------|----------------------------|--------------|
 | `pbsHost` | required if not set in bid parameters | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
-| `accountId`        | required if not set in bid parameters | The account id.  | `620533ae7f5bbe1691bbb815`               | `String`      |
+| `accountId`        | required if not set in bid parameters | The account id.  | `'6204e5fa70e3ad10821b84ff'`               | `String`      |
