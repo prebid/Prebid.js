@@ -369,7 +369,7 @@ function getPageDescription() {
  * @returns an id if there is one, or undefined
  */
 function getId(request, idType) {
-  return (typeof deepAccess(request, 'userIdAsEids') === 'object') ? request.userIdAsEids[idType] : undefined;
+  return (typeof deepAccess(request, 'userId') === 'object') ? request.userId[idType] : undefined;
 }
 
 /**

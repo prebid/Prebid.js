@@ -14,7 +14,6 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams, toLegacyResponse} from '../../../src/native.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -575,7 +574,15 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: '1111' } };
+      const userIdAsEids = [
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            atype: 1,
+            id: '1111'
+          }]
+        }
+      ];
       const expectedUserObject = { ext: { eids: [{
         source: 'id5-sync.com',
         uids: [{
@@ -584,7 +591,7 @@ describe('Improve Digital Adapter Tests', function () {
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userIdAsEids = createEidsArray(userId);
+      bidRequest.userIdAsEids = userIdAsEids;
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);
