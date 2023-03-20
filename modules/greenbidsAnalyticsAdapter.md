@@ -14,7 +14,7 @@ Analytics adapter for Greenbids
 
 ```
 {
-  provider: 'grenbids',
+  provider: 'greenbids',
   options: {
     pbuid: "PBUID_FROM_GREENBIDS"
     sampling: 1.0
