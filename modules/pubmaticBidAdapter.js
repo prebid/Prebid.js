@@ -1,9 +1,10 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques, isPlainObject, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import CONSTANTS from '../src/constants.json';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -302,39 +303,184 @@ function _checkParamDataType(key, value, datatype) {
   return UNDEFINED;
 }
 
-function _createNativeRequest(params) {
-  var nativeRequestObject = { ver: "1.2", ...params, assets: [] };
-  const { assets } = params;
+// TODO delete this code when removing native 1.1 support
+const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
+  'desc': 'desc',
+  'desc2': 'desc2',
+  'body': 'desc',
+  'body2': 'desc2',
+  'sponsoredBy': 'sponsored',
+  'cta': 'ctatext',
+  'rating': 'rating',
+  'address': 'address',
+  'downloads': 'downloads',
+  'likes': 'likes',
+  'phone': 'phone',
+  'price': 'price',
+  'salePrice': 'saleprice',
+  'displayUrl': 'displayurl',
+  'saleprice': 'saleprice',
+  'displayurl': 'displayurl'
+};
 
-  const isValidAsset = (asset) => asset.title || asset.img || asset.data || asset.video;
+const { NATIVE_IMAGE_TYPES, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS, NATIVE_ASSET_TYPES } = CONSTANTS;
+const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 
-  if (assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
+/**
+ * Copy of the function toOrtbNativeRequest from core native.js to handle the title len/length
+ * and ext and mimes parameters from legacy assets.
+ * @param {object} legacyNativeAssets
+ * @returns an OpenRTB format of the same bid request
+ */
+// TODO remove this function when the support for 1.1 is removed
+export function toOrtbNativeRequest(legacyNativeAssets) {
+  if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
+    logError(`${LOG_WARN_PREFIX}: Native assets object is empty or not an object: ${legacyNativeAssets}`);
     isInvalidNativeRequest = true;
-    return nativeRequestObject;
-  } else {
-    isInvalidNativeRequest = false;
+    return;
   }
+  const ortb = {
+    ver: '1.2',
+    assets: []
+  };
+  for (let key in legacyNativeAssets) {
+    // skip conversion for non-asset keys
+    if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
+      logError(`${LOG_WARN_PREFIX}: Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
 
-  assets.forEach(asset => {
-    var assetObj = asset;
-    if (assetObj.img) {
-      if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.IMAGE) {
-        assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
-        assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
-        assetObj.wmin = assetObj.wmin || assetObj.minimumWidth || (assetObj.minsizes ? assetObj.minsizes[0] : UNDEFINED);
-        assetObj.hmin = assetObj.hmin || assetObj.minimumHeight || (assetObj.minsizes ? assetObj.minsizes[1] : UNDEFINED);
-      } else if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.ICON) {
-        assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
-        assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+    const asset = legacyNativeAssets[key];
+    let required = 0;
+    if (asset.required && isBoolean(asset.required)) {
+      required = Number(asset.required);
+    }
+    const ortbAsset = {
+      id: ortb.assets.length,
+      required
+    };
+    // data cases
+    if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
+      ortbAsset.data = {
+        type: NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]
+      }
+      if (asset.len || asset.length) {
+        ortbAsset.data.len = asset.len || asset.length;
+      }
+      if (asset.ext) {
+        ortbAsset.data.ext = asset.ext;
+      }
+    // icon or image case
+    } else if (key === 'icon' || key === 'image') {
+      ortbAsset.img = {
+        type: key === 'icon' ? NATIVE_IMAGE_TYPES.ICON : NATIVE_IMAGE_TYPES.MAIN,
+      }
+      // if min_width and min_height are defined in aspect_ratio, they are preferred
+      if (asset.aspect_ratios) {
+        if (!isArray(asset.aspect_ratios)) {
+          logError(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's not a an array: ${asset.aspect_ratios}`);
+        } else if (!asset.aspect_ratios.length) {
+          logError(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's empty: ${asset.aspect_ratios}`);
+        } else {
+          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
+          if (!isInteger(minWidth) || !isInteger(minHeight)) {
+            logError(`${LOG_WARN_PREFIX}: image.aspect_ratios min_width or min_height are invalid: ${minWidth}, ${minHeight}`);
+          } else {
+            ortbAsset.img.wmin = minWidth;
+            ortbAsset.img.hmin = minHeight;
+          }
+          const aspectRatios = asset.aspect_ratios
+            .filter((ar) => ar.ratio_width && ar.ratio_height)
+            .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
+          if (aspectRatios.length > 0) {
+            ortbAsset.img.ext = {
+              aspectratios: aspectRatios
+            }
+          }
+        }
+      }
+
+      ortbAsset.img.w = asset.w || asset.width;
+      ortbAsset.img.h = asset.h || asset.height;
+      ortbAsset.img.wmin = asset.wmin || asset.minimumWidth || (asset.minsizes ? asset.minsizes[0] : UNDEFINED);
+      ortbAsset.img.hmin = asset.hmin || asset.minimumHeight || (asset.minsizes ? asset.minsizes[1] : UNDEFINED);
+
+      // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
+      if (asset.sizes) {
+        if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
+          logError(`${LOG_WARN_PREFIX}: image.sizes was passed, but its value is not an array of integers: ${asset.sizes}`);
+        } else {
+          logInfo(`${LOG_WARN_PREFIX}: if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin`);
+          ortbAsset.img.w = asset.sizes[0];
+          ortbAsset.img.h = asset.sizes[1];
+          delete ortbAsset.img.hmin;
+          delete ortbAsset.img.wmin;
+        }
+      }
+      asset.ext && (ortbAsset.img.ext = asset.ext);
+      asset.mimes && (ortbAsset.img.mimes = asset.mimes);
+    // title case
+    } else if (key === 'title') {
+      ortbAsset.title = {
+        // in openRTB, len is required for titles, while in legacy prebid was not.
+        // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
+        len: asset.len || asset.length || 140
+      }
+    // all extensions to the native bid request are passed as is
+    } else if (key === 'ext') {
+      ortbAsset.ext = asset;
+      // in `ext` case, required field is not needed
+      delete ortbAsset.required;
+    }
+    ortb.assets.push(ortbAsset);
+  }
+  return ortb;
+}
+// TODO delete this code when removing native 1.1 support
+
+function _createNativeRequest(params) {
+  var nativeRequestObject;
+
+  // TODO delete this code when removing native 1.1 support
+  if (!params.ortb) { // legacy assets definition found
+    nativeRequestObject = toOrtbNativeRequest(params);
+  } else { // ortb assets definition found
+    params = params.ortb;
+    // TODO delete this code when removing native 1.1 support
+    nativeRequestObject = { ver: '1.2', ...params, assets: [] };
+    const { assets } = params;
+
+    const isValidAsset = (asset) => asset.title || asset.img || asset.data || asset.video;
+
+    if (assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
+      logError(`${LOG_WARN_PREFIX}: Native assets object is empty or contains some invalid object`);
+      isInvalidNativeRequest = true;
+      return nativeRequestObject;
+    } else {
+      isInvalidNativeRequest = false;
+    }
+
+    assets.forEach(asset => {
+      var assetObj = asset;
+      if (assetObj.img) {
+        if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.IMAGE) {
+          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+          assetObj.wmin = assetObj.wmin || assetObj.minimumWidth || (assetObj.minsizes ? assetObj.minsizes[0] : UNDEFINED);
+          assetObj.hmin = assetObj.hmin || assetObj.minimumHeight || (assetObj.minsizes ? assetObj.minsizes[1] : UNDEFINED);
+        } else if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.ICON) {
+          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+        }
+      }
+
+      if (assetObj && assetObj.id !== undefined && isValidAsset(assetObj)) {
+        nativeRequestObject.assets.push(assetObj);
       }
     }
-
-    if (assetObj && assetObj.id !== undefined && isValidAsset(assetObj)) {
-      nativeRequestObject.assets.push(assetObj);
-    }
+    );
   }
-  );
-
   return nativeRequestObject;
 }
 
@@ -509,7 +655,10 @@ function _createImpressionObject(bid) {
           }
           break;
         case NATIVE:
-          nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeOrtbRequest));
+          // TODO uncomment below line when removing native 1.1 support
+          // nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeOrtbRequest));
+          // TODO delete below line when removing native 1.1 support
+          nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
           if (!isInvalidNativeRequest) {
             impObj.native = nativeObj;
           } else {

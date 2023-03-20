@@ -659,7 +659,7 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpression = {
       'native': {
-        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":140}},{"id":1,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80}},{"id":1,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
@@ -671,13 +671,13 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpressionWithRequiredParam = {
       'native': {
-        'request': '{"ver":"1.2","assets":[{"id":0,"required":0,"title":{"len":140}},{"id":1,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":0,"title":{"len":80}},{"id":1,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
     validnativeBidImpressionWithAllParams = {
       native: {
-        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80}},{"id":1,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90}},{"id":3,"required":1,"data":{"type":1,"len":10}},{"id":4,"required":1,"data":{"type":2,"len":10}},{"id":5,"required":1,"data":{"type":3,"len":10}},{"id":6,"required":1,"data":{"type":4,"len":10}},{"id":7,"required":1,"data":{"type":5,"len":10}},{"id":8,"required":1,"data":{"type":6,"len":10}},{"id":9,"required":1,"data":{"type":8,"len":10}},{"id":10,"required":1,"data":{"type":9,"len":10}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80}},{"id":1,"required":1,"img":{"type":1,"w":50,"h":50,"ext":{"icon1":"icon2"}}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"ext":{"image1":"image2"},"mimes":["image/png","image/gif"]}},{"id":3,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":4,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":5,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":6,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":7,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":8,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":9,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":10,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":11,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":12,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":13,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
       }
     }
 
