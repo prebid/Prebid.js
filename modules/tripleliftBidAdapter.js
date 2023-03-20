@@ -154,6 +154,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (!isEmpty(ext)) {
     data.ext = ext;
   }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
+  }
   return data;
 }
 
@@ -190,6 +194,9 @@ function _getORTBVideo(bidRequest) {
       logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
       video.placement = 3
     }
+  }
+  if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
+    video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
 
   // clean up oRTB object
@@ -431,6 +438,10 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
+    }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;

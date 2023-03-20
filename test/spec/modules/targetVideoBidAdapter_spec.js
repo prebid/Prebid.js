@@ -58,7 +58,7 @@ describe('TargetVideo Bid Adapter', function() {
         'uuid': '84ab500420319d',
         'ads': [{
           'ad_type': 'video',
-          'cpm': 0.500000,
+          'cpm': 0.675000,
           'notify_url': 'https://www.target-video.com/',
           'rtb': {
             'video': {
@@ -87,7 +87,7 @@ describe('TargetVideo Bid Adapter', function() {
 
     const bid = bidResponse[0];
     expect(bid).to.not.be.empty;
-    expect(bid.cpm).to.equal(0.675);
+    expect(bid.cpm).to.equal(0.5);
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.ad).to.include('<script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>')
