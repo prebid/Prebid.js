@@ -786,13 +786,13 @@ describe('UserEIDs', () => {
     it('Processes bid request without eids', () => {
       userEids.processBidRequestData({})
 
-      expect(userEids.values).to.be.empty
+      expect(userEids.eids).to.be.empty
     })
 
     it('Processed bid request with eids', () => {
       userEids.processBidRequestData({ userIdAsEids: eids })
 
-      expect(userEids.values).to.not.be.empty
+      expect(userEids.eids).to.not.be.empty
     })
   })
 
@@ -809,7 +809,7 @@ describe('UserEIDs', () => {
   })
 })
 
-describe.only('buildRequestUrl', () => {
+describe('buildRequestUrl', () => {
   const baseUrl = 'https://www.testExchange.com'
   it('Returns baseUrl if no QS strings passed', () => {
     const url = buildRequestUrl(baseUrl)
