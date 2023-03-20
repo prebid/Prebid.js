@@ -31,7 +31,7 @@ describe('YieldmoAdapter', function () {
     crumbs: {
       pubcid: 'c604130c-0144-4b63-9bf2-c2bd8c8d86da',
     },
-    userIdAsEids: {
+    userId: {
       tdid: '8d146286-91d4-4958-aff4-7e489dd1abd6'
     },
     transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
@@ -218,7 +218,7 @@ describe('YieldmoAdapter', function () {
 
       it('should add pubcid as parameter of request', function () {
         const pubcid = 'c604130c-0144-4b63-9bf2-c2bd8c8d86da2';
-        const pubcidBid = mockBannerBid({crumbs: undefined, userIdAsEids: {pubcid}});
+        const pubcidBid = mockBannerBid({crumbs: undefined, userId: {pubcid}});
         expect(buildAndGetData([pubcidBid]).pubcid).to.deep.equal(pubcid);
       });
 
@@ -242,12 +242,12 @@ describe('YieldmoAdapter', function () {
 
       it('should add unified id as parameter of request', function () {
         const unifiedIdBid = mockBannerBid({crumbs: undefined});
-        expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userIdAsEids.tdid);
+        expect(buildAndGetData([unifiedIdBid]).tdid).to.deep.equal(mockBannerBid().userId.tdid);
       });
 
       it('should add CRITEO RTUS id as parameter of request', function () {
         const criteoId = 'aff4';
-        const criteoIdBid = mockBannerBid({crumbs: undefined, userIdAsEids: { criteoId }});
+        const criteoIdBid = mockBannerBid({crumbs: undefined, userId: { criteoId }});
         expect(buildAndGetData([criteoIdBid]).cri_prebid).to.deep.equal(criteoId);
       });
 
