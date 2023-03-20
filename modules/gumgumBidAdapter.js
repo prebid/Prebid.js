@@ -264,7 +264,8 @@ function getEids(userId) {
   const idProperties = [
     'uid',
     'eid',
-    'lipbid'
+    'lipbid',
+    'envelope'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
@@ -293,6 +294,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const gppConsent = bidderRequest && bidderRequest.gppConsent;
   const timeout = config.getConfig('bidderTimeout');
   const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
@@ -386,6 +388,17 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (uspConsent) {
       data.uspConsent = uspConsent;
+    }
+    if (gppConsent) {
+      data.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        applicableSections: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
+      data.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+      };
     }
     if (coppa) {
       data.coppa = coppa;

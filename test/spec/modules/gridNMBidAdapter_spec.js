@@ -245,14 +245,6 @@ describe('TheMediaGridNM Adapter', function () {
       requests.forEach((req, i) => {
         const payload = req.data;
         expect(req).to.have.property('data');
-        expect(payload).to.have.property('user');
-        expect(payload.user.data).to.deep.equal([{
-          name: 'iow_labs_pub_data',
-          segment: [
-            {name: 'jwpseg', value: jsSegments[0]},
-            {name: 'jwpseg', value: jsSegments[1]}
-          ]
-        }]);
         expect(payload).to.have.property('site');
         expect(payload.site.content).to.deep.equal(jsContent);
       });

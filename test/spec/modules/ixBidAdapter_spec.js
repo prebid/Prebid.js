@@ -3469,7 +3469,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
 
-    it('should contain `consented_providers_settings.consented_providers` & consent on user.ext when both are provided', function () {
+    it('should contain `consented_providers_settings.addtl_consent` & consent on user.ext when both are provided', function () {
       const options = {
         gdprConsent: {
           consentString: '3huaa11=qu3198ae',
@@ -3479,11 +3479,11 @@ describe('IndexexchangeAdapter', function () {
 
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithConsent = extractPayload(validBidWithConsent[0]);
-      expect(requestWithConsent.user.ext.consented_providers_settings.consented_providers).to.equal('1~1.35.41.101');
+      expect(requestWithConsent.user.ext.consented_providers_settings.addtl_consent).to.equal('1~1.35.41.101');
       expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
     });
 
-    it('should not contain `consented_providers_settings.consented_providers` on user.ext when consent is not provided', function () {
+    it('should not contain `consented_providers_settings.addtl_consent` on user.ext when consent is not provided', function () {
       const options = {
         gdprConsent: {
           addtlConsent: '1~1.35.41.101',
@@ -3492,7 +3492,7 @@ describe('IndexexchangeAdapter', function () {
 
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithConsent = extractPayload(validBidWithConsent[0]);
-      expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings')).to.not.exist;
+      expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings.addtl_consent')).to.not.exist;
       expect(utils.deepAccess(requestWithConsent, 'user.ext.consent')).to.not.exist;
     });
 
