@@ -443,7 +443,7 @@ const findMatchingAdUnitFromOrderedAuctions = (matchesFunction, returnFirstMatch
 };
 
 const findMatchingAdUnitFromAllAuctions = (matchesFunction, returnFirstMatch) => {
-  return findAdUnitFromAuctions(matchesFunction, returnFirstMatch, cache.auctions);
+  return findAdUnitFromAuctions(matchesFunction, returnFirstMatch, Object.keys(cache.auctions));
 };
 
 const findAdUnitFromAuctions = (matchesFunction, returnFirstMatch, auctions) => {
@@ -982,7 +982,7 @@ const handleNonBidEvent = function(args) {
 const matchAuctionBeforeAdUnit = function(auctionId, impid) {
   return function (adUnit, auction) {
     if (auctionId !== auction.auctionId) return false;
-    return adUnit.code === impid;
+    return adUnit.adUnitCode === impid;
   }
 };
 
