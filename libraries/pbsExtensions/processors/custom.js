@@ -28,6 +28,7 @@ function hasQueryParam(paramName, values) {
 }
 
 export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterManager} = {}) {
+  if (!(bidderRequest?.src === 's2s')) return;
   let { s2sConfig } = context.s2sBidRequest;
   let owAliases;
   window.pbsLatency = window.pbsLatency || {};
