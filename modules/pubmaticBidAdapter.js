@@ -335,7 +335,7 @@ const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_O
 // TODO remove this function when the support for 1.1 is removed
 export function toOrtbNativeRequest(legacyNativeAssets) {
   if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
-    logError(`${LOG_WARN_PREFIX}: Native assets object is empty or not an object: ${legacyNativeAssets}`);
+    logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or not an object: ${legacyNativeAssets}`);
     isInvalidNativeRequest = true;
     return;
   }
@@ -347,7 +347,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     // skip conversion for non-asset keys
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
-      logError(`${LOG_WARN_PREFIX}: Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      logWarn(`${LOG_WARN_PREFIX}: Unrecognized native asset code: ${key}. Asset will be ignored.`);
       continue;
     }
 
@@ -379,13 +379,13 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       // if min_width and min_height are defined in aspect_ratio, they are preferred
       if (asset.aspect_ratios) {
         if (!isArray(asset.aspect_ratios)) {
-          logError(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's not a an array: ${asset.aspect_ratios}`);
+          logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's not a an array: ${asset.aspect_ratios}`);
         } else if (!asset.aspect_ratios.length) {
-          logError(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's empty: ${asset.aspect_ratios}`);
+          logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's empty: ${asset.aspect_ratios}`);
         } else {
           const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
           if (!isInteger(minWidth) || !isInteger(minHeight)) {
-            logError(`${LOG_WARN_PREFIX}: image.aspect_ratios min_width or min_height are invalid: ${minWidth}, ${minHeight}`);
+            logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios min_width or min_height are invalid: ${minWidth}, ${minHeight}`);
           } else {
             ortbAsset.img.wmin = minWidth;
             ortbAsset.img.hmin = minHeight;
@@ -409,7 +409,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
       if (asset.sizes) {
         if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
-          logError(`${LOG_WARN_PREFIX}: image.sizes was passed, but its value is not an array of integers: ${asset.sizes}`);
+          logWarn(`${LOG_WARN_PREFIX}: image.sizes was passed, but its value is not an array of integers: ${asset.sizes}`);
         } else {
           logInfo(`${LOG_WARN_PREFIX}: if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin`);
           ortbAsset.img.w = asset.sizes[0];
@@ -427,6 +427,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
         // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || asset.length || 140
       }
+      asset.ext && (ortbAsset.ext = asset.ext);
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = asset;
@@ -435,6 +436,13 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     }
     ortb.assets.push(ortbAsset);
   }
+
+  if (ortb.assets.length < 1) {
+    logWarn(`${LOG_WARN_PREFIX}: Could not find any valid asset`);
+    isInvalidNativeRequest = true;
+    return;
+  }
+
   return ortb;
 }
 // TODO delete this code when removing native 1.1 support
@@ -454,11 +462,9 @@ function _createNativeRequest(params) {
     const isValidAsset = (asset) => asset.title || asset.img || asset.data || asset.video;
 
     if (assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
-      logError(`${LOG_WARN_PREFIX}: Native assets object is empty or contains some invalid object`);
+      logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or contains some invalid object`);
       isInvalidNativeRequest = true;
       return nativeRequestObject;
-    } else {
-      isInvalidNativeRequest = false;
     }
 
     assets.forEach(asset => {
@@ -663,6 +669,7 @@ function _createImpressionObject(bid) {
             impObj.native = nativeObj;
           } else {
             logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
+            isInvalidNativeRequest = false;
           }
           break;
         case VIDEO:
