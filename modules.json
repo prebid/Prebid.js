@@ -36,6 +36,7 @@
     "freewheel-sspBidAdapter",
     "adyoulikeBidAdapter",
     "minutemediaBidAdapter",
+    "sharethroughBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
