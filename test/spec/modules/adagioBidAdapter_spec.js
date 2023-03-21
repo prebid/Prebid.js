@@ -347,6 +347,50 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data.adUnits[0].features.url).to.not.exist;
     });
 
+    it('should force split keyword param into a string', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        splitKeyword: 1234
+      }).build();
+      const bid02 = new BidRequestBuilder().withParams({
+        splitKeyword: ['1234']
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.equal('1234');
+      expect(requests[0].data.adUnits[1].params.splitKeyword).to.not.exist;
+    });
+
+    it('should force key and value from data layer param into a string', function() {
+      const bid = new BidRequestBuilder().withParams({
+        dl: {
+          1234: 'dlparam',
+          goodkey: 1234,
+          objectvalue: {
+            random: 'result'
+          },
+          arrayvalue: ['1234']
+        }
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.dl).to.exist;
+      expect(requests[0].data.adUnits[0].params.dl['1234']).to.equal('dlparam');
+      expect(requests[0].data.adUnits[0].params.dl.goodkey).to.equal('1234');
+      expect(requests[0].data.adUnits[0].params.dl.objectvalue).to.not.exist;
+      expect(requests[0].data.adUnits[0].params.dl.arrayvalue).to.not.exist;
+    });
+
     describe('With video mediatype', function() {
       context('Outstream video', function() {
         it('should logWarn if user does not set renderer.backupOnly: true', function() {

@@ -20,6 +20,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
+  isStr,
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -923,6 +924,37 @@ export const spec = {
         print_number: getPrintNumber(bidRequest.adUnitCode, bidderRequest).toString(),
         adunit_position: getSlotPosition(bidRequest.params.adUnitElementId) // adUnitElementId à déplacer ???
       };
+
+      // Force the Split Keyword to be a String
+      if (bidRequest.params.splitKeyword) {
+        if (isStr(bidRequest.params.splitKeyword) || isNumber(bidRequest.params.splitKeyword)) {
+          bidRequest.params.splitKeyword = bidRequest.params.splitKeyword.toString();
+        } else {
+          delete bidRequest.params.splitKeyword;
+
+          logWarn(LOG_PREFIX, 'The splitKeyword param have been removed because the type is invalid, accepted type: number or string.');
+        }
+      }
+
+      // Force the Data Layer key and value to be a String
+      if (bidRequest.params.dl) {
+        let invalidDlParam = false
+
+        Object.keys(bidRequest.params.dl).forEach((key) => {
+          if (bidRequest.params.dl[key]) {
+            if (isStr(bidRequest.params.dl[key]) || isNumber(bidRequest.params.dl[key])) {
+              bidRequest.params.dl[key.toString()] = bidRequest.params.dl[key].toString();
+            } else {
+              delete bidRequest.params.dl[key];
+              invalidDlParam = true;
+            }
+          }
+        });
+
+        if (invalidDlParam) {
+          logWarn(LOG_PREFIX, 'Some parameters of the dl param property have been removed because the type is invalid, accepted type: number or string.');
+        }
+      }
 
       Object.keys(features).forEach((prop) => {
         if (features[prop] === '') {
