@@ -175,6 +175,10 @@ export const liveIntentIdSubmodule = {
         result.bidswitch = { 'id': value.bidswitch }
       }
 
+      if (value.medianet) {
+        result.medianet = { 'id': value.medianet }
+      }
+
       return result
     }
 
