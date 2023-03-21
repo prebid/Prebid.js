@@ -146,6 +146,15 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // schain
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      }
+    }
+
     if (bidderRequest?.timeout) {
       payload.tmax = bidderRequest.timeout;
     }
