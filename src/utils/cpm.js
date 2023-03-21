@@ -2,15 +2,12 @@ import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {logError} from '../utils.js';
 
-export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.index, bs = bidderSettings} = {}, gba = getBidAdjustment) {
+export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.index, bs = bidderSettings} = {}) {
   bidRequest = bidRequest || index.getBidRequest(bidResponse);
 
-  const adapterAllowAlternateBidderCodes = bs.get(bidResponse?.adapterCode || bidRequest?.bidder, 'allowAlternateBidderCodes');
-  const catchUnknownBidderCodesWithAdapterBidAdjustment = bs.get(bidResponse?.adapterCode || bidRequest?.bidder, 'catchUnknownBidderCodesWithAdapterBidAdjustment');
-  const scope = adapterAllowAlternateBidderCodes && catchUnknownBidderCodesWithAdapterBidAdjustment
-    ? bidResponse?.adapterCode || bidRequest?.bidder
-    : bidResponse?.bidderCode || bidRequest?.bidder;
-  const bidCpmAdjustment = gba(bs, scope);
+  const adjustForAlternateBids = bs.get(bidResponse?.adapterCode, 'adjustForAlternateBids');
+  const scope = adjustForAlternateBids ? bidResponse?.adapterCode : bidResponse?.bidderCode || bidRequest?.bidder;
+  const bidCpmAdjustment = bs.get(scope, 'bidCpmAdjustment');
 
   if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {
     try {
@@ -20,8 +17,4 @@ export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.
     }
   }
   return cpm;
-}
-
-function getBidAdjustment(bs, scope) {
-  return bs.get(scope, 'bidCpmAdjustment');
 }

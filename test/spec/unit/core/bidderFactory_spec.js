@@ -1200,12 +1200,11 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should accept the bid and the bidderSettings scope should be set to the adapterCode initially, when both the allowAlternateBidderCodes flag is true and the catchUnknownBidderCodesWithAdapterBidAdjustment flag is true', function () {
+    it('should accept the bid and the bidderSettings scope should be set to the adapterCode initially, when both the allowAlternateBidderCodes flag is true and the adjustForAlternateBids flag is true', function () {
       const cpm = 1;
-      const getBidAdjustment = sinon.spy();
 
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'catchUnknownBidderCodesWithAdapterBidAdjustment').returns(true);
+      bidderSettingStub.withArgs(CODE, 'adjustForAlternateBids').returns(true);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1217,13 +1216,13 @@ describe('validate bid response: ', function () {
 
       const { adapterCode } = bids1;
       const scope = adapterCode;
-      adjustCpm(cpm, bids1, {}, {index: {}, bs: { get: () => true }}, getBidAdjustment);
+      adjustCpm(cpm, bids1, {}, {index: {}});
 
-      expect(getBidAdjustment.args[0][1]).to.equal(scope);
+      expect(bidderSettingStub.args[bidderSettingStub.args.length - 1][0]).to.equal(scope);
     });
 
-    it('should not accept the bid, when the allowAlternateBidderCodes flag is false and catchUnknownBidderCodesWithAdapterBidAdjustment flag is set to true', function () {
-      bidderSettingStub.withArgs(CODE, 'catchUnknownBidderCodesWithAdapterBidAdjustment').returns(true);
+    it('should not accept the bid, when the allowAlternateBidderCodes flag is false and adjustForAlternateBids flag is set to true', function () {
+      bidderSettingStub.withArgs(CODE, 'adjustForAlternateBids').returns(true);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1234,9 +1233,8 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
-    it('should accept the bid and the bidderSettings scope should be set to the bidderCode initially, when both the allowAlternateBidderCodes flag is true and the catchUnknownBidderCodesWithAdapterBidAdjustment flag is true', function () {
+    it('should accept the bid and the bidderSettings scope should be set to the bidderCode initially, when the allowAlternateBidderCodes flag is true and the adjustForAlternateBids flag is false', function () {
       const cpm = 1;
-      const getBidAdjustment = sinon.spy();
 
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
 
@@ -1250,9 +1248,9 @@ describe('validate bid response: ', function () {
 
       const { bidderCode } = bids1;
       const scope = bidderCode;
-      adjustCpm(cpm, bids1, {}, {index: {}, bs: { get: () => false }}, getBidAdjustment);
+      adjustCpm(cpm, bids1, {}, {index: {}});
 
-      expect(getBidAdjustment.args[0][1]).to.equal(scope);
+      expect(bidderSettingStub.args[bidderSettingStub.args.length - 1][0]).to.equal(scope);
     });
   });
 
