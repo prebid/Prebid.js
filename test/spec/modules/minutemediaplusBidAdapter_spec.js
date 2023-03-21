@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {
   spec as adapter,
   SUPPORTED_ID_SYSTEMS,
@@ -13,9 +13,10 @@ import {
   getUniqueDealId,
 } from 'modules/minutemediaplusBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { version } from 'package.json';
-import { useFakeTimers } from 'sinon';
-import { BANNER, VIDEO } from '../../../src/mediaTypes';
+import {version} from 'package.json';
+import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
 
 const SUB_DOMAIN = 'exchange';
 
@@ -36,6 +37,10 @@ const BID = {
   'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'mediaTypes': [BANNER]
@@ -45,6 +50,10 @@ const VIDEO_BID = {
   'bidId': '2d52001cabd527',
   'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
   'bidderRequestId': '12a8ae9ada9c13',
+  'auctionId': 'auction_id',
+  'bidRequestsCount': 4,
+  'bidderRequestsCount': 3,
+  'bidderWinsCount': 1,
   'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'params': {
@@ -78,11 +87,37 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
+  'gppString': 'gpp_string',
+  'gppSid': [7],
   'uspConsent': 'consent_string',
   'refererInfo': {
     'page': 'https://www.greatsite.com',
     'ref': 'https://www.somereferrer.com'
-  }
+  },
+  'ortb2': {
+    'regs': {
+      'gpp': 'gpp_string',
+      'gpp_sid': [7]
+    },
+    'device': {
+      'sua': {
+        'source': 2,
+        'platform': {
+          'brand': 'Android',
+          'version': ['8', '0', '0']
+        },
+        'browsers': [
+          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+        ],
+        'mobile': 1,
+        'model': 'SM-G955U',
+        'bitness': '64',
+        'architecture': ''
+      }
+    }
+  },
 };
 
 const SERVER_RESPONSE = {
@@ -134,7 +169,7 @@ const REQUEST = {
 
 function getTopWindowQueryParams() {
   try {
-    const parsedUrl = utils.parseUrl(window.top.document.URL, { decodeSearchAsString: true });
+    const parsedUrl = utils.parseUrl(window.top.document.URL, {decodeSearchAsString: true});
     return parsedUrl.search;
   } catch (e) {
     return '';
@@ -213,6 +248,9 @@ describe('MinuteMediaPlus Bid Adapter', function () {
 
     it('should build video request', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      config.setConfig({
+        bidderTimeout: 3000
+      });
       const requests = adapter.buildRequests([VIDEO_BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -223,17 +261,42 @@ describe('MinuteMediaPlus Bid Adapter', function () {
           bidFloor: 0.1,
           bidId: '2d52001cabd527',
           bidderVersion: adapter.version,
+          bidderRequestId: '12a8ae9ada9c13',
           cb: 1000,
           gdpr: 1,
           gdprConsent: 'consent_string',
           usPrivacy: 'consent_string',
+          gppString: 'gpp_string',
+          gppSid: [7],
           prebidVersion: version,
+          transactionId: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
           publisherId: '59ac17c192832d0011283fe3',
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           schain: VIDEO_BID.schain,
           sizes: ['545x307'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           mediaTypes: {
@@ -259,6 +322,9 @@ describe('MinuteMediaPlus Bid Adapter', function () {
 
     it('should build banner request for each size', function () {
       const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+      config.setConfig({
+        bidderTimeout: 3000
+      });
       const requests = adapter.buildRequests([BID], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
       expect(requests[0]).to.deep.equal({
@@ -267,8 +333,33 @@ describe('MinuteMediaPlus Bid Adapter', function () {
         data: {
           gdprConsent: 'consent_string',
           gdpr: 1,
+          gppString: 'gpp_string',
+          gppSid: [7],
           usPrivacy: 'consent_string',
+          transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+          auctionId: 'auction_id',
+          bidRequestsCount: 4,
+          bidderRequestsCount: 3,
+          bidderWinsCount: 1,
+          bidderTimeout: 3000,
+          bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -296,7 +387,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
   });
   describe('getUserSyncs', function () {
     it('should have valid user sync with iframeEnabled', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         type: 'iframe',
@@ -305,7 +396,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
     });
 
     it('should have valid user sync with cid on response', function () {
-      const result = adapter.getUserSyncs({ iframeEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
         url: 'https://sync.minutemedia-prebid.com/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
@@ -313,7 +404,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
     });
 
     it('should have valid user sync with pixelEnabled', function () {
-      const result = adapter.getUserSyncs({ pixelEnabled: true }, [SERVER_RESPONSE]);
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
         'url': 'https://sync.minutemedia-prebid.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
@@ -329,12 +420,12 @@ describe('MinuteMediaPlus Bid Adapter', function () {
     });
 
     it('should return empty array when there is no ad', function () {
-      const responses = adapter.interpretResponse({ price: 1, ad: '' });
+      const responses = adapter.interpretResponse({price: 1, ad: ''});
       expect(responses).to.be.empty;
     });
 
     it('should return empty array when there is no price', function () {
-      const responses = adapter.interpretResponse({ price: null, ad: 'great ad' });
+      const responses = adapter.interpretResponse({price: null, ad: 'great ad'});
       expect(responses).to.be.empty;
     });
 
@@ -394,11 +485,11 @@ describe('MinuteMediaPlus Bid Adapter', function () {
       const userId = (function () {
         switch (idSystemProvider) {
           case 'lipb':
-            return { lipbid: id };
+            return {lipbid: id};
           case 'parrableId':
-            return { eid: id };
+            return {eid: id};
           case 'id5id':
-            return { uid: id };
+            return {uid: id};
           default:
             return id;
         }
@@ -417,18 +508,18 @@ describe('MinuteMediaPlus Bid Adapter', function () {
 
   describe('alternate param names extractors', function () {
     it('should return undefined when param not supported', function () {
-      const cid = extractCID({ 'c_id': '1' });
-      const pid = extractPID({ 'p_id': '1' });
-      const subDomain = extractSubDomain({ 'sub_domain': 'prebid' });
+      const cid = extractCID({'c_id': '1'});
+      const pid = extractPID({'p_id': '1'});
+      const subDomain = extractSubDomain({'sub_domain': 'prebid'});
       expect(cid).to.be.undefined;
       expect(pid).to.be.undefined;
       expect(subDomain).to.be.undefined;
     });
 
     it('should return value when param supported', function () {
-      const cid = extractCID({ 'cID': '1' });
-      const pid = extractPID({ 'Pid': '2' });
-      const subDomain = extractSubDomain({ 'subDOMAIN': 'prebid' });
+      const cid = extractCID({'cID': '1'});
+      const pid = extractPID({'Pid': '2'});
+      const subDomain = extractSubDomain({'subDOMAIN': 'prebid'});
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
@@ -488,7 +579,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
         now
       });
       setStorageItem('myKey', 2020);
-      const { value, created } = getStorageItem('myKey');
+      const {value, created} = getStorageItem('myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -504,8 +595,8 @@ describe('MinuteMediaPlus Bid Adapter', function () {
     });
 
     it('should parse JSON value', function () {
-      const data = JSON.stringify({ event: 'send' });
-      const { event } = tryParseJSON(data);
+      const data = JSON.stringify({event: 'send'});
+      const {event} = tryParseJSON(data);
       expect(event).to.be.equal('send');
     });
 
