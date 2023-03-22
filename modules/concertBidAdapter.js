@@ -204,10 +204,16 @@ function hasOptedOutOfPersonalization() {
  * @param {BidderRequest} bidderRequest Object which contains any data consent signals
  */
 function consentAllowsPpid(bidderRequest) {
-  const uspConsentAllows =
+  let uspConsentAllows = true;
+
+  // if a us privacy string was provided, but they explicitly opted out
+  if (
     typeof bidderRequest?.uspConsent === 'string' &&
     bidderRequest?.uspConsent[0] === '1' &&
-    bidderRequest?.uspConsent[2].toUpperCase() === 'N';
+    bidderRequest?.uspConsent[2].toUpperCase() === 'Y' // user has opted-out
+  ) {
+    uspConsentAllows = false;
+  }
 
   /*
    * True if the gdprConsent is null-y; or GDPR does not apply; or if purpose 1 consent was given.
