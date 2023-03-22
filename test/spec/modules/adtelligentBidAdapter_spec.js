@@ -21,6 +21,7 @@ const aliasEP = {
   pgam: 'https://ghb.pgamssp.com/v2/auction/',
   ocm: 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
   vidcrunchllc: 'https://ghb.platform.vidcrunch.com/v2/auction/',
+  "9dotsmedia": 'https://ghb.platform.audiodots.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
