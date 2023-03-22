@@ -396,6 +396,10 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.coppa).to.equal(0);
     });
 
+    it('should have storageAllowed set to true', function () {
+      expect($$PREBID_GLOBAL$$.bidderSettings.sonobi.storageAllowed).to.be.true;
+    });
+
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
       const bidRequestsPageViewID = spec.buildRequests(bidRequest, bidderRequests)

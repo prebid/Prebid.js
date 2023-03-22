@@ -434,13 +434,11 @@ function loadOrCreateFirstPartyData() {
   };
   var storeData = function (key, value) {
     try {
-      if (typeof key === 'string' && key.startsWith('_iiq_fdata')) {
-        if (value && hasLocalStorage()) {
-          window.localStorage.setItem(key, value);
-        }
+      if (hasLocalStorage()) {
+        window.localStorage.setItem(key, value);
       }
     } catch (error) {
-
+      return null;
     }
   };
   var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
