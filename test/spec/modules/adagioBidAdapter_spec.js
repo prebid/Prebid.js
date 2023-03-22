@@ -367,8 +367,8 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should force key and value from data layer param into a string', function() {
-      const bid = new BidRequestBuilder().withParams({
-        dl: {
+      const bid01 = new BidRequestBuilder().withParams({
+        dataLayer: {
           1234: 'dlparam',
           goodkey: 1234,
           objectvalue: {
@@ -377,18 +377,44 @@ describe('Adagio bid adapter', () => {
           arrayvalue: ['1234']
         }
       }).build();
+
+      const bid02 = new BidRequestBuilder().withParams({
+        dataLayer: 'a random string'
+      }).build();
+
+      const bid03 = new BidRequestBuilder().withParams({
+        dataLayer: 1234
+      }).build();
+
+      const bid04 = new BidRequestBuilder().withParams({
+        dataLayer: ['an array']
+      }).build();
+
       const bidderRequest = new BidderRequestBuilder().build();
 
-      const requests = spec.buildRequests([bid], bidderRequest);
+      const requests = spec.buildRequests([bid01, bid02, bid03, bid04], bidderRequest);
 
       expect(requests).to.have.lengthOf(1);
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
       expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.dataLayer).to.not.exist;
       expect(requests[0].data.adUnits[0].params.dl).to.exist;
       expect(requests[0].data.adUnits[0].params.dl['1234']).to.equal('dlparam');
       expect(requests[0].data.adUnits[0].params.dl.goodkey).to.equal('1234');
       expect(requests[0].data.adUnits[0].params.dl.objectvalue).to.not.exist;
       expect(requests[0].data.adUnits[0].params.dl.arrayvalue).to.not.exist;
+
+      expect(requests[0].data.adUnits[1].params).to.exist;
+      expect(requests[0].data.adUnits[1].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[1].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[2].params).to.exist;
+      expect(requests[0].data.adUnits[2].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[2].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[3].params).to.exist;
+      expect(requests[0].data.adUnits[3].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[3].params.dataLayer).to.not.exist;
     });
 
     describe('With video mediatype', function() {

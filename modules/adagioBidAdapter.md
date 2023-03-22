@@ -62,7 +62,7 @@ Below, the list of Adagio params and where they can be set.
 | video                          |               | x             |
 | native                         |               | x             |
 | splitKeyword                   |               | x             |
-| dl                             |               | x             |
+| dataLayer                      |               | x             |
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 

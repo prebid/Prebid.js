@@ -937,22 +937,31 @@ export const spec = {
       }
 
       // Force the Data Layer key and value to be a String
-      if (bidRequest.params.dl) {
-        let invalidDlParam = false
+      if (bidRequest.params.dataLayer) {
+        if (isStr(bidRequest.params.dataLayer) || isNumber(bidRequest.params.dataLayer) || isArray(bidRequest.params.dataLayer) || isFn(bidRequest.params.dataLayer)) {
+          logWarn(LOG_PREFIX, 'The dataLayer param is invalid, only object is accepted as a type.');
+          delete bidRequest.params.dataLayer
+        } else {
+          let invalidDlParam = false
 
-        Object.keys(bidRequest.params.dl).forEach((key) => {
-          if (bidRequest.params.dl[key]) {
-            if (isStr(bidRequest.params.dl[key]) || isNumber(bidRequest.params.dl[key])) {
-              bidRequest.params.dl[key.toString()] = bidRequest.params.dl[key].toString();
-            } else {
-              delete bidRequest.params.dl[key];
-              invalidDlParam = true;
+          bidRequest.params.dl = bidRequest.params.dataLayer
+          // Remove the dataLayer from the BidRequest to send the `dl` instead of the `dataLayer`
+          delete bidRequest.params.dataLayer
+
+          Object.keys(bidRequest.params.dl).forEach((key) => {
+            if (bidRequest.params.dl[key]) {
+              if (isStr(bidRequest.params.dl[key]) || isNumber(bidRequest.params.dl[key])) {
+                bidRequest.params.dl[key.toString()] = bidRequest.params.dl[key].toString();
+              } else {
+                invalidDlParam = true;
+                delete bidRequest.params.dl[key]
+              }
             }
-          }
-        });
+          });
 
-        if (invalidDlParam) {
-          logWarn(LOG_PREFIX, 'Some parameters of the dl param property have been removed because the type is invalid, accepted type: number or string.');
+          if (invalidDlParam) {
+            logWarn(LOG_PREFIX, 'Some parameters of the dataLayer property have been removed because the type is invalid, accepted type: number or string.');
+          }
         }
       }
 
