@@ -24,7 +24,7 @@ const HOST_GETTERS = {
   pgam: () => 'ghb.pgamssp.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
-  "9dotsmedia": () => 'ghb.platform.audiodots.com',
+  '9dotsmedia': () => 'ghb.platform.audiodots.com'
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
