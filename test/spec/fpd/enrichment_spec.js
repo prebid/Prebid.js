@@ -2,6 +2,8 @@ import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -48,50 +50,86 @@ describe('FPD enrichment', () => {
     });
   }
 
+  CLIENT_SECTIONS.forEach(section => {
+    describe(`${section}, when set`, () => {
+      const ORTB2 = {[section]: {ext: {}}}
+
+      it('sets domain and publisher.domain', () => {
+        const refererInfo = {
+          page: 'www.example.com',
+        };
+        sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
+        sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
+        return fpd(ORTB2).then(ortb2 => {
+          sinon.assert.match(ortb2[section], {
+            domain: 'example.com',
+            publisher: {
+              domain: 'publisher.example.com'
+            }
+          });
+        });
+      })
+
+      describe('keywords', () => {
+        let metaTag;
+        beforeEach(() => {
+          metaTag = document.createElement('meta');
+          metaTag.name = 'keywords';
+          metaTag.content = 'kw1, kw2';
+          document.head.appendChild(metaTag);
+        });
+        afterEach(() => {
+          document.head.removeChild(metaTag);
+        });
+
+        testWindows(() => window, () => {
+          it(`sets kewwords from meta tag`, () => {
+            return fpd(ORTB2).then(ortb2 => {
+              expect(ortb2[section].keywords).to.eql('kw1,kw2');
+            });
+          });
+        });
+      });
+
+      it('should not set keywords if meta tag is not present', () => {
+        return fpd(ORTB2).then(ortb2 => {
+          expect(ortb2[section].hasOwnProperty('keywords')).to.be.false;
+        });
+      });
+    })
+  })
+
   describe('site', () => {
-    it('sets page, ref, domain, and publisher.domain', () => {
+    describe('when mixed with app/dooh', () => {
+      beforeEach(() => {
+        sinon.stub(utils, 'logWarn');
+      });
+
+      afterEach(() => {
+        utils.logWarn.restore();
+      });
+
+      ['dooh', 'app'].forEach(prop => {
+        it(`should not be set when ${prop} is set`, () => {
+          return fpd({[prop]: {foo: 'bar'}}).then(ortb2 => {
+            expect(ortb2.site).to.not.exist;
+            sinon.assert.notCalled(utils.logWarn); // make sure we don't generate "both site and app are set" warnings
+          })
+        })
+      })
+    })
+
+    it('sets page, ref', () => {
       const refererInfo = {
         page: 'www.example.com',
         ref: 'referrer.com'
       };
       sandbox.stub(dep, 'getRefererInfo').callsFake(() => refererInfo);
-      sandbox.stub(dep, 'findRootDomain').callsFake((dom) => `publisher.${dom}`);
       return fpd().then(ortb2 => {
         sinon.assert.match(ortb2.site, {
           page: 'www.example.com',
-          domain: 'example.com',
           ref: 'referrer.com',
-          publisher: {
-            domain: 'publisher.example.com'
-          }
         });
-      });
-    });
-
-    describe('keywords', () => {
-      let metaTag;
-      beforeEach(() => {
-        metaTag = document.createElement('meta');
-        metaTag.name = 'keywords';
-        metaTag.content = 'kw1, kw2';
-        document.head.appendChild(metaTag);
-      });
-      afterEach(() => {
-        document.head.removeChild(metaTag);
-      });
-
-      testWindows(() => window, () => {
-        it(`sets kewwords from meta tag`, () => {
-          return fpd().then(ortb2 => {
-            expect(ortb2.site.keywords).to.eql('kw1,kw2');
-          });
-        });
-      });
-    });
-
-    it('should not set keywords if meta tag is not present', () => {
-      return fpd().then(ortb2 => {
-        expect(ortb2.site.hasOwnProperty('keywords')).to.be.false;
       });
     });
 
@@ -106,6 +144,26 @@ describe('FPD enrichment', () => {
         expect(ortb2.site.publisher.domain).to.eql('pub.com');
       });
     });
+
+    it('respects config set through setConfig({site})', () => {
+      sandbox.stub(dep, 'getRefererInfo').callsFake(() => ({
+        page: 'www.example.com',
+        ref: 'referrer.com',
+      }));
+      config.setConfig({
+        site: {
+          ref: 'override.com',
+          priority: 'lower'
+        }
+      });
+      return fpd({site: {priority: 'highest'}}).then(ortb2 => {
+        sinon.assert.match(ortb2.site, {
+          page: 'www.example.com',
+          ref: 'override.com',
+          priority: 'highest'
+        })
+      })
+    })
   });
 
   describe('device', () => {
@@ -138,8 +196,43 @@ describe('FPD enrichment', () => {
           expect(ortb2.device.language).to.eql('lang');
         })
       });
+
+      it('respects setConfig({device})', () => {
+        win.navigator.userAgent = 'ua';
+        win.navigator.language = 'lang';
+        config.setConfig({
+          device: {
+            language: 'override',
+            priority: 'lower'
+          }
+        });
+        return fpd({device: {priority: 'highest'}}).then(ortb2 => {
+          sinon.assert.match(ortb2.device, {
+            language: 'override',
+            priority: 'highest',
+            ua: 'ua'
+          })
+        })
+      })
     });
   });
+
+  describe('app', () => {
+    it('respects setConfig({app})', () => {
+      config.setConfig({
+        app: {
+          priority: 'lower',
+          prop: 'value'
+        }
+      });
+      return fpd({app: {priority: 'highest'}}).then(ortb2 => {
+        sinon.assert.match(ortb2.app, {
+          priority: 'highest',
+          prop: 'value'
+        })
+      })
+    })
+  })
 
   describe('regs', () => {
     describe('gpc', () => {
@@ -210,4 +303,18 @@ describe('FPD enrichment', () => {
       })
     });
   });
+
+  it('leaves only one of app, site, dooh', () => {
+    return fpd({
+      app: {p: 'val'},
+      site: {p: 'val'},
+      dooh: {p: 'val'}
+    }).then(ortb2 => {
+      expect(ortb2.app).to.not.exist;
+      expect(ortb2.site).to.not.exist;
+      sinon.assert.match(ortb2.dooh, {
+        p: 'val'
+      })
+    });
+  })
 });

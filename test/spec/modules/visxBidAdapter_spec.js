@@ -1273,7 +1273,7 @@ describe('VisxAdapter', function () {
 
     it('onTimeout', function () {
       const data = [{ timeout: 3000, adUnitCode: 'adunit-code-1', auctionId: '1cbd2feafe5e8b', bidder: 'visx', bidId: '23423', params: [{ uid: '1' }] }];
-      const expectedData = [{ ...data[0], params: [{ uid: 1 }] }];
+      const expectedData = [{ timeout: 3000, params: [{ uid: 1 }] }];
       spec.onTimeout(data);
       expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(expectedData))).to.equal(true);
     });
