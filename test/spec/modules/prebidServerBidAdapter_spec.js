@@ -994,7 +994,7 @@ describe('S2S Adapter', function () {
         w: window.innerWidth,
         h: window.innerHeight
       })
-      expect(requestBid.app).to.deep.equal({
+      sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
         publisher: { 'id': '1' }
       });
@@ -1021,7 +1021,7 @@ describe('S2S Adapter', function () {
         w: window.innerWidth,
         h: window.innerHeight
       })
-      expect(requestBid.app).to.deep.equal({
+      sinon.assert.match(requestBid.app, {
         bundle: 'com.test.app',
         publisher: { 'id': '1' }
       });
@@ -1383,7 +1383,7 @@ describe('S2S Adapter', function () {
             w: window.innerWidth,
             h: window.innerHeight
           })
-          expect(requestBid.app).to.deep.equal({
+          sinon.assert.match(requestBid.app, {
             bundle: 'com.test.app',
             publisher: { 'id': '1' }
           });
@@ -1522,7 +1522,7 @@ describe('S2S Adapter', function () {
       };
 
       config.setConfig(_config);
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.not.exist;
       expect(requestBid.app).to.exist.and.to.be.a('object');
@@ -1732,9 +1732,9 @@ describe('S2S Adapter', function () {
         const s2sBidRequest = utils.deepClone(REQUEST);
         cookieSyncConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
         s2sBidRequest.s2sConfig = cookieSyncConfig;
-  
+
         config.setConfig({ userSync, s2sConfig: cookieSyncConfig });
-  
+
         let bidRequest = utils.deepClone(BID_REQUESTS);
         adapter.callBids(s2sBidRequest, bidRequest, addBidResponse, done, ajax);
         return JSON.parse(server.requests[0].requestBody);
@@ -1762,7 +1762,7 @@ describe('S2S Adapter', function () {
           }
         });
       });
-  
+
       it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and only the iframe key is present in userSync.filterSettings', function () {
         const userSync = {
           filterSettings: {
@@ -1944,7 +1944,7 @@ describe('S2S Adapter', function () {
           device: device
         });
 
-        adapter.callBids(s2sBidRequest, BID_REQUESTS, addBidResponse, done, ajax);
+        adapter.callBids(addFpdEnrichmentsToS2SRequest(s2sBidRequest, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
         const requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.site).to.exist.and.to.be.a('object');
