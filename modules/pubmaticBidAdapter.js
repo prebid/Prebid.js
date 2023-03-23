@@ -326,13 +326,13 @@ const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
 const { NATIVE_IMAGE_TYPES, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS, NATIVE_ASSET_TYPES } = CONSTANTS;
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 
+// TODO remove this function when the support for 1.1 is removed
 /**
  * Copy of the function toOrtbNativeRequest from core native.js to handle the title len/length
  * and ext and mimes parameters from legacy assets.
  * @param {object} legacyNativeAssets
  * @returns an OpenRTB format of the same bid request
  */
-// TODO remove this function when the support for 1.1 is removed
 export function toOrtbNativeRequest(legacyNativeAssets) {
   if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
     logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or not an object: ${legacyNativeAssets}`);
