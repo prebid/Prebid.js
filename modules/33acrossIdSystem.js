@@ -8,7 +8,7 @@
 import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { uspDataHandler } from '../src/adapterManager.js';
+import { uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
@@ -37,6 +37,8 @@ function getEnvelope(response) {
 function calculateQueryStringParams(pid, gdprConsentData) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
+  const gppConsent = gppDataHandler.getConsentData();
+
   const params = {
     pid,
     gdpr: Number(gdprApplies),
@@ -46,6 +48,13 @@ function calculateQueryStringParams(pid, gdprConsentData) {
 
   if (uspString) {
     params.us_privacy = uspString;
+  }
+
+  if (gppConsent) {
+    const { gppString = '', applicableSections = [] } = gppConsent;
+
+    params.gpp = gppString;
+    params.gpp_sid = encodeURIComponent(applicableSections.join(','))
   }
 
   if (gdprApplies) {

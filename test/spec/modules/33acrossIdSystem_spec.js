@@ -3,6 +3,7 @@ import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler } from 'src/adapterManager.js';
+import { gppDataHandler } from 'src/adapterManager.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -154,6 +155,66 @@ describe('33acrossIdSystem', () => {
         expect(request.url).not.to.contain('us_privacy');
 
         uspDataHandler.getConsentData.restore();
+      });
+    });
+
+    context('when a GPP consent string is given', () => {
+      beforeEach(() => {
+        sinon.stub(gppDataHandler, 'getConsentData');
+      });
+
+      afterEach(() => {
+        gppDataHandler.getConsentData.restore();
+      });
+
+      it('should call endpoint with the GPP consent string', () => {
+        [
+          { gppString: '', expected: '' },
+          { gppString: undefined, expected: '' },
+          { gppString: 'foo', expected: 'foo' },
+        ].forEach(({ gppString, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp=${expected}`);
+        });
+      });
+
+      it('should call endpoint with the GPP applicable sections', () => {
+        const gppString = 'foo';
+
+        [
+          { applicableSections: [], expected: '' },
+          { applicableSections: undefined, expected: '' },
+          { applicableSections: ['1'], expected: '1' },
+          { applicableSections: ['1', '2'], expected: '1%2C2' },
+        ].forEach(({ applicableSections, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString: 'foo',
+            applicableSections
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp_sid=${expected}`);
+        });
       });
     });
 
