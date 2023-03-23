@@ -4,6 +4,7 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
+const PREBID_VERSION = '$prebid.version$';
 
 describe('freewheelSSP BidAdapter Test', () => {
   const adapter = newBidder(spec);
@@ -166,6 +167,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+      expect(payload.pbjs_version).to.equal(PREBID_VERSION);
     });
 
     it('should return a properly formatted request with schain defined', function () {
