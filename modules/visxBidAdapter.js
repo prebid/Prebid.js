@@ -204,16 +204,16 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
-    timeoutData.forEach(({ params }) => {
+    const dataToSend = timeoutData.map(({ params, timeout }) => {
+      const data = { timeout };
       if (params) {
-        params.forEach((item) => {
-          if (item && item.uid) {
-            item.uid = parseInt(item.uid);
-          }
+        data.params = params.map((item) => {
+          return item && item.uid ? { uid: parseInt(item.uid) } : {};
         });
       }
+      return data;
     });
-    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
+    triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(dataToSend));
   }
 };
 
