@@ -95,7 +95,7 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
-      'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? (loadOrCreateFirstPartyData()).pcid : null,
+      'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? JSON.stringify(loadOrCreateFirstPartyData()) : null,
     };
 
     const fpd = bidderRequest.ortb2;
