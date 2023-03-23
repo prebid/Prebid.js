@@ -30,17 +30,26 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
-            if (vsgObj[key]) {
+            if (vsgObj[key] && vsgObj[key].slot === bid.adUnitCode) {
 			  copyVsgObj = deepClone(vsgObj[key]);
-              removeLastViewStarted(copyVsgObj);
+              removeKeys(copyVsgObj);
               adSizes[key] = copyVsgObj;
-            }
+            } else {
+				if(bid.mediaTypes?.video?.playerSize) {
+					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
+					if(vsgObj[key] && vsgObj[key].slot === bid.adUnitCode) {
+						copyVsgObj = deepClone(vsgObj[key]);
+						removeKeys(copyVsgObj);
+						adSizes[key] = copyVsgObj;
+					}
+				}
+			}
           });
         }
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) {
 		  copyVsgObj = deepClone(adUnit);
-          removeLastViewStarted(copyVsgObj);
+          removeKeys(copyVsgObj);
           bidViewabilityFields.adUnit = copyVsgObj;
         }
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
@@ -51,13 +60,15 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
   fn(bidderRequests);
 };
 
-const removeLastViewStarted = obj => {
+const removeKeys = obj => {
   // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
   delete obj.lastViewStarted;
   // Deleteing totalTimeView incase value is less than 1 sec.
   if (obj.totalViewTime == 0) {
     delete obj.totalViewTime;
   }
+  // Deleting slot field as it is only required to pass correct size values in corresponding impressions.
+  delete obj.slot;
 };
 
 // once the TOTAL_VIEW_TIME_LIMIT for totalViewTime is reached, divide totalViewTime, rendered & viewed all by the same factor of "x" in order to preserve the same averages but not let counts in localstorage get too high
@@ -80,21 +91,23 @@ export const updateTotalViewTime = (diff, currentTime, lastViewStarted, key, lsO
 };
 
 const incrementRenderCount = keyArr => {
-  keyArr.forEach(key => {
+  keyArr.forEach((key, index) => {
     if (vsgObj) {
       if (vsgObj[key]) {
         vsgObj[key].rendered = vsgObj[key].rendered + 1;
       } else {
         vsgObj[key] = {
           rendered: 1,
-          viewed: 0
+          viewed: 0,
+		  slot: index == 2 ? keyArr[1] : undefined
         }
       }
     } else {
       vsgObj = {
         [key]: {
           rendered: 1,
-          viewed: 0
+          viewed: 0,
+		  slot: index == 2 ? keyArr[1] : undefined
         }
       }
     }
@@ -210,30 +223,34 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
   });
 }
 
+const getSlotAndSize = (event) => {
+	const currentAdSlotElement = event.slot.getSlotElementId();
+	const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
+	const currentAdSlotSize = creativeSize?.[0];
+	return {
+		currentAdSlotElement,
+		currentAdSlotSize
+	}
+}
+
 export const setGptEventHandlers = () => {
     // add the GPT event listeners
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => {
       window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-		const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
-        const currentAdSlotSize = creativeSize?.[0];
-        gptSlotRenderEndedHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
+		const slot_size = getSlotAndSize(event);
+        gptSlotRenderEndedHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-        const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
-	    const currentAdSlotSize = creativeSize?.[0];
-        gptImpressionViewableHandler(currentAdSlotElement, currentAdSlotSize, domain, setAndStringifyToLocalStorage);
+        const slot_size = getSlotAndSize(event);
+        gptImpressionViewableHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
       });
 
       window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
-        const currentAdSlotElement = event.slot.getSlotElementId();
-        const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
-	    const currentAdSlotSize = creativeSize?.[0];
-        gptSlotVisibilityChangedHandler(currentAdSlotElement, currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
+        const slot_size = getSlotAndSize(event);
+        gptSlotVisibilityChangedHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
       });
     });
 };
