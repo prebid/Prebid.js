@@ -143,7 +143,7 @@ export function newConfig() {
       // `debug` is equivalent to legacy `pbjs.logging` property
       debug: DEFAULT_DEBUG,
       bidderTimeout: DEFAULT_BIDDER_TIMEOUT,
-      sendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
+      enableSendAllBids: DEFAULT_ENABLE_SEND_ALL_BIDS,
       useBidCache: DEFAULT_BID_CACHE,
 
       /**
