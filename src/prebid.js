@@ -45,11 +45,12 @@ import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import {default as adapterManager, gdprDataHandler, getS2SBidderSet, uspDataHandler} from './adapterManager.js';
+import {default as adapterManager, gdprDataHandler, getS2SBidderSet, gppDataHandler, uspDataHandler} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {defer} from './utils/promise.js';
+import {defer, GreedyPromise} from './utils/promise.js';
+import {enrichFPD} from './fpd/enrichment.js';
 
 const $$PREBID_GLOBAL$$ = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -335,6 +336,7 @@ function getConsentMetadata() {
   return {
     gdpr: gdprDataHandler.getConsentMeta(),
     usp: uspDataHandler.getConsentMeta(),
+    gpp: gppDataHandler.getConsentMeta(),
     coppa: !!(config.getConfig('coppa'))
   }
 }
@@ -627,11 +629,21 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
+    if (adUnitCodes && adUnitCodes.length) {
+      // if specific adUnitCodes supplied filter adUnits for those codes
+      adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
+    } else {
+      // otherwise derive adUnitCodes from adUnits
+      adUnitCodes = adUnits && adUnits.map(unit => unit.code);
+    }
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
       bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
-    return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+    return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
+      ortb2Fragments.global = global;
+      return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+    })
   }, 'requestBids');
 
   return wrapHook(delegate, function requestBids(req = {}) {
@@ -655,14 +667,6 @@ $$PREBID_GLOBAL$$.requestBids = (function() {
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
-
-  if (adUnitCodes && adUnitCodes.length) {
-    // if specific adUnitCodes supplied filter adUnits for those codes
-    adUnits = adUnits.filter(unit => includes(adUnitCodes, unit.code));
-  } else {
-    // otherwise derive adUnitCodes from adUnits
-    adUnitCodes = adUnits && adUnits.map(unit => unit.code);
-  }
 
   function auctionDone(bids, timedOut, auctionId) {
     if (typeof bidsBackHandler === 'function') {
@@ -910,6 +914,14 @@ $$PREBID_GLOBAL$$.aliasBidder = function (bidderCode, alias, options) {
     logError('bidderCode and alias must be passed as arguments', '$$PREBID_GLOBAL$$.aliasBidder');
   }
 };
+
+/**
+ * @alias module:pbjs.aliasRegistry
+ */
+$$PREBID_GLOBAL$$.aliasRegistry = adapterManager.aliasRegistry;
+config.getConfig('aliasRegistry', config => {
+  if (config.aliasRegistry === 'private') delete $$PREBID_GLOBAL$$.aliasRegistry;
+});
 
 /**
  * The bid response object returned by an external bidder adapter during the auction.

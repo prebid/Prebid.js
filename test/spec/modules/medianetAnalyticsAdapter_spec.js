@@ -3,6 +3,7 @@ import medianetAnalytics from 'modules/medianetAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
+import {clearEvents} from 'src/events.js';
 
 const {
   EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, NO_BID, BID_TIMEOUT, AUCTION_END, SET_TARGETING, BID_WON }
@@ -127,7 +128,12 @@ describe('Media.net Analytics Adapter', function() {
     options: {
       cid: CUSTOMER_ID
     }
-  };
+  }
+
+  before(() => {
+    clearEvents();
+  });
+
   beforeEach(function () {
     sandbox = sinon.sandbox.create();
   });

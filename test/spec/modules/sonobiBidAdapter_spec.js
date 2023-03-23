@@ -287,6 +287,7 @@ describe('SonobiBidAdapter', function () {
       },
       mediaTypes: {
         video: {
+          sizes: [[300, 250], [300, 600]],
           context: 'outstream'
         }
       }
@@ -331,7 +332,7 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d||f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
@@ -370,7 +371,7 @@ describe('SonobiBidAdapter', function () {
           }
         }
       };
-      const bidRequests = spec.buildRequests(bidRequest, {...bidderRequests, ortb2});
+      const bidRequests = spec.buildRequests(bidRequest, { ...bidderRequests, ortb2 });
       expect(bidRequests.data.fpd).to.equal(JSON.stringify(ortb2));
     });
 
@@ -539,7 +540,7 @@ describe('SonobiBidAdapter', function () {
       ]);
     });
 
-    it('should return a properly formatted request with userid as a JSON-encoded set of User ID results', function () {
+    it('should return a properly formatted request with the userid value omitted when the userId object is present on the bidRequest. ', function () {
       bidRequest[0].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       bidRequest[1].userId = { 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': { 'uid': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ', 'ext': { 'linkType': 2 } } };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -547,29 +548,7 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.method).to.equal('GET');
       expect(bidRequests.data.ref).not.to.be.empty;
       expect(bidRequests.data.s).not.to.be.empty;
-      expect(JSON.parse(bidRequests.data.userid)).to.eql({ 'pubcid': 'abcd-efg-0101', 'tdid': 'td-abcd-efg-0101', 'id5id': 'ID5-ZHMOrVeUVTUKgrZ-a2YGxeh5eS_pLzHCQGYOEAiTBQ' });
-    });
-
-    it('should return a properly formatted request with userid omitted if there are no userIds', function () {
-      bidRequest[0].userId = {};
-      bidRequest[1].userId = {};
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
-      expect(bidRequests.data.ref).not.to.be.empty;
-      expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.userid).to.equal(undefined);
-    });
-
-    it('should return a properly formatted request with userid omitted', function () {
-      bidRequest[0].userId = undefined;
-      bidRequest[1].userId = undefined;
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.url).to.equal('https://apex.go.sonobi.com/trinity.json');
-      expect(bidRequests.method).to.equal('GET');
-      expect(bidRequests.data.ref).not.to.be.empty;
-      expect(bidRequests.data.s).not.to.be.empty;
-      expect(bidRequests.data.userid).to.equal(undefined);
+      expect(bidRequests.data.userid).to.be.undefined;
     });
 
     it('should return a properly formatted request with keywrods included as a csv of strings', function () {
