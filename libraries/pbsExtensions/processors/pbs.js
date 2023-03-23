@@ -4,6 +4,7 @@ import {extPrebidMediaType} from './mediaType.js';
 import {setRequestExtPrebidAliases} from './aliases.js';
 import {setReqParams, setResponseParams} from './custom.js';
 import {setImpBidParams} from './params.js';
+import {setImpAdUnitCode} from './adUnitCode.js';
 import {setRequestExtPrebid, setRequestExtPrebidChannel} from './requestExtPrebid.js';
 import {setBidResponseVideoCache} from './video.js';
 
@@ -30,6 +31,10 @@ export const PBS_PROCESSORS = {
       // sets bid ext.prebid.bidder.[bidderCode] with bidRequest.params, passed through transformBidParams if necessary
       fn: setImpBidParams
     },
+    adUnitCode: {
+      // sets bid ext.prebid.adunitcode
+      fn: setImpAdUnitCode
+    }
   },
   [BID_RESPONSE]: {
     mediaType: {

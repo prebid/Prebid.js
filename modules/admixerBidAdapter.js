@@ -1,12 +1,14 @@
-import { logError } from '../src/utils.js';
+import {logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
+const BIDDER_CODE_ADX = 'admixeradx';
+const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
+const ADX_ENDPOINT_URL = 'https://inv-nets.admixer.net/adxprebid.1.2.aspx';
 export const spec = {
   code: BIDDER_CODE,
   aliases: ALIASES,
@@ -57,6 +59,10 @@ export const spec = {
       if (bidderRequest.uspConsent) {
         payload.uspConsent = bidderRequest.uspConsent;
       }
+      let bidFloor = getBidFloor(bidderRequest);
+      if (bidFloor) {
+        payload.bidFloor = bidFloor;
+      }
     }
     validRequest.forEach((bid) => {
       let imp = {};
@@ -65,7 +71,11 @@ export const spec = {
     });
     return {
       method: 'POST',
-      url: endpointUrl || ENDPOINT_URL,
+      url:
+        endpointUrl ||
+        (bidderRequest.bidderCode === BIDDER_CODE_ADX
+          ? ADX_ENDPOINT_URL
+          : ENDPOINT_URL),
       data: payload,
     };
   },
@@ -96,4 +106,16 @@ export const spec = {
     return pixels;
   }
 };
+function getBidFloor(bid) {
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0;
+  }
+}
 registerBidder(spec);

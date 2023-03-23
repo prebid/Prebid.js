@@ -28,6 +28,7 @@ function hasQueryParam(paramName, values) {
 }
 
 export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterManager} = {}) {
+  if (!(bidderRequest?.src === 's2s')) return;
   let { s2sConfig } = context.s2sBidRequest;
   let owAliases;
   window.pbsLatency = window.pbsLatency || {};
@@ -157,6 +158,6 @@ export function setResponseParams(bidResponse, bid, context) {
     // check if bid contains ext prebid bidid and add it to bidObject for logger and tracker purpose
     if (bid.ext && bid.ext.prebid && bid.ext.prebid.bidid) {
       bidResponse.prebidBidId = bid.ext.prebid.bidid;
-    }    
+    }
   }
 }

@@ -627,7 +627,7 @@ function _addDealCustomTargetings(imp, bid) {
   }
 }
 
-function _addJWPlayerSegmentData(imp, bid, isS2S) {
+function _addJWPlayerSegmentData(imp, bid) {
   var jwSegData = (bid.rtd && bid.rtd.jwplayer && bid.rtd.jwplayer.targeting) || undefined;
   var jwPlayerData = '';
   const jwMark = 'jw-';
@@ -644,12 +644,8 @@ function _addJWPlayerSegmentData(imp, bid, isS2S) {
 
   var ext;
 
-  if (isS2S) {
-    (imp.dctr === undefined || imp.dctr.length == 0) ? imp.dctr = jwPlayerData : imp.dctr += '|' + jwPlayerData;
-  } else {
-    ext = imp.ext;
-    ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
-  }
+  ext = imp.ext;
+  ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
 function _createImpressionObject(bid, conf) {
@@ -1275,6 +1271,10 @@ export const spec = {
     if (commonFpd.bcat) {
       blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
     }
+    // check if fpd ortb2 contains device property with sua object
+    if (commonFpd.device?.sua) {
+      payload.device.sua = commonFpd.device?.sua;
+    }
 
     // check if fpd ortb2 contains device property with sua object
     if (commonFpd.device?.sua) {
@@ -1319,16 +1319,6 @@ export const spec = {
     const correlator = getUniqueNumber(1000);
     let url = ENDPOINT + '?source=ow-client&correlator=' + correlator;
 
-    // For Auction End Handler
-    bidderRequest.nwMonitor = {};
-    bidderRequest.nwMonitor.reqMethod = 'POST';
-    bidderRequest.nwMonitor.correlator = correlator;
-    bidderRequest.nwMonitor.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
-    // For Timeout handler
-    if (bidderRequest?.bids?.length && isArray(bidderRequest?.bids)) {
-      bidderRequest.bids.forEach(bid => bid.correlator = correlator);
-    }
-
     let serverRequest = {
       method: 'POST',
       url: url,
@@ -1338,6 +1328,17 @@ export const spec = {
 
     // Allow translator request to execute it as GET Methoid if flag is set.
     if (hasGetRequestEnabled()) {
+      // For Auction End Handler
+      bidderRequest = bidderRequest || {};
+      bidderRequest.nwMonitor = {};
+      bidderRequest.nwMonitor.reqMethod = 'POST';
+      bidderRequest.nwMonitor.correlator = correlator;
+      bidderRequest.nwMonitor.requestUrlPayloadLength = url.length + JSON.stringify(payload).length;
+      // For Timeout handler
+      if (bidderRequest?.bids?.length && isArray(bidderRequest?.bids)) {
+        bidderRequest.bids.forEach(bid => bid.correlator = correlator);
+      }
+
       const maxUrlLength = config.getConfig('translatorGetRequest.maxUrlLength') || 63000;
       const configuredEndPoint = config.getConfig('translatorGetRequest.endPoint') || ENDPOINT;
       const urlEncodedPayloadStr = parseQueryStringParameters({
@@ -1524,7 +1525,6 @@ export const spec = {
    */
 
   transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    _addJWPlayerSegmentData(params, adUnit.bids[0], true);
     return convertTypes({
       'publisherId': 'string',
       'adSlot': 'string'

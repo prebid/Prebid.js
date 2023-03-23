@@ -6,7 +6,6 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   'debugging',
   'adloox',
-  'admatic',
   'criteo',
   'outstream',
   'adagio',
@@ -22,7 +21,9 @@ const _approvedLoadExternalJSList = [
   'medianet',
   'improvedigital',
   'aaxBlockmeter',
-  'pbjs-debug-ui'
+  'pbjs-debug-ui',
+  'confiant',
+  'arcspan'
 ]
 
 /**

@@ -31,6 +31,7 @@
     "BID_RESPONSE": "bidResponse",
     "BID_REJECTED": "bidRejected",
     "NO_BID": "noBid",
+    "SEAT_NON_BID": "seatNonBid",
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "BIDDER_ERROR": "bidderError",
@@ -75,7 +76,6 @@
     "SOURCE": "hb_source",
     "FORMAT": "hb_format",
     "UUID": "hb_uuid",
-    "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host"
   },
   "NATIVE_KEYS": "%%TG_NATIVE_KEYS%%",

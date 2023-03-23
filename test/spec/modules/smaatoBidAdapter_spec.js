@@ -297,6 +297,21 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.regs.ext.us_privacy).to.equal('uspConsentString');
       });
 
+      it('sends gpp', () => {
+        const ortb2 = {
+          regs: {
+            gpp: 'gppString',
+            gpp_sid: [7]
+          }
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.gpp).to.eql('gppString');
+        expect(req.regs.ext.gpp_sid).to.eql([7]);
+      });
+
       it('sends no schain if no schain exists', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
