@@ -427,7 +427,7 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
         // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
         len: asset.len || asset.length || 140
       }
-      asset.ext && (ortbAsset.ext = asset.ext);
+      asset.ext && (ortbAsset.title.ext = asset.ext);
     // all extensions to the native bid request are passed as is
     } else if (key === 'ext') {
       ortbAsset.ext = asset;
