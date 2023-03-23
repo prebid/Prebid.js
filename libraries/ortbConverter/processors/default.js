@@ -1,10 +1,10 @@
-import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
-import {config} from '../../../src/config.js';
+import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -15,14 +15,10 @@ export const DEFAULT_PROCESSORS = {
         mergeDeep(ortbRequest, bidderRequest.ortb2)
       }
     },
-    // override FPD app, site, and device with getConfig('app'), etc if defined
-    // TODO: these should be deprecated for v8
-    appFpd: fpdFromTopLevelConfig('app'),
-    siteFpd: fpdFromTopLevelConfig('site'),
-    deviceFpd: fpdFromTopLevelConfig('device'),
     onlyOneClient: {
+      // make sure only one of 'dooh', 'app', 'site' is set in request
       priority: -99,
-      fn: onlyOneClientSection
+      fn: clientSectionChecker('ORTB request')
     },
     props: {
       // sets request properties id, tmax, test, source.tid

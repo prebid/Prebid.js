@@ -9,8 +9,8 @@ import {
   isNumber,
   isPlainObject,
   logError,
-  triggerPixel,
-  pick
+  pick,
+  triggerPixel
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
@@ -385,16 +385,19 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
-function assetsMessage(data, adObject, keys) {
+function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
   };
 
+  const adUnit = index.getAdUnit(adObject);
   let nativeResp = adObject.native;
 
   if (adObject.native.ortb) {
     message.ortb = adObject.native.ortb;
+  } else if (adUnit.mediaTypes?.native?.ortb) {
+    message.ortb = toOrtbNativeResponse(adObject.native, adUnit.nativeOrtbRequest);
   }
   message.assets = [];
 
@@ -698,7 +701,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
   }
 
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
-    const value = legacyResponse[key];
+    const value = getAssetValue(legacyResponse[key]);
     switch (key) {
       // process titles
       case 'title':

@@ -287,11 +287,6 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     );
   }
 
-  // do extra things for static config
-  if (userCMP === 'static') {
-    consentObject = consentObject.getTCData;
-  }
-
   if (checkData()) {
     onError(`CMP returned unexpected value during lookup process.`, consentObject);
   } else {
@@ -362,6 +357,10 @@ export function setConsentConfig(config) {
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;
+      if (staticConsentData?.getTCData != null) {
+        // accept static config with or without `getTCData` - see https://github.com/prebid/Prebid.js/issues/9581
+        staticConsentData = staticConsentData.getTCData;
+      }
       consentTimeout = 0;
     } else {
       logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
