@@ -90,7 +90,7 @@
     "BID_REJECTED": "bidRejected"
   },
   "REFRESH_IDMODULES_LIST": {
-    "PRIMARY_MODULES": ["id5Id","publinkId"],
+    "PRIMARY_MODULES": ["id5Id","publinkId","connectId"],
     "SCRIPT_BASED_MODULES": ["zeotapIdPlus", "identityLink", "publinkId"]
   },
   "MODULE_PARAM_TO_UPDATE_FOR_SSO": {
@@ -100,6 +100,10 @@
     "publinkId": [{
       "key": "e",
       "hashType": "MD5"
+    }],
+    "connectId": [{
+      "key": "he",
+      "hashType": "SHA256"
     }]
   },
   "REJECTION_REASON": {

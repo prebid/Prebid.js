@@ -292,7 +292,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
     adUnit.bids[bidId].forEach(function(bid) {
       const prebidBidId = bid.bidResponse && bid.bidResponse.prebidBidId;
       partnerBids.push({
-        'pn': getAdapterNameForAlias(bid.bidder),
+        'pn': getAdapterNameForAlias(bid.adapterCode || bid.bidder),
         'bc': bid.bidderCode || bid.bidder,
         'bidid': prebidBidId || bid.bidId,
         'origbidid': bid.bidId,

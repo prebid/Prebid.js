@@ -1366,7 +1366,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (response, request) => {
-    const bidResponses = [];
+    var bidResponses = [];
     var respCur = DEFAULT_CURRENCY;
     // In case of Translator GET request, will copy the actual json data from payloadStr to data.
     if (request?.payloadStr) request.data = request.payloadStr;
@@ -1374,89 +1374,106 @@ export const spec = {
     let parsedReferrer = parsedRequest.site && parsedRequest.site.ref ? parsedRequest.site.ref : '';
     try {
       let requestData = JSON.parse(request.data);
-      if (requestData && requestData.imp && requestData.imp.length > 0) {
-        requestData.imp.forEach(impData => {
-          bidResponses.push({
-            requestId: impData.id,
-            width: 0,
-            height: 0,
-            ttl: 300,
-            ad: '',
-            creativeId: 0,
-            netRevenue: NET_REVENUE,
-            cpm: 0,
-            currency: respCur,
-            referrer: parsedReferrer,
-          })
-        });
-      }
       if (response.body && response.body.seatbid && isArray(response.body.seatbid)) {
+        bidResponses = [];
         // Supporting multiple bid responses for same adSize
         respCur = response.body.cur || respCur;
         response.body.seatbid.forEach(seatbidder => {
           seatbidder.bid &&
             isArray(seatbidder.bid) &&
             seatbidder.bid.forEach(bid => {
-              bidResponses.forEach(br => {
-                if (br.requestId == bid.impid) {
-                  br.requestId = bid.impid;
-                  br.cpm = parseFloat((bid.price || 0).toFixed(2));
-                  br.width = bid.w;
-                  br.height = bid.h;
-                  br.sspID = bid.id || '';
-                  br.creativeId = bid.crid || bid.id;
-                  br.dealId = bid.dealid;
-                  br.currency = respCur;
-                  br.netRevenue = NET_REVENUE;
-                  br.ttl = 300;
-                  br.referrer = parsedReferrer;
-                  br.ad = bid.adm;
-                  br.pm_seat = seatbidder.seat || null;
-                  br.pm_dspid = bid.ext && bid.ext.dspid ? bid.ext.dspid : null;
-                  br.partnerImpId = bid.id || '' // partner impression Id
-                  if (requestData.imp && requestData.imp.length > 0) {
-                    requestData.imp.forEach(req => {
-                      if (bid.impid === req.id) {
-                        _checkMediaType(bid, br);
-                        switch (br.mediaType) {
-                          case BANNER:
-                            break;
-                          case VIDEO:
-                            br.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
-                            br.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
-                            br.vastXml = bid.adm;
-                            _assignRenderer(br, request);
-                            break;
-                          case NATIVE:
-                            _parseNativeResponse(bid, br);
-                            break;
-                        }
-                      }
-                    });
+              let newBid = {
+                requestId: bid.impid,
+                cpm: parseFloat((bid.price || 0).toFixed(2)),
+                width: bid.w,
+                height: bid.h,
+                sspID: bid.id || '',
+                creativeId: bid.crid || bid.id,
+                dealId: bid.dealid,
+                currency: respCur,
+                netRevenue: NET_REVENUE,
+                ttl: 300,
+                referrer: parsedReferrer,
+                ad: bid.adm,
+                pm_seat: seatbidder.seat || null,
+                pm_dspid: bid.ext && bid.ext.dspid ? bid.ext.dspid : null,
+                partnerImpId: bid.id || '' // partner impression Id
+              };
+              if (parsedRequest.imp && parsedRequest.imp.length > 0) {
+                parsedRequest.imp.forEach(req => {
+                  if (bid.impid === req.id) {
+                    _checkMediaType(bid, newBid);
+                    switch (newBid.mediaType) {
+                      case BANNER:
+                        break;
+                      case VIDEO:
+                        newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
+                        newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
+                        newBid.vastXml = bid.adm;
+                        _assignRenderer(newBid, request);
+                        assignDealTier(newBid, bid, request);
+                        break;
+                      case NATIVE:
+                        _parseNativeResponse(bid, newBid);
+                        break;
+                    }
                   }
-                  if (br.dealId) {
-                    br['dealChannel'] = 'PMP';
-                  }
-                  if (br.dealId && bid.ext && bid.ext.deal_channel) {
-                    br['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
-                  }
-                  prepareMetaObject(br, bid, seatbidder.seat);
+                });
+              }
+              if (newBid['dealId']) {
+                newBid['dealChannel'] = 'PMP';
+              }
+              if (newBid['dealId'] && bid.ext && bid.ext.deal_channel) {
+                newBid['dealChannel'] = dealChannelValues[bid.ext.deal_channel] || null;
+              }
+              prepareMetaObject(newBid, bid, seatbidder.seat);
 
-                  // adserverTargeting
-                  if (seatbidder.ext && seatbidder.ext.buyid) {
-                    br.adserverTargeting = {
-                      'hb_buyid_pubmatic': seatbidder.ext.buyid
-                    };
-                  }
+              // START of Experimental change
+              if (response.body.ext) {
+                newBid['ext'] = response.body.ext;
+              }
+              // END of Experimental change
 
-                  // if from the server-response the bid.ext.marketplace is set then
-                  //    submit the bid to Prebid as marketplace name
-                  if (bid.ext && !!bid.ext.marketplace) {
-                    br.bidderCode = bid.ext.marketplace;
-                  }
-                }
-              });
+              // adserverTargeting
+              if (seatbidder.ext && seatbidder.ext.buyid) {
+                newBid.adserverTargeting = {
+                  'hb_buyid_pubmatic': seatbidder.ext.buyid
+                };
+              }
+
+              // if from the server-response the bid.ext.marketplace is set then
+              //    submit the bid to Prebid as marketplace name
+              if (bid.ext && !!bid.ext.marketplace) {
+                newBid.bidderCode = bid.ext.marketplace;
+              }
+
+              bidResponses.push(newBid);
             });
+        });
+      }
+      // adding zero bid for every no-bid
+      if (requestData && requestData.imp && requestData.imp.length > 0) {
+        let requestIds = requestData.imp.map(reqData => reqData.id);
+        let uniqueImpIds = bidResponses.map(bid => bid.requestId)
+          .filter((value, index, self) => self.indexOf(value) === index);
+        let nonBidIds = requestIds.filter(x => !uniqueImpIds.includes(x));
+        nonBidIds.forEach(function(nonBidId) {
+          requestData.imp.forEach(function (impData) {
+            if (impData.id === nonBidId) {
+              bidResponses.push({
+                requestId: impData.id,
+                width: 0,
+                height: 0,
+                ttl: 300,
+                ad: '',
+                creativeId: 0,
+                netRevenue: NET_REVENUE,
+                cpm: 0,
+                currency: respCur,
+                referrer: parsedReferrer
+              });
+            }
+          });
         });
       }
     } catch (error) {
