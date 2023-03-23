@@ -35,6 +35,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
               removeKeys(copyVsgObj);
               adSizes[key] = copyVsgObj;
             } else {
+				// Special handling for outstream video case
 				if(bid.mediaTypes?.video?.playerSize) {
 					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
 					if(vsgObj[key] && vsgObj[key].slot === bid.adUnitCode) {
@@ -46,6 +47,14 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
 			}
           });
         }
+		// else {
+		// 	// Special handling for native creative
+		// 	if(bid.mediaTypes?.native && vsgObj['0x0']) {
+		// 		copyVsgObj = deepClone(vsgObj[key]);
+		// 		removeKeys(copyVsgObj);
+		// 		adSizes[key] = copyVsgObj;
+		// 	}
+		// }
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) {
 		  copyVsgObj = deepClone(adUnit);
