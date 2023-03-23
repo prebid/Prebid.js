@@ -15,8 +15,8 @@ describe('smartxspBidAdapter', function () {
     bidId: '22499d052045',
     mediaTypes: {banner: {sizes: [[300, 250]]}},
     params: {
-      token: 'FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya',
-      placementId: 'testPlacementId'
+      accountId: '29Md1Mx1x2MpM7Me',
+      widgetId: 'sc.demo.oursblanc.io'
     },
     sizes: [
       [300, 250]
@@ -46,9 +46,10 @@ describe('smartxspBidAdapter', function () {
     it('sends bid request via POST', function () {
       expect(request.method).to.equal('POST');
     });
-    it('must contain token', function() {
-      expect(request.data.bidParams[0].token).to.equal('FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya');
+    it('must contain accountId', function() {
+      expect(request.data.bidParams[0].accountId).to.equal('29Md1Mx1x2MpM7Me');
     });
+
     it('must contain auctionId', function() {
       expect(request.data.auctionId).to.exist.and.to.be.a('string')
     });
@@ -64,11 +65,11 @@ describe('smartxspBidAdapter', function () {
       url: 'https://tag.smartxsp.io/pbjs/bid',
       bids: [bid],
       data: [{
-        token: 'FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya',
+        accountId: '29Md1Mx1x2MpM7Me',
         bidId: '22499d052045',
         'banner-format-width': 300,
         'banner-format-height': 250,
-        placementId: 'testPlacementId',
+        widgetId: 'sc.demo.oursblanc.io',
       }]
     };
     let serverResponse = {

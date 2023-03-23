@@ -13,7 +13,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid && bid.params && bid.params.token && bid.params.placementId);
+    return !!(bid && bid.params && bid.params.accountId && bid.params.widgetId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
     var i
@@ -37,7 +37,7 @@ export const spec = {
       }
       for (j = 0; j < sizes.length; j++) {
         bidParam = {
-          token: bid.params.token || '',
+          accountId: bid.params.accountId || '',
           bidId: bid.bidId,
           'banner-format-width': sizes[j][0],
           'banner-format-height': sizes[j][1]
@@ -57,7 +57,10 @@ export const spec = {
             bidParam.regions = bidParam.regions.join(',')
           }
         }
-        bidParams.push(bidParam)
+
+        bidParam.schain= bid.schain;
+
+        bidParams.push(bidParam);
       }
     }
 
@@ -83,7 +86,7 @@ export const spec = {
     var html
     var ad
     var ads
-    var token
+    var accountId
     var language
     var scriptId
     var bidResponses = []
@@ -102,7 +105,11 @@ export const spec = {
           netRevenue: !!ad.netRevenue,
           currency: ad.currency,
           ttl: ad.ttl,
-          ad: ad.ad
+          ad: ad.ad,
+          adUrl: ad.adUrl,
+          meta: {
+            advertiserDomains: bid.adomain
+          }
         }
         bidResponses.push(bidObject);
       }

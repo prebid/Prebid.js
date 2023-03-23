@@ -20,10 +20,10 @@ Module that connects to SmartXSP's demand sources.
             },
             bids: [
                 {
-                    bidder: 'smartico',
+                    bidder: 'smartxsp',
                     params: {
-                           placementId: 'testPlacementId', 
-                           token: "FNVzUGZn9ebpIOoheh3kEJ2GQ6H6IyMH39sHXaya"
+                           widgetId: 'sc.demo.oursblanc.io', 
+                           accountId: "29Md1Mx1x2MpM7Me"
                     }
                 }
             ]
