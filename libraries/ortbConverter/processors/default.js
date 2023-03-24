@@ -124,29 +124,3 @@ if (FEATURES.VIDEO) {
     fn: fillVideoResponse
   }
 }
-
-function fpdFromTopLevelConfig(prop) {
-  return {
-    priority: 90, // after FPD from 'ortb2', before the rest
-    fn(ortbRequest) {
-      const data = config.getConfig(prop);
-      if (typeof data === 'object') {
-        ortbRequest[prop] = mergeDeep({}, ortbRequest[prop], data);
-      }
-    }
-  }
-}
-
-export function onlyOneClientSection(ortbRequest) {
-  ['dooh', 'app', 'site'].reduce((found, section) => {
-    if (ortbRequest[section] != null && Object.keys(ortbRequest[section]).length > 0) {
-      if (found != null) {
-        logWarn(`ORTB request specifies both '${found}' and '${section}'; dropping the latter.`)
-        delete ortbRequest[section];
-      } else {
-        found = section;
-      }
-    }
-    return found;
-  }, null);
-}
