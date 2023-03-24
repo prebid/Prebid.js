@@ -53,16 +53,18 @@ describe('RTBHouseAdapter', () => {
 
   describe('buildRequests', function () {
     let bidRequests;
-    const bidderRequest = {
-      'refererInfo': {
-        'numIframes': 0,
-        'reachedTop': true,
-        'referer': 'https://example.com',
-        'stack': ['https://example.com']
-      }
-    };
+    let bidderRequest;
 
     beforeEach(() => {
+      bidderRequest = {
+        'auctionId': 'bidderrequest-auction-id',
+        'refererInfo': {
+          'numIframes': 0,
+          'reachedTop': true,
+          'referer': 'https://example.com',
+          'stack': ['https://example.com']
+        }
+      };
       bidRequests = [
         {
           'bidder': 'rtbhouse',
@@ -203,7 +205,7 @@ describe('RTBHouseAdapter', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.source.tid).to.equal('1d1a030790a475');
+      expect(data.source.tid).to.equal('bidderrequest-auction-id');
     });
 
     it('should include bidfloor from floor module if avaiable', () => {
