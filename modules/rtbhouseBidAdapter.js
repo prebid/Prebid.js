@@ -56,7 +56,7 @@ export const spec = {
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
-      source: mapSource(validBidRequests[0]),
+      source: mapSource(bidderRequest),
     };
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
@@ -285,7 +285,7 @@ function mapSite(slot, bidderRequest) {
  */
 function mapSource(slot) {
   const source = {
-    tid: slot.transactionId,
+    tid: slot.auctionId,
   };
 
   return source;

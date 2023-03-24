@@ -203,7 +203,7 @@ describe('RTBHouseAdapter', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.source.tid).to.equal('example-transaction-id');
+      expect(data.source.tid).to.equal('1d1a030790a475');
     });
 
     it('should include bidfloor from floor module if avaiable', () => {
