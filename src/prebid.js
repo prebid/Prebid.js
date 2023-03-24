@@ -1009,7 +1009,7 @@ $$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
   }
 
   if (bids.length > 0) {
-    bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+    auctionManager.addWinningBid(bids[0]);
   }
 };
 

@@ -220,7 +220,6 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       return;
     }
 
-    bid.status = CONSTANTS.BID_STATUS.RENDERED;
     pbGlobal.markWinningBidAsUsed(bid);
     pbEvents.emit(getExternalVideoEventName(eventName), { bid, adEvent: adEventPayload });
   }
