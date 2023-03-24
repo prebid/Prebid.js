@@ -750,7 +750,8 @@ describe('IndexexchangeAdapter', function () {
     // so structured because when calling createEidsArray, UID2's getValue func takes .id to set in uids
     uid2: { id: 'testuid2' }, // UID 2.0
     // similar to uid2, but id5's getValue takes .uid
-    id5id: { uid: 'testid5id' } // ID5
+    id5id: { uid: 'testid5id' }, // ID5
+    imuid: 'testimuid'
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -800,6 +801,11 @@ describe('IndexexchangeAdapter', function () {
       source: 'id5-sync.com',
       uids: [{
         id: DEFAULT_USERID_DATA.id5id.uid
+      }]
+    }, {
+      source: 'intimatemerger.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA.imuid,
       }]
     }
   ];
@@ -1193,7 +1199,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(6);
+        expect(payload.user.eids).to.have.lengthOf(7);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1381,8 +1387,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-
-      expect(payload.user.eids).to.have.lengthOf(6);
+      expect(payload.user.eids).to.have.lengthOf(7);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1515,7 +1520,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(9);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1557,7 +1562,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.lengthOf(8);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
@@ -3464,7 +3469,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requestWithConsent.regs.ext.us_privacy).to.equal('1YYN');
     });
 
-    it('should contain `consented_providers_settings.consented_providers` & consent on user.ext when both are provided', function () {
+    it('should contain `consented_providers_settings.addtl_consent` & consent on user.ext when both are provided', function () {
       const options = {
         gdprConsent: {
           consentString: '3huaa11=qu3198ae',
@@ -3474,11 +3479,11 @@ describe('IndexexchangeAdapter', function () {
 
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithConsent = extractPayload(validBidWithConsent[0]);
-      expect(requestWithConsent.user.ext.consented_providers_settings.consented_providers).to.equal('1~1.35.41.101');
+      expect(requestWithConsent.user.ext.consented_providers_settings.addtl_consent).to.equal('1~1.35.41.101');
       expect(requestWithConsent.user.ext.consent).to.equal('3huaa11=qu3198ae');
     });
 
-    it('should not contain `consented_providers_settings.consented_providers` on user.ext when consent is not provided', function () {
+    it('should not contain `consented_providers_settings.addtl_consent` on user.ext when consent is not provided', function () {
       const options = {
         gdprConsent: {
           addtlConsent: '1~1.35.41.101',
@@ -3487,7 +3492,7 @@ describe('IndexexchangeAdapter', function () {
 
       const validBidWithConsent = spec.buildRequests(DEFAULT_BANNER_VALID_BID, options);
       const requestWithConsent = extractPayload(validBidWithConsent[0]);
-      expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings')).to.not.exist;
+      expect(utils.deepAccess(requestWithConsent, 'user.ext.consented_providers_settings.addtl_consent')).to.not.exist;
       expect(utils.deepAccess(requestWithConsent, 'user.ext.consent')).to.not.exist;
     });
 
@@ -3610,27 +3615,9 @@ describe('IndexexchangeAdapter', function () {
       expect(FEATURE_TOGGLES.featureToggles).to.deep.equal({});
     });
 
-    it('should set request size limit to 32KB when its feature enabled', () => {
+    it('6 ad units should generate only 1 request if buildRequestV2 FT is enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
-      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-      bid.bidderRequestId = Array(10000).join('#');
-
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], {});
-      const lsData = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_FEATURE_TOGGLES_KEY));
-      expect(lsData.features.pbjs_use_32kb_size_limit.activated).to.be.true;
-    });
-
-    it('6 ad units should generate only 2 requests if 32kb size limit FT is enabled', function () {
-      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      serverResponse.body.ext.features.pbjs_enable_post = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
@@ -3660,47 +3647,30 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests([bid1, bid2, bid3, bid4, bid5, bid6], DEFAULT_OPTION);
 
       expect(requests).to.be.an('array');
-      // 32KB size limit causes only 2 requests to get generated.
-      expect(requests).to.have.lengthOf(2);
+      // buildRequestv2 enabled causes only 1 requests to get generated.
+      expect(requests).to.have.lengthOf(1);
       for (let request of requests) {
         expect(request.method).to.equal('POST');
       }
     });
 
-    it('4 ad units should generate only 1 requests if 32kb size limit FT is enabled', function () {
+    it('1 request with 2 ad units, buildRequestV2 enabled', function () {
       sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
-      serverResponse.body.ext.features.pbjs_use_32kb_size_limit = {
-        activated: true
-      };
-      serverResponse.body.ext.features.pbjs_enable_post = {
+      serverResponse.body.ext.features.pbjs_use_buildRequestV2 = {
         activated: true
       };
       FEATURE_TOGGLES.setFeatureToggles(serverResponse);
 
-      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
-      bid1.params.siteId = '121';
-      bid1.adUnitCode = 'div-gpt-1'
-      bid1.transactionId = 'tr1';
-      bid1.bidId = '2f6g5s5e';
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
+      bid.params.siteId = '124';
+      bid.adUnitCode = 'div-gpt-1'
+      bid.transactionId = '152e36d1-1241-4242-t35e-y1dv34d12315';
+      bid.bidId = '2f6g5s5e';
 
-      const bid2 = utils.deepClone(bid1);
-      bid2.transactionId = 'tr2';
-
-      const bid3 = utils.deepClone(bid1);
-      bid3.transactionId = 'tr3';
-
-      const bid4 = utils.deepClone(bid1);
-      bid4.transactionId = 'tr4';
-
-      const requests = spec.buildRequests([bid1, bid2, bid3, bid4], DEFAULT_OPTION);
-
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
       expect(requests).to.be.an('array');
-      // 32KB size limit causes only 1 requests to get generated.
       expect(requests).to.have.lengthOf(1);
-      for (let request of requests) {
-        expect(request.method).to.equal('POST');
-      }
     });
   });
 

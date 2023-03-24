@@ -12,6 +12,7 @@ describe('Conversant analytics adapter tests', function() {
   let sandbox; // sinon sandbox to make restoring all stubbed objects easier
   let xhr; // xhr stub from sinon for capturing data sent via ajax
   let clock; // clock stub from sinon to mock our cache cleanup interval
+  let logInfoStub;
 
   const PREBID_VERSION = '1.2';
   const SITE_ID = 108060;
@@ -21,14 +22,16 @@ describe('Conversant analytics adapter tests', function() {
 
   const VALID_CONFIGURATION = {
     options: {
-      site_id: SITE_ID
+      site_id: SITE_ID,
+      send_error_data: true
     }
   };
 
   const VALID_ALWAYS_SAMPLE_CONFIG = {
     options: {
       site_id: SITE_ID,
-      cnvr_sampling: 1
+      cnvr_sampling: 1,
+      send_error_data: true
     }
   };
 
@@ -45,25 +48,32 @@ describe('Conversant analytics adapter tests', function() {
     };
     sandbox.stub(prebidGlobal, 'getGlobal').returns(getGlobalStub); // getGlobal does not seem to be available in testing so need to mock it
     clock = sandbox.useFakeTimers(DATESTAMP); // to use sinon fake timers they MUST be created before the interval/timeout is created in the code you are testing.
+
+    logInfoStub = sandbox.stub(utils, 'logInfo');/* .callsFake((arg, arg1, arg2) => { //debugging stuff
+      console.log(arg);
+      if (arg1) console.log(arg1);
+      if (arg2) console.log(arg2);
+    }); */
+
+    conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
   });
 
   afterEach(function () {
     sandbox.restore();
     requests = []; // clean up any requests in our ajax request capture array.
+    conversantAnalytics.disableAnalytics();
   });
 
   describe('Initialization Tests', function() {
     it('should log error if site id is not passed', function() {
       sandbox.stub(utils, 'logError');
-
+      conversantAnalytics.disableAnalytics();
       conversantAnalytics.enableAnalytics();
       expect(utils.logError.calledWith(CNVR_CONSTANTS.LOG_PREFIX + 'siteId is required.')).to.be.true;
-      conversantAnalytics.disableAnalytics();
     });
 
     it('should not log error if valid config is passed', function() {
       sandbox.stub(utils, 'logError');
-      sandbox.stub(utils, 'logInfo');
 
       conversantAnalytics.enableAnalytics(VALID_CONFIGURATION);
       expect(utils.logError.called).to.equal(false);
@@ -78,7 +88,6 @@ describe('Conversant analytics adapter tests', function() {
           CNVR_CONSTANTS.LOG_PREFIX + 'Global sample rate set to 1'
         )
       ).to.be.true;
-      conversantAnalytics.disableAnalytics();
     });
 
     it('should sample when sampling set to 1', function() {
@@ -86,17 +95,16 @@ describe('Conversant analytics adapter tests', function() {
       conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
       expect(utils.logError.called).to.equal(false);
       expect(cnvrHelper.doSample).to.equal(true);
-      conversantAnalytics.disableAnalytics();
     });
 
     it('should NOT sample when sampling set to 0', function() {
       sandbox.stub(utils, 'logError');
       const NEVER_SAMPLE_CONFIG = utils.deepClone(VALID_ALWAYS_SAMPLE_CONFIG);
       NEVER_SAMPLE_CONFIG['options'].cnvr_sampling = 0;
+      conversantAnalytics.disableAnalytics();
       conversantAnalytics.enableAnalytics(NEVER_SAMPLE_CONFIG);
       expect(utils.logError.called).to.equal(false);
       expect(cnvrHelper.doSample).to.equal(false);
-      conversantAnalytics.disableAnalytics();
     });
   });
 
@@ -113,14 +121,19 @@ describe('Conversant analytics adapter tests', function() {
       cnvrHelper.auctionIdTimestampCache['keep'] = {timeReceived: DATESTAMP + 1};
       cnvrHelper.auctionIdTimestampCache['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE};
 
+      cnvrHelper.bidderErrorCache['keep'] = {timeReceived: DATESTAMP + 1, errors: []};
+      cnvrHelper.bidderErrorCache['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE, errors: []};
+
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(2);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(2);
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(2);
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(2);
 
       clock.tick(CNVR_CONSTANTS.CACHE_CLEANUP_TIME_IN_MILLIS);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(1);
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(1);
 
       conversantAnalytics.disableAnalytics();
 
@@ -128,6 +141,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(0);
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);
     });
 
     it('createBid() should return correct object', function() {
@@ -173,6 +187,7 @@ describe('Conversant analytics adapter tests', function() {
 
       let payload = cnvrHelper.createPayload(REQUEST_TYPE, AUCTION_ID, myDate);
       expect(payload).to.deep.equal({
+        bidderErrors: [],
         cnvrSampleRate: 1,
         globalSampleRate: 1,
         requestType: REQUEST_TYPE,
@@ -184,8 +199,6 @@ describe('Conversant analytics adapter tests', function() {
         },
         adUnits: {}
       });
-
-      conversantAnalytics.disableAnalytics();
     });
 
     it('keyExistsAndIsObject() should return correct data', function() {
@@ -236,6 +249,68 @@ describe('Conversant analytics adapter tests', function() {
       expect(cnvrHelper.getSampleRate(obj, 'not_a_key', DEFAULT_VAL)).to.equal(DEFAULT_VAL);
       expect(cnvrHelper.getSampleRate(obj, 'too_small', DEFAULT_VAL)).to.equal(0);
     });
+
+    it('getPageUrl() should return correct data', function() {
+      let url = cnvrHelper.getPageUrl();
+      expect(url.length).to.be.above(1);
+    });
+
+    it('sendErrorData() should send data via ajax', function() {
+      const error = {
+        stack: 'foobar',
+        message: 'foobar message'
+      };
+      const eventType = 'fooType';
+
+      expect(requests).to.have.lengthOf(0);
+      cnvrHelper.sendErrorData(eventType, error);
+      expect(requests).to.have.lengthOf(1);
+
+      expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
+      const data = JSON.parse(requests[0].requestBody);
+      expect(data.event).to.be.equal(eventType);
+      expect(data.siteId).to.be.equal(SITE_ID);
+      expect(data.message).to.not.be.undefined;
+      expect(data.prebidVersion).to.not.be.undefined;
+      expect(data.userAgent).to.not.be.undefined;
+      expect(data.url).to.not.be.undefined;
+    });
+
+    it('Should not send data when error logging disabled', function() {
+      const error = {
+        stack: 'foobar',
+        message: 'foobar message'
+      };
+      const eventType = 'fooType';
+
+      conversantAnalytics.disableAnalytics();
+      conversantAnalytics.enableAnalytics({
+        options: {
+          site_id: SITE_ID,
+          cnvr_sampling: 1,
+          send_error_data: false
+        }
+      });
+      expect(cnvrHelper.doSendErrorData).to.be.false;
+
+      expect(requests).to.have.lengthOf(0);
+      cnvrHelper.sendErrorData(eventType, error);
+      expect(requests).to.have.lengthOf(0);
+
+      conversantAnalytics.disableAnalytics();
+      conversantAnalytics.enableAnalytics({
+        options: {
+          site_id: SITE_ID,
+          cnvr_sampling: 1,
+          send_error_data: 0
+        }
+      });
+      expect(cnvrHelper.doSendErrorData).to.be.false;
+
+      expect(requests).to.have.lengthOf(0);
+      cnvrHelper.sendErrorData(eventType, error);
+      expect(requests).to.have.lengthOf(0);
+    });
   });
 
   describe('Bid Timeout Event Tests', function() {
@@ -250,14 +325,6 @@ describe('Conversant analytics adapter tests', function() {
       'adUnitCode': 'Leaderboard',
       'auctionId': 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
     }];
-
-    beforeEach(function () {
-      conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
-    });
-
-    afterEach(function () {
-      conversantAnalytics.disableAnalytics();
-    });
 
     it('should put both items in timeout cache', function() {
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(0);
@@ -283,14 +350,6 @@ describe('Conversant analytics adapter tests', function() {
       reason: 'reason',
       message: 'value'
     };
-
-    beforeEach(function () {
-      conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
-    });
-
-    afterEach(function () {
-      conversantAnalytics.disableAnalytics();
-    });
 
     it('should empty adIdLookup and send data', function() {
       cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId] = {
@@ -323,9 +382,18 @@ describe('Conversant analytics adapter tests', function() {
 
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
       events.emit(constants.EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD_NO_ADID);
-      expect(requests).to.have.lengthOf(0);
+      expect(requests).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1); // same object in cache as before... no change
       expect(cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId]).to.not.be.undefined;
+
+      expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
+      const data = JSON.parse(requests[0].requestBody);
+      expect(data.event).to.be.equal(constants.EVENTS.AD_RENDER_FAILED);
+      expect(data.siteId).to.be.equal(SITE_ID);
+      expect(data.message).to.not.be.undefined;
+      expect(data.prebidVersion).to.not.be.undefined;
+      expect(data.userAgent).to.not.be.undefined;
+      expect(data.url).to.not.be.undefined;
     });
 
     it('should not send data if bad data in lookup', function() {
@@ -338,7 +406,16 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
       events.emit(constants.EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0); // object should be removed but no call made to send data
-      expect(requests).to.have.lengthOf(0);
+      expect(requests).to.have.lengthOf(1);
+
+      expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
+      const data = JSON.parse(requests[0].requestBody);
+      expect(data.event).to.be.equal(constants.EVENTS.AD_RENDER_FAILED);
+      expect(data.siteId).to.be.equal(SITE_ID);
+      expect(data.message).to.not.be.undefined;
+      expect(data.prebidVersion).to.not.be.undefined;
+      expect(data.userAgent).to.not.be.undefined;
+      expect(data.url).to.not.be.undefined;
     });
   });
 
@@ -414,20 +491,22 @@ describe('Conversant analytics adapter tests', function() {
       ]
     };
 
-    beforeEach(function () {
-      conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
-    });
-
-    afterEach(function () {
-      conversantAnalytics.disableAnalytics();
-    });
-
     it('should not send data or put a record in adIdLookup when bad data provided', function() {
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
       events.emit(constants.EVENTS.BID_WON, BAD_BID_WON_ARGS);
-      expect(requests).to.have.lengthOf(0);
+      expect(requests).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
+
+      // check for error event
+      expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
+      const data = JSON.parse(requests[0].requestBody);
+      expect(data.event).to.be.equal(constants.EVENTS.BID_WON);
+      expect(data.siteId).to.be.equal(SITE_ID);
+      expect(data.message).to.not.be.undefined;
+      expect(data.prebidVersion).to.not.be.undefined;
+      expect(data.userAgent).to.not.be.undefined;
+      expect(data.url).to.not.be.undefined;
     });
 
     it('should send data and put a record in adIdLookup', function() {
@@ -834,14 +913,6 @@ describe('Conversant analytics adapter tests', function() {
       timeout: 3000
     };
 
-    beforeEach(function () {
-      conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
-    });
-
-    afterEach(function () {
-      conversantAnalytics.disableAnalytics();
-    });
-
     it('should not do anything when auction id doesnt exist', function() {
       sandbox.stub(utils, 'logError');
 
@@ -849,30 +920,48 @@ describe('Conversant analytics adapter tests', function() {
       delete BAD_ARGS.auctionId;
       expect(requests).to.have.lengthOf(0);
       events.emit(constants.EVENTS.AUCTION_END, BAD_ARGS);
-      expect(requests).to.have.lengthOf(0);
-      expect(
-        utils.logError.calledWith(
-          CNVR_CONSTANTS.LOG_PREFIX + 'onAuctionEnd(): No auctionId in args supplied so unable to process event.'
-        )
-      ).to.be.true;
+      expect(requests).to.have.lengthOf(1);
+
+      // check for error event
+      expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
+      const data = JSON.parse(requests[0].requestBody);
+      expect(data.event).to.be.equal(constants.EVENTS.AUCTION_END);
+      expect(data.siteId).to.be.equal(SITE_ID);
+      expect(data.message).to.not.be.undefined;
+      expect(data.prebidVersion).to.not.be.undefined;
+      expect(data.userAgent).to.not.be.undefined;
+      expect(data.url).to.not.be.undefined;
     });
 
     it('should send the expected data', function() {
       sandbox.stub(utils, 'logError');
-      sandbox.stub(utils, 'logWarn'); /* .callsFake((arg, arg1, arg2) => { //debugging stuff
-        console.error(arg);
-        if (arg1) console.error(arg1);
-        if (arg2) console.error(arg2);
-      }); */
+      sandbox.stub(utils, 'logWarn');
+
       expect(requests).to.have.lengthOf(0);
       const AUCTION_ID = AUCTION_END_PAYLOAD.auctionId;
       const AD_UNIT_CODE = AUCTION_END_PAYLOAD.adUnits[0].code;
       const AD_UNIT_CODE_NATIVE = AUCTION_END_PAYLOAD.adUnits[2].code;
       const timeoutKey = cnvrHelper.getLookupKey(AUCTION_ID, AD_UNIT_CODE, 'appnexus');
+      const URL = 'some url';
+      cnvrHelper.bidderErrorCache[AUCTION_ID] = {
+        errors: [{
+          status: 500,
+          message: 'error msg',
+          bidderCode: 'bidderCode',
+          url: URL,
+        }, {
+          status: 501,
+          message: 'error msg1',
+          bidderCode: 'bidderCode1',
+          url: URL,
+        }],
+        timeReceived: Date.now()
+      };
       cnvrHelper.timeoutCache[timeoutKey] = { timeReceived: Date.now() };
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(1);
       expect(utils.logError.called).to.equal(false);
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(0);
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(1);
 
       events.emit(constants.EVENTS.AUCTION_END, AUCTION_END_PAYLOAD);
       expect(utils.logError.called).to.equal(false);
@@ -958,6 +1047,69 @@ describe('Conversant analytics adapter tests', function() {
       expect(apnNativeBid.adSize.w).to.be.undefined;
       expect(apnNativeBid.adSize.h).to.be.undefined;
       expect(apnNativeBid.mediaType).to.equal('native');
+
+      expect(Object.keys(data.bidderErrors)).to.have.lengthOf(2);
+      expect(data.bidderErrors[0].status).to.equal(500);
+      expect(data.bidderErrors[0].url).to.equal(URL);
+      expect(data.bidderErrors[0].message).to.not.be.undefined;
+      expect(data.bidderErrors[0].bidderCode).to.not.be.undefined;
+
+      expect(data.bidderErrors[1].status).to.equal(501);
+      expect(data.bidderErrors[1].url).to.equal(URL);
+      expect(data.bidderErrors[1].message).to.not.be.undefined;
+      expect(data.bidderErrors[1].bidderCode).to.not.be.undefined;
+
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);
+    });
+  });
+
+  describe('Bidder Error Tests', function() {
+    // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
+    const XHR_ERROR_MOCK = {
+      status: 500,
+      statusText: 'Internal Server Error'
+    };
+
+    // https://docs.prebid.org/dev-docs/bidder-adaptor.html#registering-on-bidder-error
+    const MOCK_BID_REQUEST = {
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      auctionStart: 1579746300522,
+      bidderCode: 'myBidderCode',
+      bidderRequestId: '15246a574e859f',
+      bids: [{}],
+      gdprConsent: {consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA', vendorData: {}, gdprApplies: true},
+      refererInfo: {
+        canonicalUrl: null,
+        page: 'http://mypage.org?pbjs_debug=true',
+        domain: 'mypage.org',
+        ref: null,
+        numIframes: 0,
+        reachedTop: true,
+        isAmp: false,
+        stack: ['http://mypage.org?pbjs_debug=true']
+      }
+    };
+
+    it('should record error when bidder_error called', function() {
+      let warnStub = sandbox.stub(utils, 'logWarn');
+      expect(requests).to.have.lengthOf(0);
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);
+      expect(warnStub.calledOnce).to.be.false;
+
+      events.emit(constants.EVENTS.BIDDER_ERROR, {'error': XHR_ERROR_MOCK, 'bidderRequest': MOCK_BID_REQUEST});
+      expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(1);
+      expect(warnStub.calledOnce).to.be.true;
+
+      let errorObj = cnvrHelper.bidderErrorCache[MOCK_BID_REQUEST.auctionId];
+      expect(errorObj.errors).to.have.lengthOf(1);
+      expect(errorObj.errors[0].status).to.equal(XHR_ERROR_MOCK.status);
+      expect(errorObj.errors[0].message).to.equal(XHR_ERROR_MOCK.statusText);
+      expect(errorObj.errors[0].bidderCode).to.equal(MOCK_BID_REQUEST.bidderCode);
+      expect(errorObj.errors[0].url).to.not.be.undefined;
+
+      events.emit(constants.EVENTS.BIDDER_ERROR, {'error': XHR_ERROR_MOCK, 'bidderRequest': MOCK_BID_REQUEST});
+      errorObj = cnvrHelper.bidderErrorCache[MOCK_BID_REQUEST.auctionId];
+      expect(errorObj.errors).to.have.lengthOf(2);
     });
   });
 });

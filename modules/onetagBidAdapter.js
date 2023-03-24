@@ -61,6 +61,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       consentRequired: bidderRequest.gdprConsent.gdprApplies
     };
   }
+  if (bidderRequest && bidderRequest.gppConsent) {
+    payload.gppConsent = {
+      consentString: bidderRequest.gppConsent.gppString,
+      applicableSections: bidderRequest.gppConsent.applicableSections
+    }
+  }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
@@ -340,7 +346,7 @@ function getSizes(sizes) {
   return ret;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   let syncs = [];
   let params = '';
   if (gdprConsent) {
@@ -349,6 +355,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     }
     if (typeof gdprConsent.consentString === 'string') {
       params += '&gdpr_consent=' + gdprConsent.consentString;
+    }
+  }
+  if (gppConsent) {
+    if (typeof gppConsent.gppString === 'string') {
+      params += '&gpp_consent=' + gppConsent.gppString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {

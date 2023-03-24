@@ -36,14 +36,31 @@ describe('AppNexusAdapter', function () {
     });
 
     it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let bid1 = deepClone(bid);
+      bid1.params = {
+        'placement_id': 123423
+      }
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      let bid1 = deepClone(bid);
+      bid1.params = {
         'member': '1234',
         'invCode': 'ABCD'
       };
 
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
+    });
+
+    it('should return true when required params found', function () {
+      let bid1 = deepClone(bid);
+      bid1.params = {
+        'member': '1234',
+        'inv_code': 'ABCD'
+      };
+
+      expect(spec.isBidRequestValid(bid1)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
@@ -51,6 +68,15 @@ describe('AppNexusAdapter', function () {
       delete bid.params;
       bid.params = {
         'placementId': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when required params are not passed', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'placement_id': 0
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -90,6 +116,24 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             privateSizes: [300, 250]
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].private_sizes).to.exist;
+      expect(payload.tags[0].private_sizes).to.deep.equal([{ width: 300, height: 250 }]);
+    });
+
+    it('should parse out private sizes', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            private_sizes: [300, 250]
           }
         }
       );
@@ -168,6 +212,24 @@ describe('AppNexusAdapter', function () {
       expect(payload.publisher_id).to.deep.equal(1231234);
     });
 
+    it('should add publisher_id in request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placement_id: '10433394',
+            publisher_id: '1231234'
+          }
+        });
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].publisher_id).to.exist;
+      expect(payload.tags[0].publisher_id).to.deep.equal(1231234);
+      expect(payload.publisher_id).to.exist;
+      expect(payload.publisher_id).to.deep.equal(1231234);
+    });
+
     it('should add source and verison to the tag', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -189,7 +251,7 @@ describe('AppNexusAdapter', function () {
         bids: [{
           bidder: 'appnexus',
           params: {
-            placementId: '10433394'
+            placement_id: '10433394'
           }
         }],
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843'
@@ -351,7 +413,7 @@ describe('AppNexusAdapter', function () {
         bidRequests[0],
         {
           params: {
-            placementId: '10433394',
+            placement_id: '10433394',
             user: {
               externalUid: '123',
               segments: [123, { id: 987, value: 876 }],
@@ -407,7 +469,7 @@ describe('AppNexusAdapter', function () {
 
       // 2 -> reserve is defined, getFloor not defined > reserve is used
       bidRequest.params = {
-        'placementId': '10433394',
+        'placement_id': '10433394',
         'reserve': 0.5
       };
       request = spec.buildRequests([bidRequest]);
@@ -428,7 +490,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -461,7 +523,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -484,7 +546,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -526,7 +588,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -557,7 +619,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -585,7 +647,7 @@ describe('AppNexusAdapter', function () {
       let bidRequest = Object.assign({},
         bidRequests[0],
         {
-          params: { placementId: '14542875' }
+          params: { placement_id: '14542875' }
         },
         {
           mediaTypes: {
@@ -610,7 +672,7 @@ describe('AppNexusAdapter', function () {
           mediaType: 'banner',
           params: {
             sizes: [[300, 250], [300, 600]],
-            placementId: 13144370
+            placement_id: 13144370
           }
         }
       );
@@ -786,7 +848,7 @@ describe('AppNexusAdapter', function () {
         bidRequests[0],
         {
           params: {
-            placementId: '10433394',
+            placement_id: '10433394',
             keywords: {
               single: 'val',
               singleArr: ['val'],
@@ -921,6 +983,23 @@ describe('AppNexusAdapter', function () {
           params: {
             placementId: '10433394',
             usePaymentRule: true
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].use_pmt_rule).to.equal(true);
+    });
+
+    it('should add payment rules to the request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placement_id: '10433394',
+            use_payment_rule: true
           }
         }
       );
@@ -1239,9 +1318,33 @@ describe('AppNexusAdapter', function () {
             source: 'puburl2.com',
             uids: [{
               id: 'pubid2'
+            }, {
+              id: 'pubid2-123'
             }]
           }]
-        }
+        },
+        userIdAsEids: [{
+          source: 'adserver.org',
+          uids: [{ id: 'sample-userid' }]
+        }, {
+          source: 'criteo.com',
+          uids: [{ id: 'sample-criteo-userid' }]
+        }, {
+          source: 'netid.de',
+          uids: [{ id: 'sample-netId-userid' }]
+        }, {
+          source: 'liveramp.com',
+          uids: [{ id: 'sample-idl-userid' }]
+        }, {
+          source: 'uidapi.com',
+          uids: [{ id: 'sample-uid2-value' }]
+        }, {
+          source: 'puburl.com',
+          uids: [{ id: 'pubid1' }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+        }]
       });
 
       const request = spec.buildRequests([bidRequest]);
@@ -1281,6 +1384,10 @@ describe('AppNexusAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'puburl2.com',
         id: 'pubid2'
+      });
+      expect(payload.eids).to.deep.include({
+        source: 'puburl2.com',
+        id: 'pubid2-123'
       });
     });
 

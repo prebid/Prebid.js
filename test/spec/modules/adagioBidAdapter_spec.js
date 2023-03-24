@@ -17,6 +17,7 @@ import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 import { executeRenderer } from '../../../src/Renderer.js';
+import { userSync } from '../../../src/userSync.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -266,7 +267,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
-      'data'
+      'data',
+      'usIfr'
     ];
 
     it('groups requests by organizationId', function() {
@@ -345,6 +347,76 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data.adUnits[0].features.url).to.not.exist;
     });
 
+    it('should force split keyword param into a string', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        splitKeyword: 1234
+      }).build();
+      const bid02 = new BidRequestBuilder().withParams({
+        splitKeyword: ['1234']
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.equal('1234');
+      expect(requests[0].data.adUnits[1].params.splitKeyword).to.not.exist;
+    });
+
+    it('should force key and value from data layer param into a string', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        dataLayer: {
+          1234: 'dlparam',
+          goodkey: 1234,
+          objectvalue: {
+            random: 'result'
+          },
+          arrayvalue: ['1234']
+        }
+      }).build();
+
+      const bid02 = new BidRequestBuilder().withParams({
+        dataLayer: 'a random string'
+      }).build();
+
+      const bid03 = new BidRequestBuilder().withParams({
+        dataLayer: 1234
+      }).build();
+
+      const bid04 = new BidRequestBuilder().withParams({
+        dataLayer: ['an array']
+      }).build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03, bid04], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.dataLayer).to.not.exist;
+      expect(requests[0].data.adUnits[0].params.dl).to.exist;
+      expect(requests[0].data.adUnits[0].params.dl['1234']).to.equal('dlparam');
+      expect(requests[0].data.adUnits[0].params.dl.goodkey).to.equal('1234');
+      expect(requests[0].data.adUnits[0].params.dl.objectvalue).to.not.exist;
+      expect(requests[0].data.adUnits[0].params.dl.arrayvalue).to.not.exist;
+
+      expect(requests[0].data.adUnits[1].params).to.exist;
+      expect(requests[0].data.adUnits[1].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[1].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[2].params).to.exist;
+      expect(requests[0].data.adUnits[2].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[2].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[3].params).to.exist;
+      expect(requests[0].data.adUnits[3].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[3].params.dataLayer).to.not.exist;
+    });
+
     describe('With video mediatype', function() {
       context('Outstream video', function() {
         it('should logWarn if user does not set renderer.backupOnly: true', function() {
@@ -381,8 +453,8 @@ describe('Adagio bid adapter', () => {
               context: 'outstream',
               playerSize: [[300, 250]],
               mimes: ['video/mp4'],
-              api: 5, // will be removed because invalid
-              playbackmethod: [7], // will be removed because invalid
+              api: 'val', // will be removed because invalid
+              playbackmethod: ['val'], // will be removed because invalid
             }
           },
         }).withParams({
@@ -561,15 +633,13 @@ describe('Adagio bid adapter', () => {
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
 
-        sinon.stub(config, 'getConfig')
-          .withArgs('coppa')
-          .returns(true);
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync').returns({ syncEnabled: true })
+          .withArgs('coppa').returns(true);
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
-
-        config.getConfig.restore();
       });
     });
 
@@ -734,6 +804,46 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
         expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
+      });
+    });
+
+    describe('with user-sync iframe enabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "true" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(true);
+      });
+    });
+
+    describe('with user-sync iframe disabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "false" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(false);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(false);
       });
     });
   });
