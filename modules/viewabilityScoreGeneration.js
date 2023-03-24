@@ -14,8 +14,26 @@ const GPT_SLOT_VISIBILITY_CHANGED_EVENT = 'slotVisibilityChanged';
 const TOTAL_VIEW_TIME_LIMIT = 1000000000;
 const domain = window.location.hostname;
 
+const fireStatHatLogger = (statKeyName) => {
+	var stathatUserEmail = 'jason.quaccia@pubmatic.com';
+	var url = 'https://api.stathat.com/ez';
+	var data = `time=${(new Date()).getTime()}&stat=${statKeyName}&email=${stathatUserEmail}&count=1`
+  
+	var statHatElement = document.createElement('script');
+	statHatElement.src = url + '?' + data;
+	statHatElement.async = true;
+	document.body.appendChild(statHatElement)
+};
+
 export const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
-export const setAndStringifyToLocalStorage = (key, object) => { window.localStorage.setItem(key, JSON.stringify(object)); };
+export const setAndStringifyToLocalStorage = (key, object) => {
+	try {
+	  window.localStorage.setItem(key, JSON.stringify(object));
+	} catch (e) {
+	  // send error to stathat endpoint
+	  fireStatHatLogger(`${e} --- ${window.location.href}`);
+	}
+};
 
 let vsgObj = getAndParseFromLocalStorage('viewability-data');
 
@@ -30,7 +48,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
-            if (vsgObj[key] && vsgObj[key].slot === bid.adUnitCode) {
+            if (vsgObj[key] && vsgObj[key].slot.includes(bid.adUnitCode)) {
 			  copyVsgObj = deepClone(vsgObj[key]);
               removeKeys(copyVsgObj);
               adSizes[key] = copyVsgObj;
@@ -38,7 +56,7 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
 				// Special handling for outstream video case
 				if(bid.mediaTypes?.video?.playerSize) {
 					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
-					if(vsgObj[key] && vsgObj[key].slot === bid.adUnitCode) {
+					if(vsgObj[key] && vsgObj[key].slot.includes(bid.adUnitCode)) {
 						copyVsgObj = deepClone(vsgObj[key]);
 						removeKeys(copyVsgObj);
 						adSizes[key] = copyVsgObj;
@@ -46,15 +64,14 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
 				}
 			}
           });
-        }
-		// else {
-		// 	// Special handling for native creative
-		// 	if(bid.mediaTypes?.native && vsgObj['0x0']) {
-		// 		copyVsgObj = deepClone(vsgObj[key]);
-		// 		removeKeys(copyVsgObj);
-		// 		adSizes[key] = copyVsgObj;
-		// 	}
-		// }
+        } else {
+			// Special handling for native creative
+			if(bid.mediaTypes?.native && vsgObj['0x0']) {
+				copyVsgObj = deepClone(vsgObj['0x0']);
+				removeKeys(copyVsgObj);
+				adSizes['1x1'] = copyVsgObj;
+			}
+		}
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) {
 		  copyVsgObj = deepClone(adUnit);
@@ -101,14 +118,17 @@ export const updateTotalViewTime = (diff, currentTime, lastViewStarted, key, lsO
 
 const incrementRenderCount = keyArr => {
   keyArr.forEach((key, index) => {
+	if(!key) return;
     if (vsgObj) {
       if (vsgObj[key]) {
         vsgObj[key].rendered = vsgObj[key].rendered + 1;
+		if(!vsgObj[key].slot?.includes(keyArr[1]) && index == 2) vsgObj[key].slot.push(keyArr[1]);
       } else {
         vsgObj[key] = {
           rendered: 1,
           viewed: 0,
-		  slot: index == 2 ? keyArr[1] : undefined
+		  slot: index == 2 ? [keyArr[1]] : undefined,
+		  createdAt: Date.now()
         }
       }
     } else {
@@ -116,7 +136,8 @@ const incrementRenderCount = keyArr => {
         [key]: {
           rendered: 1,
           viewed: 0,
-		  slot: index == 2 ? keyArr[1] : undefined
+		  slot: index == 2 ? keyArr[1] : undefined,
+		  createdAt: Date.now()
         }
       }
     }
@@ -244,6 +265,7 @@ const getSlotAndSize = (event) => {
 
 export const setGptEventHandlers = () => {
     // add the GPT event listeners
+	// the event handlers below get triggered in the following order: slotRenderEnded, slotVisibilityChanged and impressionViewable
     window.googletag = window.googletag || {};
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => {
