@@ -84,7 +84,7 @@ export const spec = {
       requests.push(buildOXBannerRequest(bannerBids, bidderRequest));
     }
     // build video requests
-    if (videoBids.length > 0) {
+    if (FEATURES.VIDEO && videoBids.length > 0) {
       videoBids.forEach(videoBid => {
         requests.push(buildOXVideoRequest(videoBid, bidderRequest))
       });
@@ -95,7 +95,7 @@ export const spec = {
   interpretResponse: function ({body: oxResponseObj}, serverRequest) {
     let mediaType = getMediaTypeFromRequest(serverRequest);
 
-    return mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
+    return FEATURES.VIDEO && mediaType === VIDEO ? createVideoBidResponses(oxResponseObj, serverRequest.payload)
       : createBannerBidResponses(oxResponseObj, serverRequest.payload);
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
@@ -238,7 +238,7 @@ function formatCustomParms(customKey, customParams) {
 function partitionByVideoBids(bidRequests) {
   return bidRequests.reduce(function (acc, bid) {
     // Fallback to banner ads if nothing specified
-    if (isVideoRequest(bid)) {
+    if (FEATURES.VIDEO && isVideoRequest(bid)) {
       acc[0].push(bid);
     } else {
       acc[1].push(bid);
@@ -448,93 +448,100 @@ function buildOXBannerRequest(bids, bidderRequest) {
 }
 
 function buildOXVideoRequest(bid, bidderRequest) {
-  let oxVideoParams = generateVideoParameters(bid, bidderRequest);
-  let url = oxVideoParams.ph
-    ? `https://u.openx.net/v/1.0/avjp`
-    : `https://${bid.params.delDomain}/v/1.0/avjp`;
-  return {
-    method: 'GET',
-    url: url,
-    data: oxVideoParams,
-    payload: {'bid': bid, 'startTime': new Date()}
-  };
+  if (FEATURES.VIDEO) {
+    let oxVideoParams = generateVideoParameters(bid, bidderRequest);
+    let url = oxVideoParams.ph
+      ? `https://u.openx.net/v/1.0/avjp`
+      : `https://${bid.params.delDomain}/v/1.0/avjp`;
+    return {
+      method: 'GET',
+      url: url,
+      data: oxVideoParams,
+      payload: {'bid': bid, 'startTime': new Date()}
+    };
+  }
+
+  return {}
 }
 
 function generateVideoParameters(bid, bidderRequest) {
-  const videoMediaType = deepAccess(bid, `mediaTypes.video`);
-  let queryParams = buildCommonQueryParamsFromBids([bid], bidderRequest);
-  let oxVideoConfig = deepAccess(bid, 'params.video') || {};
-  let context = deepAccess(bid, 'mediaTypes.video.context');
-  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let width;
-  let height;
+  let queryParams = {}
+  if (FEATURES.VIDEO) {
+    const videoMediaType = deepAccess(bid, `mediaTypes.video`);
+    queryParams = buildCommonQueryParamsFromBids([bid], bidderRequest);
+    let oxVideoConfig = deepAccess(bid, 'params.video') || {};
+    let context = deepAccess(bid, 'mediaTypes.video.context');
+    let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+    let width;
+    let height;
 
-  // normalize config for video size
-  if (isArray(bid.sizes) && bid.sizes.length === 2 && !isArray(bid.sizes[0])) {
-    width = parseInt(bid.sizes[0], 10);
-    height = parseInt(bid.sizes[1], 10);
-  } else if (isArray(bid.sizes) && isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
-    width = parseInt(bid.sizes[0][0], 10);
-    height = parseInt(bid.sizes[0][1], 10);
-  } else if (isArray(playerSize) && playerSize.length === 2) {
-    width = parseInt(playerSize[0], 10);
-    height = parseInt(playerSize[1], 10);
+    // normalize config for video size
+    if (isArray(bid.sizes) && bid.sizes.length === 2 && !isArray(bid.sizes[0])) {
+      width = parseInt(bid.sizes[0], 10);
+      height = parseInt(bid.sizes[1], 10);
+    } else if (isArray(bid.sizes) && isArray(bid.sizes[0]) && bid.sizes[0].length === 2) {
+      width = parseInt(bid.sizes[0][0], 10);
+      height = parseInt(bid.sizes[0][1], 10);
+    } else if (isArray(playerSize) && playerSize.length === 2) {
+      width = parseInt(playerSize[0], 10);
+      height = parseInt(playerSize[1], 10);
+    }
+
+    let openRtbParams = {w: width, h: height};
+
+    // legacy openrtb params could be in video, openrtb, or video.openrtb
+    let legacyParams = bid.params.video || bid.params.openrtb || {};
+    if (legacyParams.openrtb) {
+      legacyParams = legacyParams.openrtb;
+    }
+    // support for video object or full openrtb object
+    if (isArray(legacyParams.imp)) {
+      legacyParams = legacyParams.imp[0].video;
+    }
+    Object.keys(legacyParams)
+      .filter(param => includes(VIDEO_TARGETING, param))
+      .forEach(param => openRtbParams[param] = legacyParams[param]);
+
+    // 5.0 openrtb video params
+    Object.keys(videoMediaType)
+      .filter(param => includes(VIDEO_TARGETING, param))
+      .forEach(param => openRtbParams[param] = videoMediaType[param]);
+
+    let openRtbReq = {
+      imp: [
+        {
+          video: openRtbParams
+        }
+      ]
+    };
+
+    queryParams['openrtb'] = JSON.stringify(openRtbReq);
+
+    queryParams.auid = bid.params.unit;
+    // override prebid config with openx config if available
+    queryParams.vwd = width || oxVideoConfig.vwd;
+    queryParams.vht = height || oxVideoConfig.vht;
+
+    if (context === 'outstream') {
+      queryParams.vos = '101';
+    }
+
+    if (oxVideoConfig.mimes) {
+      queryParams.vmimes = oxVideoConfig.mimes;
+    }
+
+    if (bid.params.test) {
+      queryParams.vtest = 1;
+    }
+
+    let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+    if (gpid) {
+      queryParams.aucs = encodeURIComponent(gpid);
+    }
+
+    // each video bid makes a separate request
+    enrichQueryWithFloors(queryParams, VIDEO, [bid]);
   }
-
-  let openRtbParams = {w: width, h: height};
-
-  // legacy openrtb params could be in video, openrtb, or video.openrtb
-  let legacyParams = bid.params.video || bid.params.openrtb || {};
-  if (legacyParams.openrtb) {
-    legacyParams = legacyParams.openrtb;
-  }
-  // support for video object or full openrtb object
-  if (isArray(legacyParams.imp)) {
-    legacyParams = legacyParams.imp[0].video;
-  }
-  Object.keys(legacyParams)
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .forEach(param => openRtbParams[param] = legacyParams[param]);
-
-  // 5.0 openrtb video params
-  Object.keys(videoMediaType)
-    .filter(param => includes(VIDEO_TARGETING, param))
-    .forEach(param => openRtbParams[param] = videoMediaType[param]);
-
-  let openRtbReq = {
-    imp: [
-      {
-        video: openRtbParams
-      }
-    ]
-  };
-
-  queryParams['openrtb'] = JSON.stringify(openRtbReq);
-
-  queryParams.auid = bid.params.unit;
-  // override prebid config with openx config if available
-  queryParams.vwd = width || oxVideoConfig.vwd;
-  queryParams.vht = height || oxVideoConfig.vht;
-
-  if (context === 'outstream') {
-    queryParams.vos = '101';
-  }
-
-  if (oxVideoConfig.mimes) {
-    queryParams.vmimes = oxVideoConfig.mimes;
-  }
-
-  if (bid.params.test) {
-    queryParams.vtest = 1;
-  }
-
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
-  if (gpid) {
-    queryParams.aucs = encodeURIComponent(gpid);
-  }
-
-  // each video bid makes a separate request
-  enrichQueryWithFloors(queryParams, VIDEO, [bid]);
 
   return queryParams;
 }
@@ -542,7 +549,7 @@ function generateVideoParameters(bid, bidderRequest) {
 function createVideoBidResponses(response, {bid, startTime}) {
   let bidResponses = [];
 
-  if (response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
+  if (FEATURES.VIDEO && response !== undefined && response.vastUrl !== '' && response.pub_rev > 0) {
     let vastQueryParams = parseUrl(response.vastUrl).search || {};
     let bidResponse = {};
     bidResponse.requestId = bid.bidId;
