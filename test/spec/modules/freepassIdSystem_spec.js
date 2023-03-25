@@ -59,6 +59,22 @@ describe('FreePass ID System', function () {
       expect(objectId.id).to.be.an('object');
       expect(objectId.id.userIp).to.be.undefined;
     });
+    it('should skip userIp in IdObject if freepassData is not available', function () {
+      const localConfig = JSON.parse(JSON.stringify(config));
+      delete localConfig.params.freepassData;
+      const objectId = freepassIdSubmodule.getId(localConfig, undefined);
+      expect(objectId).to.be.an('object');
+      expect(objectId.id).to.be.an('object');
+      expect(objectId.id.userIp).to.be.undefined;
+    });
+    it('should skip userIp in IdObject if params is not available', function () {
+      const localConfig = JSON.parse(JSON.stringify(config));
+      delete localConfig.params;
+      const objectId = freepassIdSubmodule.getId(localConfig, undefined);
+      expect(objectId).to.be.an('object');
+      expect(objectId.id).to.be.an('object');
+      expect(objectId.id.userIp).to.be.undefined;
+    });
     it('should include commonId in IdObject', function () {
       const objectId = freepassIdSubmodule.getId(config, undefined);
       expect(objectId).to.be.an('object');
@@ -68,6 +84,22 @@ describe('FreePass ID System', function () {
     it('should skip commonId in IdObject if not available', function () {
       const localConfig = Object.assign({}, config);
       delete localConfig.params.freepassData.commonId;
+      const objectId = freepassIdSubmodule.getId(localConfig, undefined);
+      expect(objectId).to.be.an('object');
+      expect(objectId.id).to.be.an('object');
+      expect(objectId.id.commonId).to.be.undefined;
+    });
+    it('should skip commonId in IdObject if freepassData is not available', function () {
+      const localConfig = JSON.parse(JSON.stringify(config));
+      delete localConfig.params.freepassData;
+      const objectId = freepassIdSubmodule.getId(localConfig, undefined);
+      expect(objectId).to.be.an('object');
+      expect(objectId.id).to.be.an('object');
+      expect(objectId.id.commonId).to.be.undefined;
+    });
+    it('should skip commonId in IdObject if params is not available', function () {
+      const localConfig = JSON.parse(JSON.stringify(config));
+      delete localConfig.params;
       const objectId = freepassIdSubmodule.getId(localConfig, undefined);
       expect(objectId).to.be.an('object');
       expect(objectId.id).to.be.an('object');

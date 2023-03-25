@@ -14,13 +14,14 @@ export const freepassIdSubmodule = {
   getId: function (config, consent, cachedIdObject) {
     logMessage('Getting FreePass ID using config: ' + JSON.stringify(config));
 
+    const freepassData = config.params !== undefined ? (config.params.freepassData || {}) : {}
     let idObject = {userId: generateUUID()};
 
-    if (config.params.freepassData.commonId !== undefined) {
+    if (freepassData.commonId !== undefined) {
       idObject.commonId = config.params.freepassData.commonId;
     }
 
-    if (config.params.freepassData.userIp !== undefined) {
+    if (freepassData.userIp !== undefined) {
       idObject.userIp = config.params.freepassData.userIp;
     }
 
