@@ -2,6 +2,14 @@
 
 [FreePass](https://freepass-login.com/introduction.html) is a common authentication service operated by Freebit Co., Ltd. If you have a FreePass account, you do not need to create a new account with the linked service. Please sign up with FreePass before using this ID. 
 
+# General Information
+
+```
+Module Name: FreePass Id System
+Module Type: User Id System
+Maintainer: dev@freepass.jp
+```
+
 ## Building Prebid with FreePass ID Support
 
 First, make sure to add the FreePass ID submodule to your Prebid.js package with:
