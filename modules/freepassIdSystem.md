@@ -1,25 +1,22 @@
-# Overview
+## FreePass User ID Submodule
 
-Module Name: FreePass Id System
-Module Type: User Id System
-Maintainer: dev@freepass.jp
+[FreePass](https://freepass-login.com/introduction.html) is a common authentication service operated by Freebit Co., Ltd. If you have a FreePass account, you do not need to create a new account with the linked service. Please sign up with FreePass before using this ID. 
 
-# Description
+## Building Prebid with FreePass ID Support
 
-FreePass user identification system. For assistance setting up your module please contact us at [dev@freepass.jp](dev@freepass.jp).
+First, make sure to add the FreePass ID submodule to your Prebid.js package with:
 
-## Example configuration for publishers:
+```
+gulp build --modules=freepassIdSystem,userId
+```
 
-```js
+The following configuration parameters are available:
+
+```javascript
 pbjs.setConfig({
     userSync: {
         userIds: [{
             name: 'freepassId',
-            storage: {
-                name: '_freepassId',
-                type: 'cookie',
-                expires: 30
-            },
             params: {
                 freepassData: {
                     commonId: 'fpcommonid123',
@@ -30,3 +27,11 @@ pbjs.setConfig({
     }
 });
 ```
+
+| Param under userSync.userIds[] | Scope    | Type   | Description              | Example        |
+|--------------------------------|----------|--------|--------------------------|----------------|
+| name                           | Required | String | The name of this module. | `"freepassId"` |
+| freepassData                   | Optional | Object | FreePass data            | `{}`           |
+| freepassData.commonId          | Optional | String | FreePass common ID       | `"abcd1234"`   |
+| freepassData.userIp            | Optional | String | IP of user               | `"127.0.0.1"`  |
+
