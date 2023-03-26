@@ -73,6 +73,8 @@ export const spec = {
     data.user = prepareUserInfo(data.user, freepassId);
     data.device = prepareDeviceInfo(data.device, freepassId);
 
+    data.test = validBidRequests[0].test || 0;
+
     logMessage('FreePass BidAdapter augmented ORTB bid request user: ', data.user);
     logMessage('FreePass BidAdapter augmented ORTB bid request device: ', data.device);
 
