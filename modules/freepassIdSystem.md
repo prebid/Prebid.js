@@ -4,7 +4,7 @@
 
 # General Information
 
-Please sign up with FreePass before using this ID.
+Please contact FreePass before using this ID.
 
 ```
 Module Name: FreePass Id System
