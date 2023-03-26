@@ -34,8 +34,8 @@ export const spec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map(bid => {
-      let url = BEDIGITECH_ENDPOINT + '?pid=' + bid.params.placementId;
-      const data = {};
+      let url = BEDIGITECH_ENDPOINT;
+      const data = {'pid': bid.params.placementId};
 
       return {
         method: BEDIGITECH_REQUEST_METHOD,

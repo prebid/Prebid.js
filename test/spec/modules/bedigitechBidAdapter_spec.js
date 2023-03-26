@@ -64,12 +64,12 @@ describe('BedigitechAdapter', function () {
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.equal('https://bedigitalhb.s3.amazonaws.com/hb.js?pid=' + bidRequests[0].params.placementId);
+      expect(request.url).to.equal('https://bedigitalhb.s3.amazonaws.com/hb.js');
     });
 
     it('should attach pid to url', function () {
       const request = spec.buildRequests(bidRequests)[0];
-      expect(request.url).to.include('pid=' + bidRequests[0].params.placementId);
+      expect(request.data.pid).to.equal(1234);
     });
   });
 
