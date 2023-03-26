@@ -8,7 +8,9 @@ Maintainer: dev@freepass.jp
 
 # Description
 
-Connects to FreePass service for bids. Only BANNER is currently supported. Please contact FreePass for proper setup.
+Connects to FreePass service for bids. Only BANNER is currently supported. 
+
+This BidAdapter requires the FreePass IdSystem to be configured. Please contact FreePass for proper setup.
 
 # Test Parameters
 ```
