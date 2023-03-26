@@ -17,10 +17,9 @@ function prepareUserInfo(user, freepassId) {
   let userInfo = user || {};
   let extendedUserInfo = userInfo.ext || {};
 
-  if (!freepassId.userId) {
-    throw new Error('FreePass UserID is not defined');
+  if (freepassId.userId) {
+    userInfo.id = freepassId.userId;
   }
-  userInfo.id = freepassId.userId;
 
   if (freepassId.commonId) {
     extendedUserInfo.fuid = freepassId.commonId;
@@ -50,9 +49,7 @@ export const spec = {
 
   isBidRequestValid(bid) {
     logMessage('Validating bid: ', bid);
-    let freepassUserId = bid.userId.freepassId || {};
-
-    return !!bid.adUnitCode && !!freepassUserId.userId;
+    return !!bid.adUnitCode;
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -71,7 +68,8 @@ export const spec = {
     });
     logMessage('FreePass BidAdapter interpreted ORTB bid request as ', data);
 
-    let freepassId = validBidRequests[0].userId.freepassId || {};
+    // Only freepassId is supported
+    let freepassId = (validBidRequests[0].userId && validBidRequests[0].userId.freepassId) || {};
     data.user = prepareUserInfo(data.user, freepassId);
     data.device = prepareDeviceInfo(data.device, freepassId);
 

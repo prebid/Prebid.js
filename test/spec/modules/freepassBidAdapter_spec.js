@@ -20,14 +20,9 @@ describe('FreePass adapter', function () {
       },
       adUnitCode: 'adunit-code',
     };
+
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
-    });
-
-    it('should return false when userId is missing', function () {
-      let localBid = Object.assign({}, bid);
-      localBid.userId = {};
-      expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
 
     it('should return false when adUnitCode is missing', function () {
@@ -68,22 +63,14 @@ describe('FreePass adapter', function () {
       expect(bidRequest.url).to.not.equal(undefined);
       expect(bidRequest.url).to.not.equal(null);
     });
+
     it('should add user id to user information', function () {
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
       const ortbData = bidRequest.data;
       expect(ortbData.user).to.be.an('object');
       expect(ortbData.user.id).to.equal('56c4c789-71ce-46f5-989e-9e543f3d5f96');
     });
-    it('should throw an error when user id is missing', function () {
-      let localBidRequests = [Object.assign({}, bidRequests[0])];
-      delete localBidRequests[0].userId.freepassId.userId;
-      expect(spec.buildRequests.bind(spec, localBidRequests, bidderRequest)).to.throw('FreePass UserID is not defined');
-    });
-    it('should throw an error when freePassId is missing', function () {
-      let localBidRequests = [Object.assign({}, bidRequests[0])];
-      delete localBidRequests[0].userId.freepassId;
-      expect(spec.buildRequests.bind(spec, localBidRequests, bidderRequest)).to.throw('FreePass UserID is not defined');
-    });
+
     it('should add freepass commonId to extended user information', function () {
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
       const ortbData = bidRequest.data;
@@ -91,6 +78,7 @@ describe('FreePass adapter', function () {
       expect(ortbData.user.ext).to.be.an('object');
       expect(ortbData.user.ext.fuid).to.equal('commonIdValue');
     });
+
     it('should skip freepass commonId when not available', function () {
       let localBidRequests = [Object.assign({}, bidRequests[0])];
       delete localBidRequests[0].userId.freepassId.commonId;
@@ -100,6 +88,7 @@ describe('FreePass adapter', function () {
       expect(ortbData.user.ext).to.be.an('object');
       expect(ortbData.user.ext.fuid).to.be.undefined;
     });
+
     it('should add IP information to extended device information', function () {
       const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
       const ortbData = bidRequest.data;
@@ -108,6 +97,7 @@ describe('FreePass adapter', function () {
       expect(ortbData.device.ext).to.be.an('object');
       expect(ortbData.device.ext.is_accurate_ip).to.equal(1);
     });
+
     it('should skip IP information when not available', function () {
       let localBidRequests = [Object.assign({}, bidRequests[0])];
       delete localBidRequests[0].userId.freepassId.userIp;
