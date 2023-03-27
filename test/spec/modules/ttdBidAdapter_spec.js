@@ -477,7 +477,7 @@ describe('ttdBidAdapter', function () {
     it('adds unified ID info to the request', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userIdAsEids = {
+      clonedBannerRequests[0].userId = {
         tdid: TDID
       };
 

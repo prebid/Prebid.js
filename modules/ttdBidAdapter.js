@@ -120,8 +120,8 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
-  if (utils.isStr(utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids.tdid'))) {
-    user.buyeruid = bidderRequest.bids[0].userIdAsEids.tdid;
+  if (utils.isStr(utils.deepAccess(bidderRequest, 'bids.0.userId.tdid'))) {
+    user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
   var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
