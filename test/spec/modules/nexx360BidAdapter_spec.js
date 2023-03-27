@@ -1,9 +1,41 @@
-import {expect} from 'chai';
-import {spec} from 'modules/nexx360BidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagement.js';
+import { expect } from 'chai';
+import {
+  spec, storage, getNexx360LocalStorage,
+} from 'modules/nexx360BidAdapter.js';
+import { sandbox } from 'sinon';
+
+const instreamResponse = {
+  'id': '2be64380-ba0c-405a-ab53-51f51c7bde51',
+  'cur': 'USD',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': '8275140264321181514',
+          'impid': '263cba3b8bfb72',
+          'price': 5,
+          'adomain': [
+            'appnexus.com'
+          ],
+          'crid': '97517771',
+          'h': 1,
+          'w': 1,
+          'ext': {
+            'mediaType': 'instream',
+            'ssp': 'appnexus',
+            'divId': 'video1',
+            'adUnitCode': 'video1',
+            'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=f093f759-3143-4ad4-a52d-d2c6de420564]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=29h5tilm&uuid=8ffb1d9e-3081-4855-87e9-8a9f5c251641&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
+          }
+        }
+      ],
+      'seat': 'appnexus'
+    }
+  ],
+  'ext': {
+    'cookies': []
+  }
+};
 
 describe('Nexx360 bid adapter tests', function () {
   const DISPLAY_BID_REQUEST = {
@@ -110,6 +142,32 @@ describe('Nexx360 bid adapter tests', function () {
         'auctionId': '98932591-c822-42e3-850e-4b3cf748d063',
       }
     });
+
+    it('We verify isBidRequestValid with unvalid adUnitName', function() {
+      bannerBid.params = { adUnitName: 1 };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
+
+    it('We verify isBidRequestValid with empty adUnitName', function() {
+      bannerBid.params = { adUnitName: '' };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
+
+    it('We verify isBidRequestValid with unvalid adUnitPath', function() {
+      bannerBid.params = { adUnitPath: 1 };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
+
+    it('We verify isBidRequestValid with unvalid divId', function() {
+      bannerBid.params = { divId: 1 };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
+
+    it('We verify isBidRequestValid unvalid allBids', function() {
+      bannerBid.params = { allBids: 1 };
+      expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
+    });
+
     it('We verify isBidRequestValid with uncorrect tagid', function() {
       bannerBid.params = { 'tagid': 'luvxjvgn' };
       expect(spec.isBidRequestValid(bannerBid)).to.be.equal(false);
@@ -121,63 +179,87 @@ describe('Nexx360 bid adapter tests', function () {
     });
   });
 
-  describe('when request is for a multiformat ad', function () {
-    describe('and request config uses mediaTypes video and banner', () => {
-      const multiformatBid = {
-        'bidder': 'nexx360',
-        'params': {'tagId': 'luvxjvgn'},
-        'mediaTypes': {
-          'banner': {
-            'sizes': [[300, 250]]
-          },
-          'video': {
-            'playerSize': [300, 250]
-          }
-        },
-        'adUnitCode': 'div-1',
-        'transactionId': '70bdc37e-9475-4b27-8c74-4634bdc2ee66',
-        'sizes': [[300, 250], [300, 600]],
-        'bidId': '4906582fc87d0c',
-        'bidderRequestId': '332fda16002dbe',
-        'auctionId': '98932591-c822-42e3-850e-4b3cf748d063',
-      }
-      it('should return true multisize when required params found', function () {
-        expect(spec.isBidRequestValid(multiformatBid)).to.equal(true);
-      });
+  describe('getNexx360LocalStorage disabled', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => false);
     });
-  });
+    it('We test if we get the nexx360Id', function() {
+      const output = getNexx360LocalStorage();
+      expect(output).to.be.eql(false);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
 
-  describe('when request is for a video ad', function () {
-    describe('and request config uses mediaTypes video and banner', () => {
-      const videoBid = {
-        'bidder': 'nexx360',
-        'params': {'tagId': 'luvxjvgn'},
-        'mediaTypes': {
-          'video': {
-            'playerSize': [300, 250]
-          }
-        },
-        'adUnitCode': 'div-1',
-        'transactionId': '70bdc37e-9475-4b27-8c74-4634bdc2ee66',
-        'bidId': '4906582fc87d0c',
-        'bidderRequestId': '332fda16002dbe',
-        'auctionId': '98932591-c822-42e3-850e-4b3cf748d063',
-      }
-      it('should return true multisize when required params found', function () {
-        expect(spec.isBidRequestValid(videoBid)).to.equal(true);
-      });
+  describe('getNexx360LocalStorage enabled but nothing', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => null);
     });
-  });
+    it('We test if we get the nexx360Id', function() {
+      const output = getNexx360LocalStorage();
+      expect(typeof output.nexx360Id).to.be.eql('string');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('getNexx360LocalStorage enabled but wrong payload', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4",}');
+    });
+    it('We test if we get the nexx360Id', function() {
+      const output = getNexx360LocalStorage();
+      expect(output).to.be.eql(false);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('getNexx360LocalStorage enabled', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => '{"nexx360Id":"5ad89a6e-7801-48e7-97bb-fe6f251f6cb4"}');
+    });
+    it('We test if we get the nexx360Id', function() {
+      const output = getNexx360LocalStorage();
+      expect(output.nexx360Id).to.be.eql('5ad89a6e-7801-48e7-97bb-fe6f251f6cb4');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
 
   describe('buildRequests()', function() {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs('div-1').returns({
+        offsetWidth: 200,
+        offsetHeight: 250,
+        style: {
+          maxWidth: '400px',
+          maxHeight: '350px',
+        }
+      });
+    });
     describe('We test with a multiple display bids', function() {
       const sampleBids = [
         {
           bidder: 'nexx360',
           params: {
-            tagId: 'luvxjvgn'
+            tagId: 'luvxjvgn',
+            divId: 'div-1',
+            adUnitName: 'header-ad',
+            adUnitPath: '/12345/nexx360/Homepage/HP/Header-Ad',
           },
-          adUnitCode: 'div-1',
+          adUnitCode: 'header-ad-1234',
           transactionId: '469a570d-f187-488d-b1cb-48c1a2009be9',
           sizes: [[300, 250], [300, 600]],
           bidId: '44a2706ac3574',
@@ -221,7 +303,7 @@ describe('Nexx360 bid adapter tests', function () {
               sizes: [[728, 90], [970, 250]]
             }
           },
-          adUnitCode: 'div-2',
+          adUnitCode: 'div-2-abcd',
           transactionId: '6196885d-4e76-40dc-a09c-906ed232626b',
           sizes: [[728, 90], [970, 250]],
           bidId: '5ba94555219a03',
@@ -276,17 +358,25 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.cur[0]).to.be.eql('USD');
         expect(requestContent.imp.length).to.be.eql(2);
         expect(requestContent.imp[0].id).to.be.eql('44a2706ac3574');
-        expect(requestContent.imp[0].tagid).to.be.eql('div-1');
+        expect(requestContent.imp[0].tagid).to.be.eql('header-ad');
         expect(requestContent.imp[0].ext.divId).to.be.eql('div-1');
+        expect(requestContent.imp[0].ext.adUnitCode).to.be.eql('header-ad-1234');
+        expect(requestContent.imp[0].ext.adUnitName).to.be.eql('header-ad');
+        expect(requestContent.imp[0].ext.adUnitPath).to.be.eql('/12345/nexx360/Homepage/HP/Header-Ad');
+        expect(requestContent.imp[0].ext.dimensions.slotW).to.be.eql(200);
+        expect(requestContent.imp[0].ext.dimensions.slotH).to.be.eql(250);
+        expect(requestContent.imp[0].ext.dimensions.cssMaxW).to.be.eql('400px');
+        expect(requestContent.imp[0].ext.dimensions.cssMaxH).to.be.eql('350px');
         expect(requestContent.imp[0].ext.nexx360.tagId).to.be.eql('luvxjvgn');
-        expect(requestContent.imp[0].ext.nexx360.allBids).to.be.eql(false);
         expect(requestContent.imp[0].banner.format.length).to.be.eql(2);
         expect(requestContent.imp[0].banner.format[0].w).to.be.eql(300);
         expect(requestContent.imp[0].banner.format[0].h).to.be.eql(250);
         expect(requestContent.imp[1].ext.nexx360.allBids).to.be.eql(true);
-        expect(requestContent.regs.ext.gdpr).to.be.eql(1);
-        expect(requestContent.user.ext.consent).to.be.eql(bidderRequest.gdprConsent.consentString);
-        expect(requestContent.user.ext.eids.length).to.be.eql(2);
+        expect(requestContent.imp[1].tagid).to.be.eql('div-2-abcd');
+        expect(requestContent.imp[1].ext.adUnitCode).to.be.eql('div-2-abcd');
+        expect(requestContent.imp[1].ext.divId).to.be.eql('div-2-abcd');
+        expect(requestContent.ext.bidderVersion).to.be.eql('2.0');
+        expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 
       it('We perform a test with a multiformat adunit', function() {
@@ -307,11 +397,11 @@ describe('Nexx360 bid adapter tests', function () {
         };
         const request = spec.buildRequests(multiformatBids, bidderRequest);
         const requestContent = request.data;
-        expect(requestContent.imp[0].video.context).to.be.eql('outstream');
+        expect(requestContent.imp[0].video.ext.context).to.be.eql('outstream');
         expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
       });
 
-      it('We perform a test with a video adunit', function() {
+      it('We perform a test with a instream adunit', function() {
         const videoBids = [sampleBids[0]];
         videoBids[0].mediaTypes = {
           video: {
@@ -326,13 +416,23 @@ describe('Nexx360 bid adapter tests', function () {
         const request = spec.buildRequests(videoBids, bidderRequest);
         const requestContent = request.data;
         expect(request).to.have.property('method').and.to.equal('POST');
-        expect(requestContent.imp[0].video.context).to.be.eql('instream');
+        expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
         expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
       })
+    });
+    after(function () {
+      sandbox.restore()
     });
   });
 
   describe('interpretResponse()', function() {
+    it('empty response', function() {
+      const response = {
+        body: ''
+      };
+      const output = spec.interpretResponse(response);
+      expect(output.length).to.be.eql(0);
+    });
     it('banner responses', function() {
       const response = {
         body: {
@@ -345,7 +445,6 @@ describe('Nexx360 bid adapter tests', function () {
                   'id': '4427551302944024629',
                   'impid': '226175918ebeda',
                   'price': 1.5,
-                  'type': 'banner',
                   'adomain': [
                     'http://prebid.org'
                   ],
@@ -356,141 +455,153 @@ describe('Nexx360 bid adapter tests', function () {
                   'cat': [
                     'IAB3-1'
                   ],
-                  'creativeuuid': 'fdddcebc-1edf-489d-880d-1418d8bdc493',
-                  'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
                   'ext': {
-                    'dsp_id': 'ssp1',
-                    'buyer_id': 'foo',
-                    'brand_id': 'bar'
+                    'adUnitCode': 'div-1',
+                    'mediaType': 'banner',
+                    'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
+                    'ssp': 'appnexus',
                   }
                 }
               ],
               'seat': 'appnexus'
             }
           ],
-          'cookies': []
+          'ext': {
+            'id': 'de3de7c7-e1cf-4712-80a9-94eb26bfc718',
+            'cookies': []
+          },
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].adUrl);
-      expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].type);
+      expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].ext.adUrl);
+      expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].ext.mediaType);
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
-      expect(output[0].meta.networkId).to.be.eql(response.body.seatbid[0].bid[0].ext.dsp_id);
-      expect(output[0].meta.advertiserId).to.be.eql(response.body.seatbid[0].bid[0].ext.buyer_id);
-      expect(output[0].meta.brandId).to.be.eql(response.body.seatbid[0].bid[0].ext.brand_id);
     });
-    it('video responses', function() {
+    it('instream responses', function() {
       const response = {
         body: {
-          'id': '33894759-0ea2-41f1-84b3-75132eefedb6',
+          'id': '2be64380-ba0c-405a-ab53-51f51c7bde51',
           'cur': 'USD',
           'seatbid': [
             {
               'bid': [
                 {
-                  'id': '294478680080716675',
-                  'impid': '2c835a6039e65f',
+                  'id': '8275140264321181514',
+                  'impid': '263cba3b8bfb72',
                   'price': 5,
-                  'type': 'instream',
                   'adomain': [
-                    ''
+                    'appnexus.com'
                   ],
                   'crid': '97517771',
-                  'ssp': 'appnexus',
                   'h': 1,
                   'w': 1,
-                  'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>prebid.org wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=9987328a-b15a-4549-974b-203cd9bbe5d3]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=5.002000800320127&cur=EUR&user_agent=Mozilla%2F5.0+%28iPhone%3B+CPU+iPhone+OS+13_2_3+like+Mac+OS+X%29+AppleWebKit%2F605.1.15+%28KHTML%2C+like+Gecko%29+Version%2F13.0.3+Mobile%2F15E148+Safari%2F604.1&consent=1&abtest_id=0&tag_id=yqsc1tfj&mediatype=video]]></Impression>\n        <Creatives></Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
+                  'ext': {
+                    'mediaType': 'instream',
+                    'ssp': 'appnexus',
+                    'adUnitCode': 'video1',
+                    'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=f093f759-3143-4ad4-a52d-d2c6de420564]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=29h5tilm&uuid=8ffb1d9e-3081-4855-87e9-8a9f5c251641&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[https://fast.nexx360.io/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=29h5tilm&uuid=c29446b7-3f15-4354-9ad2-9b7acea4b4b3&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
+                  }
                 }
               ],
               'seat': 'appnexus'
             }
           ],
-          'cookies': []
+          'ext': {
+            'cookies': []
+          }
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].vastXml);
+      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].ext.vastXml);
       expect(output[0].mediaType).to.be.eql('video');
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
     });
-  });
 
-  describe('interpretResponse()', function() {
-    it('banner responses', function() {
+    it('outstream responses', function() {
       const response = {
         body: {
-          'id': 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          'id': '40c23932-135e-4602-9701-ca36f8d80c07',
           'cur': 'USD',
           'seatbid': [
             {
               'bid': [
                 {
-                  'id': '4427551302944024629',
-                  'impid': '226175918ebeda',
-                  'price': 1.5,
-                  'type': 'banner',
+                  'id': '1186971142548769361',
+                  'impid': '4ce809b61a3928',
+                  'price': 5,
                   'adomain': [
-                    'http://prebid.org'
+                    'appnexus.com'
                   ],
-                  'crid': '98493581',
-                  'ssp': 'appnexus',
-                  'h': 600,
-                  'w': 300,
+                  'crid': '97517771',
+                  'h': 1,
+                  'w': 1,
+                  'ext': {
+                    'mediaType': 'outstream',
+                    'ssp': 'appnexus',
+                    'adUnitCode': 'div-1',
+                    'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>Nexx360 Wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[http://localhost:8081/cache?uuid=7fcc7c63-3699-4544-a6d5-8ea33ee5bdcb]]></VASTAdTagURI>\n        <Impression><![CDATA[http://localhost:8085/track-imp?ssp=appnexus&type=booster&price=4.710315591144606&cur=EUR&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&consent=1&abtest_id=0&tag_id=yqsc1tfj&uuid=d8fbebb6-f5d7-4ebd-b86b-8b1584c9445e&seat=9325&adomain=appnexus.com&mediatype=video]]></Impression>\n        <Impression><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=impression]]></Impression>\n        <Creatives>\n          <Creative>\n            <Linear>\n              <TrackingEvents>\n                <Tracking event="start"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=start]]></Tracking>\n                <Tracking event="firstQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=firstQuartile]]></Tracking>\n                <Tracking event="midpoint"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=midpoint]]></Tracking>\n                <Tracking event="thirdQuartile"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=thirdQuartile]]></Tracking>\n                <Tracking event="complete"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=complete]]></Tracking>\n                <Tracking event="creativeView"><![CDATA[http://localhost:8085/track-vast?ssp=appnexus&type=booster&user_agent=Mozilla%2F5.0+%28Macintosh%3B+Intel+Mac+OS+X+10_15_7%29+AppleWebKit%2F537.36+%28KHTML%2C+like+Gecko%29+Chrome%2F110.0.0.0+Safari%2F537.36&abtest_id=0&tag_id=yqsc1tfj&uuid=415ad33f-3de1-4a30-bf9d-5751f3bed64d&seat=9325&adomain=appnexus.com&event=creativeView]]></Tracking>\n              </TrackingEvents>\n            </Linear>\n          </Creative>\n        </Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
+                  }
+                }
+              ],
+              'seat': 'appnexus'
+            }
+          ],
+          'ext': {
+            'cookies': []
+          }
+        }
+      };
+      const output = spec.interpretResponse(response);
+      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].ext.vastXml);
+      expect(output[0].mediaType).to.be.eql('video');
+      expect(output[0].currency).to.be.eql(response.body.cur);
+      expect(typeof output[0].renderer).to.be.eql('object');
+      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+    });
+
+    it('native responses', function() {
+      const response = {
+        body: {
+          'id': '3c0290c1-6e75-4ef7-9e37-17f5ebf3bfa3',
+          'cur': 'USD',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '6624930625245272225',
+                  'impid': '23e11d845514bb',
+                  'price': 10,
+                  'adomain': [
+                    'prebid.org'
+                  ],
+                  'crid': '97494204',
+                  'h': 1,
+                  'w': 1,
                   'cat': [
                     'IAB3-1'
                   ],
-                  'creativeuuid': 'fdddcebc-1edf-489d-880d-1418d8bdc493',
-                  'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493'
+                  'ext': {
+                    'mediaType': 'native',
+                    'ssp': 'appnexus',
+                    'adUnitCode': '/19968336/prebid_native_example_1'
+                  },
+                  'adm': '{"ver":"1.2","assets":[{"id":1,"img":{"url":"https:\\/\\/vcdn.adnxs.com\\/p\\/creative-image\\/f8\\/7f\\/0f\\/13\\/f87f0f13-230c-4f05-8087-db9216e393de.jpg","w":989,"h":742,"ext":{"appnexus":{"prevent_crop":0}}}},{"id":0,"title":{"text":"This is a Prebid Native Creative"}},{"id":2,"data":{"value":"Prebid.org"}}],"link":{"url":"https:\\/\\/ams3-ib.adnxs.com\\/click?AAAAAAAAJEAAAAAAAAAkQAAAAAAAACRAAAAAAAAAJEAAAAAAAAAkQKZS4ZZl5vVbR6p-A-MwnyTZ7QVkAAAAAOLoyQBtJAAAbSQAAAIAAAC8pM8FnPgWAAAAAABVU0QAVVNEAAEAAQBNXQAAAAABAgMCAAAAALoAURe69gAAAAA.\\/bcr=AAAAAAAA8D8=\\/pp=${AUCTION_PRICE}\\/cnd=%21JBC72Aj8-LwKELzJvi4YnPFbIAQoADEAAAAAAAAkQDoJQU1TMzo2MTM1QNAwSQAAAAAAAPA_UQAAAAAAAAAAWQAAAAAAAAAAYQAAAAAAAAAAaQAAAAAAAAAAcQAAAAAAAAAAeACJAQAAAAAAAAAA\\/cca=OTMyNSNBTVMzOjYxMzU=\\/bn=97062\\/clickenc=http%3A%2F%2Fprebid.org%2Fdev-docs%2Fshow-native-ads.html"},"eventtrackers":[{"event":1,"method":1,"url":"https:\\/\\/ams3-ib.adnxs.com\\/it?an_audit=0&referrer=https%3A%2F%2Ftest.nexx360.io%2Fadapter%2Fnative%2Ftest.html&e=wqT_3QKJCqAJBQAAAwDWAAUBCNnbl6AGEKalhbfZzPn6WxjH1PqbsJzMzyQqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlC8yb4uWJzxW2AAaM26dXim9gWAAQGKAQNVU0SSAQEG9F4BmAEBoAEBqAEBsAEAuAECwAEDyAEC0AEJ2AEA4AEA8AEAigIpdWYoJ2EnLCAyNTI5ODg1LCAwKTt1ZigncicsIDk3NDk0MjA0LCAwKTuSAvEDIS0xRDNJQWo4LUx3S0VMekp2aTRZQUNDYzhWc3dBRGdBUUFSSTdVaFE0dEduQmxnQVlQX19fXzhQYUFCd0FYZ0JnQUVCaUFFQmtBRUJtQUVCb0FFQnFBRURzQUVBdVFIenJXcWtBQUFrUU1FQjg2MXFwQUFBSkVESkFYSUtWbWViSmZJXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFKZ0NBS0FDQUxVQ0FBQUFBTDBDQUFBQUFNQUNBY2dDQWRBQ0FkZ0NBZUFDQU9nQ0FQZ0NBSUFEQVpnREFib0RDVUZOVXpNNk5qRXpOZUFEMERDSUJBQ1FCQUNZQkFIQkJBQUFBQUFBQUFBQXlRUUFBCQscQUFOZ0VBUEURlSxBQUFDSUJmY3ZxUVUBDQRBQQGoCDdFRgEKCQEMREJCUQkKAQEAeRUoAUwyKAAAWi4oALg0QVhBaEQzd0JhTEQzd0w0QmQyMG1nR0NCZ05WVTBTSUJnQ1FCZ0dZQmdDaEJnQQFONEFBQ1JBcUFZQnNnWWtDHXQARR0MAEcdDABJHQw8dUFZS5oClQEhSkJDNzJBajL1ASRuUEZiSUFRb0FEFfhUa1FEb0pRVTFUTXpvMk1UTTFRTkF3UxFRDFBBX1URDAxBQUFXHQwAWR0MAGEdDABjHQwQZUFDSkEdEMjYAvfpA-ACrZhI6gIwaHR0cHM6Ly90ZXN0Lm5leHgzNjAuaW8vYWRhcHRlci9uYXRpdmUJH_CaaHRtbIADAIgDAZADAJgDFKADAaoDAMAD4KgByAMA2AMA4AMA6AMA-AMDgAQAkgQJL29wZW5ydGIymAQAqAQAsgQMCAAQABgAIAAwADgAuAQAwASA2rgiyAQA0gQOOTMyNSNBTVMzOjYxMzXaBAIIAeAEAPAEvMm-LvoEEgkAAABAPG1IQBEAAACgV8oCQIgFAZgFAKAF______8BBbABqgUkM2MwMjkwYzEtNmU3NS00ZWY3LTllMzctMTdmNWViZjNiZmEzwAUAyQWJFxTwP9IFCQkJDHgAANgFAeAFAfAFmfQh-gUECAAQAJAGAZgGALgGAMEGCSUo8D_QBvUv2gYWChAJERkBAdpg4AYM8gYCCACABwGIBwCgB0HIB6b2BdIHDRVkASYI2gcGAV1oGADgBwDqBwIIAPAHAIoIAhAAlQgAAIA_mAgB&s=ccf63f2e483a37091d2475d895e7cf7c911d1a78&pp=${AUCTION_PRICE}"}]}'
                 }
               ],
               'seat': 'appnexus'
             }
           ],
-          'cookies': []
+          'ext': {
+            'cookies': [],
+          }
         }
       };
       const output = spec.interpretResponse(response);
-      expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].adUrl);
-      expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].type);
-      expect(output[0].currency).to.be.eql(response.body.cur);
-      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
-    });
-    it('video responses', function() {
-      const response = {
-        body: {
-          'id': '33894759-0ea2-41f1-84b3-75132eefedb6',
-          'cur': 'USD',
-          'seatbid': [
-            {
-              'bid': [
-                {
-                  'id': '294478680080716675',
-                  'impid': '2c835a6039e65f',
-                  'price': 5,
-                  'type': 'instream',
-                  'adomain': [
-                    ''
-                  ],
-                  'crid': '97517771',
-                  'ssp': 'appnexus',
-                  'h': 1,
-                  'w': 1,
-                  'vastXml': '<VAST version="3.0">\n    <Ad>\n      <Wrapper>\n        <AdSystem>prebid.org wrapper</AdSystem>\n        <VASTAdTagURI><![CDATA[https://fast.nexx360.io/cache?uuid=9987328a-b15a-4549-974b-203cd9bbe5d3]]></VASTAdTagURI>\n        <Impression><![CDATA[https://fast.nexx360.io/track-imp?ssp=appnexus&type=booster&price=5.002000800320127&cur=EUR&user_agent=Mozilla%2F5.0+%28iPhone%3B+CPU+iPhone+OS+13_2_3+like+Mac+OS+X%29+AppleWebKit%2F605.1.15+%28KHTML%2C+like+Gecko%29+Version%2F13.0.3+Mobile%2F15E148+Safari%2F604.1&consent=1&abtest_id=0&tag_id=yqsc1tfj&mediatype=video]]></Impression>\n        <Creatives></Creatives>\n      </Wrapper>\n    </Ad>\n  </VAST>'
-                }
-              ],
-              'seat': 'appnexus'
-            }
-          ],
-          'cookies': []
-        }
-      };
-      const output = spec.interpretResponse(response);
-      expect(output[0].vastXml).to.be.eql(response.body.seatbid[0].bid[0].vastXml);
-      expect(output[0].mediaType).to.be.eql('video');
-      expect(output[0].currency).to.be.eql(response.body.cur);
-      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+      expect(output[0].native.ortb.ver).to.be.eql('1.2');
+      expect(output[0].native.ortb.assets[0].id).to.be.eql(1);
+      expect(output[0].mediaType).to.be.eql('native');
     });
   });
 
@@ -501,7 +612,9 @@ describe('Nexx360 bid adapter tests', function () {
       expect(syncs).to.have.lengthOf(0);
     });
     it('Verifies user sync with cookies in bid response', function () {
-      response.body.cookies = [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}];
+      response.body.ext = {
+        cookies: [{'type': 'image', 'url': 'http://www.cookie.sync.org/'}]
+      };
       var syncs = spec.getUserSyncs({}, [response], DEFAULT_OPTIONS.gdprConsent);
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0]).to.have.property('type').and.to.equal('image');
