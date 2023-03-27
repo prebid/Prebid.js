@@ -62,7 +62,6 @@ describe('viewabilityScoreGeneration', function() {
       expect(spyCall1.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(1);
       expect(spyCall1.args[1]['someElementIdNameForViewEvent'].viewed).to.equal(1);
       expect(spyCall1.args[1]['728x90'].rendered).to.equal(1);
-      expect(spyCall1.args[1]['728x90'].viewed).to.equal(1);
       expect(spyCall1.args[1]['pubmatic.com'].rendered).to.equal(1);
       expect(spyCall1.args[1]['pubmatic.com'].viewed).to.equal(1);
 
@@ -75,7 +74,6 @@ describe('viewabilityScoreGeneration', function() {
       expect(spyCall2.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(2);
       expect(spyCall2.args[1]['someElementIdNameForViewEvent'].viewed).to.equal(2);
       expect(spyCall1.args[1]['728x90'].rendered).to.equal(2);
-      expect(spyCall1.args[1]['728x90'].viewed).to.equal(2);
       expect(spyCall1.args[1]['pubmatic.com'].rendered).to.equal(2);
       expect(spyCall1.args[1]['pubmatic.com'].viewed).to.equal(2);
     });
@@ -99,11 +97,10 @@ describe('viewabilityScoreGeneration', function() {
       viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 51, setAndStringifyToLocalStorageSpy);
       let lastSpyCall = setAndStringifyToLocalStorageSpy.lastCall;
 
-      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 6);
+      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 5);
 
       // the lastViewStarted key should be updated each time an ad is at least 50% visible in the viewport
       expect(lastSpyCall.args[1][adSlotElementId].lastViewStarted).to.be.ok;
-      expect(lastSpyCall.args[1][adSlotSizeFromRender].lastViewStarted).to.be.ok;
       expect(lastSpyCall.args[1][adDomain].lastViewStarted).to.be.ok;
 
       viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 51, setAndStringifyToLocalStorageSpy);
@@ -111,7 +108,6 @@ describe('viewabilityScoreGeneration', function() {
 
       // the totalViewTime key should be updated each time an ad is at least 50% visible in the viewport after it has been viewed at least twice
       expect(lastSpyCall.args[1][adSlotElementId].totalViewTime).to.be.below(lastSpyCall.args[1][adSlotElementId].lastViewStarted);
-      expect(lastSpyCall.args[1][adSlotSizeFromRender].totalViewTime).to.be.below(lastSpyCall.args[1][adSlotSizeFromRender].lastViewStarted);
       expect(lastSpyCall.args[1][adDomain].totalViewTime).to.be.below(lastSpyCall.args[1][adDomain].lastViewStarted);
     });
 

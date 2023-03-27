@@ -13,7 +13,11 @@ const GPT_IMPRESSION_VIEWABLE_EVENT = 'impressionViewable';
 const GPT_SLOT_VISIBILITY_CHANGED_EVENT = 'slotVisibilityChanged';
 const TOTAL_VIEW_TIME_LIMIT = 1000000000;
 const domain = window.location.hostname;
+const NATIVE_DEFAULT_SIZE = '0x0';
+const ADSLOTSIZE_INDEX = 2;
+const ADUNIT_INDEX = 1;
 
+// stat hat call to collect data when there is issue while writing to localstorgae.
 const fireStatHatLogger = (statKeyName) => {
 	var stathatUserEmail = 'jason.quaccia@pubmatic.com';
 	var url = 'https://api.stathat.com/ez';
@@ -44,18 +48,18 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         const bidViewabilityFields = {};
         const adSizes = {};
         const adUnit = vsgObj[bid.adUnitCode];
-		let copyVsgObj = {};
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
             if (vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
+			// special handling for outstream video, we can check for playerSize in bid.mediaType to fetch value from localStorage
         	else if(bid.mediaTypes?.video?.playerSize) {
 					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
 					if(vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
 			}
           });
-		// Special handling for native creative
-        } else if(bid.mediaTypes?.native && vsgObj['0x0']) adSizes['1x1'] = removeKeys(deepClone(vsgObj['0x0']));
+		// Special handling for native creative, we are storing values for native againest '1x1' mapping. 
+        } else if(bid.mediaTypes?.native && vsgObj[NATIVE_DEFAULT_SIZE]) adSizes['1x1'] = removeKeys(deepClone(vsgObj[NATIVE_DEFAULT_SIZE]));
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) bidViewabilityFields.adUnit = removeKeys(deepClone(adUnit));
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
@@ -97,34 +101,37 @@ export const updateTotalViewTime = (diff, currentTime, lastViewStarted, key, lsO
   }
 };
 
+// function to return default values for rendered, viewed, slot and createdAt
+// slot is required for getting correct values from local storage
+const defaultInit = (keyArr, index) => {
+	return {
+		rendered: 1,
+        viewed: 0,
+		slot: index == ADSLOTSIZE_INDEX ? [keyArr[ADUNIT_INDEX]] : undefined,
+		createdAt: Date.now()
+	}
+}
+
+// this function initialises value and increase rendered count based on slot, size and domain level.
 const incrementRenderCount = keyArr => {
   keyArr.forEach((key, index) => {
 	if(!key) return;
     if (vsgObj) {
       if (vsgObj[key]) {
         vsgObj[key].rendered = vsgObj[key].rendered + 1;
-		if(!vsgObj[key].slot?.includes(keyArr[1]) && index == 2) vsgObj[key].slot.push(keyArr[1]);
+		if(!vsgObj[key].slot?.includes(keyArr[ADUNIT_INDEX]) && index == 2) vsgObj[key].slot.push(keyArr[ADUNIT_INDEX]);
       } else {
-        vsgObj[key] = {
-          rendered: 1,
-          viewed: 0,
-		  slot: index == 2 ? [keyArr[1]] : undefined,
-		  createdAt: Date.now()
-        }
+		vsgObj[key] = defaultInit(keyArr, index);
       }
     } else {
       vsgObj = {
-        [key]: {
-          rendered: 1,
-          viewed: 0,
-		  slot: index == 2 ? keyArr[1] : undefined,
-		  createdAt: Date.now()
-        }
+		[key]: defaultInit(keyArr, index)
       }
     }
   });
 };
 
+// this function increase viewed count based on slot, size and domain level.
 const incrementViewCount = keyArr => {
   keyArr.forEach(key => {
     if (vsgObj[key]) {
@@ -133,6 +140,7 @@ const incrementViewCount = keyArr => {
   });
 };
 
+// this function adds totalViewtime based on slot, size and domain level.
 const incrementTotalViewTime = (keyArr, inViewPercentage, setToLocalStorageCb) => {
   keyArr.forEach(key => {
     if (vsgObj[key]) {
