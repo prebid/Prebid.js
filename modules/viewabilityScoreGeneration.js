@@ -48,36 +48,16 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
         if (bid.sizes.length) {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
-            if (vsgObj[key] && vsgObj[key].slot.includes(bid.adUnitCode)) {
-			  copyVsgObj = deepClone(vsgObj[key]);
-              removeKeys(copyVsgObj);
-              adSizes[key] = copyVsgObj;
-            } else {
-				// Special handling for outstream video case
-				if(bid.mediaTypes?.video?.playerSize) {
+            if (vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
+        	else if(bid.mediaTypes?.video?.playerSize) {
 					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
-					if(vsgObj[key] && vsgObj[key].slot.includes(bid.adUnitCode)) {
-						copyVsgObj = deepClone(vsgObj[key]);
-						removeKeys(copyVsgObj);
-						adSizes[key] = copyVsgObj;
-					}
-				}
+					if(vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
 			}
           });
-        } else {
-			// Special handling for native creative
-			if(bid.mediaTypes?.native && vsgObj['0x0']) {
-				copyVsgObj = deepClone(vsgObj['0x0']);
-				removeKeys(copyVsgObj);
-				adSizes['1x1'] = copyVsgObj;
-			}
-		}
+		// Special handling for native creative
+        } else if(bid.mediaTypes?.native && vsgObj['0x0']) adSizes['1x1'] = removeKeys(deepClone(vsgObj['0x0']));
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
-        if (adUnit) {
-		  copyVsgObj = deepClone(adUnit);
-          removeKeys(copyVsgObj);
-          bidViewabilityFields.adUnit = copyVsgObj;
-        }
+        if (adUnit) bidViewabilityFields.adUnit = removeKeys(deepClone(adUnit));
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
       });
     });
@@ -95,6 +75,7 @@ const removeKeys = obj => {
   }
   // Deleting slot field as it is only required to pass correct size values in corresponding impressions.
   delete obj.slot;
+  return obj;
 };
 
 // once the TOTAL_VIEW_TIME_LIMIT for totalViewTime is reached, divide totalViewTime, rendered & viewed all by the same factor of "x" in order to preserve the same averages but not let counts in localstorage get too high
