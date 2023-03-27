@@ -232,6 +232,15 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
+    it('should suppress acat if undefined', function () {
+      const noAcatBid = deepClone(DEFAULT_BID);
+      noAcatBid.meta.primaryCatId = ''
+      let expected = getDefaultExpected(noAcatBid);
+      delete expected.hb_acat;
+      let response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
+      assert.deepEqual(response, expected);
+    });
+
     it('No bidder level configuration defined - default for video', function () {
       config.setConfig({
         cache: {
@@ -758,6 +767,20 @@ describe('auctionmanager.js', function () {
       const anyArgs = [...Array(7).keys()].map(() => sinon.match.any);
       sinon.assert.calledWith(stubMakeBidRequests, ...anyArgs.slice(0, 5).concat([sinon.match.same(ortb2Fragments)]));
       sinon.assert.calledWith(stubCallAdapters, ...anyArgs.slice(0, 7).concat([sinon.match.same(ortb2Fragments)]));
+    });
+
+    it('correctly adds nonbids when they are emitted', () => {
+      const ortb2Fragments = {
+        global: {},
+        bidder: {}
+      }
+      const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
+      expect(auction.getNonBids()[0]).to.equal(undefined);
+      events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['test']
+      });
+      expect(auction.getNonBids()[0]).to.equal('test');
     });
   });
 

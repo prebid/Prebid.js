@@ -35,6 +35,16 @@ export const novatiqIdSubmodule = {
         snowflake: novatiqId
       }
     };
+
+    if (novatiqId.syncResponse !== undefined) {
+      responseObj.novatiq.ext = {};
+      responseObj.novatiq.ext.syncResponse = novatiqId.syncResponse;
+    }
+
+    if (typeof config != 'undefined' && typeof config.params !== 'undefined' && typeof config.params.removeAdditionalInfo !== 'undefined' && config.params.removeAdditionalInfo === true) {
+      delete responseObj.novatiq.snowflake.syncResponse;
+    }
+
     return responseObj;
   },
 
@@ -120,7 +130,7 @@ export const novatiqIdSubmodule = {
   getNovatiqId(urlParams) {
     // standard uuid format
     let uuidFormat = [1e7] + -1e3 + -4e3 + -8e3 + -1e11;
-    if (urlParams.useStandardUuid == false) {
+    if (urlParams.useStandardUuid === false) {
       // novatiq standard uuid(like) format
       uuidFormat = uuidFormat + 1e3;
     }
