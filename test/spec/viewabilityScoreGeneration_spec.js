@@ -2,6 +2,11 @@ import * as viewabilityScoreGeneration from 'modules/viewabilityScoreGeneration.
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
+import { makeSlot } from './integration/faker/googletag.js';
+
+const testSlots = [
+    makeSlot({ code: 'slotCode1', divId: 'div1' })
+];
 
 const bidderRequests = [
   {
@@ -295,7 +300,7 @@ describe('viewabilityScoreGeneration', function() {
           'some-custom-key-name': 0.2
         }
       };
-
+	  window.googletag.pubads().setSlots(testSlots);
       viewabilityScoreGeneration.addViewabilityTargeting(config, targetingSet, vsgLocalStorageObj, updateGptWithViewabilityTargetingSpy);
       sinon.assert.calledOnce(updateGptWithViewabilityTargetingSpy); // make sure this func is called only once so that relative gpt ad slots are update only once
       const spyCall = updateGptWithViewabilityTargetingSpy.getCall(0);
