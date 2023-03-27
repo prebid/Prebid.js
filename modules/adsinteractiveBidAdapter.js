@@ -1,7 +1,7 @@
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { BANNER } from "../src/mediaTypes.js";
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const ADSINTERACTIVE_CODE = "adsinteractive";
+const ADSINTERACTIVE_CODE = 'adsinteractive';
 
 export const spec = {
   code: ADSINTERACTIVE_CODE,
@@ -9,13 +9,13 @@ export const spec = {
 
   isBidRequestValid: (bid) => {
     return (
-      !!bid.params.adUnit && !!bid.bidId && bid.bidder === "adsinteractive"
+      !!bid.params.adUnit && !!bid.bidId && bid.bidder === 'adsinteractive'
     );
   },
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map((bid) => {
-      let url = "https://pb.adsinteractive.com/prebid";
+      let url = 'https://pb.adsinteractive.com/prebid';
       const data = {
         id: bid.bidId,
         site: {
@@ -53,7 +53,7 @@ export const spec = {
         withCredentials: true,
       };
       return {
-        method: "POST",
+        method: 'POST',
         url,
         data,
         options,
@@ -63,13 +63,9 @@ export const spec = {
 
   interpretResponse: (serverResponse, bidRequest) => {
     let answer = [];
-    if (serverResponse.body.seatbid != null) {
+    if (!serverResponse || !serverResponse.body || serverResponse.body.seatbid != null) {
       serverResponse.body.seatbid.forEach((seatbid) => {
-        if (
-          !serverResponse ||
-          !serverResponse.body ||
-          serverResponse.body.seatbid != null
-        ) {
+        if (seatbid.bid.length) {
           answer = [
             ...answer,
             ...seatbid.bid
@@ -82,15 +78,9 @@ export const spec = {
                   netRevenue: true,
                   ttl: 1000,
                   ad: adsinteractiveBid.adm,
-                  meta: {
-                    advertiserDomains:
-                      adsinteractiveBid && adsinteractiveBid.adomain
-                        ? adsinteractiveBid.adomain
-                        : [],
-                  },
-                  width: adsinteractiveBid.w,
+                  meta: { advertiserDomains: adsinteractiveBid && adsinteractiveBid.adomain ? adsinteractiveBid.adomain : [] },                  width: adsinteractiveBid.w,
                   height: adsinteractiveBid.h,
-                  currency: serverResponse.body.cur || "USD",
+                  currency: serverResponse.body.cur || 'USD',
                   creativeId: adsinteractiveBid.crid || 0,
                 };
                 return bid;
