@@ -8,14 +8,78 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {includes} from '../src/polyfill.js';
-import {formatQS, logError} from '../src/utils.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
 
 const MODULE_NAME = 'connectId';
+const STORAGE_KEY = '__ycid';
+const STORAGE_EXPIRY_DAYS = 14;
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
+export const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
+
+/**
+ * @function
+ * @param {Object} [value]
+ */
+function storeObject(obj) {
+  const expires = Date.now() + (60 * 60 * 24 * STORAGE_EXPIRY_DAYS);
+  if (storage.cookiesAreEnabled()) {
+    setEtldPlusOneCookie(STORAGE_KEY, JSON.stringify(obj), expires, getSiteHostname());
+  } else if (storage.localStorageIsEnabled()) {
+    obj.__expires = expires;
+    storage.setDataInLocalStorage(STORAGE_KEY, obj);
+  }
+}
+
+/**
+ * Attempts to store a cookie on eTLD + 1
+ */
+function setEtldPlusOneCookie(key, value, expiration, hostname) {
+  const subDomains = hostname.split('.');
+  for (let i = 0; i < subDomains.length; ++i) {
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+    try {
+      storage.setCookie(key, value, expiration, null, '.' + domain);
+      const storedCookie = storage.getCookie(key);
+      if (storedCookie && storedCookie === value) {
+        break;
+      }
+    } catch (error) {}
+  }
+}
+
+function getIdFromCookie() {
+  if (storage.cookiesAreEnabled()) {
+    try {
+      return JSON.parse(storage.getCookie(STORAGE_KEY));
+    } catch {}
+  }
+  return null;
+}
+
+function getIdFromLocalStorage() {
+  if (storage.localStorageIsEnabled()) {
+    const storedIdData = storage.getDataFromLocalStorage(STORAGE_KEY);
+    if (storedIdData) {
+      if (isPlainObject(storedIdData) && storedIdData.__expires &&
+          storedIdData.__expires <= Date.now()) {
+        storage.removeDataFromLocalStorage(STORAGE_KEY);
+      }
+      return storedIdData;
+    }
+  }
+  return null;
+}
+
+function getSiteHostname() {
+  const pageInfo = parseUrl(getRefererInfo().page);
+  return pageInfo.hostname;
+}
 
 /** @type {Submodule} */
 export const connectIdSubmodule = {
@@ -37,8 +101,8 @@ export const connectIdSubmodule = {
     if (connectIdSubmodule.userHasOptedOut()) {
       return undefined;
     }
-    return (typeof value === 'object' && value.connectid)
-      ? {connectId: value.connectid} : undefined;
+    return (isPlainObject(value) && (value.connectId || value.connectid))
+      ? {connectId: value.connectId || value.connectid} : undefined;
   },
   /**
    * Gets the Yahoo ConnectID
@@ -59,7 +123,13 @@ export const connectIdSubmodule = {
       return;
     }
 
+    const storedId = getIdFromCookie() || getIdFromLocalStorage();
+    if (storedId) {
+      return {id: storedId};
+    }
+
     const data = {
+      v: '1',
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       gdpr: connectIdSubmodule.isEUConsentRequired(consentData) ? '1' : '0',
       gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
@@ -69,6 +139,11 @@ export const connectIdSubmodule = {
     if (connectIdSubmodule.isUnderGPPJurisdiction(consentData)) {
       data.gpp = consentData.gppConsent.gppString;
       data.gpp_sid = encodeURIComponent(consentData.gppConsent.applicableSections.join(','));
+    }
+
+    let topmostLocation = getRefererInfo().topmostLocation;
+    if (typeof topmostLocation === 'string') {
+      data.url = topmostLocation.split('?')[0];
     }
 
     INPUT_PARAM_KEYS.forEach(key => {
@@ -84,6 +159,7 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
+              storeObject(responseObj);
             } catch (error) {
               logError(error);
             }
@@ -117,7 +193,7 @@ export const connectIdSubmodule = {
    * @returns {Boolean}
    */
   isUnderGPPJurisdiction(consentData) {
-    return !!(consentData && consentData.gppConsent && consentData.gppConsent.gppString);
+    return !!(consentData?.gppConsent?.gppString && typeof consentData.gppConsent.gppString === 'string');
   },
 
   /**
