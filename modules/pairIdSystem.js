@@ -7,19 +7,20 @@
 
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js'
-import { isStr, logError } from '../src/utils.js';
+import { logError } from '../src/utils.js';
 
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
+const LIVERAMP_PAIR_ID_KEY = 'lr_pairId';
 
 export const storage = getStorageManager()
 
-function pairIdFromLocalStorage() {
-  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(PAIR_ID_KEY) : null;
+function pairIdFromLocalStorage(key) {
+  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(key) : null;
 }
 
-function pairIdFromCookie() {
-  return storage.cookiesAreEnabled ? storage.getCookie(PAIR_ID_KEY) : null;
+function pairIdFromCookie(key) {
+  return storage.cookiesAreEnabled ? storage.getCookie(key) : null;
 }
 
 /** @type {Submodule} */
@@ -36,22 +37,40 @@ export const pairIdSubmodule = {
    * @returns {{pairId:string} | undefined }
    */
   decode(value) {
-    return value && isStr(value) ? {'pairId': value} : undefined
+    return value && Array.isArray(value) ? {'pairId': value} : undefined
   },
   /**
   * performs action to obtain id and return a value in the callback's response argument
   * @function
   * @returns {id: string | undefined }
   */
-  getId() {
-    const pairIdString = pairIdFromLocalStorage() || pairIdFromCookie()
-
-    if (pairIdString && typeof pairIdString == 'string') {
-      return { id: pairIdString };
+  getId(config) {
+    const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
+    let ids = []
+    if (pairIdsString && typeof pairIdsString == 'string') {
+      try {
+        ids = ids.concat(JSON.parse(atob(pairIdsString)))
+      } catch (error) {
+        logError(error)
+      }
     }
 
-    logError('PairId not found.')
-    return undefined;
+    const configParams = (config && config.params) || {};
+    if (configParams && configParams.liveramp) {
+      const liverampValue = pairIdFromLocalStorage(LIVERAMP_PAIR_ID_KEY) || pairIdFromCookie(LIVERAMP_PAIR_ID_KEY)
+      try {
+        const obj = JSON.parse(atob(liverampValue));
+        ids = ids.concat(obj.envelope);
+      } catch (error) {
+        logError(error)
+      }
+    }
+
+    if (ids.length == 0) {
+      logError('PairId not found.')
+      return undefined;
+    }
+    return {'id': ids};
   }
 };
 
