@@ -84,13 +84,33 @@ describe('Yahoo ConnectID Submodule', () => {
 
     describe('Low level storage functionality', () => {
       const storageTestCases = [
-        { cookie: '{"connectId":"foo"}', localStorage: {connectId: 'bar'}, expected: {connectId: 'foo'} },
-        { cookie: '{"connectId":"foo"}', localStorage: undefined, expected: {connectId: 'foo'} },
-        { cookie: undefined, localStorage: {connectId: 'bar'}, expected: {connectId: 'bar'} },
-        { cookie: undefined, localStorage: undefined, expected: undefined },
+        {
+          detail: 'cookie data over local storage data',
+          cookie: '{"connectId":"foo"}',
+          localStorage: {connectId: 'bar'},
+          expected: {connectId: 'foo'}
+        },
+        {
+          detail: 'cookie data if only cookie data exists',
+          cookie: '{"connectId":"foo"}',
+          localStorage: undefined,
+          expected: {connectId: 'foo'}
+        },
+        {
+          detail: 'local storage data if only it local storage data exists',
+          cookie: undefined,
+          localStorage: {connectId: 'bar'},
+          expected: {connectId: 'bar'}
+        },
+        {
+          detail: 'undefined when both cookie and local storage are empty',
+          cookie: undefined,
+          localStorage: undefined,
+          expected: undefined
+        }
       ]
 
-      storageTestCases.forEach(testCase => it('getId() should return connectID data when it exists in storage', function () {
+      storageTestCases.forEach(testCase => it(`getId() should return ${testCase.detail}`, function () {
         getCookieStub.withArgs(STORAGE_KEY).returns(testCase.cookie);
         getLocalStorageStub.withArgs(STORAGE_KEY).returns(testCase.localStorage);
 
@@ -150,7 +170,7 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('deletes local storage data when expiry has passed', () => {
-          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() - 10};
+          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() - 10000};
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           let result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -158,11 +178,12 @@ describe('Yahoo ConnectID Submodule', () => {
           }, consentData);
           expect(removeLocalStorageDataStub.calledOnce).to.be.true;
           expect(removeLocalStorageDataStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(result.id).to.deep.equal(localStorageData);
+          expect(result.id).to.equal(undefined);
+          expect(result.callback).to.be.a('function');
         });
 
         it('will not delete local storage data when expiry has not passed', () => {
-          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() + 1000};
+          const localStorageData = {connectId: 'foobarbaz', __expires: Date.now() + 10000};
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           let result = invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -402,7 +423,7 @@ describe('Yahoo ConnectID Submodule', () => {
           dateNowStub.returns(0);
           getAjaxFnStub.restore();
           const upsResponse = {connectid: 'foobarbaz'};
-          const expiryDelta = 60 * 60 * 24 * 14;
+          const expiryDelta = new Date(60 * 60 * 24 * 14 * 1000);
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
@@ -416,7 +437,7 @@ describe('Yahoo ConnectID Submodule', () => {
           expect(setCookieStub.calledOnce).to.be.true;
           expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
           expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(upsResponse));
-          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta);
+          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setCookieStub.firstCall.args[3]).to.equal(null);
           const cookieDomain = parseUrl(TEST_SERVER_URL).hostname;
           expect(setCookieStub.firstCall.args[4]).to.equal(`.${cookieDomain}`);
@@ -431,7 +452,7 @@ describe('Yahoo ConnectID Submodule', () => {
           const upsResponse = {connectid: 'barfoo'};
           const expectedStoredData = {
             connectid: 'barfoo',
-            __expires: 60 * 60 * 24 * 14
+            __expires: 60 * 60 * 24 * 14 * 1000
           };
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,

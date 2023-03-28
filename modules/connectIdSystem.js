@@ -24,12 +24,12 @@ export const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_N
 
 /**
  * @function
- * @param {Object} [value]
+ * @param {Object} obj
  */
 function storeObject(obj) {
-  const expires = Date.now() + (60 * 60 * 24 * STORAGE_EXPIRY_DAYS);
+  const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
   if (storage.cookiesAreEnabled()) {
-    setEtldPlusOneCookie(STORAGE_KEY, JSON.stringify(obj), expires, getSiteHostname());
+    setEtldPlusOneCookie(STORAGE_KEY, JSON.stringify(obj), new Date(expires), getSiteHostname());
   } else if (storage.localStorageIsEnabled()) {
     obj.__expires = expires;
     storage.setDataInLocalStorage(STORAGE_KEY, obj);
@@ -38,13 +38,19 @@ function storeObject(obj) {
 
 /**
  * Attempts to store a cookie on eTLD + 1
+ *
+ * @function
+ * @param {String} key
+ * @param {String} value
+ * @param {Date} expirationDate
+ * @param {String} hostname
  */
-function setEtldPlusOneCookie(key, value, expiration, hostname) {
+function setEtldPlusOneCookie(key, value, expirationDate, hostname) {
   const subDomains = hostname.split('.');
   for (let i = 0; i < subDomains.length; ++i) {
     const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
     try {
-      storage.setCookie(key, value, expiration, null, '.' + domain);
+      storage.setCookie(key, value, expirationDate.toUTCString(), null, '.' + domain);
       const storedCookie = storage.getCookie(key);
       if (storedCookie && storedCookie === value) {
         break;
@@ -69,6 +75,7 @@ function getIdFromLocalStorage() {
       if (isPlainObject(storedIdData) && storedIdData.__expires &&
           storedIdData.__expires <= Date.now()) {
         storage.removeDataFromLocalStorage(STORAGE_KEY);
+        return null;
       }
       return storedIdData;
     }
