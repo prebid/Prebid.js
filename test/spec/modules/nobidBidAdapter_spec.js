@@ -14,6 +14,38 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('buildRequestsWithFloor', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    let bidRequests = [
+      {
+        'bidder': 'nobid',
+        'params': {
+          'siteId': SITE_ID
+        },
+        'getFloor': () => { return { currency: 'USD', floor: 1.00 } },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {page: REFERER}
+    }
+
+    it('should FLoor = 1', function () {
+      spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      /* eslint-disable no-console */
+      console.log('request.data:', request.data);
+      const payload = JSON.parse(request.data);
+      expect(payload.a[0].floor).to.equal(1);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'nobid',

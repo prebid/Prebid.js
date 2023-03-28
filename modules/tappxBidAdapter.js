@@ -404,7 +404,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   device.w = screen.width;
   device.dnt = getDNT() ? 1 : 0;
   device.language = getLanguage();
-  device.make = navigator.vendor ? navigator.vendor : '';
+  device.make = getVendor();
 
   let geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
@@ -490,7 +490,12 @@ function getLanguage() {
 
 function getOs() {
   let ua = navigator.userAgent;
-  if (ua == null) { return 'unknown'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'ios'; } else if (ua.match(/Android/)) { return 'android'; } else if (ua.match(/Window/)) { return 'windows'; } else { return 'unknown'; }
+  if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+}
+
+function getVendor() {
+  let ua = navigator.userAgent;
+  if (ua.indexOf('Chrome') != -1) { return 'Google'; } else if (ua.indexOf('Firefox') != -1) { return 'Mozilla'; } else if (ua.indexOf('Safari') != -1) { return 'Apple'; } else if (ua.indexOf('Edge') != -1) { return 'Microsoft'; } else if (ua.indexOf('MSIE') != -1 || ua.indexOf('Trident') != -1) { return 'Microsoft'; } else { return ''; }
 }
 
 export function _getHostInfo(validBidRequests) {

@@ -1,9 +1,9 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
-import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import {config} from 'src/config.js';
+import {deepClone} from 'src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import { deepSetValue } from '../../../src/utils';
+import {deepSetValue} from '../../../src/utils';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
@@ -13,7 +13,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import {decorateAdUnitsWithNativeParams, toLegacyResponse} from '../../../src/native.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {createEidsArray} from '../../../modules/userId/eids.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
@@ -670,7 +670,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should not set site when app is defined in CONFIG', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('app').returns({ content: 'XYZ' });
-      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.not.exist;
       expect(payload.app).does.exist;
@@ -709,7 +709,7 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('app').returns(undefined);
       getConfigStub.withArgs('site').returns({});
-      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.exist;
       expect(payload.app).does.not.exist;
