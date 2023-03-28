@@ -431,5 +431,3 @@ function buildLogMessage(message) {
   return 'Bydata Prebid Analytics ' + versionCode + ':' + message;
 }
 export default ascAdapter;
-
-
