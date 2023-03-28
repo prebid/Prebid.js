@@ -97,7 +97,7 @@ let openWrapSetup = {
     }
 
     let isGptSlotPresent = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(gptSlot.getAdUnitPath()));
-    if(!!isGptSlotPresent){
+    if (isGptSlotPresent) {
       if (isFn(PWT.requestBids) == true) {
         PWT.requestBids(
           PWT.generateConfForGPT([gptSlot]),
@@ -109,13 +109,12 @@ let openWrapSetup = {
       } else {
         sendAdserverRequest();
       }
-    }else{
+    } else {
       logMessage(MODULE_NAME, 'Slot not found for', gptSlotName);
     }
 
     // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
     setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100)
-
   },
 
   gptSlotToPbjsAdUnitMapFunction: function(gptSlotName, gptSlot, pbjsAU) {
@@ -269,6 +268,10 @@ function gptSlotRenderEndedHandler(event) {
 
   // logMessage(MODULE_NAME, 'gptSlotRenderEndedHandler: gptSlotName', gptSlotName);
 
+  // remove KVs related to auto-refresh functionality
+  gptSlot.clearTargeting(DEFAULT_CONFIG.kvKeyForRefresh);
+  gptSlot.clearTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount);
+
   // delete exclusion entry and revaluate
   delete excludedGptSlotNames[gptSlotName];
 
@@ -368,15 +371,18 @@ function setDefaultSlotConfig() {
   ]);
 }
 
-function markRefreshedAdUnit(adUnit){
+function markRefreshedAdUnit(adUnit) {
   let slot = getGptSlotForAdUnitCode(adUnit.adUnitId || adUnit.code);
-  if(!!slot){
-    let isRefreshed = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh) && slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh)[0];
-    let refreshCount = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount) && slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount)[0];
-    adUnit.isRefreshed = !!isRefreshed ? true : false;
-    adUnit.refreshCount = !!refreshCount ? refreshCount : 0;
-  }
-  else{
+  if (slot) {
+    let slotRefreshKey = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh);
+    let slotRefreshCountKey = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount);
+    let isRefreshed = slotRefreshKey && slotRefreshKey[0];
+    let refreshCount = slotRefreshCountKey && slotRefreshCountKey[0];
+    adUnit.pubmaticAutoRefresh = {
+      isRefreshed: !!isRefreshed,
+      refreshCount: refreshCount || 0
+    }
+  } else {
     logWarn(MODULE_NAME, 'No slot found for : ', (adUnit.adUnitId || adUnit.code));
   }
 }
