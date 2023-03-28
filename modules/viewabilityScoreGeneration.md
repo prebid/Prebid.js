@@ -43,6 +43,7 @@ All viewability data is stored and persisted in browser via `localStorage`.
 | totalViewTime   | number | Measures the total dwell time of an ad slot in seconds (totalViewTime = totalViewTime + (currentTime - lastViewed)                                                                                                                               |
 | createdAt       | number | Numeric timestamp indicating the time when the ad slot entry was initially created in `localStorage`                                                                                                                                             |
 | updatedAt       | number | Numeric timestamp indicating the time when the ad slot entry was last updated                                                                                                                                                                    |
+| slot			  | array of strings | Keeps track of creative sizes rendered in respective slots
 
 #### Example
 
@@ -70,7 +71,8 @@ All viewability data is stored and persisted in browser via `localStorage`.
 		rendered: 131
 		totalViewTime: 15468
 		updatedAt: 1666296333802
-		viewed: 80
+		viewed: 80,
+		slot: ["ad-unit-element-id-1", "ad-unit-element-id-n"]
 	},
   "728x90": {
 		createdAt: 1666155076240
@@ -78,7 +80,8 @@ All viewability data is stored and persisted in browser via `localStorage`.
 		rendered: 131
 		totalViewTime: 15468
 		updatedAt: 1666296333802
-		viewed: 80
+		viewed: 80,
+		slot: ["ad-unit-element-id-1"]
 	},
   "pubmatic.com": {
 		createdAt: 1666155076240
@@ -98,6 +101,16 @@ Viewability data gets passed to the translator endpoint in the following format:
 ```
 {
   ...
+    "ext": {
+		"bidViewability": {
+ 			adDomain: { // pass domain level viewability data specific to the domain the ad unit would/could be served on
+              "rendered": ..,
+              "viewed": ..,
+              "createdAt": ..,
+              "updatedAt": ..
+            }
+		}
+	}
     "imp": [
       {
         "ext": {
@@ -121,12 +134,6 @@ Viewability data gets passed to the translator endpoint in the following format:
                 "createdAt": ..,
                 "updatedAt": ..
               }
-            },
-            adDomain: { // pass domain level viewability data specific to the domain the ad unit would/could be served on
-              "rendered": ..,
-              "viewed": ..,
-              "createdAt": ..,
-              "updatedAt": ..
             }
           }
         }
