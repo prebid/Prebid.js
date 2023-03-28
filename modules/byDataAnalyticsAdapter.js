@@ -391,7 +391,7 @@ ascAdapter.dataProcess = function (t) {
 }
 
 ascAdapter.sendPayload = function (data) {
-  if(data.auctionData && data.auctionData.length > 0){
+  if (data.auctionData && data.auctionData.length > 0) {
     var obj = { 'records': [{ 'value': data }] };
     let strJSON = JSON.stringify(obj);
     _logInfo('data payload', strJSON);
@@ -430,9 +430,6 @@ function _logError(message) {
 function buildLogMessage(message) {
   return 'Bydata Prebid Analytics ' + versionCode + ':' + message;
 }
-
 export default ascAdapter;
-
-
 
 
