@@ -264,7 +264,8 @@ function getEids(userId) {
   const idProperties = [
     'uid',
     'eid',
-    'lipbid'
+    'lipbid',
+    'envelope'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
@@ -391,12 +392,12 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (gppConsent) {
       data.gppConsent = {
         gppString: bidderRequest.gppConsent.gppString,
-        applicableSections: bidderRequest.gppConsent.applicableSections
+        gpp_sid: bidderRequest.gppConsent.applicableSections
       }
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
       data.gppConsent = {
         gppString: bidderRequest.ortb2.regs.gpp,
-        applicableSections: bidderRequest.ortb2.regs.gpp_sid
+        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
       };
     }
     if (coppa) {

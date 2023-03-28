@@ -60,6 +60,7 @@ export const spec = {
       if (bidRequest.params.isInternal) {
         payload.is_internal = bidRequest.params.isInternal;
       }
+      payload.userEids = bidRequest.userIdAsEids || [];
       return {
         method: 'POST',
         url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
@@ -127,7 +128,7 @@ export const spec = {
         protocol: 'https',
         hostname,
         pathname: '/v1/bidsuccess',
-        search: { t: bid.params[0].apiKey },
+        search: { t: bid.params[0].apiKey, provider: bid.meta?.networkName, cpm: bid.cpm, currency: bid.currency },
       })
     );
     logInfo('Missena - Bid won', bid);
