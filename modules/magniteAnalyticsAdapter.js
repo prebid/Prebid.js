@@ -836,8 +836,10 @@ magniteAdapter.track = ({ eventType, args }) => {
           bidder: 'mgnipbs',
           source: 'server',
           status: 'no-bid',
-          bidId: args.requestId
+          bidId: args.requestId,
+          clientLatencyMillis: args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auction.auctionStart
         };
+        return;
       }
 
       // set bid status
