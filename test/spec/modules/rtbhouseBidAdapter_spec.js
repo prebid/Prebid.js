@@ -84,6 +84,11 @@ describe('RTBHouseAdapter', () => {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': 'example-transaction-id',
+          'ortb2Imp': {
+            'ext': {
+              'tid': 'ortb2Imp-transaction-id-1'
+            }
+          },
           'schain': {
             'ver': '1.0',
             'complete': 1,
@@ -257,6 +262,14 @@ describe('RTBHouseAdapter', () => {
       const data = JSON.parse(request.data);
       expect(data.source).to.have.deep.property('tid');
     });
+
+    it('should include impression level transaction id when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
+    });
+    
 
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
