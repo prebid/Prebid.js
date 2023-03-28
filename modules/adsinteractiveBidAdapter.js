@@ -63,7 +63,7 @@ export const spec = {
 
   interpretResponse: (serverResponse, bidRequest) => {
     let answer = [];
-    if (!serverResponse || !serverResponse.body || serverResponse.body.seatbid != null) {
+    if (serverResponse && serverResponse.body && serverResponse.body.seatbid) {
       serverResponse.body.seatbid.forEach((seatbid) => {
         if (seatbid.bid.length) {
           answer = [
