@@ -9,13 +9,13 @@ import { getStorageManager } from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
 
-const versionCode = '4.4.1'
+const versionCode = '4.4.2'
 const secretKey = 'bydata@123456'
 const { EVENTS: { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } } = CONSTANTS
 const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
 const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
-const adunitsMap = {}
+var adunitsMap = {}
 const storage = getStorageManager();
 let initOptions = {}
 var payload = {}
@@ -31,12 +31,32 @@ function isKeyInUrl(name) {
   return param
 }
 
+function makeAdUnitNameMap() {
+  if (window.googletag && window.googletag.pubads) {
+    // eslint-disable-next-line no-undef
+    const p = googletag.pubads();
+    if (p && p.getSlots) {
+      const slots = p.getSlots();
+      if (slots && slots.length) {
+        const map = {};
+        slots.forEach((slot) => {
+          const id = slot.getSlotElementId();
+          const name = slot.getAdUnitPath() || '';
+          map[id] = name;
+        });
+        return map;
+      }
+    }
+  }
+}
+
 /* return ad unit full path wrt custom ad unit code */
 function getAdunitName(code) {
   var name = code;
   for (const [key, value] of Object.entries(adunitsMap)) {
     if (key === code) { name = value; }
   }
+  _logInfo('getAdunit code - Name - ', (code + ' - ' + name));
   return name;
 }
 
@@ -67,6 +87,7 @@ function onNoBidData(t) {
 function onBidWon(t) {
   const { isCorrectOption } = initOptions
   if (isCorrectOption && (isDataSend || isBydata)) {
+    adunitsMap = makeAdUnitNameMap()
     ascAdapter.getBidWonData(t)
     ascAdapter.sendPayload(winPayload)
   }
@@ -77,6 +98,7 @@ function onAuctionEnd(t) {
   const { isCorrectOption } = initOptions;
   setTimeout(() => {
     if (isCorrectOption && (isDataSend || isBydata)) {
+      adunitsMap = makeAdUnitNameMap()
       ascAdapter.dataProcess(t);
       ascAdapter.sendPayload(payload);
     }
@@ -369,9 +391,12 @@ ascAdapter.dataProcess = function (t) {
 }
 
 ascAdapter.sendPayload = function (data) {
-  var obj = { 'records': [{ 'value': data }] };
-  let strJSON = JSON.stringify(obj);
-  sendDataOnKf(strJSON);
+  if(data.auctionData && data.auctionData.length > 0){
+    var obj = { 'records': [{ 'value': data }] };
+    let strJSON = JSON.stringify(obj);
+    _logInfo('data payload', strJSON);
+    sendDataOnKf(strJSON);
+  }
 }
 
 function sendDataOnKf(dataObj) {
@@ -407,3 +432,7 @@ function buildLogMessage(message) {
 }
 
 export default ascAdapter;
+
+
+
+
