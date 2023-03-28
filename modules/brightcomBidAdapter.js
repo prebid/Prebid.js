@@ -9,6 +9,7 @@ const URL = 'https://brightcombid.marphezis.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+  gvlid: 883,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

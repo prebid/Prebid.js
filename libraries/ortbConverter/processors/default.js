@@ -1,10 +1,10 @@
-import {deepSetValue, getDefinedParams, getDNT, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
-import {config} from '../../../src/config.js';
+import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -15,18 +15,10 @@ export const DEFAULT_PROCESSORS = {
         mergeDeep(ortbRequest, bidderRequest.ortb2)
       }
     },
-    // override FPD app, site, and device with getConfig('app'), etc if defined
-    // TODO: these should be deprecated for v8
-    appFpd: fpdFromTopLevelConfig('app'),
-    siteFpd: fpdFromTopLevelConfig('site'),
-    deviceFpd: fpdFromTopLevelConfig('device'),
-    device: {
-      // sets device w / h / ua / language
-      fn: setDevice
-    },
-    site: {
-      // sets site.domain, page, and ref from refererInfo
-      fn: setSite
+    onlyOneClient: {
+      // make sure only one of 'dooh', 'app', 'site' is set in request
+      priority: -99,
+      fn: clientSectionChecker('ORTB request')
     },
     props: {
       // sets request properties id, tmax, test, source.tid
@@ -41,15 +33,7 @@ export const DEFAULT_PROCESSORS = {
         }
         deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
-    },
-    coppa: {
-      fn(ortbRequest) {
-        const coppa = config.getConfig('coppa');
-        if (typeof coppa === 'boolean') {
-          deepSetValue(ortbRequest, 'regs.coppa', coppa ? 1 : 0);
-        }
-      }
-    },
+    }
   },
   [IMP]: {
     fpd: {
@@ -135,33 +119,5 @@ if (FEATURES.NATIVE) {
   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
     // populates bidResponse.native if bidResponse.mediaType === NATIVE
     fn: fillNativeResponse
-  }
-}
-
-function fpdFromTopLevelConfig(prop) {
-  return {
-    priority: 90, // after FPD from 'ortb2', before the rest
-    fn(ortbRequest) {
-      const data = config.getConfig(prop);
-      if (typeof data === 'object') {
-        ortbRequest[prop] = data;
-      }
-    }
-  }
-}
-
-export function setDevice(ortbRequest) {
-  ortbRequest.device = Object.assign({
-    w: window.innerWidth,
-    h: window.innerHeight,
-    dnt: getDNT() ? 1 : 0,
-    ua: window.navigator.userAgent,
-    language: window.navigator.language.split('-').shift()
-  }, ortbRequest.device);
-}
-
-export function setSite(ortbRequest, bidderRequest) {
-  if (bidderRequest.refererInfo) {
-    ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
   }
 }
