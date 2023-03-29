@@ -1200,11 +1200,11 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('should accept the bid and the bidderSettings scope should be set to the adapterCode initially, when both the allowAlternateBidderCodes flag is true and the adjustForAlternateBids flag is true', function () {
+    it('should accept the bid and the bidderSettings scope should be set to the adapterCode initially, when both the allowAlternateBidderCodes flag is true and the adjustAlternateBids flag is true', function () {
       const cpm = 1;
 
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);
-      bidderSettingStub.withArgs(CODE, 'adjustForAlternateBids').returns(true);
+      bidderSettingStub.withArgs(CODE, 'adjustAlternateBids').returns(true);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1221,8 +1221,8 @@ describe('validate bid response: ', function () {
       expect(bidderSettingStub.args[bidderSettingStub.args.length - 1][0]).to.equal(scope);
     });
 
-    it('should not accept the bid, when the allowAlternateBidderCodes flag is false and adjustForAlternateBids flag is set to true', function () {
-      bidderSettingStub.withArgs(CODE, 'adjustForAlternateBids').returns(true);
+    it('should not accept the bid, when the allowAlternateBidderCodes flag is false and adjustAlternateBids flag is set to true', function () {
+      bidderSettingStub.withArgs(CODE, 'adjustAlternateBids').returns(true);
 
       const bidder = newBidder(spec);
       spec.interpretResponse.returns(bids1);
@@ -1233,7 +1233,7 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
-    it('should accept the bid and the bidderSettings scope should be set to the bidderCode initially, when the allowAlternateBidderCodes flag is true and the adjustForAlternateBids flag is false', function () {
+    it('should accept the bid and the bidderSettings scope should be set to the bidderCode initially, when the allowAlternateBidderCodes flag is true and the adjustAlternateBids flag is false', function () {
       const cpm = 1;
 
       bidderSettingStub.withArgs(CODE, 'allowAlternateBidderCodes').returns(true);

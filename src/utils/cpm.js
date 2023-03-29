@@ -5,8 +5,8 @@ import {logError} from '../utils.js';
 export function adjustCpm(cpm, bidResponse, bidRequest, {index = auctionManager.index, bs = bidderSettings} = {}) {
   bidRequest = bidRequest || index.getBidRequest(bidResponse);
 
-  const adjustForAlternateBids = bs.get(bidResponse?.adapterCode, 'adjustForAlternateBids');
-  const scope = adjustForAlternateBids ? bidResponse?.adapterCode : bidResponse?.bidderCode || bidRequest?.bidder;
+  const adjustAlternateBids = bs.get(bidResponse?.adapterCode, 'adjustAlternateBids');
+  const scope = adjustAlternateBids ? bidResponse?.adapterCode : bidResponse?.bidderCode || bidRequest?.bidder;
   const bidCpmAdjustment = bs.get(scope, 'bidCpmAdjustment');
 
   if (bidCpmAdjustment && typeof bidCpmAdjustment === 'function') {

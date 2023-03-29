@@ -286,10 +286,9 @@ export function newBidder(spec) {
   function isInvalidAlternateBidder(responseBidder, requestBidder) {
     let allowAlternateBidderCodes = bidderSettings.get(requestBidder, 'allowAlternateBidderCodes') || false;
     let alternateBiddersList = bidderSettings.get(requestBidder, 'allowedAlternateBidderCodes');
-    let adjustForAlternateBids = bidderSettings.get(requestBidder, 'adjustForAlternateBids') || false;
     if (!!responseBidder && !!requestBidder && requestBidder !== responseBidder) {
       alternateBiddersList = isArray(alternateBiddersList) ? alternateBiddersList.map(val => val.trim().toLowerCase()).filter(val => !!val).filter(uniques) : alternateBiddersList;
-      if ((!adjustForAlternateBids && !allowAlternateBidderCodes) || !allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
+      if (!allowAlternateBidderCodes || (isArray(alternateBiddersList) && (alternateBiddersList[0] !== '*' && !alternateBiddersList.includes(responseBidder)))) {
         return true;
       }
     }
