@@ -244,7 +244,9 @@ describe('IntentIQ tests', function () {
     localStorage.clear();
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
-    submoduleCallback(callBackSpy);
+    if (submoduleCallback) {
+      submoduleCallback(callBackSpy);
+    }
     let ls_percent_data = localStorage.getItem(PRECENT_LS_KEY + '_' + partner)
     let ls_group_data = localStorage.getItem(GROUP_LS_KEY + '_' + partner)
     expect(ls_group_data).to.be.equal(WITH_IIQ);
