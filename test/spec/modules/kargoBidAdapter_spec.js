@@ -77,9 +77,6 @@ describe('kargo adapter tests', function () {
           bidId: '1',
           adUnitCode: '101',
           transactionId: '10101',
-          userId: {
-            tdid: 'fake-tdid'
-          },
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             banner: {
@@ -392,6 +389,7 @@ describe('kargo adapter tests', function () {
       var base = {
         pbv: '$prebid.version$',
         aid: '1234098',
+        requestCount: 0,
         sid: getSessionId(),
         url: 'https://www.prebid.org',
         timeout: 200,
@@ -474,7 +472,7 @@ describe('kargo adapter tests', function () {
         user: {
           kargoID: '5f108831-302d-11e7-bf6b-4595acd3bf6c',
           clientID: '2410d8f2-c111-4811-88a5-7b5e190e475f',
-          tdID: 'fake-tdid',
+          // tdID: 'ed1562d5-e52b-406f-8e65-e5ab3ed5583c',
           crbIDs: {
             2: '82fa2555-5969-4614-b4ce-4dcf1080e9f9',
             16: 'VoxIk8AoJz0AAEdCeyAAAAC2&502',
@@ -485,19 +483,6 @@ describe('kargo adapter tests', function () {
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
           optOut: false,
-          usp: '1---'
-        },
-        pageURL: 'https://www.prebid.org',
-        prebidVersion: '$prebid.version$'
-      };
-
-      if (expectedGDPR) {
-        base.user['gdpr'] = expectedGDPR;
-      }
-
-      if (excludeUserIds === true) {
-        base.user = {
-          crbIDs: {},
           usp: '1---',
           sharedIDEids: [
             {
@@ -513,7 +498,18 @@ describe('kargo adapter tests', function () {
               ]
             }
           ]
-        };
+        }
+      };
+
+      if (excludeUserIds) {
+        base.user.crbIDs = {};
+        delete base.user.clientID;
+        delete base.user.kargoID;
+        delete base.user.optOut;
+      }
+
+      if (expectedGDPR) {
+        base.user.gdpr = expectedGDPR;
       }
 
       if (expectedPage) {
@@ -521,10 +517,10 @@ describe('kargo adapter tests', function () {
       }
 
       if (currency) {
-        base.cur = currency
+        base.cur = currency;
       }
 
-      const reqCount = requestCount++
+      const reqCount = requestCount++;
       if (reqCount > 0) {
         base.requestCount = reqCount
       }
@@ -543,7 +539,8 @@ describe('kargo adapter tests', function () {
 
     function testBuildRequests(excludeTdid, expected, gdpr) {
       var clonedBids = JSON.parse(JSON.stringify(bids));
-      if (excludeTdid) {
+
+      if (excludeTdid && clonedBids[0].userId) {
         delete clonedBids[0].userId.tdid;
       }
       var payload = {
