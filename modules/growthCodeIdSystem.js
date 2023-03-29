@@ -8,14 +8,14 @@
 import {logError, logInfo, tryAppendQueryString} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 
 const GCID_EXPIRY = 7;
 const MODULE_NAME = 'growthCodeId';
 const GC_DATA_KEY = '_gc_data';
 const ENDPOINT_URL = 'https://p2.gcprivacy.com/v1/pb?'
 
-export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 /**
  * Read GrowthCode data from cookie or local storage

@@ -17,10 +17,10 @@ import {
   submodule
 } from '../src/hook.js';
 import {
-  getStorageManager
+  getStorageManager, MODULE_TYPE_UID
 } from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+const MODULE_NAME = 'dacId';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 export const FUUID_COOKIE_NAME = '_a1_f';
 export const AONEID_COOKIE_NAME = '_a1_d';
@@ -116,7 +116,7 @@ export const dacIdSystemSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'dacId',
+  name: MODULE_NAME,
 
   /**
    * decode the stored id value for passing to bid requests

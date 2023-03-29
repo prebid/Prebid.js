@@ -7,7 +7,7 @@
 
 import * as utils from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 import { loadExternalScript } from '../src/adloader.js';
 
@@ -18,7 +18,7 @@ const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
+const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 let consentInfo = {
   gdpr: {

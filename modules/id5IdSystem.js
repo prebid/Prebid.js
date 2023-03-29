@@ -18,7 +18,7 @@ import {
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'id5Id';
@@ -34,7 +34,7 @@ const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 // cookie in the array is the most preferred to use
 const LEGACY_COOKIE_NAMES = ['pbjs-id5id', 'id5id.1st', 'id5id'];
 
-export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {

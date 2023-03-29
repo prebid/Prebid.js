@@ -3,9 +3,9 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
-
-export const storage = getStorageManager();
+import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+const MODULE_CODE = 'atsAnalytics';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 /**
  * Analytics adapter for - https://liveramp.com
@@ -398,7 +398,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics',
+  code: MODULE_CODE,
   gvlid: 97
 });
 

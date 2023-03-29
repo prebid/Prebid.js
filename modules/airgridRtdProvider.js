@@ -13,7 +13,7 @@ import {
   deepAccess,
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';
@@ -21,7 +21,7 @@ const AG_TCF_ID = 782;
 export const AG_AUDIENCE_IDS_KEY = 'edkt_matched_audience_ids';
 
 export const storage = getStorageManager({
-  gvlid: AG_TCF_ID,
+  moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME,
 });
 
@@ -144,6 +144,7 @@ export const airgridSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: passAudiencesToBidders,
+  gvlid: AG_TCF_ID
 };
 
 submodule(MODULE_NAME, airgridSubmodule);

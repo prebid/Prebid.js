@@ -6,13 +6,13 @@
  */
 import { logInfo } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 
 const MODULE_NAME = 'trustpid';
 const LOG_PREFIX = 'Trustpid module'
 let mnoDomain = '';
 
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * Handle an event for an iframe.

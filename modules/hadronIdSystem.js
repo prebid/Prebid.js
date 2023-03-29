@@ -6,7 +6,7 @@
  */
 
 import {ajax} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isFn, isStr, isPlainObject, logError, logInfo} from '../src/utils.js';
 
@@ -15,7 +15,7 @@ const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
 const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
-export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'hadron'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'hadron'});
 
 /**
  * Param or default.

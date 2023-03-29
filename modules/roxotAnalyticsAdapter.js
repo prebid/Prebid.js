@@ -4,9 +4,11 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
 
-const storage = getStorageManager();
+const MODULE_CODE = 'roxot';
+
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 let ajax = ajaxBuilder(0);
 
@@ -504,7 +506,7 @@ function buildLogMessage(message) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: roxotAdapter,
-  code: 'roxot'
+  code: MODULE_CODE,
 });
 
 export default roxotAdapter;

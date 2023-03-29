@@ -55,7 +55,7 @@ const getSegmentsFromOrtb = function (ortb2) {
 // }
 
 const handleMeta = function () {
-  const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE })
+  const storage = getStorageManager({ bidderCode: BIDDER_CODE })
   let adnMeta = null
   if (storage.localStorageIsEnabled()) {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))

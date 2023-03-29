@@ -19,13 +19,14 @@ import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, l
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
-import {getStorageManager} from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+const MODULE_NAME = 'browsi';
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -336,7 +337,7 @@ export const browsiSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: 'browsi',
+  name: MODULE_NAME,
   /**
    * get data and send back to realTimeData module
    * @function

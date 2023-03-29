@@ -16,7 +16,7 @@ import {
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
 
 const KEY_ID = 'panoramaId';
@@ -31,7 +31,7 @@ const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
 const ID_HOST_COOKIELESS = 'c.ltmsphrcl.net';
 
-export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 let cookieDomain;
 
 /**

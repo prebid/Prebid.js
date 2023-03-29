@@ -119,7 +119,7 @@ import {
   ajax
 } from '../src/ajax.js';
 import {
-  getStorageManager
+  getStorageManager, MODULE_TYPE_RTD
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
 
@@ -153,7 +153,7 @@ const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 const GVLID = 284;
 
 export const storage = getStorageManager({
-  gvlid: GVLID,
+  moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME
 });
 
@@ -180,6 +180,7 @@ export const storage = getStorageManager({
 class WeboramaRtdProvider {
   #components;
   name = SUBMODULE_NAME;
+  gvlid = GVLID;
   /**
    * @param  {Components} components
    */
