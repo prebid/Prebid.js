@@ -27,7 +27,7 @@ import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {dmdIdSubmodule} from 'modules/dmdIdSystem.js';
-import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {liveIntentIdSubmodule, setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
@@ -147,6 +147,7 @@ describe('User ID', function () {
     hook.ready();
     uninstallGdprEnforcement();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
+    liveIntentIdSubmoduleDoNotFireEvent();
   });
 
   beforeEach(function () {
@@ -1298,7 +1299,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.amxId');
               expect(bid.userId.amxId).to.equal('test_amxid_id');
               expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'amxrtb.com',
+                source: 'amxdt.net',
                 uids: [{
                   id: 'test_amxid_id',
                   atype: 1,

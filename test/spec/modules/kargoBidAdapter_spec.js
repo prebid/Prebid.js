@@ -485,17 +485,36 @@ describe('kargo adapter tests', function () {
             '2_93': '5ee24138-5e03-4b9d-a953-38e833f2849f'
           },
           optOut: false,
-          usp: '1---',
-          sharedIDEids: [
-            {
-              source: 'adserver.org',
-              uids: [
-                {
-                  id: 'ed1562d5-e52b-406f-8e65-e5ab3ed5583c',
-                  atype: 1,
-                  ext: {
-                    rtiPartner: 'TDID'
-                  }
+          usp: '1---'
+        },
+        pageURL: 'https://www.prebid.org',
+        prebidVersion: '$prebid.version$',
+        prebidRawBidRequests: [
+          {
+            bidId: 1,
+            ortb2: {
+              device: {
+                sua: {
+                  platform: {
+                    brand: 'macOS',
+                    version: [ '12', '6', '0' ]
+                  },
+                  browsers: [
+                    {
+                      brand: 'Chromium',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Google Chrome',
+                      version: [ '106', '0', '5249', '119' ]
+                    },
+                    {
+                      brand: 'Not;A=Brand',
+                      version: [ '99', '0', '0', '0' ]
+                    }
+                  ],
+                  mobile: 0,
+                  model: ''
                 }
               ]
             }

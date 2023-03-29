@@ -84,7 +84,7 @@ describe('AolAdapter', function () {
     'admixer.net': '100',
     'adserver.org': '200',
     'adtelligent.com': '300',
-    'amxrtb.com': '500',
+    'amxdt.net': '500',
     'audigent.com': '600',
     'britepool.com': '700',
     'criteo.com': '800',
@@ -110,7 +110,7 @@ describe('AolAdapter', function () {
   const USER_ID_DATA = {
     admixerId: SUPPORTED_USER_ID_SOURCES['admixer.net'],
     adtelligentId: SUPPORTED_USER_ID_SOURCES['adtelligent.com'],
-    amxId: SUPPORTED_USER_ID_SOURCES['amxrtb.com'],
+    amxId: SUPPORTED_USER_ID_SOURCES['amxdt.net'],
     britepoolid: SUPPORTED_USER_ID_SOURCES['britepool.com'],
     criteoId: SUPPORTED_USER_ID_SOURCES['criteo.com'],
     connectid: SUPPORTED_USER_ID_SOURCES['verizonmedia.com'],

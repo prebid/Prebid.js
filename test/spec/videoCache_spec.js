@@ -72,6 +72,29 @@ describe('The video cache', function () {
       config.resetConfig();
     });
 
+    describe('cache.timeout', () => {
+      let getAjax, cb;
+      beforeEach(() => {
+        getAjax = sinon.stub().callsFake(() => sinon.stub());
+        cb = sinon.stub();
+      });
+
+      it('should be respected', () => {
+        config.setConfig({
+          cache: {
+            timeout: 1
+          }
+        });
+        store([{ vastUrl: 'my-mock-url.com' }], cb, getAjax);
+        sinon.assert.calledWith(getAjax, 1);
+      });
+
+      it('should use default when not specified', () => {
+        store([], cb, getAjax);
+        sinon.assert.calledWith(getAjax, undefined);
+      })
+    });
+
     it('should execute the callback with a successful result when store() is called', function () {
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const callback = fakeServerCall(

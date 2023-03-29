@@ -70,7 +70,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       prebidmanagerAnalytics.flush();
 
       expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
+      expect(server.requests[0].url).to.equal('https://endpt.prebidmanager.com/endpoint');
       expect(server.requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));

@@ -14,6 +14,7 @@ import {
   transformBidderParamKeywords
 } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -132,7 +133,7 @@ export const spec = {
         method: 'POST',
         options: {withCredentials: true},
         data: {
-          v: $$PREBID_GLOBAL$$.version,
+          v: getGlobal().version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
