@@ -8,8 +8,9 @@
 import {isStr, isNumber, logError, logInfo, isEmpty, timestamp} from '../src/utils.js'
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'teadsId';
 const GVL_ID = 132;

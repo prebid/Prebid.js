@@ -3,8 +3,9 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { logError, parseUrl, _each } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'adkernelAdn';
 const GVLID = 14;

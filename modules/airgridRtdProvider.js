@@ -13,7 +13,8 @@ import {
   deepAccess,
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';

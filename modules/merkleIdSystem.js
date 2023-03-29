@@ -8,7 +8,8 @@
 import { logInfo, logError, logWarn } from '../src/utils.js';
 import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'merkleId';
 const ID_URL = 'https://prebid.sv.rkdms.com/identity/';

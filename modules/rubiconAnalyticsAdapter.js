@@ -5,7 +5,8 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'rubicon'});

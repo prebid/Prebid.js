@@ -7,9 +7,10 @@
  */
 import {getGlobal} from '../src/prebidGlobal.js';
 import {submodule} from '../src/hook.js';
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'permutive'
 

@@ -4,7 +4,8 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'roxot';
 

@@ -2,8 +2,9 @@ import { parseUrl, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import CONSTANTS from '../src/constants.json';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'finteza';
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});

@@ -6,10 +6,11 @@
  * @requires module:modules/realTimeData
  */
 import {ajax} from '../src/ajax.js';
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';

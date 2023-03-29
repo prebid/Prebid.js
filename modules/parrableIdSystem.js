@@ -13,7 +13,8 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {uspDataHandler} from '../src/adapterManager.js';
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const PARRABLE_URL = 'https://h.parrable.com/prebid';
 const PARRABLE_COOKIE_NAME = '_parrable_id';

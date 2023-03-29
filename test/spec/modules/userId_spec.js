@@ -53,6 +53,8 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -164,6 +166,20 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
   });
+
+  describe('GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('are registered when ID submodule is registered', () => {
+      attachIdSystem({name: 'gvlidMock', gvlid: 123});
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    })
+  })
 
   describe('Decorate Ad Units', function () {
     beforeEach(function () {

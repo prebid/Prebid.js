@@ -1,6 +1,5 @@
 import {
   getCoreStorageManager, getStorageManager,
-  MODULE_TYPE_BIDDER,
   newStorageManager,
   resetData,
   storageCallbacks,
@@ -9,6 +8,7 @@ import {
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
+import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 
 describe('storage manager', function() {
   before(() => {

@@ -3,7 +3,8 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 const MODULE_CODE = 'atsAnalytics';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 

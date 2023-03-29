@@ -118,3 +118,19 @@ export class GppConsentHandler extends ConsentHandler {
     }
   }
 }
+
+export function gvlidRegistry() {
+  const registry = {};
+  return {
+    register(moduleType, moduleName, gvlid) {
+      if (gvlid) {
+        (registry[moduleType] = registry[moduleType] || {})[moduleName] = gvlid;
+      }
+    },
+    get(moduleType, moduleName) {
+      return registry[moduleType]?.[moduleName];
+    }
+  }
+}
+
+export const GDPR_GVLIDS = gvlidRegistry();

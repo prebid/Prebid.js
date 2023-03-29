@@ -21,6 +21,8 @@ import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
+import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -2791,5 +2793,24 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(del2, [bidderRequests[1]]);
       })
     })
+  });
+
+  describe('registers GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('for bid adapters', () => {
+      adapterManager.registerBidAdapter({getSpec: () => ({gvlid: 123}), callBids: sinon.stub()}, 'mock');
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_BIDDER, 'mock', 123);
+    });
+
+    it('for analytics adapters', () => {
+      adapterManager.registerAnalyticsAdapter({adapter: {enableAnalytics: sinon.stub()}, code: 'mock', gvlid: 123});
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
+    });
   });
 });

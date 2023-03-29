@@ -7,9 +7,10 @@ import { logMessage, parseUrl, buildUrl, triggerPixel, generateUUID, isArray } f
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'pubCommonId'});
 

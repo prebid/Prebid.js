@@ -4,7 +4,7 @@ import { config } from 'src/config.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
-import {MODULE_TYPE_UID} from 'src/storageManager.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';

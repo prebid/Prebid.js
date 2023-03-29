@@ -1,4 +1,4 @@
-import {ConsentHandler} from '../../../../src/consentHandler.js';
+import {ConsentHandler, gvlidRegistry} from '../../../../src/consentHandler.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -56,4 +56,30 @@ describe('Consent data handler', () => {
       })
     })
   });
+})
+
+describe('gvlidRegistry', () => {
+  let registry;
+  beforeEach(() => {
+    registry = gvlidRegistry();
+  });
+
+  it('returns undef when id cannoot be found', () => {
+    expect(registry.get('type', 'name')).to.not.exist;
+  });
+
+  it('can retrieve registered GVL IDs', () => {
+    registry.register('type', 'name', 123);
+    expect(registry.get('type', 'name')).to.eql(123);
+  });
+
+  it('partitions IDs by module type', () => {
+    registry.register('type', 'name', 123);
+    expect(registry.get('otherType', 'name')).to.not.exist;
+  });
+
+  it('does not register null ids', () => {
+    registry.register('type', 'name', null);
+    expect(registry.get('type', 'name')).to.eql(undefined);
+  })
 })

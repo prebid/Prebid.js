@@ -8,8 +8,9 @@
 import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'pubCommonId'});
 const COOKIE = 'cookie';

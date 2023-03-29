@@ -187,7 +187,7 @@ export function registerBidder(spec) {
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
     getSpec: function() {
-      return Object.freeze(spec);
+      return Object.freeze(Object.assign({}, spec));
     },
     registerSyncs,
     callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {

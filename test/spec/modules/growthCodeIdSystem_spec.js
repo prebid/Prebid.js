@@ -3,7 +3,8 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import {expect} from 'chai';
-import {getStorageManager, MODULE_TYPE_UID} from '../../../src/storageManager.js';
+import {getStorageManager} from '../../../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 const GCID_EXPIRY = 45;
 const MODULE_NAME = 'growthCodeId';

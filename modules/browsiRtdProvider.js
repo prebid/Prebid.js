@@ -19,11 +19,12 @@ import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, l
 import {submodule} from '../src/hook.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {loadExternalScript} from '../src/adloader.js';
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});

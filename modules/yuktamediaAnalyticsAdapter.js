@@ -3,9 +3,10 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import {getStorageManager, MODULE_TYPE_ANALYTICS} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_CODE = 'yuktamedia';
 const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});

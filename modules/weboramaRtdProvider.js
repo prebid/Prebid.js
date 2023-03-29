@@ -119,9 +119,10 @@ import {
   ajax
 } from '../src/ajax.js';
 import {
-  getStorageManager, MODULE_TYPE_RTD
+  getStorageManager
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

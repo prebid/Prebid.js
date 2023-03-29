@@ -157,6 +157,8 @@ import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -1019,6 +1021,7 @@ export function requestDataDeletion(next, ...args) {
 export function attachIdSystem(submodule) {
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
+    GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
     updateSubmodules();
     // TODO: a test case wants this to work even if called after init (the setConfig({userId}))
     // so we trigger a refresh. But is that even possible outside of tests?

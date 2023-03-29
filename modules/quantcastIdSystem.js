@@ -6,9 +6,10 @@
  */
 
 import {submodule} from '../src/hook.js'
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const QUANTCAST_FPA = '__qca';
 const DEFAULT_COOKIE_EXP_DAYS = 392; // (13 months - 2 days)

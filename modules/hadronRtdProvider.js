@@ -8,10 +8,11 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
 const MODULE_NAME = 'realTimeData';

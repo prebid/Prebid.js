@@ -9,7 +9,8 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import {getStorageManager, MODULE_TYPE_UID} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'liveIntentId';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});

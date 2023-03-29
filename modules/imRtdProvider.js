@@ -7,7 +7,7 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js'
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {
   deepSetValue,
   deepAccess,
@@ -18,6 +18,7 @@ import {
   isFn
 } from '../src/utils.js'
 import {submodule} from '../src/hook.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 export const imUidLocalName = '__im_uid';
 export const imVidCookieName = '_im_vid';

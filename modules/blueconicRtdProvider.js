@@ -6,9 +6,10 @@
  * @requires module:modules/realTimeData
  */
 
-import {getStorageManager, MODULE_TYPE_RTD} from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'blueconic';
