@@ -94,6 +94,7 @@ import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {createBid} from './bidfactory.js';
 import {adjustCpm} from './utils/cpm.js';
+import {getGlobal} from './prebidGlobal.js';
 
 const { syncUsers } = userSync;
 
@@ -110,6 +111,8 @@ const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
+
+const pbjsInstance = getGlobal();
 
 /**
  * Clear global state for tests
@@ -216,7 +219,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             const bids = _bidsReceived
               .filter(bind.call(adUnitsFilter, this, adUnitCodes))
               .reduce(groupByPlacement, {});
-            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut, _auctionId]);
+            _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;
           }
         } catch (e) {
