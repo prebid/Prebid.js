@@ -269,7 +269,6 @@ describe('RTBHouseAdapter', () => {
       const data = JSON.parse(request.data);
       expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
     });
-    
 
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
