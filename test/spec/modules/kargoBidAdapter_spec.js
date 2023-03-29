@@ -286,17 +286,17 @@ describe('kargo adapter tests', function () {
     }
 
     function generateRawCRB(rawCRB, rawCRBLocalStorage) {
-      if(rawCRB == null && rawCRBLocalStorage == null) {
+      if (rawCRB == null && rawCRBLocalStorage == null) {
         return null
       }
 
       let result = {}
 
-      if(rawCRB != null) {
+      if (rawCRB != null) {
         result.rawCRB = rawCRB
       }
 
-      if(rawCRBLocalStorage != null) {
+      if (rawCRBLocalStorage != null) {
         result.rawCRBLocalStorage = rawCRBLocalStorage
       }
 
@@ -488,38 +488,7 @@ describe('kargo adapter tests', function () {
           usp: '1---'
         },
         pageURL: 'https://www.prebid.org',
-        prebidVersion: '$prebid.version$',
-        prebidRawBidRequests: [
-          {
-            bidId: 1,
-            ortb2: {
-              device: {
-                sua: {
-                  platform: {
-                    brand: 'macOS',
-                    version: [ '12', '6', '0' ]
-                  },
-                  browsers: [
-                    {
-                      brand: 'Chromium',
-                      version: [ '106', '0', '5249', '119' ]
-                    },
-                    {
-                      brand: 'Google Chrome',
-                      version: [ '106', '0', '5249', '119' ]
-                    },
-                    {
-                      brand: 'Not;A=Brand',
-                      version: [ '99', '0', '0', '0' ]
-                    }
-                  ],
-                  mobile: 0,
-                  model: ''
-                }
-              ]
-            }
-          ],
-        },
+        prebidVersion: '$prebid.version$'
       };
 
       if (expectedGDPR) {
@@ -560,11 +529,11 @@ describe('kargo adapter tests', function () {
         base.requestCount = reqCount
       }
 
-      if(expectedCRB != null) {
-        if(expectedCRB.rawCRB != null) {
+      if (expectedCRB != null) {
+        if (expectedCRB.rawCRB != null) {
           base.rawCRB = expectedCRB.rawCRB
         }
-        if(expectedCRB.rawCRBLocalStorage != null) {
+        if (expectedCRB.rawCRBLocalStorage != null) {
           base.rawCRBLocalStorage = expectedCRB.rawCRBLocalStorage
         }
       }
