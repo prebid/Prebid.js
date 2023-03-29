@@ -468,7 +468,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
-  pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed || 0);
+  pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
 
   ajax(
     pixelURL,
