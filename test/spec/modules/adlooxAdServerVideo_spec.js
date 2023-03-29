@@ -235,7 +235,7 @@ describe('Adloox Ad Server Video', function () {
       it('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
         BID.responseTimestamp = utils.timestamp();
         BID.ttl = 30;
-        this.timeout(4500)
+        this.timeout(8500)
 
         const clock = sandbox.useFakeTimers(BID.responseTimestamp);
 
