@@ -50,7 +50,7 @@ describe('RealVu', function() {
 
   describe('Analytics Adapter.', function () {
     it('enableAnalytics', function () {
-      this.timeout(4500)
+      this.timeout(4000)
       const config = {
         options: {
           partnerId: '1Y',
