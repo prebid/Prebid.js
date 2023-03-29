@@ -1,51 +1,35 @@
 import {hook} from './hook.js';
-import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
+import {checkCookieSupport, hasDeviceAccess, logError, logInfo} from './utils.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
-import {VENDORLESS_GVLID} from './consentHandler.js';
 
-const moduleTypeWhiteList = ['core', 'prebid-module'];
-
-export let storageCallbacks = [];
+export const MODULE_TYPE_CORE = 'core';
+export const MODULE_TYPE_BIDDER = 'bidder';
+export const MODULE_TYPE_UID = 'userId';
+export const MODULE_TYPE_RTD = 'rtd';
+export const MODULE_TYPE_ANALYTICS = 'analytics';
 
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
 
-/**
- * Storage options
- * @typedef {Object} storageOptions
- * @property {Number=} gvlid - Vendor id
- * @property {string} moduleName? - Module name
- * @property {string=} bidderCode? - Bidder code
- * @property {string=} moduleType - Module type, value can be anyone of core or prebid-module
- */
+export let storageCallbacks = [];
 
-/**
- * Returns list of storage related functions with gvlid, module name and module type in its scope.
- * All three argument are optional here. Below shows the usage of of these
- * - GVL Id: Pass GVL id if you are a vendor
- * - Bidder code: All bid adapters need to pass bidderCode
- * - Module name: All other modules need to pass module name
- * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
- * @param {storageOptions} options
+/*
+ *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
+export function newStorageManager({moduleName, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
   function isBidderAllowed(storageType) {
-    if (bidderCode == null) {
+    if (moduleType !== MODULE_TYPE_BIDDER) {
       return true;
     }
-    const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
+    const storageAllowed = bidderSettings.get(moduleName, 'storageAllowed');
     if (!storageAllowed || storageAllowed === true) return !!storageAllowed;
     if (Array.isArray(storageAllowed)) return storageAllowed.some((e) => e === storageType);
     return storageAllowed === storageType;
   }
 
-  if (moduleTypeWhiteList.includes(moduleType)) {
-    gvlid = gvlid || VENDORLESS_GVLID;
-  }
-
   function isValid(cb, storageType) {
     if (!isBidderAllowed(storageType)) {
-      logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
+      logInfo(`bidderSettings denied access to device storage for bidder '${moduleName}'`);
       const result = {valid: false};
       return cb(result);
     } else {
@@ -53,7 +37,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(gvlid, bidderCode || moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(moduleType, moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -252,31 +236,38 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(moduleType, moduleName, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 
 /**
- * This function returns storage functions to access cookies and localstorage. This function will bypass the gdpr enforcement requirement. Prebid as a software needs to use storage in some scenarios and is not a vendor so GDPR enforcement rules does not apply on Prebid.
- * @param {string} moduleName Module name
+ * Get a storage manager for a particular module.
+ *
+ * Either bidderCode or a combination of moduleType + moduleName must be provided. The former is a shorthand
+ *  for `{moduleType: 'bidder', moduleName: bidderCode}`.
+ *
  */
-export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: 'core'});
+export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
+  function err() {
+    throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`)
+  }
+  if (bidderCode) {
+    if ((moduleType && moduleType !== MODULE_TYPE_BIDDER) || moduleName) err()
+    moduleType = MODULE_TYPE_BIDDER;
+    moduleName = bidderCode;
+  } else if (!moduleName || !moduleType) {
+    err()
+  }
+  return newStorageManager({moduleType, moduleName});
 }
 
 /**
- * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
- * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed.
- * Bid adapters should always provide `bidderCode`. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
- * @param {Number=} gvlid? Vendor id - required for proper GDPR integration
- * @param {string=} bidderCode? - required for bid adapters
- * @param {string=} moduleName? module name
+ * Get a storage manager for "core" (vendorless, or first-party) modules. Shorthand for `getStorageManager({moduleName, moduleType: 'core'})`.
+ *
+ * @param {string} moduleName Module name
  */
-export function getStorageManager({gvlid, moduleName, bidderCode} = {}) {
-  if (arguments.length > 1 || (arguments.length > 0 && !isPlainObject(arguments[0]))) {
-    throw new Error('Invalid invocation for getStorageManager')
-  }
-  return newStorageManager({gvlid, moduleName, bidderCode});
+export function getCoreStorageManager(moduleName) {
+  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_CORE});
 }
 
 export function resetData() {
