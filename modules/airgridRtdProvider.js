@@ -13,6 +13,7 @@ import {
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';
@@ -24,6 +25,10 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME,
 });
 
+function getModuleUrl(publisherId) {
+  return `https://cdn.edkt.io/${publisherId}/edgekit.min.js`;
+}
+
 /**
  * Attach script tag to DOM
  * @param {Object} rtdConfig
@@ -32,19 +37,13 @@ export const storage = getStorageManager({
 export function attachScriptTagToDOM(rtdConfig) {
   var edktInitializor = (window.edktInitializor = window.edktInitializor || {});
   if (!edktInitializor.invoked) {
-    edktInitializor.invoked = true;
-    edktInitializor.accountId = rtdConfig.params.accountId;
-    edktInitializor.publisherId = rtdConfig.params.publisherId;
-    edktInitializor.apiKey = rtdConfig.params.apiKey;
-    edktInitializor.load = function (e) {
-      var p = e || 'sdk';
-      var n = document.createElement('script');
-      n.type = 'module';
-      n.async = true;
-      n.src = 'https://cdn.edkt.io/' + p + '/edgekit.min.js';
-      document.getElementsByTagName('head')[0].appendChild(n);
-    };
-    edktInitializor.load(edktInitializor.accountId);
+    const moduleSrc = getModuleUrl(rtdConfig.params.publisherId);
+    loadExternalScript(moduleSrc, SUBMODULE_NAME, () => {
+      edktInitializor.invoked = true;
+      edktInitializor.accountId = rtdConfig.params.accountId;
+      edktInitializor.publisherId = rtdConfig.params.publisherId;
+      edktInitializor.apiKey = rtdConfig.params.apiKey;
+    });
   }
 }
 
