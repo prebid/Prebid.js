@@ -4,6 +4,7 @@
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
+    "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint"
   },
@@ -28,6 +29,7 @@
     "prebid"
   ],
   "globalVarName": "pbjs",
+  "defineGlobal": true,
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {

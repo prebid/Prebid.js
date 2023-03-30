@@ -6,6 +6,7 @@ import CONSTANTS from '../src/constants.json';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const storage = getStorageManager();
 const yuktamediaAnalyticsVersion = 'v3.1.0';
@@ -34,7 +35,7 @@ const _pageInfo = {
   referer: referer,
   refererDomain: parseUrl(referer).host,
   yuktamediaAnalyticsVersion: yuktamediaAnalyticsVersion,
-  prebidVersion: $$PREBID_GLOBAL$$.version
+  prebidVersion: getGlobal().version
 };
 
 function getParameterByName(param) {
