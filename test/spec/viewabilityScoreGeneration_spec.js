@@ -2,6 +2,11 @@ import * as viewabilityScoreGeneration from 'modules/viewabilityScoreGeneration.
 import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { config } from 'src/config.js';
+import { makeSlot } from './integration/faker/googletag.js';
+
+const testSlots = [
+    makeSlot({ code: 'slotCode1', divId: 'div1' })
+];
 
 const bidderRequests = [
   {
@@ -9,7 +14,8 @@ const bidderRequests = [
     'bids': [
       {
         'bidder': 'publisher 1',
-        'adUnitCode': 'someElementIdName'
+        'adUnitCode': 'someElementIdName',
+        'sizes': [[728, 90]]
       }
     ]
   },
@@ -18,7 +24,8 @@ const bidderRequests = [
     'bids': [
       {
         'bidder': 'publisher 2',
-        'adUnitCode': 'someElementIdName'
+        'adUnitCode': 'someElementIdName',
+        'sizes': [[728, 90]]
       }
     ]
   },
@@ -27,7 +34,8 @@ const bidderRequests = [
     'bids': [
       {
         'bidder': 'publisher 3',
-        'adUnitCode': 'someElementIdName'
+        'adUnitCode': 'someElementIdName',
+        'sizes': [[728, 90]]
       }
     ]
   }
@@ -41,72 +49,92 @@ describe('viewabilityScoreGeneration', function() {
       sandbox.restore();
     });
 
-    it('should set viewability data on adslot render events in local storage', function() {
-      const setAndStringifyToLocalStorageSpy = sandbox.spy(viewabilityScoreGeneration, 'setAndStringifyToLocalStorage');
-      const adSlotElementId = 'someElementIdNameForRenderEvent';
-      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
-      const spyCall1 = setAndStringifyToLocalStorageSpy.getCall(0);
-
-      // should create viewability-data key in local storage if it doesnt already exist
-      // should create a key on viewability-data with element id name and have the value be an object with rendered = 1 and viewed = 0
-      sinon.assert.calledOnce(setAndStringifyToLocalStorageSpy);
-      expect(spyCall1.args[0]).to.equal('viewability-data');
-      expect(spyCall1.args[1]['someElementIdNameForRenderEvent'].rendered).to.equal(1);
-      expect(spyCall1.args[1]['someElementIdNameForRenderEvent'].viewed).to.equal(0);
-
-      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
-      const spyCall2 = setAndStringifyToLocalStorageSpy.getCall(1);
-
-      // should increment the rendered key by 1 for a specific adslot if the adslot key already exists in the viewability-data object in local storage
-      sinon.assert.calledTwice(setAndStringifyToLocalStorageSpy);
-      expect(spyCall2.args[1]['someElementIdNameForRenderEvent'].rendered).to.equal(2);
-      expect(spyCall2.args[1]['someElementIdNameForRenderEvent'].viewed).to.equal(0);
-    });
-
-    it('should set viewability data on adslot view events in local storage', function() {
+    it('should set viewability data on adslot render and view events (by ad element id, size and domain) in local storage', function() {
       const setAndStringifyToLocalStorageSpy = sandbox.spy(viewabilityScoreGeneration, 'setAndStringifyToLocalStorage');
       const adSlotElementId = 'someElementIdNameForViewEvent';
-      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
+      const adSlotSizeFromRender = '728x90';
+      // gpt returns slot sizes differently with respect to render, view and visibility events
+      const adSlotSizesFromView = [{width: 728, height: 90}];
+      const adDomain = 'pubmatic.com';
+      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, adSlotSizeFromRender, adDomain, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, adSlotSizesFromView, adDomain, setAndStringifyToLocalStorageSpy);
       const spyCall1 = setAndStringifyToLocalStorageSpy.getCall(0);
 
       // should create viewability-data key in local storage if it doesnt already exist
       // should create a key on viewability-data with element id name and have the value be an object with rendered = 0 and viewed = 1
-      sinon.assert.calledOnce(setAndStringifyToLocalStorageSpy);
+      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 2);
       expect(spyCall1.args[0]).to.equal('viewability-data');
-      expect(spyCall1.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(0);
+      expect(spyCall1.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(1);
       expect(spyCall1.args[1]['someElementIdNameForViewEvent'].viewed).to.equal(1);
+      expect(spyCall1.args[1]['728x90'].rendered).to.equal(1);
+      expect(spyCall1.args[1]['pubmatic.com'].rendered).to.equal(1);
+      expect(spyCall1.args[1]['pubmatic.com'].viewed).to.equal(1);
 
-      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, adSlotSizeFromRender, adDomain, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, adSlotSizesFromView, adDomain, setAndStringifyToLocalStorageSpy);
       const spyCall2 = setAndStringifyToLocalStorageSpy.getCall(1);
 
       // should increment the viewed key by 1 for a specific adslot if the adslot key already exists in the viewability-data object in local storage
-      sinon.assert.calledTwice(setAndStringifyToLocalStorageSpy);
-      expect(spyCall2.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(0);
+      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 4);
+      expect(spyCall2.args[1]['someElementIdNameForViewEvent'].rendered).to.equal(2);
       expect(spyCall2.args[1]['someElementIdNameForViewEvent'].viewed).to.equal(2);
+      expect(spyCall1.args[1]['728x90'].rendered).to.equal(2);
+      expect(spyCall1.args[1]['pubmatic.com'].rendered).to.equal(2);
+      expect(spyCall1.args[1]['pubmatic.com'].viewed).to.equal(2);
     });
 
-    it('should set the totalViewTime and lastViewed keys in local storage correctly for each adunit', function() {
+    it('should set the totalViewTime and lastViewStarted keys in local storage correctly for each adunit (by ad element id, size and domain)', function() {
       const setAndStringifyToLocalStorageSpy = sandbox.spy(viewabilityScoreGeneration, 'setAndStringifyToLocalStorage');
       const adSlotElementId = 'someElementIdNameForVisibilityChangeEvent';
-      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, 49, setAndStringifyToLocalStorageSpy);
+      const adSlotSizeFromRender = '728x90';
+      // gpt returns slot sizes differently with respect to render, view and visibility events
+      const adSlotSizesFromView = [{width: 728, height: 90}];
+      const adDomain = 'pubmatic.com';
+
+      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, adSlotSizeFromRender, adDomain, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 49, setAndStringifyToLocalStorageSpy);
 
       // only update local storage about dwell time for an ad if the ad is at least 50% viewable in the viewport
-      sinon.assert.notCalled(setAndStringifyToLocalStorageSpy);
+      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 1);
 
-      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
-      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, setAndStringifyToLocalStorageSpy);
-      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, 51, setAndStringifyToLocalStorageSpy);
-      const spyCall3 = setAndStringifyToLocalStorageSpy.getCall(2);
-      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 3);
+      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, adSlotSizeFromRender, adDomain, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, adSlotSizesFromView, adDomain, setAndStringifyToLocalStorageSpy);
+      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 51, setAndStringifyToLocalStorageSpy);
+      let lastSpyCall = setAndStringifyToLocalStorageSpy.lastCall;
 
-      // the lastViewed key should be updated each time an ad is at least 50% visible in the viewport
-      expect(spyCall3.args[1][adSlotElementId].lastViewed).to.be.ok;
+      sinon.assert.callCount(setAndStringifyToLocalStorageSpy, 5);
 
-      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, 51, setAndStringifyToLocalStorageSpy);
-      const spyCall4 = setAndStringifyToLocalStorageSpy.getCall(3);
+      // the lastViewStarted key should be updated each time an ad is at least 50% visible in the viewport
+      expect(lastSpyCall.args[1][adSlotElementId].lastViewStarted).to.be.ok;
+      expect(lastSpyCall.args[1][adDomain].lastViewStarted).to.be.ok;
+
+      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 51, setAndStringifyToLocalStorageSpy);
+      lastSpyCall = setAndStringifyToLocalStorageSpy.lastCall;
 
       // the totalViewTime key should be updated each time an ad is at least 50% visible in the viewport after it has been viewed at least twice
-      expect(spyCall4.args[1][adSlotElementId].totalViewTime).to.be.below(spyCall4.args[1][adSlotElementId].lastViewed);
+      expect(lastSpyCall.args[1][adSlotElementId].totalViewTime).to.be.below(lastSpyCall.args[1][adSlotElementId].lastViewStarted);
+      expect(lastSpyCall.args[1][adDomain].totalViewTime).to.be.below(lastSpyCall.args[1][adDomain].lastViewStarted);
+    });
+
+    it('should check if the TOTAL_VIEW_TIME_LIMIT was exceeded and if so divide render, view and total view time counts by the proper number)', function() {
+      const lsObj = {
+        someAdSlotElementIdName: {
+          rendered: 9,
+          viewed: 7,
+          createdAt: 1677192128860,
+          updatedAt: 1677193274595,
+          totalViewTime: 1000000000,
+          lastViewStarted: 1677193300470
+        }
+      };
+      const currentTime = Date.now();
+      const lastViewStarted = lsObj.someAdSlotElementIdName.lastViewStarted;
+
+      viewabilityScoreGeneration.updateTotalViewTime(undefined, currentTime, lastViewStarted, 'someAdSlotElementIdName', lsObj);
+
+      expect(lsObj.someAdSlotElementIdName.rendered).to.equal(5);
+      expect(lsObj.someAdSlotElementIdName.viewed).to.equal(4);
+      expect(lsObj.someAdSlotElementIdName.totalViewTime).to.equal(500000000);
     });
   });
 
@@ -118,12 +146,30 @@ describe('viewabilityScoreGeneration', function() {
 		}
 	});
       const adSlotElementId = 'someElementIdName';
+      const adSlotSizeFromRender = '728x90';
+      // gpt returns slot sizes differently with respect to render, view and visibility events
+      const adSlotSizesFromView = [{width: 728, height: 90}];
+      const adDomain = 'pubmatic.com';
       const fakeCb = () => {};
-      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, fakeCb);
-      viewabilityScoreGeneration.makeBidRequestsHook(fakeCb, bidderRequests);
+      viewabilityScoreGeneration.gptSlotRenderEndedHandler(adSlotElementId, adSlotSizeFromRender, adDomain, fakeCb);
+      viewabilityScoreGeneration.gptImpressionViewableHandler(adSlotElementId, adSlotSizesFromView, adDomain, fakeCb);
+      viewabilityScoreGeneration.gptSlotVisibilityChangedHandler(adSlotElementId, adSlotSizesFromView, adDomain, 51, fakeCb);
+      viewabilityScoreGeneration.makeBidRequestsHook(fakeCb, bidderRequests, adDomain);
+
       expect(bidderRequests[0].bids[0].bidViewability).to.be.ok;
+      expect(bidderRequests[0].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
+      expect(bidderRequests[0].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
+      expect(bidderRequests[0].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
+
       expect(bidderRequests[1].bids[0].bidViewability).to.be.ok;
+      expect(bidderRequests[1].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
+      expect(bidderRequests[1].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
+      expect(bidderRequests[1].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
+
       expect(bidderRequests[2].bids[0].bidViewability).to.be.ok;
+      expect(bidderRequests[2].bids[0].bidViewability.lastViewStarted).to.equal(undefined);
+      expect(bidderRequests[2].bids[0].bidViewability.hasOwnProperty('adSizes')).to.equal(true);
+      expect(bidderRequests[2].bids[0].bidViewability.hasOwnProperty('adUnit')).to.equal(true);
     });
   });
 
@@ -189,7 +235,7 @@ describe('viewabilityScoreGeneration', function() {
           'enabled': true,
           'targeting': {
             'enabled': true,
-            'score': false, // setting to false will omit sending the score K/V to GAM
+            'score': true, // setting to false will omit sending the score K/V to GAM
             'scoreKey': 'some-custom-key-name',
             'bucket': true,
             'bucketKey': 'custom-key-name-for-bucket', // some-other-custom-key-name is the custom key name, since the line above is commented out, the default key name of bidViewabilityBucket should be used
@@ -243,21 +289,18 @@ describe('viewabilityScoreGeneration', function() {
       const result = {
         'ad-slot-id-1': {
           'custom-key-name-for-bucket': 'MEDIUM',
-          'hb_bidder': 'rubicon',
-          'hb_format': 'banner'
+          'some-custom-key-name': 0.6
         },
         'ad-slot-id-2': {
           'custom-key-name-for-bucket': 'HIGH',
-          'hb_bidder': 'pubmatic',
-          'hb_format': 'banner'
+          'some-custom-key-name': 0.8
         },
         'ad-slot-id-3': {
           'custom-key-name-for-bucket': 'VERY LOW',
-          'hb_bidder': 'rubicon',
-          'hb_format': 'banner'
+          'some-custom-key-name': 0.2
         }
       };
-
+	  window.googletag.pubads().setSlots(testSlots);
       viewabilityScoreGeneration.addViewabilityTargeting(config, targetingSet, vsgLocalStorageObj, updateGptWithViewabilityTargetingSpy);
       sinon.assert.calledOnce(updateGptWithViewabilityTargetingSpy); // make sure this func is called only once so that relative gpt ad slots are update only once
       const spyCall = updateGptWithViewabilityTargetingSpy.getCall(0);

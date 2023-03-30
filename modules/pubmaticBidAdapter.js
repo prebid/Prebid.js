@@ -181,6 +181,19 @@ let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
 
+const vsgDomain = window.location.hostname;
+const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
+let vsgObj = { [vsgDomain]: '' };
+
+const removeViewTimeForZeroValue = obj => {
+  // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
+  delete obj.lastViewStarted;
+  // Deleteing totalTimeView incase value is less than 1 sec.
+  if (obj.totalViewTime == 0) {
+    delete obj.totalViewTime;
+  }
+};
+
 // loading NATIVE_ASSET_ID_TO_KEY_MAP
 _each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
 // loading NATIVE_ASSET_KEY_TO_ASSET_MAP
@@ -1199,6 +1212,14 @@ export const spec = {
         }
       }
       payload.ext.marketplace.allowedbidders = biddersList.filter(uniques);
+    }
+
+    if (bid.bidViewability) {
+	  vsgObj =  getAndParseFromLocalStorage('viewability-data');
+      removeViewTimeForZeroValue(vsgObj[vsgDomain]);
+      payload.ext.bidViewability = {
+        adDomain: vsgObj[vsgDomain]
+      }
     }
 
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
