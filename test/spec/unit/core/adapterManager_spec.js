@@ -1602,12 +1602,15 @@ describe('adapterManager tests', function () {
       });
 
       it('should add alias to registry when original adapter is using bidderFactory', function() {
-        let thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
+        const mediaType = FEATURES.VIDEO ? 'video' : 'banner'
+        let thisSpec = Object.assign(spec, { supportedMediaTypes: [mediaType] });
         registerBidder(thisSpec);
         const alias = 'aliasBidder';
         adapterManager.aliasBidAdapter(CODE, alias);
         expect(adapterManager.bidderRegistry).to.have.property(alias);
-        expect(adapterManager.videoAdapters).to.include(alias);
+        if (FEATURES.VIDEO) {
+          expect(adapterManager.videoAdapters).to.include(alias);
+        }
       });
     });
 

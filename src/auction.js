@@ -476,7 +476,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === VIDEO) {
+      if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
         if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
@@ -623,7 +623,7 @@ const addLegacyFieldsIfNeeded = (bidResponse) => {
   }
 }
 
-const storeInCache = (batch) => {
+const _storeInCache = (batch) => {
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
@@ -649,6 +649,8 @@ const storeInCache = (batch) => {
     });
   });
 };
+
+const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {};
 
 let batchSize, batchTimeout;
 config.getConfig('cache', (cacheConfig) => {
@@ -785,7 +787,7 @@ function setupBidTargeting(bidObject) {
  */
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
-    if (mediaType === VIDEO) {
+    if (FEATURES.VIDEO && mediaType === VIDEO) {
       const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
@@ -894,7 +896,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
-  if (mediaType === 'video') {
+  if (FEATURES.VIDEO && mediaType === 'video') {
     const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].slice();
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = adserverTargeting;
 
