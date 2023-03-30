@@ -1,7 +1,13 @@
+import {
+  deepAccess,
+} from '../src/utils.js';
+
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const ADSINTERACTIVE_CODE = 'adsinteractive';
+const USER_SYNC_URL_IMAGE = 'https://pb.adsinteractive.com/img';
+const USER_SYNC_URL_IFRAME = 'https://pb.adsinteractive.com/sync';
 
 export const spec = {
   code: ADSINTERACTIVE_CODE,
@@ -15,11 +21,34 @@ export const spec = {
 
   buildRequests: (bidRequests, bidderRequest) => {
     return bidRequests.map((bid) => {
+      var gdprConsent;
+      if (bidderRequest && bidderRequest.gdprConsent) {
+        gdprConsent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies,
+        };
+
+        if (
+          bidderRequest.gdprConsent.addtlConsent &&
+            bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1
+        ) {
+          let ac = bidderRequest.gdprConsent.addtlConsent;
+          let acStr = ac.substring(ac.indexOf('~') + 1);
+          gdprConsent.addtl_consent = acStr
+            .split('.')
+            .map((id) => parseInt(id, 10));
+        }
+      }
+
       let url = 'https://pb.adsinteractive.com/prebid';
       const data = {
         id: bid.bidId,
+        at: 1,
+        source: { fd: 0 },
+        gdprConsent: gdprConsent,
         site: {
           page: bid.ortb2.site.page,
+          keywords: bid.ortb2.site.keywords,
           domain: bid.ortb2.site.domain,
           publisher: {
             domain: bid.ortb2.site.domain,
@@ -63,7 +92,7 @@ export const spec = {
 
   interpretResponse: (serverResponse, bidRequest) => {
     let answer = [];
-    if (!serverResponse || !serverResponse.body || serverResponse.body.seatbid != null) {
+    if (serverResponse && serverResponse.body && serverResponse.body.seatbid) {
       serverResponse.body.seatbid.forEach((seatbid) => {
         if (seatbid.bid.length) {
           answer = [
@@ -91,6 +120,25 @@ export const spec = {
       });
     }
     return answer;
+  },
+  getUserSyncs: (syncOptions, serverResponse, gdprConsent, uspConsent) => {
+    if (syncOptions.iframeEnabled) {
+      const auid = serverResponse.filter(resp => deepAccess(resp, 'body.ext.auid'))
+        .map(resp => resp.body.ext.auid);
+      return [
+        {
+          type: 'iframe',
+          url: USER_SYNC_URL_IFRAME + '?consent=' + gdprConsent.consentString + '&auid=' + auid,
+        },
+      ];
+    } else {
+      return [
+        {
+          type: 'image',
+          url: USER_SYNC_URL_IMAGE,
+        },
+      ];
+    }
   },
 };
 registerBidder(spec);
