@@ -88,6 +88,7 @@ export const spec = {
       };
 
       const imp = {
+        id: bid.adUnitCode,
         ext: {
           prebid: {
             storedrequest: {id}

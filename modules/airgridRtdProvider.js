@@ -8,7 +8,6 @@
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import {
-  mergeDeep,
   deepSetValue,
   deepAccess,
 } from '../src/utils.js';
@@ -86,13 +85,24 @@ function setAudiencesToAppNexusAdUnits(adUnits, audiences) {
  * @param {Array} audiences
  * @return {{}} a map from bidder code to ORTB2 config
  */
-export function getAudiencesAsBidderOrtb2(rtdConfig, audiences) {
+export function setAudiencesAsBidderOrtb2(rtdConfig, audiences) {
   const bidders = deepAccess(rtdConfig, 'params.bidders');
-  if (!bidders || bidders.length === 0) return {};
-  const agOrtb2 = {}
-  deepSetValue(agOrtb2, 'ortb2.user.ext.data.airgrid', audiences || []);
+  if (!bidders || bidders.length === 0 || !audiences || audiences.length === 0) return;
 
-  return Object.fromEntries(bidders.map(bidder => [bidder, agOrtb2]));
+  const keywords = audiences.map(
+    (audienceId) => `perid=${audienceId}`
+  ).join(',');
+
+  config.mergeBidderConfig({
+    bidders: bidders,
+    config: {
+      ortb2: {
+        site: {
+          keywords,
+        }
+      }
+    }
+  })
 }
 
 export function setAudiencesUsingAppNexusAuctionKeywords(audiences) {
@@ -132,7 +142,7 @@ export function passAudiencesToBidders(
   const audiences = getMatchedAudiencesFromStorage();
   if (audiences.length > 0) {
     setAudiencesUsingAppNexusAuctionKeywords(audiences);
-    mergeDeep(bidConfig?.ortb2Fragments?.bidder, getAudiencesAsBidderOrtb2(rtdConfig, audiences));
+    setAudiencesAsBidderOrtb2(rtdConfig, audiences)
     if (adUnits) {
       setAudiencesToAppNexusAdUnits(adUnits, audiences);
     }

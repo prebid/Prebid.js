@@ -11,16 +11,17 @@ const EXPECTED_ENDPOINTS = [
   'https://ghb.adtelligent.com/v2/auction/'
 ];
 const aliasEP = {
-  appaloosa: 'https://ghb.hb.appaloosa.media/v2/auction/',
-  appaloosa_publisherSuffix: 'https://ghb.hb.appaloosa.media/v2/auction/',
-  onefiftytwomedia: 'https://ghb.ads.152media.com/v2/auction/',
-  navelix: 'https://ghb.hb.navelix.com/v2/auction/',
-  bidsxchange: 'https://ghb.hbd.bidsxchange.com/v2/auction/',
-  streamkey: 'https://ghb.hb.streamkey.net/v2/auction/',
-  janet: 'https://ghb.bidder.jmgads.com/v2/auction/',
-  pgam: 'https://ghb.pgamssp.com/v2/auction/',
-  ocm: 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
-  vidcrunchllc: 'https://ghb.platform.vidcrunch.com/v2/auction/',
+  'appaloosa': 'https://ghb.hb.appaloosa.media/v2/auction/',
+  'appaloosa_publisherSuffix': 'https://ghb.hb.appaloosa.media/v2/auction/',
+  'onefiftytwomedia': 'https://ghb.ads.152media.com/v2/auction/',
+  'navelix': 'https://ghb.hb.navelix.com/v2/auction/',
+  'bidsxchange': 'https://ghb.hbd.bidsxchange.com/v2/auction/',
+  'streamkey': 'https://ghb.hb.streamkey.net/v2/auction/',
+  'janet': 'https://ghb.bidder.jmgads.com/v2/auction/',
+  'pgam': 'https://ghb.pgamssp.com/v2/auction/',
+  'ocm': 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
+  'vidcrunchllc': 'https://ghb.platform.vidcrunch.com/v2/auction/',
+  '9dotsmedia': 'https://ghb.platform.audiodots.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };

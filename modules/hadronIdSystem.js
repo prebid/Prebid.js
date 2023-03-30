@@ -49,6 +49,7 @@ export const hadronIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: AU_GVLID,
   /**
    * decode the stored id value for passing to bid requests
    * @function

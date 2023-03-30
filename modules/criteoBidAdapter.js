@@ -233,7 +233,7 @@ export const spec = {
           bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
         }
         if (slot.adomain) {
-          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
+          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
