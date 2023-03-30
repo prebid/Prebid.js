@@ -3,6 +3,9 @@ import {
   logError, logWarn, logMessage, deepAccess
 } from './utils.js';
 import {find} from './polyfill.js';
+import {getGlobal} from './prebidGlobal.js';
+
+const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
 
 /**
@@ -129,7 +132,7 @@ export function executeRenderer(renderer, bid, doc) {
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
-  const adUnits = $$PREBID_GLOBAL$$.adUnits;
+  const adUnits = pbjsInstance.adUnits;
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });
