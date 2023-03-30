@@ -422,6 +422,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
       'rc': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.slotCnt,
       'vw': frequencyDepth?.viewedSlot?.[origAdUnit.adUnitId],
+      'rf': origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0
     };
     slotsArray.push(slotObject);
     return slotsArray;
@@ -449,7 +450,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   }
   const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
   const generatedBidId = winningBid.bidResponse && winningBid.bidResponse.prebidBidId;
-  var origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId).adUnitId || adUnitId;
+  let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId);
+  var origAdUnitId = origAdUnit.adUnitId || adUnitId;
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -460,13 +462,14 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
-  pixelURL += '&au=' + enc(origAdUnit);
+  pixelURL += '&au=' + enc(origAdUnitId);
   pixelURL += '&pn=' + enc(adapterName);
   pixelURL += '&bc=' + enc(winningBid.bidderCode || winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
+  pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
 
   ajax(
     pixelURL,
@@ -521,10 +524,10 @@ function bidResponseHandler(args) {
   }
 
   if ((bid.bidder && args.bidderCode && bid.bidder !== args.bidderCode) || (bid.bidder === args.bidderCode && bid.status === SUCCESS)) {
-    if(!!bid.params){
+    if (bid.params) {
       args.params = bid.params;
     }
-    if(bid?.bidResponse?.partnerImpId){
+    if (bid?.bidResponse?.partnerImpId) {
       args.partnerImpId = bid.bidResponse.partnerImpId;
     }
     bid = copyRequiredBidDetails(args);
