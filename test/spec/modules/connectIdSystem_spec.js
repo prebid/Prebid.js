@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
 import {server} from '../../mocks/xhr';
 import {parseQS, parseUrl} from 'src/utils.js';
+import {uspDataHandler} from 'src/adapterManager.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 
@@ -12,6 +13,7 @@ describe('Yahoo ConnectID Submodule', () => {
   const PROD_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PIXEL_ID}/fed`;
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
   const STORAGE_KEY = '__ycid';
+  const USP_DATA = '1YYY';
 
   it('should have the correct module name declared', () => {
     expect(connectIdSubmodule.name).to.equal('connectId');
@@ -31,6 +33,7 @@ describe('Yahoo ConnectID Submodule', () => {
     let cookiesEnabledStub;
     let localStorageEnabledStub;
     let removeLocalStorageDataStub;
+    let uspConsentDataStub;
 
     let consentData;
     beforeEach(() => {
@@ -44,20 +47,15 @@ describe('Yahoo ConnectID Submodule', () => {
       setLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage');
       localStorageEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       removeLocalStorageDataStub = sinon.stub(storage, 'removeDataFromLocalStorage');
+      uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
 
       cookiesEnabledStub.returns(true);
       localStorageEnabledStub.returns(true);
+      uspConsentDataStub.returns(USP_DATA);
 
       consentData = {
-        gdpr: {
-          gdprApplies: 1,
-          consentString: 'GDPR_CONSENT_STRING'
-        },
-        uspConsent: 'USP_CONSENT_STRING',
-        gppConsent: {
-          gppString: 'header~section6~section7',
-          applicableSections: [6, 7]
-        }
+        gdprApplies: 1,
+        consentString: 'GDPR_CONSENT_STRING'
       };
     });
 
@@ -70,6 +68,7 @@ describe('Yahoo ConnectID Submodule', () => {
       cookiesEnabledStub.restore();
       localStorageEnabledStub.restore();
       removeLocalStorageDataStub.restore();
+      uspConsentDataStub.restore();
     });
 
     function invokeGetIdAPI(configParams, consentData) {
@@ -282,12 +281,10 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.gdpr.consentString,
-            us_privacy: consentData.uspConsent,
-            gpp: consentData.gppConsent.gppString,
-            gpp_sid: '6%2C7',
+            gdpr_consent: consentData.consentString,
             v: '1',
-            url: TEST_SERVER_URL
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -308,11 +305,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr: '1',
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID,
-            gdpr_consent: consentData.gdpr.consentString,
-            us_privacy: consentData.uspConsent,
-            gpp: consentData.gppConsent.gppString,
-            gpp_sid: '6%2C7',
-            url: TEST_SERVER_URL
+            gdpr_consent: consentData.consentString,
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -334,12 +329,10 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.gdpr.consentString,
-            us_privacy: consentData.uspConsent,
-            gpp: consentData.gppConsent.gppString,
-            gpp_sid: '6%2C7',
+            gdpr_consent: consentData.consentString,
             v: '1',
-            url: TEST_SERVER_URL
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -358,12 +351,10 @@ describe('Yahoo ConnectID Submodule', () => {
             he: HASHED_EMAIL,
             '1p': '0',
             gdpr: '1',
-            gdpr_consent: consentData.gdpr.consentString,
-            us_privacy: consentData.uspConsent,
-            gpp: consentData.gppConsent.gppString,
-            gpp_sid: '6%2C7',
+            gdpr_consent: consentData.consentString,
             v: '1',
-            url: TEST_SERVER_URL
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -389,11 +380,11 @@ describe('Yahoo ConnectID Submodule', () => {
 
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
           expect(requestQueryParams.gdpr).to.equal('1');
-          expect(requestQueryParams.gdpr_consent).to.equal(consentData.gdpr.consentString);
+          expect(requestQueryParams.gdpr_consent).to.equal(consentData.consentString);
         });
 
         it('sets GDPR consent data flag correctly when call is NOT under GDPR jurisdiction.', () => {
-          consentData.gdpr.gdprApplies = false;
+          consentData.gdprApplies = false;
 
           invokeGetIdAPI({
             he: HASHED_EMAIL,
@@ -539,59 +530,15 @@ describe('Yahoo ConnectID Submodule', () => {
       })).to.be.false;
     });
 
-    it('should return false if consent data.gdpr.applies is false', () => {
+    it('should return false if consent consentData.applies is false', () => {
       expect(connectIdSubmodule.isEUConsentRequired({
-        gdpr: {
-          gdprApplies: false
-        }
+        gdprApplies: false
       })).to.be.false;
     });
 
     it('should return true if consent data.gdpr.applies is true', () => {
       expect(connectIdSubmodule.isEUConsentRequired({
-        gdpr: {
-          gdprApplies: true
-        }
-      })).to.be.true;
-    });
-  });
-
-  describe('isUnderGPPJurisdiction()', () => {
-    it('should return a function', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction).to.be.a('function');
-    });
-
-    it('should be false if consent data is empty', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction({})).to.be.false;
-    });
-
-    it('should be false if consent data.gpp object is empty', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction({
-        gppConsent: {}
-      })).to.be.false;
-    });
-
-    it('should return false if consent data.gpp.gppString is empty', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction({
-        gppConsent: {
-          gppString: ''
-        }
-      })).to.be.false;
-    });
-
-    it('should return false if consent data.gpp.gppString is not a string', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction({
-        gppConsent: {
-          gppString: true
-        }
-      })).to.be.false;
-    });
-
-    it('should return true if consent data.gpp.gppString is a non-zero length string', () => {
-      expect(connectIdSubmodule.isUnderGPPJurisdiction({
-        gppConsent: {
-          gppString: 'someGppString'
-        }
+        gdprApplies: true
       })).to.be.true;
     });
   });

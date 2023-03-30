@@ -11,6 +11,7 @@ import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
+import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'connectId';
 const STORAGE_KEY = '__ycid';
@@ -135,18 +136,14 @@ export const connectIdSubmodule = {
       return {id: storedId};
     }
 
+    const uspString = uspDataHandler.getConsentData() || '';
     const data = {
       v: '1',
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       gdpr: connectIdSubmodule.isEUConsentRequired(consentData) ? '1' : '0',
-      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
-      us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
+      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.consentString : '',
+      us_privacy: uspString
     };
-
-    if (connectIdSubmodule.isUnderGPPJurisdiction(consentData)) {
-      data.gpp = consentData.gppConsent.gppString;
-      data.gpp_sid = encodeURIComponent(consentData.gppConsent.applicableSections.join(','));
-    }
 
     let topmostLocation = getRefererInfo().topmostLocation;
     if (typeof topmostLocation === 'string') {
@@ -191,16 +188,7 @@ export const connectIdSubmodule = {
    * @returns {Boolean}
    */
   isEUConsentRequired(consentData) {
-    return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
-  },
-
-  /**
-   * Utility function that returns a boolean flag indicating if the opportunity
-   * is subject to GPP jurisdiction.
-   * @returns {Boolean}
-   */
-  isUnderGPPJurisdiction(consentData) {
-    return !!(consentData?.gppConsent?.gppString && typeof consentData.gppConsent.gppString === 'string');
+    return !!(consentData?.gdprApplies);
   },
 
   /**
