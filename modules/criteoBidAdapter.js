@@ -16,7 +16,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
