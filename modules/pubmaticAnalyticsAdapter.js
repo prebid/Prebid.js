@@ -29,6 +29,7 @@ const BID_PRECISION = 2;
 const DEFAULT_PUBLISHER_ID = 0;
 const DEFAULT_PROFILE_ID = 0;
 const DEFAULT_PROFILE_VERSION_ID = 0;
+const DEFAULT_ISIDENTITY_ONLY = 0;
 const enc = window.encodeURIComponent;
 const MEDIATYPE = {
   BANNER: 0,
@@ -42,6 +43,7 @@ let publisherId = DEFAULT_PUBLISHER_ID; // int: mandatory
 let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
+let identityOnly = DEFAULT_ISIDENTITY_ONLY;
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -385,7 +387,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['psl'] = getPSL(auctionId);
   outputObj['dvc'] = {'plt': getDevicePlatform()};
-  outputObj['bm'] = window.PWT && window.PWT.browserMapping;
+  outputObj["bm"] = window.PWT && window.PWT.browserMapping;
+  outputObj['ih'] = identityOnly;
   outputObj['tgid'] = (function() {
     var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
     if (testGroupId <= 15 && testGroupId >= 0) {
@@ -604,6 +607,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
       }
       profileId = Number(conf.options.profileId) || DEFAULT_PROFILE_ID;
       profileVersionId = Number(conf.options.profileVersionId) || DEFAULT_PROFILE_VERSION_ID;
+      identityOnly = Number(conf.options.identityOnly) || DEFAULT_ISIDENTITY_ONLY;
     } else {
       logError(LOG_PRE_FIX + 'Config not found.');
       error = true;

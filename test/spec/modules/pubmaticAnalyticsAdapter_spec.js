@@ -343,7 +343,7 @@ describe('pubmatic analytics adapter', function () {
   it('should require publisherId', function () {
     sandbox.stub(utils, 'logError');
     pubmaticAnalyticsAdapter.enableAnalytics({
-      options: {}
+      options: { 'identityOnly': 1 }
     });
     expect(utils.logError.called).to.equal(true);
   });
@@ -354,7 +354,8 @@ describe('pubmatic analytics adapter', function () {
         options: {
           publisherId: 9999,
           profileId: 1111,
-          profileVersionId: 20
+          profileVersionId: 20,
+          identityOnly: 1
         }
       });
     });
@@ -1373,6 +1374,72 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].rc).to.be.not.null;
       expect(data.s[0].is).to.be.not.null;
       expect(data.s[0].fskp).to.equal(0);
+    });
+
+    it('Logger: check value of ih field when userid module is enabled', function() {
+      this.timeout(5000)
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
+      });
+
+      config.setConfig({
+        testGroupId: 15
+      });
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      clock.tick(2000 + 1000);
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
+      let request = requests[2]; // logger is executed late, trackers execute first
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.ih).to.equal('1');
+    });
+
+    it('Logger: check value of ih field when userid module is disabled', function() {
+      this.timeout(5000)
+      pubmaticAnalyticsAdapter.disableAnalytics();
+      pubmaticAnalyticsAdapter.enableAnalytics({
+        options: {
+          publisherId: 9999,
+          profileId: 1111,
+          profileVersionId: 20,
+          identityOnly: 0
+        }
+      });
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
+      });
+
+      config.setConfig({
+        testGroupId: 15
+      });
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[1]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+      events.emit(BID_WON, MOCK.BID_WON[1]);
+
+      clock.tick(2000 + 1000);
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
+      let request = requests[2]; // logger is executed late, trackers execute first
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.ih).to.equal('0');
     });
   });
 
