@@ -121,14 +121,40 @@ export class GppConsentHandler extends ConsentHandler {
 
 export function gvlidRegistry() {
   const registry = {};
+  const flat = {};
+  const none = {};
   return {
+    /**
+     * Register a module's GVL ID.
+     * @param {string} moduleType defined in `activities/modules.js`
+     * @param {string} moduleName
+     * @param {number} gvlid
+     */
     register(moduleType, moduleName, gvlid) {
       if (gvlid) {
-        (registry[moduleType] = registry[moduleType] || {})[moduleName] = gvlid;
+        (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
+        if (flat.hasOwnProperty(moduleName)) {
+          if (flat[moduleName] !== gvlid) flat[moduleName] = none;
+        } else {
+          flat[moduleName] = gvlid;
+        }
       }
     },
-    get(moduleType, moduleName) {
-      return registry[moduleType]?.[moduleName];
+    /**
+     * Get a module's GVL ID(s).
+     *
+     * @param {string} moduleName
+     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     *   `modules` is a map from module type to that module's GVL ID;
+     *   `gvlid` is the single GVL ID for this family of modules (only defined
+     *   if all modules with this name declared the same ID).
+     */
+    get(moduleName) {
+      const result = {modules: registry[moduleName] || {}};
+      if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
+        result.gvlid = flat[moduleName];
+      }
+      return result;
     }
   }
 }
