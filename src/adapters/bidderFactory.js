@@ -1,20 +1,32 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
-import { config } from '../config.js';
-import { createBid } from '../bidfactory.js';
-import { userSync } from '../userSync.js';
-import { nativeBidIsValid } from '../native.js';
-import { isValidVideoBid } from '../video.js';
+import {config} from '../config.js';
+import {createBid} from '../bidfactory.js';
+import {userSync} from '../userSync.js';
+import {nativeBidIsValid} from '../native.js';
+import {isValidVideoBid} from '../video.js';
 import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
-import { ajax } from '../ajax.js';
-import { logWarn, logInfo, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
-import { ADPOD } from '../mediaTypes.js';
-import { getHook, hook } from '../hook.js';
-import { getCoreStorageManager } from '../storageManager.js';
+import {ajax} from '../ajax.js';
+import {
+  deepAccess,
+  delayExecution,
+  flatten,
+  isArray,
+  isPlainObject,
+  logError,
+  logWarn,
+  parseQueryStringParameters,
+  parseSizesInput,
+  timestamp,
+  uniques
+} from '../utils.js';
+import {ADPOD} from '../mediaTypes.js';
+import {getHook, hook} from '../hook.js';
+import {getCoreStorageManager} from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
-import { bidderSettings } from '../bidderSettings.js';
+import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
@@ -247,7 +259,9 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest, fledgeAuctionConfig);
+              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+            } else {
+              logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
           });
         },
@@ -467,9 +481,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
-  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
-}, 'addComponentAuction')
+export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+}, 'addComponentAuction');
 
 export function preloadBidderMappingFile(fn, adUnits) {
   if (FEATURES.VIDEO) {

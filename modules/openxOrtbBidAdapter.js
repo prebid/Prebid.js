@@ -32,10 +32,6 @@ const converter = ortbConverter({
     if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
       imp.video.placement = imp.video.placement || 4;
     }
-    if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
-      // TODO: we may want to standardize this and move fledge logic to ortbConverter
-      delete imp.ext.ae;
-    }
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
       ext: {
@@ -106,10 +102,12 @@ const converter = ortbConverter({
     let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
     if (fledgeAuctionConfigs) {
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
+        return {
           bidId,
-          auctionSignals: {}
-        }, cfg);
+          config: Object.assign({
+            auctionSignals: {},
+          }, cfg)
+        }
       });
       return {
         bids: response.bids,
