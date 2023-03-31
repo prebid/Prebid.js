@@ -438,20 +438,12 @@ const sizeToDimensions = size => {
   };
 }
 
-const findMatchingAdUnitFromOrderedAuctions = (matchesFunction, returnFirstMatch) => {
-  return findAdUnitFromAuctions(matchesFunction, returnFirstMatch, cache.auctionOrder);
-};
-
-const findMatchingAdUnitFromAllAuctions = (matchesFunction, returnFirstMatch) => {
-  return findAdUnitFromAuctions(matchesFunction, returnFirstMatch, Object.keys(cache.auctions));
-};
-
-const findAdUnitFromAuctions = (matchesFunction, returnFirstMatch, auctions) => {
+const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
   // finding matching adUnit / auction
   let matches = {};
 
   // loop through auctions in order and adunits
-  for (const auctionId of auctions) {
+  for (const auctionId of cache.auctionOrder) {
     const auction = cache.auctions[auctionId].auction;
     for (const transactionId in auction.adUnits) {
       const adUnit = auction.adUnits[transactionId];
@@ -490,7 +482,7 @@ const getRenderingIds = bidWonData => {
     const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.transactionId}`);
     return adUnit.adUnitCode === bidWonData.adUnitCode && gamHasRendered;
   }
-  let { adUnit, auction } = findMatchingAdUnitFromOrderedAuctions(matchingFunction, false);
+  let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, false);
   // If no match was found, we will use the actual bid won auction id
   return {
     renderTransactionId: (adUnit && adUnit.transactionId) || bidWonData.transactionId,
@@ -563,7 +555,7 @@ const subscribeToGamSlots = () => {
       const gamHasRendered = deepAccess(cache, `auctions.${auction.auctionId}.gamRenders.${adUnit.transactionId}`);
       return matchesSlot && !gamHasRendered;
     }
-    let { adUnit, auction } = findMatchingAdUnitFromOrderedAuctions(matchingFunction, true);
+    let { adUnit, auction } = findMatchingAdUnitFromAuctions(matchingFunction, true);
 
     const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
 
@@ -830,16 +822,19 @@ magniteAdapter.track = ({ eventType, args }) => {
         auctionEntry.floors.dealsEnforced = args.floorData.enforcements.floorDeals;
       }
 
-      // no-bid from server. Document it!
-      if (!bid) {
-        bid = adUnit.bids[generateUUID()] = {
-          bidder: 'mgnipbs',
+      // no-bid from server. report it!
+      if (!bid && args.seatBidId) {
+        bid = adUnit.bids[args.seatBidId] = {
+          bidder: args.bidderCode,
           source: 'server',
-          status: 'no-bid',
-          bidId: args.requestId,
-          clientLatencyMillis: args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auction.auctionStart
+          bidId: args.seatBidId,
+          unknownBid: true
         };
-        return;
+      }
+
+      if (!bid) {
+        logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
+        break;
       }
 
       // set bid status
@@ -958,15 +953,17 @@ magniteAdapter.track = ({ eventType, args }) => {
 };
 
 const handleNonBidEvent = function(args) {
-  let {seatnonbid, auctionId} = args;
+  const {seatnonbid, auctionId} = args;
+  const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
+  const adUnits = auction.adUnits;
   seatnonbid.forEach(seatnonbid => {
     let {seat} = seatnonbid;
     seatnonbid.nonbid.forEach(nonbid => {
-      let {status, impid} = nonbid;
-      let matchByImpid = matchAuctionBeforeAdUnit(auctionId, impid)
-      let {adUnit} = findMatchingAdUnitFromAllAuctions(matchByImpid, true);
       try {
-        let statusInfo = statusMap[status] || { status: 'no-bid' }
+        const {status, impid} = nonbid;
+        const matchingTid = Object.keys(adUnits).find(tid => adUnits[tid].adUnitCode === impid);
+        const adUnit = adUnits[matchingTid];
+        const statusInfo = statusMap[status] || { status: 'no-bid' };
         adUnit.bids[generateUUID()] = {
           source: 'server',
           bidder: seat,
@@ -979,13 +976,6 @@ const handleNonBidEvent = function(args) {
       }
     });
   });
-};
-
-const matchAuctionBeforeAdUnit = function(auctionId, impid) {
-  return function (adUnit, auction) {
-    if (auctionId !== auction.auctionId) return false;
-    return adUnit.adUnitCode === impid;
-  }
 };
 
 const statusMap = {

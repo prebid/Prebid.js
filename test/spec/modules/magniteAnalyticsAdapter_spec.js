@@ -163,10 +163,12 @@ const MOCK = {
   },
   NO_BID: {
     'requestId': 'fakeId',
+    'seatBidId': 'fakeId',
+    'bidderCode': 'mgnipbs',
     'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
     'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
     'adUnitCode': 'box',
-    getStatusCode: () => 1,
+    getStatusCode: () => 2,
   },
   SEAT_NON_BID: {
     auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
@@ -2091,6 +2093,12 @@ describe('magnite analytics adapter', function () {
           bidder: 'mgnipbs',
           source: 'server',
           status: 'no-bid',
+          bidResponse: {
+            "bidPriceUSD": 0,
+            "conversionError": true
+          },
+          oldBidId: 'fakeId',
+          unknownBid: true,
           bidId: 'fakeId',
           clientLatencyMillis: -139101369960
         }
