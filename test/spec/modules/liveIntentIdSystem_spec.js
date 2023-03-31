@@ -5,7 +5,7 @@ import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
-const defaultConfigParams = { params: {publisherId: PUBLISHER_ID} };
+const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, fireEventDelay: 1} };
 const responseHeader = {'Content-Type': 'application/json'}
 
 describe('LiveIntentId', function() {
@@ -45,7 +45,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*/);
     const response = {
       unifiedId: 'a_unified_id',
@@ -59,25 +59,31 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnceWith(response)).to.be.true;
   });
 
-  it('should fire an event when getId', function() {
+  it('should fire an event when getId', function(done) {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
       consentString: 'consentDataString'
     })
     liveIntentIdSubmodule.getId(defaultConfigParams);
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
+      done();
+    }, 200);
   });
 
-  it('should fire an event when getId and a hash is provided', function() {
+  it('should fire an event when getId and a hash is provided', function(done) {
     liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
+      done();
+    }, 200);
   });
 
-  it('should initialize LiveConnect with the config params when decode and emit an event', function () {
+  it('should initialize LiveConnect with the config params when decode and emit an event', function (done) {
     liveIntentIdSubmodule.decode({}, { params: {
       ...defaultConfigParams.params,
       ...{
@@ -88,25 +94,34 @@ describe('LiveIntentId', function() {
         }
       }
     }});
-    expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
+      done();
+    }, 200);
   });
 
-  it('should initialize LiveConnect and emit an event with a privacy string when decode', function() {
+  it('should initialize LiveConnect and emit an event with a privacy string when decode', function(done) {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: false,
       consentString: 'consentDataString'
     })
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
-    expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*/);
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*/);
+      done();
+    }, 200);
   });
 
-  it('should fire an event when decode and a hash is provided', function() {
+  it('should fire an event when decode and a hash is provided', function(done) {
     liveIntentIdSubmodule.decode({}, { params: {
       ...defaultConfigParams.params,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
-    expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
+      done();
+    }, 200);
   });
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
@@ -114,25 +129,31 @@ describe('LiveIntentId', function() {
     expect(result).to.be.eql({});
   });
 
-  it('should fire an event when decode', function() {
+  it('should fire an event when decode', function(done) {
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
-    expect(server.requests[0].url).to.be.not.null
+    setTimeout(() => {
+      expect(server.requests[0].url).to.be.not.null
+      done();
+    }, 200);
   });
 
-  it('should initialize LiveConnect and send data only once', function() {
+  it('should initialize LiveConnect and send data only once', function(done) {
     liveIntentIdSubmodule.getId(defaultConfigParams);
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
     liveIntentIdSubmodule.getId(defaultConfigParams);
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
-    expect(server.requests.length).to.be.eq(1);
+    setTimeout(() => {
+      expect(server.requests.length).to.be.eq(1);
+      done();
+    }, 200);
   });
 
-  it('should call the Custom URL of the LiveIntent Identity Exchange endpoint', function() {
+  it('should call the custom URL of the LiveIntent Identity Exchange endpoint', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: {...defaultConfigParams.params, ...{'url': 'https://dummy.liveintent.com/idex'}} }).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899?resolve=nonId');
     request.respond(
       204,
@@ -152,7 +173,7 @@ describe('LiveIntentId', function() {
       }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/rubicon/89899?resolve=nonId');
     request.respond(
       200,
@@ -167,7 +188,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?resolve=nonId');
     request.respond(
       200,
@@ -182,7 +203,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?resolve=nonId');
     request.respond(
       503,
@@ -199,7 +220,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?duid=${oldCookie}&resolve=nonId`);
     request.respond(
       200,
@@ -222,7 +243,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?duid=${oldCookie}&_thirdPC=third-pc&resolve=nonId`);
     request.respond(
       200,
@@ -244,7 +265,7 @@ describe('LiveIntentId', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/89899?_thirdPC=%7B%22key%22%3A%22value%22%7D&resolve=nonId');
     request.respond(
       200,
@@ -277,7 +298,7 @@ describe('LiveIntentId', function() {
       ...{ requestedAttributesOverrides: { 'foo': true, 'bar': false } }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=nonId&resolve=foo`);
     request.respond(
       200,
@@ -304,7 +325,7 @@ describe('LiveIntentId', function() {
       ...{ requestedAttributesOverrides: { 'nonId': false, 'uid2': true } }
     } }).callback;
     submoduleCallback(callBackSpy);
-    let request = server.requests[1];
+    let request = server.requests[0];
     expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?resolve=uid2`);
     request.respond(
       200,

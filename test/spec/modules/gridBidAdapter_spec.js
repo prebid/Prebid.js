@@ -575,6 +575,30 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.regs.ext).to.have.property('us_privacy', '1YNN');
     });
 
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({gppConsent: {gppString: consentString, applicableSections: [8]}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({ortb2: {regs: {gpp: consentString, gpp_sid: [8]}}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
+    });
+
     it('if userId is present payload must have user.ext param with right keys', function () {
       const eids = [
         {
