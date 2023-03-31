@@ -15,9 +15,12 @@ export const spec = {
     return validBidRequests.map(bidRequest => {
       const bidId = bidRequest.bidId;
       const params = bidRequest.params;
+      const pageUrl = location.href.replace(/\?.*$/, '');
+      const pageEnc = encodeURIComponent(pageUrl);
       const sid = params.sid;
       const payload = {
-        sid: sid
+        sid: sid,
+        pu: pageEnc
       };
       return {
         id: bidId,

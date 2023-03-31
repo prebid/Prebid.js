@@ -45,8 +45,9 @@ describe('pubxAdapter', function () {
 
     const data = {
       banner: {
-        sid: '12345abc'
-      }
+        sid: '12345abc',
+        pu: encodeURIComponent(location.href.replace(/\?.*$/, '')),
+      },
     };
 
     it('sends bid request to ENDPOINT via GET', function () {
