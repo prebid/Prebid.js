@@ -534,7 +534,7 @@ function _createBannerRequest(bid) {
 
 export function checkVideoPlacement(videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
-  if (!deepAccess(videoData, 'placement')) {
+  if (FEATURES.VIDEO && !deepAccess(videoData, 'placement')) {
     logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
   };
 }
@@ -543,7 +543,7 @@ function _createVideoRequest(bid) {
   var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
-  if (videoData !== UNDEFINED) {
+  if (FEATURES.VIDEO && videoData !== UNDEFINED) {
     videoObj = {};
     checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
@@ -673,7 +673,7 @@ function _createImpressionObject(bid) {
             isInvalidNativeRequest = false;
           }
           break;
-        case VIDEO:
+        case FEATURES.VIDEO && VIDEO:
           videoObj = _createVideoRequest(bid);
           if (videoObj !== UNDEFINED) {
             impObj.video = videoObj;
@@ -709,7 +709,7 @@ function _createImpressionObject(bid) {
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
-            impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+          (FEATURES.VIDEO && impObj.hasOwnProperty(VIDEO)) ? impObj : UNDEFINED;
 }
 
 function _addImpressionFPD(imp, bid) {
@@ -810,7 +810,7 @@ function _checkMediaType(bid, newBid) {
     var videoRegex = new RegExp(/VAST\s+version/);
     if (adm.indexOf('span class="PubAPIAd"') >= 0) {
       newBid.mediaType = BANNER;
-    } else if (videoRegex.test(adm)) {
+    } else if (FEATURES.VIDEO && videoRegex.test(adm)) {
       newBid.mediaType = VIDEO;
     } else {
       try {
@@ -896,7 +896,10 @@ function _assignRenderer(newBid, request) {
     for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
       if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.requestId) {
         bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+
+        if (FEATURES.VIDEO) {
+          context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+        }
         adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
       }
     }
@@ -916,7 +919,7 @@ function _assignRenderer(newBid, request) {
  * @returns
  */
 export function assignDealTier(newBid, bid, request) {
-  if (!bid?.ext?.prebiddealpriority) return;
+  if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
   const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
   const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
   if (videoObj?.context != ADPOD) return;
@@ -999,7 +1002,7 @@ export const spec = {
         return false;
       }
       // video ad validation
-      if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+      if (FEATURES.VIDEO && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
         // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
         let mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
         let paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
@@ -1284,7 +1287,7 @@ export const spec = {
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
-                      case VIDEO:
+                      case FEATURES.VIDEO && VIDEO:
                         newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;
