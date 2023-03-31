@@ -161,15 +161,6 @@ const MOCK = {
     'status': 'rendered',
     getStatusCode: () => 1,
   },
-  NO_BID: {
-    'requestId': 'fakeId',
-    'seatBidId': 'fakeId',
-    'bidderCode': 'mgnipbs',
-    'transactionId': '7b10a106-89ea-4e19-bc51-9b2e970fc42a',
-    'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
-    'adUnitCode': 'box',
-    getStatusCode: () => 2,
-  },
   SEAT_NON_BID: {
     auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
     seatnonbid: [{
@@ -2072,10 +2063,12 @@ describe('magnite analytics adapter', function () {
     });
 
     it('should add a no-bid bid to the add unit if it recieves one from the server', () => {
-      const bidResponse = utils.deepClone(MOCK.NO_BID);
+      const bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
 
-      delete auctionInit.adUnits[0].sizes;
+      bidResponse.requestId = 'fakeId';
+      bidResponse.seatBidId = 'fakeId';
+
 
       bidResponse.requestId = 'fakeId';
       events.emit(AUCTION_INIT, auctionInit);
@@ -2090,17 +2083,21 @@ describe('magnite analytics adapter', function () {
 
       expect(message.auctions[0].adUnits[0].bids[1]).to.deep.equal(
         {
-          bidder: 'mgnipbs',
+          bidder: 'rubicon',
           source: 'server',
-          status: 'no-bid',
+          status: 'success',
           bidResponse: {
-            "bidPriceUSD": 0,
-            "conversionError": true
+            'bidPriceUSD': 3.4,
+            'dimensions': {
+              'height': 250,
+              'width': 300
+            },
+            'mediaType': 'banner'
           },
           oldBidId: 'fakeId',
           unknownBid: true,
           bidId: 'fakeId',
-          clientLatencyMillis: -139101369960
+          clientLatencyMillis: 271
         }
       );
     });
@@ -2139,7 +2136,6 @@ describe('magnite analytics adapter', function () {
           accountId: 1001
         }
       });
-      config.setConfig({ rubicon: { updatePageView: true } });
       seatnonbid = utils.deepClone(MOCK.SEAT_NON_BID);
     });
 
