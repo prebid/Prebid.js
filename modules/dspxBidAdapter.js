@@ -481,7 +481,7 @@ function outstreamRender(bid) {
 function createOutstreamEmbedCode(bid) {
   const fragment = window.document.createDocumentFragment();
   let div = window.document.createElement('div');
-  div.innerHTML = bid.renderer.config.code;
+  div.innerHTML = deepAccess(bid, 'renderer.config.code', "");
   fragment.appendChild(div);
 
   // run scripts
