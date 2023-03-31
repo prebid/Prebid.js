@@ -477,6 +477,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
       syncs.forEach((sync) => {
         userSync.registerSync(sync.type, spec.code, sync.url)
       });
+      userSync.bidderDone(spec.code);
     }
   }
 }, 'registerSyncs')
