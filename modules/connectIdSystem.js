@@ -126,8 +126,8 @@ export const connectIdSubmodule = {
     const params = config.params || {};
     if (!params || (typeof params.he !== 'string' && typeof params.puid !== 'string') ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      logError('The connectId submodule requires the \'pixelId\' and at least one of the \'he\' ' +
-               'or \'puid\' parameters to be defined.');
+      logError(`${MODULE_NAME} module: configurataion requires the 'pixelId' and at ` +
+                `least one of the 'he' or 'puid' parameters to be defined.`);
       return;
     }
 
@@ -163,7 +163,11 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              storeObject(responseObj);
+              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0) {
+                storeObject(responseObj);
+              } else {
+                logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
+              }
             } catch (error) {
               logError(error);
             }
@@ -171,7 +175,7 @@ export const connectIdSubmodule = {
           callback(responseObj);
         },
         error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          logError(`${MODULE_NAME} module: ID fetch encountered an error`, error);
           callback();
         }
       };
