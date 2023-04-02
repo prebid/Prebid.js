@@ -98,7 +98,8 @@ export const spec = {
     {code: 'sonic_twist'},
     {code: 'displayioads'},
     {code: 'rtbdemand_com'},
-    {code: 'bidbuddy'}
+    {code: 'bidbuddy'},
+    {code: 'adliveconnect'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
