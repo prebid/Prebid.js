@@ -442,7 +442,7 @@ describe('VidazooBidAdapter', function () {
     })
   });
 
-  describe.only('interpret response', function () {
+  describe('interpret response', function () {
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
