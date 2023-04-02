@@ -442,7 +442,7 @@ describe('VidazooBidAdapter', function () {
     })
   });
 
-  describe('interpret response', function () {
+  describe.only('interpret response', function () {
     it('should return empty array when there is no response', function () {
       const responses = adapter.interpretResponse(null);
       expect(responses).to.be.empty;
@@ -474,6 +474,19 @@ describe('VidazooBidAdapter', function () {
         meta: {
           advertiserDomains: ['securepubads.g.doubleclick.net']
         }
+      });
+    });
+
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name'
       });
     });
 
