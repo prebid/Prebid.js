@@ -14,7 +14,6 @@ import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 
 const MODULE_NAME = 'connectId';
-const STORAGE_KEY = '__ycid';
 const STORAGE_EXPIRY_DAYS = 14;
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
@@ -30,10 +29,10 @@ export const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_N
 function storeObject(obj) {
   const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
   if (storage.cookiesAreEnabled()) {
-    setEtldPlusOneCookie(STORAGE_KEY, JSON.stringify(obj), new Date(expires), getSiteHostname());
+    setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
   } else if (storage.localStorageIsEnabled()) {
     obj.__expires = expires;
-    storage.setDataInLocalStorage(STORAGE_KEY, obj);
+    storage.setDataInLocalStorage(MODULE_NAME, obj);
   }
 }
 
@@ -63,7 +62,7 @@ function setEtldPlusOneCookie(key, value, expirationDate, hostname) {
 function getIdFromCookie() {
   if (storage.cookiesAreEnabled()) {
     try {
-      return JSON.parse(storage.getCookie(STORAGE_KEY));
+      return JSON.parse(storage.getCookie(MODULE_NAME));
     } catch {}
   }
   return null;
@@ -71,11 +70,11 @@ function getIdFromCookie() {
 
 function getIdFromLocalStorage() {
   if (storage.localStorageIsEnabled()) {
-    const storedIdData = storage.getDataFromLocalStorage(STORAGE_KEY);
+    const storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
     if (storedIdData) {
       if (isPlainObject(storedIdData) && storedIdData.__expires &&
           storedIdData.__expires <= Date.now()) {
-        storage.removeDataFromLocalStorage(STORAGE_KEY);
+        storage.removeDataFromLocalStorage(MODULE_NAME);
         return null;
       }
       return storedIdData;

@@ -12,7 +12,7 @@ describe('Yahoo ConnectID Submodule', () => {
   const PIXEL_ID = '1234';
   const PROD_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PIXEL_ID}/fed`;
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
-  const STORAGE_KEY = '__ycid';
+  const STORAGE_KEY = 'connectId';
   const USP_DATA = '1YYY';
 
   it('should have the correct module name declared', () => {
