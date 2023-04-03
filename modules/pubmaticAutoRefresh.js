@@ -109,12 +109,11 @@ let openWrapSetup = {
       } else {
         sendAdserverRequest();
       }
+      // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
+      setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100);
     } else {
       logMessage(MODULE_NAME, 'Slot not found for', gptSlotName);
     }
-
-    // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
-    setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100)
   },
 
   gptSlotToPbjsAdUnitMapFunction: function(gptSlotName, gptSlot, pbjsAU) {
