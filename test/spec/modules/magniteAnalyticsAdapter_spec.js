@@ -2069,7 +2069,6 @@ describe('magnite analytics adapter', function () {
       bidResponse.requestId = 'fakeId';
       bidResponse.seatBidId = 'fakeId';
 
-
       bidResponse.requestId = 'fakeId';
       events.emit(AUCTION_INIT, auctionInit);
       events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
