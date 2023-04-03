@@ -220,9 +220,11 @@ export const spec = {
     }
 
     const gdprConsent = bidderRequest.gdprConsent;
-    if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
+
+    if (gdprConsent) {
       commonPayload.gdpr = {
-        consent: gdprConsent.consentString, applies: gdprConsent.gdprApplies
+        consent: gdprConsent.consentString,
+        applies: gdprConsent.gdprApplies
       };
     }
 
