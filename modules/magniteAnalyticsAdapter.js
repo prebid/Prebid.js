@@ -956,7 +956,10 @@ const handleNonBidEvent = function(args) {
   const {seatnonbid, auctionId} = args;
   const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
   // if no auction just bail
-  if (!auction) logWarn(`Unable to match nonbid to auction`) && return;
+  if (!auction) {
+    logWarn(`Unable to match nonbid to auction`);
+    return;
+  }
   const adUnits = auction.adUnits;
   seatnonbid.forEach(seatnonbid => {
     let {seat} = seatnonbid;
