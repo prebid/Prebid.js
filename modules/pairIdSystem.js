@@ -11,7 +11,7 @@ import { logError } from '../src/utils.js';
 
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
-const LIVERAMP_PAIR_ID_KEY = 'lr_pairId';
+const LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 
 export const storage = getStorageManager()
 
