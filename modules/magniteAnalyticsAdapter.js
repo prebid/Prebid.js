@@ -955,6 +955,8 @@ magniteAdapter.track = ({ eventType, args }) => {
 const handleNonBidEvent = function(args) {
   const {seatnonbid, auctionId} = args;
   const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
+  // if no auction just bail
+  if (!auction) logWarn(`Unable to match nonbid to auction`) && return;
   const adUnits = auction.adUnits;
   seatnonbid.forEach(seatnonbid => {
     let {seat} = seatnonbid;
@@ -965,10 +967,10 @@ const handleNonBidEvent = function(args) {
         const adUnit = adUnits[matchingTid];
         const statusInfo = statusMap[status] || { status: 'no-bid' };
         adUnit.bids[generateUUID()] = {
-          source: 'server',
           bidder: seat,
+          source: 'server',
           isSeatNonBid: true,
-          clientLatencyMillis: Date.now() - cache.auctions[args.auctionId].auction.auctionStart,
+          clientLatencyMillis: Date.now() - auction.auctionStart,
           ...statusInfo
         };
       } catch (error) {
