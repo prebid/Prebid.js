@@ -8,7 +8,7 @@ import {
 } from 'modules/prebidServerBidAdapter/index.js';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import {deepAccess, deepClone} from 'src/utils.js';
+import {deepAccess, deepClone, mergeDeep} from 'src/utils.js';
 import {ajax} from 'src/ajax.js';
 import {config} from 'src/config.js';
 import * as events from 'src/events.js';
@@ -25,13 +25,15 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
+import 'modules/fledgeForGpt.js';
 import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {registerBidder} from 'src/adapters/bidderFactory.js';
+import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {deepSetValue} from '../../../src/utils.js';
 
 let CONFIG = {
   accountId: '1',
@@ -3295,6 +3297,70 @@ describe('S2S Adapter', function () {
           expect(syncer().args[0]).to.include.members([123]);
         });
       });
+    });
+    describe('when the response contains ext.prebid.fledge', () => {
+      let fledgeStub, request, bidderRequests;
+
+      function fledgeHook(next, ...args) {
+        fledgeStub(...args);
+      }
+
+      before(() => {
+        addComponentAuction.before(fledgeHook);
+      });
+
+      after(() => {
+        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+      })
+
+      beforeEach(function () {
+        fledgeStub = sinon.stub();
+        config.setConfig({CONFIG});
+        request = deepClone(REQUEST);
+        request.ad_units.forEach(au => deepSetValue(au, 'ortb2Imp.ext.ae', 1));
+        bidderRequests = deepClone(BID_REQUESTS);
+        bidderRequests.forEach(req => req.fledgeEnabled = true);
+      });
+
+      const AU = 'div-gpt-ad-1460505748561-0';
+      const FLEDGE_RESP = {
+        ext: {
+          prebid: {
+            fledge: {
+              auctionconfigs: [
+                {
+                  impid: AU,
+                  config: {
+                    id: 1
+                  }
+                },
+                {
+                  impid: AU,
+                  config: {
+                    id: 2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+
+      it('calls addComponentAuction alongside addBidResponse', function () {
+        adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
+        expect(addBidResponse.called).to.be.true;
+        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+      });
+
+      it('calls addComponentAuction when there is no bid in the response', () => {
+        adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
+        server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
+        expect(addBidResponse.called).to.be.false;
+        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+      })
     });
   });
 
