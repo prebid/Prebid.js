@@ -363,7 +363,7 @@ export const spec = {
   },
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     logInfo(LOG_INFO_PREFIX + `getUserSyncs`);
-    let spb = isPlainObject(config.getConfig('userSync')) &&
+    const spb = isPlainObject(config.getConfig('userSync')) &&
         isNumber(config.getConfig('userSync').syncsPerBidder)
       ? config.getConfig('userSync').syncsPerBidder : USERSYNC_DEFAULT_CONFIG.syncsPerBidder;
 
@@ -402,9 +402,7 @@ export const spec = {
           type: 'iframe',
           url: 'https://cm.mgid.com/i.html?' + query.join('&')
         });
-        spb--;
-      }
-      if (syncOptions.pixelEnabled && spb > 0) {
+      } else if (syncOptions.pixelEnabled) {
         if (pixels.length === 0) {
           for (let i = 0; i < spb; i++) {
             syncs.push({
