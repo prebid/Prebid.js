@@ -1,5 +1,5 @@
 import {
-  greenbidsAnalyticsAdapter, parseBidderCode, parseAdUnitCode,
+  greenbidsAnalyticsAdapter, parseBidderCode,
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/greenbidsAnalyticsAdapter.js';
 
@@ -10,7 +10,6 @@ const events = require('src/events');
 const constants = require('src/constants.json');
 
 const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
-const adid = 'test-ad-83444226E44368D1E32E49EEBE6D29';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
@@ -18,7 +17,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     beforeEach(function () {
       const configOptions = {
         pbuid: pbuid,
-        adid: adid,
         sampling: 0,
       };
 
@@ -69,26 +67,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       });
     });
 
-    describe('#parseAdUnitCode()', function() {
-      it('should get lower case adUnit code from adUnitCode field value', function() {
-        const receivedBids = [
-          {
-            auctionId: auctionId,
-            adUnitCode: 'ADUNIT',
-            bidder: 'greenbids',
-            bidderCode: 'GREENBIDS',
-            requestId: 'a1b2c3d4',
-            timeToRespond: 72,
-            cpm: 0.1,
-            currency: 'USD',
-            ad: '<html>fake ad1</html>'
-          },
-        ];
-        const result = parseAdUnitCode(receivedBids[0]);
-        expect(result).to.equal('adunit');
-      });
-    });
-
     describe('#getCachedAuction()', function() {
       const existing = {timeoutBids: [{}]};
       greenbidsAnalyticsAdapter.cachedAuctions['test_auction_id'] = existing;
@@ -112,7 +90,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       const receivedBids = [
         {
           auctionId: auctionId,
-          adUnitCode: 'adunit_1',
+          adUnitCode: 'adunit-1',
           bidder: 'greenbids',
           bidderCode: 'greenbids',
           requestId: 'a1b2c3d4',
@@ -123,7 +101,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
         },
         {
           auctionId: auctionId,
-          adUnitCode: 'adunit_1',
+          adUnitCode: 'adunit-1',
           bidder: 'greenbidsx',
           bidderCode: 'greenbidsx',
           requestId: 'b2c3d4e5',
@@ -134,7 +112,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
         },
         {
           auctionId: auctionId,
-          adUnitCode: 'adunit_2',
+          adUnitCode: 'adunit-2',
           bidder: 'greenbids',
           bidderCode: 'greenbids',
           requestId: 'c3d4e5f6',
@@ -144,23 +122,10 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           ad: '<html>fake ad3</html>'
         },
       ];
-      const highestCpmBids = [
-        {
-          auctionId: auctionId,
-          adUnitCode: 'adunit_1',
-          bidder: 'greenbids',
-          bidderCode: 'greenbids',
-          // No requestId
-          timeToRespond: 72,
-          cpm: 0.1,
-          currency: 'USD',
-          ad: '<html>fake ad1</html>'
-        }
-      ];
       const noBids = [
         {
           auctionId: auctionId,
-          adUnitCode: 'adunit_2',
+          adUnitCode: 'adunit-2',
           bidder: 'greenbids',
           bidderCode: 'greenbids',
           bidId: 'a1b2c3d4',
@@ -169,7 +134,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       const timeoutBids = [
         {
           auctionId: auctionId,
-          adUnitCode: 'adunit_2',
+          adUnitCode: 'adunit-2',
           bidder: 'greenbids',
           bidderCode: 'greenbids',
           bidId: '00123d4c',
@@ -180,7 +145,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           version: ANALYTICS_VERSION,
           auctionId: auctionId,
           pbuid: pbuid,
-          // referrer: window.location.href,
+          referrer: window.location.href,
           sampling: 0,
           prebid: '$prebid.version$',
         });
@@ -195,33 +160,33 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       });
 
       describe('#serializeBidResponse', function() {
-        it('should handle BID properly and serialize bid price related fields', function() {
+        it('should handle BID properly with timeout false and hasBid true', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(receivedBids[0], BIDDER_STATUS.BID);
 
           expect(result).to.include({
+            bidder: 'greenbids',
             isTimeout: false,
-            status: BIDDER_STATUS.BID,
-            time: 72,
-            cpm: 0.1,
-            currency: 'USD',
+            hasBid: true,
           });
         });
 
-        it('should handle NO_BID properly and set status to noBid', function() {
+        it('should handle NO_BID properly and set hasBid to false', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.NO_BID);
 
           expect(result).to.include({
+            bidder: 'greenbids',
             isTimeout: false,
-            status: BIDDER_STATUS.NO_BID,
+            hasBid: false,
           });
         });
 
-        it('should handle TIMEOUT properly and set status to timeout and isTimeout to true', function() {
+        it('should handle TIMEOUT properly and set isTimeout to true', function() {
           const result = greenbidsAnalyticsAdapter.serializeBidResponse(noBids[0], BIDDER_STATUS.TIMEOUT);
 
           expect(result).to.include({
+            bidder: 'greenbids',
             isTimeout: true,
-            status: BIDDER_STATUS.TIMEOUT,
+            hasBid: false,
           });
         });
       });
@@ -229,17 +194,24 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       describe('#addBidResponseToMessage()', function() {
         it('should add a bid response in the output message, grouped by adunit_id and bidder', function() {
           const message = {
-            adUnits: {}
+            adUnits: [
+              {
+                code: 'adunit-2',
+                bidders: []
+              }
+            ]
           };
           greenbidsAnalyticsAdapter.addBidResponseToMessage(message, noBids[0], BIDDER_STATUS.NO_BID);
 
-          expect(message.adUnits).to.deep.include({
-            'adunit_2': {
-              'greenbids': {
+          expect(message.adUnits[0]).to.deep.include({
+            code: 'adunit-2',
+            bidders: [
+              {
+                bidder: 'greenbids',
                 isTimeout: false,
-                status: BIDDER_STATUS.NO_BID,
+                hasBid: false,
               }
-            }
+            ]
           });
         });
       });
@@ -251,7 +223,32 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             timestamp: 1234567890,
             timeout: 3000,
             auctionEnd: 1234567990,
-            adUnitCodes: ['adunit_1', 'adunit_2'],
+            adUnitCodes: ['adunit-1', 'adunit-2'],
+            adUnits: [
+              {
+                code: 'adunit-1',
+                mediaTypes: {
+                  banner: {
+                    sizes: [[300, 250], [300, 600]]
+                  },
+                }
+              },
+              {
+                code: 'adunit-2',
+                mediaTypes: {
+                  banner: {
+                    sizes: [[300, 250], [300, 600]]
+                  },
+                  video: {
+                    context: 'instream',
+                    mimes: ['video/mp4'],
+                    playerSize: [[640, 480]],
+                    skip: 1,
+                    protocols: [1, 2, 3, 4]
+                  },
+                }
+              },
+            ],
             bidsReceived: receivedBids,
             noBids: noBids
           };
@@ -261,31 +258,50 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
             auctionElapsed: 100,
-            adUnits: {
-              'adunit_1': {
-                'greenbids': {
-                  isTimeout: false,
-                  status: BIDDER_STATUS.BID,
-                  time: 72,
-                  cpm: 0.1,
-                  currency: 'USD',
+            adUnits: [
+              {
+                code: 'adunit-1',
+                mediaTypes: {
+                  banner: {
+                    sizes: [[300, 250], [300, 600]]
+                  }
                 },
-                'greenbidsx': {
-                  isTimeout: false,
-                  status: BIDDER_STATUS.BID,
-                  time: 100,
-                  cpm: 0.08,
-                  currency: 'USD',
-                }
+                bidders: [
+                  {
+                    bidder: 'greenbids',
+                    isTimeout: false,
+                    hasBid: true
+                  },
+                  {
+                    bidder: 'greenbidsx',
+                    isTimeout: false,
+                    hasBid: true
+                  }
+                ]
               },
-              'adunit_2': {
-                // this bid result exists in both bid and noBid arrays and should be treated as bid
-                'greenbids': {
-                  isTimeout: true,
-                  status: BIDDER_STATUS.TIMEOUT,
-                }
+              {
+                code: 'adunit-2',
+                mediaTypes: {
+                  banner: {
+                    sizes: [[300, 250], [300, 600]]
+                  },
+                  video: {
+                    context: 'instream',
+                    mimes: ['video/mp4'],
+                    playerSize: [[640, 480]],
+                    skip: 1,
+                    protocols: [1, 2, 3, 4]
+                  }
+                },
+                bidders: [
+                  {
+                    bidder: 'greenbids',
+                    isTimeout: true,
+                    hasBid: true
+                  }
+                ]
               }
-            }
+            ],
           });
         });
       });

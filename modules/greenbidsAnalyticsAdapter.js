@@ -30,10 +30,6 @@ export const parseBidderCode = function (bid) {
   return bidderCode.toLowerCase();
 };
 
-export const parseAdUnitCode = function (bidResponse) {
-  return bidResponse.adUnitCode.toLowerCase();
-};
-
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
 
   cachedAuctions: {},
@@ -72,47 +68,64 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       sampling: analyticsOptions.options.sampling,
       prebid: '$prebid.version$',
       pbuid: analyticsOptions.pbuid,
-      adUnits: {},
+      adUnits: [],
     };
   },
   serializeBidResponse(bid, status) {
-    const result = {
+    return {
+      bidder: bid.bidder,
       isTimeout: (status === BIDDER_STATUS.TIMEOUT),
-      status: status,
+      hasBid: (status === BIDDER_STATUS.BID),
     };
-    if (status === BIDDER_STATUS.BID) {
-      Object.assign(result, {
-        time: bid.timeToRespond,
-        cpm: bid.cpm,
-        currency: bid.currency,
-      });
-    }
-    return result;
   },
   addBidResponseToMessage(message, bid, status) {
-    const adUnitCode = parseAdUnitCode(bid);
-    message.adUnits[adUnitCode] = message.adUnits[adUnitCode] || {};
-    const bidder = parseBidderCode(bid);
-    message.adUnits[adUnitCode][bidder] = this.serializeBidResponse(bid, status);
+    const adUnitCode = bid.adUnitCode.toLowerCase();
+    const adUnitIndex = message.adUnits.findIndex((adUnit) => {
+      return adUnit.code === adUnitCode;
+    });
+    if (adUnitIndex === -1) {
+      logError('Trying to add to non registered adunit');
+      return;
+    }
+    const bidderIndex = message.adUnits[adUnitIndex].bidders.findIndex((bidder) => {
+      return bidder.bidder === bid.bidder;
+    });
+    if (bidderIndex === -1) {
+      message.adUnits[adUnitIndex].bidders.push(this.serializeBidResponse(bid, status));
+    } else {
+      if (status === BIDDER_STATUS.BID) {
+        message.adUnits[adUnitIndex].bidders[bidderIndex].hasBid = true;
+      } else if (status === BIDDER_STATUS.TIMEOUT) {
+        message.adUnits[adUnitIndex].bidders[bidderIndex].isTimeout = true;
+      }
+    }
   },
   createBidMessage(auctionEndArgs, timeoutBids) {
-    const {auctionId, timestamp, auctionEnd, adUnitCodes, bidsReceived, noBids} = auctionEndArgs;
+    logInfo(auctionEndArgs)
+    const {auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
     message.auctionElapsed = (auctionEnd - timestamp);
 
-    adUnitCodes.forEach((adUnitCode) => {
-      message.adUnits[adUnitCode] = {};
+    adUnits.forEach((adUnit) => {
+      const adUnitCode = adUnit.code.toLowerCase();
+      message.adUnits.push({
+        code: adUnitCode,
+        mediaTypes: {
+          ...(adUnit.mediaTypes.banner !== undefined) && {banner: adUnit.mediaTypes.banner},
+          ...(adUnit.mediaTypes.video !== undefined) && {video: adUnit.mediaTypes.video},
+          ...(adUnit.mediaTypes.native !== undefined) && {native: adUnit.mediaTypes.native}
+        },
+        bidders: [],
+      });
     });
 
-    // In this situation, the bid exists in both noBids and bids arrays.
+    // We enrich noBid then bids, then timeouts, because in case of a timeout, one response from a bidder
+    // Can be in the 3 arrays, and we want that case reflected in the call
     noBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.NO_BID));
 
-    // This array may contain some timeout bids (responses come back after auction timeout)
     bidsReceived.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.BID));
 
-    // We handle timeout after bids since it's possible that a bid has a response, but the response comes back
-    // after auction end. In this case, the bid exists in both bidsReceived and timeoutBids arrays.
     timeoutBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.TIMEOUT));
 
     return message;
