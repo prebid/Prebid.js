@@ -13,7 +13,7 @@
     <script>
       // Setup ad units
       var adUnits = [{
-        code: 'div-gpt-ad-51545-0',
+        code: 'testUnit',
         mediaTypes: {
           video: {}
         },
@@ -54,7 +54,7 @@
             intercept: [
               {
                 when: {
-                  adUnitCode: 'div-gpt-ad-51545-0',
+                  adUnitCode: 'testUnit',
                 },
                 then: {
                   cpm: 25,
@@ -258,27 +258,27 @@
 
         pbjs.onEvent('videoAuctionAdLoadAbort', (e) => {
           console.log('videos pb auction ad load attempt: ', e);
-          eventHandler(e, e.type, "auction", );
+          eventHandler(e, "auctionAdLoadAbort", "auction", );
         });
 
         pbjs.onEvent('videoAuctionAdLoadQueued', (e) => {
           console.log('videos pb auction ad load queued: ', e);
-          eventHandler(e, e.type, "auction", );
+          eventHandler(e, "auctionAdLoadQueued", "auction", );
         });
 
-        pbjs.onEvent('videoAuctionAdLoadAttempt', event => {
-          console.log('The Video Module is attempting to load an ad into the player! \n', event);
-          eventHandler(e, e.type, "auction", );
+        pbjs.onEvent('videoAuctionAdLoadAttempt', e => {
+          console.log('The Video Module is attempting to load an ad into the player! \n', e);
+          eventHandler(e, "auctionAdLoadAttempt", "auction", );
         });
 
         pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
-          eventHandler(e, e.type, "auction", );
+          eventHandler(e, "bidError", "auction", );
         });
 
         pbjs.onEvent('videoBidImpression', e => {
           console.log('An Ad Impression came from a Bid: ', e);
-          eventHandler(e, e.type, "auction", );
+          eventHandler(e, "bidImpression", "auction", );
         });
 
         pbjs.requestBids(adUnits);
@@ -288,9 +288,8 @@
 
 <body>
 <div id ="player"></div>
-<div id ="eventsLog">
+<div id ="eventsLog"></div>
 
-</div>
 </body>
 
 </html>

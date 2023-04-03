@@ -4,7 +4,7 @@ html {
 body {
     background: #ccc;
     margin: 20px 5px;
-    font: 14px/20px Helvetica, Arial, sans-serif;
+    font: 42px/60px Helvetica, Arial, sans-serif;
     min-width: 320px;
     max-width: 1920px;
 }
@@ -91,7 +91,7 @@ div.sequence {
     background: #fcc;
 }
 .group-auction {
-    background: #fea;
+    background: #ece;
 }
 pre {
     margin: 0;
