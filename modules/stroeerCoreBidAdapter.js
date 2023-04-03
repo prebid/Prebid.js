@@ -68,9 +68,10 @@ export const spec = {
 
     const gdprConsent = bidderRequest.gdprConsent;
 
-    if (gdprConsent && gdprConsent.consentString != null && gdprConsent.gdprApplies != null) {
+    if (gdprConsent) {
       basePayload.gdpr = {
-        consent: bidderRequest.gdprConsent.consentString, applies: bidderRequest.gdprConsent.gdprApplies
+        consent: gdprConsent.consentString,
+        applies: gdprConsent.gdprApplies
       };
     }
 
