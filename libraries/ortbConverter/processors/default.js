@@ -138,7 +138,7 @@ function fpdFromTopLevelConfig(prop) {
   }
 }
 
-export function onlyOneClientSection(ortbRequest) {
+export function onlyOneClientSection(ortbRequest, bidderRequest) {
   ['dooh', 'app', 'site'].reduce((found, section) => {
     if (ortbRequest[section] != null && Object.keys(ortbRequest[section]).length > 0) {
       if (found != null) {
@@ -151,14 +151,13 @@ export function onlyOneClientSection(ortbRequest) {
     return found;
   }, null);
 
-  // NOTE: As Prebid(from 7.39) is not allowing to overwriting page, domain and ref, so we don't need below code changes.
-  // // We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
-  // const { page, domain } = bidderRequest.refererInfo;
-  // const ref = window.document.referrer;
-  // if (bidderRequest?.src === 's2s') {
-  //   ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
-  //   if (ref.length) {
-  //     ortbRequest.site.ref = ref;
-  //   }
-  // }
+  // PM: We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
+  const { page, domain } = bidderRequest.refererInfo;
+  const ref = window.document.referrer;
+  if (bidderRequest?.src === 's2s') {
+    ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
+    if (ref.length) {
+      ortbRequest.site.ref = ref;
+    }
+  }
 }
