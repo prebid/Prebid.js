@@ -684,32 +684,26 @@ describe('Adagio bid adapter', () => {
     });
 
     describe('with userID modules', function() {
-      const userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666'
-      };
+      const userIdAsEids = [{
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+          }
+        ]
+      }];
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bid01 = new BidRequestBuilder({
-          userId
+          userIdAsEids
         }).withParams().build();
 
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        const expected = [{
-          source: 'pubcid.org',
-          uids: [
-            {
-              atype: 1,
-              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
-            }
-          ]
-        }];
-
-        expect(requests[0].data.user.eids).to.have.lengthOf(1);
-        expect(requests[0].data.user.eids).to.deep.equal(expected);
+        expect(requests[0].data.user.eids).to.deep.equal(userIdAsEids);
       });
 
       it('should send an empty "user.eids" array in the request if userId module is unsupported', function() {
