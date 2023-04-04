@@ -879,6 +879,15 @@ describe('ttdBidAdapter', function () {
     });
   });
 
+  it('sets plcmt correctly if sent', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.plcmt).to.equal(3);
+    });
+  });
+
   describe('interpretResponse-empty', function () {
     it('should handle empty response', function () {
       let result = spec.interpretResponse({});
