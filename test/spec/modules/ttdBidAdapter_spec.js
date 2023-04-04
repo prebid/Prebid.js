@@ -877,7 +877,6 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.placement).to.equal(3);
     });
-  });
 
   it('sets plcmt correctly if sent', function () {
       let clonedVideoRequests = deepClone(baseVideoBidRequests);
@@ -887,6 +886,8 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].video.plcmt).to.equal(3);
     });
   });
+
+
 
   describe('interpretResponse-empty', function () {
     it('should handle empty response', function () {
