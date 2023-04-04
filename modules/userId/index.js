@@ -413,7 +413,7 @@ function processSubmoduleCallbacks(submodules, cb) {
       moduleDone();
     }
     try {
-      submodule.callback(callbackCompleted);
+      submodule.callback(callbackCompleted, getStoredValue.bind(null, submodule.config?.storage));
     } catch (e) {
       logError(`Error in userID module '${submodule.submodule.name}':`, e);
       moduleDone();
@@ -982,7 +982,7 @@ function updateSubmodules() {
       submodule: i,
       config: submoduleConfig,
       callback: undefined,
-      idObj: undefined
+      idObj: undefined,
     } : null;
   }).filter(submodule => submodule !== null)
     .forEach((sm) => submodules.push(sm));
