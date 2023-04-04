@@ -111,7 +111,7 @@ export const spec = {
     params = convertTypes({
       'sitekey': 'string',
       'placementId': 'string',
-      'keywords': transformBidderParamKeywords
+      'keywords': transformBidderParamKeywords,
     }, params);
     if (isOpenRtb) {
       if (isPopulatedArray(params.keywords)) {
@@ -153,11 +153,11 @@ function formatRequest(payload, bidderRequest) {
       withCredentials: false
     };
   }
-
+  const baseUrl = payload.tags[0].url || URL_BASE;
   const payloadString = JSON.stringify(payload);
   return {
     method: 'POST',
-    url: `${URL_BASE}/${payload.tags[0].sitekey}`,
+    url: `${baseUrl}/${payload.tags[0].sitekey}`,
     data: payloadString,
     bidderRequest,
     options
