@@ -164,15 +164,18 @@ function getImpression(bidRequest) {
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const tid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  const rwdd = utils.deepAccess(bidRequest, 'ortb2Imp.rwdd');
   if (gpid || tid) {
     impression.ext = {}
     if (gpid) { impression.ext.gpid = gpid }
     if (tid) { impression.ext.tid = tid }
   }
-
+  if (rwdd) {
+    impression.rwdd = rwdd;
+  }
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
-    impression.tagid = tagid
+    impression.tagid = tagid;
   }
 
   const mediaTypesVideo = utils.deepAccess(bidRequest, 'mediaTypes.video');
