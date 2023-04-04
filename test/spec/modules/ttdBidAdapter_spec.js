@@ -878,7 +878,7 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].video.placement).to.equal(3);
     });
 
-  it('sets plcmt correctly if sent', function () {
+    it('sets plcmt correctly if sent', function () {
       let clonedVideoRequests = deepClone(baseVideoBidRequests);
       clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
 
