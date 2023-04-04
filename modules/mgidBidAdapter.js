@@ -21,7 +21,6 @@ import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
-import {createEidsArray} from './userId/eids.js';
 
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
@@ -272,7 +271,7 @@ export const spec = {
     if (isStr(userId)) {
       deepSetValue(request, 'user.id', userId);
     }
-    const eids = setOnAny(validBidRequests, 'userIdAsEids') || createEidsArray(userId);
+    const eids = setOnAny(validBidRequests, 'userIdAsEids')
     if (eids && eids.length > 0) {
       deepSetValue(request, 'user.ext.eids', eids);
     }
