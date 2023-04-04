@@ -371,7 +371,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the banner bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
@@ -532,7 +540,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the video bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{

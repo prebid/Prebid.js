@@ -2,7 +2,6 @@ import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
-import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -63,9 +62,8 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   if (schain) request.source.ext = { schain: schain };
 
   // Set eids
-  let bidUserId = deepAccess(validBidRequests, '0.userId');
-  let eids = createEidsArray(bidUserId);
-  if (eids.length) {
+  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (eids && eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
 
