@@ -8,8 +8,11 @@ import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
-const storage = getStorageManager({moduleName: 'pubCommonId'});
+const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 
 const ID_NAME = '_pubcid';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -165,8 +168,8 @@ export function getPubcidConfig() { return pubcidConfig; }
  * @param {function} next The next function in the chain
  */
 
-export function requestBidHook(next, config) {
-  let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
+export const requestBidHook = timedAuctionHook('pubCommonId', function requestBidHook(next, config) {
+  let adUnits = config.adUnits || getGlobal().adUnits;
   let pubcid = null;
 
   // Pass control to the next function if not enabled
@@ -221,7 +224,7 @@ export function requestBidHook(next, config) {
   }
 
   return next.call(this, config);
-}
+});
 
 // Helper to set a cookie
 export function setCookie(name, value, expires, sameSite) {
@@ -290,7 +293,7 @@ export function initPubcid() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
 
   if (!optout) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
+    getGlobal().requestBids.before(requestBidHook);
   }
 }
 

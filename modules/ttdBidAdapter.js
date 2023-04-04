@@ -38,10 +38,19 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
 function getBidFloor(bid) {
+  // value from params takes precedance over value set by Floor Module
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+
   if (!utils.isFn(bid.getFloor)) {
     return null;
   }
@@ -59,7 +68,7 @@ function getBidFloor(bid) {
 
 function getSource(validBidRequests) {
   let source = {
-    tid: validBidRequests[0].transactionId
+    tid: validBidRequests[0].auctionId
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -121,17 +130,26 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
+  // gather user.data
+  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
+  if (ortb2UserData && ortb2UserData.length) {
+    user = utils.mergeDeep(user, {
+      data: [...ortb2UserData]
+    });
+  };
   return user;
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = {
+  var site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
+    ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
-    ...firstPartyData.site
-  };
+  },
+  firstPartyData.site
+  );
 
   var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
@@ -333,6 +351,11 @@ export const spec = {
     }
     if (bid.params.publisherId.length > 32) {
       utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
+      return false;
+    }
+
+    // optional parameters
+    if (bid.params.bidfloor && isNaN(parseFloat(bid.params.bidfloor))) {
       return false;
     }
 

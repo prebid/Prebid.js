@@ -264,7 +264,8 @@ function getEids(userId) {
   const idProperties = [
     'uid',
     'eid',
-    'lipbid'
+    'lipbid',
+    'envelope'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
@@ -293,7 +294,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
+  const gppConsent = bidderRequest && bidderRequest.gppConsent;
   const timeout = config.getConfig('bidderTimeout');
+  const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
@@ -385,6 +388,20 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     if (uspConsent) {
       data.uspConsent = uspConsent;
+    }
+    if (gppConsent) {
+      data.gppConsent = {
+        gppString: bidderRequest.gppConsent.gppString,
+        gpp_sid: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
+      data.gppConsent = {
+        gppString: bidderRequest.ortb2.regs.gpp,
+        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
+      };
+    }
+    if (coppa) {
+      data.coppa = coppa;
     }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);

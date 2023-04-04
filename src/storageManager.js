@@ -1,10 +1,14 @@
 import {hook} from './hook.js';
 import {hasDeviceAccess, checkCookieSupport, logError, logInfo, isPlainObject} from './utils.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
+import {VENDORLESS_GVLID} from './consentHandler.js';
 
 const moduleTypeWhiteList = ['core', 'prebid-module'];
 
 export let storageCallbacks = [];
+
+export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+export const STORAGE_TYPE_COOKIES = 'cookie';
 
 /**
  * Storage options
@@ -25,18 +29,22 @@ export let storageCallbacks = [];
  * @param {storageOptions} options
  */
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
-  function isBidderAllowed() {
+  function isBidderAllowed(storageType) {
     if (bidderCode == null) {
       return true;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-    return storageAllowed == null ? false : storageAllowed;
+    if (!storageAllowed || storageAllowed === true) return !!storageAllowed;
+    if (Array.isArray(storageAllowed)) return storageAllowed.some((e) => e === storageType);
+    return storageAllowed === storageType;
   }
 
-  const isVendorless = moduleTypeWhiteList.includes(moduleType);
+  if (moduleTypeWhiteList.includes(moduleType)) {
+    gvlid = gvlid || VENDORLESS_GVLID;
+  }
 
-  function isValid(cb) {
-    if (!isBidderAllowed()) {
+  function isValid(cb, storageType) {
+    if (!isBidderAllowed(storageType)) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);
@@ -45,7 +53,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       let hookDetails = {
         hasEnforcementHook: false
       }
-      validateStorageEnforcement(isVendorless, gvlid, bidderCode || moduleName, hookDetails, function(result) {
+      validateStorageEnforcement(gvlid, bidderCode || moduleName, hookDetails, function(result) {
         if (result && result.hasEnforcementHook) {
           value = cb(result);
         } else {
@@ -57,6 +65,17 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         }
       });
       return value;
+    }
+  }
+
+  function schedule(operation, storageType, done) {
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(operation, storageType);
+        done(result);
+      });
+    } else {
+      return isValid(operation, storageType);
     }
   }
 
@@ -80,14 +99,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -102,14 +114,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -130,14 +135,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -150,14 +148,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   /**
@@ -170,14 +161,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         window.localStorage.setItem(key, value);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -191,14 +175,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -210,14 +187,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         window.localStorage.removeItem(key);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -234,14 +204,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -270,14 +233,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
     }
 
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   return {
@@ -296,7 +252,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
 /**
  * This hook validates the storage enforcement if gdprEnforcement module is included
  */
-export const validateStorageEnforcement = hook('async', function(isVendorless, gvlid, moduleName, hookDetails, callback) {
+export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
   callback(hookDetails);
 }, 'validateStorageEnforcement');
 

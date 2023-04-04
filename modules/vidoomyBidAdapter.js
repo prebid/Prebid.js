@@ -46,6 +46,34 @@ const isBidRequestValid = bid => {
   return true;
 };
 
+/**
+ * Schain Object needed encodes URI Component with exlamation mark
+ * @param {String} str
+ * @returns {String}
+ */
+function encodeURIComponentWithExlamation(str) {
+  return encodeURIComponent(str).replace(/!/g, '%21');
+}
+
+/**
+ * Serializes the supply chain object based on IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string} serialized supply chain value
+ */
+function serializeSupplyChainObj(schainObj) {
+  if (!schainObj || !schainObj.nodes) {
+    return '';
+  }
+  const nodeProps = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+  const serializedNodes = schainObj.nodes.map(node =>
+    nodeProps.map(prop => encodeURIComponentWithExlamation(node[prop] || '')).join(',')
+  ).join('!');
+
+  const serializedSchain = `${schainObj.ver},${schainObj.complete}!${serializedNodes}`;
+  return serializedSchain;
+}
+
 const isBidResponseValid = bid => {
   if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
@@ -91,7 +119,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: bid.schain || '',
+      schain: serializeSupplyChainObj(bid.schain) || '',
       bidfloor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?
