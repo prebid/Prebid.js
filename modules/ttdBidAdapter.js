@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -125,8 +124,8 @@ function getUser(bidderRequest) {
     user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
-  var eids = createEidsArray(utils.deepAccess(bidderRequest, 'bids.0.userId'))
-  if (eids.length) {
+  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 

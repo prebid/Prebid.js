@@ -465,6 +465,7 @@ export const spec = {
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
       'x_source.tid': bidRequest.transactionId,
+      'x_imp.ext.tid': bidRequest.transactionId,
       'l_pb_bid_id': bidRequest.bidId,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
