@@ -46,7 +46,8 @@
     "AUCTION_DEBUG": "auctionDebug",
     "BID_VIEWABLE": "bidViewable",
     "STALE_RENDER": "staleRender",
-    "BILLABLE_EVENT": "billableEvent"
+    "BILLABLE_EVENT": "billableEvent",
+    "IH_INIT": "initIdentityHub"
   },
   "AD_RENDER_FAILED_REASON": {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
