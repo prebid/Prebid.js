@@ -1,10 +1,9 @@
 import {
   deviceAccessHook,
   enableAnalyticsHook,
-  enforcementRules,
+  enforcementRules, fetchBidsRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
-  makeBidRequestsHook,
   purpose1Rule,
   purpose2Rule,
   setEnforcementConfig,
@@ -28,6 +27,7 @@ import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {validateStorageEnforcement} from '../../../src/storageManager.js';
+import {activityParams} from '../../../src/activities/params.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -107,7 +107,18 @@ describe('gdpr enforcement', function () {
       }
     }
   };
-  let gvlids;
+  let gvlids, sandbox;
+
+  function setupConsentData({gdprApplies = true, apiVersion = 2} = {}) {
+    const cd = utils.deepClone(staticConfig);
+    const consent = {
+      vendorData: cd.consentData.getTCData,
+      gdprApplies,
+      apiVersion
+    };
+    sandbox.stub(gdprDataHandler, 'getConsentData').callsFake(() => consent)
+    return consent;
+  }
 
   before(() => {
     hook.ready();
@@ -116,17 +127,17 @@ describe('gdpr enforcement', function () {
   after(function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
-    adapterManager.makeBidRequests.getHooks({ hook: makeBidRequestsHook }).remove();
   })
 
   beforeEach(() => {
+    sandbox = sinon.sandbox.create();
     gvlids = {};
-    sinon.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({gvlid: gvlids[name], modules: {}}));
+    sandbox.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({gvlid: gvlids[name], modules: {}}));
   });
 
   afterEach(() => {
-    GDPR_GVLIDS.get.restore();
-  });
+    sandbox.restore();
+  })
 
   describe('deviceAccessHook', function () {
     beforeEach(function () {
@@ -528,40 +539,9 @@ describe('gdpr enforcement', function () {
     });
   });
 
-  describe('makeBidRequestsHook', function () {
-    let sandbox;
-    let adapterManagerStub;
-    let emitEventSpy;
-
-    const MOCK_AD_UNITS = [{
-      code: 'ad-unit-1',
-      mediaTypes: {},
-      bids: [{
-        bidder: 'bidder_1' // has consent
-      }, {
-        bidder: 'bidder_2' // doesn't have consent, but liTransparency is true. Bidder remains active.
-      }]
-    }, {
-      code: 'ad-unit-2',
-      mediaTypes: {},
-      bids: [{
-        bidder: 'bidder_2'
-      }, {
-        bidder: 'bidder_3'
-      }]
-    }];
-
-    beforeEach(function () {
-      sandbox = sinon.createSandbox();
-      gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
-      adapterManagerStub = sandbox.stub(adapterManager, 'getBidAdapter');
-      logWarnSpy = sandbox.spy(utils, 'logWarn');
-      nextFnSpy = sandbox.spy();
-      emitEventSpy = sandbox.spy(events, 'emit');
-    });
+  describe('fetchBidsRule', () => {
     afterEach(function () {
       config.resetConfig();
-      sandbox.restore();
     });
 
     it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is established)', function () {
@@ -575,35 +555,12 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      const consentData = {};
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-
-      gdprDataHandlerStub.returns(consentData);
+      setupConsentData()
       Object.assign(gvlids, {
         bidder_1: 4,
         bidder_2: 5,
       });
-      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
-
-      // Assertions
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, [{
-        code: 'ad-unit-1',
-        mediaTypes: {},
-        bids: [
-          sinon.match({ bidder: 'bidder_1' }),
-          sinon.match({ bidder: 'bidder_2' })
-        ]
-      }, {
-        code: 'ad-unit-2',
-        mediaTypes: {},
-        bids: [
-          sinon.match({ bidder: 'bidder_2' }),
-          sinon.match({ bidder: 'bidder_3' }) // should be allowed even though it's doesn't have a gvlId because liTransparency is established.
-        ]
-      }], []);
+      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
 
     it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is NOT established)', function() {
@@ -617,41 +574,20 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      const consentData = {};
-
-      // set li for purpose 2 to false
-      const newConsentData = utils.deepClone(staticConfig);
-      newConsentData.consentData.getTCData.purpose.legitimateInterests['2'] = false;
-
-      consentData.vendorData = newConsentData.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-
-      gdprDataHandlerStub.returns(consentData);
+      const consent = setupConsentData();
+      consent.vendorData.purpose.legitimateInterests['2'] = false;
       Object.assign(gvlids, {
         bidder_1: 4,
         bidder_2: 5,
       })
-
-      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
-
-      // Assertions
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, [{
-        code: 'ad-unit-1',
-        mediaTypes: {},
-        bids: [
-          sinon.match({ bidder: 'bidder_1' }), // 'bidder_2' is not present because it doesn't have vendorConsent
-        ]
-      }, {
-        code: 'ad-unit-2',
-        mediaTypes: {},
-        bids: [
-          sinon.match({ bidder: 'bidder_3' }), // 'bidder_3' is allowed despite gvlId being undefined because it's part of vendorExceptions
-        ]
-      }], []);
-
-      expect(logWarnSpy.calledOnce).to.equal(true);
+      Object.entries({
+        bidder_1: true,
+        bidder_2: false,
+        bidder_3: true
+      }).forEach(([bidder, allowed]) => {
+        const res = fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder));
+        allowed ? expect(res).to.not.exist : expect(res).to.eql({allow: false});
+      })
     });
 
     it('should skip validation checks if GDPR version is not equal to "2"', function () {
@@ -659,31 +595,36 @@ describe('gdpr enforcement', function () {
         gdpr: {
           rules: [{
             purpose: 'storage',
-            enforePurpose: false,
-            enforceVendor: false,
+            enforcePurpose: true,
+            enforceVendor: true,
             vendorExceptions: []
           }]
         }
       });
-
-      const consentData = {};
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 1;
-      consentData.gdprApplies = true;
-      gdprDataHandlerStub.returns(consentData);
-
-      makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
-
-      // Assertions
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, sinon.match.array.deepEquals(MOCK_AD_UNITS), []);
-      expect(emitEventSpy.notCalled).to.equal(true);
-      expect(logWarnSpy.notCalled).to.equal(true);
+      const consent = setupConsentData();
+      consent.vendorData.purpose.consents['2'] = false;
+      consent.apiVersion = 1;
+      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
+
+    it('should skip validation if enforcePurpose is false', () => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'storage',
+            enforcePurpose: false,
+            enforceVendor: true,
+            vendorExceptions: []
+          }]
+        }
+      });
+      const consent = setupConsentData();
+      consent.vendorData.purpose.consents['2'] = false;
+      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
+    })
   });
 
   describe('enableAnalyticsHook', function () {
-    let sandbox;
     let adapterManagerStub;
 
     const MOCK_ANALYTICS_ADAPTER_CONFIG = [{
@@ -698,7 +639,6 @@ describe('gdpr enforcement', function () {
     }];
 
     beforeEach(function () {
-      sandbox = sinon.createSandbox();
       gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
       adapterManagerStub = sandbox.stub(adapterManager, 'getAnalyticsAdapter');
       logWarnSpy = sandbox.spy(utils, 'logWarn');
@@ -707,7 +647,6 @@ describe('gdpr enforcement', function () {
 
     afterEach(function() {
       config.resetConfig();
-      sandbox.restore();
     });
 
     it('should block analytics adapter which does not have consent and allow the one(s) which have consent', function() {

@@ -18,6 +18,9 @@ import {
   MODULE_TYPE_CORE, MODULE_TYPE_RTD,
   MODULE_TYPE_UID
 } from '../src/activities/modules.js';
+import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../src/activities/params.js';
+import {registerActivityControl} from '../src/activities/rules.js';
+import {ACTIVITY_FETCH_BIDS} from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -263,30 +266,15 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * Checks if bidders are allowed in the auction.
- * Enforces "purpose 2 (Basic Ads)" of TCF v2.0 spec
- * @param {Function} fn - Function reference to the original function.
- * @param {Array<adUnits>} adUnits
+ * fetchBids activity control: disallow bidders from auctions if they do not have consent for purpose 2
  */
-export function makeBidRequestsHook(fn, adUnits, ...args) {
+export function fetchBidsRule(params) {
   const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 2)) {
-    adUnits.forEach(adUnit => {
-      adUnit.bids = adUnit.bids.filter(bid => {
-        const currBidder = bid.bidder;
-        const gvlId = getGvlid(MODULE_TYPE_BIDDER, currBidder);
-        if (includes(biddersBlocked, currBidder)) return false;
-        const isAllowed = !!validateRules(purpose2Rule, consentData, currBidder, gvlId);
-        if (!isAllowed) {
-          logWarn(`TCF2 blocked auction for ${currBidder}`);
-          biddersBlocked.push(currBidder);
-        }
-        return isAllowed;
-      });
-    });
-    fn.call(this, adUnits, ...args);
-  } else {
-    fn.call(this, adUnits, ...args);
+    const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME]
+    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], bidder);
+    const allow = !!validateRules(purpose2Rule, consentData, bidder, gvlid);
+    if (!allow) return {allow};
   }
 }
 
@@ -344,6 +332,9 @@ const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
 const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
 
+const RULE_NAME = 'TCF2';
+const RULE_HANDLES = [];
+
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
  * @param {Object} config - GDPR enforcement config object
@@ -379,7 +370,7 @@ export function setEnforcementConfig(config) {
       getHook('validateGdprEnforcement').before(userIdHook, 47);
     }
     if (purpose2Rule) {
-      getHook('makeBidRequests').before(makeBidRequestsHook);
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
     }
     if (purpose7Rule) {
       getHook('enableAnalyticsCb').before(enableAnalyticsHook);
@@ -388,11 +379,11 @@ export function setEnforcementConfig(config) {
 }
 
 export function uninstall() {
+  while (RULE_HANDLES.length) RULE_HANDLES.pop()();
   [
     validateStorageEnforcement.getHooks({hook: deviceAccessHook}),
     registerSyncInner.getHooks({hook: userSyncHook}),
     getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
-    getHook('makeBidRequests').getHooks({hook: makeBidRequestsHook}),
     getHook('enableAnalyticsCb').getHooks({hook: enableAnalyticsHook}),
   ].forEach(hook => hook.remove());
   hooksAdded = false;

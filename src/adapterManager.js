@@ -37,10 +37,17 @@ import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from './activities/modules.js';
+import {isActivityAllowed} from './activities/rules.js';
+import {ACTIVITY_FETCH_BIDS} from './activities/activities.js';
+import {activityParams} from './activities/params.js';
 
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
+}
+
+export const dep = {
+  isAllowed: isActivityAllowed
 }
 
 let adapterManager = {};
@@ -237,6 +244,11 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (FEATURES.NATIVE) {
     decorateAdUnitsWithNativeParams(adUnits);
   }
+
+  // filter out bidders that cannot participate in the auction
+  // TODO: PBS requests should be checked against the PBS vendor
+  adUnits.forEach(au => au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder))))
+
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);

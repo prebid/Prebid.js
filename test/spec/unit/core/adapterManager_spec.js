@@ -4,7 +4,7 @@ import adapterManager, {
   coppaDataHandler,
   _partitionBidders,
   PARTITIONS,
-  getS2SBidderSet, _filterBidsForAdUnit
+  getS2SBidderSet, _filterBidsForAdUnit, dep
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
@@ -23,6 +23,7 @@ import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {ACTIVITY_FETCH_BIDS} from '../../../../src/activities/activities.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1720,6 +1721,75 @@ describe('adapterManager tests', function () {
 
       expect(sizes1).not.to.deep.equal(sizes2);
     });
+
+    describe('and activity controls', () => {
+      const MOCK_BIDDERS = ['1', '2', '3', '4', '5'].map((n) => `mockBidder${n}`);
+
+      beforeEach(() => {
+        sinon.stub(dep, 'isAllowed');
+        MOCK_BIDDERS.forEach((bidder) => adapterManager.bidderRegistry[bidder] = {});
+      });
+      afterEach(() => {
+        dep.isAllowed.restore();
+        MOCK_BIDDERS.forEach(bidder => { delete adapterManager.bidderRegistry[bidder] });
+        config.resetConfig();
+      })
+      it('should not generate requests for bidders that cannot fetchBids', () => {
+        adUnits = [
+          {code: 'one', bids: ['mockBidder1', 'mockBidder2', 'mockBidder3'].map((bidder) => ({bidder}))},
+          {code: 'two', bids: ['mockBidder4', 'mockBidder5', 'mockBidder4'].map((bidder) => ({bidder}))}
+        ];
+        const allowed = ['mockBidder2', 'mockBidder5'];
+        dep.isAllowed.callsFake((activity, {componentType, componentName}) => {
+          return activity === ACTIVITY_FETCH_BIDS &&
+            componentType === MODULE_TYPE_BIDDER &&
+            allowed.includes(componentName);
+        });
+        let bidRequests = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        const bidders = Array.from(new Set(bidRequests.flatMap(br => br.bids).map(bid => bid.bidder)).keys());
+        expect(bidders).to.have.members(allowed);
+      });
+
+      it('should keep stored impressions, even if everything else is denied', () => {
+        config.setConfig({
+          s2sConfig: [
+            {
+              enabled: true,
+              adapter: 'mockS2SDefault',
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S1',
+              configName: 'mock1',
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S2',
+              configName: 'mock2',
+            }
+          ]
+        })
+        adUnits = [
+          {code: 'one', bids: [{bidder: null}]},
+          {code: 'two', bids: [{module: 'pbsBidAdapter', configName: 'mock1'}, {module: 'pbsBidAdapter', configName: 'mock2'}]}
+        ]
+        dep.isAllowed.callsFake(() => false);
+        let bidRequests = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        expect(bidRequests.flatMap(br => br.bids).length).to.equal(3);
+      })
+    })
 
     it('should make FPD available under `ortb2`', () => {
       const global = {
