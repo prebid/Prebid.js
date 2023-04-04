@@ -182,7 +182,7 @@ describe('eids array generation for known sub-modules', function() {
       source: 'bidswitch.com',
       uids: [{
         id: 'sample_id',
-        atype: 508
+        atype: 3
       }]
     });
   });
