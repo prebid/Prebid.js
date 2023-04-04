@@ -442,6 +442,58 @@ describe('User ID', function () {
       });
     });
 
+    describe('submodule callback', () => {
+      const TEST_KEY = 'testKey';
+
+      function setVal(val) {
+        if (val) {
+          coreStorage.setDataInLocalStorage(TEST_KEY, val);
+          coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
+        } else {
+          coreStorage.removeDataFromLocalStorage(TEST_KEY);
+          coreStorage.removeDataFromLocalStorage(TEST_KEY + '_exp');
+        }
+      }
+      afterEach(() => {
+        setVal(null);
+      })
+
+      it('should be able to re-read ID changes', (done) => {
+        setVal(null);
+        init(config);
+        setSubmoduleRegistry([{
+          name: 'mockId',
+          getId: function (_1, _2, storedId) {
+            expect(storedId).to.not.exist;
+            setVal('laterValue');
+            return {
+              callback(_, readId) {
+                expect(readId()).to.eql('laterValue');
+                done();
+              }
+            }
+          },
+          decode(d) {
+            return d
+          }
+        }]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [
+              {
+                name: 'mockId',
+                storage: {
+                  type: 'html5',
+                  name: TEST_KEY
+                }
+              }
+            ]
+          }
+        });
+      });
+    });
+
     it('should set PPID when the source needs to call out to the network', () => {
       let adUnits = [getAdUnitMock()];
       init(config);
