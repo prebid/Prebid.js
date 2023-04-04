@@ -583,7 +583,7 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub.returns(consentData);
       Object.assign(gvlids, {
         bidder_1: 4,
-        biddder_2: 5,
+        bidder_2: 5,
       });
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
@@ -630,7 +630,7 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub.returns(consentData);
       Object.assign(gvlids, {
         bidder_1: 4,
-        biddder_2: 5,
+        bidder_2: 5,
       })
 
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
