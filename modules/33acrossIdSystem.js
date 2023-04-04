@@ -17,10 +17,10 @@ const CALLER_NAME = 'pbjs';
 
 function getEnvelope(response) {
   if (!response.succeeded) {
-    if(response.error = 'Cookied User') {
-      logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ',response.error));
+    if (response.error == 'Cookied User') {
+      logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     } else {
-      logError(`${MODULE_NAME}: Unsuccessful response`.concat(' ',response.error));
+      logError(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     }
     return;
   }
