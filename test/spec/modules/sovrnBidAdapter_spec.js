@@ -247,7 +247,7 @@ describe('sovrnBidAdapter', function() {
 
       expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent)
     })
-    
+
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
       const bidderRequest = {
         ...baseBidderRequest,
@@ -302,8 +302,8 @@ describe('sovrnBidAdapter', function() {
         bids: [baseBidRequest]
       }
 
-      const { regs, user} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
-      
+      const { regs, user } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+
       expect(regs.ext.gdpr).to.exist.and.to.be.a('number')
       expect(regs.ext.gdpr).to.equal(1)
       expect(user.ext.consent).to.exist.and.to.be.a('string')
@@ -312,7 +312,7 @@ describe('sovrnBidAdapter', function() {
       expect(regs.gpp_sid).to.be.an('array')
       expect(regs.gpp_sid).to.include(8)
     })
-    
+
     it('should add schain if present', function() {
       const schainRequest = {
         ...baseBidRequest,
