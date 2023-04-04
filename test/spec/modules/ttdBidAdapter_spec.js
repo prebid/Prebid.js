@@ -282,6 +282,21 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
     });
 
+    it('sends rwdd in imp.rwdd if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const gpid = '/1111/home#header';
+      const rwdd = 1;
+      clonedBannerRequests[0].ortb2Imp = {
+        rwdd: rwdd,
+        ext: {
+          gpid: gpid
+        }
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].rwdd).to.be.not.null;
+      expect(requestBody.imp[0].rwdd).to.equal(1);
+    });
+
     it('sends auction id in source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
