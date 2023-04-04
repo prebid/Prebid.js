@@ -991,6 +991,7 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
+<<<<<<< HEAD
 if (FEATURES.VIDEO) {
   /**
    * Mark the winning bid as used, should only be used in conjunction with video
@@ -1013,12 +1014,41 @@ if (FEATURES.VIDEO) {
     } else {
       logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
     }
+=======
+/**
+ * Mark the winning bid as used, should only be used in conjunction with video
+ * @typedef {Object} MarkBidRequest
+ * @property {string} adUnitCode The ad unit code
+ * @property {string} adId The id representing the ad we want to mark
+ *
+ * @alias module:pbjs.markWinningBidAsUsed
+ */
+$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
+  const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+>>>>>>> 5fe144c74 (addressed feedback)
 
     if (bids.length > 0) {
       bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
     }
   }
 }
+
+const fetchReceivedBids = (bidRequest, warningMessage) => {
+  let bids = [];
+
+  if (bidRequest.adUnitCode && bidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === bidRequest.adId && bid.adUnitCode === bidRequest.adUnitCode);
+  } else if (bidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(bidRequest.adUnitCode);
+  } else if (bidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === bidRequest.adId);
+  } else {
+    logWarn(warningMessage);
+  }
+
+  return bids;
+};
 
 /**
  * Get Prebid config options

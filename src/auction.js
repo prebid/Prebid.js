@@ -367,6 +367,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
+    // // eslint-disable-next-line no-console
+    // console.log({ winningBid });
+    // // eslint-disable-next-line no-console
+    // console.log({ adUnits });
     const { transactionId } = winningBid;
     const winningAd = adUnits.find(adUnit => adUnit.transactionId === transactionId);
     _winningBids = _winningBids.concat(winningBid);
