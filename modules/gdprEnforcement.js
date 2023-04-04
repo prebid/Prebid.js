@@ -18,9 +18,13 @@ import {
   MODULE_TYPE_CORE, MODULE_TYPE_RTD,
   MODULE_TYPE_UID
 } from '../src/activities/modules.js';
-import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../src/activities/params.js';
+import {
+  ACTIVITY_PARAM_ANL_CONFIG,
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE
+} from '../src/activities/params.js';
 import {registerActivityControl} from '../src/activities/rules.js';
-import {ACTIVITY_FETCH_BIDS} from '../src/activities/activities.js';
+import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -285,6 +289,15 @@ export function fetchBidsRule(params) {
   }
 }
 
+export function reportAnalyticsRule(params) {
+  const consentData = gdprDataHandler.getConsentData();
+  if (shouldEnforce(consentData, 7, 'Analytics')) {
+    const analyticsAdapterCode = params[ACTIVITY_PARAM_COMPONENT_NAME];
+    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], analyticsAdapterCode, () => getGvlidFromAnalyticsAdapter(analyticsAdapterCode, params[ACTIVITY_PARAM_ANL_CONFIG]));
+    const allow = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
+    if (!allow) return {allow};
+  }
+}
 /**
  * Checks if Analytics adapters are allowed to send data to their servers for furhter processing.
  * Enforces "purpose 7 (Measurement)" of TCF v2.0 spec
@@ -380,7 +393,7 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
     }
     if (purpose7Rule) {
-      getHook('enableAnalyticsCb').before(enableAnalyticsHook);
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule))
     }
   }
 }
@@ -391,7 +404,6 @@ export function uninstall() {
     validateStorageEnforcement.getHooks({hook: deviceAccessHook}),
     registerSyncInner.getHooks({hook: userSyncHook}),
     getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
-    getHook('enableAnalyticsCb').getHooks({hook: enableAnalyticsHook}),
   ].forEach(hook => hook.remove());
   hooksAdded = false;
 }

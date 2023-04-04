@@ -38,8 +38,8 @@ import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_CORE} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
-import {ACTIVITY_FETCH_BIDS} from './activities/activities.js';
-import {ACTIVITY_PARAM_S2S_NAME, activityParams} from './activities/params.js';
+import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
+import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParams} from './activities/params.js';
 
 const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
@@ -570,7 +570,9 @@ adapterManager.enableAnalytics = function (config) {
   _each(config, adapterConfig => {
     const entry = _analyticsRegistry[adapterConfig.provider];
     if (entry && entry.adapter) {
-      entry.adapter.enableAnalytics(adapterConfig);
+      if (dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, adapterConfig.provider, {[ACTIVITY_PARAM_ANL_CONFIG]: adapterConfig}))) {
+        entry.adapter.enableAnalytics(adapterConfig);
+      }
     } else {
       logError(`Prebid Error: no analytics adapter found in registry for '${adapterConfig.provider}'.`);
     }

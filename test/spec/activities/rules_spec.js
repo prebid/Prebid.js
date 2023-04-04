@@ -83,8 +83,7 @@ describe('Activity control rules', () => {
   it('logs INFO with reason if the rule provides one', () => {
     registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({allow: true, reason: 'because'}));
     isAllowed(MOCK_ACTIVITY, {});
-    sinon.assert.calledWithMatch(logger.logInfo, new RegExp(MOCK_RULE));
-    sinon.assert.calledWithMatch(logger.logInfo, /because/);
+    sinon.assert.calledWithMatch(logger.logInfo, new RegExp(MOCK_RULE), /because/);
   });
 
   it('logs WARN when a deny is found', () => {
@@ -96,7 +95,6 @@ describe('Activity control rules', () => {
   it('logs WARN with reason if the rule provides one', () => {
     registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({allow: false, reason: 'fail'}));
     isAllowed(MOCK_ACTIVITY, {});
-    sinon.assert.calledWithMatch(logger.logWarn, new RegExp(MOCK_RULE));
-    sinon.assert.calledWithMatch(logger.logWarn, /fail/);
+    sinon.assert.calledWithMatch(logger.logWarn, new RegExp(MOCK_RULE), /fail/);
   });
 });

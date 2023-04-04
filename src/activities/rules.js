@@ -20,11 +20,11 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
   }
 
   function logResult({activity, name, allow, reason, component}) {
-    let msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'`
-    if (reason) {
-      msg = `${msg}: ${reason}`;
-    }
-    (allow ? logger.logInfo : logger.logWarn)(msg);
+    const msg = [
+      `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`
+    ];
+    reason && msg.push(reason);
+    (allow ? logger.logInfo : logger.logWarn).apply(logger, msg);
   }
 
   return [

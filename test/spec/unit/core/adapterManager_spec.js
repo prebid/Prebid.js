@@ -23,7 +23,8 @@ import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
-import {ACTIVITY_FETCH_BIDS} from '../../../../src/activities/activities.js';
+import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
+import {sandbox} from 'sinon';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -2837,6 +2838,45 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(del2, [bidderRequests[1]]);
       })
     })
+  });
+
+  describe('reportAnalytics check', () => {
+    beforeEach(() => {
+      sinon.stub(dep, 'isAllowed');
+    });
+    afterEach(() => {
+      dep.isAllowed.restore();
+    });
+
+    it('should check for reportAnalytics before registering analytics adapter', () => {
+      const enabled = {};
+      ['mockAnalytics1', 'mockAnalytics2'].forEach((code) => {
+        adapterManager.registerAnalyticsAdapter({
+          code,
+          adapter: {
+            enableAnalytics: sinon.stub().callsFake(() => { enabled[code] = true })
+          }
+        })
+      })
+
+      const anlCfg = [
+        {
+          provider: 'mockAnalytics1',
+          random: 'values'
+        },
+        {
+          provider: 'mockAnalytics2'
+        }
+      ]
+      dep.isAllowed.callsFake((activity, {component, _config}) => {
+        return activity === ACTIVITY_REPORT_ANALYTICS &&
+          component === `${MODULE_TYPE_ANALYTICS}.${anlCfg[0].provider}` &&
+          _config === anlCfg[0]
+      })
+
+      adapterManager.enableAnalytics(anlCfg);
+      expect(enabled).to.eql({mockAnalytics1: true});
+    });
   });
 
   describe('registers GVL IDs', () => {
