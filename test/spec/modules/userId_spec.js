@@ -27,7 +27,7 @@ import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {dmdIdSubmodule} from 'modules/dmdIdSystem.js';
-import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {liveIntentIdSubmodule, setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
@@ -53,6 +53,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {getCoreStorageManager} from '../../../src/storageManager.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -147,6 +148,7 @@ describe('User ID', function () {
     hook.ready();
     uninstallGdprEnforcement();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
+    liveIntentIdSubmoduleDoNotFireEvent();
   });
 
   beforeEach(function () {
@@ -422,6 +424,58 @@ describe('User ID', function () {
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    describe('submodule callback', () => {
+      const TEST_KEY = 'testKey';
+
+      function setVal(val) {
+        if (val) {
+          coreStorage.setDataInLocalStorage(TEST_KEY, val);
+          coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
+        } else {
+          coreStorage.removeDataFromLocalStorage(TEST_KEY);
+          coreStorage.removeDataFromLocalStorage(TEST_KEY + '_exp');
+        }
+      }
+      afterEach(() => {
+        setVal(null);
+      })
+
+      it('should be able to re-read ID changes', (done) => {
+        setVal(null);
+        init(config);
+        setSubmoduleRegistry([{
+          name: 'mockId',
+          getId: function (_1, _2, storedId) {
+            expect(storedId).to.not.exist;
+            setVal('laterValue');
+            return {
+              callback(_, readId) {
+                expect(readId()).to.eql('laterValue');
+                done();
+              }
+            }
+          },
+          decode(d) {
+            return d
+          }
+        }]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [
+              {
+                name: 'mockId',
+                storage: {
+                  type: 'html5',
+                  name: TEST_KEY
+                }
+              }
+            ]
+          }
+        });
       });
     });
 

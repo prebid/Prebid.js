@@ -7,6 +7,9 @@ const moduleTypeWhiteList = ['core', 'prebid-module'];
 
 export let storageCallbacks = [];
 
+export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+export const STORAGE_TYPE_COOKIES = 'cookie';
+
 /**
  * Storage options
  * @typedef {Object} storageOptions
@@ -26,20 +29,22 @@ export let storageCallbacks = [];
  * @param {storageOptions} options
  */
 export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
-  function isBidderAllowed() {
+  function isBidderAllowed(storageType) {
     if (bidderCode == null) {
       return true;
     }
     const storageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
-    return storageAllowed == null ? false : storageAllowed;
+    if (!storageAllowed || storageAllowed === true) return !!storageAllowed;
+    if (Array.isArray(storageAllowed)) return storageAllowed.some((e) => e === storageType);
+    return storageAllowed === storageType;
   }
 
   if (moduleTypeWhiteList.includes(moduleType)) {
     gvlid = gvlid || VENDORLESS_GVLID;
   }
 
-  function isValid(cb) {
-    if (!isBidderAllowed()) {
+  function isValid(cb, storageType) {
+    if (!isBidderAllowed(storageType)) {
       logInfo(`bidderSettings denied access to device storage for bidder '${bidderCode}'`);
       const result = {valid: false};
       return cb(result);
@@ -63,6 +68,17 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
     }
   }
 
+  function schedule(operation, storageType, done) {
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(operation, storageType);
+        done(result);
+      });
+    } else {
+      return isValid(operation, storageType);
+    }
+  }
+
   /**
    * @param {string} key
    * @param {string} value
@@ -83,14 +99,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -105,14 +114,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -133,14 +135,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -153,14 +148,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   /**
@@ -173,14 +161,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         window.localStorage.setItem(key, value);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -194,14 +175,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -213,14 +187,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
         window.localStorage.removeItem(key);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -237,14 +204,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -273,14 +233,7 @@ export function newStorageManager({gvlid, moduleName, bidderCode, moduleType} = 
       }
     }
 
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   return {

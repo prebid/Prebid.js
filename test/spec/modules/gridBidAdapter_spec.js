@@ -575,6 +575,30 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.regs.ext).to.have.property('us_privacy', '1YNN');
     });
 
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({gppConsent: {gppString: consentString, applicableSections: [8]}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({ortb2: {regs: {gpp: consentString, gpp_sid: [8]}}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
+    });
+
     it('if userId is present payload must have user.ext param with right keys', function () {
       const eids = [
         {
@@ -849,13 +873,16 @@ describe('TheMediaGrid Adapter', function () {
         }
       }, {
         ext: {
+          gpid: '/222222/slot',
           data: {
             adserver: {
               name: 'ad_server_name',
-              adslot: '/222222/slot'
-            },
-            pbadslot: '/222222/slot'
+            }
           }
+        }
+      }, {
+        ext: {
+          gpid: '/333333/slot'
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
@@ -872,10 +899,11 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[1].ext).to.deep.equal({
         divid: bidRequests[1].adUnitCode,
         data: ortb2Imp[1].ext.data,
-        gpid: ortb2Imp[1].ext.data.adserver.adslot
+        gpid: ortb2Imp[1].ext.gpid
       });
       expect(payload.imp[2].ext).to.deep.equal({
-        divid: bidRequests[2].adUnitCode
+        divid: bidRequests[2].adUnitCode,
+        gpid: ortb2Imp[2].ext.gpid
       });
     });
 
