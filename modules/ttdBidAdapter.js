@@ -251,6 +251,7 @@ function video(bid) {
   const api = utils.deepAccess(bid, 'mediaTypes.video.api');
   const mimes = utils.deepAccess(bid, 'mediaTypes.video.mimes');
   const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
+  const plcmt = utils.deepAccess(bid, 'mediaTypes.video.plcmt');
   const protocols = utils.deepAccess(bid, 'mediaTypes.video.protocols');
   const playbackmethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod');
   const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
@@ -285,6 +286,9 @@ function video(bid) {
 
   if (playbackmethod) {
     video.playbackmethod = playbackmethod;
+  }
+  if (plcmt) {
+    video.plcmt = plcmt;
   }
   if (pos) {
     video.pos = pos;
