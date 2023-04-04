@@ -887,8 +887,6 @@ describe('ttdBidAdapter', function () {
     });
   });
 
-
-
   describe('interpretResponse-empty', function () {
     it('should handle empty response', function () {
       let result = spec.interpretResponse({});
