@@ -36,11 +36,12 @@ import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
-import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from './activities/modules.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_CORE} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS} from './activities/activities.js';
-import {activityParams} from './activities/params.js';
+import {ACTIVITY_PARAM_S2S_NAME, activityParams} from './activities/params.js';
 
+const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
@@ -146,7 +147,7 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
-    const s2sBids = adUnit.bids.filter((b) => b.module === 'pbsBidAdapter' && b.params?.configName === s2sConfig.configName);
+    const s2sBids = adUnit.bids.filter((b) => b.module === PBS_ADAPTER_NAME && b.params?.configName === s2sConfig.configName);
     if (s2sBids.length === 1) {
       adUnit.s2sBid = s2sBids[0];
       hasModuleBids = true;
@@ -246,7 +247,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   }
 
   // filter out bidders that cannot participate in the auction
-  // TODO: PBS requests should be checked against the PBS vendor
   adUnits.forEach(au => au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder))))
 
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
@@ -270,8 +270,14 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     return bidderRequest;
   }
 
+  function isS2SAllowed(s2sConfig) {
+    return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_CORE, PBS_ADAPTER_NAME, {
+      [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+    }));
+  }
+
   _s2sConfigs.forEach(s2sConfig => {
-    if (s2sConfig && s2sConfig.enabled) {
+    if (s2sConfig && s2sConfig.enabled && isS2SAllowed(s2sConfig)) {
       let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function

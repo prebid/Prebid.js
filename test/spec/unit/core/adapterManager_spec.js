@@ -1756,40 +1756,69 @@ describe('adapterManager tests', function () {
         expect(bidders).to.have.members(allowed);
       });
 
-      it('should keep stored impressions, even if everything else is denied', () => {
-        config.setConfig({
-          s2sConfig: [
-            {
-              enabled: true,
-              adapter: 'mockS2SDefault',
-            },
-            {
-              enabled: true,
-              adapter: 'mockS2S1',
-              configName: 'mock1',
-            },
-            {
-              enabled: true,
-              adapter: 'mockS2S2',
-              configName: 'mock2',
-            }
+      describe('with multiple s2s configs', () => {
+        beforeEach(() => {
+          config.setConfig({
+            s2sConfig: [
+              {
+                enabled: true,
+                adapter: 'mockS2SDefault',
+                bidders: ['mockBidder1']
+              },
+              {
+                enabled: true,
+                adapter: 'mockS2S1',
+                configName: 'mock1',
+              },
+              {
+                enabled: true,
+                adapter: 'mockS2S2',
+                configName: 'mock2',
+              }
+            ]
+          });
+        });
+        it('should keep stored impressions, even if everything else is denied', () => {
+          adUnits = [
+            {code: 'one', bids: [{bidder: null}]},
+            {code: 'two', bids: [{module: 'pbsBidAdapter', params: {configName: 'mock1'}}, {module: 'pbsBidAdapter', params: {configName: 'mock2'}}]}
           ]
-        })
-        adUnits = [
-          {code: 'one', bids: [{bidder: null}]},
-          {code: 'two', bids: [{module: 'pbsBidAdapter', configName: 'mock1'}, {module: 'pbsBidAdapter', configName: 'mock2'}]}
-        ]
-        dep.isAllowed.callsFake(() => false);
-        let bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
-        expect(bidRequests.flatMap(br => br.bids).length).to.equal(3);
-      })
-    })
+          dep.isAllowed.callsFake(({componentType}) => componentType !== 'bidder');
+          let bidRequests = adapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+          expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.equal(3);
+        });
+
+        it('should check if the s2s adapter itself is allowed to fetch bids', () => {
+          adUnits = [
+            {
+              code: 'au',
+              bids: [
+                {bidder: null},
+                {module: 'pbsBidAdapter', params: {configName: 'mock1'}},
+                {module: 'pbsBidAdapter', params: {configName: 'mock2'}},
+                {bidder: 'mockBidder1'}
+              ]
+            }
+          ];
+          dep.isAllowed.callsFake((_, {configName, componentName}) => !(componentName === 'pbsBidAdapter' && configName === 'mock1'));
+          let bidRequests = adapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {
+            },
+            []
+          );
+          expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.eql(2)
+        });
+      });
+    });
 
     it('should make FPD available under `ortb2`', () => {
       const global = {

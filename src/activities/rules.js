@@ -1,4 +1,5 @@
 import {prefixLog} from '../utils.js';
+import {ACTIVITY_PARAM_COMPONENT} from './params.js';
 
 export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const registry = {};
@@ -15,11 +16,11 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
       logger.logError(`Exception in rule ${name} for '${activity}'`, e);
       res = {allow: false, reason: e};
     }
-    return res && Object.assign({activity, name}, res);
+    return res && Object.assign({activity, name, component: params[ACTIVITY_PARAM_COMPONENT]}, res);
   }
 
-  function logResult({activity, name, allow, reason}) {
-    let msg = `'${activity}' is ${allow ? 'allowed' : 'denied'} by ${name}`;
+  function logResult({activity, name, allow, reason, component}) {
+    let msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'`
     if (reason) {
       msg = `${msg}: ${reason}`;
     }
@@ -33,10 +34,16 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * @param {string} activity activity name - set is defined in `activities.js`
      * @param {string} ruleName a name for this rule; used for logging.
      * @param {function({}): {allow: boolean, reason?: string}} rule definition function. Takes in activity
-     *            parameters as a single object; MAY return an object {allow, reason}, where allow is true/false,
-     *            and reason is an optional message used for logging.
+     *        parameters as a single map; MAY return an object {allow, reason}, where allow is true/false,
+     *        and reason is an optional message used for logging.
+     *
+     *        {allow: true} will allow this activity AS LONG AS no other rules with same or higher priority return {allow: false};
+     *        {allow: false} will deny this activity AS LONG AS no other rules with higher priority return {allow: true};
+     *        returning null/undefined has no effect - the decision is left to other rules.
+     *        If no rule returns an allow value, the default is to allow the activity.
+     *
      * @param {number} priority rule priority; lower number means higher priority
-     * @returns a function that unregisters the rule when called.
+     * @returns {function(void): void} a function that unregisters the rule when called.
      */
     function registerActivityControl(activity, ruleName, rule, priority = 10) {
       const rules = getRules(activity);
@@ -52,7 +59,7 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      * Test whether an activity is allowed.
      *
      * @param {string} activity activity name
-     * @param {{}} params activity parameters; should be generated through `activityParams` below
+     * @param {{}} params activity parameters; should be generated through the `activityParams` utility.
      * @return {boolean} true for allow, false for deny.
      */
     function isActivityAllowed(activity, params) {

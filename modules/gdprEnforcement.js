@@ -5,7 +5,7 @@
 import {deepAccess, hasDeviceAccess, isArray, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
-import {find, includes} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {registerSyncInner} from '../src/adapters/bidderFactory.js';
 import {getHook} from '../src/hook.js';
 import {validateStorageEnforcement} from '../src/storageManager.js';
@@ -266,9 +266,16 @@ export function userIdHook(fn, submodules, consentData) {
 }
 
 /**
- * fetchBids activity control: disallow bidders from auctions if they do not have consent for purpose 2
+ * fetchBids activity control: disallow bidders from auctions if they do not have consent for purpose 2 (and purpose 2
+ * enforcement is enabled)
  */
 export function fetchBidsRule(params) {
+  if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
+    // TODO: this special case is for the PBS adapter (componentType is core)
+    // we should check for generic purpose 2 consent & vendor consent based on the PBS vendor's GVL ID;
+    // that is, however, a breaking change and skipped for now
+    return;
+  }
   const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 2)) {
     const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME]
