@@ -991,7 +991,6 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
-<<<<<<< HEAD
 if (FEATURES.VIDEO) {
   /**
    * Mark the winning bid as used, should only be used in conjunction with video
@@ -1002,30 +1001,7 @@ if (FEATURES.VIDEO) {
    * @alias module:pbjs.markWinningBidAsUsed
    */
   pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
-    let bids = [];
-
-    if (markBidRequest.adUnitCode && markBidRequest.adId) {
-      bids = auctionManager.getBidsReceived()
-        .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
-    } else if (markBidRequest.adUnitCode) {
-      bids = targeting.getWinningBids(markBidRequest.adUnitCode);
-    } else if (markBidRequest.adId) {
-      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
-    } else {
-      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-    }
-=======
-/**
- * Mark the winning bid as used, should only be used in conjunction with video
- * @typedef {Object} MarkBidRequest
- * @property {string} adUnitCode The ad unit code
- * @property {string} adId The id representing the ad we want to mark
- *
- * @alias module:pbjs.markWinningBidAsUsed
- */
-$$PREBID_GLOBAL$$.markWinningBidAsUsed = function (markBidRequest) {
-  const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
->>>>>>> 5fe144c74 (addressed feedback)
+    const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
 
     if (bids.length > 0) {
       bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
@@ -1125,6 +1101,24 @@ pbjsInstance.processQueue = function () {
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
+};
+
+/**
+ * @alias module:pbjs.triggerBilling
+ */
+pbjsInstance.triggerBilling = (winningBid) => {
+  const bids = fetchReceivedBids(winningBid, 'Improper use of triggerBilling. It requires a bid with at least an adUnitCode or an adId to function.');
+  const triggerBillingBid = bids.find(bid => bid.requestId === winningBid.requestId);
+
+  if (bids.length > 0 && triggerBillingBid) {
+    try {
+      adapterManager.callBidBillableBidder(triggerBillingBid);
+    } catch (e) {
+      logError('Error when triggering billing :', e);
+    }
+  } else {
+    logWarn('The bid provided to triggerBilling did not match any bids received.');
+  }
 };
 
 export default pbjsInstance;
