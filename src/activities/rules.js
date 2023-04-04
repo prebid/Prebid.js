@@ -36,11 +36,17 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
      *            parameters as a single object; MAY return an object {allow, reason}, where allow is true/false,
      *            and reason is an optional message used for logging.
      * @param {number} priority rule priority; lower number means higher priority
+     * @returns a function that unregisters the rule when called.
      */
     function registerActivityControl(activity, ruleName, rule, priority = 10) {
       const rules = getRules(activity);
       const pos = rules.findIndex(([itemPriority]) => priority < itemPriority);
-      rules.splice(pos < 0 ? rules.length : pos, 0, [priority, ruleName, rule]);
+      const entry = [priority, ruleName, rule];
+      rules.splice(pos < 0 ? rules.length : pos, 0, entry);
+      return function () {
+        const idx = rules.indexOf(entry);
+        if (idx >= 0) rules.splice(idx, 1);
+      }
     },
     /**
      * Test whether an activity is allowed.

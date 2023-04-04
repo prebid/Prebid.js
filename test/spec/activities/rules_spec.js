@@ -66,6 +66,14 @@ describe('Activity control rules', () => {
     expect(isAllowed(MOCK_ACTIVITY, {})).to.be.false;
   });
 
+  it('can unregister rules', () => {
+    registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({allow: true}));
+    const r = registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({allow: false}), 0);
+    expect(isAllowed(MOCK_ACTIVITY, {})).to.be.false;
+    r();
+    expect(isAllowed(MOCK_ACTIVITY, {})).to.be.true;
+  })
+
   it('logs INFO when explicit allow is found', () => {
     registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({allow: true}));
     isAllowed(MOCK_ACTIVITY, {});
