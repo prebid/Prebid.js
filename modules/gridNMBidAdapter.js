@@ -136,7 +136,7 @@ export const spec = {
         reqSource.ext.schain = schain;
       }
 
-      const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
+      const bidderTimeout = timeout;
       const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
 
       const request = {

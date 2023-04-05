@@ -1241,7 +1241,7 @@ export const spec = {
     // bidderRequest has timeout property if publisher sets during calling requestBids function from page
     // if not bidderRequest contains global value set by Prebid
     if (bidderRequest?.timeout) {
-      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+      payload.tmax = bidderRequest.timeout;
     } else {
       payload.tmax = window?.PWT?.versionDetails?.timeout;
     }

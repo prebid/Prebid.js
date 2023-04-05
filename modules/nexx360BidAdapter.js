@@ -169,7 +169,7 @@ function getBaseRequest(bid, bidderRequest) {
     imp: [],
     cur: [config.getConfig('currency.adServerCurrency') || 'USD'],
     at: 1,
-    tmax: config.getConfig('bidderTimeout'),
+    tmax: bidderRequest.timeout,
     site: {
       page: bidderRequest.refererInfo.topmostLocation || bidderRequest.refererInfo.page,
       domain: bidderRequest.refererInfo.domain,

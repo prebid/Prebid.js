@@ -1,5 +1,4 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {
@@ -102,7 +101,7 @@ function getReferer(bidderRequest) {
 function buildQuery(bidderRequest) {
   let url = appendQueryParam(ENDPOINT, 'ver', '$prebid.version$');
 
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
   url = appendQueryParam(url, 'tmax', timeout);
 
   if (gdprApplies(bidderRequest)) {
