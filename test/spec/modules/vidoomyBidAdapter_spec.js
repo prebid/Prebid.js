@@ -74,6 +74,33 @@ describe('vidoomyBidAdapter', function() {
             'sizes': [[300, 250], [200, 100]]
           }
         },
+        'schain': {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              'asi': 'exchange1.com',
+              'sid': '1234!abcd',
+              'hp': 1,
+              'rid': 'bid-request-1',
+              'name': 'publisher, Inc.',
+              'domain': 'publisher.com'
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1
+            },
+            {
+              'asi': 'exchange2.com',
+              'sid': 'abcd',
+              'hp': 1,
+              'rid': 'bid-request-2',
+              'name': 'intermediary',
+              'domain': 'intermediary.com'
+            }
+          ]
+        }
       },
       {
         'bidder': 'vidoomy',
@@ -127,6 +154,12 @@ describe('vidoomyBidAdapter', function() {
       expect('' + request[0].data.pid).to.equal('123123');
       expect('' + request[1].data.id).to.equal('456456');
       expect('' + request[1].data.pid).to.equal('456456');
+    });
+
+    it('should send schain parameter in serialized form', function () {
+      const serializedForm = '1.0,1!exchange1.com,1234%21abcd,1,bid-request-1,publisher%2C%20Inc.,publisher.com!exchange2.com,abcd,1,,,!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com'
+      expect(request[0].data).to.include.any.keys('schain');
+      expect(request[0].data.schain).to.eq(serializedForm);
     });
   });
 

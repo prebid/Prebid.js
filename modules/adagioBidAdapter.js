@@ -20,6 +20,7 @@ import {
   logInfo,
   logWarn,
   mergeDeep,
+  isStr,
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -27,7 +28,6 @@ import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
-import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -400,8 +400,8 @@ function _getSchain(bidRequest) {
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId);
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
   }
 }
 
@@ -923,6 +923,46 @@ export const spec = {
         print_number: getPrintNumber(bidRequest.adUnitCode, bidderRequest).toString(),
         adunit_position: getSlotPosition(bidRequest.params.adUnitElementId) // adUnitElementId à déplacer ???
       };
+
+      // Force the Split Keyword to be a String
+      if (bidRequest.params.splitKeyword) {
+        if (isStr(bidRequest.params.splitKeyword) || isNumber(bidRequest.params.splitKeyword)) {
+          bidRequest.params.splitKeyword = bidRequest.params.splitKeyword.toString();
+        } else {
+          delete bidRequest.params.splitKeyword;
+
+          logWarn(LOG_PREFIX, 'The splitKeyword param have been removed because the type is invalid, accepted type: number or string.');
+        }
+      }
+
+      // Force the Data Layer key and value to be a String
+      if (bidRequest.params.dataLayer) {
+        if (isStr(bidRequest.params.dataLayer) || isNumber(bidRequest.params.dataLayer) || isArray(bidRequest.params.dataLayer) || isFn(bidRequest.params.dataLayer)) {
+          logWarn(LOG_PREFIX, 'The dataLayer param is invalid, only object is accepted as a type.');
+          delete bidRequest.params.dataLayer;
+        } else {
+          let invalidDlParam = false;
+
+          bidRequest.params.dl = bidRequest.params.dataLayer
+          // Remove the dataLayer from the BidRequest to send the `dl` instead of the `dataLayer`
+          delete bidRequest.params.dataLayer
+
+          Object.keys(bidRequest.params.dl).forEach((key) => {
+            if (bidRequest.params.dl[key]) {
+              if (isStr(bidRequest.params.dl[key]) || isNumber(bidRequest.params.dl[key])) {
+                bidRequest.params.dl[key] = bidRequest.params.dl[key].toString();
+              } else {
+                invalidDlParam = true;
+                delete bidRequest.params.dl[key];
+              }
+            }
+          });
+
+          if (invalidDlParam) {
+            logWarn(LOG_PREFIX, 'Some parameters of the dataLayer property have been removed because the type is invalid, accepted type: number or string.');
+          }
+        }
+      }
 
       Object.keys(features).forEach((prop) => {
         if (features[prop] === '') {
