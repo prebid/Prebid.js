@@ -165,6 +165,9 @@ import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetr
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
 import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
+import {activityParams} from '../../src/activities/params.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
@@ -177,6 +180,9 @@ const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
 };
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
+export const dep = {
+  isAllowed: isActivityAllowed
+}
 
 /** @type {boolean} */
 let addedUserIdHook = false;
@@ -860,19 +866,25 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
-    // filter out submodules whose storage type is not enabled or allowed
-    // this needs to be done here (after consent data has loaded) so that this checks for allowed storage
-    submodules = submodules.filter((submod) => !submod.config.storage || canUseStorage(submod));
+    /**
+     * filter out submodules that:
+     *
+     *  - cannot use the storage they've been set up with (storage not available / not allowed / disabled)
+     *  - are not allowed to perform the `enrichEids` activity
+     */
+    submodules = submodules.filter((submod) => {
+      return (!submod.config.storage || canUseStorage(submod)) &&
+        dep.isAllowed(ACTIVITY_ENRICH_EIDS, activityParams(MODULE_TYPE_UID, submod.config.name));
+    });
 
     if (!submodules.length) {
-      logWarn(`${MODULE_NAME} - no ID module is configured for one of the available storage types`);
+      logWarn(`${MODULE_NAME} - no ID module configured`);
       return [];
     }
 
-    // another consent check, this time each module is checked for consent with its own gvlid
+    // TODO: remove this check in v8 (https://github.com/prebid/Prebid.js/issues/9766)
     let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasPurpose1Consent(consentData)) {
-      // TODO: remove this check in v8 (https://github.com/prebid/Prebid.js/issues/9766)
       logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return [];
     }

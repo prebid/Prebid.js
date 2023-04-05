@@ -1,7 +1,7 @@
 import {
   attachIdSystem,
   auctionDelay,
-  coreStorage,
+  coreStorage, dep,
   findRootDomain,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
@@ -57,6 +57,8 @@ import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
+import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
+import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -2502,6 +2504,53 @@ describe('User ID', function () {
           done();
         }, {adUnits});
       });
+
+      describe('activity controls', () => {
+        let isAllowed;
+        const MOCK_IDS = ['mockId1', 'mockId2']
+        beforeEach(() => {
+          isAllowed = sinon.stub(dep, 'isAllowed');
+          init(config);
+          setSubmoduleRegistry([]);
+          const mods = MOCK_IDS.map((name) => ({
+            name,
+            decode: function (value) {
+              return {
+                [name]: value
+              };
+            },
+            getId: function () {
+              return {id: `${name}Value`};
+            }
+          }));
+          mods.forEach(attachIdSystem);
+        });
+        afterEach(() => {
+          isAllowed.restore();
+        });
+
+        it('should check for enrichEids activity permissions', (done) => {
+          isAllowed.callsFake((activity, params) => {
+            return !(activity === ACTIVITY_ENRICH_EIDS &&
+              params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_UID &&
+              params[ACTIVITY_PARAM_COMPONENT_NAME] === MOCK_IDS[0])
+          })
+
+          config.setConfig({
+            userSync: {
+              syncDelay: 0,
+              userIds: MOCK_IDS.map(name => ({
+                name, storage: {name, type: 'cookie'}
+              }))
+            }
+          });
+          requestBidsHook((req) => {
+            const activeIds = req.adUnits.flatMap(au => au.bids).flatMap(bid => Object.keys(bid.userId));
+            expect(Array.from(new Set(activeIds))).to.have.members([MOCK_IDS[1]]);
+            done();
+          }, {adUnits})
+        });
+      })
     });
 
     describe('callbacks at the end of auction', function () {
