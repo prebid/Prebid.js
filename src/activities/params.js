@@ -1,11 +1,22 @@
 export const ACTIVITY_PARAM_COMPONENT = 'component';
 export const ACTIVITY_PARAM_COMPONENT_TYPE = ACTIVITY_PARAM_COMPONENT + 'Type';
 export const ACTIVITY_PARAM_COMPONENT_NAME = ACTIVITY_PARAM_COMPONENT + 'Name';
+
 /**
  * s2sConfig[].configName, used to identify a particular s2s instance
  * relevant for: fetchBids
  */
 export const ACTIVITY_PARAM_S2S_NAME = 'configName';
+/**
+ * user sync type - 'iframe' or 'pixel'
+ * relevant for: syncUser
+ */
+export const ACTIVITY_PARAM_SYNC_TYPE = 'syncType'
+/**
+ * user sync URL
+ * relevant for: syncUser
+ */
+export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
 /**
  * @private
  * configuration options for analytics adapter - the argument passed to `enableAnalytics`.
