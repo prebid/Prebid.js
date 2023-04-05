@@ -10,6 +10,7 @@ import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
 
@@ -168,7 +169,7 @@ export function getPubcidConfig() { return pubcidConfig; }
  */
 
 export const requestBidHook = timedAuctionHook('pubCommonId', function requestBidHook(next, config) {
-  let adUnits = config.adUnits || $$PREBID_GLOBAL$$.adUnits;
+  let adUnits = config.adUnits || getGlobal().adUnits;
   let pubcid = null;
 
   // Pass control to the next function if not enabled
@@ -292,7 +293,7 @@ export function initPubcid() {
     (storage.hasLocalStorage() && readValue(OPTOUT_NAME, LOCAL_STORAGE));
 
   if (!optout) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidHook);
+    getGlobal().requestBids.before(requestBidHook);
   }
 }
 

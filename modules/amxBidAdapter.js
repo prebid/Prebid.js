@@ -194,6 +194,8 @@ function resolveSize(bid, request, bidId) {
 }
 
 function isSyncEnabled(syncConfigP, syncType) {
+  if (syncConfigP == null) return false;
+
   const syncConfig = syncConfigP[syncType];
   if (syncConfig == null) {
     return false;

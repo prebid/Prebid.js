@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
+const PREBID_VERSION = '$prebid.version$';
 
 describe('freewheelSSP BidAdapter Test', () => {
   const adapter = newBidder(spec);
@@ -131,6 +133,22 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload._fw_bidfloorcur).to.deep.equal('USD');
     });
 
+    it('should pass 3rd party IDs with the request when present', function () {
+      const bidRequest = bidRequests[0];
+      bidRequest.userIdAsEids = createEidsArray({
+        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+        admixerId: 'admixerId_FROM_USER_ID_MODULE',
+        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE'
+      });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ]));
+    });
+
     it('should return empty bidFloorCurrency when bidfloor <= 0', () => {
       const bidRequest = bidRequests[0];
       bidRequest.getFloor = () => ({ currency: 'USD', floor: -1 });
@@ -149,6 +167,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+      expect(payload.pbjs_version).to.equal(PREBID_VERSION);
     });
 
     it('should return a properly formatted request with schain defined', function () {

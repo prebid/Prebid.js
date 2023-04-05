@@ -63,7 +63,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 
   // Set eids
   let eids = deepAccess(validBidRequests, '0.userIdAsEids');
-  if (eids.length) {
+  if (eids && eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
 
