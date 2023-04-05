@@ -17,7 +17,7 @@ import * as utils from 'src/utils.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
-  MODULE_TYPE_CORE,
+  MODULE_TYPE_PREBID,
   MODULE_TYPE_UID
 } from '../../../src/activities/modules.js';
 import * as events from 'src/events.js';
@@ -329,9 +329,9 @@ describe('gdpr enforcement', function () {
       }
       gdprDataHandlerStub.returns(consentData);
       const validate = sinon.stub().callsFake(() => false);
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_CORE, 'mockModule', undefined, {validate});
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_PREBID, 'mockModule', undefined, {validate});
       sinon.assert.callCount(validate, 0);
-      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_CORE, 'mockModule', {hasEnforcementHook: true, valid: true});
+      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_PREBID, 'mockModule', {hasEnforcementHook: true, valid: true});
     })
   });
 
@@ -1056,7 +1056,7 @@ describe('gdpr enforcement', function () {
 
           it('should return VENDORLESS_GVLID for core modules', () => {
             entry = {gvlid: 123};
-            expect(getGvlid(MODULE_TYPE_CORE, MOCK_MODULE, fallbackFn)).to.equal(VENDORLESS_GVLID);
+            expect(getGvlid(MODULE_TYPE_PREBID, MOCK_MODULE, fallbackFn)).to.equal(VENDORLESS_GVLID);
           });
 
           describe('multiple GVL IDs are found', () => {

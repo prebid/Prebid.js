@@ -8,7 +8,7 @@ import {
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
-import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -72,7 +72,7 @@ describe('storage manager', function() {
     })
 
     Object.entries({
-      'core': () => getCoreStorageManager('mock'),
+      [MODULE_TYPE_PREBID]: () => getCoreStorageManager('mock'),
       'other': () => getStorageManager({moduleType: 'other', moduleName: 'mock'})
     }).forEach(([moduleType, getMgr]) => {
       describe(`for ${moduleType} modules`, () => {

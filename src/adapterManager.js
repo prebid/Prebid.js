@@ -36,7 +36,7 @@ import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
-import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_CORE} from './activities/modules.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParams} from './activities/params.js';
@@ -271,7 +271,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   }
 
   function isS2SAllowed(s2sConfig) {
-    return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_CORE, PBS_ADAPTER_NAME, {
+    return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
       [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
     }));
   }

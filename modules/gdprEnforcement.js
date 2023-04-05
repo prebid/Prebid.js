@@ -15,7 +15,7 @@ import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
-  MODULE_TYPE_CORE, MODULE_TYPE_RTD,
+  MODULE_TYPE_PREBID, MODULE_TYPE_RTD,
   MODULE_TYPE_UID
 } from '../src/activities/modules.js';
 import {
@@ -80,7 +80,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
     // Return GVL ID from user defined gvlMapping
     if (gvlMapping && gvlMapping[moduleName]) {
       return gvlMapping[moduleName];
-    } else if (moduleType === MODULE_TYPE_CORE) {
+    } else if (moduleType === MODULE_TYPE_PREBID) {
       return VENDORLESS_GVLID;
     } else {
       let {gvlid, modules} = GDPR_GVLIDS.get(moduleName);
@@ -191,7 +191,7 @@ export function deviceAccessHook(fn, moduleType, moduleName, result, {validate =
   if (!hasDeviceAccess()) {
     logWarn('Device access is disabled by Publisher');
     result.valid = false;
-  } else if (moduleType === MODULE_TYPE_CORE && !strictStorageEnforcement) {
+  } else if (moduleType === MODULE_TYPE_PREBID && !strictStorageEnforcement) {
     // for vendorless (core) storage, do not enforce rules unless strictStorageEnforcement is set
     result.valid = true;
   } else {

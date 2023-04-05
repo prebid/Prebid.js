@@ -773,6 +773,8 @@ function getUserIdsAsync() {
  * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
  */
 export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
+  // TODO: remove the `hasValidated` check in v8. Enforcement should be OFF by default.
+  // https://github.com/prebid/Prebid.js/issues/9766
   return { userIdModules: submodules, hasValidated: consentData && consentData.hasValidated };
 }, 'validateGdprEnforcement');
 
@@ -862,6 +864,7 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
     // another consent check, this time each module is checked for consent with its own gvlid
     let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
     if (!hasValidated && !hasPurpose1Consent(consentData)) {
+      // TODO: remove this check in v8 (https://github.com/prebid/Prebid.js/issues/9766)
       logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return [];
     }

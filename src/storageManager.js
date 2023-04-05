@@ -1,7 +1,7 @@
 import {hook} from './hook.js';
 import {checkCookieSupport, hasDeviceAccess, logError, logInfo} from './utils.js';
 import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_CORE} from './activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
 
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
@@ -262,7 +262,7 @@ export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_CORE});
+  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_PREBID});
 }
 
 export function resetData() {
