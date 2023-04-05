@@ -1,7 +1,7 @@
 import { deepAccess, logError, parseUrl, parseSizesInput, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js'; // eslint-disable-line prebid/validate-imports
 
 const BIDDER_CODE = 'viously';
@@ -16,7 +16,7 @@ const REQUIRED_VIOUSLY_PARAMS = ['pid'];
 export const spec = {
   code: BIDDER_CODE,
   // gvlid: GVLID,
-  supportedMediaTypes: [VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -26,33 +26,48 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     let videoParams = deepAccess(bid, 'mediaTypes.video');
+    let bannerParams = deepAccess(bid, 'mediaTypes.banner');
 
     if (!bid.params) {
       logError('The bid params are missing');
       return false;
     }
 
-    if (!videoParams) {
-      logError('The placement must be of video type');
+    if (!bannerParams && !videoParams) {
+      logError('The placement must be of banner or video type');
       return false;
+    }
+
+    /**
+     * BANNER checks
+     */
+
+    if (bannerParams) {
+      let sizes = bannerParams.sizes;
+
+      if (!sizes || parseSizesInput(sizes).length == 0) {
+        logError('mediaTypes.banner.sizes must be set for banner placement at the right format.');
+        return false;
+      }
     }
 
     /**
      * VIDEO checks
      */
-
     let areParamsValid = true;
 
-    REQUIRED_VIDEO_PARAMS.forEach(function(videoParam) {
-      if (typeof videoParams[videoParam] === 'undefined') {
-        logError('mediaTypes.video.' + videoParam + ' must be set for video placement.');
+    if (videoParams) {
+      REQUIRED_VIDEO_PARAMS.forEach(function(videoParam) {
+        if (typeof videoParams[videoParam] === 'undefined') {
+          logError('mediaTypes.video.' + videoParam + ' must be set for video placement.');
+          areParamsValid = false;
+        }
+      });
+
+      if (parseSizesInput(videoParams.playerSize).length === 0) {
+        logError('mediaTypes.video.playerSize must be set for video placement at the right format.');
         areParamsValid = false;
       }
-    });
-
-    if (parseSizesInput(videoParams.playerSize).length === 0) {
-      logError('mediaTypes.video.playerSize must be set for video placement at the right format.');
-      return false;
     }
 
     /**
@@ -132,11 +147,23 @@ export const spec = {
         bid_id: bidRequest.bidId
       };
 
-      request.video_params = {
-        context: deepAccess(bidRequest, 'mediaTypes.video.context'),
-        playbackmethod: deepAccess(bidRequest, 'mediaTypes.video.playbackmethod'),
-        size: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
-      };
+      if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+        let position = deepAccess(bidRequest, 'mediaTypes.banner.pos');
+
+        request.type = BANNER;
+
+        request.sizes = parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes'));
+
+        request.position = position || 0;
+      } else {
+        request.type = VIDEO;
+
+        request.video_params = {
+          context: deepAccess(bidRequest, 'mediaTypes.video.context'),
+          playbackmethod: deepAccess(bidRequest, 'mediaTypes.video.playbackmethod'),
+          size: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
+        };
+      }
 
       return request;
     });
@@ -170,16 +197,20 @@ export const spec = {
               currency: CURRENCY,
               netRevenue: true,
               ttl: TTL,
-              mediaType: 'video',
+              mediaType: bidResponse.type,
               meta: {},
               // Tracking data
               nurl: bidResponse.nurl ? bidResponse.nurl : []
             };
 
-            if (bidResponse.ad_url) {
-              bid.vastUrl = bidResponse.ad_url;
+            if (bidResponse.type == VIDEO) {
+              if (bidResponse.ad_url) {
+                bid.vastUrl = bidResponse.ad_url;
+              } else {
+                bid.vastXml = bidResponse.ad;
+              }
             } else {
-              bid.vastXml = bidResponse.ad;
+              bid.ad = bidResponse.ad;
             }
 
             bidResponses.push(bid);

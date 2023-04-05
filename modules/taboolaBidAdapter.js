@@ -278,13 +278,15 @@ function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  const {
-    price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
+  let {
+    price: cpm, nurl, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
   let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
+
+  ad = replaceAuctionPrice(ad, cpm);
 
   return {
     requestId,
@@ -297,6 +299,7 @@ function getBid(bids, currency, bidResponse) {
     width,
     height,
     meta,
+    nurl,
     netRevenue: true
   };
 }

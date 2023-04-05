@@ -1,6 +1,6 @@
-# AMX RTB ID
+# AMX ID
 
-For help adding this module, please contact [prebid@amxrtb.com](prebid@amxrtb.com).
+For help adding this module, please contact [info@amxdt.net](info@amxdt.net).
 
 ### Prebid Configuration
 
@@ -41,11 +41,3 @@ The following settings are available for the `storage` property in the `userSync
 | name                  | Required | String       | Where the ID will be stored                                                      | `"amxId"` |
 | type                  | Required | String       | This must be `"html5"`                                                           | `"html5"` |
 | expires               | Required | Number <= 30 | number of days until the stored ID expires. **Must be less than or equal to 30** | `14`      |
-
-### Params
-
-The following options are available in the `params` property in `userSync.userIds[]`:
-
-| Param under `params` | Scope    | Type   | Description                                                               | Example          |
-| -------------------- | -------- | ------ | ------------------------------------------------------------------------- | ---------------- |
-| tagId                | Optional | String | Your AMX tagId (optional)                                                 | `cHJlYmlkLm9yZw` |

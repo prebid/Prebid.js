@@ -1,5 +1,5 @@
-import {isEmptyStr, isStr, isEmpty} from '../../src/utils.js';
-import {GreedyPromise} from '../../src/utils/promise.js';
+import {isEmptyStr, isStr, isEmpty} from '../utils.js';
+import {GreedyPromise} from '../utils/promise.js';
 
 export const SUA_SOURCE_UNKNOWN = 0;
 export const SUA_SOURCE_LOW_ENTROPY = 1;

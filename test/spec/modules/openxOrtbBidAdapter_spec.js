@@ -991,12 +991,14 @@ describe('OpenxRtbAdapter', function () {
       });
     });
 
-    context('video', function () {
-      it('should send bid request with a mediaTypes specified with video type', function () {
-        const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
-        expect(request[1].data.imp[0]).to.have.any.keys(VIDEO);
+    if (FEATURES.VIDEO) {
+      context('video', function () {
+        it('should send bid request with a mediaTypes specified with video type', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
+          expect(request[1].data.imp[0]).to.have.any.keys(VIDEO);
+        });
       });
-    });
+    }
 
     it.skip('should send ad unit ids when any are defined', function () {
       const bidRequestsWithUnitIds = [{
@@ -1317,56 +1319,58 @@ describe('OpenxRtbAdapter', function () {
       });
     });
 
-    context('when the response is a video', function() {
-      beforeEach(function () {
-        bidRequestConfigs = [{
-          bidder: 'openx',
-          params: {
-            unit: '12345678',
-            delDomain: 'test-del-domain'
-          },
-          adUnitCode: 'adunit-code',
-          mediaTypes: {
-            video: {
-              playerSize: [[640, 360], [854, 480]],
+    if (FEATURES.VIDEO) {
+      context('when the response is a video', function() {
+        beforeEach(function () {
+          bidRequestConfigs = [{
+            bidder: 'openx',
+            params: {
+              unit: '12345678',
+              delDomain: 'test-del-domain'
             },
-          },
-          bidId: 'test-bid-id',
-          bidderRequestId: 'test-bidder-request-id',
-          auctionId: 'test-auction-id'
-        }];
+            adUnitCode: 'adunit-code',
+            mediaTypes: {
+              video: {
+                playerSize: [[640, 360], [854, 480]],
+              },
+            },
+            bidId: 'test-bid-id',
+            bidderRequestId: 'test-bidder-request-id',
+            auctionId: 'test-auction-id'
+          }];
 
-        bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
+          bidRequest = spec.buildRequests(bidRequestConfigs, {refererInfo: {}})[0];
 
-        bidResponse = {
-          seatbid: [{
-            bid: [{
-              impid: 'test-bid-id',
-              price: 2,
-              w: 854,
-              h: 480,
-              crid: 'test-creative-id',
-              dealid: 'test-deal-id',
-              adm: 'test-ad-markup',
-            }]
-          }],
-          cur: 'AUS'
-        };
+          bidResponse = {
+            seatbid: [{
+              bid: [{
+                impid: 'test-bid-id',
+                price: 2,
+                w: 854,
+                h: 480,
+                crid: 'test-creative-id',
+                dealid: 'test-deal-id',
+                adm: 'test-ad-markup',
+              }]
+            }],
+            cur: 'AUS'
+          };
+        });
+
+        it('should return the proper mediaType', function () {
+          bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+          expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
+        });
+
+        it('should return the proper mediaType', function () {
+          const winUrl = 'https//my.win.url';
+          bidResponse.seatbid[0].bid[0].nurl = winUrl
+          bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
+
+          expect(bid.vastUrl).to.equal(winUrl);
+        });
       });
-
-      it('should return the proper mediaType', function () {
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
-        expect(bid.mediaType).to.equal(Object.keys(bidRequestConfigs[0].mediaTypes)[0]);
-      });
-
-      it('should return the proper mediaType', function () {
-        const winUrl = 'https//my.win.url';
-        bidResponse.seatbid[0].bid[0].nurl = winUrl
-        bid = spec.interpretResponse({body: bidResponse}, bidRequest)[0];
-
-        expect(bid.vastUrl).to.equal(winUrl);
-      });
-    });
+    }
 
     context('when the response contains FLEDGE interest groups config', function() {
       let response;

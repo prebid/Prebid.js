@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -46,6 +45,11 @@ function getRegs(bidderRequest) {
 }
 
 function getBidFloor(bid) {
+  // value from params takes precedance over value set by Floor Module
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+
   if (!utils.isFn(bid.getFloor)) {
     return null;
   }
@@ -120,8 +124,8 @@ function getUser(bidderRequest) {
     user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
-  var eids = createEidsArray(utils.deepAccess(bidderRequest, 'bids.0.userId'))
-  if (eids.length) {
+  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
@@ -346,6 +350,11 @@ export const spec = {
     }
     if (bid.params.publisherId.length > 32) {
       utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
+      return false;
+    }
+
+    // optional parameters
+    if (bid.params.bidfloor && isNaN(parseFloat(bid.params.bidfloor))) {
       return false;
     }
 

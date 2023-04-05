@@ -11,6 +11,7 @@ import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -20,10 +21,10 @@ export let userCMP;
 export let consentTimeout;
 export let gdprScope;
 export let staticConsentData;
+let actionTimeout;
 
 let consentData;
 let addedConsentHook = false;
-let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -46,7 +47,7 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
  * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
  */
-function lookupIabConsent({onSuccess, onError}) {
+function lookupIabConsent({onSuccess, onError, onEvent}) {
   function findCMP() {
     let f = window;
     let cmpFrame;
@@ -80,10 +81,9 @@ function lookupIabConsent({onSuccess, onError}) {
   function cmpResponseCallback(tcfData, success) {
     logInfo('Received a response from CMP', tcfData);
     if (success) {
+      onEvent(tcfData);
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         processCmpData(tcfData, {onSuccess, onError});
-      } else {
-        provisionalConsent = tcfData;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');
@@ -165,11 +165,24 @@ function lookupIabConsent({onSuccess, onError}) {
 function loadConsentData(cb) {
   let isDone = false;
   let timer = null;
+  let onTimeout, provisionalConsent;
+  let cmpLoaded = false;
 
-  function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
+  function resetTimeout(timeout) {
     if (timer != null) {
       clearTimeout(timer);
     }
+    if (!isDone && timeout != null) {
+      if (timeout === 0) {
+        onTimeout()
+      } else {
+        timer = setTimeout(onTimeout, timeout);
+      }
+    }
+  }
+
+  function done(consentData, shouldCancelAuction, errMsg, ...extraArgs) {
+    resetTimeout(null);
     isDone = true;
     gdprDataHandler.setConsentData(consentData);
     if (typeof cb === 'function') {
@@ -186,25 +199,30 @@ function loadConsentData(cb) {
     onSuccess: (data) => done(data, false),
     onError: function (msg, ...extraArgs) {
       done(null, true, msg, ...extraArgs);
+    },
+    onEvent: function (consentData) {
+      provisionalConsent = consentData;
+      if (cmpLoaded) return;
+      cmpLoaded = true;
+      if (actionTimeout != null) {
+        resetTimeout(actionTimeout);
+      }
     }
   }
-  cmpCallMap[userCMP](callbacks);
 
-  if (!isDone) {
-    const onTimeout = () => {
-      const continueToAuction = (data) => {
-        done(data, false, 'CMP did not load, continuing auction...');
-      }
-      processCmpData(provisionalConsent, {
-        onSuccess: continueToAuction,
-        onError: () => continueToAuction(storeConsentData(undefined))
-      })
+  onTimeout = () => {
+    const continueToAuction = (data) => {
+      done(data, false, `${cmpLoaded ? 'Timeout waiting for user action on CMP' : 'CMP did not load'}, continuing auction...`);
     }
-    if (consentTimeout === 0) {
-      onTimeout();
-    } else {
-      timer = setTimeout(onTimeout, consentTimeout);
-    }
+    processCmpData(provisionalConsent, {
+      onSuccess: continueToAuction,
+      onError: () => continueToAuction(storeConsentData(undefined)),
+    })
+  }
+
+  cmpCallMap[userCMP](callbacks);
+  if (!(actionTimeout != null && cmpLoaded)) {
+    resetTimeout(consentTimeout);
   }
 }
 
@@ -270,11 +288,6 @@ function processCmpData(consentObject, {onSuccess, onError}) {
     );
   }
 
-  // do extra things for static config
-  if (userCMP === 'static') {
-    consentObject = consentObject.getTCData;
-  }
-
   if (checkData()) {
     onError(`CMP returned unexpected value during lookup process.`, consentObject);
   } else {
@@ -335,6 +348,8 @@ export function setConsentConfig(config) {
     logInfo(`consentManagement config did not specify timeout.  Using system default setting (${DEFAULT_CONSENT_TIMEOUT}).`);
   }
 
+  actionTimeout = isNumber(config.actionTimeout) ? config.actionTimeout : null;
+
   // if true, then gdprApplies should be set to true
   gdprScope = config.defaultGdprScope === true;
 
@@ -343,13 +358,17 @@ export function setConsentConfig(config) {
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {
       staticConsentData = config.consentData;
+      if (staticConsentData?.getTCData != null) {
+        // accept static config with or without `getTCData` - see https://github.com/prebid/Prebid.js/issues/9581
+        staticConsentData = staticConsentData.getTCData;
+      }
       consentTimeout = 0;
     } else {
       logError(`consentManagement config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
     }
   }
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    getGlobal().requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
   gdprDataHandler.enable();

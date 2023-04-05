@@ -113,6 +113,11 @@ export const id5IdSubmodule = {
       return undefined;
     }
 
+    if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.')
+      return undefined;
+    }
+
     const resp = function (cbFunction) {
       new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
         .then(response => {
@@ -139,6 +144,11 @@ export const id5IdSubmodule = {
    */
   extendId(config, consentData, cacheIdObj) {
     hasRequiredConfig(config);
+
+    if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.')
+      return cacheIdObj;
+    }
 
     const partnerId = (config && config.params && config.params.partner) || 0;
     incrementNb(partnerId);
@@ -253,7 +263,8 @@ class IdFetchFlow {
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$',
-      'storage': this.submoduleConfig.storage
+      'storage': this.submoduleConfig.storage,
+      'localStorage': storage.localStorageIsEnabled() ? 1 : 0
     };
 
     // pass in optional data, but only if populated
@@ -374,6 +385,21 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ * Check to see if we can write to local storage based on purpose consent 1, and that we have vendor consent (ID5=131)
+ * @param {ConsentData} consentData
+ * @returns {boolean}
+ */
+function hasWriteConsentToLocalStorage(consentData) {
+  const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+  const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
+  const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`)
+  if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+    return false;
+  }
+  return true;
 }
 
 submodule('userId', id5IdSubmodule);
