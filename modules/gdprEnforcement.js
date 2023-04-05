@@ -2,7 +2,7 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, hasDeviceAccess, isArray, logError, logWarn} from '../src/utils.js';
+import {deepAccess, hasDeviceAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
@@ -55,9 +55,9 @@ export let purpose7Rule;
 
 export let enforcementRules;
 
-const storageBlocked = [];
-const biddersBlocked = [];
-const analyticsBlocked = [];
+const storageBlocked = new Set();
+const biddersBlocked = new Set();
+const analyticsBlocked = new Set();
 
 let hooksAdded = false;
 let strictStorageEnforcement = false;
@@ -212,7 +212,7 @@ export function deviceAccessHook(fn, moduleType, moduleName, result, {validate =
       } else {
         curModule && logWarn(`TCF2 denied device access for ${curModule}`);
         result.valid = false;
-        storageBlocked.push(curModule);
+        storageBlocked.add(curModule);
       }
     } else {
       result.valid = true;
@@ -236,7 +236,7 @@ export function userSyncHook(fn, ...args) {
       fn.call(this, ...args);
     } else {
       logWarn(`User sync not allowed for ${curBidder}`);
-      storageBlocked.push(curBidder);
+      storageBlocked.add(curBidder);
     }
   } else {
     fn.call(this, ...args);
@@ -259,7 +259,7 @@ export function userIdHook(fn, submodules, consentData) {
         return submodule;
       } else {
         logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-        storageBlocked.push(moduleName);
+        storageBlocked.add(moduleName);
       }
       return undefined;
     }).filter(module => module)
@@ -285,44 +285,27 @@ export function fetchBidsRule(params) {
     const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME]
     const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], bidder);
     const allow = !!validateRules(purpose2Rule, consentData, bidder, gvlid);
-    if (!allow) return {allow};
+    if (!allow) {
+      biddersBlocked.add(bidder);
+      return {allow};
+    }
   }
 }
 
+/**
+ * reportAnalytics activity control: disallow analytics adapters that do not have purpose 7 consent
+ * (if purpose 7 consent enforcement is enabled).
+ */
 export function reportAnalyticsRule(params) {
   const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 7, 'Analytics')) {
     const analyticsAdapterCode = params[ACTIVITY_PARAM_COMPONENT_NAME];
     const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], analyticsAdapterCode, () => getGvlidFromAnalyticsAdapter(analyticsAdapterCode, params[ACTIVITY_PARAM_ANL_CONFIG]));
     const allow = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
-    if (!allow) return {allow};
-  }
-}
-/**
- * Checks if Analytics adapters are allowed to send data to their servers for furhter processing.
- * Enforces "purpose 7 (Measurement)" of TCF v2.0 spec
- * @param {Function} fn - Function reference to the original function.
- * @param {Array<AnalyticsAdapterConfig>} config - Configuration object passed to pbjs.enableAnalytics()
- */
-export function enableAnalyticsHook(fn, config) {
-  const consentData = gdprDataHandler.getConsentData();
-  if (shouldEnforce(consentData, 7, 'Analytics')) {
-    if (!isArray(config)) {
-      config = [config]
+    if (!allow) {
+      analyticsBlocked.add(analyticsAdapterCode);
+      return {allow};
     }
-    config = config.filter(conf => {
-      const analyticsAdapterCode = conf.provider;
-      const gvlid = getGvlid(MODULE_TYPE_ANALYTICS, analyticsAdapterCode, () => getGvlidFromAnalyticsAdapter(analyticsAdapterCode, conf));
-      const isAllowed = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
-      if (!isAllowed) {
-        analyticsBlocked.push(analyticsAdapterCode);
-        logWarn(`TCF2 blocked analytics adapter ${conf.provider}`);
-      }
-      return isAllowed;
-    });
-    fn.call(this, config);
-  } else {
-    fn.call(this, config);
   }
 }
 
@@ -331,16 +314,17 @@ export function enableAnalyticsHook(fn, config) {
  */
 function emitTCF2FinalResults() {
   // remove null and duplicate values
-  const formatArray = function (arr) {
-    return arr.filter((i, k) => i !== null && arr.indexOf(i) === k);
+  const formatSet = function (st) {
+    return Array.from(st.keys()).filter(el => el != null);
   }
   const tcf2FinalResults = {
-    storageBlocked: formatArray(storageBlocked),
-    biddersBlocked: formatArray(biddersBlocked),
-    analyticsBlocked: formatArray(analyticsBlocked)
+    storageBlocked: formatSet(storageBlocked),
+    biddersBlocked: formatSet(biddersBlocked),
+    analyticsBlocked: formatSet(analyticsBlocked)
   };
 
   events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
+  [storageBlocked, biddersBlocked, analyticsBlocked].forEach(el => el.clear());
 }
 
 events.on(CONSTANTS.EVENTS.AUCTION_END, emitTCF2FinalResults);

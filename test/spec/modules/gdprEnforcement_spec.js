@@ -1,11 +1,10 @@
 import {
   deviceAccessHook,
-  enableAnalyticsHook,
   enforcementRules, fetchBidsRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   purpose1Rule,
-  purpose2Rule,
+  purpose2Rule, reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
   userIdHook,
@@ -624,31 +623,7 @@ describe('gdpr enforcement', function () {
     })
   });
 
-  describe('enableAnalyticsHook', function () {
-    let adapterManagerStub;
-
-    const MOCK_ANALYTICS_ADAPTER_CONFIG = [{
-      provider: 'analyticsAdapter_A',
-      options: {}
-    }, {
-      provider: 'analyticsAdapter_B',
-      options: {}
-    }, {
-      provider: 'analyticsAdapter_C',
-      options: {}
-    }];
-
-    beforeEach(function () {
-      gdprDataHandlerStub = sandbox.stub(gdprDataHandler, 'getConsentData');
-      adapterManagerStub = sandbox.stub(adapterManager, 'getAnalyticsAdapter');
-      logWarnSpy = sandbox.spy(utils, 'logWarn');
-      nextFnSpy = sandbox.spy();
-    });
-
-    afterEach(function() {
-      config.resetConfig();
-    });
-
+  describe('reportAnalyticsRule', () => {
     it('should block analytics adapter which does not have consent and allow the one(s) which have consent', function() {
       setEnforcementConfig({
         gdpr: {
@@ -661,30 +636,22 @@ describe('gdpr enforcement', function () {
         }
       });
 
-      const consentData = {};
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-
-      gdprDataHandlerStub.returns(consentData);
       Object.assign(gvlids, {
         analyticsAdapter_A: 3,
         analyticsAdapter_B: 5,
         analyticsAdapter_C: 1
       });
 
-      enableAnalyticsHook(nextFnSpy, MOCK_ANALYTICS_ADAPTER_CONFIG);
+      setupConsentData()
 
-      // Assertions
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, [{
-        provider: 'analyticsAdapter_B',
-        options: {}
-      }, {
-        provider: 'analyticsAdapter_C',
-        options: {}
-      }]);
-      expect(logWarnSpy.calledOnce).to.equal(true);
+      Object.entries({
+        analyticsAdapter_A: false,
+        analyticsAdapter_B: true,
+        analyticsAdapter_C: true
+      }).forEach(([adapter, allow]) => {
+        const res = reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, adapter));
+        allow ? expect(res).to.not.exist : expect(res).to.eql({allow});
+      })
     });
   });
 

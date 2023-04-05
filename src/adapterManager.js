@@ -356,7 +356,6 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
       bidRequest['gppConsent'] = gppDataHandler.getConsentData();
     }
   });
-
   return bidRequests;
 }, 'makeBidRequests');
 
