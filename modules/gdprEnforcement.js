@@ -24,7 +24,7 @@ import {
   ACTIVITY_PARAM_COMPONENT_TYPE
 } from '../src/activities/params.js';
 import {registerActivityControl} from '../src/activities/rules.js';
-import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../src/activities/activities.js';
+import {ACTIVITY_ENRICH_EIDS, ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -243,27 +243,23 @@ export function userSyncHook(fn, ...args) {
   }
 }
 
-/**
- * This hook checks if user id module is given consent or not
- * @param {Function} fn reference to original function (used by hook logic)
- * @param  {Submodule[]} submodules Array of user id submodules
- * @param {Object} consentData GDPR consent data
- */
-export function userIdHook(fn, submodules, consentData) {
+export function enrichEidsRule(params) {
+  const consentData = gdprDataHandler.getConsentData();
   if (shouldEnforce(consentData, 1, 'User ID')) {
-    let userIdModules = submodules.map((submodule) => {
-      const moduleName = submodule.submodule.name;
-      const gvlid = getGvlid(MODULE_TYPE_UID, moduleName);
-      let isAllowed = validateRules(purpose1Rule, consentData, moduleName, gvlid);
-      if (isAllowed) {
-        return submodule;
-      } else {
-        logWarn(`User denied permission to fetch user id for ${moduleName} User id module`);
-        storageBlocked.add(moduleName);
-      }
-      return undefined;
-    }).filter(module => module)
-    fn.call(this, userIdModules, { ...consentData, hasValidated: true });
+    const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME];
+    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], moduleName);
+    let allow = !!validateRules(purpose1Rule, consentData, moduleName, gvlid);
+    if (!allow) {
+      storageBlocked.add(moduleName);
+      return {allow};
+    }
+  }
+}
+
+export function userIdHook(fn, submodules, consentData) {
+  // TODO: remove this in v8 (https://github.com/prebid/Prebid.js/issues/9766)
+  if (shouldEnforce(consentData, 1, 'User ID')) {
+    fn.call(this, submodules, { ...consentData, hasValidated: true });
   } else {
     fn.call(this, submodules, consentData);
   }
@@ -370,7 +366,8 @@ export function setEnforcementConfig(config) {
       hooksAdded = true;
       validateStorageEnforcement.before(deviceAccessHook, 49);
       registerSyncInner.before(userSyncHook, 48);
-      // Using getHook as user id and gdprEnforcement are both optional modules. Using import will auto include the file in build
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
+      // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
       getHook('validateGdprEnforcement').before(userIdHook, 47);
     }
     if (purpose2Rule) {

@@ -1,13 +1,12 @@
 import {
   deviceAccessHook,
-  enforcementRules, fetchBidsRule,
+  enforcementRules, enrichEidsRule, fetchBidsRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   purpose1Rule,
   purpose2Rule, reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  userIdHook,
   userSyncHook,
   validateRules
 } from 'modules/gdprEnforcement.js';
@@ -127,6 +126,10 @@ describe('gdpr enforcement', function () {
     validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
   })
+
+  function expectAllow(allow, ruleResult) {
+    allow ? expect(ruleResult).to.not.exist : sinon.assert.match(ruleResult, {allow: false});
+  }
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -439,15 +442,7 @@ describe('gdpr enforcement', function () {
     });
   });
 
-  describe('userIdHook', function () {
-    beforeEach(function () {
-      logWarnSpy = sinon.spy(utils, 'logWarn');
-      nextFnSpy = sinon.spy();
-    });
-    afterEach(function () {
-      config.resetConfig();
-      logWarnSpy.restore();
-    });
+  describe('enrichEidsRule', () => {
     it('should allow user id module if consent is given', function () {
       setEnforcementConfig({
         gdpr: {
@@ -459,40 +454,16 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-      let submodules = [{
-        submodule: {
-          gvlid: 1,
-          name: 'sampleUserId'
-        }
-      }]
+      setupConsentData();
       gvlids.sampleUserId = 1;
-      userIdHook(nextFnSpy, submodules, consentData);
-      // Should pass back hasValidated flag since version 2
-      const args = nextFnSpy.getCalls()[0].args;
-      expect(args[1].hasValidated).to.be.true;
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, submodules, { ...consentData, hasValidated: true });
+      expect(enrichEidsRule(activityParams(MODULE_TYPE_UID, 'sampleUserId'))).to.not.exist;
     });
 
     it('should allow userId module if gdpr not in scope', function () {
-      let submodules = [{
-        submodule: {
-          gvlid: 1,
-          name: 'sampleUserId'
-        }
-      }];
       gvlids.sampleUserId = 1;
-      let consentData = null;
-      userIdHook(nextFnSpy, submodules, consentData);
-      // Should not pass back hasValidated flag since version 2
-      const args = nextFnSpy.getCalls()[0].args;
-      expect(args[1]).to.be.null;
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      sinon.assert.calledWith(nextFnSpy, submodules, consentData);
+      const consent = setupConsentData({gdprApplies: false});
+      consent.vendorData.purpose.consents['1'] = false;
+      expect(enrichEidsRule(activityParams(MODULE_TYPE_UID, 'sampleUserId'))).to.not.exist;
     });
 
     it('should not allow user id module if user denied consent', function () {
@@ -506,35 +477,17 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-
-      let submodules = [{
-        submodule: {
-          gvlid: 1,
-          name: 'sampleUserId'
-        }
-      }, {
-        submodule: {
-          gvlid: 3,
-          name: 'sampleUserId1'
-        }
-      }]
+      setupConsentData();
       Object.assign(gvlids, {
         sampleUserId: 1,
         sampleUserId1: 3
       });
-      userIdHook(nextFnSpy, submodules, consentData);
-      expect(logWarnSpy.callCount).to.equal(1);
-      let expectedSubmodules = [{
-        submodule: {
-          gvlid: 1,
-          name: 'sampleUserId'
-        }
-      }]
-      sinon.assert.calledWith(nextFnSpy, expectedSubmodules, { ...consentData, hasValidated: true });
+      Object.entries({
+        sampleUserId: true,
+        sampleUserId1: false
+      }).forEach(([name, allow]) => {
+        expectAllow(allow, enrichEidsRule(activityParams(MODULE_TYPE_UID, name)))
+      });
     });
   });
 
@@ -584,8 +537,7 @@ describe('gdpr enforcement', function () {
         bidder_2: false,
         bidder_3: true
       }).forEach(([bidder, allowed]) => {
-        const res = fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder));
-        allowed ? expect(res).to.not.exist : expect(res).to.eql({allow: false});
+        expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
       })
     });
 
@@ -649,8 +601,7 @@ describe('gdpr enforcement', function () {
         analyticsAdapter_B: true,
         analyticsAdapter_C: true
       }).forEach(([adapter, allow]) => {
-        const res = reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, adapter));
-        allow ? expect(res).to.not.exist : expect(res).to.eql({allow});
+        expectAllow(allow, reportAnalyticsRule(activityParams(MODULE_TYPE_ANALYTICS, adapter)))
       })
     });
   });
