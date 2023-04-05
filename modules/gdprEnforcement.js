@@ -90,7 +90,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
         for (const type of GVLID_LOOKUP_PRIORITY) {
           if (modules.hasOwnProperty(type)) {
             gvlid = modules[type];
-            if (type !== moduleType && !fallbackFn) {
+            if (type !== moduleType) {
               logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${gvlid}) instead of the ${moduleType}'s ID (${modules[moduleType]})`)
             }
             break;
