@@ -2,24 +2,24 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage,
+  findRootDomain,
   init,
+  PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
+  requestDataDeletion,
   setStoredConsentData,
   setStoredValue,
   setSubmoduleRegistry,
   syncDelay,
-  PBJS_USER_ID_OPTOUT_NAME,
-  findRootDomain, requestDataDeletion,
 } from 'modules/userId/index.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
-import {
-  resetConsentData,
-} from 'modules/consentManagement.js';
+import {resetConsentData, } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
 import {find} from 'src/polyfill.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
@@ -27,7 +27,10 @@ import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {dmdIdSubmodule} from 'modules/dmdIdSystem.js';
-import {liveIntentIdSubmodule, setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
+import {
+  liveIntentIdSubmodule,
+  setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent
+} from 'modules/liveIntentIdSystem.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
@@ -39,7 +42,6 @@ import {criteoIdSubmodule} from 'modules/criteoIdSystem.js';
 import {mwOpenLinkIdSubModule} from 'modules/mwOpenLinkIdSystem.js';
 import {tapadIdSubmodule} from 'modules/tapadIdSystem.js';
 import {tncidSubModule} from 'modules/tncIdSystem.js';
-import {getPrebidInternal} from 'src/utils.js';
 import {uid2IdSubmodule} from 'modules/uid2IdSystem.js';
 import {admixerIdSubmodule} from 'modules/admixerIdSystem.js';
 import {deepintentDpesSubmodule} from 'modules/deepintentDpesIdSystem.js';
@@ -188,8 +190,7 @@ describe('User ID', function () {
       mockGpt.disable();
       mockGpt.enable();
       coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 5000).toUTCString()));
-      let origSK = coreStorage.setCookie.bind(coreStorage);
+      coreStorage.setCookie('pubcid_alt', 'altpubcid200000', (new Date(Date.now() + 20000).toUTCString()));
       sinon.spy(coreStorage, 'setCookie');
       sinon.stub(utils, 'logWarn');
     });
@@ -320,10 +321,6 @@ describe('User ID', function () {
             });
           });
         });
-        // Because the consent cookie doesn't exist yet, we'll have 2 setCookie calls:
-        // 1) for the consent cookie
-        // 2) from the getId() call that results in a new call to store the results
-        expect(coreStorage.setCookie.callCount).to.equal(2);
       });
     });
 
@@ -350,7 +347,6 @@ describe('User ID', function () {
             });
           });
         });
-        expect(coreStorage.setCookie.callCount).to.equal(2);
       });
     });
 
@@ -2591,15 +2587,21 @@ describe('User ID', function () {
     });
 
     describe('Set cookie behavior', function () {
-      let coreStorageSpy;
+      let cookie, cookieStub;
+
       beforeEach(function () {
-        coreStorageSpy = sinon.spy(coreStorage, 'setCookie');
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         init(config);
+        cookie = document.cookie;
+        cookieStub = sinon.stub(document, 'cookie');
+        cookieStub.get(() => cookie);
+        cookieStub.set((val) => cookie = val);
       });
+
       afterEach(function () {
-        coreStorageSpy.restore();
+        cookieStub.restore();
       });
+
       it('should allow submodules to override the domain', function () {
         const submodule = {
           submodule: {
@@ -2608,26 +2610,34 @@ describe('User ID', function () {
             }
           },
           config: {
+            name: 'mockId',
             storage: {
               type: 'cookie'
             }
+          },
+          storageMgr: {
+            setCookie: sinon.stub()
           }
         }
         setStoredValue(submodule, 'bar');
-        expect(coreStorage.setCookie.getCall(0).args[4]).to.equal('foo.com');
+        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
       });
 
-      it('should pass null for domain if submodule does not override the domain', function () {
+      it('should pass no domain if submodule does not override the domain', function () {
         const submodule = {
           submodule: {},
           config: {
+            name: 'mockId',
             storage: {
               type: 'cookie'
             }
+          },
+          storageMgr: {
+            setCookie: sinon.stub()
           }
         }
         setStoredValue(submodule, 'bar');
-        expect(coreStorage.setCookie.getCall(0).args[4]).to.equal(null);
+        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
       });
     });
 
