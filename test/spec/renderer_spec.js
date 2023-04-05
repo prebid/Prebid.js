@@ -110,7 +110,6 @@ describe('Renderer', function () {
 
     it('renders immediately when requested', function () {
       const testRenderer3 = Renderer.install({
-        url: 'https://httpbin.org/post',
         config: { test: 'config2' },
         id: 2,
         renderNow: true
