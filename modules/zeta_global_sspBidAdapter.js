@@ -77,6 +77,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
+      if (params.tagid) {
+        impData.tagid = params.tagid;
+      }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
           switch (mediaType) {

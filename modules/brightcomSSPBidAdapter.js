@@ -116,7 +116,6 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(payload),
-      options: {contentType: 'text/plain', withCredentials: false}
     };
   } catch (e) {
     logError(e, {bidReqs, bidderRequest});
