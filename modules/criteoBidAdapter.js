@@ -418,7 +418,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: bidderRequest.publisherExt,
     },
     regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
+      gpp: bidderRequest.ortb2?.regs?.gpp,
+      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
