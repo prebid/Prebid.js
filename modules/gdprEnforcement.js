@@ -228,53 +228,32 @@ export function deviceAccessHook(fn, moduleType, moduleName, result, {validate =
   fn.call(this, moduleType, moduleName, result);
 }
 
-export function syncUserRule(params) {
-  const consentData = gdprDataHandler.getConsentData();
-  const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
-  if (shouldEnforce(consentData, 1, modName)) {
-    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName);
-    let allow = !!validateRules(purpose1Rule, consentData, modName, gvlid);
-    if (!allow) {
-      storageBlocked.add(modName);
-      return {allow};
-    }
-  }
-}
-
 /**
- * This hook checks if a bidder has consent for user sync or not
- * @param {Function} fn reference to original function (used by hook logic)
- * @param  {...any} args args
+ * all activity rules follow the same structure:
+ * if GDPR is in scope, check configuration for a particular purpose
+ *
+ * @param purposeNo TCF purpose number to check for this activity
+ * @param getEnforcementRule getter for gdprEnforcement rule definition to use
+ * @param blocked optional set to use for collecting denied vendors
+ * @param gvlidFallback optional factory function for a gvlid falllback function
  */
-export function userSyncHook(fn, ...args) {
-  const consentData = gdprDataHandler.getConsentData();
-  const curBidder = config.getCurrentBidder();
-  if (shouldEnforce(consentData, 1, curBidder)) {
-    const gvlid = getGvlid(MODULE_TYPE_BIDDER, curBidder);
-    let isAllowed = validateRules(purpose1Rule, consentData, curBidder, gvlid);
-    if (isAllowed) {
-      fn.call(this, ...args);
-    } else {
-      logWarn(`User sync not allowed for ${curBidder}`);
-      storageBlocked.add(curBidder);
+function gdprRule(purposeNo, getEnforcementRule, blocked = null, gvlidFallback = () => null) {
+  return function (params) {
+    const consentData = gdprDataHandler.getConsentData();
+    const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
+    if (shouldEnforce(consentData, purposeNo, modName)) {
+      const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
+      let allow = !!validateRules(getEnforcementRule(), consentData, modName, gvlid);
+      if (!allow) {
+        blocked && blocked.add(modName);
+        return {allow};
+      }
     }
-  } else {
-    fn.call(this, ...args);
   }
 }
 
-export function enrichEidsRule(params) {
-  const consentData = gdprDataHandler.getConsentData();
-  if (shouldEnforce(consentData, 1, 'User ID')) {
-    const moduleName = params[ACTIVITY_PARAM_COMPONENT_NAME];
-    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], moduleName);
-    let allow = !!validateRules(purpose1Rule, consentData, moduleName, gvlid);
-    if (!allow) {
-      storageBlocked.add(moduleName);
-      return {allow};
-    }
-  }
-}
+export const syncUserRule = gdprRule(1, () => purpose1Rule, storageBlocked);
+export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked)
 
 export function userIdHook(fn, submodules, consentData) {
   // TODO: remove this in v8 (https://github.com/prebid/Prebid.js/issues/9766)
@@ -285,45 +264,19 @@ export function userIdHook(fn, submodules, consentData) {
   }
 }
 
-/**
- * fetchBids activity control: disallow bidders from auctions if they do not have consent for purpose 2 (and purpose 2
- * enforcement is enabled)
- */
-export function fetchBidsRule(params) {
-  if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
-    // TODO: this special case is for the PBS adapter (componentType is core)
-    // we should check for generic purpose 2 consent & vendor consent based on the PBS vendor's GVL ID;
-    // that is, however, a breaking change and skipped for now
-    return;
-  }
-  const consentData = gdprDataHandler.getConsentData();
-  if (shouldEnforce(consentData, 2)) {
-    const bidder = params[ACTIVITY_PARAM_COMPONENT_NAME]
-    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], bidder);
-    const allow = !!validateRules(purpose2Rule, consentData, bidder, gvlid);
-    if (!allow) {
-      biddersBlocked.add(bidder);
-      return {allow};
+export const fetchBidsRule = ((rule) => {
+  return function (params) {
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
+      // TODO: this special case is for the PBS adapter (componentType is core)
+      // we should check for generic purpose 2 consent & vendor consent based on the PBS vendor's GVL ID;
+      // that is, however, a breaking change and skipped for now
+      return;
     }
+    return rule(params);
   }
-}
+})(gdprRule(2, () => purpose2Rule, biddersBlocked))
 
-/**
- * reportAnalytics activity control: disallow analytics adapters that do not have purpose 7 consent
- * (if purpose 7 consent enforcement is enabled).
- */
-export function reportAnalyticsRule(params) {
-  const consentData = gdprDataHandler.getConsentData();
-  if (shouldEnforce(consentData, 7, 'Analytics')) {
-    const analyticsAdapterCode = params[ACTIVITY_PARAM_COMPONENT_NAME];
-    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], analyticsAdapterCode, () => getGvlidFromAnalyticsAdapter(analyticsAdapterCode, params[ACTIVITY_PARAM_ANL_CONFIG]));
-    const allow = !!validateRules(purpose7Rule, consentData, analyticsAdapterCode, gvlid);
-    if (!allow) {
-      analyticsBlocked.add(analyticsAdapterCode);
-      return {allow};
-    }
-  }
-}
+export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]))
 
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
