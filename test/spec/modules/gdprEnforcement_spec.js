@@ -1,13 +1,16 @@
 import {
   deviceAccessHook,
-  enforcementRules, enrichEidsRule, fetchBidsRule,
+  enforcementRules,
+  enrichEidsRule,
+  fetchBidsRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
   purpose1Rule,
-  purpose2Rule, reportAnalyticsRule,
+  purpose2Rule,
+  reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  userSyncHook,
+  syncUserRule,
   validateRules
 } from 'modules/gdprEnforcement.js';
 import {config} from 'src/config.js';
@@ -338,26 +341,7 @@ describe('gdpr enforcement', function () {
     })
   });
 
-  describe('userSyncHook', function () {
-    let curBidderStub;
-    let adapterManagerStub;
-
-    beforeEach(function () {
-      gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
-      logWarnSpy = sinon.spy(utils, 'logWarn');
-      curBidderStub = sinon.stub(config, 'getCurrentBidder');
-      adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
-      nextFnSpy = sinon.spy();
-    });
-
-    afterEach(function () {
-      config.getCurrentBidder.restore();
-      config.resetConfig();
-      gdprDataHandler.getConsentData.restore();
-      adapterManager.getBidAdapter.restore();
-      logWarnSpy.restore();
-    });
-
+  describe('syncUserRule', () => {
     it('should allow bidder to do user sync if consent is true', function () {
       setEnforcementConfig({
         gdpr: {
@@ -369,20 +353,17 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
+      setupConsentData();
       let consentData = {}
       consentData.vendorData = staticConfig.consentData.getTCData;
       consentData.gdprApplies = true;
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
-
-      curBidderStub.returns('sampleBidder1');
-      gvlids.sampleBidder1 = 1;
-      userSyncHook(nextFnSpy);
-
-      curBidderStub.returns('sampleBidder2');
-      gvlids.sampleBidder2 = 3;
-      userSyncHook(nextFnSpy);
-      expect(nextFnSpy.calledTwice).to.equal(true);
+      Object.assign(gvlids, {
+        sampleBidder1: 1,
+        sampleBidder2: 2
+      })
+      Object.keys(gvlids).forEach(bidder => expect(syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
 
     it('should not allow bidder to do user sync if user has denied consent', function () {
@@ -396,21 +377,18 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-      gdprDataHandlerStub.returns(consentData);
+      setupConsentData();
+      Object.assign(gvlids, {
+        sampleBidder1: 1,
+        sampleBidder2: 3
+      })
 
-      curBidderStub.returns('sampleBidder1');
-      gvlids.sampleBidder1 = 1;
-      userSyncHook(nextFnSpy);
-
-      curBidderStub.returns('sampleBidder2');
-      gvlids.sampleBidder2 = 3;
-      userSyncHook(nextFnSpy);
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(1);
+      Object.entries({
+        sampleBidder1: true,
+        sampleBidder2: false
+      }).forEach(([bidder, isAllowed]) => {
+        expectAllow(isAllowed, syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
+      })
     });
 
     it('should not check vendor consent when enforceVendor is false', function () {
@@ -424,24 +402,14 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.apiVersion = 2;
-      consentData.gdprApplies = true;
-      gdprDataHandlerStub.returns(consentData);
-
-      curBidderStub.returns('sampleBidder1');
-      gvlids.sampleBidder1 = 1;
-      userSyncHook(nextFnSpy);
-
-      curBidderStub.returns('sampleBidder2');
-      gvlids.sampleBidder2 = 3;
-      userSyncHook(nextFnSpy);
-      expect(nextFnSpy.calledTwice).to.equal(true);
-      expect(logWarnSpy.callCount).to.equal(0);
+      setupConsentData();
+      Object.assign(gvlids, {
+        sampleBidder1: 1,
+        sampleBidder2: 3
+      })
+      Object.keys(gvlids).forEach(bidder => expect(syncUserRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
   });
-
   describe('enrichEidsRule', () => {
     it('should allow user id module if consent is given', function () {
       setEnforcementConfig({

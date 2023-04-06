@@ -6,7 +6,6 @@ import {deepAccess, hasDeviceAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
-import {registerSyncInner} from '../src/adapters/bidderFactory.js';
 import {getHook} from '../src/hook.js';
 import {validateStorageEnforcement} from '../src/storageManager.js';
 import * as events from '../src/events.js';
@@ -24,7 +23,12 @@ import {
   ACTIVITY_PARAM_COMPONENT_TYPE
 } from '../src/activities/params.js';
 import {registerActivityControl} from '../src/activities/rules.js';
-import {ACTIVITY_ENRICH_EIDS, ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../src/activities/activities.js';
+import {
+  ACTIVITY_ENRICH_EIDS,
+  ACTIVITY_FETCH_BIDS,
+  ACTIVITY_REPORT_ANALYTICS,
+  ACTIVITY_SYNC_USER
+} from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
@@ -68,6 +72,9 @@ const GVLID_LOOKUP_PRIORITY = [
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_RTD
 ];
+
+const RULE_NAME = 'TCF2';
+const RULE_HANDLES = [];
 
 /**
  * Retrieve a module's GVL ID.
@@ -221,6 +228,19 @@ export function deviceAccessHook(fn, moduleType, moduleName, result, {validate =
   fn.call(this, moduleType, moduleName, result);
 }
 
+export function syncUserRule(params) {
+  const consentData = gdprDataHandler.getConsentData();
+  const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
+  if (shouldEnforce(consentData, 1, modName)) {
+    const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName);
+    let allow = !!validateRules(purpose1Rule, consentData, modName, gvlid);
+    if (!allow) {
+      storageBlocked.add(modName);
+      return {allow};
+    }
+  }
+}
+
 /**
  * This hook checks if a bidder has consent for user sync or not
  * @param {Function} fn reference to original function (used by hook logic)
@@ -332,9 +352,6 @@ const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
 const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
 const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
 
-const RULE_NAME = 'TCF2';
-const RULE_HANDLES = [];
-
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
  * @param {Object} config - GDPR enforcement config object
@@ -365,7 +382,7 @@ export function setEnforcementConfig(config) {
     if (purpose1Rule) {
       hooksAdded = true;
       validateStorageEnforcement.before(deviceAccessHook, 49);
-      registerSyncInner.before(userSyncHook, 48);
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule))
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
       // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
       getHook('validateGdprEnforcement').before(userIdHook, 47);
@@ -383,7 +400,6 @@ export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
   [
     validateStorageEnforcement.getHooks({hook: deviceAccessHook}),
-    registerSyncInner.getHooks({hook: userSyncHook}),
     getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
   ].forEach(hook => hook.remove());
   hooksAdded = false;
