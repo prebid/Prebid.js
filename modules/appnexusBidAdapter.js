@@ -960,6 +960,9 @@ function bidToTag(bid) {
               tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
             }
             break;
+          case 'plcmt':
+            tag.video['plcmt'] = videoMediaType['plcmt'];
+            break;
         }
       });
   }
