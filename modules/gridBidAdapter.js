@@ -31,7 +31,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',

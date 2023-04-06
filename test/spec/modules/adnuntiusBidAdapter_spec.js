@@ -13,21 +13,21 @@ describe('adnuntiusBidAdapter', function () {
   const meta = [{ key: 'usi', value: usi }]
 
   before(() => {
-    const storage = getStorageManager({ gvlid: GVLID, moduleName: 'adnuntius' })
-    storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
-  });
-
-  beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
       adnuntius: {
         storageAllowed: true
       }
     };
+    const storage = getStorageManager({ bidderCode: 'adnuntius' })
+    storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
+  });
+
+  after(() => {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
 
   afterEach(function () {
     config.resetConfig();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
 
   const tzo = new Date().getTimezoneOffset();
