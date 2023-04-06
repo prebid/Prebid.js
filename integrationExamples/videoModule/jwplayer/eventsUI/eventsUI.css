@@ -91,7 +91,8 @@ div.sequence {
     background: #fcc;
 }
 .group-auction {
-    background: #ece;
+    background: #228;
+    color: #eee;
 }
 pre {
     margin: 0;
