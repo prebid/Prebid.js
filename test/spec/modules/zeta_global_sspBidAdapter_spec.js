@@ -402,6 +402,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
 
-    expect(payload.imp.tagid).to.eql(params.tagid);
+    expect(payload.imp[0].tagid).to.eql(params.tagid);
   });
 });
