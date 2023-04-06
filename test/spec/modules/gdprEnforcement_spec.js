@@ -29,7 +29,7 @@ import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {validateStorageEnforcement} from '../../../src/storageManager.js';
-import {activityParams} from '../../../src/activities/params.js';
+import {activityParams} from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;

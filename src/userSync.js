@@ -10,9 +10,10 @@ import {ACTIVITY_SYNC_USER} from './activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
-  ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL, activityParams
+  ACTIVITY_PARAM_SYNC_TYPE, ACTIVITY_PARAM_SYNC_URL
 } from './activities/params.js';
 import {MODULE_TYPE_BIDDER} from './activities/modules.js';
+import {activityParams} from './activities/activityParams.js';
 
 export const USERSYNC_DEFAULT_CONFIG = {
   syncEnabled: true,

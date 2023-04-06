@@ -1,5 +1,4 @@
 import {MODULE_TYPE_BIDDER} from './modules.js';
-import adapterManager from '../adapterManager.js';
 
 /**
  * Component ID - who is trying to perform the activity?
@@ -45,14 +44,16 @@ export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
  */
 export const ACTIVITY_PARAM_ANL_CONFIG = '_config';
 
-export function activityParams(moduleType, moduleName, params) {
-  const defaults = {
-    [ACTIVITY_PARAM_COMPONENT_TYPE]: moduleType,
-    [ACTIVITY_PARAM_COMPONENT_NAME]: moduleName,
-    [ACTIVITY_PARAM_COMPONENT]: `${moduleType}.${moduleName}`
-  };
-  if (moduleType === MODULE_TYPE_BIDDER) {
-    defaults[ACTIVITY_PARAM_ADAPTER_CODE] = adapterManager.resolveAlias(moduleName);
+export function activityParamsBuilder(resolveAlias) {
+  return function activityParams(moduleType, moduleName, params) {
+    const defaults = {
+      [ACTIVITY_PARAM_COMPONENT_TYPE]: moduleType,
+      [ACTIVITY_PARAM_COMPONENT_NAME]: moduleName,
+      [ACTIVITY_PARAM_COMPONENT]: `${moduleType}.${moduleName}`
+    };
+    if (moduleType === MODULE_TYPE_BIDDER) {
+      defaults[ACTIVITY_PARAM_ADAPTER_CODE] = resolveAlias(moduleName);
+    }
+    return Object.assign(defaults, params);
   }
-  return Object.assign(defaults, params);
 }

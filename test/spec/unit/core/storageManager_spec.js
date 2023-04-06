@@ -17,9 +17,9 @@ import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
 import {
   ACTIVITY_PARAM_COMPONENT_NAME,
   ACTIVITY_PARAM_COMPONENT_TYPE,
-  ACTIVITY_PARAM_STORAGE_TYPE,
-  activityParams
+  ACTIVITY_PARAM_STORAGE_TYPE
 } from '../../../../src/activities/params.js';
+import {activityParams} from '../../../../src/activities/activityParams.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -157,7 +157,7 @@ describe('storage manager', function() {
     });
   });
 
-  describe('deviceAccess control', ()=> {
+  describe('deviceAccess control', () => {
     afterEach(() => {
       config.resetConfig()
     });

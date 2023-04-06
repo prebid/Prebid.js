@@ -1,17 +1,17 @@
-import {hook} from './hook.js';
 import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
 import {bidderSettings} from './bidderSettings.js';
 import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
+import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
 import {
   ACTIVITY_PARAM_ADAPTER_CODE,
   ACTIVITY_PARAM_COMPONENT_TYPE,
-  ACTIVITY_PARAM_STORAGE_TYPE,
-  activityParams
+  ACTIVITY_PARAM_STORAGE_TYPE
 } from './activities/params.js';
-import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
+
 import {ACTIVITY_ACCESS_DEVICE} from './activities/activities.js';
 import {config} from './config.js';
 import adapterManager from './adapterManager.js';
+import {activityParams} from './activities/activityParams.js';
 
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
@@ -22,7 +22,6 @@ export let storageCallbacks = [];
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
 export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
-
   function isValid(cb, storageType) {
     let mod = moduleName;
     const curBidder = config.getCurrentBidder();
@@ -217,13 +216,6 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
     findSimilarCookies
   }
 }
-
-/**
- * This hook validates the storage enforcement if gdprEnforcement module is included
- */
-export const validateStorageEnforcement = hook('async', function(moduleType, moduleName, hookDetails, callback) {
-  callback(hookDetails);
-}, 'validateStorageEnforcement');
 
 /**
  * Get a storage manager for a particular module.

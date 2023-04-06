@@ -39,7 +39,8 @@ import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
-import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParams} from './activities/params.js';
+import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
+
 
 const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
@@ -64,6 +65,8 @@ config.getConfig('s2sConfig', config => {
 });
 
 var _analyticsRegistry = {};
+
+const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
 
 /**
  * @typedef {object} LabelDescriptor

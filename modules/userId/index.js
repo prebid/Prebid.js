@@ -167,7 +167,7 @@ import {GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
-import {activityParams} from '../../src/activities/params.js';
+import {activityParams} from '../../src/activities/activityParams.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;

@@ -2,7 +2,7 @@
  * This module gives publishers extra set of features to enforce individual purposes of TCF v2
  */
 
-import {deepAccess, hasDeviceAccess, logError, logWarn} from '../src/utils.js';
+import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
@@ -13,7 +13,8 @@ import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
-  MODULE_TYPE_PREBID, MODULE_TYPE_RTD,
+  MODULE_TYPE_PREBID,
+  MODULE_TYPE_RTD,
   MODULE_TYPE_UID
 } from '../src/activities/modules.js';
 import {
@@ -33,10 +34,10 @@ import {
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
 const TCF2 = {
-  'purpose1': { id: 1, name: 'storage' },
-  'purpose2': { id: 2, name: 'basicAds' },
-  'purpose7': { id: 7, name: 'measurement' }
-}
+  'purpose1': {id: 1, name: 'storage'},
+  'purpose2': {id: 2, name: 'basicAds'},
+  'purpose7': {id: 7, name: 'measurement'}
+};
 
 /*
   These rules would be used if `consentManagement.gdpr.rules` is undefined by the publisher.
@@ -98,7 +99,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
           if (modules.hasOwnProperty(type)) {
             gvlid = modules[type];
             if (type !== moduleType) {
-              logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${gvlid}) instead of the ${moduleType}'s ID (${modules[moduleType]})`)
+              logWarn(`Multiple GVL IDs found for module '${moduleName}'; using the ${type} module's ID (${gvlid}) instead of the ${moduleType}'s ID (${modules[moduleType]})`);
             }
             break;
           }
@@ -123,9 +124,9 @@ export function getGvlidFromAnalyticsAdapter(code, config) {
     try {
       return gvlid.call(adapter.adapter, config);
     } catch (e) {
-      logError(`Error invoking ${code} adapter.gvlid()`, e)
+      logError(`Error invoking ${code} adapter.gvlid()`, e);
     }
-  })(adapter?.adapter?.gvlid)
+  })(adapter?.adapter?.gvlid);
 }
 
 export function shouldEnforce(consentData, purpose, name) {
@@ -134,7 +135,7 @@ export function shouldEnforce(consentData, purpose, name) {
     // NOTE: this check is not foolproof, as when Prebid first loads, enforcement hooks have not been attached yet
     // This piece of code would not run at all, and `gdprDataHandler.enabled` would be false, until the first
     // `setConfig({consentManagement})`
-    logWarn(`Attempting operation that requires purpose ${purpose} consent while consent data is not available${name ? ` (module: ${name})` : ''}. Assuming no consent was given.`)
+    logWarn(`Attempting operation that requires purpose ${purpose} consent while consent data is not available${name ? ` (module: ${name})` : ''}. Assuming no consent was given.`);
     return true;
   }
   return consentData && consentData.gdprApplies;
@@ -156,7 +157,7 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
-  const vendorConsentRequred = !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)))
+  const vendorConsentRequred = !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
 
   // get data from the consent string
   const purposeConsent = deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
@@ -204,24 +205,24 @@ function gdprRule(purposeNo, getEnforcementRule, blocked = null, gvlidFallback =
         return {allow};
       }
     }
-  }
+  };
 }
 
 export const accessDeviceRule = ((rule) => {
-  return function(params) {
+  return function (params) {
     // for vendorless (core) storage, do not enforce rules unless strictStorageEnforcement is set
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_PREBID && !strictStorageEnforcement) return;
     return rule(params);
-  }
-})(gdprRule(1, () => purpose1Rule, storageBlocked))
+  };
+})(gdprRule(1, () => purpose1Rule, storageBlocked));
 
 export const syncUserRule = gdprRule(1, () => purpose1Rule, storageBlocked);
-export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked)
+export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 
 export function userIdHook(fn, submodules, consentData) {
   // TODO: remove this in v8 (https://github.com/prebid/Prebid.js/issues/9766)
   if (shouldEnforce(consentData, 1, 'User ID')) {
-    fn.call(this, submodules, { ...consentData, hasValidated: true });
+    fn.call(this, submodules, {...consentData, hasValidated: true});
   } else {
     fn.call(this, submodules, consentData);
   }
@@ -236,10 +237,10 @@ export const fetchBidsRule = ((rule) => {
       return;
     }
     return rule(params);
-  }
-})(gdprRule(2, () => purpose2Rule, biddersBlocked))
+  };
+})(gdprRule(2, () => purpose2Rule, biddersBlocked));
 
-export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]))
+export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]));
 
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
@@ -248,7 +249,7 @@ function emitTCF2FinalResults() {
   // remove null and duplicate values
   const formatSet = function (st) {
     return Array.from(st.keys()).filter(el => el != null);
-  }
+  };
   const tcf2FinalResults = {
     storageBlocked: formatSet(storageBlocked),
     biddersBlocked: formatSet(biddersBlocked),
@@ -264,9 +265,15 @@ events.on(CONSTANTS.EVENTS.AUCTION_END, emitTCF2FinalResults);
 /*
   Set of callback functions used to detect presence of a TCF rule, passed as the second argument to find().
 */
-const hasPurpose1 = (rule) => { return rule.purpose === TCF2.purpose1.name }
-const hasPurpose2 = (rule) => { return rule.purpose === TCF2.purpose2.name }
-const hasPurpose7 = (rule) => { return rule.purpose === TCF2.purpose7.name }
+const hasPurpose1 = (rule) => {
+  return rule.purpose === TCF2.purpose1.name;
+};
+const hasPurpose2 = (rule) => {
+  return rule.purpose === TCF2.purpose2.name;
+};
+const hasPurpose7 = (rule) => {
+  return rule.purpose === TCF2.purpose7.name;
+};
 
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
@@ -297,8 +304,8 @@ export function setEnforcementConfig(config) {
   if (!hooksAdded) {
     if (purpose1Rule) {
       hooksAdded = true;
-      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule))
-      RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule))
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
       // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
       getHook('validateGdprEnforcement').before(userIdHook, 47);
@@ -307,7 +314,7 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
     }
     if (purpose7Rule) {
-      RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule))
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule));
     }
   }
 }

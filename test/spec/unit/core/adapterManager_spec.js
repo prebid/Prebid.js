@@ -2793,7 +2793,7 @@ describe('adapterManager tests', function () {
       beforeEach(() => {
         bidderRequests = [];
         ['mockBidder', 'mockBidder1', 'mockBidder2'].forEach(bidder => {
-          adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () =>({code: bidder})}, bidder);
+          adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({code: bidder})}, bidder);
         })
         sinon.stub(auctionManager, 'getBidsRequested').callsFake(() => bidderRequests);
       })
