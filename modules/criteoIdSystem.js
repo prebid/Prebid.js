@@ -102,6 +102,9 @@ function callSyncPixel(domain, pixel) {
               saveOnAllStorages(pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
             }
           }
+        },
+        error: error => {
+          logError(`criteoIdSystem: unable to sync user id`, error);
         }
       },
       undefined,
