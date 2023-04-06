@@ -6,13 +6,13 @@ import {getStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
-const BIDDER_CODE = 'gumgum'
+const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-const ALIAS_BIDDER_CODE = ['gg']
-const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
+const ALIAS_BIDDER_CODE = ['gg'];
+const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
-const TIME_TO_LIVE = 60
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
 
 let invalidRequestIds = {};
@@ -97,17 +97,6 @@ function _getBrowserParams(topWindowUrl) {
 
 function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
-}
-
-function _getDigiTrustQueryParams(userId) {
-  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return {};
-  }
-  return {
-    dt: digiTrustId.id
-  };
 }
 
 /**
@@ -416,7 +405,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl))
     });
   });
   return bids;
@@ -596,6 +585,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 61,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,
