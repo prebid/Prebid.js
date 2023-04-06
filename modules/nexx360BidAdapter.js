@@ -78,7 +78,6 @@ const converter = ortbConverter({
       deepSetValue(imp, 'ext.dimensions.slotH', slotEl.offsetHeight);
       deepSetValue(imp, 'ext.dimensions.cssMaxW', slotEl.style?.maxWidth);
       deepSetValue(imp, 'ext.dimensions.cssMaxH', slotEl.style?.maxHeight);
-
     }
     deepSetValue(imp, 'ext.nexx360', bidRequest.params.tagId);
     deepSetValue(imp, 'ext.nexx360.tagId', bidRequest.params.tagId);
