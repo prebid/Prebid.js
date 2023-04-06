@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 import { expect } from 'chai';
 
-import analyticsAdapter, { locals } from 'modules/33acrossAnalyticsAdapter.js';
+import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
 
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 
@@ -10,176 +10,523 @@ import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 const { EVENTS } = CONSTANTS;
 
-describe.only('33acrossAnalyticsAdapter:', function () {
+describe.only('33acrossAnalyticsAdapter:', function() {
   let sandbox, clock;
 
-  beforeEach(function () {
+  beforeEach(function() {
     mockGpt.enable();
     sandbox = sinon.sandbox.create();
     clock = sandbox.useFakeTimers(1680287706002);
   });
 
-  afterEach(function () {
+  afterEach(function() {
     sandbox.restore();
     analyticsAdapter.disableAnalytics();
-    locals.reset();
   });
 
-  describe('enableAnalytics', function () {
-    it('should log an error if no endpoint is passed', function () {
-      sandbox.stub(utils, 'logError');
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          pid: 'test-pid',
-        },
+  describe('enableAnalytics', function() {
+    context('when endpoint hasn\'t been given', function() {
+      it('logs an error', function() {
+        sandbox.spy(utils, 'logError');
+
+        analyticsAdapter.enableAnalytics({
+          provider: '33across',
+          options: {
+            pid: 'test-pid',
+          },
+        });
+
+        sinon.assert.calledOnce(utils.logError);
+        sinon.assert.calledWithExactly(utils.logError, '33across Analytics: No endpoint provided for "options.endpoint". No analytics will be sent.');
       });
-      expect(utils.logError.calledOnce).to.be.true;
     });
 
-    it('should log an error if no pid is passed', function () {
-      sandbox.stub(utils, 'logError');
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-        },
+    context('when pid hasn\'t been given', function() {
+      it('logs an error', function() {
+        sandbox.spy(utils, 'logError');
+        analyticsAdapter.enableAnalytics({
+          provider: '33across',
+          options: {
+            endpoint: 'test-endpoint',
+          },
+        });
+
+        sinon.assert.calledOnce(utils.logError);
+        sinon.assert.calledWithExactly(utils.logError, '33across Analytics: No partnerId provided for "options.pid". No analytics will be sent.');
       });
-      expect(utils.logError.calledOnce).to.be.true;
     });
 
-    it('should set the endpoint and pid if both are passed', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-        },
-      });
-      expect(locals.endpoint).to.equal('test-endpoint');
-      expect(locals.analyticsCache.pid).to.equal('test-pid');
-    });
+    context('when pid and endpoint have been given', function() {
+      context('and an invalid timeout config value has been given', function() {
+        it('logs an info message', function() {
+          sandbox.spy(utils, 'logInfo');
 
-    it('should set the timeout if passed', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-          timeout: 1000,
-        },
-      });
-      expect(locals.transactionManager.timeout).to.equal(1000);
-    });
+          [ null, 'foo', -1 ].forEach((value, index) => {
+            analyticsAdapter.enableAnalytics({
+              provider: '33across',
+              options: {
+                pid: 'test-pid',
+                endpoint: 'test-endpoint',
+                timeout: value
+              },
+            });
+            analyticsAdapter.disableAnalytics();
 
-    it('should set the timeout to 3000 if not passed', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-        },
+            sinon.assert.calledWithExactly(utils.logInfo.getCall(index), '33across Analytics: Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.');
+          });
+        });
       });
-      expect(locals.transactionManager.timeout).to.equal(3000);
-    });
 
-    it('should set the timeout to 3000 if passed a non-number', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-          timeout: 'test',
-        },
-      });
-      expect(locals.transactionManager.timeout).to.equal(3000);
-    });
+      it('logs any received GAM slotRenderEnded event', function() {
+        sandbox.spy(utils, 'logInfo');
 
-    it('should set the timeout to 3000 if passed a negative number', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-          timeout: -1,
-        },
-      });
-      expect(locals.transactionManager.timeout).to.equal(3000);
-    });
+        analyticsAdapter.enableAnalytics({
+          provider: '33across',
+          options: {
+            pid: 'test-pid',
+            endpoint: 'test-endpoint'
+          },
+        });
 
-    it('should allow the timeout to be set to 0 to allow immediate reporting', function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-          timeout: 0,
-        },
+        window.googletag.cmd.forEach(fn => fn());
+
+        const { gam } = getMockEvents();
+        const [ gEvent ] = gam.slotRenderEnded;
+
+        mockGpt.emitEvent('slotRenderEnded', gEvent);
+
+        sinon.assert.calledOnce(utils.logInfo);
+        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: slotRenderEnded', Object.assign({ eventName: 'slotRenderEnded'}, gEvent));
       });
-      expect(locals.transactionManager.timeout).to.equal(0);
     });
   });
 
-  describe('when handling events', function () {
-    const defaultTimeout = 3000;
-    beforeEach(function () {
-      analyticsAdapter.enableAnalytics({
-        provider: '33across',
-        options: {
-          endpoint: 'test-endpoint',
-          pid: 'test-pid',
-          timeout: defaultTimeout,
-        },
-      });
+  describe('disableAnalytics()', function() {
+    xit('removes the GAM slotRenderEnded event listeners', ()=> {
+
+    });
+  });
+
+  describe('when handling events', function() {
+    beforeEach(function() {
+      this.defaultTimeout = 3000;
+      this.enableAnalytics = (options) => {
+        analyticsAdapter.enableAnalytics({
+          provider: '33across',
+          options: {
+            endpoint: 'test-endpoint',
+            pid: 'test-pid',
+            timeout: this.defaultTimeout,
+            ...options
+          },
+        });
+      }
     });
 
-    it('should send data to the endpoint when an auction is complete', function () {
+    it('sends a correctly formed AnalyticsReport to the given endpoint when an auction is complete', function() {
+      this.enableAnalytics({ endpoint: 'foo-endpoint' });
+
       sandbox.stub(navigator, 'sendBeacon').returns(true);
       performStandardAuction();
-      clock.tick(defaultTimeout + 1);
-      expect(navigator.sendBeacon.called).to.be.true;
+      clock.tick(this.defaultTimeout + 1);
+
+      sinon.assert.calledOnce(navigator.sendBeacon);
+      sinon.assert.calledWithExactly(navigator.sendBeacon, 'foo-endpoint',
+        JSON.stringify(getStandardAnalyticsReport()));
     });
 
-    xit('should send a correctly formed AnalyticsReport to the endpoint when an auction is complete', function () {
+    context('when an error occurs while sending the AnalyticsReport', function() {
+      it('logs an error', function() {
+        sandbox.spy(utils, 'logError');
+        this.enableAnalytics({ endpoint: 'foo-endpoint' });
 
+        sandbox.stub(navigator, 'sendBeacon').returns(false);
+        performStandardAuction();
+        clock.tick(this.defaultTimeout + 1);
+
+        sinon.assert.calledOnce(utils.logError);
+
+        // FIXME: The args match doesn't work
+        // sinon.assert.calledWith(utils.logError, 'Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
+      });
     });
 
-    function performStandardAuction() {
-      const mockEvents = getMockEvents();
-      let { prebid, gam } = mockEvents;
+    context('when a transaction doesn\'t reach its complete state', function() {
+      context('and a timeout config value has been given', function() {
+        context('and the timeout value has elapsed', function() {
+          it('logs an error', function() {
+            this.enableAnalytics({ timeout: 2000 });
 
-      for (let auction of prebid) {
-                        // Events in one possible order of execution
+            sandbox.spy(utils, 'logWarn');
 
-                        // ADD_AD_UNITS
-                        // REQUEST_BIDS
-                        // BEFORE_REQUEST_BIDS
-        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-                        // BID_REQUESTED
-                        // BEFORE_BIDDER_HTTP
-                        // NO_BID
-                        // BIDDER_DONE
-                        // BID_ADJUSTMENT
-                        // BID_RESPONSE
-                        // BIDDER_DONE
-                        // NO_BID
-                        // TCF2_ENFORCEMENT
-        events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
-                        // SET_TARGETING
-                        // BIDDER_DONE
-        for (let gEvent of gam.slotRenderEnded) {
-          mockGpt.emitEvent(gEvent);
-        }
-        events.emit(EVENTS.BID_WON, auction.BID_WON);
-                        // AD_RENDER_SUCCEEDED
-                        // AD_RENDER_FAILED
-                        // BID_TIMEOUT
+            performAuctionWithMissingBidWon();
 
-        clock.tick();
-      }
-    }
+            clock.tick(2001);
+
+            sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: Timed out waiting for ad transactions to complete. Sending report.');
+          });
+        })
+      });
+
+      context('and a timeout config value hasn\'t been given', function() {
+        context('and the default timeout has elapsed', function() {
+          it('logs an error', function() {
+            this.enableAnalytics();
+
+            sandbox.spy(utils, 'logWarn');
+
+            performAuctionWithMissingBidWon();
+
+            clock.tick(this.defaultTimeout + 1);
+
+            sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: Timed out waiting for ad transactions to complete. Sending report.');
+          });
+        })
+      });
+
+      xit('sends the report in its current state', function() {
+        sandbox.stub(navigator, 'sendBeacon').returns(true);
+
+        // As soon as the analyticsAdapter is enabled, its event handler
+        // will start getting events from another unit test.
+        // Every enablement of the adapter has its own instance
+        // of the transaction manager but the mocked transaction IDs
+        // are the same.
+        //
+        // We need to start generation different transaction IDs for the mocked
+        // events and evaluate having a structure like
+        // this.#transactions[auctionId][transactionId]
+        this.enableAnalytics();
+
+        performAuctionWithMissingBidWon();
+
+        clock.tick(this.defaultTimeout + 1);
+
+        sinon.assert.calledOnce(navigator.sendBeacon);
+        // sinon.assert.calledWith(navigator.sendBeacon, 'test-endpoint');
+      });
+    });
   });
 });
+
+/**
+ * Events in possible order of execution
+ * ADD_AD_UNITS
+ * REQUEST_BIDS
+ * BEFORE_REQUEST_BIDS
+ * AUCTION_INIT
+ * BID_REQUESTED
+ * BEFORE_BIDDER_HTTP
+ * NO_BID
+ * BIDDER_DONE
+ * BID_ADJUSTMENT
+ * BID_RESPONSE
+ * BIDDER_DONE
+ * NO_BID
+ * TCF2_ENFORCEMENT
+ * AUCTION_END
+ * SET_TARGETING
+ * BIDDER_DONE
+ * - GAM SLOT RENDER EVENT
+ * BID_WON
+ * AD_RENDER_SUCCEEDED
+ * AD_RENDER_FAILED
+ * BID_TIMEOUT
+ */
+
+function performStandardAuction() {
+  const mockEvents = getMockEvents();
+  const { prebid, gam } = mockEvents;
+
+  for (let auction of prebid) {
+    events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+    events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+
+    for (let gEvent of gam.slotRenderEnded) {
+      mockGpt.emitEvent(gEvent);
+    }
+
+    auction.BID_WON.forEach((bidWonEvent) => {
+      events.emit(EVENTS.BID_WON, bidWonEvent);
+    });
+  }
+}
+
+function performAuctionWithMissingBidWon() {
+  const mockEvents = getMockEvents();
+  let { prebid, gam } = mockEvents;
+
+  const [ auction ] = prebid;
+
+  events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+  events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+}
+
+function getStandardAnalyticsReport() {
+  return {
+    siteId: '',
+    pid: 'test-pid',
+    src: 'pbjs',
+    analyticsVersion: '1.0.0',
+    pbjsVersion: '$prebid.version$',
+    auctions: [{
+      adUnits: [{
+        transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
+        adUnitCode: '/19968336/header-bid-tag-0',
+        slotId: '',
+        mediaTypes: ['banner'],
+        sizes: ['300x250', '300x600'],
+        bids: [{
+          bidder: 'bidder0',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }]
+      }, {
+        transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+        adUnitCode: '/19968336/header-bid-tag-1',
+        slotId: '',
+        mediaTypes: ['banner'],
+        sizes: ['728x90', '970x250'],
+        bids: [{
+          bidder: 'bidder0',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }]
+      }, {
+        transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+        adUnitCode: '/17118521/header-bid-tag-2',
+        slotId: '',
+        mediaTypes: ['banner'],
+        sizes: ['300x250'],
+        bids: [{
+          bidder: '33across',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder1',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder2',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder3',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder4',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder6',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder0',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder0Ast',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder8',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder5',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder9',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder10',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder7',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder11',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'bidder12',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'rubicon',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }, {
+          bidder: 'pulsepoint',
+          bidResponse: {
+            cpm: 0,
+            cur: '',
+            cpmOrig: 0,
+            cpmFloor: 0,
+            mediaType: '',
+            size: ''
+          }
+        }]
+      }],
+      auctionId: 'auction-000',
+      userIds: {}
+    }],
+    bidsWon: [{
+      bidder: 'bidder0',
+      source: 'client',
+      status: 'rendered',
+      transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
+      bidResponse: {
+        cpm: 0,
+        cur: '',
+        cpmOrig: 0,
+        cpmFloor: 0,
+        mediaType: '',
+        size: ''
+      }
+    }, {
+      bidder: 'bidder0',
+      source: 'client',
+      status: 'rendered',
+      transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+      bidResponse: {
+        cpm: 0,
+        cur: '',
+        cpmOrig: 0,
+        cpmFloor: 0,
+        mediaType: '',
+        size: ''
+      }
+    }, {
+      bidder: 'bidder0',
+      source: 'client',
+      status: 'targetingSet',
+      transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+      bidResponse: {
+        cpm: 0,
+        cur: '',
+        cpmOrig: 0,
+        cpmFloor: 0,
+        mediaType: '',
+        size: ''
+      }
+    }]
+  };
+}
 
 function getMockEvents() {
   const ad = '<!-- Creative --><div>ad</div>';
@@ -1047,6 +1394,95 @@ function getMockEvents() {
             placementId: 12345678,
           },
         ],
+      },
+      {
+        bidderCode: 'bidder0',
+        width: 728,
+        height: 90,
+        statusMessage: 'Bid available',
+        adId: '3969aa0dc284f9e',
+        requestId: '21ad295f40dd7ab',
+        transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+        auctionId: 'auction-000',
+        mediaType: 'banner',
+        source: 'client',
+        cpm: 1.5,
+        creativeId: 98476543,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 300,
+        adUnitCode: '/19968336/header-bid-tag-1',
+        bidder0: {
+          buyerMemberId: 1234,
+        },
+        ad,
+        adapterCode: 'bidder0',
+        originalCpm: 1.5,
+        originalCurrency: 'USD',
+        responseTimestamp: 1680279733304,
+        requestTimestamp: 1680279732963,
+        bidder: 'bidder0',
+        timeToRespond: 342,
+        pbLg: '1.50',
+        pbMg: '1.50',
+        pbHg: '1.50',
+        pbAg: '1.50',
+        pbDg: '1.50',
+        pbCg: '',
+        size: '728x90',
+        adserverTargeting: {
+          bidder: 'bidder0',
+          hb_adid: '3969aa0dc284f9e',
+          hb_pb: '1.50',
+          hb_size: '728x90',
+          hb_source: 'client',
+          hb_format: 'banner',
+          hb_adomain: '',
+          hb_acat: '',
+        },
+        status: 'rendered',
+        params: [
+          {
+            placementId: 12345678,
+          },
+        ],
+      },
+      {
+        bidderCode: 'bidder0',
+        width: 300,
+        height: 250,
+        statusMessage: 'Bid available',
+        adId: '3969aa0dc284f9e',
+        requestId: '15bef0b1fd2b2e',
+        transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+        auctionId: 'auction-000',
+        mediaType: 'banner',
+        source: 'client',
+        cpm: 1.5,
+        creativeId: 98476543,
+        currency: 'USD',
+        netRevenue: true,
+        ttl: 300,
+        adUnitCode: '/17118521/header-bid-tag-2',
+        bidder0: {
+          buyerMemberId: 1234,
+        },
+        ad,
+        adapterCode: 'bidder0',
+        originalCpm: 1.5,
+        originalCurrency: 'USD',
+        responseTimestamp: 1680279733305,
+        requestTimestamp: 1680279732963,
+        bidder: 'bidder0',
+        timeToRespond: 342,
+        pbLg: '1.50',
+        pbMg: '1.50',
+        pbHg: '1.50',
+        pbAg: '1.50',
+        pbDg: '1.50',
+        pbCg: '',
+        size: '728x90',
+        status: 'targetingSet',
       }],
       AUCTION_END: {
         auctionId: 'auction-000',

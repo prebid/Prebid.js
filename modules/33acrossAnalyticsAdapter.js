@@ -1,13 +1,14 @@
 /* eslint-disable no-console */
 import { logError, logWarn, logInfo } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 const { EVENTS } = CONSTANTS;
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
+const DEFAULT_TRANSACTION_TIMEOUT = 3000;
 
 const log = getLogger();
 
@@ -20,10 +21,16 @@ const log = getLogger();
  * @property {string} pbjsVersion
  * @property {Auction[]} auctions
  * @property {Bid[]} bidsWon
+ */
+
+/**
  * @typedef {Object} Auction
  * @property {AdUnit[]} adUnits
  * @property {string} auctionId
  * @property {Object} userIds
+ */
+
+/**
  * @typedef {Object} BidResponse
  * @property {number} cpm
  * @property {string} cur
@@ -31,6 +38,9 @@ const log = getLogger();
  * @property {number} cpmFloor
  * @property {string} mediaType
  * @property {string} size
+ */
+
+/**
  * @typedef {Object} Bid
  * @property {string} bidder
  * @property {string} source
@@ -38,6 +48,9 @@ const log = getLogger();
  * @property {BidResponse} bidResponse
  * @property {string} [auctionId] // do not include in report
  * @property {string} [transactionId] // do not include in report
+ */
+
+/**
  * @typedef {Object} AdUnit
  * @property {string} transactionId
  * @property {string} adUnitCode
@@ -53,24 +66,33 @@ const log = getLogger();
  * all bids are complete.
  */
 class TransactionManager {
-  timeoutId = null;
-
+  #timeoutId = null;
   #unsent = 0;
+  #timeout;
+  #transactions = {};
+  #analyticsCache;
+  #endpoint;
+
   get unsent() {
     return this.#unsent;
   }
+
   set unsent(value) {
     this.#unsent = value;
+
     if (this.#unsent <= 0) {
-      sendReport(locals.analyticsCache);
+      this.clearTimeout();
+
+      sendReport(this.#analyticsCache, this.#endpoint);
+
       this.#transactions = {};
     }
   }
 
-  #transactions = {};
-
-  constructor({timeout}) {
-    this.timeout = timeout;
+  constructor({ timeout, analyticsCache, endpoint }) {
+    this.#timeout = timeout;
+    this.#analyticsCache = analyticsCache;
+    this.#endpoint = endpoint;
   }
 
   add(transactionId) {
@@ -82,7 +104,7 @@ class TransactionManager {
     };
     ++this.unsent;
 
-    this.restartSendTimeout();
+    this.#restartSendTimeout(); // NOTE: This could be a private method
   }
 
   que(transactionId) {
@@ -92,17 +114,24 @@ class TransactionManager {
     }
     this.#transactions[transactionId].status = 'queued';
     --this.unsent;
+
     log.info(`Queued transaction "${transactionId}". ${this.#unsent} unsent.`, this.#transactions);
   }
 
-  restartSendTimeout() {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
-    this.timeoutId = setTimeout(() => {
-      if (this.timeout !== 0) log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
+  #restartSendTimeout() {
+    this.clearTimeout();
+
+    this.#timeoutId = setTimeout(() => {
+      if (this.#timeout !== 0) {
+        log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
+      }
+
       this.unsent = 0;
-    }, this.timeout);
+    }, this.#timeout);
+  }
+
+  clearTimeout() {
+    return clearTimeout(this.#timeoutId);
   }
 
   get() {
@@ -121,54 +150,80 @@ export const locals = {
   /** @type {AnalyticsReport} */
   analyticsCache: undefined,
   /** sets all locals to undefined */
-  reset: function () {
+  reset() {
     this.transactionManager = undefined;
     this.endpoint = undefined;
     this.analyticsCache = undefined;
   }
 }
 
-let analyticsAdapter = Object.assign(
-  adapter({ analyticsType: 'endpoint' }),
+const analyticsAdapter = Object.assign(
+  buildAdapter({ analyticsType: 'endpoint' }),
   { track: analyticEventHandler }
 );
 
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 
-function enableAnalyticsWrapper(config) {
-  locals.endpoint = config?.options?.endpoint;
-  if (!locals.endpoint) {
-    log.error(`No endpoint provided for "options.endpoint". No analytics will be sent.`);
+function enableAnalyticsWrapper(config = {}) {
+  const { options = {} } = config;
+  const endpoint = options.endpoint;
+
+  if (!endpoint) {
+    log.error('No endpoint provided for "options.endpoint". No analytics will be sent.');
+
     return;
   }
 
-  const pid = config?.options?.pid;
+  const pid = options.pid;
   if (!pid) {
-    log.error(`No partnerId provided for "options.pid". No analytics will be sent.`);
+    log.error('No partnerId provided for "options.pid". No analytics will be sent.');
+
     return;
   }
-  locals.analyticsCache = newAnalyticsReport(pid);
 
-  let timeout = 3000; // default timeout
-  if (typeof config?.options?.timeout === 'number' && config?.options?.timeout >= 0) {
-    timeout = config.options.timeout;
-  } else {
-    log.info(`Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.`);
+  const analyticsCache = locals.analyticsCache = newAnalyticsReport(pid);
+  const transactionManager = locals.transactionManager = createTransactionManager(options.timeout, analyticsCache, endpoint);
+
+  subscribeToGamSlotRenderEvent(transactionManager);
+
+  analyticsAdapter.originEnableAnalytics(config);
+}
+
+function calculateTransactionTimeout(configTimeout) {
+  if (typeof configTimeout === 'undefined') {
+    return DEFAULT_TRANSACTION_TIMEOUT;
   }
-  locals.transactionManager = new TransactionManager({timeout});
 
+  if (typeof configTimeout === 'number' && configTimeout >= 0) {
+    return configTimeout;
+  }
+
+  log.info(`Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.`);
+
+  return DEFAULT_TRANSACTION_TIMEOUT;
+}
+
+function createTransactionManager(configTimeout, analyticsCache, endpoint) {
+  return new TransactionManager({
+    timeout: calculateTransactionTimeout(configTimeout),
+    analyticsCache,
+    endpoint
+  });
+}
+
+function subscribeToGamSlotRenderEvent(transactionManager) {
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
     window.googletag.pubads().addEventListener('slotRenderEnded', event => {
       log.info('slotRenderEnded', event);
+
       const slot = `${event.slot.getAdUnitPath()}:${event.slot.getSlotElementId()}`;
-      locals.transactionManager.que(slot);
+
+      transactionManager.que(slot);
     });
   });
-
-  analyticsAdapter.originEnableAnalytics(config);
 }
 
 /** necessary for testing */
@@ -206,23 +261,24 @@ function newAnalyticsReport(pid) {
 /**
  * @returns {Auction}
  */
-function parseAuction({adUnits, auctionId, bidderRequests}) {
+function parseAuction({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
-    log.error(`Analytics adapter failed to parse auction.`);
+    log.error('Analytics adapter failed to parse auction.');
   }
 
   return {
     adUnits: adUnits.map(unit => parseAdUnit(unit)),
     auctionId,
-    userIds: getGlobal().getUserIds()
+    userIds: getGlobal().getUserIds?.() || {}
   }
 }
 
 /**
  * @returns {AdUnit}
  */
-function parseAdUnit({transactionId, code, slotId, mediaTypes, sizes, bids}) {
+function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
   log.warn(`parsing adUnit, slotId not yet implemented`);
+
   return {
     transactionId,
     adUnitCode: code,
@@ -236,13 +292,15 @@ function parseAdUnit({transactionId, code, slotId, mediaTypes, sizes, bids}) {
 /**
  * @returns {Bid}
  */
-function parseBid({auctionId, bidder, source, status, transactionId}) {
-  log.warn(`parsing bid: source and status may need to be populated by downstream event. bidResponse not yet implemented`);
+function parseBid({ auctionId, bidder, source, status, transactionId }) {
+  log.warn('parsing bid: source and status may need to be populated by downstream event. bidResponse not yet implemented');
+
   return {
     bidder,
     source,
     status,
-    bidResponse: parseBidResponse(),
+    transactionId,
+    bidResponse: parseBidResponse(), // Not sending any params
   }
 }
 
@@ -265,25 +323,31 @@ function parseBidResponse(args) {
  * @param {Object} args
  * @param {EVENTS[keyof EVENTS]} args.eventType
  */
-function analyticEventHandler({eventType, args}) {
+function analyticEventHandler({ eventType, args }) {
   log.info(eventType, args);
   switch (eventType) {
-    case EVENTS.AUCTION_INIT:
+    case EVENTS.AUCTION_INIT: // Move these events to top of fn.
       for (let adUnit of args.adUnits) {
         locals.transactionManager.add(adUnit.transactionId);
       }
+
       break;
     case EVENTS.BID_REQUESTED:
+      // It's probably a better idea to do the add at trasaction manager.
       break;
     case EVENTS.AUCTION_END:
       const auction = parseAuction(args);
+
       locals.analyticsCache.auctions.push(auction);
+
       break;
     // see also `slotRenderEnded` GAM-event listener
     case EVENTS.BID_WON:
       const bidWon = parseBid(args);
+
       locals.analyticsCache.bidsWon.push(bidWon);
       locals.transactionManager.que(bidWon.transactionId);
+
       break;
     case EVENTS.AD_RENDER_SUCCEEDED:
       break;
@@ -296,18 +360,23 @@ function analyticEventHandler({eventType, args}) {
 
 /**
  * Guarantees sending of data without waiting for response, even after page is left/closed
+ *
  * @param {AnalyticsReport} report
+ * @param {string}          endpoint
  */
-function sendReport(report) {
-  if (navigator.sendBeacon(locals.endpoint, JSON.stringify(report))) {
-    log.info(`Analytics report sent to ${locals.endpoint}`, report);
-  } else {
-    log.error(`Analytics report exceeded User-Agent data limits and was not sent.`, report);
+function sendReport(report, endpoint) {
+  if (navigator.sendBeacon(endpoint, JSON.stringify(report))) {
+    log.info(`Analytics report sent to ${endpoint}`, report);
+
+    return;
   }
+
+  log.error('Analytics report exceeded User-Agent data limits and was not sent.', report);
 }
 
 function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
+
   return {
     info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...args),
     warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...args),
