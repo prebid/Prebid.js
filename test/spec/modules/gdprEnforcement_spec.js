@@ -1,4 +1,5 @@
 import {
+  accessDeviceRule,
   deviceAccessHook,
   enforcementRules,
   enrichEidsRule,
@@ -126,7 +127,6 @@ describe('gdpr enforcement', function () {
   });
 
   after(function () {
-    validateStorageEnforcement.getHooks({ hook: deviceAccessHook }).remove();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
   })
 
@@ -144,44 +144,12 @@ describe('gdpr enforcement', function () {
     sandbox.restore();
   })
 
-  describe('deviceAccessHook', function () {
-    beforeEach(function () {
-      nextFnSpy = sinon.spy();
-      gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
-      logWarnSpy = sinon.spy(utils, 'logWarn');
-    });
-
-    afterEach(function () {
+  describe('deviceAccessRule', () => {
+    afterEach(() => {
       config.resetConfig();
-      gdprDataHandler.getConsentData.restore();
-      logWarnSpy.restore();
     });
 
-    it('should not allow device access when device access flag is set to false', function () {
-      config.setConfig({
-        deviceAccess: false,
-        consentManagement: {
-          gdpr: {
-            rules: [{
-              purpose: 'storage',
-              enforcePurpose: false,
-              enforceVendor: false,
-              vendorExceptions: ['appnexus', 'rubicon']
-            }]
-          }
-        }
-      });
-
-      deviceAccessHook(nextFnSpy);
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      let result = {
-        hasEnforcementHook: true,
-        valid: false
-      }
-      sinon.assert.calledWith(nextFnSpy, undefined, undefined, result);
-    });
-
-    it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
+    it('should not check for consent when enforcePurpose and enforceVendor are false', function () {
       Object.assign(gvlids, {
         appnexus: 1,
         rubicon: 5
@@ -196,15 +164,8 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
-
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'rubicon');
-      expect(logWarnSpy.callCount).to.equal(0);
+      setupConsentData();
+      ['appnexus', 'rubicon'].forEach(bidder => expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, bidder))));
     });
 
     it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
@@ -221,15 +182,13 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
-
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'rubicon');
-      expect(logWarnSpy.callCount).to.equal(1);
+      setupConsentData();
+      Object.entries({
+        appnexus: true,
+        rubicon: false
+      }).forEach(([bidder, isAllowed]) => {
+        expectAllow(isAllowed, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
+      })
     });
 
     it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
@@ -244,19 +203,8 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = false;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
-
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      let result = {
-        hasEnforcementHook: true,
-        valid: true
-      }
-      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
+      setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
     });
 
     it('should use gvlMapping set by publisher', function() {
@@ -275,69 +223,14 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
-
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      let result = {
-        hasEnforcementHook: true,
-        valid: true
-      }
-      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
-      config.resetConfig();
-    });
-
-    it('should use gvl id of alias and not of parent', function() {
-      let curBidderStub = sinon.stub(config, 'getCurrentBidder');
-      curBidderStub.returns('appnexus-alias');
-      adapterManager.aliasBidAdapter('appnexus', 'appnexus-alias');
-      config.setConfig({
-        'gvlMapping': {
-          'appnexus-alias': 4
-        }
-      });
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
-        }
-      });
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
-
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
-      expect(nextFnSpy.calledOnce).to.equal(true);
-      let result = {
-        hasEnforcementHook: true,
-        valid: true
-      }
-      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
-      config.resetConfig();
-      curBidderStub.restore();
+      setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_BIDDER, 'appnexus')));
     });
 
     it(`should not enforce consent for vendorless modules if ${STRICT_STORAGE_ENFORCEMENT} is not set`, () => {
       setEnforcementConfig({});
-      let consentData = {
-        vendorData: staticConfig.consentData.getTCData,
-        gdprApplies: true
-      }
-      gdprDataHandlerStub.returns(consentData);
-      const validate = sinon.stub().callsFake(() => false);
-      deviceAccessHook(nextFnSpy, MODULE_TYPE_PREBID, 'mockModule', undefined, {validate});
-      sinon.assert.callCount(validate, 0);
-      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_PREBID, 'mockModule', {hasEnforcementHook: true, valid: true});
+      setupConsentData();
+      expectAllow(true, accessDeviceRule(activityParams(MODULE_TYPE_PREBID, 'mockCoreModule')));
     })
   });
 
@@ -354,11 +247,6 @@ describe('gdpr enforcement', function () {
         }
       });
       setupConsentData();
-      let consentData = {}
-      consentData.vendorData = staticConfig.consentData.getTCData;
-      consentData.gdprApplies = true;
-      consentData.apiVersion = 2;
-      gdprDataHandlerStub.returns(consentData);
       Object.assign(gvlids, {
         sampleBidder1: 1,
         sampleBidder2: 2

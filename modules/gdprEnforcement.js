@@ -7,7 +7,6 @@ import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
 import {getHook} from '../src/hook.js';
-import {validateStorageEnforcement} from '../src/storageManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
@@ -24,6 +23,7 @@ import {
 } from '../src/activities/params.js';
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
+  ACTIVITY_ACCESS_DEVICE,
   ACTIVITY_ENRICH_EIDS,
   ACTIVITY_FETCH_BIDS,
   ACTIVITY_REPORT_ANALYTICS,
@@ -183,54 +183,9 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
 }
 
 /**
- * This hook checks whether module has permission to access device or not. Device access include cookie and local storage
- *
- * @param {Function} fn reference to original function (used by hook logic)
- * @param {string} moduleType type of the module
- * @param {string=} moduleName name of the module
- * @param result
- * @param validate
- */
-export function deviceAccessHook(fn, moduleType, moduleName, result, {validate = validateRules} = {}) {
-  result = Object.assign({}, {
-    hasEnforcementHook: true
-  });
-  if (!hasDeviceAccess()) {
-    logWarn('Device access is disabled by Publisher');
-    result.valid = false;
-  } else if (moduleType === MODULE_TYPE_PREBID && !strictStorageEnforcement) {
-    // for vendorless (core) storage, do not enforce rules unless strictStorageEnforcement is set
-    result.valid = true;
-  } else {
-    const consentData = gdprDataHandler.getConsentData();
-    let gvlid;
-    if (shouldEnforce(consentData, 1, moduleName)) {
-      const curBidder = config.getCurrentBidder();
-      // Bidders have a copy of storage object with bidder code binded. Aliases will also pass the same bidder code when invoking storage functions and hence if alias tries to access device we will try to grab the gvl id for alias instead of original bidder
-      if (curBidder && (curBidder !== moduleName) && adapterManager.aliasRegistry[curBidder] === moduleName) {
-        gvlid = getGvlid(moduleType, curBidder);
-      } else {
-        gvlid = getGvlid(moduleType, moduleName)
-      }
-      const curModule = moduleName || curBidder;
-      let isAllowed = validate(purpose1Rule, consentData, curModule, gvlid,);
-      if (isAllowed) {
-        result.valid = true;
-      } else {
-        curModule && logWarn(`TCF2 denied device access for ${curModule}`);
-        result.valid = false;
-        storageBlocked.add(curModule);
-      }
-    } else {
-      result.valid = true;
-    }
-  }
-  fn.call(this, moduleType, moduleName, result);
-}
-
-/**
  * all activity rules follow the same structure:
- * if GDPR is in scope, check configuration for a particular purpose
+ * if GDPR is in scope, check configuration for a particular purpose, and if that enables enforcement,
+ * check against consent data for that purpose and vendor
  *
  * @param purposeNo TCF purpose number to check for this activity
  * @param getEnforcementRule getter for gdprEnforcement rule definition to use
@@ -252,6 +207,14 @@ function gdprRule(purposeNo, getEnforcementRule, blocked = null, gvlidFallback =
   }
 }
 
+export const accessDeviceRule = ((rule) => {
+  return function(params) {
+    // for vendorless (core) storage, do not enforce rules unless strictStorageEnforcement is set
+    if (params[ACTIVITY_PARAM_COMPONENT_TYPE] === MODULE_TYPE_PREBID && !strictStorageEnforcement) return;
+    return rule(params);
+  }
+})(gdprRule(1, () => purpose1Rule, storageBlocked))
+
 export const syncUserRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked)
 
@@ -267,7 +230,7 @@ export function userIdHook(fn, submodules, consentData) {
 export const fetchBidsRule = ((rule) => {
   return function (params) {
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
-      // TODO: this special case is for the PBS adapter (componentType is core)
+      // TODO: this special case is for the PBS adapter (componentType is 'prebid')
       // we should check for generic purpose 2 consent & vendor consent based on the PBS vendor's GVL ID;
       // that is, however, a breaking change and skipped for now
       return;
@@ -334,7 +297,7 @@ export function setEnforcementConfig(config) {
   if (!hooksAdded) {
     if (purpose1Rule) {
       hooksAdded = true;
-      validateStorageEnforcement.before(deviceAccessHook, 49);
+      RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule))
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule))
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
       // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
@@ -352,7 +315,6 @@ export function setEnforcementConfig(config) {
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
   [
-    validateStorageEnforcement.getHooks({hook: deviceAccessHook}),
     getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
   ].forEach(hook => hook.remove());
   hooksAdded = false;
