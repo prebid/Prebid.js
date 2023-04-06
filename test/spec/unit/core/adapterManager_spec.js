@@ -2792,10 +2792,27 @@ describe('adapterManager tests', function () {
 
       beforeEach(() => {
         bidderRequests = [];
+        ['mockBidder', 'mockBidder1', 'mockBidder2'].forEach(bidder => {
+          adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () =>({code: bidder})}, bidder);
+        })
         sinon.stub(auctionManager, 'getBidsRequested').callsFake(() => bidderRequests);
       })
       afterEach(() => {
         auctionManager.getBidsRequested.restore();
+      })
+
+      it('can resolve aliases', () => {
+        adapterManager.aliasBidAdapter('mockBidder', 'mockBidderAlias');
+        expect(adapterManager.resolveAlias('mockBidderAlias')).to.eql('mockBidder');
+      });
+      it('does not stuck in alias cycles', () => {
+        adapterManager.aliasRegistry['alias1'] = 'alias2';
+        adapterManager.aliasRegistry['alias2'] = 'alias2';
+        expect(adapterManager.resolveAlias('alias2')).to.eql('alias2');
+      })
+      it('returns self when not an alias', () => {
+        delete adapterManager.aliasRegistry['missing'];
+        expect(adapterManager.resolveAlias('missing')).to.eql('missing');
       })
 
       it('does not invoke onDataDeletionRequest on aliases', () => {

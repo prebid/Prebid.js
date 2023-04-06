@@ -546,6 +546,16 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
   }
 };
 
+adapterManager.resolveAlias = function (alias) {
+  let code = alias;
+  let visited;
+  while (_aliasRegistry[code] && (!visited || !visited.has(code))) {
+    code = _aliasRegistry[code];
+    (visited = visited || new Set()).add(code);
+  }
+  return code;
+}
+
 adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
   if (adapter && code) {
     if (typeof adapter.enableAnalytics === 'function') {

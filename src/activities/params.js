@@ -52,11 +52,7 @@ export function activityParams(moduleType, moduleName, params) {
     [ACTIVITY_PARAM_COMPONENT]: `${moduleType}.${moduleName}`
   };
   if (moduleType === MODULE_TYPE_BIDDER) {
-    let adapterCode = moduleName;
-    while (adapterManager.aliasRegistry[adapterCode]) {
-      adapterCode = adapterManager.aliasRegistry[adapterCode];
-    }
-    defaults[ACTIVITY_PARAM_ADAPTER_CODE] = adapterCode;
+    defaults[ACTIVITY_PARAM_ADAPTER_CODE] = adapterManager.resolveAlias(moduleName);
   }
   return Object.assign(defaults, params);
 }
