@@ -1,10 +1,31 @@
+import {MODULE_TYPE_BIDDER} from './modules.js';
+import adapterManager from '../adapterManager.js';
+
+/**
+ * Component ID - who is trying to perform the activity?
+ * Relevant for all activities.
+ */
 export const ACTIVITY_PARAM_COMPONENT = 'component';
 export const ACTIVITY_PARAM_COMPONENT_TYPE = ACTIVITY_PARAM_COMPONENT + 'Type';
 export const ACTIVITY_PARAM_COMPONENT_NAME = ACTIVITY_PARAM_COMPONENT + 'Name';
 
 /**
+ * Code of the bid adapter that `componentName` is an alias of.
+ * May be the same as the component name.
+ *
+ * relevant for all activities, but only when componentType is 'bidder'.
+ */
+export const ACTIVITY_PARAM_ADAPTER_CODE = 'adapterCode';
+
+/**
+ * Storage type - either 'html5' or 'cookie'.
+ * Relevant for: accessDevice
+ */
+export const ACTIVITY_PARAM_STORAGE_TYPE = 'storageType';
+
+/**
  * s2sConfig[].configName, used to identify a particular s2s instance
- * relevant for: fetchBids
+ * relevant for: fetchBids, but only when component is 'prebid.pbsBidAdapter'
  */
 export const ACTIVITY_PARAM_S2S_NAME = 'configName';
 /**
@@ -25,9 +46,17 @@ export const ACTIVITY_PARAM_SYNC_URL = 'syncUrl';
 export const ACTIVITY_PARAM_ANL_CONFIG = '_config';
 
 export function activityParams(moduleType, moduleName, params) {
-  return Object.assign({
+  const defaults = {
     [ACTIVITY_PARAM_COMPONENT_TYPE]: moduleType,
     [ACTIVITY_PARAM_COMPONENT_NAME]: moduleName,
     [ACTIVITY_PARAM_COMPONENT]: `${moduleType}.${moduleName}`
-  }, params);
+  };
+  if (moduleType === MODULE_TYPE_BIDDER) {
+    let adapterCode = moduleName;
+    while (adapterManager.aliasRegistry[adapterCode]) {
+      adapterCode = adapterManager.aliasRegistry[adapterCode];
+    }
+    defaults[ACTIVITY_PARAM_ADAPTER_CODE] = adapterCode;
+  }
+  return Object.assign(defaults, params);
 }
