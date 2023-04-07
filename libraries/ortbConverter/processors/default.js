@@ -2,7 +2,7 @@ import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
-// import {fillNativeImp, fillNativeResponse} from './native.js';
+import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
 import {config} from '../../../src/config.js';
 
@@ -115,16 +115,16 @@ export const DEFAULT_PROCESSORS = {
   }
 }
 
-// if (FEATURES.NATIVE) {
-//   DEFAULT_PROCESSORS[IMP].native = {
-//     // populates imp.native
-//     fn: fillNativeImp
-//   }
-//   DEFAULT_PROCESSORS[BID_RESPONSE].native = {
-//     // populates bidResponse.native if bidResponse.mediaType === NATIVE
-//     fn: fillNativeResponse
-//   }
-// }
+if (FEATURES.NATIVE) {
+  DEFAULT_PROCESSORS[IMP].native = {
+    // populates imp.native
+    fn: fillNativeImp
+  }
+  DEFAULT_PROCESSORS[BID_RESPONSE].native = {
+    // populates bidResponse.native if bidResponse.mediaType === NATIVE
+    fn: fillNativeResponse
+  }
+}
 
 function fpdFromTopLevelConfig(prop) {
   return {
