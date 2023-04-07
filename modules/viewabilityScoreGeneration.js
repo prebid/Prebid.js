@@ -19,24 +19,24 @@ const ADUNIT_INDEX = 1;
 
 // stat hat call to collect data when there is issue while writing to localstorgae.
 const fireStatHatLogger = (statKeyName) => {
-	var stathatUserEmail = 'jason.quaccia@pubmatic.com';
-	var url = 'https://api.stathat.com/ez';
-	var data = `time=${(new Date()).getTime()}&stat=${statKeyName}&email=${stathatUserEmail}&count=1`
-  
-	var statHatElement = document.createElement('script');
-	statHatElement.src = url + '?' + data;
-	statHatElement.async = true;
-	document.body.appendChild(statHatElement)
+  var stathatUserEmail = 'jason.quaccia@pubmatic.com';
+  var url = 'https://api.stathat.com/ez';
+  var data = `time=${(new Date()).getTime()}&stat=${statKeyName}&email=${stathatUserEmail}&count=1`
+
+  var statHatElement = document.createElement('script');
+  statHatElement.src = url + '?' + data;
+  statHatElement.async = true;
+  document.body.appendChild(statHatElement)
 };
 
 export const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
 export const setAndStringifyToLocalStorage = (key, object) => {
-	try {
-	  window.localStorage.setItem(key, JSON.stringify(object));
-	} catch (e) {
-	  // send error to stathat endpoint
-	  fireStatHatLogger(`${e} --- ${window.location.href}`);
-	}
+  try {
+    window.localStorage.setItem(key, JSON.stringify(object));
+  } catch (e) {
+    // send error to stathat endpoint
+    fireStatHatLogger(`${e} --- ${window.location.href}`);
+  }
 };
 
 let vsgObj = getAndParseFromLocalStorage('viewability-data');
@@ -52,14 +52,14 @@ export const makeBidRequestsHook = (fn, bidderRequests) => {
           bid.sizes.forEach(bidSize => {
             const key = bidSize.toString().replace(',', 'x');
             if (vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
-			// special handling for outstream video, we can check for playerSize in bid.mediaType to fetch value from localStorage
-        	else if(bid.mediaTypes?.video?.playerSize) {
-					const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
-					if(vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
-			}
+            // special handling for outstream video, we can check for playerSize in bid.mediaType to fetch value from localStorage
+            else if (bid.mediaTypes?.video?.playerSize) {
+              const key = bid.mediaTypes.video.playerSize.toString().replace(',', 'x');
+              if (vsgObj[key]?.slot.includes(bid.adUnitCode)) adSizes[key] = removeKeys(deepClone(vsgObj[key]));
+            }
           });
-		// Special handling for native creative, we are storing values for native againest '1x1' mapping. 
-        } else if(bid.mediaTypes?.native && vsgObj[NATIVE_DEFAULT_SIZE]) adSizes['1x1'] = removeKeys(deepClone(vsgObj[NATIVE_DEFAULT_SIZE]));
+          // Special handling for native creative, we are storing values for native againest '1x1' mapping.
+        } else if (bid.mediaTypes?.native && vsgObj[NATIVE_DEFAULT_SIZE]) adSizes['1x1'] = removeKeys(deepClone(vsgObj[NATIVE_DEFAULT_SIZE]));
         if (Object.keys(adSizes).length) bidViewabilityFields.adSizes = adSizes;
         if (adUnit) bidViewabilityFields.adUnit = removeKeys(deepClone(adUnit));
         if (Object.keys(bidViewabilityFields).length) bid.bidViewability = bidViewabilityFields;
@@ -104,28 +104,28 @@ export const updateTotalViewTime = (diff, currentTime, lastViewStarted, key, lsO
 // function to return default values for rendered, viewed, slot and createdAt
 // slot is required for getting correct values from local storage
 const defaultInit = (keyArr, index) => {
-	return {
-		rendered: 1,
-        viewed: 0,
-		slot: index == ADSLOTSIZE_INDEX ? [keyArr[ADUNIT_INDEX]] : undefined,
-		createdAt: Date.now()
-	}
+  return {
+    rendered: 1,
+    viewed: 0,
+    slot: index == ADSLOTSIZE_INDEX ? [keyArr[ADUNIT_INDEX]] : undefined,
+    createdAt: Date.now()
+  }
 }
 
 // this function initialises value and increase rendered count based on slot, size and domain level.
 const incrementRenderCount = keyArr => {
   keyArr.forEach((key, index) => {
-	if(!key) return;
+    if (!key) return;
     if (vsgObj) {
       if (vsgObj[key]) {
         vsgObj[key].rendered = vsgObj[key].rendered + 1;
-		if(!vsgObj[key].slot?.includes(keyArr[ADUNIT_INDEX]) && index == 2) vsgObj[key].slot.push(keyArr[ADUNIT_INDEX]);
+        if (!vsgObj[key].slot?.includes(keyArr[ADUNIT_INDEX]) && index == 2) vsgObj[key].slot.push(keyArr[ADUNIT_INDEX]);
       } else {
-		vsgObj[key] = defaultInit(keyArr, index);
+        vsgObj[key] = defaultInit(keyArr, index);
       }
     } else {
       vsgObj = {
-		[key]: defaultInit(keyArr, index)
+        [key]: defaultInit(keyArr, index)
       }
     }
   });
@@ -243,36 +243,36 @@ export const updateGptWithViewabilityTargeting = targetingSet => {
 }
 
 const getSlotAndSize = (event) => {
-	const currentAdSlotElement = event.slot.getSlotElementId();
-	const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
-	const currentAdSlotSize = creativeSize?.[0];
-	return {
-		currentAdSlotElement,
-		currentAdSlotSize
-	}
+  const currentAdSlotElement = event.slot.getSlotElementId();
+  const creativeSize = event.slot.getTargeting('hb_size')?.length === 0 ? event.slot.getTargeting('pwtsz') : event.slot.getTargeting('hb_size');
+  const currentAdSlotSize = creativeSize?.[0];
+  return {
+    currentAdSlotElement,
+    currentAdSlotSize
+  }
 }
 
 export const setGptEventHandlers = () => {
-    // add the GPT event listeners
-	// the event handlers below get triggered in the following order: slotRenderEnded, slotVisibilityChanged and impressionViewable
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(() => {
-      window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
-		const slot_size = getSlotAndSize(event);
-        gptSlotRenderEndedHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
-      });
-
-      window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
-        const slot_size = getSlotAndSize(event);
-        gptImpressionViewableHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
-      });
-
-      window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
-        const slot_size = getSlotAndSize(event);
-        gptSlotVisibilityChangedHandler(slot_size.currentAdSlotElement, slot_size.currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
-      });
+  // add the GPT event listeners
+  // the event handlers below get triggered in the following order: slotRenderEnded, slotVisibilityChanged and impressionViewable
+  window.googletag = window.googletag || {};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().addEventListener(GPT_SLOT_RENDER_ENDED_EVENT, function(event) {
+      const slotSize = getSlotAndSize(event);
+      gptSlotRenderEndedHandler(slotSize.currentAdSlotElement, slotSize.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
     });
+
+    window.googletag.pubads().addEventListener(GPT_IMPRESSION_VIEWABLE_EVENT, function(event) {
+      const slotSize = getSlotAndSize(event);
+      gptImpressionViewableHandler(slotSize.currentAdSlotElement, slotSize.currentAdSlotSize, domain, setAndStringifyToLocalStorage);
+    });
+
+    window.googletag.pubads().addEventListener(GPT_SLOT_VISIBILITY_CHANGED_EVENT, function(event) {
+      const slotSize = getSlotAndSize(event);
+      gptSlotVisibilityChangedHandler(slotSize.currentAdSlotElement, slotSize.currentAdSlotSize, domain, event.inViewPercentage, setAndStringifyToLocalStorage);
+    });
+  });
 };
 
 const initConfigDefaults = config => {

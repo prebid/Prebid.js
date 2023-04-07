@@ -1215,7 +1215,7 @@ export const spec = {
     }
 
     if (bid.bidViewability) {
-	  vsgObj =  getAndParseFromLocalStorage('viewability-data');
+      vsgObj = getAndParseFromLocalStorage('viewability-data');
       removeViewTimeForZeroValue(vsgObj[vsgDomain]);
       payload.ext.bidViewability = {
         adDomain: vsgObj[vsgDomain]

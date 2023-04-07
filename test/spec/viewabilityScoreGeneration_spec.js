@@ -5,7 +5,7 @@ import { config } from 'src/config.js';
 import { makeSlot } from './integration/faker/googletag.js';
 
 const testSlots = [
-    makeSlot({ code: 'slotCode1', divId: 'div1' })
+  makeSlot({ code: 'slotCode1', divId: 'div1' })
 ];
 
 const bidderRequests = [
@@ -140,11 +140,11 @@ describe('viewabilityScoreGeneration', function() {
 
   describe('bidder requests', function() {
     it('should add the bidViewability key onto all bidder requests', function() {
-	config.setConfig({
-		viewabilityScoreGeneration: {
-			enabled: true
-		}
-	});
+      config.setConfig({
+        viewabilityScoreGeneration: {
+          enabled: true
+        }
+      });
       const adSlotElementId = 'someElementIdName';
       const adSlotSizeFromRender = '728x90';
       // gpt returns slot sizes differently with respect to render, view and visibility events
