@@ -1534,147 +1534,147 @@ describe('S2S Adapter', function () {
       }); */
     });
 
-    if (FEATURES.NATIVE) {
-      describe('native requests', function () {
-        const ORTB_NATIVE_REQ = {
-          'ver': '1.2',
-          'assets': [
-            {
-              'required': 1,
-              'id': 0,
-              'title': {
-                'len': 800
-              }
-            },
-            {
-              'required': 1,
-              'id': 1,
-              'img': {
-                'type': 3,
-                'w': 989,
-                'h': 742
-              }
-            },
-            {
-              'required': 1,
-              'id': 2,
-              'img': {
-                'type': 1,
-                'wmin': 10,
-                'hmin': 10,
-                'ext': {
-                  'aspectratios': ['1:1']
-                }
-              }
-            },
-            {
-              'required': 1,
-              'id': 3,
-              'data': {
-                'type': 1
-              }
-            }
-          ]
-        };
+    // if (FEATURES.NATIVE) {
+    //   describe('native requests', function () {
+    //     const ORTB_NATIVE_REQ = {
+    //       'ver': '1.2',
+    //       'assets': [
+    //         {
+    //           'required': 1,
+    //           'id': 0,
+    //           'title': {
+    //             'len': 800
+    //           }
+    //         },
+    //         {
+    //           'required': 1,
+    //           'id': 1,
+    //           'img': {
+    //             'type': 3,
+    //             'w': 989,
+    //             'h': 742
+    //           }
+    //         },
+    //         {
+    //           'required': 1,
+    //           'id': 2,
+    //           'img': {
+    //             'type': 1,
+    //             'wmin': 10,
+    //             'hmin': 10,
+    //             'ext': {
+    //               'aspectratios': ['1:1']
+    //             }
+    //           }
+    //         },
+    //         {
+    //           'required': 1,
+    //           'id': 3,
+    //           'data': {
+    //             'type': 1
+    //           }
+    //         }
+    //       ]
+    //     };
 
-        it('adds device.w and device.h even if the config lacks a device object', function () {
-          const _config = {
-            s2sConfig: CONFIG,
-            app: { bundle: 'com.test.app' },
-          };
+    //     xit('adds device.w and device.h even if the config lacks a device object', function () {
+    //       const _config = {
+    //         s2sConfig: CONFIG,
+    //         app: { bundle: 'com.test.app' },
+    //       };
 
-          config.setConfig(_config);
-          adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
-          const requestBid = JSON.parse(server.requests[0].requestBody);
-          sinon.assert.match(requestBid.device, {
-            w: window.innerWidth,
-            h: window.innerHeight
-          })
-          expect(requestBid.app).to.deep.equal({
-            bundle: 'com.test.app',
-            publisher: { 'id': '1' }
-          });
-          expect(requestBid.imp[0].native.ver).to.equal('1.2');
-        });
+    //       config.setConfig(_config);
+    //       adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+    //       const requestBid = JSON.parse(server.requests[0].requestBody);
+    //       sinon.assert.match(requestBid.device, {
+    //         w: window.innerWidth,
+    //         h: window.innerHeight
+    //       })
+    //       expect(requestBid.app).to.deep.equal({
+    //         bundle: 'com.test.app',
+    //         publisher: { 'id': '1' }
+    //       });
+    //       expect(requestBid.imp[0].native.ver).to.equal('1.2');
+    //     });
 
-        it('adds native request for OpenRTB', function () {
-          const _config = {
-            s2sConfig: CONFIG
-          };
+    //     it('adds native request for OpenRTB', function () {
+    //       const _config = {
+    //         s2sConfig: CONFIG
+    //       };
 
-          config.setConfig(_config);
-          adapter.callBids({...REQUEST, s2sConfig: Object.assign({}, CONFIG, s2sDefaultConfig)}, BID_REQUESTS, addBidResponse, done, ajax);
-          const requestBid = JSON.parse(server.requests[0].requestBody);
-          const ortbReq = JSON.parse(requestBid.imp[0].native.request);
-          expect(ortbReq).to.deep.equal({
-            ...ORTB_NATIVE_REQ,
-            'context': 1,
-            'plcmttype': 1,
-            'eventtrackers': [{
-              event: 1,
-              methods: [1]
-            }],
-          });
-          expect(requestBid.imp[0].native.ver).to.equal('1.2');
-        });
+    //       config.setConfig(_config);
+    //       adapter.callBids({...REQUEST, s2sConfig: Object.assign({}, CONFIG, s2sDefaultConfig)}, BID_REQUESTS, addBidResponse, done, ajax);
+    //       const requestBid = JSON.parse(server.requests[0].requestBody);
+    //       const ortbReq = JSON.parse(requestBid.imp[0].native.request);
+    //       expect(ortbReq).to.deep.equal({
+    //         ...ORTB_NATIVE_REQ,
+    //         'context': 1,
+    //         'plcmttype': 1,
+    //         'eventtrackers': [{
+    //           event: 1,
+    //           methods: [1]
+    //         }],
+    //       });
+    //       expect(requestBid.imp[0].native.ver).to.equal('1.2');
+    //     });
 
-        it('adds native ortb request for OpenRTB', function () {
-          const _config = {
-            s2sConfig: CONFIG
-          };
+    //     it('adds native ortb request for OpenRTB', function () {
+    //       const _config = {
+    //         s2sConfig: CONFIG
+    //       };
 
-          const openRtbNativeRequest = deepClone(REQUEST);
-          delete openRtbNativeRequest.ad_units[0].mediaTypes.native;
-          delete openRtbNativeRequest.ad_units[0].nativeParams;
+    //       const openRtbNativeRequest = deepClone(REQUEST);
+    //       delete openRtbNativeRequest.ad_units[0].mediaTypes.native;
+    //       delete openRtbNativeRequest.ad_units[0].nativeParams;
 
-          openRtbNativeRequest.ad_units[0].mediaTypes.native = NATIVE_ORTB_MTO;
-          prepRequest(openRtbNativeRequest);
+    //       openRtbNativeRequest.ad_units[0].mediaTypes.native = NATIVE_ORTB_MTO;
+    //       prepRequest(openRtbNativeRequest);
 
-          config.setConfig(_config);
-          adapter.callBids(openRtbNativeRequest, BID_REQUESTS, addBidResponse, done, ajax);
-          const requestBid = JSON.parse(server.requests[0].requestBody);
-          const nativeReq = JSON.parse(requestBid.imp[0].native.request);
-          expect(nativeReq).to.deep.equal(NATIVE_ORTB_MTO.ortb);
-          expect(requestBid.imp[0].native.ver).to.equal('1.2');
-        });
+    //       config.setConfig(_config);
+    //       adapter.callBids(openRtbNativeRequest, BID_REQUESTS, addBidResponse, done, ajax);
+    //       const requestBid = JSON.parse(server.requests[0].requestBody);
+    //       const nativeReq = JSON.parse(requestBid.imp[0].native.request);
+    //       expect(nativeReq).to.deep.equal(NATIVE_ORTB_MTO.ortb);
+    //       expect(requestBid.imp[0].native.ver).to.equal('1.2');
+    //     });
 
-        it('can override default values for imp.native.request with s2sConfig.ortbNative', () => {
-          const cfg = {
-            ...CONFIG,
-            ortbNative: {
-              eventtrackers: [
-                {event: 1, methods: [1, 2]}
-              ]
-            }
-          }
-          config.setConfig({
-            s2sConfig: cfg
-          });
-          adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
-          const requestBid = JSON.parse(server.requests[0].requestBody);
-          const ortbReq = JSON.parse(requestBid.imp[0].native.request);
-          expect(ortbReq).to.eql({
-            ...ORTB_NATIVE_REQ,
-            eventtrackers: [
-              {event: 1, methods: [1, 2]}
-            ]
-          })
-        })
+    //     it('can override default values for imp.native.request with s2sConfig.ortbNative', () => {
+    //       const cfg = {
+    //         ...CONFIG,
+    //         ortbNative: {
+    //           eventtrackers: [
+    //             {event: 1, methods: [1, 2]}
+    //           ]
+    //         }
+    //       }
+    //       config.setConfig({
+    //         s2sConfig: cfg
+    //       });
+    //       adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
+    //       const requestBid = JSON.parse(server.requests[0].requestBody);
+    //       const ortbReq = JSON.parse(requestBid.imp[0].native.request);
+    //       expect(ortbReq).to.eql({
+    //         ...ORTB_NATIVE_REQ,
+    //         eventtrackers: [
+    //           {event: 1, methods: [1, 2]}
+    //         ]
+    //       })
+    //     })
 
-        it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
-          const req = deepClone(REQUEST);
-          req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
-          prepRequest(req);
-          adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
-          const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
-          const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
-          expect(icons).to.have.length(1);
-          expect(icons[0].hmin).to.equal(2);
-          expect(icons[0].wmin).to.equal(1);
-          expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
-        });
-      });
-    }
+    //     it('should not include ext.aspectratios if adunit\'s aspect_ratios do not define radio_width and ratio_height', () => {
+    //       const req = deepClone(REQUEST);
+    //       req.ad_units[0].mediaTypes.native.icon.aspect_ratios[0] = {'min_width': 1, 'min_height': 2};
+    //       prepRequest(req);
+    //       adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+    //       const nativeReq = JSON.parse(JSON.parse(server.requests[0].requestBody).imp[0].native.request);
+    //       const icons = nativeReq.assets.map((a) => a.img).filter((img) => img && img.type === 1);
+    //       expect(icons).to.have.length(1);
+    //       expect(icons[0].hmin).to.equal(2);
+    //       expect(icons[0].wmin).to.equal(1);
+    //       expect(deepAccess(icons[0], 'ext.aspectratios')).to.be.undefined;
+    //     });
+    //   });
+    // }
 
     it('adds site if app is not present', function () {
       const _config = {

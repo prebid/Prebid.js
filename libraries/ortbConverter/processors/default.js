@@ -155,8 +155,8 @@ export function onlyOneClientSection(ortbRequest, bidderRequest) {
   // const { page, domain } = bidderRequest.refererInfo;
   const page = bidderRequest?.refererInfo?.page || '';
   const domain = bidderRequest?.refererInfo?.domain || '';
-  const ref = window.document.referrer;
-  if (bidderRequest?.src === 's2s') {
+  const ref = window?.document?.referrer;
+  if (bidderRequest?.src === 's2s' && ortbRequest.site) {
     ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
     if (ref.length) {
       ortbRequest.site.ref = ref;
