@@ -102,7 +102,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
   });
 
   describe('disableAnalytics()', function() {
-    xit('removes the GAM slotRenderEnded event listeners', ()=> {
+    xit('removes the GAM slotRenderEnded event listeners', function() {
 
     });
   });
@@ -123,16 +123,23 @@ describe.only('33acrossAnalyticsAdapter:', function() {
       }
     });
 
-    it('sends a correctly formed AnalyticsReport to the given endpoint when an auction is complete', function() {
-      this.enableAnalytics({ endpoint: 'foo-endpoint' });
+    context('when the AnalyticsReport is sent successfully to the given endpoint when an auction is complete', function() {
+      it('logs an info message', function() {
+        sandbox.spy(utils, 'logInfo');
 
-      sandbox.stub(navigator, 'sendBeacon').returns(true);
-      performStandardAuction();
-      clock.tick(this.defaultTimeout + 1);
+        this.enableAnalytics({ endpoint: 'foo-endpoint' });
 
-      sinon.assert.calledOnce(navigator.sendBeacon);
-      sinon.assert.calledWithExactly(navigator.sendBeacon, 'foo-endpoint',
-        JSON.stringify(getStandardAnalyticsReport()));
+        sandbox.stub(navigator, 'sendBeacon')
+          .withArgs('foo-endpoint', JSON.stringify(getStandardAnalyticsReport()))
+          .returns(true);
+
+        performStandardAuction();
+
+        clock.tick(this.defaultTimeout + 1);
+
+        sinon.assert.calledOnce(navigator.sendBeacon);
+        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+      });
     });
 
     context('when an error occurs while sending the AnalyticsReport', function() {
@@ -145,9 +152,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         clock.tick(this.defaultTimeout + 1);
 
         sinon.assert.calledOnce(utils.logError);
-
-        // FIXME: The args match doesn't work
-        // sinon.assert.calledWith(utils.logError, 'Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
+        sinon.assert.calledWith(utils.logError, '33across Analytics: Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
       });
     });
 
