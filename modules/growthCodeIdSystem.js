@@ -25,11 +25,11 @@ export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_
 export function readData(key) {
   try {
     let payload
-    if (storage.cookiesAreEnabled()) {
-      payload = tryParse(storage.getCookie(key))
+    if (storage.cookiesAreEnabled(null)) {
+      payload = tryParse(storage.getCookie(key, null))
     }
     if (storage.hasLocalStorage()) {
-      payload = tryParse(storage.getDataFromLocalStorage(key))
+      payload = tryParse(storage.getDataFromLocalStorage(key, null))
     }
     if (payload !== undefined) {
       if (payload.expire_at > (Date.now() / 1000)) {
@@ -52,8 +52,8 @@ function storeData(key, value) {
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
     if (value) {
-      if (storage.hasLocalStorage()) {
-        storage.setDataInLocalStorage(key, value);
+      if (storage.hasLocalStorage(null)) {
+        storage.setDataInLocalStorage(key, value, null);
       }
     }
   } catch (error) {
