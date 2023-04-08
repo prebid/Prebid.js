@@ -31,8 +31,10 @@ export function readData(key) {
     if (storage.hasLocalStorage()) {
       payload = tryParse(storage.getDataFromLocalStorage(key))
     }
-    if ((payload.expire_at !== undefined) && (payload.expire_at > (Date.now() / 1000))) {
-      return payload
+    if (payload !== undefined) {
+      if (payload.expire_at > (Date.now() / 1000)) {
+        return payload
+      }
     }
   } catch (error) {
     logError(error);
@@ -65,11 +67,15 @@ function storeData(key, value) {
  * @param {object|null}
  */
 function tryParse(data) {
+  let payload;
   try {
-    return JSON.parse(data);
+    payload = JSON.parse(data);
+    if (payload == null) {
+      return undefined
+    }
+    return payload
   } catch (err) {
-    logError(err);
-    return null;
+    return undefined;
   }
 }
 
