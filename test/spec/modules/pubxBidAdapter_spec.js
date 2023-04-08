@@ -39,6 +39,11 @@ describe('pubxAdapter', function () {
         id: '26c1ee0038ac11',
         params: {
           sid: '12345abc'
+        },
+        ortb2: {
+          site: {
+            page: `${location.href}?test=1`
+          }
         }
       }
     ];
@@ -46,7 +51,9 @@ describe('pubxAdapter', function () {
     const data = {
       banner: {
         sid: '12345abc',
-        pu: encodeURIComponent(location.href.replace(/\?.*$/, '')),
+        pu: encodeURIComponent(
+          utils.deepAccess(bidRequests[0], 'ortb2.site.page').replace(/\?.*$/, '')
+        ),
       },
     };
 
