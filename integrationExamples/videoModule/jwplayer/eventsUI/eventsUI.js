@@ -1,3 +1,5 @@
+"use strict";
+
 let sequenceCount = 0;
 const eventLogGroups = {};
 const Uint8Array = window.Uint8Array;
@@ -87,59 +89,27 @@ function textContentGrouped(inEvent, group) {
   return inEvent;
 }
 
-function padStart(str, content, length) {
-  if (str.length >= length) {
-    return content;
-  }
-  return (new Array(1 + length - str.length)).join(' ') + content;
-}
-
-function appendData(div, inEvent, group, data) {
-  if (group === 'adRequest' || group === 'adBreak' || inEvent === 'time' || inEvent === 'meta') {
-    const pre = document.createElement('pre');
-    pre.classList.add('group-quickPeek');
-    const quickPeekProps = [
-      'currentTime',
-      'metadataType',
-      'adBreakId',
-      'adPlayId',
-    ].reduce((obj, prop) => {
-      if (prop in data) {
-        obj[prop] = data[prop];
-      }
-      return obj;
-    }, {});
-    if (Object.keys(quickPeekProps).length) {
-      pre.textContent = padStart(inEvent, JSON.stringify(quickPeekProps, null, 0), 20);
-      div.appendChild(pre);
-    }
-  }
-}
-
 function appendEvent(container, currentEventType, currentEventGroup, data) {
   const div = document.createElement('div');
   div.classList.add('group-' + currentEventGroup, 'event-' + currentEventType, 'pre');
   div.textContent = textContentGrouped(currentEventType);
-  appendData(div, currentEventType, currentEventGroup, data);
   div.setAttribute('title', `${currentEventGroup} event "${currentEventType}"`);
   div.setAttribute('tabindex', '0');
+  const theData = Object.assign({}, data);
   div.onclick = div.onkeyup = function(e) {
     if (e && e.keyCode && e.keyCode !== 13) {
       return;
     }
-    console.log(data);
+
+    console.log(theData);
     div.textContent = ((div.expanded = !div.expanded)) ?
-      textContentExpanded(currentEventType, [data]) : textContentGrouped(currentEventType);
+      textContentExpanded(currentEventType, [theData]) : textContentGrouped(currentEventType);
     if (e) {
       e.preventDefault();
     }
-    return [data];
+    return [theData];
   };
   container.appendChild(div);
-  if (currentEventType === 'javascriptError') {
-    div.setAttribute('title', div.textContent);
-    div.onclick();
-  }
   return div;
 }
 
@@ -148,18 +118,19 @@ function textContentExpanded(inEvent, allData) {
     (allData.length > 1 ? `[${i}] = ` : '') + stringify(item, null, 4)).join('\n')})`;
 }
 
-function incrementEvent(group, currentEventType, currentEventGroup, div, data) {
+function incrementEvent(group, currentEventType, currentEventGroup, div, datum) {
   group[currentEventType]++;
   div.textContent = textContentGrouped(currentEventType, group);
-  appendData(div, div.textContent, currentEventGroup, data);
   const logPreviousEvents = div.onclick;
+  const scopedDatum = Object.assign({}, datum);
   div.onclick = div.onkeyup = function(e) {
     if (e && e.keyCode && e.keyCode !== 13) {
       return;
     }
+
     const allData = logPreviousEvents();
-    allData.push(data);
-    console.log(data);
+    allData.push(scopedDatum);
+    console.log(scopedDatum);
     div.textContent = (div.expanded) ? textContentExpanded(currentEventType, allData) : textContentGrouped(currentEventType, group);
     if (e) {
       e.preventDefault();
@@ -202,7 +173,6 @@ function getGenericEventHandler() {
     }
     lastEvent = currentEventType;
     lastGroup = group;
-    group.lastUiEvent = null;
   };
 
   return genericEventHandler;
