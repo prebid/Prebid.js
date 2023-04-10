@@ -255,10 +255,14 @@ describe('Adloox Ad Server Video', function () {
 
           ajax(blob, {
             success: (responseText, q) => {
-              expect(q.status).is.equal(200);
-              expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
-              clock.runAll();
-              clock.restore();
+              try {
+                expect(q.status).is.equal(200);
+                expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
+                clock.runAll();
+                clock.restore();
+              } catch (e) {
+                done(e);
+              }
               setTimeout(() => {
                 ajax(blob, {
                   success: (responseText, q) => {
