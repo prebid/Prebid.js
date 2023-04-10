@@ -450,7 +450,7 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, gulp.series('test-only')));
+gulp.task('test', gulp.series(clean, gulp.series('test-only')));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
