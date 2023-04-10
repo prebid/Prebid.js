@@ -300,6 +300,17 @@ describe('OpenxRtbAdapter', function () {
     });
 
     context('common requests checks', function() {
+      it('should be able to handle multiformat requests', () => {
+        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
+        multiformat.mediaTypes.video = {
+          context: 'outstream',
+          playerSize: [640, 480]
+        }
+        const requests = spec.buildRequests([multiformat], mockBidderRequest);
+        const outgoingFormats = requests.flatMap(rq => rq.data.imp.flatMap(imp => ['banner', 'video'].filter(k => imp[k] != null)));
+        expect(outgoingFormats).to.have.members(['banner', 'video'])
+      })
+
       it('should send bid request to openx url via POST', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].url).to.equal(REQUEST_URL);
