@@ -483,7 +483,7 @@ export function JWPlayerProvider(config, jwplayer_, adState_, timeState_, callba
   }
 
   function triggerSetupComplete() {
-    if (!setupCompleteCallbacks) {
+    if (!setupCompleteCallbacks.length) {
       return;
     }
 
