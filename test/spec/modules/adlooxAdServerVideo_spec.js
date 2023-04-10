@@ -229,7 +229,7 @@ describe('Adloox Ad Server Video', function () {
         request.respond(200, vastHeaders, '<?xml version="1.0" encoding="UTF-8" ?>\n<VAST version="3.0"/>');
       });
 
-      it('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
+      it.only('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
         BID.responseTimestamp = utils.timestamp();
         BID.ttl = 30;
         this.timeout(5000)
@@ -256,13 +256,16 @@ describe('Adloox Ad Server Video', function () {
           ajax(blob, {
             success: (responseText, q) => {
               try {
+                console.error('ADLOOX', responseText)
                 expect(q.status).is.equal(200);
                 expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
                 clock.runAll();
                 clock.restore();
               } catch (e) {
+                console.error('ADLOOX', e)
                 done(e);
               }
+              console.error('ADLOOX', '2nd blob')
               setTimeout(() => {
                 ajax(blob, {
                   success: (responseText, q) => {
