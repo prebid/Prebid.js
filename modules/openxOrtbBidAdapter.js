@@ -55,6 +55,9 @@ const converter = ortbConverter({
       }
     })
     const bid = context.bidRequests[0];
+    if (bid.params.coppa) {
+      utils.deepSetValue(req, 'regs.coppa', 1);
+    }
     if (bid.params.doNotTrack) {
       utils.deepSetValue(req, 'device.dnt', 1);
     }
@@ -127,6 +130,17 @@ const converter = ortbConverter({
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
+      },
+      video(orig, imp, bidRequest, context) {
+        // `orig` is the video imp processor, which looks at bidRequest.mediaTypes[VIDEO]
+        // to populate imp.video
+        // alter its input `bidRequest` to also pick up parameters from `bidRequest.params`
+        let videoParams = bidRequest.mediaTypes[VIDEO];
+        if (videoParams) {
+          videoParams = Object.assign({}, videoParams, bidRequest.params.video);
+          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+        }
+        orig(imp, bidRequest, context);
       }
     }
   }

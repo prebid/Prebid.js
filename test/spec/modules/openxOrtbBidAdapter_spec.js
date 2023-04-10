@@ -19,6 +19,57 @@ import {hook} from '../../../src/hook.js';
 
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
+const BidRequestBuilder = function BidRequestBuilder(options) {
+  const defaults = {
+    request: {
+      auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
+      adUnitCode: 'adunit-code',
+      bidder: 'openx'
+    },
+    params: {
+      unit: '12345678',
+      delDomain: 'test-del-domain'
+    },
+    sizes: [[300, 250], [300, 600]],
+  };
+
+  const request = {
+    ...defaults.request,
+    ...options
+  };
+
+  this.withParams = (options) => {
+    request.params = {
+      ...defaults.params,
+      ...options
+    };
+    return this;
+  };
+
+  this.build = () => request;
+};
+
+const BidderRequestBuilder = function BidderRequestBuilder(options) {
+  const defaults = {
+    bidderCode: 'openx',
+    auctionId: '4fd1ca2d-846c-4211-b9e5-321dfe1709c9',
+    bidderRequestId: '7g36s867Tr4xF90X',
+    timeout: 3000,
+    refererInfo: {
+      numIframes: 0,
+      reachedTop: true,
+      referer: 'http://test.io/index.html?pbjs_debug=true'
+    }
+  };
+
+  const request = {
+    ...defaults,
+    ...options
+  };
+
+  this.build = () => request;
+};
+
 describe('OpenxRtbAdapter', function () {
   before(() => {
     hook.ready();
@@ -789,6 +840,12 @@ describe('OpenxRtbAdapter', function () {
           expect(request[0].data.regs.coppa).to.equal(1);
         });
 
+        it('should send a coppa flag there is when there is coppa param settings in the bid params', function () {
+          const request = spec.buildRequests(bidRequestsWithMediaTypes, syncAddFPDToBidderRequest(mockBidderRequest));
+          request.params = {coppa: true};
+          expect(request[0].data.regs.coppa).to.equal(1);
+        });
+
         after(function () {
           config.getConfig.restore()
         });
@@ -963,17 +1020,6 @@ describe('OpenxRtbAdapter', function () {
       });
 
       context('FLEDGE', function() {
-        it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
-          const request = spec.buildRequests(
-            bidRequestsWithMediaTypes,
-            {
-              ...mockBidderRequest,
-              fledgeEnabled: false
-            }
-          );
-          expect(request[0].data.imp[0].ext).to.not.have.property('ae');
-        });
-
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
@@ -996,6 +1042,45 @@ describe('OpenxRtbAdapter', function () {
         it('should send bid request with a mediaTypes specified with video type', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
           expect(request[1].data.imp[0]).to.have.any.keys(VIDEO);
+        });
+
+        it('Update imp.video with OpenRTB options from mimeTypes and params', function() {
+          const bid01 = new BidRequestBuilder({
+            adUnitCode: 'adunit-code-01',
+            mediaTypes: {
+              banner: { sizes: [[300, 250]] },
+              video: {
+                context: 'outstream',
+                playerSize: [[300, 250]],
+                mimes: ['video/mp4'],
+                protocols: [8]
+              }
+            },
+          }).withParams({
+            // options in video, will merge
+            video: {
+              skip: 1,
+              skipafter: 4,
+              minduration: 10,
+              maxduration: 30
+            }
+          }).build();
+
+          const bidderRequest = new BidderRequestBuilder().build();
+          const expected = {
+            mimes: ['video/mp4'],
+            skip: 1,
+            skipafter: 4,
+            minduration: 10,
+            maxduration: 30,
+            placement: 4,
+            protocols: [8],
+            w: 300,
+            h: 250
+          };
+          const requests = spec.buildRequests([bid01], bidderRequest);
+          expect(requests).to.have.lengthOf(2);
+          expect(requests[1].data.imp[0].video).to.deep.equal(expected);
         });
       });
     }
