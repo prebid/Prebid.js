@@ -122,6 +122,7 @@ import {
   getStorageManager
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -153,7 +154,7 @@ const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 const GVLID = 284;
 
 export const storage = getStorageManager({
-  gvlid: GVLID,
+  moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME
 });
 
@@ -180,6 +181,7 @@ export const storage = getStorageManager({
 class WeboramaRtdProvider {
   #components;
   name = SUBMODULE_NAME;
+  gvlid = GVLID;
   /**
    * @param  {Components} components
    */

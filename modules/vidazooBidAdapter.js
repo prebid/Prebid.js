@@ -28,7 +28,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubProvidedId': 1
 };
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
