@@ -257,20 +257,21 @@ describe('Adloox Ad Server Video', function () {
             success: (responseText, q) => {
               expect(q.status).is.equal(200);
               expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
-
               clock.runAll();
-
-              ajax(blob, {
-                success: (responseText, q) => {
-                  xfr.useFilters = false;		// .restore() does not really work
-                  if (q.status == 0) return done();
-                  done(new Error('Blob should have expired'));
-                },
-                error: (statusText, q) => {
-                  xfr.useFilters = false;
-                  done();
-                }
-              });
+              clock.restore();
+              setTimeout(() => {
+                ajax(blob, {
+                  success: (responseText, q) => {
+                    xfr.useFilters = false;		// .restore() does not really work
+                    if (q.status == 0) return done();
+                    done(new Error('Blob should have expired'));
+                  },
+                  error: (statusText, q) => {
+                    xfr.useFilters = false;
+                    done();
+                  }
+                });
+              }, 100)
             },
             error: (statusText, q) => {
               xfr.useFilters = false;
