@@ -229,7 +229,7 @@ describe('Adloox Ad Server Video', function () {
         request.respond(200, vastHeaders, '<?xml version="1.0" encoding="UTF-8" ?>\n<VAST version="3.0"/>');
       });
 
-      it.only('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
+      it('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
         BID.responseTimestamp = utils.timestamp();
         BID.ttl = 30;
         this.timeout(5000)
