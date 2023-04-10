@@ -308,7 +308,8 @@ describe('OpenxRtbAdapter', function () {
         }
         const requests = spec.buildRequests([multiformat], mockBidderRequest);
         const outgoingFormats = requests.flatMap(rq => rq.data.imp.flatMap(imp => ['banner', 'video'].filter(k => imp[k] != null)));
-        expect(outgoingFormats).to.have.members(['banner', 'video'])
+        const expected = FEATURES.VIDEO ? ['banner', 'video'] : ['banner']
+        expect(outgoingFormats).to.have.members(expected);
       })
 
       it('should send bid request to openx url via POST', function () {
