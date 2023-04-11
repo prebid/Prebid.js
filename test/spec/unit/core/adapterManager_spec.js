@@ -24,7 +24,6 @@ import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
-import {sandbox} from 'sinon';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1724,14 +1723,23 @@ describe('adapterManager tests', function () {
     });
 
     describe('and activity controls', () => {
+      let redactOrtb2;
+      let redactBidRequest;
       const MOCK_BIDDERS = ['1', '2', '3', '4', '5'].map((n) => `mockBidder${n}`);
 
       beforeEach(() => {
         sinon.stub(dep, 'isAllowed');
+        redactOrtb2 = sinon.stub().callsFake(ob => ob);
+        redactBidRequest = sinon.stub().callsFake(ob => ob);
+        sinon.stub(dep, 'redact').callsFake(() => ({
+          ortb2: redactOrtb2,
+          bidRequest: redactBidRequest
+        }))
         MOCK_BIDDERS.forEach((bidder) => adapterManager.bidderRegistry[bidder] = {});
       });
       afterEach(() => {
         dep.isAllowed.restore();
+        dep.redact.restore();
         MOCK_BIDDERS.forEach(bidder => { delete adapterManager.bidderRegistry[bidder] });
         config.resetConfig();
       })
@@ -1746,16 +1754,32 @@ describe('adapterManager tests', function () {
             componentType === MODULE_TYPE_BIDDER &&
             allowed.includes(componentName);
         });
-        let bidRequests = adapterManager.makeBidRequests(
+        let reqs = adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
           function callback() {},
           []
         );
-        const bidders = Array.from(new Set(bidRequests.flatMap(br => br.bids).map(bid => bid.bidder)).keys());
+        const bidders = Array.from(new Set(reqs.flatMap(br => br.bids).map(bid => bid.bidder)).keys());
         expect(bidders).to.have.members(allowed);
       });
+
+      it('should redact ortb2 and bid request objects', () => {
+        dep.isAllowed.callsFake(() => true);
+        adUnits = [
+          {code: 'one', bids: [{bidder: 'mockBidder1'}]}
+        ];
+        let reqs = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        sinon.assert.calledWith(redactBidRequest, reqs[0].bids[0]);
+        sinon.assert.calledWith(redactOrtb2, reqs[0].ortb2);
+      })
 
       describe('with multiple s2s configs', () => {
         beforeEach(() => {

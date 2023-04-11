@@ -36,11 +36,11 @@ import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
-import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID, MODULE_TYPE_UID} from './activities/modules.js';
 import {isActivityAllowed} from './activities/rules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
-
+import {redactor} from './activities/redactor.js';
 
 const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
@@ -49,7 +49,8 @@ export const PARTITIONS = {
 }
 
 export const dep = {
-  isAllowed: isActivityAllowed
+  isAllowed: isActivityAllowed,
+  redact: redactor
 }
 
 let adapterManager = {};
@@ -267,9 +268,13 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
   function addOrtb2(bidderRequest) {
-    const fpd = Object.freeze(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode]));
+    const redact = dep.redact(activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode));
+    const fpd = Object.freeze(redact.ortb2(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
     bidderRequest.ortb2 = fpd;
-    bidderRequest.bids.forEach((bid) => bid.ortb2 = fpd);
+    bidderRequest.bids = bidderRequest.bids.map((bid) => {
+      bid.ortb2 = fpd;
+      return redact.bidRequest(bid);
+    })
     return bidderRequest;
   }
 
