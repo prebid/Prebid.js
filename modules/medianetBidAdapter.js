@@ -334,7 +334,7 @@ function generatePayload(bidRequests, bidderRequests) {
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     ortb2: bidderRequests.ortb2,
-    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
+    tmax: bidderRequests.timeout
   }
 }
 

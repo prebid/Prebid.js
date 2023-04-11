@@ -332,7 +332,7 @@ export const spec = {
       m: createBidMap(bidRequests),
       cpp: config.getConfig('coppa') ? 1 : 0,
       fpd2: bidderRequest.ortb2,
-      tmax: config.getConfig('bidderTimeout'),
+      tmax: bidderRequest.timeout,
       amp: refInfo(bidderRequest, 'isAmp', null),
       ri: buildReferrerInfo(bidderRequest),
       sync: getSyncSettings(),
