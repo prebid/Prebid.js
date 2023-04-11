@@ -326,7 +326,7 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
   })
 
-  describe('buildRequestsForVideo', () => {
+  describe('buildRequestsForVideoWithContextAndPlacement', () => {
     let bidRequests = [
       {
         'bidder': 'freewheel-ssp',
