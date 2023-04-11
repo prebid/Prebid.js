@@ -32,10 +32,6 @@ const converter = ortbConverter({
     if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
       imp.video.placement = imp.video.placement || 4;
     }
-    if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
-      // TODO: we may want to standardize this and move fledge logic to ortbConverter
-      delete imp.ext.ae;
-    }
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
       ext: {
@@ -59,6 +55,9 @@ const converter = ortbConverter({
       }
     })
     const bid = context.bidRequests[0];
+    if (bid.params.coppa) {
+      utils.deepSetValue(req, 'regs.coppa', 1);
+    }
     if (bid.params.doNotTrack) {
       utils.deepSetValue(req, 'device.dnt', 1);
     }
@@ -106,10 +105,12 @@ const converter = ortbConverter({
     let fledgeAuctionConfigs = utils.deepAccess(ortbResponse, 'ext.fledge_auction_configs');
     if (fledgeAuctionConfigs) {
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
+        return {
           bidId,
-          auctionSignals: {}
-        }, cfg);
+          config: Object.assign({
+            auctionSignals: {},
+          }, cfg)
+        }
       });
       return {
         bids: response.bids,
@@ -129,6 +130,17 @@ const converter = ortbConverter({
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
         }
+      },
+      video(orig, imp, bidRequest, context) {
+        // `orig` is the video imp processor, which looks at bidRequest.mediaTypes[VIDEO]
+        // to populate imp.video
+        // alter its input `bidRequest` to also pick up parameters from `bidRequest.params`
+        let videoParams = bidRequest.mediaTypes[VIDEO];
+        if (videoParams) {
+          videoParams = Object.assign({}, videoParams, bidRequest.params.video);
+          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+        }
+        orig(imp, bidRequest, context);
       }
     }
   }

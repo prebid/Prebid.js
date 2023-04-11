@@ -10,6 +10,7 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'permutive'
 
@@ -20,7 +21,7 @@ export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
 export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME})
 
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
@@ -133,6 +134,8 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * @return {Object} Merged ortb2 object
  */
 function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
+  logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
+
   const customCohortsData = deepAccess(segmentData, bidder) || []
 
   const name = 'permutive.com'
@@ -146,20 +149,46 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     .filter(({ id }) => ortb2UserDataTransformations.hasOwnProperty(id))
     .map(({ id, config }) => ortb2UserDataTransformations[id](permutiveUserData, config))
 
+  const customCohortsUserData = {
+    name: PERMUTIVE_CUSTOM_COHORTS_KEYWORD,
+    segment: customCohortsData.map(cohortID => ({ id: cohortID })),
+  }
+
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
   const updatedUserData = currentUserData
-    .filter(el => el.name !== name)
-    .concat(permutiveUserData, transformedUserData)
+    .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
+    .concat(permutiveUserData, transformedUserData, customCohortsUserData)
 
+  logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData })
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
 
-  // As of writing this, only used for AppNexus/Xandr in place of appnexusAuctionKeywords in config
-  const currentUserKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords') || ''
-  const keywords = sspSegmentIDs.map(segment => `${PERMUTIVE_STANDARD_AUD_KEYWORD}=${segment}`).join(',')
-  const updatedUserKeywords = (currentUserKeywords === '') ? keywords : `${currentUserKeywords},${keywords}`
-  deepSetValue(ortbConfig, 'ortb2.user.keywords', updatedUserKeywords)
+  // Set ortb2.user.keywords
+  const currentKeywords = deepAccess(ortbConfig, 'ortb2.user.keywords')
+  const keywordGroups = {
+    [PERMUTIVE_STANDARD_KEYWORD]: segmentIDs,
+    [PERMUTIVE_STANDARD_AUD_KEYWORD]: sspSegmentIDs,
+    [PERMUTIVE_CUSTOM_COHORTS_KEYWORD]: customCohortsData,
+  }
+
+  // Transform groups of key-values into a single array of strings
+  // i.e { permutive: ['1', '2'], p_standard: ['3', '4'] } => ['permutive=1', 'permutive=2', 'p_standard=3',' p_standard=4']
+  const transformedKeywordGroups = Object.entries(keywordGroups)
+    .flatMap(([keyword, ids]) => ids.map(id => `${keyword}=${id}`))
+
+  const keywords = [
+    currentKeywords,
+    ...transformedKeywordGroups,
+  ]
+    .filter(Boolean)
+    .join(',')
+
+  logger.logInfo(`Updating ortb2.user.keywords`, {
+    bidder,
+    keywords,
+  })
+  deepSetValue(ortbConfig, 'ortb2.user.keywords', keywords)
 
   // Set user extensions
   if (segmentIDs.length > 0) {
@@ -172,8 +201,7 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
-  logger.logInfo(`Updating ortb2 config for ${bidder}`, ortbConfig)
-
+  logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig })
   return ortbConfig
 }
 
@@ -251,17 +279,6 @@ function getDefaultBidderFn (bidder) {
     return [...new Set([...ac, ...ssp])]
   }
   const bidderMap = {
-    appnexus: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.keywords.p_standard', segments)
-      }
-      if (data.appnexus && data.appnexus.length) {
-        deepSetValue(bid, 'params.keywords.permutive', data.appnexus)
-      }
-
-      return bid
-    },
     ozone: function (bid, data, acEnabled) {
       if (isPStandardTargetingEnabled(data, acEnabled)) {
         const segments = pStandardTargeting(data, acEnabled)
@@ -311,6 +328,7 @@ export function getSegments (maxSegs) {
 
   const segments = {
     ac: [..._pcrprs, ..._ppam, ...legacySegs],
+    ix: readSegments('_pindexs', []),
     rubicon: readSegments('_prubicons', []),
     appnexus: readSegments('_papns', []),
     gam: readSegments('_pdfps', []),

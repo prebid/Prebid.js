@@ -1,14 +1,33 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo, isGptPubadsDefined } from '../src/utils.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getWindowLocation,
+  isAdUnitCodeMatchingSlot,
+  isEmpty,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  parseQS,
+  parseUrl,
+  pick
+} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({ gvlid: RUBICON_GVL_ID, moduleName: 'magnite' });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
 const COOKIE_NAME = 'mgniSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours

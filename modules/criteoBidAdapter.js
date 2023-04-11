@@ -16,7 +16,7 @@ const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-export const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -233,7 +233,7 @@ export const spec = {
           bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
         }
         if (slot.adomain) {
-          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
+          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
@@ -418,7 +418,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: bidderRequest.publisherExt,
     },
     regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
+      gpp: bidderRequest.ortb2?.regs?.gpp,
+      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;

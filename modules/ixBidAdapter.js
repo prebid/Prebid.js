@@ -102,7 +102,7 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 let hasRegisteredHandler = false;
-export const storage = getStorageManager({ gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   featureToggles: {},
   isFeatureEnabled: function (ft) {

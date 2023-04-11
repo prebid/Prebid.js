@@ -11,7 +11,7 @@ const PREBID_VERSION = '$prebid.version$';
 const SYNC_COUNT = 5;
 const GVLID = 972;
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 let sessionId,
   lastPageUrl,

@@ -883,6 +883,35 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with gpp consent field', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const ortb2 = {
+        regs: {
+          gpp: 'gpp_consent_string',
+          gpp_sid: [0, 1, 2]
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
+      expect(request.data.regs).to.not.be.null;
+      expect(request.data.regs.gpp).to.equal('gpp_consent_string');
+      expect(request.data.regs.gpp_sid).to.deep.equal([0, 1, 2]);
+    });
+
     it('should properly build a request with schain object', function () {
       const expectedSchain = {
         someProperty: 'someValue'

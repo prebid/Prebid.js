@@ -2,7 +2,6 @@ import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -66,7 +65,7 @@ export const sharethroughAdapterSpec = {
 
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = createEidsArray(deepAccess(bidRequests[0], 'userId')) || [];
+    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;

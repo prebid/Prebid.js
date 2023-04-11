@@ -13,7 +13,7 @@ const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
