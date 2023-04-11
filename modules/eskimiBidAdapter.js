@@ -18,8 +18,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    // return true;
-    return !!bid.params.accId;
+    return !!bid.params.placementId;
   },
 
   buildRequests(bidRequests, bidderRequest) {
