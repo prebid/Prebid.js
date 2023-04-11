@@ -1,15 +1,17 @@
 # Overview
 
 ```
-Module Name: OpenX OpenRTB Bidder Adapter
+Module Name: OpenX Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: team-openx@openx.com
 ```
 
 # Description
+DEPRECATED. Use openxBidAdapter.
 
-This is an updated version of the OpenX bid adapter which calls our new serving architecture.
-Publishers are welcome to test this adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
+This adapter was originally an adapter used to test OpenX serving architecture changes.
+This adapter now mirrors openxBidAdapter and this adapter will be removed in a future release. Please use openxBidAdapter.
+Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
 
 # Bid Parameters
 ## Banner
