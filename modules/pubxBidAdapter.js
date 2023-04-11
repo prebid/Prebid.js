@@ -20,7 +20,7 @@ export const spec = {
       const pageEnc = encodeURIComponent(pageUrl);
       const payload = {
         sid: sid,
-        pu: pageEnc
+        pu: pageEnc,
       };
       return {
         id: bidId,
