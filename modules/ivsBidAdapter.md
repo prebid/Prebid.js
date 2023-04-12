@@ -25,11 +25,7 @@ Module that connects to IVS's demand sources
                 {
                     bidder: 'ivs',
                     params: {
-                        site: {
-                            publisher: {
-                                id: '3001234' // required
-                            }
-                        }
+                        publisherId: '3001234' // required
                     }
                 }
             ]
