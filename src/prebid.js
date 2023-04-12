@@ -1108,7 +1108,7 @@ pbjsInstance.processQueue = function () {
  */
 pbjsInstance.triggerBilling = (winningBid) => {
   const bids = fetchReceivedBids(winningBid, 'Improper use of triggerBilling. It requires a bid with at least an adUnitCode or an adId to function.');
-  const triggerBillingBid = bids.find(bid => bid.requestId === winningBid.requestId);
+  const triggerBillingBid = bids.find(bid => (bid.adId === winningBid.adId && bid.adUnitCode === winningBid.adUnitCode) || bid.requestId === winningBid.requestId);
 
   if (bids.length > 0 && triggerBillingBid) {
     try {
