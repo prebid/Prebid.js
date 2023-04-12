@@ -195,6 +195,12 @@ function bidToVideoImp(bid) {
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
+  // AdUnit-Specific First Party Data
+  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    deepSetValue(imp, 'ext.data', adUnitFPD)
+  }
+
   // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
     if (VIDEO_PARAMS_ALLOW_LIST.indexOf(adUnitProperty) !== -1 && !imp.video.hasOwnProperty(adUnitProperty)) {
@@ -267,6 +273,12 @@ function bidToNativeImp(bid) {
 
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+
+  // AdUnit-Specific First Party Data
+  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    deepSetValue(imp, 'ext.data', adUnitFPD)
+  }
 
   _applyFloor(bid, imp, NATIVE);
 
@@ -956,6 +968,11 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex) {
       _bannerImpression.bidfloorcur = impressionObjects[0].bidfloorcur;
     }
 
+    const adUnitFPD = impressions[transactionIds[adUnitIndex]].adUnitFPD
+    if (adUnitFPD) {
+      _bannerImpression.ext.data = adUnitFPD;
+    }
+
     r.imp.push(_bannerImpression);
   } else {
     // set imp.ext.gpid to resolved gpid for each imp
@@ -1195,6 +1212,12 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
+
+  // AdUnit-Specific First Party Data
+  const adUnitFPD = deepAccess(validBidRequest, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    bannerImps[validBidRequest.transactionId].adUnitFPD = adUnitFPD;
+  }
 
   const sid = deepAccess(validBidRequest, 'params.id');
   if (sid && (typeof sid === 'string' || typeof sid === 'number')) {
