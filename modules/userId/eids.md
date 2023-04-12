@@ -107,7 +107,7 @@ userIdAsEids = [
     },
     
     {
-        source: 'bidswitch.com',
+        source: 'bidswitch.net',
         uids: [{
             id: 'some-random-id-value',
             atype: 3

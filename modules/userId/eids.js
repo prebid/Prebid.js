@@ -148,7 +148,7 @@ export const USER_IDS_CONFIG = {
 
   // bidswitchId
   'bidswitch': {
-    source: 'bidswitch.com',
+    source: 'bidswitch.net',
     atype: 3,
     getValue: function(data) {
       return data.id;
