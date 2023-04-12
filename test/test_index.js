@@ -14,7 +14,7 @@
       'because they pollute the pipeline test output',
       // eslint-disable-next-line no-console
     ].forEach(l => console.error(l))
-    throw new Error('do not use .only()')
+    throw new Error('do not use .skip()')
   }
 })
 
