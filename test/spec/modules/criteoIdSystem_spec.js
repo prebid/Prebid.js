@@ -185,6 +185,44 @@ describe('CriteoId module', function () {
     expect(setLocalStorageStub.calledWith('cto_pixel_test', 'ok')).to.be.true;
   });
 
+  it('should call sync pixels and use error handler', function () {
+    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
+
+    const result = criteoIdSubmodule.getId();
+    result.callback((id) => {
+    });
+
+    const response = {
+      pixels: [
+        {
+          pixelUrl: 'pixelUrlWithBundle',
+          writeBundleInStorage: true,
+          bundlePropertyName: 'abc',
+          storageKeyName: 'cto_pixel_test'
+        }
+      ]
+    };
+
+    server.requests[0].respond(
+      200,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify(response)
+    );
+
+    server.requests[1].respond(
+      500,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({
+        abc: 'ok'
+      })
+    );
+
+    expect(triggerPixelStub.called).to.be.false;
+    expect(setCookieStub.calledWith('cto_pixel_test', 'ok', expirationTs, null, '.com')).to.be.false;
+    expect(setCookieStub.calledWith('cto_pixel_test', 'ok', expirationTs, null, '.testdev.com')).to.be.false;
+    expect(setLocalStorageStub.calledWith('cto_pixel_test', 'ok')).to.be.false;
+  });
+
   gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
     let callBackSpy = sinon.spy();
     let result = criteoIdSubmodule.getId(undefined, testCase.consentData);

@@ -1,14 +1,33 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo, isGptPubadsDefined } from '../src/utils.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getWindowLocation,
+  isAdUnitCodeMatchingSlot,
+  isEmpty,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  parseQS,
+  parseUrl,
+  pick
+} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({ gvlid: RUBICON_GVL_ID, moduleName: 'magnite' });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
 const COOKIE_NAME = 'mgniSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -305,6 +324,10 @@ const getTopLevelDetails = () => {
     }
   }
 
+  if (browser) {
+    deepSetValue(payload, rubiConf.pbaBrowserLocation || 'client.browser', browser);
+  }
+
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
     payload.wrapper = {
@@ -595,6 +618,28 @@ const subscribeToGamSlots = () => {
   });
 }
 
+/**
+ * Lazy parsing of UA to determine browser
+ * @param {string} userAgent string from prebid ortb ua or navigator
+ * @returns {string} lazily guessed browser name
+ */
+export const detectBrowserFromUa = userAgent => {
+  let normalizedUa = userAgent.toLowerCase();
+
+  if (normalizedUa.includes('edg')) {
+    return 'Edge';
+  } else if ((/opr|opera|opt/i).test(normalizedUa)) {
+    return 'Opera';
+  } else if ((/chrome|crios/i).test(normalizedUa)) {
+    return 'Chrome';
+  } else if ((/fxios|firefox/i).test(normalizedUa)) {
+    return 'Firefox';
+  } else if (normalizedUa.includes('safari') && !(/chromium|ucbrowser/i).test(normalizedUa)) {
+    return 'Safari';
+  }
+  return 'OTHER';
+}
+
 let accountId;
 let endpoint;
 
@@ -656,6 +701,7 @@ magniteAdapter.onDataDeletionRequest = function () {
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
 
+let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
@@ -674,6 +720,12 @@ magniteAdapter.track = ({ eventType, args }) => {
         'timeout as clientTimeoutMillis',
       ]);
       auctionData.accountId = accountId;
+
+      // get browser
+      if (!browser) {
+        const userAgent = deepAccess(args, 'bidderRequests.0.ortb2.device.ua', navigator.userAgent) || '';
+        browser = detectBrowserFromUa(userAgent);
+      }
 
       // Order bidders were called
       auctionData.bidderOrder = args.bidderRequests.map(bidderRequest => bidderRequest.bidderCode);

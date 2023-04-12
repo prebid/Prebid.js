@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -194,6 +194,14 @@ describe('PubMatic adapter', function () {
         image: { required: true, sizes: [300, 250] },
         sponsoredBy: { required: true }
       },
+      nativeOrtbRequest: {
+        ver: '1.2',
+        assets: [
+          { id: 0, required: 1, title: {len: 140} },
+          { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+          { id: 2, required: 1, data: { type: 1 } }
+        ]
+      },
       bidder: 'pubmatic',
       params: {
         publisherId: '5670',
@@ -242,6 +250,22 @@ describe('PubMatic adapter', function () {
         address: {required: true, len: 10, ext: {'address1': 'address2'}},
         desc2: {required: true, len: 10, ext: {'desc21': 'desc22'}},
         displayurl: {required: true, len: 10, ext: {'displayurl1': 'displayurl2'}}
+      },
+      nativeOrtbRequest: {
+        'ver': '1.2',
+        'assets': [
+          {'id': 0, 'required': 1, 'title': {'len': 80}},
+          {'id': 1, 'required': 1, 'img': {'type': 1, 'w': 50, 'h': 50}},
+          {'id': 2, 'required': 1, 'img': {'type': 3, 'w': 728, 'h': 90}},
+          {'id': 3, 'required': 1, 'data': {'type': 1, 'len': 10}},
+          {'id': 4, 'required': 1, 'data': {'type': 2, 'len': 10}},
+          {'id': 5, 'required': 1, 'data': {'type': 3, 'len': 10}},
+          {'id': 6, 'required': 1, 'data': {'type': 4, 'len': 10}},
+          {'id': 7, 'required': 1, 'data': {'type': 5, 'len': 10}},
+          {'id': 8, 'required': 1, 'data': {'type': 6, 'len': 10}},
+          {'id': 9, 'required': 1, 'data': {'type': 8, 'len': 10}},
+          {'id': 10, 'required': 1, 'data': {'type': 9, 'len': 10}}
+        ]
       },
       bidder: 'pubmatic',
       params: {
@@ -300,6 +324,14 @@ describe('PubMatic adapter', function () {
         title: { required: false, length: 80 },
         image: { required: false, sizes: [300, 250] },
         sponsoredBy: { required: true }
+      },
+      nativeOrtbRequest: {
+        ver: '1.2',
+        assets: [
+          { id: 0, required: 0, title: {len: 140} },
+          { id: 1, required: 0, img: {type: 3, w: 300, h: 250} },
+          { id: 2, required: 1, data: {type: 1} }
+        ]
       },
       bidder: 'pubmatic',
       params: {
@@ -389,6 +421,14 @@ describe('PubMatic adapter', function () {
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
         },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            {id: 0, required: 1, title: {len: 140}},
+            {id: 1, required: 1, img: {type: 3, w: 300, h: 250}},
+            {id: 2, required: 1, data: {type: 1}}
+          ]
+        },
         bidder: 'pubmatic',
         params: {
           publisherId: '301',
@@ -441,6 +481,14 @@ describe('PubMatic adapter', function () {
           title: { required: true, length: 80 },
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
+        },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            { id: 0, required: 1, title: {len: 140} },
+            { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+            { id: 2, required: 1, data: { type: 1 } }
+          ]
         },
         bidder: 'pubmatic',
         params: {
@@ -503,6 +551,14 @@ describe('PubMatic adapter', function () {
           image: { required: true, sizes: [300, 250] },
           sponsoredBy: { required: true }
         },
+        nativeOrtbRequest: {
+          ver: '1.2',
+          assets: [
+            { id: 0, required: 1, title: {len: 80} },
+            { id: 1, required: 1, img: { type: 3, w: 300, h: 250 } },
+            { id: 2, required: 1, data: { type: 1 } }
+          ]
+        },
         bidder: 'pubmatic',
         params: {
           publisherId: '301',
@@ -553,7 +609,8 @@ describe('PubMatic adapter', function () {
             'ext': {
               'deal_channel': 6,
               'advid': 976,
-              'dspid': 123
+              'dspid': 123,
+              'dchain': 'dchain'
             }
           }]
         }, {
@@ -602,7 +659,7 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpression = {
       'native': {
-        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80}},{"id":2,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80}},{"id":1,"required":1,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
@@ -614,13 +671,13 @@ describe('PubMatic adapter', function () {
 
     validnativeBidImpressionWithRequiredParam = {
       'native': {
-        'request': '{"assets":[{"id":1,"required":0,"title":{"len":80}},{"id":2,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":4,"required":1,"data":{"type":1}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":0,"title":{"len":80}},{"id":1,"required":0,"img":{"type":3,"w":300,"h":250}},{"id":2,"required":1,"data":{"type":1}}]}'
       }
     }
 
     validnativeBidImpressionWithAllParams = {
       native: {
-        'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
+        'request': '{"ver":"1.2","assets":[{"id":0,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":1,"required":1,"img":{"type":1,"w":50,"h":50,"ext":{"icon1":"icon2"}}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"ext":{"image1":"image2"},"mimes":["image/png","image/gif"]}},{"id":3,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":4,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":5,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":6,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":7,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":8,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":9,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":10,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":11,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":12,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":13,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
       }
     }
 
@@ -2607,6 +2664,21 @@ describe('PubMatic adapter', function () {
         expect(data.imp[1]['video']['h']).to.equal(multipleMediaRequests[1].mediaTypes.video.playerSize[1]);
       });
 
+	  it('should pass device.sua if present in bidderRequest fpd ortb2 object', function () {
+        const suaObject = {'source': 2, 'platform': {'brand': 'macOS', 'version': ['12', '4', '0']}, 'browsers': [{'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']}, {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']}, {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}], 'mobile': 0, 'model': '', 'bitness': '64', 'architecture': 'x86'};
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              sua: suaObject
+            }
+		  }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.sua).to.exist.and.to.be.an('object');
+        expect(data.device.sua).to.deep.equal(suaObject);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
@@ -2637,13 +2709,6 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithRequiredParam.native.request);
-      });
-
-      it('should not have valid native request if assets are not defined with minimum required params and only native is the slot', function () {
-        let request = spec.buildRequests(nativeBidRequestsWithoutAsset, {
-          auctionId: 'new-auction-id'
-        });
-        expect(request).to.deep.equal(undefined);
       });
 
       it('Request params should have valid native bid request for all native params', function () {
@@ -2848,7 +2913,7 @@ describe('PubMatic adapter', function () {
         expect(data.native.request).to.exist;
       });
 
-      it('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - banner and native multiformat request - should have native object incase of invalid config present', function() {
         bannerAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2868,10 +2933,10 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.banner).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
-      it('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
+      it('Request params - video and native multiformat request - should have native object incase of invalid config present', function() {
         videoAndNativeBidRequests[0].mediaTypes.native = {
           title: { required: true },
           image: { required: true },
@@ -2891,7 +2956,7 @@ describe('PubMatic adapter', function () {
         data = data.imp[0];
 
         expect(data.video).to.exist;
-        expect(data.native).to.not.exist;
+        expect(data.native).to.exist;
       });
 
       it('should build video impression if video params are present in adunit.mediaTypes instead of bid.params', function() {
@@ -3420,7 +3485,8 @@ describe('PubMatic adapter', function () {
         expect(response[0].ttl).to.equal(300);
         expect(response[0].meta.networkId).to.equal(123);
         expect(response[0].adserverTargeting.hb_buyid_pubmatic).to.equal('BUYER-ID-987');
-        expect(response[0].meta.buyerId).to.equal(976);
+        expect(response[0].meta.buyerId).to.equal('seat-id');
+        expect(response[0].meta.dchain).to.equal('dchain');
         expect(response[0].meta.clickUrl).to.equal('blackrock.com');
         expect(response[0].meta.advertiserDomains[0]).to.equal('blackrock.com');
         expect(response[0].referrer).to.include(data.site.ref);
@@ -3485,16 +3551,17 @@ describe('PubMatic adapter', function () {
         data.imp[0].id = '2a5571261281d4';
         request.data = JSON.stringify(data);
         let response = spec.interpretResponse(nativeBidResponse, request);
+        let assets = response[0].native.ortb.assets;
         expect(response).to.be.an('array').with.length.above(0);
         expect(response[0].native).to.exist.and.to.be.an('object');
         expect(response[0].mediaType).to.exist.and.to.equal('native');
-        expect(response[0].native.title).to.exist.and.to.be.an('string');
-        expect(response[0].native.image).to.exist.and.to.be.an('object');
-        expect(response[0].native.image.url).to.exist.and.to.be.an('string');
-        expect(response[0].native.image.height).to.exist;
-        expect(response[0].native.image.width).to.exist;
-        expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
-        expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
+        expect(assets).to.be.an('array').with.length.above(0);
+        expect(assets[0].title).to.exist.and.to.be.an('object');
+        expect(assets[1].img).to.exist.and.to.be.an('object');
+        expect(assets[1].img.url).to.exist.and.to.be.an('string');
+        expect(assets[1].img.h).to.exist;
+        expect(assets[1].img.w).to.exist;
+        expect(assets[2].data).to.exist.and.to.be.an('object');
       });
 
       it('should check for valid banner mediaType in case of multiformat request', function() {
@@ -3708,7 +3775,87 @@ describe('PubMatic adapter', function () {
         });
         let newresponse = spec.interpretResponse(newvideoBidResponses, newrequest);
         expect(newresponse[0].mediaType).to.equal('video')
-      })
+      });
+    });
+
+    describe('Preapare metadata', function () {
+      it('Should copy all fields from ext to meta', function () {
+        const bid = {
+          'adomain': [
+            'mystartab.com'
+          ],
+          cat: ['IAB_CATEGORY'],
+          ext: {
+            advid: '12',
+            'dspid': 6,
+            'deal_channel': 1,
+            'bidtype': 0,
+            advertiserId: 'adid',
+            // networkName: 'nwnm',
+            // primaryCatId: 'pcid',
+            // advertiserName: 'adnm',
+            // agencyId: 'agid',
+            // agencyName: 'agnm',
+            // brandId: 'brid',
+            // brandName: 'brnm',
+            // dchain: 'dc',
+            // demandSource: 'ds',
+            // secondaryCatIds: ['secondaryCatIds']
+          }
+        };
+
+        const br = {};
+        prepareMetaObject(br, bid, null);
+        expect(br.meta.networkId).to.equal(6); // dspid
+        expect(br.meta.buyerId).to.equal('12'); // adid
+        expect(br.meta.advertiserId).to.equal('12');
+        // expect(br.meta.networkName).to.equal('nwnm');
+        expect(br.meta.primaryCatId).to.equal('IAB_CATEGORY');
+        // expect(br.meta.advertiserName).to.equal('adnm');
+        expect(br.meta.agencyId).to.equal('12');
+        // expect(br.meta.agencyName).to.equal('agnm');
+        expect(br.meta.brandId).to.equal('mystartab.com');
+        // expect(br.meta.brandName).to.equal('brnm');
+        // expect(br.meta.dchain).to.equal('dc');
+        expect(br.meta.demandSource).to.equal(6);
+        expect(br.meta.secondaryCatIds).to.be.an('array').with.length.above(0);
+        expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');
+        expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
+        expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
+      });
+
+      it('Should be empty, when ext and adomain is absent in bid object', function () {
+        const bid = {};
+        const br = {};
+        prepareMetaObject(br, bid, null);
+        expect(Object.keys(br.meta).length).to.equal(0);
+      });
+
+      it('Should be empty, when ext and adomain will not have properties', function () {
+        const bid = {
+          'adomain': [],
+          ext: {}
+        };
+        const br = {};
+        prepareMetaObject(br, bid, null);
+        expect(Object.keys(br.meta).length).to.equal(0);
+        expect(br.meta.advertiserDomains).to.equal(undefined); // adomain
+        expect(br.meta.clickUrl).to.equal(undefined); // adomain
+      });
+
+      it('Should have buyerId,advertiserId, agencyId value of site ', function () {
+        const bid = {
+          'adomain': [],
+          ext: {
+            advid: '12',
+          }
+        };
+        const br = {};
+        prepareMetaObject(br, bid, '5100');
+        expect(br.meta.buyerId).to.equal('5100'); // adid
+        expect(br.meta.advertiserId).to.equal('5100');
+        expect(br.meta.agencyId).to.equal('5100');
+      });
     });
 
     describe('getUserSyncs', function() {
@@ -3807,184 +3954,6 @@ describe('PubMatic adapter', function () {
         }]);
       });
     });
-
-    describe('JW player segment data for S2S', function() {
-      let sandbox = sinon.sandbox.create();
-      beforeEach(function () {
-        sandbox = sinon.sandbox.create();
-      });
-      afterEach(function() {
-        sandbox.restore();
-      });
-      it('Should append JW player segment data to dctr values in auction endpoint', function() {
-        var videoAdUnit = {
-          'bidderCode': 'pubmatic',
-          'bids': [
-            {
-              'bidder': 'pubmatic',
-              'params': {
-                'publisherId': '156276',
-                'adSlot': 'pubmatic_video2',
-                'dctr': 'key1=123|key2=345',
-                'pmzoneid': '1243',
-                'video': {
-                  'mimes': ['video/mp4', 'video/x-flv'],
-                  'skippable': true,
-                  'minduration': 5,
-                  'maxduration': 30,
-                  'startdelay': 5,
-                  'playbackmethod': [1, 3],
-                  'api': [1, 2],
-                  'protocols': [2, 3],
-                  'battr': [13, 14],
-                  'linearity': 1,
-                  'placement': 2,
-                  'minbitrate': 10,
-                  'maxbitrate': 10
-                }
-              },
-              'rtd': {
-                'jwplayer': {
-                  'targeting': {
-                    'segments': ['80011026', '80011035'],
-                    'content': {
-                      'id': 'jw_d9J2zcaA'
-                    }
-                  }
-                }
-              },
-              'bid_id': '17a6771be26cc4',
-              'ortb2Imp': {
-                'ext': {
-                  'data': {
-                    'pbadslot': 'abcd',
-                    'jwTargeting': {
-                      'playerID': 'myElement1',
-                      'mediaID': 'd9J2zcaA'
-                    }
-                  }
-                }
-              }
-            }
-          ],
-          'auctionStart': 1630923178417,
-          'timeout': 1000,
-          'src': 's2s'
-        }
-
-        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
-        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1|jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
-      });
-      it('Should send only JW player segment data in auction endpoint, if dctr is missing', function() {
-        var videoAdUnit = {
-          'bidderCode': 'pubmatic',
-          'bids': [
-            {
-              'bidder': 'pubmatic',
-              'params': {
-                'publisherId': '156276',
-                'adSlot': 'pubmatic_video2',
-                'dctr': 'key1=123|key2=345',
-                'pmzoneid': '1243',
-                'video': {
-                  'mimes': ['video/mp4', 'video/x-flv'],
-                  'skippable': true,
-                  'minduration': 5,
-                  'maxduration': 30,
-                  'startdelay': 5,
-                  'playbackmethod': [1, 3],
-                  'api': [1, 2],
-                  'protocols': [2, 3],
-                  'battr': [13, 14],
-                  'linearity': 1,
-                  'placement': 2,
-                  'minbitrate': 10,
-                  'maxbitrate': 10
-                }
-              },
-              'rtd': {
-                'jwplayer': {
-                  'targeting': {
-                    'segments': ['80011026', '80011035'],
-                    'content': {
-                      'id': 'jw_d9J2zcaA'
-                    }
-                  }
-                }
-              },
-              'bid_id': '17a6771be26cc4',
-              'ortb2Imp': {
-                'ext': {
-                  'data': {
-                    'pbadslot': 'abcd',
-                    'jwTargeting': {
-                      'playerID': 'myElement1',
-                      'mediaID': 'd9J2zcaA'
-                    }
-                  }
-                }
-              }
-            }
-          ],
-          'auctionStart': 1630923178417,
-          'timeout': 1000,
-          'src': 's2s'
-        }
-
-        delete bidRequests[0].params.dctr;
-        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
-        expect(bidRequests[0].params.dctr).to.equal('jw-id=jw_d9J2zcaA|jw-80011026=1|jw-80011035=1');
-      });
-
-      it('Should not send any JW player segment data in auction endpoint, if it is not available', function() {
-        var videoAdUnit = {
-          'bidderCode': 'pubmatic',
-          'bids': [
-            {
-              'bidder': 'pubmatic',
-              'params': {
-                'publisherId': '156276',
-                'adSlot': 'pubmatic_video2',
-                'dctr': 'key1=123|key2=345',
-                'pmzoneid': '1243',
-                'video': {
-                  'mimes': ['video/mp4', 'video/x-flv'],
-                  'skippable': true,
-                  'minduration': 5,
-                  'maxduration': 30,
-                  'startdelay': 5,
-                  'playbackmethod': [1, 3],
-                  'api': [1, 2],
-                  'protocols': [2, 3],
-                  'battr': [13, 14],
-                  'linearity': 1,
-                  'placement': 2,
-                  'minbitrate': 10,
-                  'maxbitrate': 10
-                }
-              },
-              'bid_id': '17a6771be26cc4',
-              'ortb2Imp': {
-                'ext': {
-                  'data': {
-                    'pbadslot': 'abcd',
-                    'jwTargeting': {
-                      'playerID': 'myElement1',
-                      'mediaID': 'd9J2zcaA'
-                    }
-                  }
-                }
-              }
-            }
-          ],
-          'auctionStart': 1630923178417,
-          'timeout': 1000,
-          'src': 's2s'
-        }
-        spec.transformBidParams(bidRequests[0].params, true, videoAdUnit);
-        expect(bidRequests[0].params.dctr).to.equal('key1:val1,val2|key2:val1');
-      });
-    })
 
     describe('Checking for Video.Placement property', function() {
       let sandbox, utilsMock;

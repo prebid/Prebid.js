@@ -161,5 +161,34 @@ describe('holidBidAdapterTests', () => {
 
       expect(userSyncs).to.deep.equal(expectedUserSyncs)
     })
+
+    it('should return empty user syncs when responsetimemillis is not defined', () => {
+      const optionsType = {
+        iframeEnabled: true,
+        pixelEnabled: true,
+      }
+      const serverResponse = [
+        {
+          body: {
+            ext: {},
+          },
+        },
+      ]
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
+      }
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb'
+      const expectedUserSyncs = []
+
+      const userSyncs = spec.getUserSyncs(
+        optionsType,
+        serverResponse,
+        gdprConsent,
+        uspConsent
+      )
+
+      expect(userSyncs).to.deep.equal(expectedUserSyncs)
+    })
   })
 })

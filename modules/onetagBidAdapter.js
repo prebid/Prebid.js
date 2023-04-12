@@ -13,7 +13,7 @@ const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -60,6 +60,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       consentString: bidderRequest.gdprConsent.consentString,
       consentRequired: bidderRequest.gdprConsent.gdprApplies
     };
+  }
+  if (bidderRequest && bidderRequest.gppConsent) {
+    payload.gppConsent = {
+      consentString: bidderRequest.gppConsent.gppString,
+      applicableSections: bidderRequest.gppConsent.applicableSections
+    }
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
@@ -340,7 +346,7 @@ function getSizes(sizes) {
   return ret;
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
   let syncs = [];
   let params = '';
   if (gdprConsent) {
@@ -349,6 +355,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
     }
     if (typeof gdprConsent.consentString === 'string') {
       params += '&gdpr_consent=' + gdprConsent.consentString;
+    }
+  }
+  if (gppConsent) {
+    if (typeof gppConsent.gppString === 'string') {
+      params += '&gpp_consent=' + gppConsent.gppString;
     }
   }
   if (uspConsent && typeof uspConsent === 'string') {

@@ -90,12 +90,13 @@ export function ortbConverter({
         req: Object.assign({bidRequests}, defaultContext, context),
         imp: {}
       }
+      ctx.req.impContext = ctx.imp;
       const imps = bidRequests.map(bidRequest => {
         const impContext = Object.assign({bidderRequest, reqContext: ctx.req}, defaultContext, context);
         const result = buildImp(bidRequest, impContext);
         if (result != null) {
           if (result.hasOwnProperty('id')) {
-            impContext.bidRequest = bidRequest;
+            Object.assign(impContext, {bidRequest, imp: result});
             ctx.imp[result.id] = impContext;
             return result;
           }
@@ -116,7 +117,7 @@ export function ortbConverter({
         throw new Error('ortbRequest passed to `fromORTB` must be the same object returned by `toORTB`')
       }
       function augmentContext(ctx, extraParams = {}) {
-        return Object.assign({ortbRequest: request}, extraParams, ctx);
+        return Object.assign(ctx, {ortbRequest: request}, extraParams, ctx);
       }
       const impsById = Object.fromEntries((request.imp || []).map(imp => [imp.id, imp]));
       const bidResponses = (response.seatbid || []).flatMap(seatbid =>
