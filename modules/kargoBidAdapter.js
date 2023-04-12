@@ -16,7 +16,7 @@ const BIDDER = Object.freeze({
   SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
 });
 
-const STORAGE = getStorageManager({gvlid: BIDDER.GVLID, bidderCode: BIDDER.CODE});
+const STORAGE = getStorageManager({bidderCode: BIDDER.CODE});
 
 const CURRENCY = Object.freeze({
   KEY: 'currency',
