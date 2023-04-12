@@ -424,6 +424,14 @@ export const spec = {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
       }
 
+      // Add video context and placement in requestParams
+      if (currentBidRequest.mediaTypes.video) {
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : 'instream';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : 1;
+        requestParams.video_context = videoContext;
+        requestParams.video_placement = videoPlacement;
+      }
+
       return {
         method: 'GET',
         url: FREEWHEEL_ADSSETUP,

@@ -25,7 +25,6 @@ const ALIASES = [
 ];
 
 export const storage = getStorageManager({
-  gvlid: GVLID,
   bidderCode: BIDDER_CODE,
 });
 

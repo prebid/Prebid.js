@@ -28,7 +28,6 @@ import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
-import {createEidsArray} from './userId/eids.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
@@ -44,7 +43,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
 const MAX_SESS_DURATION = 30 * 60 * 1000;
 const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
@@ -401,8 +400,8 @@ function _getSchain(bidRequest) {
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId);
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
   }
 }
 

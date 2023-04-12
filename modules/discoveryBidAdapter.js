@@ -6,7 +6,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];

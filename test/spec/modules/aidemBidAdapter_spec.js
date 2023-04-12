@@ -276,7 +276,7 @@ const SERVER_RESPONSE_VIDEO = {
   },
 }
 
-const WIN_NOTICE = {
+const WIN_NOTICE_WEB = {
   'adId': '3a20ee5dc78c1e',
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
   'creativeId': '24277955',
@@ -297,9 +297,71 @@ const WIN_NOTICE = {
     'USD'
   ],
   'mediaType': 'banner',
-  'advertiserDomains': [
-    'abc.com'
+  'meta': {
+    'advertiserDomains': [
+      'cloudflare.com'
+    ],
+    'ext': {}
+  },
+  'size': '300x250',
+  'params': [
+    {
+      'placementId': '13144370',
+      'siteId': '23434',
+      'publisherId': '7689670753'
+    }
   ],
+  'width': 300,
+  'height': 250,
+  'status': 'rendered',
+  'transactionId': 'ce089116-4251-45c3-bdbb-3a03cb13816b',
+  'ttl': 300,
+  'requestTimestamp': 1666796241007,
+  'responseTimestamp': 1666796241021,
+  metrics: {
+    getMetrics() {
+      return {
+
+      }
+    }
+  }
+}
+
+const WIN_NOTICE_APP = {
+  'adId': '3a20ee5dc78c1e',
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'creativeId': '24277955',
+  'cpm': 1,
+  'netRevenue': false,
+  'adserverTargeting': {
+    'hb_bidder': 'aidem',
+    'hb_adid': '3a20ee5dc78c1e',
+    'hb_pb': '1.00',
+    'hb_size': '300x250',
+    'hb_source': 'client',
+    'hb_format': 'banner',
+    'hb_adomain': 'example.com'
+  },
+
+  'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',
+  'currency': [
+    'USD'
+  ],
+  'mediaType': 'banner',
+  'meta': {
+    'advertiserDomains': [
+      'cloudflare.com'
+    ],
+    'ext': {
+      'app': {
+        'app_bundle': '{{APP_BUNDLE}}',
+        'app_id': '{{APP_ID}}',
+        'app_name': '{{APP_NAME}}',
+        'app_store_url': '{{APP_STORE_URL}}',
+        'inventory_source': '{{INVENTORY_SOURCE}}'
+      }
+    }
+  },
   'size': '300x250',
   'params': [
     {
@@ -549,11 +611,13 @@ describe('Aidem adapter', () => {
       expect(spec.onBidWon).to.exist.and.to.be.a('function')
     });
 
-    it(`should send a valid bid won notice`, function () {
-      spec.onBidWon(WIN_NOTICE);
-      // server.respondWith('POST', WIN_EVENT_URL, [
-      //   400, {'Content-Type': 'application/json'}, )
-      // ]);
+    it(`should send a valid bid won notice from web environment`, function () {
+      spec.onBidWon(WIN_NOTICE_WEB);
+      expect(server.requests.length).to.equal(1);
+    });
+
+    it(`should send a valid bid won notice from app environment`, function () {
+      spec.onBidWon(WIN_NOTICE_APP);
       expect(server.requests.length).to.equal(1);
     });
   });

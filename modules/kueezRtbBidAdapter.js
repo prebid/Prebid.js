@@ -23,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {

@@ -46,6 +46,54 @@ const isBidRequestValid = bid => {
   return true;
 };
 
+/**
+ * Schain Object needed encodes URI Component with exlamation mark
+ * @param {String} str
+ * @returns {String}
+ */
+function encodeURIComponentWithExlamation(str) {
+  return encodeURIComponent(str).replace(/!/g, '%21');
+}
+
+/**
+ * Serializes the supply chain object based on IAB standards
+ * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * @param {Object} schainObj supply chain object
+ * @returns {string} serialized supply chain value
+ */
+function serializeSupplyChainObj(schainObj) {
+  if (!schainObj || !schainObj.nodes) {
+    return '';
+  }
+  const nodeProps = ['asi', 'sid', 'hp', 'rid', 'name', 'domain'];
+  const serializedNodes = schainObj.nodes.map(node =>
+    nodeProps.map(prop => encodeURIComponentWithExlamation(node[prop] || '')).join(',')
+  ).join('!');
+
+  const serializedSchain = `${schainObj.ver},${schainObj.complete}!${serializedNodes}`;
+  return serializedSchain;
+}
+
+/**
+ * Gets highest floor between getFloor.floor and params.bidfloor
+ * @param {Object} bid
+ * @param {Object} mediaType
+ * @param {Array} sizes
+ * @param {Number} bidfloor
+ * @returns {Number} floor
+ */
+function getBidFloor(bid, mediaType, sizes, bidfloor) {
+  let floor = bidfloor;
+  var size = sizes && sizes.length > 0 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
+    }
+  }
+  return floor;
+}
+
 const isBidResponseValid = bid => {
   if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
@@ -78,6 +126,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
+    const floor = getBidFloor(bid, adType, sizes, bidfloor);
 
     const queryParams = {
       id: bid.params.id,
@@ -91,8 +140,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       dt: /Mobi/.test(navigator.userAgent) ? 2 : 1,
       pid: bid.params.pid,
       requestId: bid.bidId,
-      schain: bid.schain || '',
-      bidfloor,
+      schain: serializeSupplyChainObj(bid.schain) || '',
+      bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?
       sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
