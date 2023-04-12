@@ -52,7 +52,7 @@ describe('Renderer', function () {
       expect(testRenderer2.getConfig()).to.deep.equal({ test: 'config2' });
     });
 
-    it('sets a render function with setRender method', function () {
+    it('sets a render function with the setRender method', function () {
       testRenderer1.setRender(spyRenderFn);
       expect(typeof testRenderer1.render).to.equal('function');
       testRenderer1.render();
