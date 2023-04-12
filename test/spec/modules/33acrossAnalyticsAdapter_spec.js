@@ -191,23 +191,25 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         })
       });
 
-      it('sends the report in its current state', function() {
-        sandbox.stub(navigator, 'sendBeacon').returns(true);
+      it('logs an info message after successfully submitting the incomplete report', function() {
+        sandbox.spy(utils, 'logInfo');
+        const incompleteAnalyticsReport = Object.assign(
+          getStandardAnalyticsReport(),
+          { bidsWon: [] }
+        );
 
-        this.enableAnalytics();
+        sandbox.stub(navigator, 'sendBeacon')
+          .withArgs('foo-endpoint', JSON.stringify(incompleteAnalyticsReport))
+          .returns(true);
+
+        this.enableAnalytics({ endpoint: 'foo-endpoint' });
 
         performAuctionWithMissingBidWon();
 
         clock.tick(this.defaultTimeout + 1);
 
         sinon.assert.calledOnce(navigator.sendBeacon);
-
-        const incompleteAnalyticsReport = Object.assign(
-          getStandardAnalyticsReport(),
-          { bidsWon: [] }
-        );
-
-        sinon.assert.calledWithExactly(navigator.sendBeacon, 'test-endpoint', JSON.stringify(incompleteAnalyticsReport));
+        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
       });
     });
   });
