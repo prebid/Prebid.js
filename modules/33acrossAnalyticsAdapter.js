@@ -62,6 +62,7 @@ const log = getLogger();
 
 /**
  * After the first bid is initiated, we wait until every bid is completed before sending the report.
+ *
  * We will listen for the `bidWon` event and for `slotRenderEnded` event from GAM to determine when
  * all bids are complete.
  */
@@ -70,8 +71,7 @@ class TransactionManager {
   #unsent = 0;
   #timeout;
   #transactions = {};
-  #analyticsCache;
-  #endpoint;
+  #onComplete;
 
   get unsent() {
     return this.#unsent;
@@ -81,18 +81,17 @@ class TransactionManager {
     this.#unsent = value;
 
     if (this.#unsent <= 0) {
-      this.clearTimeout();
+      this.#clearTimeout();
 
-      sendReport(this.#analyticsCache, this.#endpoint);
+      this.#onComplete();
 
       this.#transactions = {};
     }
   }
 
-  constructor({ timeout, analyticsCache, endpoint }) {
+  constructor({ timeout, onComplete }) {
     this.#timeout = timeout;
-    this.#analyticsCache = analyticsCache;
-    this.#endpoint = endpoint;
+    this.#onComplete = onComplete;
   }
 
   add(transactionId) {
@@ -119,7 +118,7 @@ class TransactionManager {
   }
 
   #restartSendTimeout() {
-    this.clearTimeout();
+    this.#clearTimeout();
 
     this.#timeoutId = setTimeout(() => {
       if (this.#timeout !== 0) {
@@ -130,12 +129,8 @@ class TransactionManager {
     }, this.#timeout);
   }
 
-  clearTimeout() {
+  #clearTimeout() {
     return clearTimeout(this.#timeoutId);
-  }
-
-  get() {
-    return this.#transactions;
   }
 }
 
@@ -144,14 +139,14 @@ class TransactionManager {
  */
 export const locals = {
   /** @type {TransactionManager} */
-  transactionManager: undefined,
+  transactionManagers: {},
   /** @type {string} */
   endpoint: undefined,
   /** @type {AnalyticsReport} */
   analyticsCache: undefined,
   /** sets all locals to undefined */
   reset() {
-    this.transactionManager = undefined;
+    this.transactionManagers = {};
     this.endpoint = undefined;
     this.analyticsCache = undefined;
   }
@@ -182,10 +177,16 @@ function enableAnalyticsWrapper(config = {}) {
     return;
   }
 
-  const analyticsCache = locals.analyticsCache = newAnalyticsReport(pid);
-  const transactionManager = locals.transactionManager = createTransactionManager(options.timeout, analyticsCache, endpoint);
+  this.getUrl = () => endpoint;
 
-  subscribeToGamSlotRenderEvent(transactionManager);
+  const timeout = calculateTransactionTimeout(options.timeout);
+  this.getTimeout = () => timeout;
+
+  locals.analyticsCache = newAnalyticsReport(pid);
+
+  // const transactionManager = locals.transactionManager =
+  // createTransactionManager({ options.timeout, analyticsCache });
+  // subscribeToGamSlotRenderEvent(transactionManager);
 
   analyticsAdapter.originEnableAnalytics(config);
 }
@@ -202,14 +203,6 @@ function calculateTransactionTimeout(configTimeout) {
   log.info(`Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.`);
 
   return DEFAULT_TRANSACTION_TIMEOUT;
-}
-
-function createTransactionManager(configTimeout, analyticsCache, endpoint) {
-  return new TransactionManager({
-    timeout: calculateTransactionTimeout(configTimeout),
-    analyticsCache,
-    endpoint
-  });
 }
 
 function subscribeToGamSlotRenderEvent(transactionManager) {
@@ -252,7 +245,7 @@ function newAnalyticsReport(pid) {
     pid,
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
-    pbjsVersion: '$prebid.version$', // replaced by build script
+    pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [],
     bidsWon: [],
   };
@@ -327,8 +320,18 @@ function analyticEventHandler({ eventType, args }) {
   log.info(eventType, args);
   switch (eventType) {
     case EVENTS.AUCTION_INIT: // Move these events to top of fn.
+      const transactionManager = locals.transactionManagers[args.auctionId] =
+        new TransactionManager({
+          timeout: analyticsAdapter.getTimeout(),
+          onComplete() {
+            sendReport(locals.analyticsCache, analyticsAdapter.getUrl());
+          }
+        });
+
+      subscribeToGamSlotRenderEvent(transactionManager);
+
       for (let adUnit of args.adUnits) {
-        locals.transactionManager.add(adUnit.transactionId);
+        transactionManager.add(adUnit.transactionId);
       }
 
       break;
@@ -346,7 +349,8 @@ function analyticEventHandler({ eventType, args }) {
       const bidWon = parseBid(args);
 
       locals.analyticsCache.bidsWon.push(bidWon);
-      locals.transactionManager.que(bidWon.transactionId);
+
+      locals.transactionManagers[args.auctionId].que(bidWon.transactionId);
 
       break;
     case EVENTS.AD_RENDER_SUCCEEDED:

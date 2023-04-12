@@ -22,6 +22,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
   afterEach(function() {
     sandbox.restore();
     analyticsAdapter.disableAnalytics();
+    events.clearEvents();
   });
 
   describe('enableAnalytics', function() {
@@ -88,6 +89,8 @@ describe.only('33acrossAnalyticsAdapter:', function() {
           },
         });
 
+        performAuctionWithMissingBidWon();
+
         window.googletag.cmd.forEach(fn => fn());
 
         const { gam } = getMockEvents();
@@ -95,8 +98,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
         mockGpt.emitEvent('slotRenderEnded', gEvent);
 
-        sinon.assert.calledOnce(utils.logInfo);
-        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: slotRenderEnded', Object.assign({ eventName: 'slotRenderEnded'}, gEvent));
+        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: slotRenderEnded', Object.assign({ eventName: 'slotRenderEnded' }, gEvent));
       });
     });
   });
@@ -189,18 +191,9 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         })
       });
 
-      xit('sends the report in its current state', function() {
+      it('sends the report in its current state', function() {
         sandbox.stub(navigator, 'sendBeacon').returns(true);
 
-        // As soon as the analyticsAdapter is enabled, its event handler
-        // will start getting events from another unit test.
-        // Every enablement of the adapter has its own instance
-        // of the transaction manager but the mocked transaction IDs
-        // are the same.
-        //
-        // We need to start generation different transaction IDs for the mocked
-        // events and evaluate having a structure like
-        // this.#transactions[auctionId][transactionId]
         this.enableAnalytics();
 
         performAuctionWithMissingBidWon();
@@ -208,7 +201,13 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         clock.tick(this.defaultTimeout + 1);
 
         sinon.assert.calledOnce(navigator.sendBeacon);
-        // sinon.assert.calledWith(navigator.sendBeacon, 'test-endpoint');
+
+        const incompleteAnalyticsReport = Object.assign(
+          getStandardAnalyticsReport(),
+          { bidsWon: [] }
+        );
+
+        sinon.assert.calledWithExactly(navigator.sendBeacon, 'test-endpoint', JSON.stringify(incompleteAnalyticsReport));
       });
     });
   });
@@ -239,8 +238,8 @@ describe.only('33acrossAnalyticsAdapter:', function() {
  * BID_TIMEOUT
  */
 
-function performStandardAuction() {
-  const mockEvents = getMockEvents();
+function performStandardAuction(options) {
+  const mockEvents = getMockEvents(options);
   const { prebid, gam } = mockEvents;
 
   for (let auction of prebid) {
@@ -257,9 +256,9 @@ function performStandardAuction() {
   }
 }
 
-function performAuctionWithMissingBidWon() {
-  const mockEvents = getMockEvents();
-  let { prebid, gam } = mockEvents;
+function performAuctionWithMissingBidWon(options) {
+  const mockEvents = getMockEvents(options);
+  let { prebid } = mockEvents;
 
   const [ auction ] = prebid;
 
@@ -533,8 +532,9 @@ function getStandardAnalyticsReport() {
   };
 }
 
-function getMockEvents() {
+function getMockEvents(options = {}) {
   const ad = '<!-- Creative --><div>ad</div>';
+  const auctionId = 'auction-000';
 
   return {
     gam: {
@@ -589,7 +589,7 @@ function getMockEvents() {
     },
     prebid: [{
       AUCTION_INIT: {
-        auctionId: 'auction-000',
+        auctionId,
         timestamp: 1680279732944,
         auctionStatus: 'inProgress',
         adUnits: [
@@ -804,7 +804,7 @@ function getMockEvents() {
         bidderRequests: [
           {
             bidderCode: '33across',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '15bef0b1fd2b2e',
             bids: [
               {
@@ -856,7 +856,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '278a991ca57141',
                 bidderRequestId: '15bef0b1fd2b2e',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -971,7 +971,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder0',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '196b58215c10dc9',
             bids: [
               {
@@ -1028,7 +1028,7 @@ function getMockEvents() {
                 ],
                 bidId: '20661fc5fbb5d9b',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -1129,7 +1129,7 @@ function getMockEvents() {
                 ],
                 bidId: '21ad295f40dd7ab',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -1224,7 +1224,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '22108ac7b778717',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -1356,7 +1356,7 @@ function getMockEvents() {
         adId: '123456789abcdef',
         requestId: '20661fc5fbb5d9b',
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-        auctionId: 'auction-000',
+        auctionId,
         mediaType: 'banner',
         source: 'client',
         cpm: 1.5,
@@ -1408,7 +1408,7 @@ function getMockEvents() {
         adId: '3969aa0dc284f9e',
         requestId: '21ad295f40dd7ab',
         transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
-        auctionId: 'auction-000',
+        auctionId,
         mediaType: 'banner',
         source: 'client',
         cpm: 1.5,
@@ -1460,7 +1460,7 @@ function getMockEvents() {
         adId: '3969aa0dc284f9e',
         requestId: '15bef0b1fd2b2e',
         transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
-        auctionId: 'auction-000',
+        auctionId,
         mediaType: 'banner',
         source: 'client',
         cpm: 1.5,
@@ -1490,7 +1490,7 @@ function getMockEvents() {
         status: 'targetingSet',
       }],
       AUCTION_END: {
-        auctionId: 'auction-000',
+        auctionId,
         timestamp: 1680279732944,
         auctionEnd: 1680279733675,
         auctionStatus: 'completed',
@@ -2119,7 +2119,7 @@ function getMockEvents() {
         bidderRequests: [
           {
             bidderCode: '33across',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '15bef0b1fd2b2e',
             bids: [
               {
@@ -2171,7 +2171,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '278a991ca57141',
                 bidderRequestId: '15bef0b1fd2b2e',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -2286,7 +2286,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder5',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '3291cb014b476f',
             bids: [
               {
@@ -2337,7 +2337,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '4aa9cadf65349f',
                 bidderRequestId: '3291cb014b476f',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -2452,7 +2452,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder6',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '5970694290d904',
             bids: [
               {
@@ -2504,7 +2504,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '679d8548884e77',
                 bidderRequestId: '5970694290d904',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -2619,7 +2619,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder7',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '795a032f6fd0a4',
             bids: [
               {
@@ -2674,7 +2674,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '85f09b966e352',
                 bidderRequestId: '795a032f6fd0a4',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -2789,7 +2789,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder0Ast',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '943e8011283df8',
             bids: [
               {
@@ -2840,7 +2840,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '10eff0b5e62207e',
                 bidderRequestId: '943e8011283df8',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -2955,7 +2955,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder1',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '11ef9ba88706948',
             bids: [
               {
@@ -3006,7 +3006,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '120d003a1ad64ee',
                 bidderRequestId: '11ef9ba88706948',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3121,7 +3121,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder3',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '135e79fd79c43d5',
             bids: [
               {
@@ -3173,7 +3173,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '14002adaa6a668d',
                 bidderRequestId: '135e79fd79c43d5',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3288,7 +3288,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder8',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '1530e004dd66185',
             bids: [
               {
@@ -3339,7 +3339,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '160595fa6abe78f',
                 bidderRequestId: '1530e004dd66185',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3454,7 +3454,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder10',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '1735cd680171181',
             bids: [
               {
@@ -3506,7 +3506,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '18f09d45818b9f9',
                 bidderRequestId: '1735cd680171181',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3621,7 +3621,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder0',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '196b58215c10dc9',
             bids: [
               {
@@ -3678,7 +3678,7 @@ function getMockEvents() {
                 ],
                 bidId: '20661fc5fbb5d9b',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3779,7 +3779,7 @@ function getMockEvents() {
                 ],
                 bidId: '21ad295f40dd7ab',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3874,7 +3874,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '22108ac7b778717',
                 bidderRequestId: '196b58215c10dc9',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -3989,7 +3989,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder4',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '236be693ac8aab1',
             bids: [
               {
@@ -4041,7 +4041,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '24e4aa3b3f8ca51',
                 bidderRequestId: '236be693ac8aab1',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -4156,7 +4156,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder12',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '25f69703c7839e2',
             bids: [
               {
@@ -4207,7 +4207,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '265f29671f2228c',
                 bidderRequestId: '25f69703c7839e2',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -4322,7 +4322,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'pulsepoint',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '27676b839dab671',
             bids: [
               {
@@ -4375,7 +4375,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '28ee1841acb5722',
                 bidderRequestId: '27676b839dab671',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -4490,7 +4490,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder2',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '29ecdfe8cb58dcf',
             bids: [
               {
@@ -4542,7 +4542,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '30c770cd8b6ecb6',
                 bidderRequestId: '29ecdfe8cb58dcf',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -4657,7 +4657,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder9',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '31885f8b47e177c',
             bids: [
               {
@@ -4708,7 +4708,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '324820900e1fe2e',
                 bidderRequestId: '31885f8b47e177c',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -4823,7 +4823,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'rubicon',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '33b0897ae1ec03',
             bids: [
               {
@@ -4885,7 +4885,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '34872cacff0a74d',
                 bidderRequestId: '33b0897ae1ec03',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -5001,7 +5001,7 @@ function getMockEvents() {
           },
           {
             bidderCode: 'bidder11',
-            auctionId: 'auction-000',
+            auctionId,
             bidderRequestId: '35411e18ed77aa',
             bids: [
               {
@@ -5054,7 +5054,7 @@ function getMockEvents() {
                 sizes: [[300, 250]],
                 bidId: '361b21bdba26d54',
                 bidderRequestId: '35411e18ed77aa',
-                auctionId: 'auction-000',
+                auctionId,
                 src: 'client',
                 bidRequestsCount: 1,
                 bidderRequestsCount: 1,
@@ -5217,7 +5217,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '4aa9cadf65349f',
             bidderRequestId: '3291cb014b476f',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5313,7 +5313,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '24e4aa3b3f8ca51',
             bidderRequestId: '236be693ac8aab1',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5410,7 +5410,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '361b21bdba26d54',
             bidderRequestId: '35411e18ed77aa',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5506,7 +5506,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '679d8548884e77',
             bidderRequestId: '5970694290d904',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5602,7 +5602,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '30c770cd8b6ecb6',
             bidderRequestId: '29ecdfe8cb58dcf',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5697,7 +5697,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '160595fa6abe78f',
             bidderRequestId: '1530e004dd66185',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5794,7 +5794,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '28ee1841acb5722',
             bidderRequestId: '27676b839dab671',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5900,7 +5900,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '34872cacff0a74d',
             bidderRequestId: '33b0897ae1ec03',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -5997,7 +5997,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '14002adaa6a668d',
             bidderRequestId: '135e79fd79c43d5',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6092,7 +6092,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '10eff0b5e62207e',
             bidderRequestId: '943e8011283df8',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6187,7 +6187,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '22108ac7b778717',
             bidderRequestId: '196b58215c10dc9',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6286,7 +6286,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '85f09b966e352',
             bidderRequestId: '795a032f6fd0a4',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6381,7 +6381,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '120d003a1ad64ee',
             bidderRequestId: '11ef9ba88706948',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6477,7 +6477,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '278a991ca57141',
             bidderRequestId: '15bef0b1fd2b2e',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6572,7 +6572,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '324820900e1fe2e',
             bidderRequestId: '31885f8b47e177c',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6668,7 +6668,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '18f09d45818b9f9',
             bidderRequestId: '1735cd680171181',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6763,7 +6763,7 @@ function getMockEvents() {
             sizes: [[300, 250]],
             bidId: '265f29671f2228c',
             bidderRequestId: '25f69703c7839e2',
-            auctionId: 'auction-000',
+            auctionId,
             src: 'client',
             bidRequestsCount: 1,
             bidderRequestsCount: 1,
@@ -6820,7 +6820,7 @@ function getMockEvents() {
             adId: '123456789abcdef',
             requestId: '20661fc5fbb5d9b',
             transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-            auctionId: 'auction-000',
+            auctionId,
             mediaType: 'banner',
             source: 'client',
             cpm: 1.5,
@@ -6860,7 +6860,7 @@ function getMockEvents() {
             adId: '3969aa0dc284f9e',
             requestId: '21ad295f40dd7ab',
             transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
-            auctionId: 'auction-000',
+            auctionId,
             mediaType: 'banner',
             source: 'client',
             cpm: 1.5,
