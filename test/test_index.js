@@ -8,6 +8,8 @@
     ].forEach(l => console.error(l))
     throw new Error('do not use .only()')
   }
+})
+[it, describe].forEach((ob) => {
   ob.skip = function () {
     [
       'describe.skip and it.skip are disabled,',
