@@ -196,10 +196,7 @@ function bidToVideoImp(bid) {
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
   // AdUnit-Specific First Party Data
-  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
-  if (adUnitFPD) {
-    deepSetValue(imp, 'ext.data', adUnitFPD)
-  }
+  addAdUnitFPD(imp, bid)
 
   // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
@@ -275,10 +272,7 @@ function bidToNativeImp(bid) {
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
   // AdUnit-Specific First Party Data
-  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
-  if (adUnitFPD) {
-    deepSetValue(imp, 'ext.data', adUnitFPD)
-  }
+  addAdUnitFPD(imp, bid)
 
   _applyFloor(bid, imp, NATIVE);
 
@@ -1026,6 +1020,19 @@ function addFPD(bidderRequest, r, fpd, site, user) {
   }
 
   return r;
+}
+
+/**
+ * Adds First-Party Data (FPD) from the bid object to the imp object.
+ *
+ * @param {Object} imp - The imp object, representing an impression in the OpenRTB format.
+ * @param {Object} bid - The bid object, containing information about the bid request.
+ */
+function addAdUnitFPD(imp, bid) {
+  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    deepSetValue(imp, 'ext.data', adUnitFPD)
+  }
 }
 
 /**
