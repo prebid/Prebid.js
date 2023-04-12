@@ -21,7 +21,7 @@ const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
-export const storage = getStorageManager({MODULE_TYPE: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * @function
