@@ -14,7 +14,6 @@ import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-
 const MODULE_NAME = 'connectId';
 const STORAGE_EXPIRY_DAYS = 14;
 const VENDOR_ID = 25;
