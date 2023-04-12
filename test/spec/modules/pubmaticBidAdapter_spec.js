@@ -1116,18 +1116,6 @@ describe('PubMatic adapter', function () {
         expect(data.test).to.equal(undefined);
       });
 
-      // disabled this test case as  it refreshes the whole suite when in karma watch mode
-      // todo: needs a fix
-      xit('test flag set to 1 when pubmaticTest=true is present in page url', function() {
-        window.location.href += '#pubmaticTest=true';
-        // now all the test cases below will have window.location.href with #pubmaticTest=true
-        let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
-        });
-        let data = JSON.parse(request.data);
-        expect(data.test).to.equal(1);
-      });
-
   		it('Request params check', function () {
         let request = spec.buildRequests(bidRequests, {
           auctionId: 'new-auction-id'
