@@ -8,6 +8,14 @@
     ].forEach(l => console.error(l))
     throw new Error('do not use .only()')
   }
+  ob.skip = function () {
+    [
+      'describe.skip and it.skip are disabled,',
+      'because they pollute break the pipeline test output',
+      // eslint-disable-next-line no-console
+    ].forEach(l => console.error(l))
+    throw new Error('do not use .only()')
+  }
 })
 
 require('./test_deps.js');
