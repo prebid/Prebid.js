@@ -1,7 +1,8 @@
-import { domainOverrideToRootDomain } from 'libraries/domainOverrideToRootDomain/index.js';
+import {domainOverrideToRootDomain} from 'libraries/domainOverrideToRootDomain/index.js';
 import {getStorageManager} from 'src/storageManager.js';
+import {MODULE_TYPE_UID} from '../../../../src/activities/modules';
 
-const storage = getStorageManager();
+const storage = getStorageManager({ moduleName: 'test', moduleType: MODULE_TYPE_UID });
 const domainOverride = domainOverrideToRootDomain(storage, 'test');
 
 describe('domainOverride', () => {
