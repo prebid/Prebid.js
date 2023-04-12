@@ -110,3 +110,4 @@ var adUnits = [
 |---------------|----------|---------------------------------------------------------|----------------------------|--------------|
 | `pbsHost` | required if not set in bid parameters | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
 | `accountId`        | required if not set in bid parameters | The account id.  | `'6204e5fa70e3ad10821b84ff'`               | `String`      |
+| `pbsBufferMs` | optional | How much less in *milliseconds* the server's internal timeout should be compared to the normal Prebid timeout. Default is *250*. To be increased in cases of frequent timeouts. | `250`                | `Integer`     |
