@@ -1,5 +1,6 @@
 import {prefixLog} from '../utils.js';
 import {ACTIVITY_PARAM_COMPONENT} from './params.js';
+import {updateRulesFromConfig} from './cfg.js';
 
 export function ruleRegistry(logger = prefixLog('Activity control:')) {
   const registry = {};
@@ -84,3 +85,4 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
 }
 
 export const [registerActivityControl, isActivityAllowed] = ruleRegistry();
+updateRulesFromConfig(registerActivityControl);

@@ -18,6 +18,7 @@ export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat',
 
 /**
  * @typedef RedactRuleDef
+ * @augments TransformationRuleDef
  * @property {function(*): *} get? substitution functions for values that should be redacted;
  *  takes in the original (unredacted) value as an input, and returns a substitute to use in the redacted
  *  version. If it returns undefined, or this option is omitted, protected paths will be removed
@@ -47,7 +48,7 @@ export function redactRule(ruleDef) {
 
 /**
  * @typedef TransformationRule
- * @extends TransformationRuleDef
+ * @augments TransformationRuleDef
  * @property {function} run rule logic - see `redactRule` for an example.
  */
 
@@ -145,7 +146,7 @@ export function redactorFactory(isAllowed = isActivityAllowed) {
  * to activity rules.
  *
  * @param {{}} params activity parameters to use for activity checks
- * @return {{ortb2: function({}): {}, bidRequest: function({}): {}}} a collection of methods
+ * @return {{ortb2: function({}): {}, bidRequest: function({}): {}}} methods
  *  that can redact disallowed data from ORTB2 and/or bid request objects.
  */
 export const redactor = redactorFactory();
