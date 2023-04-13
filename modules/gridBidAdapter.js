@@ -93,7 +93,7 @@ export const spec = {
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout || config.getConfig('bidderTimeout');
+    const tmax = timeout;
     const imp = [];
     const bidsMap = {};
     const requests = [];

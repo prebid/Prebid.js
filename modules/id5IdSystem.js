@@ -264,7 +264,8 @@ class IdFetchFlow {
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$',
-      'storage': this.submoduleConfig.storage
+      'storage': this.submoduleConfig.storage,
+      'localStorage': storage.localStorageIsEnabled() ? 1 : 0
     };
 
     // pass in optional data, but only if populated

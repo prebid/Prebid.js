@@ -20,7 +20,6 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {createEidsArray} from './userId/eids.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const AUCTION_TYPE = 1;
@@ -638,8 +637,8 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    if (deepAccess(validBidRequests[0], 'userId')) {
-      deepSetValue(payload, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+    if (deepAccess(validBidRequests[0], 'userIdAsEids')) {
+      deepSetValue(payload, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
     // Assign payload.site from refererinfo
