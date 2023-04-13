@@ -91,6 +91,17 @@ describe('allowActivities config', () => {
       expect(isAllowed(ACTIVITY, params)).to.be.false;
     });
 
+    it('does not pass private (underscored) parameters to condition', () => {
+      setupActivityConfig({
+        rules: [{
+          condition({_priv}) { return _priv },
+          allow: false
+        }]
+      });
+      params._priv = true;
+      expect(isAllowed(ACTIVITY, params)).to.be.true;
+    })
+
     it('are evaluated in order of priority', () => {
       setupActivityConfig({
         rules: [{

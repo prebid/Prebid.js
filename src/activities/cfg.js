@@ -19,6 +19,11 @@ export function updateRulesFromConfig(registerRule) {
     defaultRuleHandles.clear();
   }
 
+  function cleanParams(params) {
+    // remove private parameters for publisher condition checks
+    return Object.fromEntries(Object.entries(params).filter(([k]) => !k.startsWith('_')))
+  }
+
   function setupRule(activity, priority) {
     if (!activeRuleHandles.has(activity)) {
       activeRuleHandles.set(activity, new Map())
@@ -27,7 +32,7 @@ export function updateRulesFromConfig(registerRule) {
     if (!handles.has(priority)) {
       handles.set(priority, registerRule(activity, RULE_NAME, function (params) {
         for (const rule of rulesByActivity.get(activity).get(priority)) {
-          if (!rule.condition || rule.condition(params)) {
+          if (!rule.condition || rule.condition(cleanParams(params))) {
             return {allow: rule.allow, reason: rule}
           }
         }
