@@ -169,24 +169,26 @@ describe('ivsBidAdapter', function () {
       request = { data: converter.toORTB({ bidderRequest }) };
     });
 
-    it('should match parsed server response', function () {
-      const results = spec.interpretResponse(serverResponse, request);
-      const expected = {
-        mediaType: 'video',
-        playerWidth: 640,
-        playerHeight: 480,
-        vastUrl: 'https://a.ivstracker.net/dev/getvastxml?ad_creativeid=3715&domain=localhost%3A9999&ip=136.158.51.114&pageurl=http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fivs.html&spid=3001234&adplacement=&brand=unknown&device=desktop&adsclientid=A45-fd46289e-dc60-4be2-a637-4bc8eb953ddf&clientid=3b5e435f-0351-4ba0-bd2d-8d6f3454c5ed&uastring=Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F109.0.0.0%20Safari%2F537.36',
-        requestId: '200d1ca23b15a6',
-        seatBidId: 'bca9823d-ca7a-4dac-b292-0e1fae5948f8',
-        cpm: 1.5,
-        currency: 'USD',
-        creativeId: 3715,
-        ttl: 360,
-      };
+    if (FEATURES.VIDEO) {
+      it('should match parsed server response', function () {
+        const results = spec.interpretResponse(serverResponse, request);
+        const expected = {
+          mediaType: 'video',
+          playerWidth: 640,
+          playerHeight: 480,
+          vastUrl: 'https://a.ivstracker.net/dev/getvastxml?ad_creativeid=3715&domain=localhost%3A9999&ip=136.158.51.114&pageurl=http%3A%2F%2Flocalhost%3A9999%2Ftest%2Fpages%2Fivs.html&spid=3001234&adplacement=&brand=unknown&device=desktop&adsclientid=A45-fd46289e-dc60-4be2-a637-4bc8eb953ddf&clientid=3b5e435f-0351-4ba0-bd2d-8d6f3454c5ed&uastring=Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F109.0.0.0%20Safari%2F537.36',
+          requestId: '200d1ca23b15a6',
+          seatBidId: 'bca9823d-ca7a-4dac-b292-0e1fae5948f8',
+          cpm: 1.5,
+          currency: 'USD',
+          creativeId: 3715,
+          ttl: 360,
+        };
 
-      expect(results.length).to.equal(1);
-      sinon.assert.match(results[0], expected);
-    });
+        expect(results.length).to.equal(1);
+        sinon.assert.match(results[0], expected);
+      });
+    }
 
     it('should return empty when no response', function () {
       assert.ok(!spec.interpretResponse({}, request));
