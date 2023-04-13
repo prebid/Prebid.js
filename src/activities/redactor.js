@@ -9,15 +9,15 @@ export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat',
 /**
  * @typedef TransformationRuleDef
  * @property {name}
+ * @property {Array[string]} paths dot-separated list of paths that this rule applies to.
  * @property {function(*): boolean} applies a predicate that should return true if this rule applies
  * (and the transformation defined herein should be applied). The arguments are those passed to the transformation function.
  * @property {name} a name for the rule; used to debounce calls to `applies` (and avoid excessive logging):
  * if a rule with the same name was already found to apply (or not), this one will (or won't) as well.
- * @property {Array[string]} paths dot-separated list of paths that this rule applies to.*
  */
 
 /**
- * @typedef RedactRuleDef
+ * @typedef RedactRuleDef A rule that removes, or replaces, values from an object (modifications are done in-place).
  * @augments TransformationRuleDef
  * @property {function(*): *} get? substitution functions for values that should be redacted;
  *  takes in the original (unredacted) value as an input, and returns a substitute to use in the redacted
@@ -53,11 +53,16 @@ export function redactRule(ruleDef) {
  */
 
 /**
- * Factory for transformation functions that apply the given rules to an object.
- *
+ * @typedef {Function} TransformationFunction
+ * @param object object to transform
+ * @param ...args arguments to pass down to rule's `apply` methods.
+ */
+
+/**
+ * Return a transformation function that will apply the given rules to an object.
  *
  * @param {Array[TransformationRule]} rules
- * @return {function({}, {}, ...[*]): *}
+ * @return {TransformationFunction}
  */
 export function objectTransformer(rules) {
   rules.forEach(rule => {

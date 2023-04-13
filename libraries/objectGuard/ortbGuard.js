@@ -28,6 +28,21 @@ export function ortb2GuardFactory(isAllowed = isActivityAllowed) {
   return objectGuard(ortb2TransmitRules(isAllowed).concat(ortb2EnrichRules(isAllowed)));
 }
 
+/**
+ *
+ *
+ * @typedef {Function} ortb2Guard
+ * @param {{}} ortb2 ORTB object to guard
+ * @param {{}} params activity params to use for activity checks
+ * @returns {ObjectGuard}
+ */
+
+/*
+ * Get a guard for an ORTB object. Read access is restricted in the same way it'd be redacted (see activites/redactor.js);
+ * and writes are checked against the enrich* activites.
+ *
+ * @type ortb2Guard
+ */
 export const ortb2Guard = ortb2GuardFactory();
 
 export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
@@ -66,4 +81,8 @@ export function ortb2FragmentsGuardFactory(guardOrtb2 = ortb2Guard) {
   }
 }
 
+/**
+ * Get a guard for an ortb2Fragments object.
+ * @type {function(*, *): ObjectGuard}
+ */
 export const guardOrtb2Fragments = ortb2FragmentsGuardFactory();

@@ -10,6 +10,7 @@ export function updateRulesFromConfig(registerRule) {
   const rulesByActivity = new Map();
 
   function clearAllRules() {
+    rulesByActivity.clear();
     Array.from(activeRuleHandles.values())
       .flatMap(ruleset => Array.from(ruleset.values()))
       .forEach(fn => fn());
@@ -37,7 +38,7 @@ export function updateRulesFromConfig(registerRule) {
   function setupDefaultRule(activity) {
     if (!defaultRuleHandles.has(activity)) {
       defaultRuleHandles.set(activity, registerRule(activity, RULE_NAME, function () {
-        return {allow: false, reason: 'activity default is false'}
+        return {allow: false, reason: 'activity denied by default'}
       }, Number.POSITIVE_INFINITY))
     }
   }

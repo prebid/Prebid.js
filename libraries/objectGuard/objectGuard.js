@@ -2,15 +2,24 @@ import {isData, objectTransformer} from '../../src/activities/redactor.js';
 import {deepAccess, deepClone, deepEqual, deepSetValue} from '../../src/utils.js';
 
 /**
- * @typedef {Object} Guard
- * @property {{}} obj a view on the guarded object where reads are passed through redaction rules
- * @property {function(): void} verify a method that, when called, verifies that no disallowed writes were done;
- *    and undoes them if they were.
+ * @typedef {Object} ObjectGuard
+ * @property {*} obj a view on the guarded object
+ * @property {function(): void} verify a function that checks for and rolls back disallowed changes to the guarded object
  */
 
 /**
+ * Create a factory function for object guards using the given rules.
+ *
+ * An object guard is a pair {obj, verify} where:
+ *  - `obj` is a view on the guarded object that applies "redact" rules (the same rules used in activites/redactor.js)
+ *  - `verify` is a function that, when called, will check that the guarded object was not modified
+ *   in a way that violates any "write protect" rules, and rolls back any offending changes.
+ *
+ * This is meant to provide sandboxed version of a privacy-sensitive object, where reads
+ * are filtered through redaction rules and writes are checked against write protect rules.
+ *
  * @param {Array[TransformationRule]} rules
- * @return {function(*, ...[*]): Guard}
+ * @return {function(*, ...[*]): ObjectGuard}
  */
 export function objectGuard(rules) {
   const root = {};
@@ -73,6 +82,10 @@ export function objectGuard(rules) {
   };
 }
 
+/**
+ * @param {TransformationRuleDef} ruleDef
+ * @return {TransformationRule}
+ */
 export function writeProtectRule(ruleDef) {
   return Object.assign({
     wp: true,
