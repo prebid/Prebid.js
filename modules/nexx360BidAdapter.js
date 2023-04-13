@@ -79,9 +79,6 @@ function createImpObject(bid) {
       }
     }
   };
-  if (bid.params.customParams) {
-    utils.deepSetValue(imp, 'ext.customParams', bid.params.customParams);
-  }
   enrichImp(imp, bid, floor);
   return imp;
 }
@@ -154,9 +151,6 @@ function getFloor(bid, mediaType) {
 }
 
 function enrichImp(imp, bid, floor) {
-  if (bid.params.customParams) {
-    utils.deepSetValue(imp, 'ext.customParams', bid.params.customParams);
-  }
   if (floor > 0) {
     imp.bidfloor = floor;
     imp.bidfloorcur = 'USD';
@@ -251,6 +245,7 @@ function interpretResponse(response, req) {
 
   let bids = [];
   respBody.seatbid.forEach(seatbid => {
+    const ssp = seatbid.seat;
     bids = [...bids, ...seatbid.bid.map(bid => {
       const response = {
         requestId: bid.impid,
@@ -264,7 +259,10 @@ function interpretResponse(response, req) {
         ttl: 120,
         bidderCode: allowAlternateBidderCodes ? `n360-${bid.ssp}` : 'nexx360',
         mediaType: bid.type === 'banner' ? 'banner' : 'video',
-        meta: { advertiserDomains: bid.adomain },
+        meta: {
+          advertiserDomains: bid.adomain,
+          demandSource: ssp,
+        },
       };
       // if (bid.dealid) response.dealid = bid.dealid;
 
