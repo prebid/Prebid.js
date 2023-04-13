@@ -569,13 +569,13 @@ function bidWonHandler(args) {
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
 }
 
-function auctionEndHandler(args) {
+getGlobal().onEvent(CONSTANTS.EVENTS.AUCTION_END, function(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
-}
+});
 
 function bidTimeoutHandler(args) {
   // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
@@ -657,7 +657,7 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
         bidWonHandler(args);
         break;
       case CONSTANTS.EVENTS.AUCTION_END:
-        auctionEndHandler(args);
+        // auctionEndHandler(args);
         break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
         bidTimeoutHandler(args);
