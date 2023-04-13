@@ -12,6 +12,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'connectId';
 const STORAGE_EXPIRY_DAYS = 14;
@@ -20,7 +21,7 @@ const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
-export const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * @function
