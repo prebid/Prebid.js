@@ -125,29 +125,31 @@ describe.only('33acrossAnalyticsAdapter:', function() {
       }
     });
 
-    context('when the AnalyticsReport is sent successfully to the given endpoint when an auction is complete', function() {
-      it('logs an info message', function() {
-        sandbox.spy(utils, 'logInfo');
+    context('when an auction is complete', function() {
+      context('and the AnalyticsReport is sent successfully to the given endpoint', function() {
+        it('logs an info message', function() {
+          sandbox.spy(utils, 'logInfo');
 
-        this.enableAnalytics({ endpoint: 'foo-endpoint' });
+          this.enableAnalytics({ endpoint: 'foo-endpoint' });
 
-        sandbox.stub(navigator, 'sendBeacon')
-          .withArgs('foo-endpoint', JSON.stringify(getStandardAnalyticsReport()))
-          .returns(true);
+          sandbox.stub(navigator, 'sendBeacon')
+            .withArgs('foo-endpoint', JSON.stringify(getStandardAnalyticsReport()))
+            .returns(true);
 
-        performStandardAuction();
+          performStandardAuction();
 
-        clock.tick(this.defaultTimeout + 1);
+          clock.tick(this.defaultTimeout + 1);
 
-        sinon.assert.calledOnce(navigator.sendBeacon);
-        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+          sinon.assert.calledOnce(navigator.sendBeacon);
+          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+        });
       });
     });
 
     context('when an error occurs while sending the AnalyticsReport', function() {
       it('logs an error', function() {
         sandbox.spy(utils, 'logError');
-        this.enableAnalytics({ endpoint: 'foo-endpoint' });
+        this.enableAnalytics();
 
         sandbox.stub(navigator, 'sendBeacon').returns(false);
         performStandardAuction();
@@ -155,6 +157,23 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
         sinon.assert.calledOnce(utils.logError);
         sinon.assert.calledWith(utils.logError, '33across Analytics: Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
+      });
+    });
+
+    context('when the same bid-won event is received more than once', function() {
+      it('logs a warning message', function() {
+        sandbox.spy(utils, 'logWarn');
+
+        this.enableAnalytics();
+
+        const mockEvents = getMockEvents();
+        const { prebid } = mockEvents;
+        const [ auction ] = prebid;
+
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+
+        sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: transactionId "ef947609-7b55-4420-8407-599760d0e373" already exists')
       });
     });
 
@@ -175,7 +194,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         })
       });
 
-      context('and a timeout config value hasn\'t been given', function() {
+      context('when a timeout config value hasn\'t been given', function() {
         context('and the default timeout has elapsed', function() {
           it('logs an error', function() {
             this.enableAnalytics();
@@ -191,25 +210,27 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         })
       });
 
-      it('logs an info message after successfully submitting the incomplete report', function() {
-        sandbox.spy(utils, 'logInfo');
-        const incompleteAnalyticsReport = Object.assign(
-          getStandardAnalyticsReport(),
-          { bidsWon: [] }
-        );
+      context('and the incomplete report has been sent successfully', function() {
+        it('logs an info message', function() {
+          sandbox.spy(utils, 'logInfo');
+          const incompleteAnalyticsReport = Object.assign(
+            getStandardAnalyticsReport(),
+            { bidsWon: [] }
+          );
 
-        sandbox.stub(navigator, 'sendBeacon')
-          .withArgs('foo-endpoint', JSON.stringify(incompleteAnalyticsReport))
-          .returns(true);
+          sandbox.stub(navigator, 'sendBeacon')
+            .withArgs('foo-endpoint', JSON.stringify(incompleteAnalyticsReport))
+            .returns(true);
 
-        this.enableAnalytics({ endpoint: 'foo-endpoint' });
+          this.enableAnalytics({ endpoint: 'foo-endpoint' });
 
-        performAuctionWithMissingBidWon();
+          performAuctionWithMissingBidWon();
 
-        clock.tick(this.defaultTimeout + 1);
+          clock.tick(this.defaultTimeout + 1);
 
-        sinon.assert.calledOnce(navigator.sendBeacon);
-        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+          sinon.assert.calledOnce(navigator.sendBeacon);
+          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+        });
       });
     });
   });
@@ -240,8 +261,8 @@ describe.only('33acrossAnalyticsAdapter:', function() {
  * BID_TIMEOUT
  */
 
-function performStandardAuction(options) {
-  const mockEvents = getMockEvents(options);
+function performStandardAuction() {
+  const mockEvents = getMockEvents();
   const { prebid, gam } = mockEvents;
 
   for (let auction of prebid) {
@@ -258,8 +279,8 @@ function performStandardAuction(options) {
   }
 }
 
-function performAuctionWithMissingBidWon(options) {
-  const mockEvents = getMockEvents(options);
+function performAuctionWithMissingBidWon() {
+  const mockEvents = getMockEvents();
   let { prebid } = mockEvents;
 
   const [ auction ] = prebid;
@@ -534,7 +555,7 @@ function getStandardAnalyticsReport() {
   };
 }
 
-function getMockEvents(options = {}) {
+function getMockEvents() {
   const ad = '<!-- Creative --><div>ad</div>';
   const auctionId = 'auction-000';
 

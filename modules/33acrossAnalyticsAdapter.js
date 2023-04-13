@@ -97,13 +97,16 @@ class TransactionManager {
   add(transactionId) {
     if (this.#transactions[transactionId]) {
       log.warn(`transactionId "${transactionId}" already exists`);
+
+      return;
     }
+
     this.#transactions[transactionId] = {
       status: 'waiting'
     };
     ++this.unsent;
 
-    this.#restartSendTimeout(); // NOTE: This could be a private method
+    this.#restartSendTimeout();
   }
 
   que(transactionId) {
@@ -320,7 +323,7 @@ function analyticEventHandler({ eventType, args }) {
   log.info(eventType, args);
   switch (eventType) {
     case EVENTS.AUCTION_INIT: // Move these events to top of fn.
-      const transactionManager = locals.transactionManagers[args.auctionId] =
+      const transactionManager = locals.transactionManagers[args.auctionId] ||=
         new TransactionManager({
           timeout: analyticsAdapter.getTimeout(),
           onComplete() {
