@@ -11,7 +11,7 @@ import { logError } from '../src/utils.js';
 
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
-const LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
+const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 
 export const storage = getStorageManager()
 
@@ -57,7 +57,8 @@ export const pairIdSubmodule = {
 
     const configParams = (config && config.params) || {};
     if (configParams && configParams.liveramp) {
-      const liverampValue = pairIdFromLocalStorage(LIVERAMP_PAIR_ID_KEY) || pairIdFromCookie(LIVERAMP_PAIR_ID_KEY)
+      let LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY
+      const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation)
       try {
         const obj = JSON.parse(atob(liverampValue));
         ids = ids.concat(obj.envelope);

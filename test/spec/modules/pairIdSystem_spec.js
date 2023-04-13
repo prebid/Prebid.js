@@ -18,7 +18,7 @@ describe('pairId', function () {
     expect(logErrorStub.calledOnce).to.be.true;
   });
 
-  it('should read pairId from local stroage if exists', function() {
+  it('should read pairId from local storage if exists', function() {
     let pairIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
     sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('pairId').returns(btoa(JSON.stringify(pairIds)));
 
@@ -34,9 +34,9 @@ describe('pairId', function () {
     expect(id).to.be.deep.equal({id: pairIds});
   });
 
-  it('should read pairId from liveramp envelop local storage key if configured', function() {
+  it('should read pairId from default liveramp envelope local storage key if configured', function() {
     let pairIds = ['test-pair-id1', 'test-pair-id2', 'test-pair-id3'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('lr_pairId').returns(btoa(JSON.stringify({'envelope': pairIds})));
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': pairIds})));
     let id = pairIdSubmodule.getId({
       params: {
         liveramp: {}
@@ -44,12 +44,24 @@ describe('pairId', function () {
     expect(id).to.be.deep.equal({id: pairIds})
   })
 
-  it('should read pairId from liveramp envelop cookie entry if configured', function() {
+  it('should read pairId from default liveramp envelope cookie entry if configured', function() {
     let pairIds = ['test-pair-id4', 'test-pair-id5', 'test-pair-id6'];
-    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('lr_pairId').returns(btoa(JSON.stringify({'envelope': pairIds})));
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('_lr_pairId').returns(btoa(JSON.stringify({'envelope': pairIds})));
     let id = pairIdSubmodule.getId({
       params: {
         liveramp: {}
+      }})
+    expect(id).to.be.deep.equal({id: pairIds})
+  })
+
+  it('should read pairId from specified liveramp envelope cookie entry if configured with storageKey', function() {
+    let pairIds = ['test-pair-id7', 'test-pair-id8', 'test-pair-id9'];
+    sandbox.stub(storage, 'getDataFromLocalStorage').withArgs('lr_pairId_custom').returns(btoa(JSON.stringify({'envelope': pairIds})));
+    let id = pairIdSubmodule.getId({
+      params: {
+        liveramp: {
+          storageKey: 'lr_pairId_custom'
+        }
       }})
     expect(id).to.be.deep.equal({id: pairIds})
   })
