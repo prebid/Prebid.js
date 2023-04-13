@@ -160,6 +160,30 @@ describe.only('33acrossAnalyticsAdapter:', function() {
       });
     });
 
+    context('when a bid-won event is received', function() {
+      context('and there\'s no record of that bid being requested', function() {
+        it('logs a warning message', function() {
+          sandbox.spy(utils, 'logWarn');
+
+          this.enableAnalytics();
+
+          const mockEvents = getMockEvents();
+          const { prebid } = mockEvents;
+          const [ auction ] = prebid;
+
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+
+          const fakeBidWonEvent = Object.assign(auction.BID_WON[0], {
+            transactionId: 'foo'
+          })
+
+          events.emit(EVENTS.BID_WON, fakeBidWonEvent);
+
+          sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: transactionId "foo" was not found. Nothing to enqueue.');
+        });
+      });
+    });
+
     context('when the same bid-won event is received more than once', function() {
       it('logs a warning message', function() {
         sandbox.spy(utils, 'logWarn');

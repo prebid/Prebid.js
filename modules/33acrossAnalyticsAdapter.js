@@ -353,7 +353,7 @@ function analyticEventHandler({ eventType, args }) {
 
       locals.analyticsCache.bidsWon.push(bidWon);
 
-      locals.transactionManagers[args.auctionId].que(bidWon.transactionId);
+      locals.transactionManagers[args.auctionId]?.que(bidWon.transactionId);
 
       break;
     case EVENTS.AD_RENDER_SUCCEEDED:
