@@ -122,7 +122,8 @@ describe('objectGuard', () => {
           }
         }
       })
-    })
+    });
+
     it('should undo nested deletes', () => {
       const obj = {outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}};
       const guard = objectGuard([rule])(obj);
@@ -130,6 +131,14 @@ describe('objectGuard', () => {
       delete guard.obj.outer.inner.bar;
       guard.verify();
       expect(obj).to.eql({outer: {inner: {foo: {nested: 'val'}, bar: 'val'}}})
-    })
+    });
+
+    it('should work on null properties', () => {
+      const obj = {foo: null};
+      const guard = objectGuard([rule])(obj);
+      guard.obj.foo = 'denied';
+      guard.verify();
+      expect(obj).to.eql({foo: null});
+    });
   });
 });

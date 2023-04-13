@@ -92,7 +92,7 @@ export function writeProtectRule(ruleDef) {
     run(root, path, object, property, applies) {
       const origHasProp = object && object.hasOwnProperty(property);
       const original = origHasProp ? object[property] : undefined;
-      const origCopy = origHasProp && typeof original === 'object' ? deepClone(original) : original;
+      const origCopy = origHasProp && original != null && typeof original === 'object' ? deepClone(original) : original;
       return function () {
         const object = path == null ? root : deepAccess(root, path);
         const finalHasProp = object && isData(object[property]);
