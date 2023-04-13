@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
-import { logError, logWarn, logInfo } from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import { logError, logWarn, logInfo, deepAccess } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -265,7 +264,7 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
   return {
     adUnits: adUnits.map(unit => parseAdUnit(unit)),
     auctionId,
-    userIds: getGlobal().getUserIds?.() || {}
+    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {}))
   }
 }
 

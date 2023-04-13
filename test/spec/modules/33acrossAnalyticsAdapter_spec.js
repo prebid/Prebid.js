@@ -534,7 +534,7 @@ function getStandardAnalyticsReport() {
         }]
       }],
       auctionId: 'auction-000',
-      userIds: {}
+      userIds: [ '33acrossId' ]
     }],
     bidsWon: [{
       bidder: 'bidder0',
