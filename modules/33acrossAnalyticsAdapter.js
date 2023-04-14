@@ -25,8 +25,8 @@ const log = getLogger();
 /**
  * @typedef {Object} AnalyticsCache
  * @property {string} pid Partner ID
- * @property {Object<string><Auction>} auctions
- * @property {Object<string><Bid[]>} bidsWon
+ * @property {Object<string, Auction>} auctions
+ * @property {Object<string, Bid[]>} bidsWon
  */
 
 /**
@@ -147,7 +147,7 @@ class TransactionManager {
  * initialized during `enableAnalytics`
  */
 export const locals = {
-  /** @type {TransactionManager} */
+  /** @type {Object<string, TransactionManager>} */
   transactionManagers: {},
   /** @type {string} */
   endpoint: undefined,
@@ -192,10 +192,6 @@ function enableAnalyticsWrapper(config = {}) {
   this.getTimeout = () => timeout;
 
   locals.analyticsCache = newAnalyticsCache(pid);
-
-  // const transactionManager = locals.transactionManager =
-  // createTransactionManager({ options.timeout, analyticsCache });
-  // subscribeToGamSlotRenderEvent(transactionManager);
 
   analyticsAdapter.originEnableAnalytics(config);
 }
@@ -260,7 +256,7 @@ function createReportFromCache(analyticsCache) {
   const { pid, bidsWon, auctions } = analyticsCache;
 
   return {
-    siteId: '', // possibly remove, awaiting more information222222
+    siteId: '', // FIXME: possibly remove, awaiting more information222222
     pid,
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
@@ -296,7 +292,7 @@ function parseAdUnit(adUnit, bidsReceived = []) {
   return {
     transactionId,
     adUnitCode: code,
-    slotId: '',
+    slotId: '', // FIXME: slot ID has to be populated from the slotRenderEnded event
     mediaTypes: Object.keys(mediaTypes),
     sizes: sizes.map(size => size.join('x')),
     bids: bidsReceived.map(bid => parseBid(bid)),
@@ -356,7 +352,7 @@ function analyticEventHandler({ eventType, args }) {
 
       break;
     case EVENTS.BID_REQUESTED:
-      // It's probably a better idea to do the add at trasaction manager.
+      // FIXME: It's probably a better idea to do the add at trasaction manager.
       break;
     case EVENTS.AUCTION_END:
       const auction = parseAuction(args);
@@ -373,10 +369,6 @@ function analyticEventHandler({ eventType, args }) {
 
       locals.transactionManagers[args.auctionId]?.que(bidWon.transactionId);
 
-      break;
-    case EVENTS.AD_RENDER_SUCCEEDED:
-      break;
-    case EVENTS.AD_RENDER_FAILED:
       break;
     default:
       break;
