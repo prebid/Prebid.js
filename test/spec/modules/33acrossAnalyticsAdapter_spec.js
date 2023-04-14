@@ -542,12 +542,12 @@ function getStandardAnalyticsReport() {
       status: 'rendered',
       transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
       bidResponse: {
-        cpm: 0,
-        cur: '',
-        cpmOrig: 0,
+        cpm: 1.5,
+        cur: 'USD',
+        cpmOrig: 1.5,
         cpmFloor: 0,
-        mediaType: '',
-        size: ''
+        mediaType: 'banner',
+        size: '300x250'
       }
     }, {
       bidder: 'bidder0',
@@ -555,12 +555,12 @@ function getStandardAnalyticsReport() {
       status: 'rendered',
       transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
       bidResponse: {
-        cpm: 0,
-        cur: '',
-        cpmOrig: 0,
+        cpm: 1.5,
+        cur: 'USD',
+        cpmOrig: 1.5,
         cpmFloor: 0,
-        mediaType: '',
-        size: ''
+        mediaType: 'banner',
+        size: '728x90'
       }
     }, {
       bidder: 'bidder0',
@@ -568,12 +568,12 @@ function getStandardAnalyticsReport() {
       status: 'targetingSet',
       transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
       bidResponse: {
-        cpm: 0,
-        cur: '',
-        cpmOrig: 0,
+        cpm: 1.5,
+        cur: 'USD',
+        cpmOrig: 1.5,
         cpmFloor: 0,
-        mediaType: '',
-        size: ''
+        mediaType: 'banner',
+        size: '728x90'
       }
     }]
   };

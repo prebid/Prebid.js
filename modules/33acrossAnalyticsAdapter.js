@@ -287,7 +287,9 @@ function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
 /**
  * @returns {Bid}
  */
-function parseBid({ auctionId, bidder, source, status, transactionId }) {
+function parseBid(bid) {
+  const { auctionId, bidder, source, status, transactionId, ...args } = bid;
+
   log.warn('parsing bid: source and status may need to be populated by downstream event. bidResponse not yet implemented');
 
   return {
@@ -295,7 +297,7 @@ function parseBid({ auctionId, bidder, source, status, transactionId }) {
     source,
     status,
     transactionId,
-    bidResponse: parseBidResponse(), // Not sending any params
+    bidResponse: parseBidResponse(args)
   }
 }
 
@@ -303,14 +305,16 @@ function parseBid({ auctionId, bidder, source, status, transactionId }) {
  * @returns {BidResponse}
  * @todo implement
  */
-function parseBidResponse(args) {
+function parseBidResponse(params) {
+  const { cpm = 0, currency = '', originalCpm = 0, mediaType = '', size = '' } = params;
+
   return {
-    cpm: 0,
-    cur: '',
-    cpmOrig: 0,
+    cpm,
+    cur: currency,
+    cpmOrig: originalCpm,
     cpmFloor: 0,
-    mediaType: '',
-    size: '',
+    mediaType,
+    size: typeof size === 'string' ? size : ''
   }
 }
 
