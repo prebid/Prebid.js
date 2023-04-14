@@ -1,6 +1,7 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
+import { getGlobal } from '../src/prebidGlobal.js'
 // import { config } from 'src/config'
 
 const BIDDER_CODE = 'nativo'
@@ -13,6 +14,8 @@ const TIME_TO_LIVE = 360
 const SUPPORTED_AD_TYPES = [BANNER]
 const FLOOR_PRICE_CURRENCY = 'USD'
 const PRICE_FLOOR_WILDCARD = '*'
+
+const localPbjsRef = getGlobal()
 
 /**
  * Keep track of bid data by keys
@@ -179,6 +182,10 @@ export const spec = {
 
     // Build basic required QS Params
     let params = [
+      // Prebid version
+      {
+        key: 'ntv_pbv', value: localPbjsRef.version
+      },
       // Prebid request id
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       // Ad unit data
