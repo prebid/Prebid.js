@@ -11,6 +11,17 @@ let defaultAliases = {
 
 let iidValue;
 let firstBidRequest;
+const vsgDomain = window.location.hostname;
+const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
+const removeViewTimeForZeroValue = obj => {
+  // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
+  delete obj.lastViewStarted;
+  // Deleteing totalTimeView incase value is less than 1 sec.
+  if (obj.totalViewTime == 0) {
+    delete obj.totalViewTime;
+  }
+  return obj;
+};
 
 /**
  * Checks if window.location.search(i.e. string of query params on the page URL)
@@ -28,6 +39,7 @@ function hasQueryParam(paramName, values) {
 }
 
 export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterManager} = {}) {
+  if (!(bidderRequest?.src === 's2s')) return;
   let { s2sConfig } = context.s2sBidRequest;
   let owAliases;
   window.pbsLatency = window.pbsLatency || {};
@@ -52,6 +64,10 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
     listOfPubMaticBidders.forEach(function(bidder) {
       if (ortbRequest.ext.prebid.bidderparams[bidder]) {
         ortbRequest.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
+        if (firstBidRequest.bids[0]?.bidViewability) {
+          let vsgObj = getAndParseFromLocalStorage('viewability-data');
+          ortbRequest.ext.prebid.bidderparams[bidder]['bidViewability'] = {'adDomain': removeViewTimeForZeroValue(vsgObj[vsgDomain])};
+        }
       }
     })
   }
@@ -157,6 +173,6 @@ export function setResponseParams(bidResponse, bid, context) {
     // check if bid contains ext prebid bidid and add it to bidObject for logger and tracker purpose
     if (bid.ext && bid.ext.prebid && bid.ext.prebid.bidid) {
       bidResponse.prebidBidId = bid.ext.prebid.bidid;
-    }    
+    }
   }
 }

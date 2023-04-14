@@ -52,6 +52,18 @@ describe('ID5 ID System', function () {
     'signature': ID5_RESPONSE_SIGNATURE,
     'link_type': ID5_RESPONSE_LINK_TYPE
   };
+  const ALLOWED_ID5_VENDOR_DATA = {
+    purpose: {
+      consents: {
+        1: true
+      }
+    },
+    vendor: {
+      consents: {
+        131: true
+      }
+    }
+  }
 
   function getId5FetchConfig(storageName = ID5_STORAGE_NAME, storageType = 'html5') {
     return {
@@ -205,6 +217,37 @@ describe('ID5 ID System', function () {
     });
   });
 
+  describe('Check for valid consent', function() {
+    const dataConsentVals = [
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}, ' no purpose consent'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}, ' no vendor consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}, ' no purpose and vendor consent'],
+      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}, ' undefined purpose consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}], ' undefined vendor consent',
+      [undefined, {vendor: {consents: {131: true}}}, ' undefined purpose'],
+      [{purpose: {consents: {1: true}}}, {vendor: undefined}, ' undefined vendor'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}, ' incorrect vendor consent']
+    ];
+
+    dataConsentVals.forEach(function([purposeConsent, vendorConsent, caseName]) {
+      it('should fail with invalid consent because of ' + caseName, function() {
+        let dataConsent = {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            purposeConsent, vendorConsent
+          }
+        }
+        expect(id5IdSubmodule.getId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.getId(config, dataConsent)).is.eq(undefined);
+
+        let cacheIdObject = 'cacheIdObject';
+        expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.extendId(config, dataConsent, cacheIdObject)).is.eq(cacheIdObject);
+      });
+    });
+  });
+
   describe('Xhr Requests from getId()', function () {
     const responseHeader = {'Content-Type': 'application/json'};
 
@@ -248,7 +291,8 @@ describe('ID5 ID System', function () {
       let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
       let consentData = {
         gdprApplies: true,
-        consentString: 'consentString'
+        consentString: 'consentString',
+        vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
@@ -297,7 +341,8 @@ describe('ID5 ID System', function () {
       let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
       let consentData = {
         gdprApplies: true,
-        consentString: 'consentString'
+        consentString: 'consentString',
+        vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);

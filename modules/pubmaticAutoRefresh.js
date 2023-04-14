@@ -17,7 +17,7 @@
 import { config } from '../src/config.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.json';
-import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotMatchingAdUnitCode } from '../src/utils.js';
+import { mergeDeep, logMessage, logWarn, pick, timestamp, isFn, isArray, isSlotMatchingAdUnitCode, getGptSlotForAdUnitCode } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { find } from '../src/polyfill.js';
 // import find from 'core-js-pure/features/array/find.js';
@@ -97,7 +97,7 @@ let openWrapSetup = {
     }
 
     let isGptSlotPresent = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(gptSlot.getAdUnitPath()));
-    if(!!isGptSlotPresent){
+    if (isGptSlotPresent) {
       if (isFn(PWT.requestBids) == true) {
         PWT.requestBids(
           PWT.generateConfForGPT([gptSlot]),
@@ -109,13 +109,11 @@ let openWrapSetup = {
       } else {
         sendAdserverRequest();
       }
-    }else{
+      // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
+      setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100);
+    } else {
       logMessage(MODULE_NAME, 'Slot not found for', gptSlotName);
     }
-
-    // to make sure we call sendAdserverRequest even when PrebidJS fails to execute bidsBackHandler
-    setTimeout(sendAdserverRequest, pbjsAuctionTimeoutFromLastAuction + 100)
-
   },
 
   gptSlotToPbjsAdUnitMapFunction: function(gptSlotName, gptSlot, pbjsAU) {
@@ -269,6 +267,10 @@ function gptSlotRenderEndedHandler(event) {
 
   // logMessage(MODULE_NAME, 'gptSlotRenderEndedHandler: gptSlotName', gptSlotName);
 
+  // remove KVs related to auto-refresh functionality
+  gptSlot.clearTargeting(DEFAULT_CONFIG.kvKeyForRefresh);
+  gptSlot.clearTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount);
+
   // delete exclusion entry and revaluate
   delete excludedGptSlotNames[gptSlotName];
 
@@ -368,7 +370,24 @@ function setDefaultSlotConfig() {
   ]);
 }
 
-function init() {
+function markRefreshedAdUnit(adUnit) {
+  let slot = getGptSlotForAdUnitCode(adUnit.adUnitId || adUnit.code);
+  if (slot) {
+    let slotRefreshKey = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefresh);
+    let slotRefreshCountKey = slot.getTargeting(DEFAULT_CONFIG.kvKeyForRefreshCount);
+    let isRefreshed = slotRefreshKey && slotRefreshKey[0];
+    let refreshCount = slotRefreshCountKey && slotRefreshCountKey[0];
+    adUnit.pubmaticAutoRefresh = {
+      isRefreshed: !!isRefreshed,
+      refreshCount: refreshCount || 0
+    }
+  } else {
+    logWarn(MODULE_NAME, 'No slot found for : ', (adUnit.adUnitId || adUnit.code));
+  }
+}
+
+function init(adUnits) {
+  adUnits.forEach(adUnit => markRefreshedAdUnit(adUnit))
   if (beforeRequestBidsHandlerAdded === true) {
     // BEFORE_REQUEST_BIDS event listener already added, no need to add again
     return;

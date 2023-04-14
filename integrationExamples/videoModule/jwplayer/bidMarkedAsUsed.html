@@ -76,10 +76,6 @@
           console.log('player setup failed: ', e);
         });
 
-        pbjs.onEvent('videoPlaybackRequest', (e) => {
-          pbjs.requestBids(adUnits);
-        });
-
         pbjs.onEvent('videoBidError', e => {
           console.log('An Ad Error came from a Bid: ', e);
         });
@@ -87,6 +83,8 @@
         pbjs.onEvent('videoBidImpression', e => {
           console.log('An Ad Impression came from a Bid: ', e);
         });
+
+        pbjs.requestBids(adUnits);
       });
     </script>
 </head>

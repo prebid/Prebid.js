@@ -1,4 +1,4 @@
-import {deepSetValue, getDefinedParams, getDNT, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -20,13 +20,9 @@ export const DEFAULT_PROCESSORS = {
     appFpd: fpdFromTopLevelConfig('app'),
     siteFpd: fpdFromTopLevelConfig('site'),
     deviceFpd: fpdFromTopLevelConfig('device'),
-    device: {
-      // sets device w / h / ua / language
-      fn: setDevice
-    },
-    site: {
-      // sets site.domain, page, and ref from refererInfo
-      fn: setSite
+    onlyOneClient: {
+      priority: -99,
+      fn: onlyOneClientSection
     },
     props: {
       // sets request properties id, tmax, test, source.tid
@@ -41,15 +37,7 @@ export const DEFAULT_PROCESSORS = {
         }
         deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
-    },
-    coppa: {
-      fn(ortbRequest) {
-        const coppa = config.getConfig('coppa');
-        if (typeof coppa === 'boolean') {
-          deepSetValue(ortbRequest, 'regs.coppa', coppa ? 1 : 0);
-        }
-      }
-    },
+    }
   },
   [IMP]: {
     fpd: {
@@ -144,33 +132,34 @@ function fpdFromTopLevelConfig(prop) {
     fn(ortbRequest) {
       const data = config.getConfig(prop);
       if (typeof data === 'object') {
-        ortbRequest[prop] = data;
+        ortbRequest[prop] = mergeDeep({}, ortbRequest[prop], data);
       }
     }
   }
 }
 
-export function setDevice(ortbRequest) {
-  ortbRequest.device = Object.assign({
-    w: window.innerWidth,
-    h: window.innerHeight,
-    dnt: getDNT() ? 1 : 0,
-    ua: window.navigator.userAgent,
-    language: window.navigator.language.split('-').shift()
-  }, ortbRequest.device);
-}
+export function onlyOneClientSection(ortbRequest, bidderRequest) {
+  ['dooh', 'app', 'site'].reduce((found, section) => {
+    if (ortbRequest[section] != null && Object.keys(ortbRequest[section]).length > 0) {
+      if (found != null) {
+        logWarn(`ORTB request specifies both '${found}' and '${section}'; dropping the latter.`)
+        delete ortbRequest[section];
+      } else {
+        found = section;
+      }
+    }
+    return found;
+  }, null);
 
-export function setSite(ortbRequest, bidderRequest) {
-  if (bidderRequest.refererInfo) {
-	const { page, domain } = bidderRequest.refererInfo;
-    ortbRequest.site = Object.assign(getDefinedParams(bidderRequest.refererInfo, ['page', 'domain', 'ref']), ortbRequest.site);
-	// We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
-	const ref = window.document.referrer;
-	if(bidderRequest?.src === 's2s') {
-		ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
-		if(ref.length) {
-			ortbRequest.site.ref = ref;
-		}
-	}
+  // PM: We will be overwriting page, domain and ref as mentioned in UOE-8675 for s2s partners
+  // const { page, domain } = bidderRequest.refererInfo;
+  const page = bidderRequest?.refererInfo?.page || '';
+  const domain = bidderRequest?.refererInfo?.domain || '';
+  const ref = window?.document?.referrer;
+  if (bidderRequest?.src === 's2s' && ortbRequest.site) {
+    ortbRequest.site = Object.assign(ortbRequest.site, { page, domain });
+    if (ref.length) {
+      ortbRequest.site.ref = ref;
+    }
   }
 }
