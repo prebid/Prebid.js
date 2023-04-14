@@ -26,7 +26,7 @@ const log = getLogger();
  * @typedef {Object} AnalyticsCache
  * @property {string} pid Partner ID
  * @property {Object<string><Auction>} auctions
- * @property {Bid[]} bidsWon
+ * @property {Object<string><Bid[]>} bidsWon
  */
 
 /**
@@ -252,7 +252,7 @@ function newAnalyticsCache(pid) {
   return {
     pid,
     auctions: {},
-    bidsWon: [],
+    bidsWon: {},
   };
 }
 
@@ -266,20 +266,20 @@ function createReportFromCache(analyticsCache) {
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: Object.values(auctions),
-    bidsWon
+    bidsWon: Object.values(bidsWon).flat()
   }
 }
 
 /**
  * @returns {Auction}
  */
-function parseAuction({ adUnits, auctionId, bidderRequests }) {
+function parseAuction({ adUnits, auctionId, bidderRequests, bidsReceived }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
   }
 
   return {
-    adUnits: adUnits.map(unit => parseAdUnit(unit)),
+    adUnits: adUnits.map(unit => parseAdUnit(unit, bidsReceived)),
     auctionId,
     userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {}))
   }
@@ -288,7 +288,9 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
 /**
  * @returns {AdUnit}
  */
-function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
+function parseAdUnit(adUnit, bidsReceived = []) {
+  const { transactionId, code, slotId, mediaTypes, sizes, bids } = adUnit;
+
   log.warn(`parsing adUnit, slotId not yet implemented`);
 
   return {
@@ -297,18 +299,14 @@ function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
     slotId: '',
     mediaTypes: Object.keys(mediaTypes),
     sizes: sizes.map(size => size.join('x')),
-    bids: bids.map(bid => parseBid(bid)),
+    bids: bidsReceived.map(bid => parseBid(bid)),
   }
 }
 
 /**
  * @returns {Bid}
  */
-function parseBid(bid) {
-  const { auctionId, bidder, source, status, transactionId, ...args } = bid;
-
-  log.warn('parsing bid: source and status may need to be populated by downstream event. bidResponse not yet implemented');
-
+function parseBid({ auctionId, bidder, source, status, transactionId, ...args }) {
   return {
     bidder,
     source,
@@ -322,16 +320,14 @@ function parseBid(bid) {
  * @returns {BidResponse}
  * @todo implement
  */
-function parseBidResponse(params) {
-  const { cpm = 0, currency = '', originalCpm = 0, mediaType = '', size = '' } = params;
-
+function parseBidResponse({ cpm, currency, originalCpm, mediaType, size }) {
   return {
     cpm,
     cur: currency,
     cpmOrig: originalCpm,
     cpmFloor: 0,
     mediaType,
-    size: typeof size === 'string' ? size : ''
+    size
   }
 }
 
@@ -371,8 +367,9 @@ function analyticEventHandler({ eventType, args }) {
     // see also `slotRenderEnded` GAM-event listener
     case EVENTS.BID_WON:
       const bidWon = parseBid(args);
+      const auctionBids = locals.analyticsCache.bidsWon[args.auctionId] ||= [];
 
-      locals.analyticsCache.bidsWon.push(bidWon);
+      auctionBids.push(bidWon);
 
       locals.transactionManagers[args.auctionId]?.que(bidWon.transactionId);
 

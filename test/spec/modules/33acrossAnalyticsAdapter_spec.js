@@ -319,7 +319,7 @@ function getStandardAnalyticsReport() {
     pid: 'test-pid',
     src: 'pbjs',
     analyticsVersion: '1.0.0',
-    pbjsVersion: '$prebid.version$',
+    pbjsVersion: '7.44.0-pre',
     auctions: [{
       adUnits: [{
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
@@ -329,13 +329,29 @@ function getStandardAnalyticsReport() {
         sizes: ['300x250', '300x600'],
         bids: [{
           bidder: 'bidder0',
+          source: 'client',
+          status: 'rendered',
+          transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
           bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
             cpmFloor: 0,
-            mediaType: '',
-            size: ''
+            mediaType: 'banner',
+            size: '300x250'
+          }
+        }, {
+          bidder: 'bidder0',
+          source: 'client',
+          status: 'targetingSet',
+          transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+          bidResponse: {
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
+            cpmFloor: 0,
+            mediaType: 'banner',
+            size: '728x90'
           }
         }]
       }, {
@@ -346,13 +362,29 @@ function getStandardAnalyticsReport() {
         sizes: ['728x90', '970x250'],
         bids: [{
           bidder: 'bidder0',
+          source: 'client',
+          status: 'rendered',
+          transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
           bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
             cpmFloor: 0,
-            mediaType: '',
-            size: ''
+            mediaType: 'banner',
+            size: '300x250'
+          }
+        }, {
+          bidder: 'bidder0',
+          source: 'client',
+          status: 'targetingSet',
+          transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+          bidResponse: {
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
+            cpmFloor: 0,
+            mediaType: 'banner',
+            size: '728x90'
           }
         }]
       }, {
@@ -362,179 +394,35 @@ function getStandardAnalyticsReport() {
         mediaTypes: ['banner'],
         sizes: ['300x250'],
         bids: [{
-          bidder: '33across',
+          bidder: 'bidder0',
+          source: 'client',
+          status: 'rendered',
+          transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
           bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
             cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder1',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder2',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder3',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder4',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder6',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
+            mediaType: 'banner',
+            size: '300x250'
           }
         }, {
           bidder: 'bidder0',
+          source: 'client',
+          status: 'targetingSet',
+          transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
           bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
+            cpm: 1.5,
+            cur: 'USD',
+            cpmOrig: 1.5,
             cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder0Ast',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder8',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder5',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder9',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder10',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder7',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder11',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'bidder12',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'rubicon',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
-          }
-        }, {
-          bidder: 'pulsepoint',
-          bidResponse: {
-            cpm: 0,
-            cur: '',
-            cpmOrig: 0,
-            cpmFloor: 0,
-            mediaType: '',
-            size: ''
+            mediaType: 'banner',
+            size: '728x90'
           }
         }]
       }],
       auctionId: 'auction-000',
-      userIds: [ '33acrossId' ]
+      userIds: ['33acrossId']
     }],
     bidsWon: [{
       bidder: 'bidder0',
@@ -576,7 +464,7 @@ function getStandardAnalyticsReport() {
         size: '728x90'
       }
     }]
-  };
+  }
 }
 
 function getMockEvents() {
