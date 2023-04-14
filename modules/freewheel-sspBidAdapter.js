@@ -350,6 +350,7 @@ export const spec = {
         timestamp: timeInMillis,
         _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
         _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
+        pbjs_version: '$prebid.version$',
         pKey: keyCode
       };
 
@@ -378,6 +379,14 @@ export const spec = {
           requestParams.schain = JSON.stringify(schain);
         } catch (error) {
           logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
+        }
+      }
+
+      if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
+        try {
+          requestParams._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error);
         }
       }
 
@@ -413,6 +422,14 @@ export const spec = {
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
+      }
+
+      // Add video context and placement in requestParams
+      if (currentBidRequest.mediaTypes.video) {
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : 'instream';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : 1;
+        requestParams.video_context = videoContext;
+        requestParams.video_placement = videoPlacement;
       }
 
       return {

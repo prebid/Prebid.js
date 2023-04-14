@@ -23,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
@@ -115,6 +115,12 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   };
 
   appendUserIdsToRequestPayload(data, userId);
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
 
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {

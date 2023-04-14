@@ -356,6 +356,13 @@ describe('smaatoBidAdapterTest', () => {
             keywords: 'a,b',
             gender: 'M',
             yob: 1984
+          },
+          device: {
+            ifa: 'ifa',
+            geo: {
+              lat: 53.5488,
+              lon: 9.9872
+            }
           }
         };
 
@@ -368,6 +375,9 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
         expect(req.site.keywords).to.eql('power tools,drills');
         expect(req.site.publisher.id).to.equal('publisherId');
+        expect(req.device.ifa).to.equal('ifa');
+        expect(req.device.geo.lat).to.equal(53.5488);
+        expect(req.device.geo.lon).to.equal(9.9872);
       });
 
       it('has no user ids', () => {
@@ -1005,6 +1015,28 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.deep.equal(LOCATION);
         expect(req.device.ifa).to.equal(DEVICE_ID);
+      });
+
+      it('when geo and ifa info present and fpd present, then prefer fpd', () => {
+        const ortb2 = {
+          device: {
+            ifa: 'ifa',
+            geo: {
+              lat: 53.5488,
+              lon: 9.9872
+            }
+          }
+        };
+
+        const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
+        inAppBidRequest.params.app = {ifa: DEVICE_ID, geo: LOCATION};
+
+        const reqs = spec.buildRequests([inAppBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.device.geo.lat).to.equal(53.5488);
+        expect(req.device.geo.lon).to.equal(9.9872);
+        expect(req.device.ifa).to.equal('ifa');
       });
 
       it('when ifa is present but geo is missing, then add only ifa to device object', () => {
