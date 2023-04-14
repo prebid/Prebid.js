@@ -1475,7 +1475,7 @@ describe('The Criteo bidding adapter', function () {
             creativecode: 'test-crId',
             width: 728,
             height: 90,
-            dealCode: 'myDealCode',
+            deal: 'myDealCode',
             adomain: ['criteo.com'],
           }],
         },

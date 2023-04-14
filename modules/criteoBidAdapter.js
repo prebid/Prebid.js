@@ -223,7 +223,7 @@ export const spec = {
           creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
-          dealId: slot.dealCode,
+          dealId: slot.deal,
         };
         if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
           const pafResponseMeta = {
