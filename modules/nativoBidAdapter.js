@@ -420,13 +420,6 @@ export const spec = {
   },
 
   /**
-   * Will be called when an adpater timed out for an auction.
-   * Adapter can fire a ajax or pixel call to register a timeout at thier end.
-   * @param {Object} timeoutData - Timeout specific data
-   */
-  onTimeout: function (timeoutData) { },
-
-  /**
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
@@ -439,12 +432,6 @@ export const spec = {
     appendFilterData(advertisersToFilter, ext.advertisersToFilter)
     appendFilterData(campaignsToFilter, ext.campaignsToFilter)
   },
-
-  /**
-   * Will be called when the adserver targeting has been set for a bid from the adapter.
-   * @param {Object} bidder - The bid of which the targeting has been set
-   */
-  onSetTargeting: function (bid) { },
 
   /**
    * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId
