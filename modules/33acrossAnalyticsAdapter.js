@@ -23,6 +23,13 @@ const log = getLogger();
  */
 
 /**
+ * @typedef {Object} AnalyticsCache
+ * @property {string} pid Partner ID
+ * @property {Object<string><Auction>} auctions
+ * @property {Bid[]} bidsWon
+ */
+
+/**
  * @typedef {Object} Auction
  * @property {AdUnit[]} adUnits
  * @property {string} auctionId
@@ -184,7 +191,7 @@ function enableAnalyticsWrapper(config = {}) {
   const timeout = calculateTransactionTimeout(options.timeout);
   this.getTimeout = () => timeout;
 
-  locals.analyticsCache = newAnalyticsReport(pid);
+  locals.analyticsCache = newAnalyticsCache(pid);
 
   // const transactionManager = locals.transactionManager =
   // createTransactionManager({ options.timeout, analyticsCache });
@@ -239,18 +246,28 @@ export default analyticsAdapter;
 
 /**
  * @param {string} pid Partner ID
- * @returns {AnalyticsReport}
+ * @returns {AnalyticsCache}
  */
-function newAnalyticsReport(pid) {
+function newAnalyticsCache(pid) {
+  return {
+    pid,
+    auctions: {},
+    bidsWon: [],
+  };
+}
+
+function createReportFromCache(analyticsCache) {
+  const { pid, bidsWon, auctions } = analyticsCache;
+
   return {
     siteId: '', // possibly remove, awaiting more information222222
     pid,
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [],
-    bidsWon: [],
-  };
+    auctions: Object.values(auctions),
+    bidsWon
+  }
 }
 
 /**
@@ -330,7 +347,8 @@ function analyticEventHandler({ eventType, args }) {
         new TransactionManager({
           timeout: analyticsAdapter.getTimeout(),
           onComplete() {
-            sendReport(locals.analyticsCache, analyticsAdapter.getUrl());
+            sendReport(createReportFromCache(locals.analyticsCache),
+              analyticsAdapter.getUrl());
           }
         });
 
@@ -347,7 +365,7 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.AUCTION_END:
       const auction = parseAuction(args);
 
-      locals.analyticsCache.auctions.push(auction);
+      locals.analyticsCache.auctions[auction.auctionId] = auction;
 
       break;
     // see also `slotRenderEnded` GAM-event listener
