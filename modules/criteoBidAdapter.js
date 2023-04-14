@@ -514,6 +514,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     request.user.uspIab = bidderRequest.uspConsent;
   }
+  if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
+  }
   return request;
 }
 
