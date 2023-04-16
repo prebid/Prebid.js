@@ -3,8 +3,7 @@ import {logMessage} from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
-// TODO: Update with official URL and remove configurability option
-const BIDDER_SERVICE_URL = 'http://127.0.0.1:8080/bid';
+const BIDDER_SERVICE_URL = 'https://bidding-dsp.ad-m.asia/dsp/api/bid/s/s/freepass';
 
 const converter = ortbConverter({
   context: {
