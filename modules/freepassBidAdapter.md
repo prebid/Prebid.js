@@ -3,7 +3,7 @@
 ```
 Module Name: FreePass Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: dev@freepass.jp
+Maintainer: freepass-headerbidding@craid-inc.com
 ```
 
 # Description
