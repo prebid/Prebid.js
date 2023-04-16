@@ -379,46 +379,48 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 
-      it('We perform a test with a multiformat adunit', function() {
-        const multiformatBids = [...sampleBids];
-        multiformatBids[0].mediaTypes = {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          },
-          video: {
-            context: 'outstream',
-            playerSize: [640, 480],
-            mimes: ['video/mp4'],
-            protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-            playbackmethod: [2],
-            skip: 1,
-            playback_method: ['auto_play_sound_off']
-          }
-        };
-        const request = spec.buildRequests(multiformatBids, bidderRequest);
-        const requestContent = request.data;
-        expect(requestContent.imp[0].video.ext.context).to.be.eql('outstream');
-        expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-      });
+      if (FEATURES.VIDEO) {
+        it('We perform a test with a multiformat adunit', function() {
+          const multiformatBids = [...sampleBids];
+          multiformatBids[0].mediaTypes = {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              playbackmethod: [2],
+              skip: 1,
+              playback_method: ['auto_play_sound_off']
+            }
+          };
+          const request = spec.buildRequests(multiformatBids, bidderRequest);
+          const requestContent = request.data;
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('outstream');
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
+        });
 
-      it('We perform a test with a instream adunit', function() {
-        const videoBids = [sampleBids[0]];
-        videoBids[0].mediaTypes = {
-          video: {
-            context: 'instream',
-            playerSize: [640, 480],
-            mimes: ['video/mp4'],
-            protocols: [1, 2, 3, 4, 5, 6],
-            playbackmethod: [2],
-            skip: 1
-          }
-        };
-        const request = spec.buildRequests(videoBids, bidderRequest);
-        const requestContent = request.data;
-        expect(request).to.have.property('method').and.to.equal('POST');
-        expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
-        expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-      })
+        it('We perform a test with a instream adunit', function() {
+          const videoBids = [sampleBids[0]];
+          videoBids[0].mediaTypes = {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+              protocols: [1, 2, 3, 4, 5, 6],
+              playbackmethod: [2],
+              skip: 1
+            }
+          };
+          const request = spec.buildRequests(videoBids, bidderRequest);
+          const requestContent = request.data;
+          expect(request).to.have.property('method').and.to.equal('POST');
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
+        })
+      }
     });
     after(function () {
       sandbox.restore()

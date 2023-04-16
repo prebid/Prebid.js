@@ -28,7 +28,8 @@ describe('vrtcalBidAdapter', function () {
         'bidId': 'bidID0001',
         'bidderRequestId': 'br0001',
         'auctionId': 'auction0001',
-        'userIdAsEids': {}
+        'userIdAsEids': {},
+        timeout: 435
       }
     ];
 
@@ -95,7 +96,7 @@ describe('vrtcalBidAdapter', function () {
               w: 300,
               h: 250,
               crid: 'v2_1064_vrt_vrtcaltestdisplay2_300_250',
-              adomain: ['vrtcal.com']
+              adomain: ['vrtcal.com'],
             }],
             seat: '16'
           }],

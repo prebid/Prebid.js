@@ -69,7 +69,7 @@ function winFallback(fn) {
 
 function getSUA() {
   const hints = config.getConfig('firstPartyData.uaHints');
-  return Array.isArray(hints) && hints.length === 0
+  return !Array.isArray(hints) || hints.length === 0
     ? GreedyPromise.resolve(dep.getLowEntropySUA())
     : dep.getHighEntropySUA(hints);
 }

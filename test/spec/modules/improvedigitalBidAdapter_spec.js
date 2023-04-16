@@ -14,7 +14,6 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -278,12 +277,14 @@ describe('Improve Digital Adapter Tests', function () {
               placementId: 1053688,
             }
           },
-          video: {
-            placement: OUTSTREAM_TYPE,
-            w: 640,
-            h: 480,
-            mimes: ['video/mp4'],
-          },
+          ...(FEATURES.VIDEO && {
+            video: {
+              placement: OUTSTREAM_TYPE,
+              w: 640,
+              h: 480,
+              mimes: ['video/mp4'],
+            }
+          }),
           banner: {
             format: [
               {w: 300, h: 250},
@@ -468,102 +469,104 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].video).to.not.exist;
     });
 
-    it('should add correct placement value for instream and outstream video', function () {
-      let bidRequest = deepClone(simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video).to.not.exist;
+    if (FEATURES.VIDEO) {
+      it('should add correct placement value for instream and outstream video', function () {
+        let bidRequest = deepClone(simpleBidRequest);
+        let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video).to.not.exist;
 
-      bidRequest = deepClone(simpleBidRequest);
-      bidRequest.mediaTypes = {
-        video: {
-          context: 'instream',
-          playerSize: [640, 480]
+        bidRequest = deepClone(simpleBidRequest);
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480]
+          }
+        };
+        payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video.placement).to.exist.and.equal(1);
+        bidRequest.mediaTypes.video.context = 'outstream';
+        payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video.placement).to.exist.and.equal(3);
+      });
+
+      it('should set video params for instream', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        delete bidRequest.mediaTypes.video.playerSize;
+        const videoParams = {
+          mimes: ['video/mp4'],
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30,
+          minduration: 15,
+          maxduration: 60,
+          startdelay: 5,
+          minbitrate: 500,
+          maxbitrate: 2000,
+          w: 1024,
+          h: 640,
+          placement: INSTREAM_TYPE,
+        };
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.equal(videoParams);
+      });
+
+      it('should set video playerSize over video params', () => {
+        const bidRequest = deepClone(instreamBidRequest);
+        bidRequest.params.video = {
+          w: 1024, h: 640
         }
-      };
-      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video.placement).to.exist.and.equal(1);
-      bidRequest.mediaTypes.video.context = 'outstream';
-      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video.placement).to.exist.and.equal(3);
-    });
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.h).equal(480);
+        expect(payload.imp[0].video.w).equal(640);
+      });
 
-    it('should set video params for instream', function() {
-      const bidRequest = deepClone(instreamBidRequest);
-      delete bidRequest.mediaTypes.video.playerSize;
-      const videoParams = {
-        mimes: ['video/mp4'],
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30,
-        minduration: 15,
-        maxduration: 60,
-        startdelay: 5,
-        minbitrate: 500,
-        maxbitrate: 2000,
-        w: 1024,
-        h: 640,
-        placement: INSTREAM_TYPE,
-      };
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video).to.deep.equal(videoParams);
-    });
+      it('should ignore invalid/unexpected video params', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        // 1
+        const videoTest = {
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30
+        }
+        const videoTestInvParam = Object.assign({}, videoTest);
+        videoTestInvParam.blah = 1;
+        bidRequest.params.video = videoTestInvParam;
+        let request = spec.buildRequests([bidRequest], {})[0];
+        let payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.blah).not.to.exist;
+      });
 
-    it('should set video playerSize over video params', () => {
-      const bidRequest = deepClone(instreamBidRequest);
-      bidRequest.params.video = {
-        w: 1024, h: 640
-      }
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.h).equal(480);
-      expect(payload.imp[0].video.w).equal(640);
-    });
-
-    it('should ignore invalid/unexpected video params', function() {
-      const bidRequest = deepClone(instreamBidRequest);
-      // 1
-      const videoTest = {
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30
-      }
-      const videoTestInvParam = Object.assign({}, videoTest);
-      videoTestInvParam.blah = 1;
-      bidRequest.params.video = videoTestInvParam;
-      let request = spec.buildRequests([bidRequest], {})[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.blah).not.to.exist;
-    });
-
-    it('should set video params for outstream', function() {
-      const bidRequest = deepClone(outstreamBidRequest);
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], {})[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video).to.deep.equal({...{
-        mimes: ['video/mp4'],
-        placement: OUTSTREAM_TYPE,
-        w: bidRequest.mediaTypes.video.playerSize[0],
-        h: bidRequest.mediaTypes.video.playerSize[1],
-      },
-      ...videoParams});
-    });
-    //
-    it('should set video params for multi-format', function() {
-      const bidRequest = deepClone(multiFormatBidRequest);
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], {})[0];
-      const payload = JSON.parse(request.data);
-      const testVideoParams = Object.assign({
-        placement: OUTSTREAM_TYPE,
-        w: 640,
-        h: 480,
-        mimes: ['video/mp4'],
-      }, videoParams);
-      expect(payload.imp[0].video).to.deep.equal(testVideoParams);
-    });
+      it('should set video params for outstream', function() {
+        const bidRequest = deepClone(outstreamBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.equal({...{
+          mimes: ['video/mp4'],
+          placement: OUTSTREAM_TYPE,
+          w: bidRequest.mediaTypes.video.playerSize[0],
+          h: bidRequest.mediaTypes.video.playerSize[1],
+        },
+        ...videoParams});
+      });
+      //
+      it('should set video params for multi-format', function() {
+        const bidRequest = deepClone(multiFormatBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        const testVideoParams = Object.assign({
+          placement: OUTSTREAM_TYPE,
+          w: 640,
+          h: 480,
+          mimes: ['video/mp4'],
+        }, videoParams);
+        expect(payload.imp[0].video).to.deep.equal(testVideoParams);
+      });
+    }
 
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
@@ -575,7 +578,15 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: '1111' } };
+      const userIdAsEids = [
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            atype: 1,
+            id: '1111'
+          }]
+        }
+      ];
       const expectedUserObject = { ext: { eids: [{
         source: 'id5-sync.com',
         uids: [{
@@ -584,7 +595,7 @@ describe('Improve Digital Adapter Tests', function () {
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userIdAsEids = createEidsArray(userId);
+      bidRequest.userIdAsEids = userIdAsEids;
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);
@@ -609,7 +620,7 @@ describe('Improve Digital Adapter Tests', function () {
       const request = JSON.parse(requests[0].data);
       expect(request.imp.length).to.equal(2);
       expect(request.imp[0].banner).to.exist;
-      expect(request.imp[1].video).to.exist;
+      if (FEATURES.VIDEO) { expect(request.imp[1].video).to.exist; }
     });
 
     it('should create one request per endpoint in a single request mode', function () {
@@ -623,7 +634,7 @@ describe('Improve Digital Adapter Tests', function () {
       const adServerRequest = JSON.parse(requests[1].data);
       expect(adServerRequest.imp.length).to.equal(2);
       expect(adServerRequest.imp[0].banner).to.exist;
-      expect(adServerRequest.imp[1].video).to.exist;
+      if (FEATURES.VIDEO) { expect(adServerRequest.imp[1].video).to.exist; }
     });
 
     it('should set Prebid sizes in bid request', function () {
@@ -1238,32 +1249,34 @@ describe('Improve Digital Adapter Tests', function () {
     }
 
     // Video
-    it('should return a well-formed instream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
-      expectMatch(bids, expectedBidInstreamVideo);
-    });
+    if (FEATURES.VIDEO) {
+      it('should return a well-formed instream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
+        expectMatch(bids, expectedBidInstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
-      expect(bids[0].renderer).to.exist;
-      expectMatch(bids, expectedBidOutstreamVideo);
-    });
+      it('should return a well-formed outstream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid for multi-format ad unit', function () {
-      const request = makeRequest(multiFormatBidderRequest);
-      const videoResponse = deepClone(serverResponseVideo);
-      let bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].renderer).to.exist;
-      expectMatch(bids, expectedBidOutstreamVideo);
+      it('should return a well-formed outstream video bid for multi-format ad unit', function () {
+        const request = makeRequest(multiFormatBidderRequest);
+        const videoResponse = deepClone(serverResponseVideo);
+        let bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
 
-      videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
-      bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].mediaType).to.equal(VIDEO);
+        videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
 
-      videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
-      bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].mediaType).to.equal(VIDEO);
-    });
+        videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      });
+    }
   });
 
   describe('getUserSyncs', function () {

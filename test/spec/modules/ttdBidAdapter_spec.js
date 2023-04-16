@@ -282,6 +282,21 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
     });
 
+    it('sends rwdd in imp.rwdd if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const gpid = '/1111/home#header';
+      const rwdd = 1;
+      clonedBannerRequests[0].ortb2Imp = {
+        rwdd: rwdd,
+        ext: {
+          gpid: gpid
+        }
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].rwdd).to.be.not.null;
+      expect(requestBody.imp[0].rwdd).to.equal(1);
+    });
+
     it('sends auction id in source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
@@ -489,13 +504,7 @@ describe('ttdBidAdapter', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID,
-        uid2: {
-          id: UID2
-        }
-      };
-      const expectedEids = [
+      clonedBannerRequests[0].userIdAsEids = [
         {
           source: 'adserver.org',
           uids: [
@@ -518,6 +527,7 @@ describe('ttdBidAdapter', function () {
           ]
         }
       ];
+      const expectedEids = clonedBannerRequests[0].userIdAsEids;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
@@ -881,6 +891,14 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.placement).to.equal(3);
+    });
+
+    it('sets plcmt correctly if sent', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.plcmt).to.equal(3);
     });
   });
 

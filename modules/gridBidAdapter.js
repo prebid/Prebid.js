@@ -31,7 +31,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -93,7 +93,7 @@ export const spec = {
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout || config.getConfig('bidderTimeout');
+    const tmax = timeout;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -145,12 +145,18 @@ export const spec = {
         if (ortb2Imp.instl) {
           impObj.instl = ortb2Imp.instl;
         }
-        if (ortb2Imp.ext && ortb2Imp.ext.data) {
-          impObj.ext.data = ortb2Imp.ext.data;
-          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-          } else {
-            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+
+        if (ortb2Imp.ext) {
+          if (ortb2Imp.ext.data) {
+            impObj.ext.data = ortb2Imp.ext.data;
+            if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+              impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+            } else if (ortb2Imp.ext.data.pbadslot) {
+              impObj.ext.gpid = ortb2Imp.ext.data.pbadslot.toString();
+            }
+          }
+          if (ortb2Imp.ext.gpid) {
+            impObj.ext.gpid = ortb2Imp.ext.gpid.toString();
           }
         }
       }

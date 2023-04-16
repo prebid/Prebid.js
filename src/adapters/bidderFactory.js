@@ -1,20 +1,32 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
-import { config } from '../config.js';
-import { createBid } from '../bidfactory.js';
-import { userSync } from '../userSync.js';
-import { nativeBidIsValid } from '../native.js';
-import { isValidVideoBid } from '../video.js';
+import {config} from '../config.js';
+import {createBid} from '../bidfactory.js';
+import {userSync} from '../userSync.js';
+import {nativeBidIsValid} from '../native.js';
+import {isValidVideoBid} from '../video.js';
 import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
-import { ajax } from '../ajax.js';
-import { logWarn, logInfo, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
-import { ADPOD } from '../mediaTypes.js';
-import { getHook, hook } from '../hook.js';
-import { getCoreStorageManager } from '../storageManager.js';
+import {ajax} from '../ajax.js';
+import {
+  deepAccess,
+  delayExecution,
+  flatten,
+  isArray,
+  isPlainObject,
+  logError,
+  logWarn,
+  parseQueryStringParameters,
+  parseSizesInput,
+  timestamp,
+  uniques
+} from '../utils.js';
+import {ADPOD} from '../mediaTypes.js';
+import {getHook, hook} from '../hook.js';
+import {getCoreStorageManager} from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
-import { bidderSettings } from '../bidderSettings.js';
+import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
 
 export const storage = getCoreStorageManager('bidderFactory');
@@ -187,7 +199,7 @@ export function registerBidder(spec) {
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
     getSpec: function() {
-      return Object.freeze(spec);
+      return Object.freeze(Object.assign({}, spec));
     },
     registerSyncs,
     callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
@@ -247,7 +259,9 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest, fledgeAuctionConfig);
+              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+            } else {
+              logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
           });
         },
@@ -463,60 +477,65 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
       syncs.forEach((sync) => {
         userSync.registerSync(sync.type, spec.code, sync.url)
       });
+      userSync.bidderDone(spec.code);
     }
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
-  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
-}, 'addComponentAuction')
+export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+}, 'addComponentAuction');
 
 export function preloadBidderMappingFile(fn, adUnits) {
-  if (!config.getConfig('adpod.brandCategoryExclusion')) {
-    return fn.call(this, adUnits);
-  }
-  let adPodBidders = adUnits
-    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
-    .reduce(flatten, [])
-    .filter(uniques);
+  if (FEATURES.VIDEO) {
+    if (!config.getConfig('adpod.brandCategoryExclusion')) {
+      return fn.call(this, adUnits);
+    }
 
-  adPodBidders.forEach(bidder => {
-    let bidderSpec = adapterManager.getBidAdapter(bidder);
-    if (bidderSpec.getSpec().getMappingFileInfo) {
-      let info = bidderSpec.getSpec().getMappingFileInfo();
-      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
-      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = storage.getDataFromLocalStorage(key);
-      try {
-        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
-        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-          ajax(info.url,
-            {
-              success: (response) => {
-                try {
-                  response = JSON.parse(response);
-                  let mapping = {
-                    lastUpdated: timestamp(),
-                    mapping: response.mapping
+    let adPodBidders = adUnits
+      .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
+      .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
+      .reduce(flatten, [])
+      .filter(uniques);
+
+    adPodBidders.forEach(bidder => {
+      let bidderSpec = adapterManager.getBidAdapter(bidder);
+      if (bidderSpec.getSpec().getMappingFileInfo) {
+        let info = bidderSpec.getSpec().getMappingFileInfo();
+        let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
+        let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
+        let mappingData = storage.getDataFromLocalStorage(key);
+        try {
+          mappingData = mappingData ? JSON.parse(mappingData) : undefined;
+          if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
+            ajax(info.url,
+              {
+                success: (response) => {
+                  try {
+                    response = JSON.parse(response);
+                    let mapping = {
+                      lastUpdated: timestamp(),
+                      mapping: response.mapping
+                    }
+                    storage.setDataInLocalStorage(key, JSON.stringify(mapping));
+                  } catch (error) {
+                    logError(`Failed to parse ${bidder} bidder translation mapping file`);
                   }
-                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-                } catch (error) {
-                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
+                },
+                error: () => {
+                  logError(`Failed to load ${bidder} bidder translation file`)
                 }
               },
-              error: () => {
-                logError(`Failed to load ${bidder} bidder translation file`)
-              }
-            },
-          );
+            );
+          }
+        } catch (error) {
+          logError(`Failed to parse ${bidder} bidder translation mapping file`);
         }
-      } catch (error) {
-        logError(`Failed to parse ${bidder} bidder translation mapping file`);
       }
-    }
-  });
-  fn.call(this, adUnits);
+    });
+    fn.call(this, adUnits);
+  } else {
+    return fn.call(this, adUnits)
+  }
 }
 
 getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
@@ -599,7 +618,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
+  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }

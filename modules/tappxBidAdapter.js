@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -473,7 +474,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = ($$PREBID_GLOBAL$$.version !== null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
 
   return {
     method: 'POST',
