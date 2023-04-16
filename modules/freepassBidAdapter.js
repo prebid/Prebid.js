@@ -80,7 +80,8 @@ export const spec = {
     return {
       method: 'POST',
       url: BIDDER_SERVICE_URL,
-      data
+      data,
+      options: { withCredentials: false }
     };
   },
 
