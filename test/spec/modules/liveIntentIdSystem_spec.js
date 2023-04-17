@@ -323,6 +323,11 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'medianet': 'bar'}, 'medianet': {'id': 'bar'}});
   });
 
+  it('should decode a magnite id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', magnite: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar'}});
+  });
+
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
     expect(result).to.eql({'uid2': {'id': 'bar'}});

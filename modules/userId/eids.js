@@ -164,6 +164,15 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // magnite
+  'magnite': {
+    source: 'rubiconproject.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
