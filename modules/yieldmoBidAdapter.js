@@ -17,7 +17,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
@@ -382,6 +381,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
   const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
+    tmax: bidderRequest.timeout || 400,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
@@ -651,8 +651,8 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId) || [];
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids || [];
   }
 };
 

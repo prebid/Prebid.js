@@ -9,11 +9,12 @@ import { timestamp, parseUrl, triggerPixel, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const gvlid = 91;
 const bidderCode = 'criteo';
-export const storage = getStorageManager({ gvlid: gvlid, moduleName: bidderCode });
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: bidderCode});
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
@@ -102,6 +103,9 @@ function callSyncPixel(domain, pixel) {
               saveOnAllStorages(pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
             }
           }
+        },
+        error: error => {
+          logError(`criteoIdSystem: unable to sync user id`, error);
         }
       },
       undefined,

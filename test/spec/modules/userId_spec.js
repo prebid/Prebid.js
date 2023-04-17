@@ -27,7 +27,7 @@ import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {dmdIdSubmodule} from 'modules/dmdIdSystem.js';
-import {liveIntentIdSubmodule} from 'modules/liveIntentIdSystem.js';
+import {liveIntentIdSubmodule, setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {merkleIdSubmodule} from 'modules/merkleIdSystem.js';
 import {netIdSubmodule} from 'modules/netIdSystem.js';
 import {intentIqIdSubmodule} from 'modules/intentIqIdSystem.js';
@@ -53,6 +53,8 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -147,6 +149,7 @@ describe('User ID', function () {
     hook.ready();
     uninstallGdprEnforcement();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
+    liveIntentIdSubmoduleDoNotFireEvent();
   });
 
   beforeEach(function () {
@@ -164,6 +167,20 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
   });
+
+  describe('GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('are registered when ID submodule is registered', () => {
+      attachIdSystem({name: 'gvlidMock', gvlid: 123});
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    })
+  })
 
   describe('Decorate Ad Units', function () {
     beforeEach(function () {
@@ -422,6 +439,58 @@ describe('User ID', function () {
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    describe('submodule callback', () => {
+      const TEST_KEY = 'testKey';
+
+      function setVal(val) {
+        if (val) {
+          coreStorage.setDataInLocalStorage(TEST_KEY, val);
+          coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
+        } else {
+          coreStorage.removeDataFromLocalStorage(TEST_KEY);
+          coreStorage.removeDataFromLocalStorage(TEST_KEY + '_exp');
+        }
+      }
+      afterEach(() => {
+        setVal(null);
+      })
+
+      it('should be able to re-read ID changes', (done) => {
+        setVal(null);
+        init(config);
+        setSubmoduleRegistry([{
+          name: 'mockId',
+          getId: function (_1, _2, storedId) {
+            expect(storedId).to.not.exist;
+            setVal('laterValue');
+            return {
+              callback(_, readId) {
+                expect(readId()).to.eql('laterValue');
+                done();
+              }
+            }
+          },
+          decode(d) {
+            return d
+          }
+        }]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [
+              {
+                name: 'mockId',
+                storage: {
+                  type: 'html5',
+                  name: TEST_KEY
+                }
+              }
+            ]
+          }
+        });
       });
     });
 
@@ -897,7 +966,7 @@ describe('User ID', function () {
             storage: {name: 'intentIqId', type: 'cookie'}
           }, {
             name: 'hadronId',
-            storage: {name: 'hadronId', type: 'cookie'}
+            storage: {name: 'hadronId', type: 'html5'}
           }, {
             name: 'zeotapIdPlus'
           }, {
@@ -1298,7 +1367,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.amxId');
               expect(bid.userId.amxId).to.equal('test_amxid_id');
               expect(bid.userIdAsEids[0]).to.deep.equal({
-                source: 'amxrtb.com',
+                source: 'amxdt.net',
                 uids: [{
                   id: 'test_amxid_id',
                   atype: 1,
@@ -1872,8 +1941,8 @@ describe('User ID', function () {
 
       it('test hook from hadronId html5', function (done) {
         // simulate existing browser local storage values
-        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'random-ls-identifier'}));
-        localStorage.setItem('hadronId_exp', '');
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
 
         init(config);
         setSubmoduleRegistry([hadronIdSubmodule]);
@@ -1883,15 +1952,15 @@ describe('User ID', function () {
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('random-ls-identifier');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               expect(bid.userIdAsEids[0]).to.deep.equal({
                 source: 'audigent.com',
-                uids: [{id: 'random-ls-identifier', atype: 1}]
+                uids: [{id: 'testHadronId1', atype: 1}]
               });
             });
           });
           localStorage.removeItem('hadronId');
-          localStorage.removeItem('hadronId_exp', '');
+          localStorage.removeItem('hadronId_exp');
           done();
         }, {adUnits});
       });
@@ -2125,7 +2194,9 @@ describe('User ID', function () {
         coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
-        coreStorage.setCookie('hadronId', JSON.stringify({'hadronId': 'testHadronId'}), (new Date(Date.now() + 5000).toUTCString()));
+        // hadronId only supports localStorage
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
         coreStorage.setCookie('storage_criteo', JSON.stringify({'criteoId': 'test_bidid'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('mwol', JSON.stringify({eid: 'XX-YY-ZZ-123'}), (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('uid2id', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
@@ -2149,7 +2220,7 @@ describe('User ID', function () {
           ['netId', 'netId', 'cookie'],
           ['intentIqId', 'intentIqId', 'cookie'],
           ['zeotapIdPlus', 'IDP', 'cookie'],
-          ['hadronId', 'hadronId', 'cookie'],
+          ['hadronId', 'hadronId', 'html5'],
           ['criteo', 'storage_criteo', 'cookie'],
           ['mwOpenLinkId', 'mwol', 'cookie'],
           ['tapadId', 'tapad_id', 'cookie'],
@@ -2192,7 +2263,7 @@ describe('User ID', function () {
               expect(bid.userId.IDP).to.equal('zeotapId');
               // also check that hadronId id was copied to bid
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('testHadronId');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               // also check that criteo id was copied to bid
               expect(bid).to.have.deep.nested.property('userId.criteoId');
               expect(bid.userId.criteoId).to.equal('test_bidid');
@@ -2231,7 +2302,8 @@ describe('User ID', function () {
           coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
-          coreStorage.setCookie('hadronId', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('hadronId');
+          localStorage.removeItem('hadronId_exp');
           coreStorage.setCookie('storage_criteo', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('mwol', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('uid2id', '', EXPIRED_COOKIE_DATE);
@@ -2284,7 +2356,8 @@ describe('User ID', function () {
         coreStorage.setCookie('netId', JSON.stringify({'netId': 'testnetId'}), new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('intentIqId', 'testintentIqId', (new Date(Date.now() + 5000).toUTCString()));
         coreStorage.setCookie('IDP', btoa(JSON.stringify('zeotapId')), (new Date(Date.now() + 5000).toUTCString()));
-        coreStorage.setCookie('hadronId', JSON.stringify({'hadronId': 'testHadronId'}), (new Date(Date.now() + 5000).toUTCString()));
+        localStorage.setItem('hadronId', JSON.stringify({'hadronId': 'testHadronId1'}));
+        localStorage.setItem('hadronId_exp', (new Date(Date.now() + 5000)).toUTCString());
         coreStorage.setCookie('admixerId', 'testadmixerId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('deepintentId', 'testdeepintentId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
@@ -2320,7 +2393,7 @@ describe('User ID', function () {
             }, {
               name: 'zeotapIdPlus'
             }, {
-              name: 'hadronId', storage: {name: 'hadronId', type: 'cookie'}
+              name: 'hadronId', storage: {name: 'hadronId', type: 'html5'}
             }, {
               name: 'admixerId', storage: {name: 'admixerId', type: 'cookie'}
             }, {
@@ -2388,7 +2461,7 @@ describe('User ID', function () {
               expect(bid.userId.IDP).to.equal('zeotapId');
               // also check that hadronId id data was copied to bid
               expect(bid).to.have.deep.nested.property('userId.hadronId');
-              expect(bid.userId.hadronId).to.equal('testHadronId');
+              expect(bid.userId.hadronId).to.equal('testHadronId1');
               expect(bid.userId.uid2).to.deep.equal({
                 id: 'Sample_AD_Token'
               });
@@ -2420,7 +2493,8 @@ describe('User ID', function () {
           coreStorage.setCookie('netId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('intentIqId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('IDP', '', EXPIRED_COOKIE_DATE);
-          coreStorage.setCookie('hadronId', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('hadronId');
+          localStorage.removeItem('hadronId_exp');
           coreStorage.setCookie('dmdId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('admixerId', '', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('deepintentId', '', EXPIRED_COOKIE_DATE);

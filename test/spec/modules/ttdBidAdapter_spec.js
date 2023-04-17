@@ -81,6 +81,18 @@ describe('ttdBidAdapter', function () {
         delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
+
+      it('should return false if bidfloor is passed incorrectly', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 'invalid bidfloor';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true if bidfloor is passed correctly as a float', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 3.01;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
     });
 
     describe('banner', function () {
@@ -268,6 +280,21 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].ext).to.be.not.null;
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
+    });
+
+    it('sends rwdd in imp.rwdd if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const gpid = '/1111/home#header';
+      const rwdd = 1;
+      clonedBannerRequests[0].ortb2Imp = {
+        rwdd: rwdd,
+        ext: {
+          gpid: gpid
+        }
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].rwdd).to.be.not.null;
+      expect(requestBody.imp[0].rwdd).to.equal(1);
     });
 
     it('sends auction id in source.tid', function () {
@@ -477,13 +504,7 @@ describe('ttdBidAdapter', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID,
-        uid2: {
-          id: UID2
-        }
-      };
-      const expectedEids = [
+      clonedBannerRequests[0].userIdAsEids = [
         {
           source: 'adserver.org',
           uids: [
@@ -506,6 +527,7 @@ describe('ttdBidAdapter', function () {
           ]
         }
       ];
+      const expectedEids = clonedBannerRequests[0].userIdAsEids;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
@@ -534,6 +556,17 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.page).to.equal('https://page.example.com/here.html');
       expect(requestBody.site.ref).to.equal('https://ref.example.com');
       expect(requestBody.site.keywords).to.equal('power tools, drills');
+    });
+
+    it('should fallback to floor module if no bidfloor is sent ', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const bidfloor = 5.00;
+      clonedBannerRequests[0].getFloor = () => {
+        return { currency: 'USD', floor: bidfloor };
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.imp[0].bidfloor).to.equal(bidfloor);
     });
   });
 
@@ -858,6 +891,14 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.placement).to.equal(3);
+    });
+
+    it('sets plcmt correctly if sent', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.plcmt).to.equal(3);
     });
   });
 
