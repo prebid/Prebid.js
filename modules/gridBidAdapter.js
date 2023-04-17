@@ -31,7 +31,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -83,7 +83,6 @@ export const spec = {
       return null;
     }
     let pageKeywords = null;
-    let jwpseg = null;
     let content = null;
     let schain = null;
     let userIdAsEids = null;
@@ -91,11 +90,10 @@ export const spec = {
     let userExt = null;
     let endpoint = null;
     let forceBidderName = false;
-    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo} = bidderRequest || {};
+    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const bidderTimeout = config.getConfig('bidderTimeout') || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -129,16 +127,11 @@ export const spec = {
         endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
       const { params: { uid, keywords, forceBidder, multiRequest }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
-      const { pubdata, secid, pubid, source, content: bidParamsContent } = bid.params;
+      const { secid, pubid, source, content: bidParamsContent } = bid.params;
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
-      if (jwTargeting) {
-        if (!jwpseg && jwTargeting.segments) {
-          jwpseg = jwTargeting.segments;
-        }
-        if (!content && jwTargeting.content) {
-          content = jwTargeting.content;
-        }
+      if (jwTargeting && !content && jwTargeting.content) {
+        content = jwTargeting.content;
       }
 
       let impObj = {
@@ -152,12 +145,18 @@ export const spec = {
         if (ortb2Imp.instl) {
           impObj.instl = ortb2Imp.instl;
         }
-        if (ortb2Imp.ext && ortb2Imp.ext.data) {
-          impObj.ext.data = ortb2Imp.ext.data;
-          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-          } else {
-            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+
+        if (ortb2Imp.ext) {
+          if (ortb2Imp.ext.data) {
+            impObj.ext.data = ortb2Imp.ext.data;
+            if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+              impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+            } else if (ortb2Imp.ext.data.pbadslot) {
+              impObj.ext.gpid = ortb2Imp.ext.data.pbadslot.toString();
+            }
+          }
+          if (ortb2Imp.ext.gpid) {
+            impObj.ext.gpid = ortb2Imp.ext.gpid.toString();
           }
         }
       }
@@ -211,21 +210,10 @@ export const spec = {
             request.site.publisher = { id: pubid };
           }
 
-          const reqJwpseg = (pubdata && pubdata.jwpseg) || (jwTargeting && jwTargeting.segments);
-
           const siteContent = bidParamsContent || (jwTargeting && jwTargeting.content);
 
           if (siteContent) {
             request.site.content = siteContent;
-          }
-
-          if (reqJwpseg && reqJwpseg.length) {
-            request.user = {
-              data: [{
-                name: 'iow_labs_pub_data',
-                segment: segmentProcessing(reqJwpseg, 'jwpseg'),
-              }]
-            };
           }
 
           requests.push(request);
@@ -275,26 +263,16 @@ export const spec = {
       mainRequest.site.content = content;
     }
 
-    if (jwpseg && jwpseg.length) {
-      mainRequest.user = {
-        data: [{
-          name: 'iow_labs_pub_data',
-          segment: segmentProcessing(jwpseg, 'jwpseg'),
-        }]
-      };
-    }
-
     [...requests, mainRequest].forEach((request) => {
       if (!request) {
         return;
       }
 
+      user = null;
+
       const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
       if (ortb2UserData && ortb2UserData.length) {
-        user = request.user || { data: [] };
-        user = mergeDeep(user, {
-          data: [...ortb2UserData]
-        });
+        user = { data: [...ortb2UserData] };
       }
 
       if (gdprConsent && gdprConsent.consentString) {
@@ -368,10 +346,21 @@ export const spec = {
           }
         };
       }
+      const ortb2Regs = deepAccess(bidderRequest, 'ortb2.regs') || {};
+      if (gppConsent || ortb2Regs?.gpp) {
+        const gpp = {
+          gpp: gppConsent?.gppString ?? ortb2Regs?.gpp,
+          gpp_sid: gppConsent?.applicableSections ?? ortb2Regs?.gpp_sid
+        };
+        request.regs = mergeDeep(request?.regs ?? {}, gpp);
+      }
 
       if (uspConsent) {
         if (!request.regs) {
           request.regs = {ext: {}};
+        }
+        if (!request.regs.ext) {
+          request.regs.ext = {};
         }
         request.regs.ext.us_privacy = uspConsent;
       }
@@ -647,22 +636,6 @@ function makeNewUserIdInFPDStorage() {
 
 function getUserIdFromFPDStorage() {
   return storage.getDataFromLocalStorage(USER_ID_KEY) || makeNewUserIdInFPDStorage();
-}
-
-function segmentProcessing(segment, forceSegName) {
-  return segment
-    .map((seg) => {
-      const value = seg && (seg.id || seg);
-      if (typeof value === 'string' || typeof value === 'number') {
-        return {
-          value: value.toString(),
-          ...(forceSegName && { name: forceSegName }),
-          ...(seg.name && { name: seg.name }),
-        };
-      }
-      return null;
-    })
-    .filter((seg) => !!seg);
 }
 
 function reformatKeywords(pageKeywords) {

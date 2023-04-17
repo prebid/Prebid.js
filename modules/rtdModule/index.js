@@ -163,9 +163,11 @@ import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager, {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -188,6 +190,7 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
   return function detach() {
     const idx = registeredSubModules.indexOf(submodule)
     if (idx >= 0) {
@@ -246,6 +249,7 @@ function getConsentData() {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
+    gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
   }
 }

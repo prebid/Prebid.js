@@ -11,12 +11,12 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 91;
-export const ADAPTER_VERSION = 34;
+export const ADAPTER_VERSION = 35;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
 export const PROFILE_ID_PUBLISHERTAG = 185;
-export const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
 /*
@@ -27,16 +27,13 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 132;
+export const FAST_BID_VERSION_CURRENT = 135;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
-const SID_COOKIE_NAME = 'cto_sid';
-const IDCPY_COOKIE_NAME = 'cto_idcpy';
-const LWID_COOKIE_NAME = 'cto_lwid';
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
@@ -78,15 +75,12 @@ export const spec = {
       const jsonHash = {
         bundle: readFromAllStorages(BUNDLE_COOKIE_NAME),
         cw: storage.cookiesAreEnabled(),
-        localWebId: readFromAllStorages(LWID_COOKIE_NAME),
         lsw: storage.localStorageIsEnabled(),
         optoutCookie: readFromAllStorages(OPTOUT_COOKIE_NAME),
         origin: origin,
         requestId: requestId,
-        secureIdCookie: readFromAllStorages(SID_COOKIE_NAME),
         tld: refererInfo.domain,
         topUrl: refererInfo.domain,
-        uid: readFromAllStorages(IDCPY_COOKIE_NAME),
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
 
@@ -106,25 +100,12 @@ export const spec = {
         const response = event.data;
 
         if (response.optout) {
-          deleteFromAllStorages(IDCPY_COOKIE_NAME);
-          deleteFromAllStorages(SID_COOKIE_NAME);
           deleteFromAllStorages(BUNDLE_COOKIE_NAME);
-          deleteFromAllStorages(LWID_COOKIE_NAME);
 
           saveOnAllStorages(OPTOUT_COOKIE_NAME, true, OPTOUT_RETENTION_TIME_HOUR);
         } else {
-          if (response.uid) {
-            saveOnAllStorages(IDCPY_COOKIE_NAME, response.uid, GUID_RETENTION_TIME_HOUR);
-          }
-
           if (response.bundle) {
             saveOnAllStorages(BUNDLE_COOKIE_NAME, response.bundle, GUID_RETENTION_TIME_HOUR);
-          }
-
-          if (response.removeSid) {
-            deleteFromAllStorages(SID_COOKIE_NAME);
-          } else if (response.sid) {
-            saveOnAllStorages(SID_COOKIE_NAME, response.sid, GUID_RETENTION_TIME_HOUR);
           }
         }
       }, true);
@@ -242,7 +223,7 @@ export const spec = {
           creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
-          dealId: slot.dealCode,
+          dealId: slot.deal,
         };
         if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
           const pafResponseMeta = {
@@ -252,7 +233,7 @@ export const spec = {
           bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
         }
         if (slot.adomain) {
-          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
+          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
@@ -407,16 +388,6 @@ function buildCdbUrl(context) {
     url += `&optout=1`;
   }
 
-  const sid = readFromAllStorages(SID_COOKIE_NAME);
-  if (sid) {
-    url += `&sid=${sid}`;
-  }
-
-  const idcpy = readFromAllStorages(IDCPY_COOKIE_NAME);
-  if (idcpy) {
-    url += `&idcpy=${idcpy}`;
-  }
-
   return url;
 }
 
@@ -447,7 +418,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       ext: bidderRequest.publisherExt,
     },
     regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
+      gpp: bidderRequest.ortb2?.regs?.gpp,
+      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
       networkId = bidRequest.params.networkId || networkId;
@@ -523,9 +496,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
     };
   };
-  request.user = {
-    ext: bidderRequest.userExt
-  };
+  request.user = bidderRequest.ortb2?.user || {};
+  request.site = bidderRequest.ortb2?.site || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -541,6 +513,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     request.user.uspIab = bidderRequest.uspConsent;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
   }
   return request;
 }

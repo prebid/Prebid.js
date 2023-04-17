@@ -21,6 +21,8 @@ import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
+import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1602,12 +1604,15 @@ describe('adapterManager tests', function () {
       });
 
       it('should add alias to registry when original adapter is using bidderFactory', function() {
-        let thisSpec = Object.assign(spec, { supportedMediaTypes: ['video'] });
+        const mediaType = FEATURES.VIDEO ? 'video' : 'banner'
+        let thisSpec = Object.assign(spec, { supportedMediaTypes: [mediaType] });
         registerBidder(thisSpec);
         const alias = 'aliasBidder';
         adapterManager.aliasBidAdapter(CODE, alias);
         expect(adapterManager.bidderRegistry).to.have.property(alias);
-        expect(adapterManager.videoAdapters).to.include(alias);
+        if (FEATURES.VIDEO) {
+          expect(adapterManager.videoAdapters).to.include(alias);
+        }
       });
     });
 
@@ -1757,6 +1762,153 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
+    it('should merge in bid-level ortb2Imp with adUnit-level ortb2Imp', () => {
+      const adUnit = {
+        ...adUnits[1],
+        ortb2Imp: {oneone: {twoone: 'val'}, onetwo: 'val'}
+      };
+      adUnit.bids[0].ortb2Imp = {oneone: {twotwo: 'val'}, onethree: 'val', onetwo: 'val2'};
+      const reqs = Object.fromEntries(
+        adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})
+          .map((req) => [req.bidderCode, req])
+      );
+      sinon.assert.match(reqs[adUnit.bids[0].bidder].bids[0].ortb2Imp, {
+        oneone: {
+          twoone: 'val',
+          twotwo: 'val',
+        },
+        onetwo: 'val2',
+        onethree: 'val'
+      })
+      sinon.assert.match(reqs[adUnit.bids[1].bidder].bids[0].ortb2Imp, adUnit.ortb2Imp)
+    })
+
+    it('picks ortb2Imp from "module" when only one s2sConfig is set', () => {
+      config.setConfig({
+        s2sConfig: [
+          {
+            enabled: true,
+            adapter: 'mockS2S1',
+          }
+        ]
+      });
+      const adUnit = {
+        code: 'mockau',
+        ortb2Imp: {
+          p1: 'adUnit'
+        },
+        bids: [
+          {
+            module: 'pbsBidAdapter',
+            ortb2Imp: {
+              p2: 'module'
+            }
+          }
+        ]
+      };
+      const req = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {})[0];
+      [req.adUnitsS2SCopy[0].ortb2Imp, req.bids[0].ortb2Imp].forEach(imp => {
+        sinon.assert.match(imp, {
+          p1: 'adUnit',
+          p2: 'module'
+        });
+      });
+    });
+
+    describe('with named s2s configs', () => {
+      beforeEach(() => {
+        config.setConfig({
+          s2sConfig: [
+            {
+              enabled: true,
+              adapter: 'mockS2S1',
+              configName: 'one',
+              bidders: ['A']
+            },
+            {
+              enabled: true,
+              adapter: 'mockS2S2',
+              configName: 'two',
+              bidders: ['B']
+            }
+          ]
+        })
+      });
+
+      it('generates requests for "module" bids', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'two'},
+              ortb2Imp: {
+                p2: 'two'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        [reqs[0].adUnitsS2SCopy[0].ortb2Imp, reqs[0].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'one'
+          })
+        });
+        [reqs[1].adUnitsS2SCopy[0].ortb2Imp, reqs[1].bids[0].ortb2Imp].forEach(imp => {
+          sinon.assert.match(imp, {
+            p1: 'adUnit',
+            p2: 'two'
+          })
+        });
+      });
+
+      it('applies module-level ortb2Imp to "normal" s2s requests', () => {
+        const adUnit = {
+          code: 'mockau',
+          ortb2Imp: {
+            p1: 'adUnit'
+          },
+          bids: [
+            {
+              module: 'pbsBidAdapter',
+              params: {configName: 'one'},
+              ortb2Imp: {
+                p2: 'one'
+              }
+            },
+            {
+              bidder: 'A',
+              ortb2Imp: {
+                p3: 'bidderA'
+              }
+            }
+          ]
+        };
+        const reqs = adapterManager.makeBidRequests([adUnit], 123, 'auction-id', 123, [], {});
+        expect(reqs.length).to.equal(1);
+        sinon.assert.match(reqs[0].adUnitsS2SCopy[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one'
+        })
+        sinon.assert.match(reqs[0].bids[0].ortb2Imp, {
+          p1: 'adUnit',
+          p2: 'one',
+          p3: 'bidderA'
+        })
+      });
+    });
+
     describe('when calling the s2s adapter', () => {
       beforeEach(() => {
         config.setConfig({
@@ -1813,64 +1965,6 @@ describe('adapterManager tests', function () {
           []
         );
         sinon.assert.calledOnce(utils.shuffle);
-      });
-    });
-
-    describe('fledgeEnabled', function () {
-      const origRunAdAuction = navigator?.runAdAuction;
-      before(function () {
-        // navigator.runAdAuction doesn't exist, so we can't stub it normally with
-        // sinon.stub(navigator, 'runAdAuction') or something
-        navigator.runAdAuction = sinon.stub();
-      });
-
-      after(function() {
-        navigator.runAdAuction = origRunAdAuction;
-      })
-
-      afterEach(function () {
-        config.resetConfig();
-      });
-
-      it('should set fledgeEnabled correctly per bidder', function () {
-        config.setConfig({bidderSequence: 'fixed'})
-        config.setBidderConfig({
-          bidders: ['appnexus'],
-          config: {
-            fledgeEnabled: true,
-          }
-        });
-
-        const adUnits = [{
-          'code': '/19968336/header-bid-tag1',
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[728, 90]]
-            },
-          },
-          'bids': [
-            {
-              'bidder': 'appnexus',
-            },
-            {
-              'bidder': 'rubicon',
-            },
-          ]
-        }];
-
-        const bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
-
-        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-        expect(bidRequests[0].fledgeEnabled).to.be.true;
-
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-        expect(bidRequests[1].fledgeEnabled).to.be.undefined;
       });
     });
 
@@ -2644,5 +2738,24 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(del2, [bidderRequests[1]]);
       })
     })
+  });
+
+  describe('registers GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('for bid adapters', () => {
+      adapterManager.registerBidAdapter({getSpec: () => ({gvlid: 123}), callBids: sinon.stub()}, 'mock');
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_BIDDER, 'mock', 123);
+    });
+
+    it('for analytics adapters', () => {
+      adapterManager.registerAnalyticsAdapter({adapter: {enableAnalytics: sinon.stub()}, code: 'mock', gvlid: 123});
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_ANALYTICS, 'mock', 123);
+    });
   });
 });

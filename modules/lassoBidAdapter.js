@@ -40,14 +40,14 @@ export const spec = {
         auctionId: bidRequest.auctionId,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.transactionId,
-        device: JSON.stringify(getDeviceData()),
+        device: encodeURIComponent(JSON.stringify(getDeviceData())),
         sizes,
         aimXR,
         uid: '$UID',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 2,
+        version: 3,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined
       }
