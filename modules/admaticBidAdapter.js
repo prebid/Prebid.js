@@ -74,7 +74,7 @@ export const spec = {
           break;
       }
 
-      return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
+      return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
 
