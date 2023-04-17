@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 import { expect } from 'chai';
 
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
@@ -340,7 +339,7 @@ function getStandardAnalyticsReport() {
             cpm: 1.5,
             cur: 'USD',
             cpmOrig: 1.5,
-            cpmFloor: 0,
+            cpmFloor: 1,
             mediaType: 'banner',
             size: '300x250'
           }
@@ -360,7 +359,7 @@ function getStandardAnalyticsReport() {
             cpm: 1.5,
             cur: 'USD',
             cpmOrig: 1.5,
-            cpmFloor: 0,
+            cpmFloor: 1,
             mediaType: 'banner',
             size: '728x90'
           }
@@ -385,7 +384,7 @@ function getStandardAnalyticsReport() {
         cpm: 1.5,
         cur: 'USD',
         cpmOrig: 1.5,
-        cpmFloor: 0,
+        cpmFloor: 1,
         mediaType: 'banner',
         size: '300x250'
       }
@@ -398,7 +397,7 @@ function getStandardAnalyticsReport() {
         cpm: 1.5,
         cur: 'USD',
         cpmOrig: 1.5,
-        cpmFloor: 0,
+        cpmFloor: 1,
         mediaType: 'banner',
         size: '728x90'
       }
@@ -411,7 +410,7 @@ function getStandardAnalyticsReport() {
         cpm: 1.5,
         cur: 'USD',
         cpmOrig: 1.5,
-        cpmFloor: 0,
+        cpmFloor: 1,
         mediaType: 'banner',
         size: '728x90'
       }
@@ -1092,6 +1091,9 @@ function getMockEvents() {
         adapterCode: 'bidder0',
         originalCpm: 1.5,
         originalCurrency: 'USD',
+        floorData: {
+          cpmAfterAdjustments: 1
+        },
         bidder: 'bidder0',
         timeToRespond: 341,
         pbLg: '1.50',
@@ -1132,6 +1134,9 @@ function getMockEvents() {
         adapterCode: 'bidder0',
         originalCpm: 1.5,
         originalCurrency: 'USD',
+        floorData: {
+          cpmAfterAdjustments: 1
+        },
         responseTimestamp: 1680279733305,
         requestTimestamp: 1680279732963,
         bidder: 'bidder0',
@@ -1169,6 +1174,9 @@ function getMockEvents() {
         adapterCode: 'bidder0',
         originalCpm: 1.5,
         originalCurrency: 'USD',
+        floorData: {
+          cpmAfterAdjustments: 1
+        },
         responseTimestamp: 1680279733304,
         requestTimestamp: 1680279732963,
         bidder: 'bidder0',
@@ -1221,6 +1229,9 @@ function getMockEvents() {
         adapterCode: 'bidder0',
         originalCpm: 1.5,
         originalCurrency: 'USD',
+        floorData: {
+          cpmAfterAdjustments: 1
+        },
         responseTimestamp: 1680279733304,
         requestTimestamp: 1680279732963,
         bidder: 'bidder0',
@@ -1273,6 +1284,9 @@ function getMockEvents() {
         adapterCode: 'bidder0',
         originalCpm: 1.5,
         originalCurrency: 'USD',
+        floorData: {
+          cpmAfterAdjustments: 1
+        },
         responseTimestamp: 1680279733305,
         requestTimestamp: 1680279732963,
         bidder: 'bidder0',
@@ -1896,6 +1910,9 @@ function getMockEvents() {
             adapterCode: 'bidder0',
             originalCpm: 1.5,
             originalCurrency: 'USD',
+            floorData: {
+              cpmAfterAdjustments: 1
+            },
             bidder: 'bidder0',
             timeToRespond: 341,
             pbLg: '1.50',
@@ -1936,6 +1953,9 @@ function getMockEvents() {
             adapterCode: 'bidder0',
             originalCpm: 1.5,
             originalCurrency: 'USD',
+            floorData: {
+              cpmAfterAdjustments: 1
+            },
             responseTimestamp: 1680279733305,
             requestTimestamp: 1680279732963,
             bidder: 'bidder0',

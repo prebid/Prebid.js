@@ -74,19 +74,19 @@ const log = getLogger();
  */
 class TransactionManager {
   #timeoutId = null;
-  #unsent = 0;
+  #pending = 0;
   #timeout;
   #transactions = {};
   #onComplete;
 
-  get unsent() {
-    return this.#unsent;
+  get #unsent() {
+    return this.#pending;
   }
 
-  set unsent(value) {
-    this.#unsent = value;
+  set #unsent(value) {
+    this.#pending = value;
 
-    if (this.#unsent <= 0) {
+    if (this.#pending <= 0) {
       this.#clearTimeout();
 
       this.#onComplete();
@@ -110,7 +110,7 @@ class TransactionManager {
     this.#transactions[transactionId] = {
       status: 'waiting'
     };
-    ++this.unsent;
+    ++this.#unsent;
 
     this.#restartSendTimeout();
   }
@@ -121,9 +121,13 @@ class TransactionManager {
       return;
     }
     this.#transactions[transactionId].status = 'queued';
-    --this.unsent;
+    --this.#unsent;
 
     log.info(`Queued transaction "${transactionId}". ${this.#unsent} unsent.`, this.#transactions);
+  }
+
+  #clearTimeout() {
+    return window.clearTimeout(this.#timeoutId);
   }
 
   #restartSendTimeout() {
@@ -134,12 +138,8 @@ class TransactionManager {
         log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
       }
 
-      this.unsent = 0;
+      this.#unsent = 0;
     }, this.#timeout);
-  }
-
-  #clearTimeout() {
-    return clearTimeout(this.#timeoutId);
   }
 }
 
@@ -314,12 +314,12 @@ function parseBid({ auctionId, bidder, source, status, transactionId, ...args })
  * @returns {BidResponse}
  * @todo implement
  */
-function parseBidResponse({ cpm, currency, originalCpm, mediaType, size }) {
+function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, size }) {
   return {
     cpm,
     cur: currency,
     cpmOrig: originalCpm,
-    cpmFloor: 0,
+    cpmFloor: floorData?.cpmAfterAdjustments,
     mediaType,
     size
   }
@@ -372,6 +372,7 @@ function analyticEventHandler({ eventType, args }) {
 
       auctionBids.push(bidWon);
 
+      // eslint-disable-next-line no-unused-expressions
       locals.transactionManagers[args.auctionId]?.que(bidWon.transactionId);
 
       break;
