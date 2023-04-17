@@ -587,14 +587,9 @@ function shouldEmitNonbids(s2sConfig, response) {
 }
 
 function emitNonBids(context) {
-  const {seatnonbid, auctionId, response, requestedBidders, adapterMetrics} = context;
-  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
-    seatnonbid,
-    auctionId,
-    response,
-    requestedBidders,
-    adapterMetrics
-  });
+  // parse/stringify to prevent manipulation of original data through the event
+  const sanitizedData = JSON.parse(JSON.stringify({...context}))
+  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, sanitizedData);
 }
 
 /**
