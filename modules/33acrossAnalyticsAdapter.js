@@ -252,7 +252,7 @@ function newAnalyticsCache(pid) {
   };
 }
 
-function createReportFromCache(analyticsCache) {
+function createReportFromCache(analyticsCache, completedAuction) {
   const { pid, bidsWon, auctions } = analyticsCache;
 
   return {
@@ -261,21 +261,21 @@ function createReportFromCache(analyticsCache) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: Object.values(auctions),
-    bidsWon: Object.values(bidsWon).flat()
+    auctions: [ auctions[completedAuction] ],
+    bidsWon: bidsWon[completedAuction]
   }
 }
 
 /**
  * @returns {Auction}
  */
-function parseAuction({ adUnits, auctionId, bidderRequests, bidsReceived }) {
+function parseAuction({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
   }
 
   return {
-    adUnits: adUnits.map(unit => parseAdUnit(unit, bidsReceived)),
+    adUnits: adUnits.map(unit => parseAdUnit(unit)),
     auctionId,
     userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {}))
   }
@@ -284,9 +284,7 @@ function parseAuction({ adUnits, auctionId, bidderRequests, bidsReceived }) {
 /**
  * @returns {AdUnit}
  */
-function parseAdUnit(adUnit, bidsReceived = []) {
-  const { transactionId, code, slotId, mediaTypes, sizes, bids } = adUnit;
-
+function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
   log.warn(`parsing adUnit, slotId not yet implemented`);
 
   return {
@@ -295,7 +293,7 @@ function parseAdUnit(adUnit, bidsReceived = []) {
     slotId: '', // FIXME: slot ID has to be populated from the slotRenderEnded event
     mediaTypes: Object.keys(mediaTypes),
     sizes: sizes.map(size => size.join('x')),
-    bids: bidsReceived.map(bid => parseBid(bid)),
+    bids: []
   }
 }
 
@@ -335,11 +333,16 @@ function analyticEventHandler({ eventType, args }) {
   log.info(eventType, args);
   switch (eventType) {
     case EVENTS.AUCTION_INIT: // Move these events to top of fn.
+      const auction = parseAuction(args);
+
+      locals.analyticsCache.auctions[auction.auctionId] = auction;
+      locals.analyticsCache.bidsWon[args.auctionId] = [];
+
       const transactionManager = locals.transactionManagers[args.auctionId] ||=
         new TransactionManager({
           timeout: analyticsAdapter.getTimeout(),
           onComplete() {
-            sendReport(createReportFromCache(locals.analyticsCache),
+            sendReport(createReportFromCache(locals.analyticsCache, auction.auctionId),
               analyticsAdapter.getUrl());
           }
         });
@@ -351,19 +354,21 @@ function analyticEventHandler({ eventType, args }) {
       }
 
       break;
+    case EVENTS.BID_RESPONSE:
+      const bidResponse = parseBid(args);
+      const cachedAuction = locals.analyticsCache.auctions[args.auctionId];
+      const cachedAdUnit = cachedAuction.adUnits.find(adUnit => adUnit.transactionId === bidResponse.transactionId);
+
+      cachedAdUnit.bids.push(bidResponse);
+
+      break;
     case EVENTS.BID_REQUESTED:
       // FIXME: It's probably a better idea to do the add at trasaction manager.
-      break;
-    case EVENTS.AUCTION_END:
-      const auction = parseAuction(args);
-
-      locals.analyticsCache.auctions[auction.auctionId] = auction;
-
       break;
     // see also `slotRenderEnded` GAM-event listener
     case EVENTS.BID_WON:
       const bidWon = parseBid(args);
-      const auctionBids = locals.analyticsCache.bidsWon[args.auctionId] ||= [];
+      const auctionBids = locals.analyticsCache.bidsWon[args.auctionId];
 
       auctionBids.push(bidWon);
 
