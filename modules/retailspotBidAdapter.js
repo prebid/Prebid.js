@@ -7,6 +7,7 @@ const DEFAULT_SUBDOMAIN = 'ssp';
 const PREPROD_SUBDOMAIN = 'ssp-preprod';
 const HOST = 'retail-spot.io';
 const ENDPOINT = '/prebid';
+const DEV_URL = 'http://localhost:8090/prebid';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -39,20 +40,25 @@ export const spec = {
       withCredentials: true
     };
 
+    const envParam = bidRequests[0].params.env;
     var subDomain = DEFAULT_SUBDOMAIN;
-    if (bidRequests[0].params.env === 'preprod') {
+    if (envParam === 'preprod') {
       subDomain = PREPROD_SUBDOMAIN;
     }
 
-    const url = buildUrl({
+    let url = buildUrl({
       protocol: 'https',
       host: `${subDomain}.${HOST}`,
       pathname: ENDPOINT
     });
 
+    if (envParam === 'dev') {
+      url = DEV_URL;
+    }
+
     return {
       method: 'POST',
-      url: 'http://localhost:8090/prebid',
+      url,
       data,
       options
     };
