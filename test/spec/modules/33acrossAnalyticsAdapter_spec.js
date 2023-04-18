@@ -102,7 +102,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
     });
   });
 
-  describe('when handling events', function() {
+  describe('Event Handling', function() {
     beforeEach(function() {
       this.defaultTimeout = 3000;
       this.enableAnalytics = (options) => {
@@ -128,9 +128,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
           sandbox.stub(navigator, 'sendBeacon')
             .withArgs('foo-endpoint', JSON.stringify(getStandardAnalyticsReport()))
             .returns(true);
-
           performStandardAuction();
-
           clock.tick(this.defaultTimeout + 1);
 
           sinon.assert.calledOnce(navigator.sendBeacon);
@@ -153,7 +151,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
       });
     });
 
-    context('when a bid-won event is received', function() {
+    context('when a BID_WON event is received', function() {
       context('and there\'s no record of that bid being requested', function() {
         it('logs a warning message', function() {
           sandbox.spy(utils, 'logWarn');
@@ -177,7 +175,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
       });
     });
 
-    context('when the same bid-won event is received more than once', function() {
+    context('when the same BID_REQUESTED event is received more than once', function() {
       it('logs a warning message', function() {
         sandbox.spy(utils, 'logWarn');
 
@@ -188,7 +186,9 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         const [ auction ] = prebid;
 
         events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+
+        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
 
         sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: transactionId "ef947609-7b55-4420-8407-599760d0e373" already exists')
       });
@@ -255,6 +255,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
 /**
  * Events in possible order of execution
+ *
  * ADD_AD_UNITS
  * REQUEST_BIDS
  * BEFORE_REQUEST_BIDS
@@ -285,6 +286,10 @@ function performStandardAuction() {
   for (let auction of prebid) {
     events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
 
+    auction.BID_REQUESTED.forEach((bidRequestedEvent) => {
+      events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
+    });
+
     auction.BID_RESPONSE.forEach((bidResponseEvent) => {
       events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
     });
@@ -303,12 +308,14 @@ function performStandardAuction() {
 
 function performAuctionWithMissingBidWon() {
   const mockEvents = getMockEvents();
-  let { prebid } = mockEvents;
-
+  const { prebid } = mockEvents;
   const [ auction ] = prebid;
 
   events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
 
+  auction.BID_REQUESTED.forEach((bidRequestedEvent) => {
+    events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
+  });
   auction.BID_RESPONSE.forEach((bidResponseEvent) => {
     events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
   });
@@ -334,7 +341,6 @@ function getStandardAnalyticsReport() {
           bidder: 'bidder0',
           source: 'client',
           status: 'rendered',
-          transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
           bidResponse: {
             cpm: 1.5,
             cur: 'USD',
@@ -354,7 +360,6 @@ function getStandardAnalyticsReport() {
           bidder: 'bidder0',
           source: 'client',
           status: 'targetingSet',
-          transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
           bidResponse: {
             cpm: 1.5,
             cur: 'USD',
@@ -379,7 +384,6 @@ function getStandardAnalyticsReport() {
       bidder: 'bidder0',
       source: 'client',
       status: 'rendered',
-      transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
       bidResponse: {
         cpm: 1.5,
         cur: 'USD',
@@ -387,12 +391,12 @@ function getStandardAnalyticsReport() {
         cpmFloor: 1,
         mediaType: 'banner',
         size: '300x250'
-      }
+      },
+      transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
     }, {
       bidder: 'bidder0',
       source: 'client',
       status: 'rendered',
-      transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
       bidResponse: {
         cpm: 1.5,
         cur: 'USD',
@@ -400,12 +404,12 @@ function getStandardAnalyticsReport() {
         cpmFloor: 1,
         mediaType: 'banner',
         size: '728x90'
-      }
+      },
+      transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
     }, {
       bidder: 'bidder0',
       source: 'client',
       status: 'targetingSet',
-      transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
       bidResponse: {
         cpm: 1.5,
         cur: 'USD',
@@ -413,7 +417,8 @@ function getStandardAnalyticsReport() {
         cpmFloor: 1,
         mediaType: 'banner',
         size: '728x90'
-      }
+      },
+      transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
     }]
   };
 }
@@ -1067,6 +1072,374 @@ function getMockEvents() {
           publisherId: '1001',
         },
       },
+      BID_REQUESTED: [{
+        bidderCode: 'bidder0',
+        auctionId,
+        transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
+        bids: [
+          {
+            bidder: 'bidder0',
+            params: {
+              placement_id: 12345678,
+            },
+            userId: {
+              '33acrossId': {
+                envelope:
+                  'v1.0014',
+              },
+            },
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [
+                  {
+                    id: 'v1.0014',
+                    atype: 1,
+                  },
+                ],
+              },
+            ],
+            crumbs: {
+              pubcid: 'badbbf35-1573-47c5-948e-70a63f9271f4',
+            },
+            ortb2Imp: {
+              ext: {
+                tid: 'ef947609-7b55-4420-8407-599760d0e373',
+                data: {
+                  adserver: {
+                    name: 'gam',
+                    adslot: '/19968336/header-bid-tag-0',
+                  },
+                  pbadslot: '/19968336/header-bid-tag-0',
+                },
+                gpid: '/19968336/header-bid-tag-0',
+              },
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [
+                  [300, 250],
+                  [300, 600],
+                ],
+              },
+            },
+            adUnitCode: '/19968336/header-bid-tag-0',
+            transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
+            sizes: [
+              [300, 250],
+              [300, 600],
+            ],
+            bidId: '20661fc5fbb5d9b',
+            bidderRequestId: '196b58215c10dc9',
+            auctionId,
+            src: 'client',
+            bidRequestsCount: 1,
+            bidderRequestsCount: 1,
+            bidderWinsCount: 0,
+            ortb2: {
+              site: {
+                page: 'https://site.example.com/pb.html',
+                domain: 'site.example.com',
+                publisher: {
+                  domain: 'site.example.com',
+                },
+              },
+              device: {
+                w: 594,
+                h: 976,
+                dnt: 0,
+                ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+                language: 'en',
+                sua: {
+                  source: 2,
+                  platform: {
+                    brand: 'macOS',
+                    version: ['13', '2', '1'],
+                  },
+                  browsers: [
+                    {
+                      brand: 'Google Chrome',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                    {
+                      brand: 'Not(A:Brand',
+                      version: ['8', '0', '0', '0'],
+                    },
+                    {
+                      brand: 'Chromium',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                  ],
+                  mobile: 0,
+                  model: '',
+                  bitness: '64',
+                  architecture: 'arm',
+                },
+              },
+            },
+          },
+          {
+            bidder: 'bidder0',
+            params: {
+              placement_id: 12345678,
+            },
+            userId: {
+              '33acrossId': {
+                envelope:
+                  'v1.0014',
+              },
+            },
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [
+                  {
+                    id: 'v1.0014',
+                    atype: 1,
+                  },
+                ],
+              },
+            ],
+            crumbs: {
+              pubcid: 'badbbf35-1573-47c5-948e-70a63f9271f4',
+            },
+            ortb2Imp: {
+              ext: {
+                tid: 'abab4423-d962-41aa-adc7-0681f686c330',
+                data: {
+                  adserver: {
+                    name: 'gam',
+                    adslot: '/19968336/header-bid-tag-1',
+                  },
+                  pbadslot: '/19968336/header-bid-tag-1',
+                },
+                gpid: '/19968336/header-bid-tag-1',
+              },
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [
+                  [728, 90],
+                  [970, 250],
+                ],
+              },
+            },
+            adUnitCode: '/19968336/header-bid-tag-1',
+            transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
+            sizes: [
+              [728, 90],
+              [970, 250],
+            ],
+            bidId: '21ad295f40dd7ab',
+            bidderRequestId: '196b58215c10dc9',
+            auctionId,
+            src: 'client',
+            bidRequestsCount: 1,
+            bidderRequestsCount: 1,
+            bidderWinsCount: 0,
+            ortb2: {
+              site: {
+                page: 'https://site.example.com/pb.html',
+                domain: 'site.example.com',
+                publisher: {
+                  domain: 'site.example.com',
+                },
+              },
+              device: {
+                w: 594,
+                h: 976,
+                dnt: 0,
+                ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+                language: 'en',
+                sua: {
+                  source: 2,
+                  platform: {
+                    brand: 'macOS',
+                    version: ['13', '2', '1'],
+                  },
+                  browsers: [
+                    {
+                      brand: 'Google Chrome',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                    {
+                      brand: 'Not(A:Brand',
+                      version: ['8', '0', '0', '0'],
+                    },
+                    {
+                      brand: 'Chromium',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                  ],
+                  mobile: 0,
+                  model: '',
+                  bitness: '64',
+                  architecture: 'arm',
+                },
+              },
+            },
+          },
+          {
+            bidder: 'bidder0',
+            params: {
+              placement_id: 20216405,
+            },
+            userId: {
+              '33acrossId': {
+                envelope:
+                  'v1.0014',
+              },
+            },
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [
+                  {
+                    id: 'v1.0014',
+                    atype: 1,
+                  },
+                ],
+              },
+            ],
+            crumbs: {
+              pubcid: 'badbbf35-1573-47c5-948e-70a63f9271f4',
+            },
+            ortb2Imp: {
+              ext: {
+                tid: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+                data: {
+                  adserver: {
+                    name: 'gam',
+                    adslot: '/17118521/header-bid-tag-2',
+                  },
+                  pbadslot: '/17118521/header-bid-tag-2',
+                },
+                gpid: '/17118521/header-bid-tag-2',
+              },
+            },
+            mediaTypes: {
+              banner: {
+                sizes: [[300, 250]],
+              },
+            },
+            adUnitCode: '/17118521/header-bid-tag-2',
+            transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+            sizes: [[300, 250]],
+            bidId: '22108ac7b778717',
+            bidderRequestId: '196b58215c10dc9',
+            auctionId,
+            src: 'client',
+            bidRequestsCount: 1,
+            bidderRequestsCount: 1,
+            bidderWinsCount: 0,
+            ortb2: {
+              site: {
+                page: 'https://site.example.com/pb.html',
+                domain: 'site.example.com',
+                publisher: {
+                  domain: 'site.example.com',
+                },
+              },
+              device: {
+                w: 594,
+                h: 976,
+                dnt: 0,
+                ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+                language: 'en',
+                sua: {
+                  source: 2,
+                  platform: {
+                    brand: 'macOS',
+                    version: ['13', '2', '1'],
+                  },
+                  browsers: [
+                    {
+                      brand: 'Google Chrome',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                    {
+                      brand: 'Not(A:Brand',
+                      version: ['8', '0', '0', '0'],
+                    },
+                    {
+                      brand: 'Chromium',
+                      version: ['111', '0', '5563', '110'],
+                    },
+                  ],
+                  mobile: 0,
+                  model: '',
+                  bitness: '64',
+                  architecture: 'arm',
+                },
+              },
+            },
+          },
+        ],
+        auctionStart: 1680279732944,
+        timeout: 3000,
+        refererInfo: {
+          reachedTop: true,
+          isAmp: false,
+          numIframes: 0,
+          stack: ['https://site.example.com/pb.html'],
+          topmostLocation: 'https://site.example.com/pb.html',
+          location: 'https://site.example.com/pb.html',
+          canonicalUrl: null,
+          page: 'https://site.example.com/pb.html',
+          domain: 'site.example.com',
+          ref: null,
+          legacy: {
+            reachedTop: true,
+            isAmp: false,
+            numIframes: 0,
+            stack: ['https://site.example.com/pb.html'],
+            referer: 'https://site.example.com/pb.html',
+            canonicalUrl: null,
+          },
+        },
+        ortb2: {
+          site: {
+            page: 'https://site.example.com/pb.html',
+            domain: 'site.example.com',
+            publisher: {
+              domain: 'site.example.com',
+            },
+          },
+          device: {
+            w: 594,
+            h: 976,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36',
+            language: 'en',
+            sua: {
+              source: 2,
+              platform: {
+                brand: 'macOS',
+                version: ['13', '2', '1'],
+              },
+              browsers: [
+                {
+                  brand: 'Google Chrome',
+                  version: ['111', '0', '5563', '110'],
+                },
+                {
+                  brand: 'Not(A:Brand',
+                  version: ['8', '0', '0', '0'],
+                },
+                {
+                  brand: 'Chromium',
+                  version: ['111', '0', '5563', '110'],
+                },
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'arm',
+            },
+          },
+        },
+        start: 1680279732963,
+      }],
       BID_RESPONSE: [{
         bidderCode: 'bidder0',
         width: 300,

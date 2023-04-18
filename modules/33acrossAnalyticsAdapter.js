@@ -52,8 +52,7 @@ const log = getLogger();
  * @property {string} source
  * @property {string} status
  * @property {BidResponse} bidResponse
- * @property {string} [auctionId] // do not include in report
- * @property {string} [transactionId] // do not include in report
+ * @property {string} [transactionId] // Only included for winning bids
  */
 
 /**
@@ -153,7 +152,7 @@ export const locals = {
   transactionManagers: {},
   /** @type {string} */
   endpoint: undefined,
-  /** @type {AnalyticsReport} */
+  /** @type {AnalyticsCache} */
   analyticsCache: undefined,
   /** sets all locals to undefined */
   reset() {
@@ -198,6 +197,10 @@ function enableAnalyticsWrapper(config = {}) {
   analyticsAdapter.originEnableAnalytics(config);
 }
 
+/**
+ * @param   {Number} configTimeout
+ * @return  {Number} Transaction Timeout
+ */
 function calculateTransactionTimeout(configTimeout) {
   if (typeof configTimeout === 'undefined') {
     return DEFAULT_TRANSACTION_TIMEOUT;
@@ -212,6 +215,9 @@ function calculateTransactionTimeout(configTimeout) {
   return DEFAULT_TRANSACTION_TIMEOUT;
 }
 
+/**
+ * @param {TransacionManager} transactionManager
+ */
 function subscribeToGamSlotRenderEvent(transactionManager) {
   window.googletag = window.googletag || {};
   window.googletag.cmd = window.googletag.cmd || [];
@@ -254,7 +260,12 @@ function newAnalyticsCache(pid) {
   };
 }
 
-function createReportFromCache(analyticsCache, completedAuction) {
+/**
+ * @param   {AnalyticsCache} analyticsCache
+ * @param   {string} completedAuctionId
+ * @return  {AnalyticsReport} Analytics report
+ */
+function createReportFromCache(analyticsCache, completedAuctionId) {
   const { pid, bidsWon, auctions } = analyticsCache;
 
   return {
@@ -263,12 +274,16 @@ function createReportFromCache(analyticsCache, completedAuction) {
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
-    auctions: [ auctions[completedAuction] ],
-    bidsWon: bidsWon[completedAuction]
+    auctions: [ auctions[completedAuctionId] ],
+    bidsWon: bidsWon[completedAuctionId]
   }
 }
 
 /**
+ * @param   {Object}  params
+ * @param   {Array}   params.adUnits
+ * @param   {String}  params.auctionId
+ * @param   {Array}   params.bidderRequests
  * @returns {Auction}
  */
 function parseAuction({ adUnits, auctionId, bidderRequests }) {
@@ -307,7 +322,6 @@ function parseBid({ auctionId, bidder, source, status, transactionId, ...args })
     bidder,
     source,
     status,
-    transactionId,
     bidResponse: parseBidResponse(args)
   }
 }
@@ -332,9 +346,8 @@ function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, si
  * @param {EVENTS[keyof EVENTS]} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
-  log.info(eventType, args);
   switch (eventType) {
-    case EVENTS.AUCTION_INIT: // Move these events to top of fn.
+    case EVENTS.AUCTION_INIT:
       const auction = parseAuction(args);
 
       locals.analyticsCache.auctions[auction.auctionId] = auction;
@@ -351,25 +364,26 @@ function analyticEventHandler({ eventType, args }) {
 
       subscribeToGamSlotRenderEvent(transactionManager);
 
-      for (let adUnit of args.adUnits) {
-        transactionManager.add(adUnit.transactionId);
-      }
+      break;
+    case EVENTS.BID_REQUESTED:
+      args.bids.forEach((bid) => {
+        locals.transactionManagers[args.auctionId].add(bid.transactionId);
+      });
 
       break;
     case EVENTS.BID_RESPONSE:
       const bidResponse = parseBid(args);
       const cachedAuction = locals.analyticsCache.auctions[args.auctionId];
-      const cachedAdUnit = cachedAuction.adUnits.find(adUnit => adUnit.transactionId === bidResponse.transactionId);
+      const cachedAdUnit = cachedAuction.adUnits.find(adUnit => adUnit.transactionId === args.transactionId);
 
       cachedAdUnit.bids.push(bidResponse);
 
       break;
-    case EVENTS.BID_REQUESTED:
-      // FIXME: It's probably a better idea to do the add at trasaction manager.
-      break;
-    // see also `slotRenderEnded` GAM-event listener
     case EVENTS.BID_WON:
-      const bidWon = parseBid(args);
+      const bidWon = Object.assign(parseBid(args), {
+        transactionId: args.transactionId
+      });
+
       const auctionBids = locals.analyticsCache.bidsWon[args.auctionId];
 
       auctionBids.push(bidWon);
