@@ -47,7 +47,7 @@ const SUA_ATTRIBUTES = [
 
 const CERBERUS = Object.freeze({
   KEY: 'krg_crb',
-  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}',
+  SYNC_URL: 'https://crb.kargo.com/api/v1/initsyncrnd/{UUID}?seed={SEED}&idx={INDEX}&gdpr={GDPR}&gdpr_consent={GDPR_CONSENT}&us_privacy={US_PRIVACY}&gpp={GPP_STRING}&gpp_sid={GPP_SID}',
   SYNC_COUNT: 5,
   PAGE_VIEW_ID: 'pageViewId',
   PAGE_VIEW_TIMESTAMP: 'pageViewTimestamp',
@@ -94,7 +94,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids),
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
   });
 
   const reqCount = getRequestCount()
@@ -229,13 +229,16 @@ function interpretResponse(response, bidRequest) {
   return bidResponses;
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
+function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
   const syncs = [];
   const seed = _generateRandomUUID();
   const clientId = getClientId();
 
   var gdpr = (gdprConsent && gdprConsent.gdprApplies) ? 1 : 0;
   var gdprConsentString = (gdprConsent && gdprConsent.consentString) ? gdprConsent.consentString : '';
+
+  var gppString = (gppConsent && gppConsent.consentString) ? gppConsent.consentString : '';
+  var gppApplicableSections = (gppConsent && gppConsent.applicableSections && Array.isArray(gppConsent.applicableSections)) ? gppConsent.applicableSections.join(',') : '';
 
   // don't sync if opted out via usPrivacy
   if (typeof usPrivacy == 'string' && usPrivacy.length == 4 && usPrivacy[0] == 1 && usPrivacy[2] == 'Y') {
@@ -251,6 +254,8 @@ function getUserSyncs(syncOptions, responses, gdprConsent, usPrivacy) {
           .replace('{GDPR}', gdpr)
           .replace('{GDPR_CONSENT}', gdprConsentString)
           .replace('{US_PRIVACY}', usPrivacy || '')
+          .replace('{GPP_STRING}', gppString)
+          .replace('{GPP_SID}', gppApplicableSections)
       });
     }
   }
@@ -329,7 +334,7 @@ function getLocalStorageSafely(key) {
   }
 }
 
-function getUserIds(tdidAdapter, usp, gdpr, eids) {
+function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
   const crb = spec._getCrb();
   const userIds = {
     crbIDs: crb.syncIds || {}
@@ -373,6 +378,19 @@ function getUserIds(tdidAdapter, usp, gdpr, eids) {
 
   if (eids != null) {
     userIds.sharedIDEids = eids;
+  }
+
+  if (gpp) {
+    const parsedGPP = {}
+    if (gpp && gpp.consentString) {
+      parsedGPP.gppString = gpp.consentString
+    }
+    if (gpp && gpp.applicableSections) {
+      parsedGPP.applicableSections = gpp.applicableSections
+    }
+    if (!isEmpty(parsedGPP)) {
+      userIds.gpp = parsedGPP
+    }
   }
 
   return userIds;
