@@ -12,16 +12,17 @@ import {ajax} from '../src/ajax.js';
 const MODULE_NAME = 'growthCodeRtd';
 const LOG_PREFIX = 'GrowthCodeRtd: ';
 const ENDPOINT_URL = 'https://p2.gcprivacy.com/v2/rtd?'
-const RTD_EXPIRE_KEY = 'gc_rtd_expire_at'
+const RTD_EXPIRE_KEY = 'gc_rtd_expires_at'
 const RTD_CACHE_KEY = 'gc_rtd_items'
 
 export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
 let items
 
-export const subModuleObj = {
+export const growthCodeRtdProvider = {
   name: MODULE_NAME,
   init: init,
-  getBidRequestData: alterBidRequests
+  getBidRequestData: alterBidRequests,
+  addData: addData
 };
 
 /**
@@ -47,6 +48,10 @@ function tryParse(data) {
 function init(config, userConsent) {
   logMessage(LOG_PREFIX + 'Init RTB');
 
+  if (config == null) {
+    return false
+  }
+
   const configParams = (config && config.params) || {};
   let expiresAt = parseInt(storage.getDataFromLocalStorage(RTD_EXPIRE_KEY, null));
 
@@ -66,7 +71,7 @@ function init(config, userConsent) {
     url = tryAppendQueryString(url, 'pid', configParams.pid);
     url = tryAppendQueryString(url, 'u', window.location.href);
     url = tryAppendQueryString(url, 'gcid', gcid);
-    if ((userConsent.gdpr !== null) && (userConsent.gdpr.consentData.getTCData.tcString)) {
+    if ((userConsent !== null) && (userConsent.gdpr !== null) && (userConsent.gdpr.consentData.getTCData.tcString)) {
       url = tryAppendQueryString(url, 'tcf', userConsent.gdpr.consentData.getTCData.tcString)
     }
 
@@ -90,6 +95,32 @@ function init(config, userConsent) {
   return true;
 }
 
+function addData(reqBidsConfigObj, items) {
+  let merge = false
+
+  for (let j = 0; j < items.length; j++) {
+    let item = items[j]
+    let data = JSON.parse(item.parameters);
+    if (item['attachment_point'] === 'data') {
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, data)
+      merge = true
+    } else if (item['attachment_point'] === 'config') {
+      let adUnits = reqBidsConfigObj.adUnits
+      for (let i = 0; i < adUnits.length; i++) {
+        let adUnit = adUnits[i];
+        for (let k = 0; k < adUnit.bids.length; k++) {
+          let bid = adUnit.bids[k]
+          if (item.bidder === bid.bidder) {
+            mergeDeep(reqBidsConfigObj.adUnits[i].bids[k], data)
+            merge = true
+          }
+        }
+      }
+    }
+  }
+  return merge
+}
+
 /**
  * Alter the Bid Request for additional information such as HEM or 3rd Party Ids
  * @param reqBidsConfigObj
@@ -99,26 +130,9 @@ function init(config, userConsent) {
  */
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   if (items != null) {
-    for (let j = 0; j < items.length; j++) {
-      let item = items[j]
-      let data = JSON.parse(item.parameters);
-      if (item.attachment_point === 'data') {
-        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, data)
-      } else if (item.attachment_point === 'config') {
-        let adUnits = reqBidsConfigObj.adUnits
-        for (let i = 0; i < adUnits.length; i++) {
-          let adUnit = adUnits[i];
-          for (let k = 0; k < adUnit.bids.length; k++) {
-            let bid = adUnit.bids[k]
-            if (item.bidder === bid.bidder) {
-              mergeDeep(reqBidsConfigObj.adUnits[i].bids[k], data)
-            }
-          }
-        }
-      }
-    }
+    addData(reqBidsConfigObj, items)
   }
   callback();
 }
 
-submodule('realTimeData', subModuleObj);
+submodule('realTimeData', growthCodeRtdProvider);
