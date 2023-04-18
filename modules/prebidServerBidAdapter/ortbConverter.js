@@ -169,7 +169,8 @@ const PBS_CONVERTER = ortbConverter({
 
         const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).filter(([bidder]) => {
           const bidders = context.s2sBidRequest.s2sConfig.bidders;
-          return bidders && bidders.includes(bidder);
+          const allowUnknownBidderCodes = context.s2sBidRequest.s2sConfig.allowUnknownBidderCodes;
+          return allowUnknownBidderCodes || (bidders && bidders.includes(bidder));
         }).map(([bidder, ortb2]) => ({
           bidders: [bidder],
           config: {ortb2}
