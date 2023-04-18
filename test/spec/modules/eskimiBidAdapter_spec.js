@@ -83,27 +83,18 @@ const RESPONSE = {
 
 describe('Eskimi bid adapter', function () {
   describe('isBidRequestValid', function () {
-    it('should accept request if accId is passed', function () {
+    it('should accept request if placementId is passed', function () {
       let bid = {
         bidder: 'eskimi',
         params: {
-          accId: 123
+          placementId: 123
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
-    it('should not accept request if only placementId is passed', function () {
-      let bid = {
-        bidder: 'eskimi',
-        params: {
-          placementId: 1003000,
-        }
-      };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
     it('reject requests without params', function () {
       let bid = {
-        bidder: 'padsquad',
+        bidder: 'eskimi',
         params: {}
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
