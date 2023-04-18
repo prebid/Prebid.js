@@ -2512,6 +2512,101 @@ describe('S2S Adapter', function () {
       expect(parsedRequestBody.bcat).to.deep.equal(bcat);
     });
 
+    it('passes first party data in request for unknown when allowUnknownBidderCodes is true', () => {
+      const cfg = { ...CONFIG, allowUnknownBidderCodes: true };
+      config.setConfig({ s2sConfig: cfg });
+
+      const clonedReq = {...REQUEST, s2sConfig: cfg}
+      const s2sBidRequest = utils.deepClone(clonedReq);
+      const bidRequests = utils.deepClone(BID_REQUESTS);
+
+      const commonSite = {
+        keywords: ['power tools'],
+        search: 'drill'
+      };
+      const commonUser = {
+        keywords: ['a', 'b'],
+        gender: 'M'
+      };
+
+      const site = {
+        content: {userrating: 4},
+        ext: {
+          data: {
+            pageType: 'article',
+            category: 'tools'
+          }
+        }
+      };
+      const user = {
+        yob: '1984',
+        geo: { country: 'ca' },
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      };
+      const bcat = ['IAB25', 'IAB7-39'];
+      const badv = ['blockedAdv-1.com', 'blockedAdv-2.com'];
+      const allowedBidders = ['appnexus', 'unknown'];
+
+      const expected = allowedBidders.map(bidder => ({
+        bidders: [bidder],
+        config: {
+          ortb2: {
+            site: {
+              content: { userrating: 4 },
+              ext: {
+                data: {
+                  pageType: 'article',
+                  category: 'tools'
+                }
+              }
+            },
+            user: {
+              yob: '1984',
+              geo: { country: 'ca' },
+              ext: {
+                data: {
+                  registered: true,
+                  interests: ['cars']
+                }
+              }
+            },
+            bcat: ['IAB25', 'IAB7-39'],
+            badv: ['blockedAdv-1.com', 'blockedAdv-2.com']
+          }
+        }
+      }));
+      const commonContextExpected = utils.mergeDeep({
+        'page': 'http://mytestpage.com',
+        'domain': 'mytestpage.com',
+        'publisher': {
+          'id': '1',
+          'domain': 'mytestpage.com'
+        }
+      }, commonSite);
+
+      const ortb2Fragments = {
+        global: {site: commonSite, user: commonUser, badv, bcat},
+        bidder: Object.fromEntries(allowedBidders.map(bidder => [bidder, {site, user, bcat, badv}]))
+      };
+
+      // adapter.callBids({ ...REQUEST, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
+
+      adapter.callBids(addFpdEnrichmentsToS2SRequest({...s2sBidRequest, ortb2Fragments}, bidRequests, cfg), bidRequests, addBidResponse, done, ajax);
+      const parsedRequestBody = JSON.parse(server.requests[0].requestBody);
+      // eslint-disable-next-line no-console
+      console.log(parsedRequestBody);
+      expect(parsedRequestBody.ext.prebid.bidderconfig).to.deep.equal(expected);
+      expect(parsedRequestBody.site).to.deep.equal(commonContextExpected);
+      expect(parsedRequestBody.user).to.deep.equal(commonUser);
+      expect(parsedRequestBody.badv).to.deep.equal(badv);
+      expect(parsedRequestBody.bcat).to.deep.equal(bcat);
+    });
+
     describe('pbAdSlot config', function () {
       it('should not send \"imp.ext.data.pbadslot\" if \"ortb2Imp.ext\" is undefined', function () {
         const consentConfig = { s2sConfig: CONFIG };
