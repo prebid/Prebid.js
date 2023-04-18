@@ -474,7 +474,7 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            emitNonBids({
+            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
               requestedBidders,
@@ -584,12 +584,6 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
-}
-
-function emitNonBids(context) {
-  // parse/stringify to prevent manipulation of original data through the event
-  const sanitizedData = JSON.parse(JSON.stringify({...context}))
-  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, sanitizedData);
 }
 
 /**
