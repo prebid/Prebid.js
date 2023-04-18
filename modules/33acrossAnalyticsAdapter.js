@@ -125,6 +125,7 @@ class TransactionManager {
     log.info(`Queued transaction "${transactionId}". ${this.#unsent} unsent.`, this.#transactions);
   }
 
+  // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
   // eslint-disable-next-line no-dupe-class-members
   #clearTimeout() {
     return window.clearTimeout(this.#timeoutId);
@@ -198,8 +199,8 @@ function enableAnalyticsWrapper(config = {}) {
 }
 
 /**
- * @param   {Number} configTimeout
- * @return  {Number} Transaction Timeout
+ * @param {number|undefined} configTimeout
+ * @return {number} Transaction Timeout
  */
 function calculateTransactionTimeout(configTimeout) {
   if (typeof configTimeout === 'undefined') {
@@ -261,9 +262,9 @@ function newAnalyticsCache(pid) {
 }
 
 /**
- * @param   {AnalyticsCache} analyticsCache
- * @param   {string} completedAuctionId
- * @return  {AnalyticsReport} Analytics report
+ * @param {AnalyticsCache} analyticsCache
+ * @param {string} completedAuctionId
+ * @return {AnalyticsReport} Analytics report
  */
 function createReportFromCache(analyticsCache, completedAuctionId) {
   const { pid, bidsWon, auctions } = analyticsCache;
@@ -280,10 +281,10 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
 }
 
 /**
- * @param   {Object}  params
- * @param   {Array}   params.adUnits
- * @param   {String}  params.auctionId
- * @param   {Array}   params.bidderRequests
+ * @param {Object} params
+ * @param {Array} params.adUnits
+ * @param {string} params.auctionId
+ * @param {Array} params.bidderRequests
  * @returns {Auction}
  */
 function parseAuction({ adUnits, auctionId, bidderRequests }) {
@@ -299,9 +300,15 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
 }
 
 /**
+ * @param {Object} params
+ * @param {string} params.transactionId
+ * @param {string} params.code
+ * @param {string} params.slotId
+ * @param {Array<string>} params.mediaTypes
+ * @param {Array<string>} params.sizes
  * @returns {AdUnit}
  */
-function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
+function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes }) {
   log.warn(`parsing adUnit, slotId not yet implemented`);
 
   return {
@@ -315,9 +322,15 @@ function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes, bids }) {
 }
 
 /**
+ * @param {Object} params
+ * @param {string} params.auctionId
+ * @param {string} params.bidder
+ * @param {string} params.source
+ * @param {string} params.status
+ * @param {Object} params.args
  * @returns {Bid}
  */
-function parseBid({ auctionId, bidder, source, status, transactionId, ...args }) {
+function parseBid({ auctionId, bidder, source, status, ...args }) {
   return {
     bidder,
     source,
@@ -327,8 +340,14 @@ function parseBid({ auctionId, bidder, source, status, transactionId, ...args })
 }
 
 /**
+ * @param {Object} params
+ * @param {number} params.cpm
+ * @param {string} params.currency
+ * @param {number} params.originalCpm
+ * @param {Object} params.floorData
+ * @param {string} params.mediaType
+ * @param {string} params.size
  * @returns {BidResponse}
- * @todo implement
  */
 function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, size }) {
   return {
@@ -400,8 +419,8 @@ function analyticEventHandler({ eventType, args }) {
 /**
  * Guarantees sending of data without waiting for response, even after page is left/closed
  *
- * @param {AnalyticsReport} report
- * @param {string}          endpoint
+ * @param {AnalyticsReport} report Request payload
+ * @param {string} endpoint URL
  */
 function sendReport(report, endpoint) {
   if (navigator.sendBeacon(endpoint, JSON.stringify(report))) {
