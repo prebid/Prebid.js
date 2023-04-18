@@ -56,7 +56,8 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    BILLABLE_EVENT
+    BILLABLE_EVENT,
+    SEAT_NON_BID
   },
   STATUS: {
     GOOD,
@@ -483,7 +484,7 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
     }
   }
   return matches;
-}
+};
 
 const getRenderingIds = bidWonData => {
   // if bid caching off -> return the bidWon auction id
@@ -840,7 +841,16 @@ magniteAdapter.track = ({ eventType, args }) => {
         auctionEntry.floors.dealsEnforced = args.floorData.enforcements.floorDeals;
       }
 
-      // Log error if no matching bid!
+      // no-bid from server. report it!
+      if (!bid && args.seatBidId) {
+        bid = adUnit.bids[args.seatBidId] = {
+          bidder: args.bidderCode,
+          source: 'server',
+          bidId: args.seatBidId,
+          unknownBid: true
+        };
+      }
+
       if (!bid) {
         logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
         break;
@@ -870,6 +880,9 @@ magniteAdapter.track = ({ eventType, args }) => {
       if (pbsBidId) {
         bid.pbsBidId = pbsBidId;
       }
+      break;
+    case SEAT_NON_BID:
+      handleNonBidEvent(args);
       break;
     case BIDDER_DONE:
       const serverError = deepAccess(args, 'serverErrors.0');
@@ -955,6 +968,66 @@ magniteAdapter.track = ({ eventType, args }) => {
         logInfo(`${MODULE_NAME}: Billing event ignored`, args);
       }
       break;
+  }
+};
+
+const handleNonBidEvent = function(args) {
+  const {seatnonbid, auctionId} = args;
+  const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
+  // if no auction just bail
+  if (!auction) {
+    logWarn(`Unable to match nonbid to auction`);
+    return;
+  }
+  const adUnits = auction.adUnits;
+  seatnonbid.forEach(seatnonbid => {
+    let {seat} = seatnonbid;
+    seatnonbid.nonbid.forEach(nonbid => {
+      try {
+        const {status, impid} = nonbid;
+        const matchingTid = Object.keys(adUnits).find(tid => adUnits[tid].adUnitCode === impid);
+        const adUnit = adUnits[matchingTid];
+        const statusInfo = statusMap[status] || { status: 'no-bid' };
+        adUnit.bids[generateUUID()] = {
+          bidder: seat,
+          source: 'server',
+          isSeatNonBid: true,
+          clientLatencyMillis: Date.now() - auction.auctionStart,
+          ...statusInfo
+        };
+      } catch (error) {
+        logWarn(`Unable to match nonbid to adUnit`);
+      }
+    });
+  });
+};
+
+const statusMap = {
+  0: {
+    status: 'no-bid'
+  },
+  100: {
+    status: 'error',
+    error: {
+      code: 'request-error',
+      description: 'general error'
+    }
+  },
+  101: {
+    status: 'error',
+    error: {
+      code: 'timeout-error',
+      description: 'prebid server timeout'
+    }
+  },
+  200: {
+    status: 'rejected'
+  },
+  202: {
+    status: 'rejected'
+  },
+  301: {
+    status: 'rejected-ipf'
   }
 };
 

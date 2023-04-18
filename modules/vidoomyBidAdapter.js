@@ -74,6 +74,26 @@ function serializeSupplyChainObj(schainObj) {
   return serializedSchain;
 }
 
+/**
+ * Gets highest floor between getFloor.floor and params.bidfloor
+ * @param {Object} bid
+ * @param {Object} mediaType
+ * @param {Array} sizes
+ * @param {Number} bidfloor
+ * @returns {Number} floor
+ */
+function getBidFloor(bid, mediaType, sizes, bidfloor) {
+  let floor = bidfloor;
+  var size = sizes && sizes.length > 0 ? sizes[0] : '*';
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({currency: 'USD', mediaType, size});
+    if (typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+      floor = Math.max(bidfloor, parseFloat(floorInfo.floor));
+    }
+  }
+  return floor;
+}
+
 const isBidResponseValid = bid => {
   if (!bid || !bid.requestId || !bid.cpm || !bid.ttl || !bid.currency) {
     return false;
@@ -106,6 +126,13 @@ const buildRequests = (validBidRequests, bidderRequest) => {
 
     const videoContext = deepAccess(bid, 'mediaTypes.video.context');
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
+    const floor = getBidFloor(bid, adType, sizes, bidfloor);
+
+    let eids;
+    const userEids = deepAccess(bid, 'userIdAsEids');
+    if (Array.isArray(userEids) && userEids.length > 0) {
+      eids = JSON.stringify(userEids) || '';
+    }
 
     const queryParams = {
       id: bid.params.id,
@@ -120,7 +147,8 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       pid: bid.params.pid,
       requestId: bid.bidId,
       schain: serializeSupplyChainObj(bid.schain) || '',
-      bidfloor,
+      eids: eids || '',
+      bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?
       sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),

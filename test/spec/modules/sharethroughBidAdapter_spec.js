@@ -248,7 +248,8 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
-        auctionId: 'auction-id'
+        auctionId: 'auction-id',
+        timeout: 242
       };
     });
 
