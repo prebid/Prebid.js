@@ -126,10 +126,12 @@ class TransactionManager {
     log.info(`Queued transaction "${transactionId}". ${this.#unsent} unsent.`, this.#transactions);
   }
 
+  // eslint-disable-next-line no-dupe-class-members
   #clearTimeout() {
     return window.clearTimeout(this.#timeoutId);
   }
 
+  // eslint-disable-next-line no-dupe-class-members
   #restartSendTimeout() {
     this.#clearTimeout();
 
