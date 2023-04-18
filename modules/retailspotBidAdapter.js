@@ -135,21 +135,20 @@ function getSize(sizesArray) {
 
 /* Create bid from response */
 function createBid(response, bidRequests) {
-  if (!response ||
+  if (!response || !response.mediaType ||
     (response.mediaType === 'video' && !response.vastXml) ||
-    !response.ad) {
+    (response.mediaType === 'banner' && !response.ad)) {
     return;
   }
 
-  const request = bidRequests && bidRequests[response.BidID];
-
+  const request = bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
   // In case we don't retreive the size from the adserver, use the given one.
   if (request) {
     if (!response.width || response.width === '0') {
       response.width = request.width;
     }
 
-    if (!response.Height || response.height === '0') {
+    if (!response.height || response.height === '0') {
       response.height = request.height;
     }
   }
