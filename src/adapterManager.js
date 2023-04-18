@@ -610,7 +610,7 @@ adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
 };
 
 adapterManager.callBidBillableBidder = function(bid) {
-  tryCallBidderMethod(bid.adapterCode || bid.bidder, 'onBidBillable', bid);
+  tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
 };
 
 adapterManager.callSetTargetingBidder = function(bidder, bid) {
