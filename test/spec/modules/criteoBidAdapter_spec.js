@@ -883,6 +883,38 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with device sua field', function () {
+      const sua = {}
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        timeout: 3000,
+        uspConsent: '1YNY',
+        ortb2: {
+          device: {
+            sua: sua
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.sua).to.not.be.null;
+      expect(request.data.user.ext.sua).to.equal(sua);
+    });
+
     it('should properly build a request with gpp consent field', function () {
       const bidRequests = [
         {
@@ -1475,7 +1507,7 @@ describe('The Criteo bidding adapter', function () {
             creativecode: 'test-crId',
             width: 728,
             height: 90,
-            dealCode: 'myDealCode',
+            deal: 'myDealCode',
             adomain: ['criteo.com'],
           }],
         },
