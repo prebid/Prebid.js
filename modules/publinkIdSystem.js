@@ -10,13 +10,14 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import { parseUrl, buildUrl, logError } from '../src/utils.js';
 import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'publinkId';
 const GVLID = 24;
 const PUBLINK_COOKIE = '_publink';
 const PUBLINK_S2S_COOKIE = '_publink_srv';
 
-export const storage = getStorageManager({gvlid: GVLID});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function isHex(s) {
   return /^[A-F0-9]+$/i.test(s);

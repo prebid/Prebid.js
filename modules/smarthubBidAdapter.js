@@ -125,7 +125,7 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
     coppa: config.getConfig('coppa') === true ? 1 : 0,
     ccpa: bidderRequest.uspConsent || undefined,
     gdpr: bidderRequest.gdprConsent || undefined,
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequest.timeout
   };
 }
 

@@ -109,10 +109,7 @@ export function newUserSync(userSyncDependencies) {
     // Randomize the order of the pixels before firing
     // This is to avoid giving any bidder who has registered multiple syncs
     // any preferential treatment and balancing them out
-    shuffle(queue).forEach((sync) => {
-      fn(sync);
-      hasFiredBidder.add(sync[0]);
-    });
+    shuffle(queue).forEach(fn);
   }
 
   /**
@@ -211,6 +208,12 @@ export function newUserSync(userSyncDependencies) {
     queue[type].push([bidder, url]);
     numAdapterBids = incrementAdapterBids(numAdapterBids, bidder);
   };
+
+  /**
+   * Mark a bidder as done with its user syncs - no more will be accepted from them in this session.
+   * @param {string} bidderCode
+   */
+  publicApi.bidderDone = hasFiredBidder.add.bind(hasFiredBidder);
 
   /**
    * @function shouldBidderBeBlocked

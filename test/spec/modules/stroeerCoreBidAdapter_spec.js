@@ -636,10 +636,13 @@ describe('stroeerCore bid adapter', function () {
           }
         });
 
-        const gdprSamples = [{consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true}, {
-          consentString: 'UGluZyBQb25n',
-          gdprApplies: false
-        }];
+        const gdprSamples = [
+          {consentString: 'RG9ua2V5IEtvbmc=', gdprApplies: true},
+          {consentString: 'UGluZyBQb25n', gdprApplies: false},
+          {consentString: undefined, gdprApplies: true},
+          {consentString: undefined, gdprApplies: false},
+          {consentString: undefined, gdprApplies: undefined},
+        ];
         gdprSamples.forEach((sample) => {
           it(`should add GDPR info ${JSON.stringify(sample)} when provided`, () => {
             const bidReq = buildBidderRequest();
@@ -653,22 +656,14 @@ describe('stroeerCore bid adapter', function () {
           });
         });
 
-        const skippableGdprSamples = [{consentString: null, gdprApplies: true}, //
-          {consentString: 'UGluZyBQb25n', gdprApplies: null}, //
-          {consentString: null, gdprApplies: null}, //
-          {consentString: undefined, gdprApplies: true}, //
-          {consentString: 'UGluZyBQb25n', gdprApplies: undefined}, //
-          {consentString: undefined, gdprApplies: undefined}];
-        skippableGdprSamples.forEach((sample) => {
-          it(`should not add GDPR info ${JSON.stringify(sample)} when one or more values are missing`, () => {
-            const bidReq = buildBidderRequest();
-            bidReq.gdprConsent = sample;
+        it(`should not add GDPR info when not provided`, () => {
+          const bidReq = buildBidderRequest();
 
-            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          delete bidReq.gdprConsent;
 
-            const actualGdpr = serverRequestInfo.data.gdpr;
-            assert.isUndefined(actualGdpr);
-          });
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+
+          assert.notProperty(serverRequestInfo.data, 'gdpr');
         });
 
         it('should be able to build without third party user id data', () => {

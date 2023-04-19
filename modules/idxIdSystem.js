@@ -6,11 +6,12 @@
  */
 import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const IDX_MODULE_NAME = 'idx';
 const IDX_COOKIE_NAME = '_idx';
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: IDX_MODULE_NAME});
 
 function readIDxFromCookie() {
   return storage.cookiesAreEnabled ? storage.getCookie(IDX_COOKIE_NAME) : null;
