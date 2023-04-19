@@ -11,12 +11,21 @@ Module Type:  Analytics Adapter
 pbjs.enableAnalytics({
     provider: '33across',
     options: {
-        /** The partner id assigned to you by the 33Across Team */
+        /**
+         * The partner id assigned by the 33Across Team
+         */
         pid: 12345,
-        /** Given by the 33Across Team */
+        /** 
+         * Defaults to 33Across endpoint if not provided 
+         * [optional]
+         */
         endpoint: 'https://localhost:9999/event',
-        /** [optional] timeout in milliseconds after which an auction report will sent regardless of auction state */
-        timeout: 3000 
+        /** 
+         * Timeout in milliseconds after which an auction report 
+         * will be sent regardless of auction state
+         * [optional]
+         */
+        timeout: 3000
     }
 });
 ```

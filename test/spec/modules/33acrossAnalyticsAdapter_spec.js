@@ -1,90 +1,110 @@
-import { expect } from 'chai';
-
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
-
+import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
-
-import * as utils from 'src/utils.js';
 import * as events from 'src/events.js';
+import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
 const { EVENTS } = CONSTANTS;
+const { assert } = sinon;
 
-describe.only('33acrossAnalyticsAdapter:', function() {
-  let sandbox, clock;
+describe('33acrossAnalyticsAdapter:', function() {
+  let sandbox;
 
   beforeEach(function() {
     mockGpt.enable();
-    sandbox = sinon.sandbox.create();
-    clock = sandbox.useFakeTimers(1680287706002);
+
+    sandbox = sinon.createSandbox({
+      useFakeTimers: {
+        now: new Date(2023, 3, 3, 0, 1, 33, 425),
+      },
+    });
+
+    sandbox.spy(log, 'info');
+    sandbox.spy(log, 'warn');
+    sandbox.spy(log, 'error');
   });
 
   afterEach(function() {
-    sandbox.restore();
     analyticsAdapter.disableAnalytics();
+    mockGpt.enable();
     events.clearEvents();
+    sandbox.restore();
   });
 
-  describe('enableAnalytics', function() {
-    context('when endpoint hasn\'t been given', function() {
-      it('logs an error', function() {
-        sandbox.spy(utils, 'logError');
+  describe('enableAnalytics:', function() {
+    context('When pid is given', function() {
+      context('but endpoint is not', function() {
+        it('it logs an info message', function() {
+          analyticsAdapter.enableAnalytics({
+            provider: '33across',
+            options: {
+              pid: 'test-pid',
+            },
+          });
 
-        analyticsAdapter.enableAnalytics({
-          provider: '33across',
-          options: {
-            pid: 'test-pid',
-          },
+          assert.calledOnce(log.info);
+          assert.calledWithExactly(log.info, 'Invalid endpoint provided for "options.endpoint". Using default endpoint.');
         });
+      });
 
-        sinon.assert.calledOnce(utils.logError);
-        sinon.assert.calledWithExactly(utils.logError, '33across Analytics: No endpoint provided for "options.endpoint". No analytics will be sent.');
+      context('but the endpoint is invalid', function() {
+        it('it logs an info message', function() {
+          analyticsAdapter.enableAnalytics({
+            provider: '33across',
+            options: {
+              pid: 'test-pid',
+              endpoint: 'foo'
+            },
+          });
+
+          assert.calledOnce(log.info);
+          assert.calledWithExactly(log.info, 'Invalid endpoint provided for "options.endpoint". Using default endpoint.');
+        });
       });
     });
 
-    context('when pid hasn\'t been given', function() {
-      it('logs an error', function() {
-        sandbox.spy(utils, 'logError');
-        analyticsAdapter.enableAnalytics({
-          provider: '33across',
-          options: {
-            endpoint: 'test-endpoint',
-          },
-        });
+    context('When endpoint is given', function() {
+      context('but pid is not', function() {
+        it('it logs an error message', function() {
+          analyticsAdapter.enableAnalytics({
+            provider: '33across',
+            options: {
+              endpoint: faker.internet.url()
+            },
+          });
 
-        sinon.assert.calledOnce(utils.logError);
-        sinon.assert.calledWithExactly(utils.logError, '33across Analytics: No partnerId provided for "options.pid". No analytics will be sent.');
+          assert.calledOnce(log.error);
+          assert.calledWithExactly(log.error, 'No partnerId provided for "options.pid". No analytics will be sent.');
+        });
       });
     });
 
-    context('when pid and endpoint have been given', function() {
-      context('and an invalid timeout config value has been given', function() {
-        it('logs an info message', function() {
-          sandbox.spy(utils, 'logInfo');
-
+    context('When pid and endpoint are given', function() {
+      context('and an invalid timeout config value is given', function() {
+        it('it logs an info message', function() {
           [ null, 'foo', -1 ].forEach((value, index) => {
             analyticsAdapter.enableAnalytics({
               provider: '33across',
               options: {
                 pid: 'test-pid',
-                endpoint: 'test-endpoint',
+                endpoint: 'http://test-endpoint',
                 timeout: value
               },
             });
             analyticsAdapter.disableAnalytics();
 
-            sinon.assert.calledWithExactly(utils.logInfo.getCall(index), '33across Analytics: Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.');
+            assert.called(log.info);
+            assert.calledWithExactly(log.info.getCall(index), 'Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.');
           });
         });
       });
 
       it('logs any received GAM slotRenderEnded event', function() {
-        sandbox.spy(utils, 'logInfo');
-
         analyticsAdapter.enableAnalytics({
           provider: '33across',
           options: {
             pid: 'test-pid',
-            endpoint: 'test-endpoint'
+            endpoint: faker.internet.url(),
           },
         });
 
@@ -97,7 +117,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
         mockGpt.emitEvent('slotRenderEnded', gEvent);
 
-        sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: slotRenderEnded', Object.assign({ eventName: 'slotRenderEnded' }, gEvent));
+        assert.calledWithExactly(log.info, 'slotRenderEnded', { ...gEvent, eventName: 'slotRenderEnded' });
       });
     });
   });
@@ -109,7 +129,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         analyticsAdapter.enableAnalytics({
           provider: '33across',
           options: {
-            endpoint: 'test-endpoint',
+            endpoint: 'http://test-endpoint',
             pid: 'test-pid',
             timeout: this.defaultTimeout,
             ...options
@@ -120,42 +140,44 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
     context('when an auction is complete', function() {
       context('and the AnalyticsReport is sent successfully to the given endpoint', function() {
-        it('logs an info message', function() {
-          sandbox.spy(utils, 'logInfo');
+        it('it logs an info message', function() {
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
-          this.enableAnalytics({ endpoint: 'foo-endpoint' });
+          sandbox.stub(navigator, 'sendBeacon').returns(true);
 
-          sandbox.stub(navigator, 'sendBeacon')
-            .withArgs('foo-endpoint', JSON.stringify(getStandardAnalyticsReport()))
-            .returns(true);
           performStandardAuction();
-          clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1);
 
-          sinon.assert.calledOnce(navigator.sendBeacon);
-          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', getStandardAnalyticsReport());
+          assert.calledOnce(navigator.sendBeacon);
+          assert.calledWith(navigator.sendBeacon, endpoint, sinon.match.string);
+          assert.calledWith(log.info, `Analytics report sent to ${endpoint}`, sinon.match.object);
+
+          navigator.sendBeacon.restore();
         });
       });
     });
 
     context('when an error occurs while sending the AnalyticsReport', function() {
       it('logs an error', function() {
-        sandbox.spy(utils, 'logError');
         this.enableAnalytics();
 
         sandbox.stub(navigator, 'sendBeacon').returns(false);
-        performStandardAuction();
-        clock.tick(this.defaultTimeout + 1);
 
-        sinon.assert.calledOnce(utils.logError);
-        sinon.assert.calledWith(utils.logError, '33across Analytics: Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1);
+
+        assert.calledOnce(navigator.sendBeacon);
+        assert.calledOnce(log.error);
+        assert.calledWith(log.error, 'Analytics report exceeded User-Agent data limits and was not sent.', sinon.match.object);
+
+        navigator.sendBeacon.restore();
       });
     });
 
     context('when a BID_WON event is received', function() {
-      context('and there\'s no record of that bid being requested', function() {
+      context('and there is no record of that bid being requested', function() {
         it('logs a warning message', function() {
-          sandbox.spy(utils, 'logWarn');
-
           this.enableAnalytics();
 
           const mockEvents = getMockEvents();
@@ -170,15 +192,13 @@ describe.only('33acrossAnalyticsAdapter:', function() {
 
           events.emit(EVENTS.BID_WON, fakeBidWonEvent);
 
-          sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: transactionId "foo" was not found. Nothing to enqueue.');
+          assert.calledWithExactly(log.warn, 'transactionId "foo" was not found. Nothing to enqueue.');
         });
       });
     });
 
     context('when the same BID_REQUESTED event is received more than once', function() {
       it('logs a warning message', function() {
-        sandbox.spy(utils, 'logWarn');
-
         this.enableAnalytics();
 
         const mockEvents = getMockEvents();
@@ -190,23 +210,22 @@ describe.only('33acrossAnalyticsAdapter:', function() {
         events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
         events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
 
-        sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: transactionId "ef947609-7b55-4420-8407-599760d0e373" already exists')
+        assert.calledWithExactly(log.warn, 'transactionId "ef947609-7b55-4420-8407-599760d0e373" already exists')
       });
     });
 
-    context('when a transaction doesn\'t reach its complete state', function() {
+    context('when a transaction does not reach its complete state', function() {
       context('and a timeout config value has been given', function() {
         context('and the timeout value has elapsed', function() {
-          it('logs an error', function() {
+          it('logs a warning', function() {
             this.enableAnalytics({ timeout: 2000 });
-
-            sandbox.spy(utils, 'logWarn');
 
             performAuctionWithMissingBidWon();
 
-            clock.tick(2001);
+            sandbox.clock.tick(5001);
 
-            sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: Timed out waiting for ad transactions to complete. Sending report.');
+            assert.called(log.warn);
+            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
         })
       });
@@ -216,37 +235,34 @@ describe.only('33acrossAnalyticsAdapter:', function() {
           it('logs an error', function() {
             this.enableAnalytics();
 
-            sandbox.spy(utils, 'logWarn');
-
             performAuctionWithMissingBidWon();
 
-            clock.tick(this.defaultTimeout + 1);
+            sandbox.clock.tick(this.defaultTimeout + 1);
 
-            sinon.assert.calledWithExactly(utils.logWarn, '33across Analytics: Timed out waiting for ad transactions to complete. Sending report.');
+            assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
         })
       });
 
       context('and the incomplete report has been sent successfully', function() {
         it('logs an info message', function() {
-          sandbox.spy(utils, 'logInfo');
           const incompleteAnalyticsReport = Object.assign(
             getStandardAnalyticsReport(),
             { bidsWon: [] }
           );
 
-          sandbox.stub(navigator, 'sendBeacon')
-            .withArgs('foo-endpoint', JSON.stringify(incompleteAnalyticsReport))
-            .returns(true);
+          sandbox.stub(navigator, 'sendBeacon').returns(true);
 
-          this.enableAnalytics({ endpoint: 'foo-endpoint' });
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
 
           performAuctionWithMissingBidWon();
+          sandbox.clock.tick(this.defaultTimeout + 1);
 
-          clock.tick(this.defaultTimeout + 1);
+          assert.calledOnce(navigator.sendBeacon);
+          assert.calledWith(log.info, `Analytics report sent to ${endpoint}`, incompleteAnalyticsReport);
 
-          sinon.assert.calledOnce(navigator.sendBeacon);
-          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+          navigator.sendBeacon.restore();
         });
       });
     });
@@ -325,7 +341,6 @@ function performAuctionWithMissingBidWon() {
 
 function getStandardAnalyticsReport() {
   return {
-    siteId: '',
     pid: 'test-pid',
     src: 'pbjs',
     analyticsVersion: '1.0.0',
@@ -334,7 +349,7 @@ function getStandardAnalyticsReport() {
       adUnits: [{
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
         adUnitCode: '/19968336/header-bid-tag-0',
-        slotId: '',
+        slotId: '/19968336/header-bid-tag-0',
         mediaTypes: ['banner'],
         sizes: ['300x250', '300x600'],
         bids: [{
@@ -353,7 +368,7 @@ function getStandardAnalyticsReport() {
       }, {
         transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
         adUnitCode: '/19968336/header-bid-tag-1',
-        slotId: '',
+        slotId: '/19968336/header-bid-tag-1',
         mediaTypes: ['banner'],
         sizes: ['728x90', '970x250'],
         bids: [{
@@ -372,7 +387,7 @@ function getStandardAnalyticsReport() {
       }, {
         transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
         adUnitCode: '/17118521/header-bid-tag-2',
-        slotId: '',
+        slotId: '/17118521/header-bid-tag-2',
         mediaTypes: ['banner'],
         sizes: ['300x250'],
         bids: []
