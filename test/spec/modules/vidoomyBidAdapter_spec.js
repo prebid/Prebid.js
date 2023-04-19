@@ -162,6 +162,29 @@ describe('vidoomyBidAdapter', function() {
       expect(request[0].data.schain).to.eq(serializedForm);
     });
 
+    it('should return standard json formated eids', function () {
+      const eids = [{
+        source: 'pubcid.org',
+        uids: [
+          {
+            id: 'some-random-id-value-1',
+            atype: 1
+          }
+        ]
+      },
+      {
+        source: 'adserver.org',
+        uids: [{
+          id: 'some-random-id-value-2',
+          atype: 1
+        }]
+      }]
+      bidRequests[0].userIdAsEids = eids
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+      expect(bidRequest[0].data).to.include.any.keys('eids');
+      expect(JSON.parse(bidRequest[0].data.eids)).to.eql(eids);
+    });
+
     it('should set the bidfloor if getFloor module is undefined but static bidfloor is present', function () {
       const request = { ...bidRequests[0], params: { bidfloor: 2.5 } }
       const req = spec.buildRequests([request], bidderRequest)[0];

@@ -136,6 +136,12 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       battr: []
     };
 
+    let eids;
+    const userEids = deepAccess(bid, 'userIdAsEids');
+    if (Array.isArray(userEids) && userEids.length > 0) {
+      eids = JSON.stringify(userEids) || '';
+    }
+
     const queryParams = {
       id: bid.params.id,
       adtype: adType,
@@ -149,6 +155,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       pid: bid.params.pid,
       requestId: bid.bidId,
       schain: serializeSupplyChainObj(bid.schain) || '',
+      eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?

@@ -524,9 +524,7 @@ describe('kargo adapter tests', function () {
       }
 
       const reqCount = requestCount++;
-      if (reqCount > 0) {
-        base.requestCount = reqCount
-      }
+      base.requestCount = reqCount
 
       if (expectedCRB != null) {
         if (expectedCRB.rawCRB != null) {
@@ -894,8 +892,8 @@ describe('kargo adapter tests', function () {
       });
     });
 
-    function getUserSyncsWhenAllowed(gdprConsent, usPrivacy) {
-      return spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent, usPrivacy);
+    function getUserSyncsWhenAllowed(gdprConsent, usPrivacy, gppConsent) {
+      return spec.getUserSyncs({iframeEnabled: true}, null, gdprConsent, usPrivacy, gppConsent);
     }
 
     function getUserSyncsWhenForbidden() {
@@ -910,17 +908,17 @@ describe('kargo adapter tests', function () {
       shouldSimulateOutdatedBrowser = true;
     }
 
-    function getSyncUrl(index, gdprApplies, gdprConsentString, usPrivacy) {
+    function getSyncUrl(index, gdprApplies, gdprConsentString, usPrivacy, gpp, gppSid) {
       return {
         type: 'iframe',
-        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}&gdpr=${gdprApplies}&gdpr_consent=${gdprConsentString}&us_privacy=${usPrivacy}`
+        url: `https://crb.kargo.com/api/v1/initsyncrnd/${clientId}?seed=3205e885-8d37-4139-b47e-f82cff268000&idx=${index}&gdpr=${gdprApplies}&gdpr_consent=${gdprConsentString}&us_privacy=${usPrivacy}&gpp=${gpp}&gpp_sid=${gppSid}`
       };
     }
 
-    function getSyncUrls(gdprApplies, gdprConsentString, usPrivacy) {
+    function getSyncUrls(gdprApplies, gdprConsentString, usPrivacy, gpp, gppSid) {
       var syncs = [];
       for (var i = 0; i < 5; i++) {
-        syncs[i] = getSyncUrl(i, gdprApplies || 0, gdprConsentString || '', usPrivacy || '');
+        syncs[i] = getSyncUrl(i, gdprApplies || 0, gdprConsentString || '', usPrivacy || '', gpp || '', gppSid || '');
       }
       return syncs;
     }
@@ -955,6 +953,11 @@ describe('kargo adapter tests', function () {
     it('pass through gdpr consent', function() {
       turnOnClientId();
       safelyRun(() => expect(getUserSyncsWhenAllowed({ gdprApplies: true, consentString: 'consentstring' })).to.deep.equal(getSyncUrls(1, 'consentstring', '')));
+    });
+
+    it('pass through gpp consent', function () {
+      turnOnClientId();
+      safelyRun(() => expect(getUserSyncsWhenAllowed(null, null, { consentString: 'gppString', applicableSections: [-1] })).to.deep.equal(getSyncUrls('', '', '', 'gppString', '-1')));
     });
 
     it('no user syncs when there is outdated browser', function() {
