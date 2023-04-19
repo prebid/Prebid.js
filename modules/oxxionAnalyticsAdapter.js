@@ -208,3 +208,4 @@ adapterManager.registerAnalyticsAdapter({
 });
 
 export default oxxionAnalytics;
+
