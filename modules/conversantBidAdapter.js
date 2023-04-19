@@ -124,6 +124,9 @@ export const spec = {
     const payload = {
       id: requestId,
       imp: conversantImps,
+      source: {
+        tid: requestId
+      },
       site: {
         id: siteId,
         mobile: document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
