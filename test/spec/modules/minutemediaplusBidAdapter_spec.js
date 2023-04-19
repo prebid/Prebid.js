@@ -448,6 +448,19 @@ describe('MinuteMediaPlus Bid Adapter', function () {
       });
     });
 
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['minutemedia-prebid.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['minutemedia-prebid.com'],
+        agencyName: 'Agency Name'
+      });
+    });
+
     it('should return an array of interpreted video responses', function () {
       const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);

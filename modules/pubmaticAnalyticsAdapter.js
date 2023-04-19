@@ -291,6 +291,17 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   }, [])
 }
 
+function getSizesForAdUnit(adUnit) {
+  var bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
+  if (!!bid || (bid === undefined && adUnit.dimensions.length === 0)) {
+    return ['1x1'];
+  } else {
+    return adUnit.dimensions.map(function (e) {
+      return e[0] + 'x' + e[1];
+    })
+  }
+}
+
 function getAdUnitAdFormats(adUnit) {
   var af = adUnit ? Object.keys(adUnit.mediaTypes || {}).map(format => MEDIATYPE[format.toUpperCase()]) : [];
   return af;
@@ -346,7 +357,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'sn': adUnitId,
       'au': origAdUnit.adUnitId || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
-      'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
+      'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
       'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
     };

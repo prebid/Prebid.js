@@ -1,5 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+
 const BIDDER_CODE = 'mabidder';
 export const baseUrl = 'https://prebid.ecdrsvc.com/bid';
 export const spec = {
@@ -33,7 +35,7 @@ export const spec = {
       url: baseUrl,
       method: 'POST',
       data: {
-        v: $$PREBID_GLOBAL$$.version,
+        v: getGlobal().version,
         bids: bids,
         url: bidderRequest.refererInfo.page || '',
         referer: bidderRequest.refererInfo.ref || '',

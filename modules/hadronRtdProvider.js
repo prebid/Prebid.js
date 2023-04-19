@@ -12,6 +12,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
 const MODULE_NAME = 'realTimeData';
@@ -21,7 +22,7 @@ const HADRON_ID_DEFAULT_URL = 'https://id.hadron.ad.gt/api/v1/hadronid?_it=prebi
 const HADRON_SEGMENT_URL = 'https://id.hadron.ad.gt/api/v1/rtd';
 export const HALOID_LOCAL_NAME = 'auHadronId';
 export const RTD_LOCAL_NAME = 'auHadronRtd';
-export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
 /**
  * @param {string} url
@@ -251,7 +252,8 @@ function init(provider, userConsent) {
 export const hadronSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getRealTimeData,
-  init: init
+  init: init,
+  gvlid: AU_GVLID,
 };
 
 submodule(MODULE_NAME, hadronSubmodule);

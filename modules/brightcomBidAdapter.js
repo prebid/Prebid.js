@@ -68,7 +68,7 @@ function buildRequests(bidReqs, bidderRequest) {
         w: screen.width,
         h: screen.height
       },
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest?.timeout
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -100,7 +100,6 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(brightcomBidReq),
-      options: {contentType: 'text/plain', withCredentials: false}
     };
   } catch (e) {
     logError(e, {bidReqs, bidderRequest});

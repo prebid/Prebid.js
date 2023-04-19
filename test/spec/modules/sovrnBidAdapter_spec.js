@@ -270,14 +270,33 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     })
 
-    it('should add eds to the bid request', function() {
+    it('should add eids to the bid request', function() {
       const criteoIdRequest = {
         ...baseBidRequest,
-        userId: {
-          criteoId: 'A_CRITEO_ID',
-          tdid: 'SOMESORTOFID',
-        }
-      }
+        userIdAsEids: [
+          {
+            source: 'criteo.com',
+            uids: [
+              {
+                atype: 1,
+                id: 'A_CRITEO_ID'
+              }
+            ]
+          },
+          {
+            source: 'adserver.org',
+            uids: [
+              {
+                atype: 1,
+                ext: {
+                  rtiPartner: 'TDID'
+                },
+                id: 'SOMESORTOFID'
+              }
+            ]
+          }
+        ]
+      };
       const criteoIdRequests = [criteoIdRequest, baseBidRequest]
       const ext = JSON.parse(spec.buildRequests(criteoIdRequests, baseBidderRequest).data).user.ext
       const firstEID = ext.eids[0]
