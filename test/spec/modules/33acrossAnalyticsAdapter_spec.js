@@ -132,7 +132,7 @@ describe.only('33acrossAnalyticsAdapter:', function() {
           clock.tick(this.defaultTimeout + 1);
 
           sinon.assert.calledOnce(navigator.sendBeacon);
-          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', sinon.match.object);
+          sinon.assert.calledWithExactly(utils.logInfo, '33across Analytics: Analytics report sent to foo-endpoint', getStandardAnalyticsReport());
         });
       });
     });

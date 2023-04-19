@@ -171,6 +171,9 @@ const analyticsAdapter = Object.assign(
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 
+/**
+ * @param {Object} [config] Analytics module configuration
+ */
 function enableAnalyticsWrapper(config = {}) {
   const { options = {} } = config;
   const endpoint = options.endpoint;
@@ -281,10 +284,10 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
 }
 
 /**
- * @param {Object} params
- * @param {Array} params.adUnits
- * @param {string} params.auctionId
- * @param {Array} params.bidderRequests
+ * @param {Object} args
+ * @param {Array} args.adUnits
+ * @param {string} args.auctionId
+ * @param {Array} args.bidderRequests
  * @returns {Auction}
  */
 function parseAuction({ adUnits, auctionId, bidderRequests }) {
@@ -300,12 +303,12 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
 }
 
 /**
- * @param {Object} params
- * @param {string} params.transactionId
- * @param {string} params.code
- * @param {string} params.slotId
- * @param {Array<string>} params.mediaTypes
- * @param {Array<string>} params.sizes
+ * @param {Object} args
+ * @param {string} args.transactionId
+ * @param {string} args.code
+ * @param {string} args.slotId
+ * @param {Array<string>} args.mediaTypes
+ * @param {Array<string>} args.sizes
  * @returns {AdUnit}
  */
 function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes }) {
@@ -322,12 +325,12 @@ function parseAdUnit({ transactionId, code, slotId, mediaTypes, sizes }) {
 }
 
 /**
- * @param {Object} params
- * @param {string} params.auctionId
- * @param {string} params.bidder
- * @param {string} params.source
- * @param {string} params.status
- * @param {Object} params.args
+ * @param {Object} args
+ * @param {string} args.auctionId
+ * @param {string} args.bidder
+ * @param {string} args.source
+ * @param {string} args.status
+ * @param {Object} args.args
  * @returns {Bid}
  */
 function parseBid({ auctionId, bidder, source, status, ...args }) {
@@ -340,13 +343,13 @@ function parseBid({ auctionId, bidder, source, status, ...args }) {
 }
 
 /**
- * @param {Object} params
- * @param {number} params.cpm
- * @param {string} params.currency
- * @param {number} params.originalCpm
- * @param {Object} params.floorData
- * @param {string} params.mediaType
- * @param {string} params.size
+ * @param {Object} args
+ * @param {number} args.cpm
+ * @param {string} args.currency
+ * @param {number} args.originalCpm
+ * @param {Object} args.floorData
+ * @param {string} args.mediaType
+ * @param {string} args.size
  * @returns {BidResponse}
  */
 function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, size }) {
@@ -362,6 +365,7 @@ function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, si
 
 /**
  * @param {Object} args
+ * @param {Object} args.args Event data
  * @param {EVENTS[keyof EVENTS]} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
@@ -432,6 +436,11 @@ function sendReport(report, endpoint) {
   log.error('Analytics report exceeded User-Agent data limits and was not sent.', report);
 }
 
+/**
+ * Encapsute certain logger functions and add a prefix to the final messages.
+ *
+ * @return {Object} New logger functions
+ */
 function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
