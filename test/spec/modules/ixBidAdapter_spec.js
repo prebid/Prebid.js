@@ -1703,6 +1703,63 @@ describe('IndexexchangeAdapter', function () {
       expect(r.regs.gpp_sid).to.be.an('array');
       expect(r.regs.gpp_sid).to.include(1);
     });
+
+    it('should add adunit specific data to imp ext for banner', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam banner',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam banner');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for native', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam native',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam native');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for video', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam video',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam video');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
   });
 
   describe('buildRequests', function () {
