@@ -21,33 +21,6 @@ describe('RetailSpot Adapter', function () {
     refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
     ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
-  const bidRequestWithEmptyPlacement = [
-    {
-      'bidId': 'bid_id_0',
-      'bidder': 'retailspot',
-      'placementCode': 'adunit/hb-0',
-      'params': {},
-      'sizes': '300x250',
-      'mediaTypes':
-        { 'banner':
-          {'sizes': ['300x250', '300x600']
-          }
-        }
-    }
-  ];
-  const bidRequestWithEmptySizes = {
-    'bids': [
-      {
-        'bidId': 'bid_id_0',
-        'bidder': 'retailspot',
-        'placementCode': 'adunit/hb-0',
-        'params': {
-          'placement': 'placement_0'
-        },
-        'transactionId': 'bid_id_0_transaction_id'
-      }
-    ],
-  };
 
   const bidRequestWithSinglePlacement = [
     {
@@ -410,7 +383,7 @@ describe('RetailSpot Adapter', function () {
 
     it('receive reponse with single placement', function () {
       serverResponse.body = responseWithSinglePlacement;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(requestDataOnePlacement) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result[0].cpm).to.equal(0.5);
@@ -422,7 +395,7 @@ describe('RetailSpot Adapter', function () {
 
     it('receive reponse with multiple placement', function () {
       serverResponse.body = responseWithMultiplePlacements;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(requestDataMultiPlacement) + '}'});
 
       expect(result.length).to.equal(2);
 
@@ -439,7 +412,7 @@ describe('RetailSpot Adapter', function () {
 
     it('receive Vast reponse with Video ad', function () {
       serverResponse.body = responseWithSingleVideo;
-      let result = spec.interpretResponse(serverResponse, {data: '{"Bids":' + JSON.stringify(sentBidVideo) + '}'});
+      let result = spec.interpretResponse(serverResponse, {data: '{"bids":' + JSON.stringify(sentBidVideo) + '}'});
 
       expect(result.length).to.equal(1);
       expect(result).to.deep.equal(videoResult);

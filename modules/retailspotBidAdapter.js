@@ -74,7 +74,7 @@ export const spec = {
     var bidRequests = {};
 
     try {
-      bidRequests = JSON.parse(request.data).Bids;
+      bidRequests = JSON.parse(request.data).bids;
     } catch (err) {
       // json error initial request can't be read
     }
@@ -141,7 +141,7 @@ function createBid(response, bidRequests) {
     return;
   }
 
-  const request = bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
+  const request = bidRequests && bidRequests.length && bidRequests.find(itm => response.requestId === itm.bidId);
   // In case we don't retreive the size from the adserver, use the given one.
   if (request) {
     if (!response.width || response.width === '0') {
