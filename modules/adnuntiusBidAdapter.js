@@ -17,7 +17,7 @@ const checkSegment = function (segment) {
 }
 
 const getSegmentsFromOrtb = function (ortb2) {
-  const userData = deepAccess(ortb2, 'user.data'); s
+  const userData = deepAccess(ortb2, 'user.data');
   let segments = [];
   if (userData) {
     userData.forEach(userdat => {
@@ -128,10 +128,10 @@ export const spec = {
 
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
-      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       const network = networkKeys[j];
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
+      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       // if (network.indexOf('_native') > -1) { networkRequest.push('tt=' + DEFAULT_NATIVE) }
       requests.push({
         method: 'POST',
