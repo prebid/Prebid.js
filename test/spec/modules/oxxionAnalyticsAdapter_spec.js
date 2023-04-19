@@ -297,7 +297,7 @@ describe('Oxxion Analytics', function () {
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
-      sinon.assert.callCount(oxxionAnalytics.track, 4);
+      sinon.assert.callCount(oxxionAnalytics.track, 5);
     });
 
     it('test bidWon', function() {
