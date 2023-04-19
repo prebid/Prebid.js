@@ -8,12 +8,13 @@
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js'
 import { logError } from '../src/utils.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
 const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 
-export const storage = getStorageManager()
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function pairIdFromLocalStorage(key) {
   return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(key) : null;
