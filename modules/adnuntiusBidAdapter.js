@@ -6,6 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
+const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
 // const DEFAULT_NATIVE = 'native'
@@ -16,7 +17,7 @@ const checkSegment = function (segment) {
 }
 
 const getSegmentsFromOrtb = function (ortb2) {
-  const userData = deepAccess(ortb2, 'user.data');
+  const userData = deepAccess(ortb2, 'user.data'); s
   let segments = [];
   if (userData) {
     userData.forEach(userdat => {
@@ -127,13 +128,14 @@ export const spec = {
 
     const networkKeys = Object.keys(networks)
     for (var j = 0; j < networkKeys.length; j++) {
+      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       const network = networkKeys[j];
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
       // if (network.indexOf('_native') > -1) { networkRequest.push('tt=' + DEFAULT_NATIVE) }
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + '?' + networkRequest.join('&'),
+        url: requestURL + '?' + networkRequest.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });
