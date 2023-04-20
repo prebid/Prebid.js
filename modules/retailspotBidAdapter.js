@@ -154,21 +154,24 @@ function createBid(response, bidRequests) {
   }
 
   const bid = {
+    bidderCode: BIDDER_CODE,
     width: response.width,
     height: response.height,
     requestId: response.requestId,
     ttl: response.ttl || 3600,
     creativeId: response.creativeId,
+    adId: response.adId,
+    dealId: response.dealId,
     cpm: response.cpm,
     netRevenue: response.netRevenue,
     currency: response.currency,
-    meta: response.meta || { advertiserDomains: [] }
+    meta: response.meta || { advertiserDomains: ['retail-spot.io'] },
+    mediaType: response.mediaType
   };
 
   // retreive video response if present
   if (response.mediaType === 'video') {
     bid.vastXml = response.vastXml;
-    bid.mediaType = response.mediaType;
   } else {
     bid.ad = response.ad;
   }
