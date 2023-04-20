@@ -9,7 +9,7 @@ describe('smartxspBidAdapter', function () {
     auctionId: '5kaj89l8-3456-2s56-c455-4g6h78jsdfgf',
     bidRequestsCount: 1,
     bidder: 'smartxsp',
-    bidderRequestId: '24081afs940568',
+    bidderRequestId: '24081afs940568', 
     bidderRequestsCount: 1,
     bidderWinsCount: 0,
     bidId: '22499d052045',
