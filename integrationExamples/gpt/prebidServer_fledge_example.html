@@ -29,7 +29,7 @@
         }
       },
       bids: [{
-        bidder: 'openx-via-pbs',
+        bidder: 'openx',
         params: {
           platform: '8869ec2c-9d3f-4f16-9d2f-49aaab8978fb',
           unit: '111111'
@@ -51,19 +51,14 @@
           accountId : '1',
           enabled : true,
           defaultVendor: 'appnexus',
-          bidders : ['openx-via-pbs'],
+          bidders : ['openx'],
           timeout : 1500,
-          adapter : 'prebidServer',
-          extPrebid: {
-            aliases: {
-              'openx-via-pbs': 'openx'
-            }
-          },
+          adapter : 'prebidServer'
         }]
       });
 
       pbjs.setBidderConfig({
-        bidders: ['openx-via-pbs'],
+        bidders: ['openx'],
         config: {
           fledgeEnabled: true
         }
