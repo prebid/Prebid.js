@@ -81,11 +81,6 @@ describe('RealVu', function() {
       result = realvuAnalyticsAdapter.checkIn(bid, ''); // test invalid partnerId ''
     });
 
-    it.skip('isInView returns "yes"', () => {
-      let inview = realvuAnalyticsAdapter.isInView('ad1');
-      expect(inview).to.equal('yes');
-    });
-
     it('isInView return "NA"', function () {
       const adUnitCode = '1234';
       let result = realvuAnalyticsAdapter.isInView(adUnitCode);
