@@ -1583,7 +1583,9 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         let eidPermissions;
         getPrebidInternal().setEidPermissions = function (newEidPermissions) {
-          eidPermissions = newEidPermissions;
+          if (newEidPermissions.length > 0) {
+            eidPermissions = newEidPermissions;
+          }
         }
         config.setConfig({
           userSync: {
@@ -1649,7 +1651,9 @@ describe('User ID', function () {
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
         let eidPermissions;
         getPrebidInternal().setEidPermissions = function (newEidPermissions) {
-          eidPermissions = newEidPermissions;
+          if (newEidPermissions.length > 0) {
+            eidPermissions = newEidPermissions;
+          }
         }
         config.setConfig({
           userSync: {
@@ -1668,9 +1672,7 @@ describe('User ID', function () {
         });
 
         requestBidsHook(function () {
-          expect(eidPermissions).to.deep.equal(
-            []
-          );
+          expect(eidPermissions).to.be.undefined;
           adUnits.forEach(unit => {
             unit.bids.forEach(bid => {
               expect(bid).to.have.deep.nested.property('userId.pubcid');

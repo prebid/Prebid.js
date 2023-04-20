@@ -593,7 +593,9 @@ function emitNonBids(seatnonbid, auctionId) {
  * @param {array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
-  eidPermissions = newEidPermissions;
+  if (newEidPermissions.length > 0) {
+    eidPermissions = newEidPermissions;
+  }
 }
 getPrebidInternal().setEidPermissions = setEidPermissions;
 
