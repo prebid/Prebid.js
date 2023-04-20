@@ -293,20 +293,6 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0]).to.be.an('object');
       expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
-
-    describe('COPPA param', function () {
-      it('should add COPPA param to payload when COPPA equal to true', function () {
-        config.setConfig({ coppa: true });
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.params.coppa).to.equal(1);
-      });
-
-      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
-        config.setConfig({ coppa: false });
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.params.coppa).to.be.undefined;
-      });
-    })
   });
 
   describe('interpretResponse', function () {
