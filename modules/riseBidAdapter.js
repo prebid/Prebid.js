@@ -449,5 +449,9 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
+  if (config.getConfig('coppa') === true) {
+    generalParams.coppa = 1;
+  }
+
   return generalParams;
 }
