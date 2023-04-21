@@ -139,6 +139,7 @@ describe('triplelift adapter', function () {
           sizes: [[300, 250], [300, 600], [1, 1, 1], ['flex']],
           bidId: '30b31c1838de1e',
           bidderRequestId: '22edbae2733bf6',
+          transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
@@ -687,6 +688,12 @@ describe('triplelift adapter', function () {
       expect(payload.imp[13]).to.have.property('video');
       expect(payload.imp[13].video).to.exist.and.to.be.a('object');
       expect(payload.imp[13].video.placement).to.equal(3);
+    });
+
+    it('should add tid to imp.ext if transactionId exists', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[0].ext.tid).to.exist.and.be.a('string');
+      expect(request.data.imp[0].ext.tid).to.equal('173f49a8-7549-4218-a23c-e7ba59b47229');
     });
 
     it('should add tdid to the payload if included', function () {

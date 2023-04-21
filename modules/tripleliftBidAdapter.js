@@ -132,6 +132,11 @@ function _buildPostBody(bidRequests, bidderRequest) {
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
     }
+    // add tid to extension obj
+    if (!isEmpty(bidRequest.transactionId)) {
+      imp.ext = _getImpExt(bidRequest.transactionId);
+    }
+
     return imp;
   });
 
@@ -281,6 +286,16 @@ function _getAdUnitFpd(adUnitFpd) {
   }
 
   return fpd;
+}
+
+function _getImpExt(transactionId) {
+  const ext = {};
+
+  if (transactionId) {
+    ext.tid = transactionId;
+  }
+
+  return ext;
 }
 
 function _addEntries(target, source) {
