@@ -344,7 +344,7 @@ function getStandardAnalyticsReport() {
     pid: 'test-pid',
     src: 'pbjs',
     analyticsVersion: '1.0.0',
-    pbjsVersion: '7.44.0-pre',
+    pbjsVersion: '$prebid.version$',
     auctions: [{
       adUnits: [{
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
