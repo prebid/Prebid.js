@@ -134,17 +134,14 @@ class TransactionManager {
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
   // eslint-disable-next-line no-dupe-class-members
   #clearTimeout() {
-    log.info(`clear timeout. #timeoutId: ${this.#timeoutId}`);
     return window.clearTimeout(this.#timeoutId);
   }
 
   // eslint-disable-next-line no-dupe-class-members
   #restartSendTimeout() {
-    log.info(`Restarting send timeout. ${this.#unsent} unsent.`);
     this.#clearTimeout();
 
     this.#timeoutId = setTimeout(() => {
-      log.info(`timeout triggered. #timeout: ${this.#timeout}. #unsent: ${this.#unsent}`);
       if (this.#timeout !== 0) {
         log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
       }
