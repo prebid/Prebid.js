@@ -10,11 +10,12 @@ const BIDDER_CODE = 'vidoomy';
 const GVLID = 380;
 
 const COOKIE_SYNC_FALLBACK_URLS = [
-  'https://x.bidswitch.net/sync?ssp=vidoomy',
-  'https://ib.adnxs.com/getuid?https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadnxs%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
+  'https://x.bidswitch.net/sync?ssp=vidoomy&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=',
   'https://pixel-sync.sitescout.com/dmp/pixelSync?nid=120&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&redir=https%3A%2F%2Fa.vidoomy.com%2Fapi%2Frtbserver%2Fcookie%3Fi%3DCEN%26uid%3D%7BuserId%7D',
   'https://cm.adform.net/cookie?redirect_url=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dadf%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D%24UID',
-  'https://ups.analytics.yahoo.com/ups/58531/occ?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}'
+  'https://pixel.rubiconproject.com/exchange/sync.php?p=pbs-vidoomy&gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=',
+  'https://rtb.openx.net/sync/prebid?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&r=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dopenx%26uid%3D$%7BUID%7D',
+  'https://ads.pubmatic.com/AdServer/js/user_sync.html?gdpr={{GDPR}}&gdpr_consent={{GDPR_CONSENT}}&us_privacy=&predirect=https%3A%2F%2Fa-prebid.vidoomy.com%2Fsetuid%3Fbidder%3Dpubmatic%26gdpr%3D{{GDPR}}%26gdpr_consent%3D{{GDPR_CONSENT}}%26uid%3D'
 ];
 
 const isBidRequestValid = bid => {
@@ -128,6 +129,12 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
     const floor = getBidFloor(bid, adType, sizes, bidfloor);
 
+    let eids;
+    const userEids = deepAccess(bid, 'userIdAsEids');
+    if (Array.isArray(userEids) && userEids.length > 0) {
+      eids = JSON.stringify(userEids) || '';
+    }
+
     const queryParams = {
       id: bid.params.id,
       adtype: adType,
@@ -141,6 +148,7 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       pid: bid.params.pid,
       requestId: bid.bidId,
       schain: serializeSupplyChainObj(bid.schain) || '',
+      eids: eids || '',
       bidfloor: floor,
       d: getDomainWithoutSubdomain(hostname), // 'vidoomy.com',
       // TODO: does the fallback make sense here?

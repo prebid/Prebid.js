@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
+import { getValue, logError, isEmpty, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -34,6 +34,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(buildRequestObject);
+    const blacklist = bidderRequest.ortb2 || {};
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
     const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
@@ -59,6 +60,10 @@ export const spec = {
       }
     };
 
+    if (!isEmpty(blacklist.badv)) {
+      payload.blacklist = blacklist.badv;
+    };
+
     if (payload) {
       switch (bidderName) {
         case 'pixad':
@@ -69,7 +74,7 @@ export const spec = {
           break;
       }
 
-      return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
+      return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
 
