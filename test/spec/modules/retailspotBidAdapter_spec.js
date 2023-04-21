@@ -204,6 +204,7 @@ describe('RetailSpot Adapter', function () {
   }];
 
   const videoResult = [{
+    bidderCode: 'retailspot',
     cpm: 0.5,
     creativeId: 'testvideo123',
     currency: 'USD',
@@ -213,10 +214,12 @@ describe('RetailSpot Adapter', function () {
     ttl: 3600,
     mediaType: 'video',
     meta: {
-      advertiserDomains: []
+      advertiserDomains: ['retail-spot.io']
     },
     vastXml: '<VAST>Empty sample</vast>',
-    width: 530
+    width: 530,
+    adId: undefined,
+    dealId: undefined
   }];
 
   const responseWithMultiplePlacements = [
