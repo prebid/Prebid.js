@@ -200,7 +200,9 @@ describe('RetailSpot Adapter', function () {
     'mediaType': 'video',
     'creativeId': 'testvideo123',
     'netRevenue': true,
-    'currency': 'USD'
+    'currency': 'USD',
+    'adId': 'fakeAdID',
+    'dealId': 'fakeDealId'
   }];
 
   const videoResult = [{
@@ -218,8 +220,8 @@ describe('RetailSpot Adapter', function () {
     },
     vastXml: '<VAST>Empty sample</vast>',
     width: 530,
-    adId: undefined,
-    dealId: undefined
+    adId: 'fakeAdID',
+    dealId: 'fakeDealId'
   }];
 
   const responseWithMultiplePlacements = [

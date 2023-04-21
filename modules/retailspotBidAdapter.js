@@ -160,8 +160,6 @@ function createBid(response, bidRequests) {
     requestId: response.requestId,
     ttl: response.ttl || 3600,
     creativeId: response.creativeId,
-    adId: response.adId,
-    dealId: response.dealId,
     cpm: response.cpm,
     netRevenue: response.netRevenue,
     currency: response.currency,
@@ -174,6 +172,12 @@ function createBid(response, bidRequests) {
     bid.vastXml = response.vastXml;
   } else {
     bid.ad = response.ad;
+  }
+  if (response.adId) {
+    bid.adId = response.adId;
+  }
+  if (response.dealId) {
+    bid.dealId = response.dealId;
   }
 
   return bid;
