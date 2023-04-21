@@ -240,10 +240,7 @@ function subscribeToGamSlotRenderEvent(transactionManager) {
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
     window.googletag.pubads().addEventListener('slotRenderEnded', event => {
-      log.info('slotRenderEnded', event);
-
-      const slot = `${event.slot.getAdUnitPath()}:${event.slot.getSlotElementId()}`;
-      log.info(slot);
+      log.info('slotRenderEnded', `adUnitPath: ${event.slot.getAdUnitPath()}`, `slotElementId: ${event.slot.getSlotElementId()}`);
     });
   });
 }

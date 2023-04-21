@@ -117,7 +117,7 @@ describe('33acrossAnalyticsAdapter:', function() {
 
         mockGpt.emitEvent('slotRenderEnded', gEvent);
 
-        assert.calledWithExactly(log.info, 'slotRenderEnded', { ...gEvent, eventName: 'slotRenderEnded' });
+        assert.calledWithExactly(log.info, 'slotRenderEnded', `adUnitPath: ${gEvent.slot.getAdUnitPath()}`, `slotElementId: ${gEvent.slot.getSlotElementId()}`);
       });
     });
   });
