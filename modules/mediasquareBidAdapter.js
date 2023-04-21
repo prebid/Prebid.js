@@ -4,6 +4,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {Renderer} from '../src/Renderer.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
@@ -170,7 +171,7 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    let params = {'pbjs': '$prebid.version$'};
+    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     if (bid.hasOwnProperty('mediasquare')) {

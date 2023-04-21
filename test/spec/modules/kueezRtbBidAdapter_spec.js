@@ -43,7 +43,12 @@ const BID = {
   'bidderWinsCount': 1,
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
-  'mediaTypes': [BANNER]
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '0123456789'
+    }
+  }
 };
 
 const VIDEO_BID = {
@@ -315,7 +320,8 @@ describe('KueezRtbBidAdapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          gpid: ''
         }
       });
     });
@@ -373,6 +379,7 @@ describe('KueezRtbBidAdapter', function () {
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
+          gpid: '0123456789',
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',

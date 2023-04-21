@@ -233,23 +233,6 @@ describe('Publisher Common ID', function () {
         });
       });
     });
-
-    it.skip('disable auto create', function() {
-      setConfig({
-        create: false
-      });
-
-      const config = getPubcidConfig();
-      expect(config.create).to.be.false;
-      expect(config.typeEnabled).to.equal('html5');
-
-      let adUnits = getAdUnits();
-      let innerAdUnits;
-      requestBidHook((config) => { innerAdUnits = config.adUnits }, {adUnits});
-
-      const pubcid = localStorage.getItem(ID_NAME);
-      expect(pubcid).to.be.null;
-    });
   });
 
   describe('Invoking requestBid', function () {

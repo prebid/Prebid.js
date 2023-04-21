@@ -45,6 +45,12 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
+  },
+
   // justId
   'justId': {
     source: 'justtag.com',
