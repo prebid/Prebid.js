@@ -78,7 +78,7 @@ export const log = getLogger();
  * all bids are complete.
  */
 class TransactionManager {
-  #timeoutId = null;
+  #timeoutId;
   #pending = 0;
   #timeout;
   #transactions = {};
@@ -157,18 +157,28 @@ class TransactionManager {
 const locals = {
   /** @type {Object<string, TransactionManager>} */
   transactionManagers: {},
-  /** @type {string} */
-  endpoint: DEFAULT_ENDPOINT,
-  /** @type {AnalyticsReport} */
+  /** @type {AnalyticsCache=} */
   analyticsCache: undefined,
   /** sets all locals to undefined */
   reset() {
     this.transactionManagers = {};
-    this.endpoint = DEFAULT_ENDPOINT;
     this.analyticsCache = undefined;
   }
 }
 
+/**
+ * @typedef {Object} AnalyticsAdapter
+ * @property {function} track
+ * @property {function} enableAnalytics
+ * @property {function} disableAnalytics
+ * @property {function} [originEnableAnalytics]
+ * @property {function} [originDisableAnalytics]
+ * @property {function} [_oldEnable]
+ */
+
+/**
+ * @type {AnalyticsAdapter}
+ */
 const analyticsAdapter = Object.assign(
   buildAdapter({ analyticsType: 'endpoint' }),
   { track: analyticEventHandler }
@@ -178,10 +188,19 @@ analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 
 /**
- * @param {Object} [config] Analytics module configuration
+ * @typedef {Object} AnalyticsConfig
+ * @property {string} provider
+ * @property {Object} options
+ * @property {string} options.pid - Publisher/Partner ID
+ * @property {string} [options.endpoint=DEFAULT_ENDPOINT] - Endpoint to send analytics data
+ * @property {number} [options.timeout=DEFAULT_TRANSACTION_TIMEOUT] - Timeout for sending analytics data
  */
-function enableAnalyticsWrapper(config = {}) {
-  const { options = {} } = config;
+
+/**
+ * @param {AnalyticsConfig} config Analytics module configuration
+ */
+function enableAnalyticsWrapper(config) {
+  const { options } = config;
 
   const pid = options.pid;
   if (!pid) {
@@ -202,7 +221,7 @@ function enableAnalyticsWrapper(config = {}) {
 }
 
 /**
- * @param {string} endpoint
+ * @param {string} [endpoint]
  * @returns {string}
  */
 function calculateEndpoint(endpoint) {
@@ -215,7 +234,7 @@ function calculateEndpoint(endpoint) {
   return DEFAULT_ENDPOINT;
 }
 /**
- * @param {number|undefined} configTimeout
+ * @param {number} [configTimeout]
  * @returns {number} Transaction Timeout
  */
 function calculateTransactionTimeout(configTimeout) {
@@ -233,7 +252,7 @@ function calculateTransactionTimeout(configTimeout) {
 }
 
 /**
- * @param {TransacionManager} transactionManager
+ * @param {TransactionManager} transactionManager
  */
 function subscribeToGamSlotRenderEvent(transactionManager) {
   window.googletag = window.googletag || {};
@@ -314,9 +333,9 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
  * @param {Object} args
  * @param {string} args.transactionId
  * @param {string} args.code
- * @param {string} args.ortb2Imp
- * @param {Array<string>} args.mediaTypes
- * @param {Array<string>} args.sizes
+ * @param {Object} args.ortb2Imp
+ * @param {Array<Object>} args.mediaTypes
+ * @param {Array<[number,number]>} args.sizes
  * @returns {AdUnit}
  */
 function parseAdUnit({ transactionId, code, ortb2Imp, mediaTypes, sizes }) {
@@ -378,6 +397,11 @@ function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, si
  * @param {EVENTS[keyof EVENTS]} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
+  if (!locals.analyticsCache) {
+    log.error('Something went wrong. Analytics cache is not initialized.');
+    return;
+  }
+
   switch (eventType) {
     case EVENTS.AUCTION_INIT:
       const auction = parseAuction(args);
@@ -409,6 +433,11 @@ function analyticEventHandler({ eventType, args }) {
       const bidResponse = parseBid(args);
       const cachedAuction = locals.analyticsCache.auctions[args.auctionId];
       const cachedAdUnit = cachedAuction.adUnits.find(adUnit => adUnit.transactionId === args.transactionId);
+
+      if (!cachedAdUnit) {
+        log.error('Failed to find adUnit in analytics cache.');
+        return;
+      }
 
       cachedAdUnit.bids.push(bidResponse);
 
