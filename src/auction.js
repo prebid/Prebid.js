@@ -579,8 +579,8 @@ export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
 
   useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
-  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
   auctionInstance.addBidReceived(bidResponse);
+  events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
 
   doCallbacksIfTimedout(auctionInstance, bidResponse);
 }
