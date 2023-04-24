@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -189,7 +189,7 @@ analyticsAdapter.enableAnalytics = enableAnalyticsWrapper;
 
 /**
  * @typedef {Object} AnalyticsConfig
- * @property {string} provider
+ * @property {string} provider - set by pbjs at module registration time
  * @property {Object} options
  * @property {string} options.pid - Publisher/Partner ID
  * @property {string} [options.endpoint=DEFAULT_ENDPOINT] - Endpoint to send analytics data
@@ -325,7 +325,7 @@ function parseAuction({ adUnits, auctionId, bidderRequests }) {
   return {
     adUnits: adUnits.map(unit => parseAdUnit(unit)),
     auctionId,
-    userIds: Object.keys(utils.deepAccess(bidderRequests, '0.bids.0.userId', {}))
+    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {}))
   }
 }
 
@@ -345,7 +345,7 @@ function parseAdUnit({ transactionId, code, ortb2Imp, mediaTypes, sizes }) {
     // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
     // The value of the UNIQUIFIER is likely to be the div-id,
     // but, if div-id is randomized / unavailable, may be something else like the media size)
-    slotId: utils.deepAccess(ortb2Imp, 'ext.gpid', code),
+    slotId: deepAccess(ortb2Imp, 'ext.gpid', code),
     mediaTypes: Object.keys(mediaTypes),
     sizes: sizes.map(size => size.join('x')),
     bids: []
@@ -485,8 +485,8 @@ function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
-    info: (msg, ...args) => utils.logInfo(`${LPREFIX}${msg}`, ...args),
-    warn: (msg, ...args) => utils.logWarn(`${LPREFIX}${msg}`, ...args),
-    error: (msg, ...args) => utils.logError(`${LPREFIX}${msg}`, ...args),
+    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...args),
+    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...args),
+    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...args),
   }
 }
