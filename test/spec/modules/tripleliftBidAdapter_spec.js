@@ -145,10 +145,7 @@ describe('triplelift adapter', function () {
           schain,
           ortb2Imp: {
             ext: {
-              data: {
-                pbAdSlot: 'homepage-top-rect',
-                adUnitSpecificAttribute: 123
-              }
+              tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
             }
           }
         },
@@ -179,6 +176,15 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+          ortb2Imp: {
+            ext: {
+              data: {
+                pbAdSlot: 'homepage-top-rect',
+                adUnitSpecificAttribute: 123
+              },
+              tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
+            }
+          }
         },
         // banner and outstream video
         {
@@ -696,6 +702,23 @@ describe('triplelift adapter', function () {
       expect(request.data.imp[0].ext.tid).to.equal('173f49a8-7549-4218-a23c-e7ba59b47229');
     });
 
+    it('should copy entire impression ext object', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[1].ext).to.haveOwnProperty('tid');
+      expect(request.data.imp[1].ext).to.haveOwnProperty('data');
+      expect(request.data.imp[1].ext.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request.data.imp[1].ext.data).to.haveOwnProperty('pbAdSlot');
+      expect(request.data.imp[1].ext).to.deep.equal(
+        {
+          data: {
+            pbAdSlot: 'homepage-top-rect',
+            adUnitSpecificAttribute: 123
+          },
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229'
+        }
+      );
+    });
+
     it('should add tdid to the payload if included', function () {
       const id = '6bca7f6b-a98a-46c0-be05-6020f7604598';
       bidRequests[0].userId.tdid = id;
@@ -1110,10 +1133,10 @@ describe('triplelift adapter', function () {
     });
     it('should send ad unit fpd if kvps are available', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.imp[0].fpd.context).to.haveOwnProperty('data');
-      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('pbAdSlot');
-      expect(request.data.imp[0].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
-      expect(request.data.imp[1].fpd).to.not.exist;
+      expect(request.data.imp[1].fpd.context).to.haveOwnProperty('data');
+      expect(request.data.imp[1].fpd.context.data).to.haveOwnProperty('pbAdSlot');
+      expect(request.data.imp[1].fpd.context.data).to.haveOwnProperty('adUnitSpecificAttribute');
+      expect(request.data.imp[2].fpd).to.not.exist;
     });
     it('should send 1PlusX data as fpd if localStorage is available and no other fpd is defined', function() {
       sandbox.stub(storage, 'getDataFromLocalStorage').callsFake(() => '{"kid":1,"s":"ySRdArquXuBolr/cVv0UNqrJhTO4QZsbNH/t+2kR3gXjbA==","t":"/yVtBrquXuBolr/cVv0UNtx1mssdLYeKFhWFI3Dq1dJnug=="}');
