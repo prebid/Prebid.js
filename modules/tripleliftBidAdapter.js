@@ -131,10 +131,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
-    }
-    // add tid to extension obj
-    if (!isEmpty(bidRequest.transactionId)) {
-      imp.ext = _getImpExt(bidRequest.transactionId);
+      imp.ext = _getImpExt(bidRequest);
     }
 
     return imp;
@@ -288,11 +285,15 @@ function _getAdUnitFpd(adUnitFpd) {
   return fpd;
 }
 
-function _getImpExt(transactionId) {
-  const ext = {};
+function _getImpExt(bidRequest) {
+  let ext = {};
 
-  if (transactionId) {
-    ext.tid = transactionId;
+  if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+    ext = { ...bidRequest.ortb2Imp.ext }
+  }
+
+  if (!ext.tid) {
+    ext.tid = bidRequest.transactionId;
   }
 
   return ext;
