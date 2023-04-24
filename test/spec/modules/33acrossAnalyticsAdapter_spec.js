@@ -93,26 +93,6 @@ describe('33acrossAnalyticsAdapter:', function() {
           });
         });
       });
-
-      it('logs any received GAM slotRenderEnded event', function() {
-        analyticsAdapter.enableAnalytics({
-          options: {
-            pid: 'test-pid',
-            endpoint: faker.internet.url(),
-          },
-        });
-
-        performAuctionWithMissingBidWon();
-
-        window.googletag.cmd.forEach(fn => fn());
-
-        const { gam } = getMockEvents();
-        const [ gEvent ] = gam.slotRenderEnded;
-
-        mockGpt.emitEvent('slotRenderEnded', gEvent);
-
-        assert.calledWithExactly(log.info, 'slotRenderEnded', `adUnitPath: ${gEvent.slot.getAdUnitPath()}`, `slotElementId: ${gEvent.slot.getSlotElementId()}`);
-      });
     });
   });
 

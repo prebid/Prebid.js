@@ -3,9 +3,7 @@ import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
-/**
- * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
- */
+// printf "declare const CONSTANTS: %s; export default CONSTANTS;" "$(cat src/constants.json)" > src/constants.json.d.ts
 const { EVENTS } = CONSTANTS;
 
 const ANALYTICS_VERSION = '1.0.0';
@@ -16,7 +14,7 @@ const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production e
 export const log = getLogger();
 
 /**
- * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` and `slotRenderEnded` events)
+ * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` event)
  * @property {string} pid - Partner ID
  * @property {'pbjs'} src - Source of the report
  * @property {string} analyticsVersion - Version of the Prebid.js 33Across Analytics Adapter
@@ -74,8 +72,7 @@ export const log = getLogger();
 /**
  * After the first bid is initiated, we wait until every bid is completed before sending the report.
  *
- * We will listen for the `bidWon` event and for `slotRenderEnded` event from GAM to determine when
- * all bids are complete.
+ * We will listen for the `bidWon` event to determine when all bids are complete.
  */
 class TransactionManager {
   #timeoutId;
@@ -251,19 +248,6 @@ function calculateTransactionTimeout(configTimeout) {
   return DEFAULT_TRANSACTION_TIMEOUT;
 }
 
-/**
- * @param {TransactionManager} transactionManager
- */
-function subscribeToGamSlotRenderEvent(transactionManager) {
-  window.googletag = window.googletag || {};
-  window.googletag.cmd = window.googletag.cmd || [];
-  window.googletag.cmd.push(() => {
-    window.googletag.pubads().addEventListener('slotRenderEnded', event => {
-      log.info('slotRenderEnded', `adUnitPath: ${event.slot.getAdUnitPath()}`, `slotElementId: ${event.slot.getSlotElementId()}`);
-    });
-  });
-}
-
 /** necessary for testing */
 analyticsAdapter.originDisableAnalytics = analyticsAdapter.disableAnalytics;
 analyticsAdapter.disableAnalytics = function () {
@@ -409,7 +393,7 @@ function analyticEventHandler({ eventType, args }) {
       locals.analyticsCache.auctions[auction.auctionId] = auction;
       locals.analyticsCache.bidsWon[args.auctionId] = [];
 
-      const transactionManager = locals.transactionManagers[args.auctionId] ||=
+      locals.transactionManagers[args.auctionId] ||=
         new TransactionManager({
           timeout: analyticsAdapter.getTimeout(),
           onComplete() {
@@ -419,8 +403,6 @@ function analyticEventHandler({ eventType, args }) {
             );
           }
         });
-
-      subscribeToGamSlotRenderEvent(transactionManager);
 
       break;
     case EVENTS.BID_REQUESTED:
