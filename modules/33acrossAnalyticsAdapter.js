@@ -3,7 +3,9 @@ import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
-// printf "declare const CONSTANTS: %s; export default CONSTANTS;" "$(cat src/constants.json)" > src/constants.json.d.ts
+/**
+ * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
+ */
 const { EVENTS } = CONSTANTS;
 
 const ANALYTICS_VERSION = '1.0.0';
