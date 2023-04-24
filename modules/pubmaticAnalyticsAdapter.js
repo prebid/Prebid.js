@@ -1,4 +1,4 @@
-import { _each, pick, logWarn, isStr, isArray, logError } from '../src/utils.js';
+import { _each, pick, logWarn, isStr, isArray, logError, isFn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -311,6 +311,19 @@ function getAdUnit(adUnits, adUnitId) {
   return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
 }
 
+const getGPTSlot = (adUnitId) => {
+  let gptSlot;
+  if (window.googletag && isFn(window.googletag.pubads) && isFn(window.googletag.pubads().getSlots)) {
+    window.googletag.pubads().getSlots().some(slot => {
+      if (slot.getSlotElementId() === adUnitId) {
+        gptSlot = slot.getAdUnitPath();
+        return true;
+      }
+    })
+  }
+  return gptSlot;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
@@ -353,9 +366,10 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
+    let gptSlot = getGPTSlot(adUnitId);
     let slotObject = {
       'sn': adUnitId,
-      'au': origAdUnit.adUnitId || adUnitId,
+      'au': origAdUnit.adUnitId || gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
