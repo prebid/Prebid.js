@@ -31,9 +31,10 @@ function storeObject(obj) {
   const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
   if (storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
-  } else if (storage.localStorageIsEnabled()) {
-    obj.__expires = expires;
-    storage.setDataInLocalStorage(MODULE_NAME, obj);
+  }
+  if (storage.localStorageIsEnabled()) {
+    obj.expires = expires;
+    storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
 
@@ -71,17 +72,51 @@ function getIdFromCookie() {
 
 function getIdFromLocalStorage() {
   if (storage.localStorageIsEnabled()) {
-    const storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
+    let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME); logError(storedIdData);
     if (storedIdData) {
-      if (isPlainObject(storedIdData) && storedIdData.__expires &&
-          storedIdData.__expires <= Date.now()) {
-        storage.removeDataFromLocalStorage(MODULE_NAME);
-        return null;
+      try {
+        storedIdData = JSON.parse(storedIdData);
+      } catch (e) {
+        logError(`${MODULE_NAME} module: error while reading the local storage data.`);
+      }
+      if (isPlainObject(storedIdData) && storedIdData.expires &&
+          storedIdData.expires <= Date.now()) {
+        // storage.removeDataFromLocalStorage(MODULE_NAME);
+        // return null;
       }
       return storedIdData;
     }
   }
   return null;
+}
+
+function syncLocalStorageToCookie() {
+  if (!storage.cookiesAreEnabled()) {
+    return;
+  }
+  const value = getIdFromLocalStorage();
+  setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(value), new Date(value.expires), getSiteHostname());
+}
+
+function isStale(storedIdData) {
+  if (isPlainObject(storedIdData) && storedIdData.expires &&
+    storedIdData.expires <= Date.now()) {
+    return true;
+  }
+  return false;
+}
+
+function getStoredId() {
+  let storedId = getIdFromCookie();
+  if (!storedId) {
+    logError('radu got  id from storage ');
+    storedId = getIdFromLocalStorage();
+    if (storedId) {
+      logError('radu sync cookie from storage');
+      syncLocalStorageToCookie();
+    }
+  }
+  return storedId;
 }
 
 function getSiteHostname() {
@@ -120,20 +155,32 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
+    logError('radu start');
     if (connectIdSubmodule.userHasOptedOut()) {
       return;
     }
+    logError('radu get id');
     const params = config.params || {};
-    if (!params || (typeof params.he !== 'string' && typeof params.puid !== 'string') ||
+    if (!params ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
       logError(`${MODULE_NAME} module: configurataion requires the 'pixelId' and at ` +
                 `least one of the 'he' or 'puid' parameters to be defined.`);
       return;
     }
 
-    const storedId = getIdFromCookie() || getIdFromLocalStorage();
+    const storedId = getStoredId();
+    logError('radu got  id ', storedId);
+
+    let shouldResync = false;
+
     if (storedId) {
-      return {id: storedId};
+      if ((params.he && params.he !== storedId.he) ||
+        (params.puid && params.puid !== storedId.puid) || isStale(storedId)) {
+        shouldResync = true;
+      }
+      if (!shouldResync) {
+        return {id: storedId};
+      }
     }
 
     const uspString = uspDataHandler.getConsentData() || '';
@@ -163,7 +210,12 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
+              responseObj = {
+                connectid: 'remote'
+              }
               if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0) {
+                responseObj.he = params.he;
+                responseObj.puid = params.puid || responseObj.puid;
                 storeObject(responseObj);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
@@ -183,7 +235,11 @@ export const connectIdSubmodule = {
       let url = `${params.endpoint || endpoint}?${formatQS(data)}`;
       connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
-    return {callback: resp};
+    const result = {callback: resp};
+    if (shouldResync && storedId) {
+      result.id = storedId;
+    }
+    return result;
   },
 
   /**
