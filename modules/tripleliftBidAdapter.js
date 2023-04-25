@@ -131,9 +131,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
-      imp.ext = _getImpExt(bidRequest.ortb2Imp);
     }
-
     return imp;
   });
 
@@ -283,16 +281,6 @@ function _getAdUnitFpd(adUnitFpd) {
   }
 
   return fpd;
-}
-
-function _getImpExt(ortb2Imp) {
-  let ext = {};
-
-  if (!isEmpty(ortb2Imp.ext)) {
-    ext = { ...ortb2Imp.ext }
-  }
-
-  return ext;
 }
 
 function _addEntries(target, source) {
