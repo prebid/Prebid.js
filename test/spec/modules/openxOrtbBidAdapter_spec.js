@@ -300,6 +300,18 @@ describe('OpenxRtbAdapter', function () {
     });
 
     context('common requests checks', function() {
+      it('should be able to handle multiformat requests', () => {
+        const multiformat = utils.deepClone(bidRequestsWithMediaTypes[0]);
+        multiformat.mediaTypes.video = {
+          context: 'outstream',
+          playerSize: [640, 480]
+        }
+        const requests = spec.buildRequests([multiformat], mockBidderRequest);
+        const outgoingFormats = requests.flatMap(rq => rq.data.imp.flatMap(imp => ['banner', 'video'].filter(k => imp[k] != null)));
+        const expected = FEATURES.VIDEO ? ['banner', 'video'] : ['banner']
+        expect(outgoingFormats).to.have.members(expected);
+      })
+
       it('should send bid request to openx url via POST', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].url).to.equal(REQUEST_URL);
@@ -1084,45 +1096,6 @@ describe('OpenxRtbAdapter', function () {
         });
       });
     }
-
-    it.skip('should send ad unit ids when any are defined', function () {
-      const bidRequestsWithUnitIds = [{
-        bidder: 'openx',
-        params: {
-          delDomain: 'test-del-domain'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          }
-        },
-        bidId: 'test-bid-id-1',
-        bidderRequestId: 'test-bid-request-1',
-        auctionId: 'test-auction-1',
-        transactionId: 'test-transaction-id-1'
-      }, {
-        bidder: 'openx',
-        params: {
-          unit: '22',
-          delDomain: 'test-del-domain'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[728, 90]]
-          }
-        },
-        bidId: 'test-bid-id-2',
-        bidderRequestId: 'test-bid-request-2',
-        auctionId: 'test-auction-2',
-        transactionId: 'test-transaction-id-2'
-      }];
-      mockBidderRequest.bids = bidRequestsWithUnitIds;
-      const request = spec.buildRequests(bidRequestsWithUnitIds, mockBidderRequest);
-      expect(request[0].data.imp[1].tagid).to.equal(bidRequestsWithUnitIds[1].params.unit);
-      expect(request[0].data.imp[1].ext.divid).to.equal(bidRequestsWithUnitIds[1].params.adUnitCode);
-    });
   });
 
   describe('interpretResponse()', function () {

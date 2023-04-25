@@ -223,7 +223,7 @@ export const spec = {
           creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
-          dealId: slot.dealCode,
+          dealId: slot.deal,
         };
         if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
           const pafResponseMeta = {
@@ -513,6 +513,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     request.user.uspIab = bidderRequest.uspConsent;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
   }
   return request;
 }
