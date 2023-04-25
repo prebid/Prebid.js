@@ -111,6 +111,7 @@ function _getSyncType(syncOptions) {
 
 function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
+  let impExt = {};
   let { schain } = bidRequests[0];
   const globalFpd = _getGlobalFpd(bidderRequest);
 
@@ -131,7 +132,13 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+      impExt = _getImpExt(bidRequest.ortb2Imp);
     }
+
+    if (typeof impExt !== 'undefined') {
+      imp.ext = impExt;
+    }
+
     return imp;
   });
 
@@ -281,6 +288,16 @@ function _getAdUnitFpd(adUnitFpd) {
   }
 
   return fpd;
+}
+
+function _getImpExt(ortb2Imp) {
+  let ext = {};
+
+  if (!isEmpty(ortb2Imp.ext)) {
+    ext = { ...ortb2Imp.ext }
+  }
+
+  return ext;
 }
 
 function _addEntries(target, source) {
