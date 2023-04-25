@@ -232,8 +232,6 @@ describe('Adloox Ad Server Video', function () {
       it('should fetch, retry on withoutCredentials, follow and return a wrapped blob that expires', function (done) {
         BID.responseTimestamp = utils.timestamp();
         BID.ttl = 30;
-        const orig = window.setTimeout;
-        console.error('ADLOOX', orig)
 
         const clock = sandbox.useFakeTimers(BID.responseTimestamp);
 
@@ -261,27 +259,24 @@ describe('Adloox Ad Server Video', function () {
                 expect(q.status).is.equal(200);
                 expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
                 clock.runAll();
-                clock.restore();
               } catch (e) {
                 console.error('ADLOOX - error:', e)
                 done(e);
               }
-              orig(() => {
-                console.error('ADLOOX - 2nd blob')
-                ajax(blob, {
-                  success: (responseText, q) => {
-                    console.error('ADLOOX - final', responseText)
-                    xfr.useFilters = false;		// .restore() does not really work
-                    if (q.status == 0) return done();
-                    done(new Error('Blob should have expired'));
-                  },
-                  error: (statusText, q) => {
-                    console.error('ADLOOX - final', statusText)
-                    xfr.useFilters = false;
-                    done();
-                  }
-                });
-              }, 100)
+              console.error('ADLOOX - 2nd blob')
+              ajax(blob, {
+                success: (responseText, q) => {
+                  console.error('ADLOOX - final', responseText)
+                  xfr.useFilters = false;		// .restore() does not really work
+                  if (q.status == 0) return done();
+                  done(new Error('Blob should have expired'));
+                },
+                error: (statusText, q) => {
+                  console.error('ADLOOX - final', statusText)
+                  xfr.useFilters = false;
+                  done();
+                }
+              });
             },
             error: (statusText, q) => {
               xfr.useFilters = false;
