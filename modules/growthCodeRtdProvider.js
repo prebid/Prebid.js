@@ -7,7 +7,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   logMessage, logError, tryAppendQueryString, mergeDeep
 } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import * as ajax from '../src/ajax.js';
 
 const MODULE_NAME = 'growthCodeRtd';
 const LOG_PREFIX = 'GrowthCodeRtd: ';
@@ -22,7 +22,8 @@ export const growthCodeRtdProvider = {
   name: MODULE_NAME,
   init: init,
   getBidRequestData: alterBidRequests,
-  addData: addData
+  addData: addData,
+  callServer: callServer
 };
 
 /**
@@ -57,6 +58,9 @@ function init(config, userConsent) {
 
   items = tryParse(storage.getDataFromLocalStorage(RTD_CACHE_KEY, null));
 
+  return callServer(configParams, items, expiresAt, userConsent);
+}
+function callServer(configParams, items, expiresAt, userConsent) {
   // Expire Cache
   let now = Math.trunc(Date.now() / 1000);
   if ((!isNaN(expiresAt)) && (now > expiresAt)) {
@@ -75,7 +79,7 @@ function init(config, userConsent) {
       url = tryAppendQueryString(url, 'tcf', userConsent.gdpr.consentData.getTCData.tcString)
     }
 
-    ajax(url, {
+    ajax.ajaxBuilder()(url, {
       success: response => {
         let respJson = tryParse(response);
         // If response is a valid json and should save is true
@@ -104,18 +108,6 @@ function addData(reqBidsConfigObj, items) {
     if (item['attachment_point'] === 'data') {
       mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, data)
       merge = true
-    } else if (item['attachment_point'] === 'config') {
-      let adUnits = reqBidsConfigObj.adUnits
-      for (let i = 0; i < adUnits.length; i++) {
-        let adUnit = adUnits[i];
-        for (let k = 0; k < adUnit.bids.length; k++) {
-          let bid = adUnit.bids[k]
-          if (item.bidder === bid.bidder) {
-            mergeDeep(reqBidsConfigObj.adUnits[i].bids[k], data)
-            merge = true
-          }
-        }
-      }
     }
   }
   return merge
