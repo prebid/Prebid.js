@@ -631,10 +631,10 @@ describe('RTBHouseAdapter', () => {
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('https://example.com'),
+          clickUrl: encodeURI('https://example.com'),
           impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('https://example.com/image.jpg'),
+            url: encodeURI('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },
