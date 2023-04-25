@@ -479,7 +479,7 @@ function interpretNativeBid(serverBid) {
 function interpretNativeAd(adm) {
   const native = JSON.parse(adm).native;
   const result = {
-    clickUrl: encodeURIComponent(native.link.url),
+    clickUrl: encodeURI(native.link.url),
     impressionTrackers: native.imptrackers
   };
   native.assets.forEach(asset => {
@@ -489,14 +489,14 @@ function interpretNativeAd(adm) {
         break;
       case OPENRTB.NATIVE.ASSET_ID.IMAGE:
         result.image = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
       case OPENRTB.NATIVE.ASSET_ID.ICON:
         result.icon = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
