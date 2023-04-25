@@ -1,6 +1,5 @@
 import {config} from 'src/config.js';
 import {growthCodeRtdProvider, storage} from '../../../modules/growthCodeRtdProvider';
-import {debug} from 'karma/release.config';
 
 const ENDPOINT_URL = 'https://p2.gcprivacy.com/v2/rtd?'
 const RTD_EXPIRE_KEY = 'gc_rtd_expires_at'
@@ -20,12 +19,13 @@ describe('growthCodeRtdProvider', function() {
 
   beforeEach(function() {
     config.resetConfig();
-    // getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    // setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage')
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    setDataInLocalStorageStub = sinon.stub(storage, 'setDataInLocalStorage')
   });
 
   afterEach(function () {
-    // getDataFromLocalStorageStub.restore();
+    getDataFromLocalStorageStub.restore();
+    setDataInLocalStorageStub.restore();
   });
 
   describe('growthCodeRtdSubmodule', function() {
@@ -37,14 +37,14 @@ describe('growthCodeRtdProvider', function() {
     });
     it('successfully instantiates (cached)', function () {
       const localStoreItem = '[{"bidder":"criteo","attachment_point":"data","parameters":"{\\"criteo\\":{\\"user\\":{\\"ext\\":{\\"data\\":{\\"eids\\":[{\\"source\\":\\"\\",\\"uids\\":[{\\"id\\":\\"4254074976bb6a6d970f5f693bd8a75c\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemmd5\\"}},{\\"id\\":\\"d0ee291572ffcfba0bf7edb2b1c90ca7c32d255e5040b8b50907f5963abb1898\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemsha256\\"}}]}]}}}}}"}]'
-      storage.setDataInLocalStorage(RTD_CACHE_KEY, localStoreItem, null)
-      storage.setDataInLocalStorage(RTD_EXPIRE_KEY, '1965949885', null)
+      setDataInLocalStorageStub(RTD_CACHE_KEY, localStoreItem, null)
+      setDataInLocalStorageStub(RTD_EXPIRE_KEY, '1965949885', null)
       expect(growthCodeRtdProvider.init(sampleConfig, null)).to.equal(true);
     });
     it('successfully instantiates (cached,expire)', function () {
       const localStoreItem = '[{"bidder":"criteo","attachment_point":"data","parameters":"{\\"criteo\\":{\\"user\\":{\\"ext\\":{\\"data\\":{\\"eids\\":[{\\"source\\":\\"\\",\\"uids\\":[{\\"id\\":\\"4254074976bb6a6d970f5f693bd8a75c\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemmd5\\"}},{\\"id\\":\\"d0ee291572ffcfba0bf7edb2b1c90ca7c32d255e5040b8b50907f5963abb1898\\",\\"atype\\":3,\\"ext\\":{\\"stype\\":\\"hemsha256\\"}}]}]}}}}}"}]'
-      storage.setDataInLocalStorage(RTD_CACHE_KEY, localStoreItem, null)
-      storage.setDataInLocalStorage(RTD_EXPIRE_KEY, '1679188732', null)
+      setDataInLocalStorageStub(RTD_CACHE_KEY, localStoreItem, null)
+      setDataInLocalStorageStub(RTD_EXPIRE_KEY, '1679188732', null)
       expect(growthCodeRtdProvider.init(sampleConfig, null)).to.equal(true);
     });
 
