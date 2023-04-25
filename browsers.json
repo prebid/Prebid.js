@@ -1,7 +1,7 @@
 {
   "bs_edge_latest_windows_10": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "edge",
     "browser_version": "latest",
     "device": null,
