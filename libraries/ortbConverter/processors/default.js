@@ -1,10 +1,10 @@
-import {deepSetValue, logWarn, mergeDeep} from '../../../src/utils.js';
+import {deepSetValue, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
 import {fillNativeImp, fillNativeResponse} from './native.js';
 import {BID_RESPONSE, IMP, REQUEST} from '../../../src/pbjsORTB.js';
-import {config} from '../../../src/config.js';
+import {clientSectionChecker} from '../../../src/fpd/oneClient.js';
 
 export const DEFAULT_PROCESSORS = {
   [REQUEST]: {
@@ -15,14 +15,10 @@ export const DEFAULT_PROCESSORS = {
         mergeDeep(ortbRequest, bidderRequest.ortb2)
       }
     },
-    // override FPD app, site, and device with getConfig('app'), etc if defined
-    // TODO: these should be deprecated for v8
-    appFpd: fpdFromTopLevelConfig('app'),
-    siteFpd: fpdFromTopLevelConfig('site'),
-    deviceFpd: fpdFromTopLevelConfig('device'),
     onlyOneClient: {
+      // make sure only one of 'dooh', 'app', 'site' is set in request
       priority: -99,
-      fn: onlyOneClientSection
+      fn: clientSectionChecker('ORTB request')
     },
     props: {
       // sets request properties id, tmax, test, source.tid
@@ -57,10 +53,6 @@ export const DEFAULT_PROCESSORS = {
       // populates imp.banner
       fn: fillBannerImp
     },
-    video: {
-      // populates imp.video
-      fn: fillVideoImp
-    },
     pbadslot: {
       // removes imp.ext.data.pbaslot if it's not a string
       // TODO: is this needed?
@@ -81,10 +73,6 @@ export const DEFAULT_PROCESSORS = {
     banner: {
       // sets banner response attributes if bidResponse.mediaType === BANNER
       fn: bannerResponseProcessor(),
-    },
-    video: {
-      // sets video response attributes if bidResponse.mediaType === VIDEO
-      fn: fillVideoResponse
     },
     props: {
       // sets base bidResponse properties common to all types of bids
@@ -126,28 +114,13 @@ if (FEATURES.NATIVE) {
   }
 }
 
-function fpdFromTopLevelConfig(prop) {
-  return {
-    priority: 90, // after FPD from 'ortb2', before the rest
-    fn(ortbRequest) {
-      const data = config.getConfig(prop);
-      if (typeof data === 'object') {
-        ortbRequest[prop] = mergeDeep({}, ortbRequest[prop], data);
-      }
-    }
+if (FEATURES.VIDEO) {
+  DEFAULT_PROCESSORS[IMP].video = {
+    // populates imp.video
+    fn: fillVideoImp
   }
-}
-
-export function onlyOneClientSection(ortbRequest) {
-  ['dooh', 'app', 'site'].reduce((found, section) => {
-    if (ortbRequest[section] != null && Object.keys(ortbRequest[section]).length > 0) {
-      if (found != null) {
-        logWarn(`ORTB request specifies both '${found}' and '${section}'; dropping the latter.`)
-        delete ortbRequest[section];
-      } else {
-        found = section;
-      }
-    }
-    return found;
-  }, null);
+  DEFAULT_PROCESSORS[BID_RESPONSE].video = {
+    // sets video response attributes if bidResponse.mediaType === VIDEO
+    fn: fillVideoResponse
+  }
 }

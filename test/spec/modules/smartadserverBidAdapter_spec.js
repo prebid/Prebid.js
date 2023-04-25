@@ -57,18 +57,80 @@ describe('Smart bid adapter tests', function () {
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg',
-    userId: {
-      britepoolid: '1111',
-      criteoId: '1111',
-      digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
-      id5id: { uid: '1111' },
-      idl_env: '1111',
-      lipbid: '1111',
-      parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
-      pubcid: '1111',
-      tdid: '1111',
-      netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-    }
+    userIdAsEids: [
+      {
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'britepoolid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'id5id',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'idl_env',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'lipbid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'parrableid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': 'eidVersion.encryptionKeyReference.encryptedValue'
+          }
+        ]
+      },
+      {
+        'source': 'tdid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'netId',
+        'uids': [
+          {
+            'atype': 1,
+            'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg'
+          }
+        ]
+      }
+    ]
   }];
 
   // Default params without optional ones
@@ -440,6 +502,30 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.not.have.property('gdpr');
       expect(requestContent).to.have.property('gdpr_consent').and.to.equal('BOKAVy4OKAVy4ABAB8AAAAAZ+A==');
+    });
+  });
+
+  describe('GPP', function () {
+    it('should be added to payload when gppConsent available in bidder request', function () {
+      const options = {
+        gppConsent: {
+          gppString: 'some-gpp-string',
+          applicableSections: [3, 5]
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, options);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload).to.have.property('gpp').and.to.equal(options.gppConsent.gppString);
+      expect(payload).to.have.property('gpp_sid').and.to.be.an('array');
+      expect(payload.gpp_sid).to.have.lengthOf(2).and.to.deep.equal(options.gppConsent.applicableSections);
+    });
+
+    it('should be undefined on payload when gppConsent unavailable in bidder request', function () {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {});
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.gpp).to.be.undefined;
     });
   });
 

@@ -46,7 +46,7 @@ export const spec = {
         coppa = 1;
       }
 
-      tmax = config.getConfig('bidderTimeout');
+      tmax = bid.timeout;
 
       const params = {
         prebidJS: 1,

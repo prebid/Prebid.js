@@ -8,7 +8,8 @@
 
 import { logInfo } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = `1.0`;
@@ -24,7 +25,7 @@ const UID2_PROD_URL = 'https://prod.uidapi.com';
 const UID2_BASE_URL = UID2_PROD_URL;
 
 function getStorage() {
-  return getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+  return getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 }
 
 function createLogInfo(prefix) {
