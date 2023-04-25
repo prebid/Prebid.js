@@ -2,14 +2,14 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES } from '../../../modules/ixBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
   const IX_SECURE_ENDPOINT = 'https://htlb.casalemedia.com/openrtb/pbjs';
-  const VIDEO_ENDPOINT_VERSION = 8.1;
-  const BANNER_ENDPOINT_VERSION = 7.2;
+
+  FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES = ['test1', 'test2'];
 
   const SAMPLE_SCHAIN = {
     'ver': '1.0',
@@ -1669,27 +1669,6 @@ describe('IndexexchangeAdapter', function () {
       expect(r.user.testProperty).to.be.undefined;
     });
 
-    it('should not add fpd data to r object if it exceeds maximum request', function () {
-      const ortb2 = {
-        site: {
-          keywords: 'power tools, drills',
-          search: 'drill',
-        },
-        user: {
-          keywords: Array(1200).join('#'),
-        }
-      };
-
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
-
-      const request = spec.buildRequests([bid], { ortb2 })[0];
-      const r = extractPayload(request);
-
-      expect(r.site.ref).to.exist;
-      expect(r.site.keywords).to.be.undefined;
-      expect(r.user).to.be.undefined;
-    });
     it('should set gpp and gpp_sid field when defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 'gpp', gpp_sid: [1]}} })[0];
       const r = extractPayload(request);
@@ -1723,6 +1702,63 @@ describe('IndexexchangeAdapter', function () {
       expect(r.regs.gpp).to.equal('gpp');
       expect(r.regs.gpp_sid).to.be.an('array');
       expect(r.regs.gpp_sid).to.include(1);
+    });
+
+    it('should add adunit specific data to imp ext for banner', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam banner',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam banner');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for native', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam native',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam native');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for video', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam video',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam video');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
     });
   });
 
@@ -2273,7 +2309,7 @@ describe('IndexexchangeAdapter', function () {
       expect(requests[0].data.sn).to.be.undefined;
     });
 
-    it('2 requests due to 2 ad units, one larger than url size', function () {
+    it('1 request, one larger than url size, no splitting', function () {
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
       bid.params.siteId = '124';
@@ -2283,10 +2319,10 @@ describe('IndexexchangeAdapter', function () {
 
       const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
       expect(requests).to.be.an('array');
-      expect(requests).to.have.lengthOf(2);
+      expect(requests).to.have.lengthOf(1);
     });
 
-    it('6 ad units should generate only 4 requests', function () {
+    it('6 ad units should generate only 1 requests', function () {
       const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       bid1.mediaTypes.banner.sizes = LARGE_SET_OF_SIZES;
       bid1.params.siteId = '121';
@@ -2312,7 +2348,7 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests([bid1, bid2, bid3, bid4, bid5, bid6], DEFAULT_OPTION);
 
       expect(requests).to.be.an('array');
-      expect(requests).to.have.lengthOf(4);
+      expect(requests).to.have.lengthOf(1);
 
       for (var i = 0; i < requests.length; i++) {
         const reqSize = `${requests[i].url}?${utils.parseQueryStringParameters(requests[i].data)}`.length;
@@ -3611,7 +3647,7 @@ describe('IndexexchangeAdapter', function () {
         }
       }
       FEATURE_TOGGLES.getFeatureToggles(LOCAL_STORAGE_FEATURE_TOGGLES_KEY);
-      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.undefined;
+      expect(FEATURE_TOGGLES.isFeatureEnabled('test')).to.be.false;
       expect(FEATURE_TOGGLES.featureToggles).to.deep.equal({});
     });
 
@@ -3671,6 +3707,82 @@ describe('IndexexchangeAdapter', function () {
       const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
       expect(requests).to.be.an('array');
       expect(requests).to.have.lengthOf(1);
+    });
+
+    it('request should have requested feature toggles when local storage is enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      const r = extractPayload(requests[0]);
+      expect(r.ext.features).to.exist;
+      expect(Object.keys(r.ext.features).length).to.equal(FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES.length);
+    });
+
+    it('request should have requested feature toggles when local storage is not enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      const r = extractPayload(requests[0]);
+      expect(r.ext.features).to.exist;
+      expect(Object.keys(r.ext.features).length).to.equal(FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES.length);
+    });
+
+    it('request should not have any feature toggles when there is no requested feature toggle', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES = []
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      const r = extractPayload(requests[0]);
+      expect(r.ext.features).to.be.undefined;
+    });
+
+    it('request should not have any feature toggles when there is no requested feature toggle and local storage not enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      const r = extractPayload(requests[0]);
+      FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES = []
+      expect(r.ext.features).to.be.undefined;
+    });
+
+    it('correct activation status of requested feature toggles when local storage not enabled', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES = ['test1']
+      const requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      const r = extractPayload(requests[0]);
+      expect(r.ext.features).to.deep.equal({
+        [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: { activated: false }
+      });
+    });
+
+    it('correct activation status of requested feature toggles', function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
+      serverResponse.body.ext.features = {
+        [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: {
+          activated: true
+        }
+      }
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      let bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      let requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      let r = extractPayload(requests[0]);
+      expect(r.ext.features).to.deep.equal({
+        [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: { activated: true }
+      });
+
+      serverResponse.body.ext.features = {
+        [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: {
+          activated: false
+        }
+      }
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      requests = spec.buildRequests([bid, DEFAULT_BANNER_VALID_BID[0]], DEFAULT_OPTION);
+      r = extractPayload(requests[0]);
+      expect(r.ext.features).to.deep.equal({
+        [FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES[0]]: { activated: false }
+      });
     });
   });
 
@@ -3749,48 +3861,6 @@ describe('IndexexchangeAdapter', function () {
 
       expect(spec.isBidRequestValid(bid)).to.be.false;
       expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.BID_FLOOR_INVALID_FORMAT]: 1 } });
-    });
-
-    it('should log ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE in LocalStorage when there is logError called.', () => {
-      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-
-      config.setConfig({
-        ix: {
-          firstPartyData: {
-            cd: Array(1700).join('#')
-          }
-        }
-      });
-
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], {});
-      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE]: 2 } });
-    });
-
-    it('should log ERROR_CODES.EXCEEDS_MAX_SIZE in LocalStorage when there is logError called.', () => {
-      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-      bid.bidderRequestId = Array(8000).join('#');
-
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], {});
-      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.EXCEEDS_MAX_SIZE]: 2 } });
-    });
-
-    it('should log ERROR_CODES.PB_FPD_EXCEEDS_MAX_SIZE in LocalStorage when there is logError called.', () => {
-      const bid = utils.deepClone(DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]);
-      const ortb2 = {
-        site: {
-          ext: {
-            data: {
-              pageType: Array(5700).join('#')
-            }
-          }
-        }
-      };
-
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-      spec.buildRequests([bid], { ortb2 });
-      expect(JSON.parse(localStorageValues[key])).to.deep.equal({ [TODAY]: { [ERROR_CODES.PB_FPD_EXCEEDS_MAX_SIZE]: 2 } });
     });
 
     it('should log ERROR_CODES.VIDEO_DURATION_INVALID in LocalStorage when there is logError called.', () => {

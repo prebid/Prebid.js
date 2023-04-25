@@ -23,7 +23,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'tdid': 1,
   'pubProvidedId': 1
 };
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
@@ -77,6 +77,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
 
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
@@ -105,6 +107,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     res: `${screen.width}x${screen.height}`,
     schain: schain,
     mediaTypes: mediaTypes,
+    gpid: gpid,
     auctionId: auctionId,
     transactionId: transactionId,
     bidderRequestId: bidderRequestId,
@@ -204,7 +207,7 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER} = result;
+      const {creativeId, ad, price, exp, width, height, currency, metaData, advertiserDomains, mediaType = BANNER} = result;
       if (!ad || !price) {
         return;
       }
@@ -218,10 +221,19 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        meta: {
-          advertiserDomains: advertiserDomains || []
-        }
       };
+
+      if (metaData) {
+        Object.assign(response, {
+          meta: metaData
+        })
+      } else {
+        Object.assign(response, {
+          meta: {
+            advertiserDomains: advertiserDomains || []
+          }
+        })
+      }
 
       if (mediaType === BANNER) {
         Object.assign(response, {

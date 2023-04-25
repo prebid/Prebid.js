@@ -31,11 +31,12 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {GdprConsentHandler, UspConsentHandler, GppConsentHandler} from './consentHandler.js';
+import {GdprConsentHandler, UspConsentHandler, GppConsentHandler, GDPR_GVLIDS} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from './activities/modules.js';
 
 export const PARTITIONS = {
   CLIENT: 'client',
@@ -463,6 +464,7 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
   if (bidAdapter && bidderCode) {
     if (typeof bidAdapter.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdapter;
+      GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
       if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
@@ -532,6 +534,7 @@ adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
       _analyticsRegistry[code] = { adapter, gvlid };
+      GDPR_GVLIDS.register(MODULE_TYPE_ANALYTICS, code, gvlid);
     } else {
       logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);
