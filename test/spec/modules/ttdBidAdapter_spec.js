@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ttdBidAdapter';
-import { deepClone } from 'src/utils.js';
+import { deepClone, mergeDeep } from 'src/utils.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
@@ -567,6 +567,132 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       config.resetConfig();
       expect(requestBody.imp[0].bidfloor).to.equal(bidfloor);
+    });
+
+    it('adds default value for secure if not set to request', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].secure).to.equal(1);
+    });
+
+    it('adds secure to request', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      clonedBannerRequests[0].secure = 0;
+
+      let requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(0).to.equal(requestBody.imp[0].secure);
+
+      clonedBannerRequests[0].secure = 1;
+      requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(1).to.equal(requestBody.imp[0].secure);
+    });
+
+    it('adds all of site including first party data to request', function() {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {
+              firstPartyKey: 'firstPartyValue'
+            },
+            custom: 'custom_data',
+            custom_kvp: {
+              customKey: 'customValue'
+            }
+          },
+          search: 'test search'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      expect(requestBody.site.ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(requestBody.site.ext.custom).to.equal('custom_data');
+      expect(requestBody.site.ext.custom_kvp.customKey).to.equal('customValue');
+      expect(requestBody.site.search).to.equal('test search')
+    });
+
+    it('adds all of user including first party data to request', function() {
+      const values = ['value', 'value2'];
+      const ortb2 = {
+        user: {
+          ext: {
+            data: {
+              firstPartyKey: 'firstPartyValue',
+              firstPartyKey2: values
+            },
+            custom: 'custom_data',
+            custom_kvp: {
+              customKey: 'customValue'
+            }
+          },
+          yob: 1998
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      expect(requestBody.user.ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(requestBody.user.ext.data.firstPartyKey2).to.eql(values);
+      expect(requestBody.user.ext.custom).to.equal('custom_data');
+      expect(requestBody.user.ext.custom_kvp.customKey).to.equal('customValue');
+      expect(requestBody.user.yob).to.equal(1998)
+    });
+
+    it('adds all of imp including first party data to request', function() {
+      const values = ['value', 'value2'];
+      const metric = { type: 'viewability', value: 0.8 };
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      clonedBannerRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            firstPartyKey: 'firstPartyValue',
+            firstPartyKey2: values
+          },
+          custom: 'custom_data',
+          custom_kvp: {
+            customKey: 'customValue'
+          }
+        },
+        metric: [metric],
+        clickbrowser: 1
+      };
+
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+
+      expect(requestBody.imp[0].tagid).to.equal('1gaa015');
+      expect(requestBody.imp[0].ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(requestBody.imp[0].ext.data.firstPartyKey2).to.eql(values);
+      expect(requestBody.imp[0].ext.custom).to.equal('custom_data');
+      expect(requestBody.imp[0].ext.custom_kvp.customKey).to.equal('customValue');
+      expect(requestBody.imp[0].metric[0]).to.deep.equal(metric);
+      expect(requestBody.imp[0].clickbrowser).to.equal(1)
+    });
+
+    it('adds all of app including first party data to request', function() {
+      const values = ['value', 'value2'];
+      const ortb2 = {
+        app: {
+          ext: {
+            data: {
+              firstPartyKey: 'firstPartyValue',
+              firstPartyKey2: values
+            },
+            custom: 'custom_data',
+            custom_kvp: {
+              customKey: 'customValue'
+            }
+          },
+          ver: 'v1.0'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      expect(requestBody.app.ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(requestBody.app.ext.data.firstPartyKey2).to.eql(values);
+      expect(requestBody.app.ext.custom).to.equal('custom_data');
+      expect(requestBody.app.ext.custom_kvp.customKey).to.equal('customValue');
+      expect(requestBody.app.ver).to.equal('v1.0')
     });
   });
 
@@ -1280,20 +1406,20 @@ describe('ttdBidAdapter', function () {
     };
 
     const expectedBid =
-    {
-      'requestId': '2eabb87dfbcae4',
-      'cpm': 13.6,
-      'creativeId': 'mokivv6m',
-      'dealId': null,
-      'currency': 'USD',
-      'netRevenue': true,
-      'ttl': 500,
-      'width': 640,
-      'height': 480,
-      'mediaType': 'video',
-      'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
-      'meta': {}
-    };
+      {
+        'requestId': '2eabb87dfbcae4',
+        'cpm': 13.6,
+        'creativeId': 'mokivv6m',
+        'dealId': null,
+        'currency': 'USD',
+        'netRevenue': true,
+        'ttl': 500,
+        'width': 640,
+        'height': 480,
+        'mediaType': 'video',
+        'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+        'meta': {}
+      };
 
     it('should get the correct bid response if nurl is returned', function () {
       let result = spec.interpretResponse(incoming, serverRequest);
