@@ -91,8 +91,8 @@ var adUnits = [
          playerSize: [[300, 250]],
          context: 'outstream',
          // Certain ORTB 2.5 video values can be read from the mediatypes object; below are examples of supported params.
-         // To note - appnexus supports additional values for our system that are not part of the ORTB spec.  If you want
-         // to use these values, they will have to be declared in the bids[].params.video object instead using the appnexus syntax.
+         // To note - uol supports additional values for our system that are not part of the ORTB spec.  If you want
+         // to use these values, they will have to be declared in the bids[].params.video object instead using the uol syntax.
          // Between the corresponding values of the mediaTypes.video and params.video objects, the properties in params.video will
          // take precedence if declared; eg in the example below, the `skippable: true` setting will be used instead of the `skip: 0`.
          minduration: 1,
