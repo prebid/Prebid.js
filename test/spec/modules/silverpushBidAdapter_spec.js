@@ -168,6 +168,35 @@ describe('Silverpush Adapter', function () {
       expect(requestData.imp[0].banner.h).to.equal(250);
     });
 
+    it('should return default bidfloor when bidFloor is not defined', () => {
+      const bid = utils.deepClone(bannerBid);
+      delete bid.params.bidFloor;
+
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const requestData = request.data;
+
+      expect(requestData.imp[0].bidfloor).to.equal(0.05);
+    });
+
+    it('should contain deals in request if deal is specified in params', () => {
+      const bid = utils.deepClone(bannerBid);
+      bid.params.deals = [{ id: 'test' }];
+
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const requestData = request.data;
+
+      expect(requestData.imp[0].pmp.deals).to.equal(bid.params.deals);
+    });
+
+    it('should return bidfloor when bidFloor is defined', () => {
+      const bid = utils.deepClone(bannerBid);
+
+      const [request] = spec.buildRequests([bid], bidderRequest);
+      const requestData = request.data;
+
+      expect(requestData.imp[0].bidfloor).to.equal(bannerBid.params.bidFloor);
+    });
+
     it('should build correct request for video bid with playerSize', () => {
       const bid = utils.deepClone(videoBid);
 
@@ -208,7 +237,51 @@ describe('Silverpush Adapter', function () {
     });
   });
 
+  describe('getOS()', () => {
+    it('shold return correct os name for Windows', () => {
+      let userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246';
+      let osName = spec.getOS(userAgent);
+
+      expect(osName).to.equal('Windows');
+    });
+
+    it('shold return correct os name for Mac OS', () => {
+      let userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_2) AppleWebKit/601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9';
+      let osName = spec.getOS(userAgent);
+
+      expect(osName).to.equal('macOS');
+    });
+
+    it('shold return correct os name for Android', () => {
+      let userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-G996U Build/QP1A.190711.020; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36';
+      let osName = spec.getOS(userAgent);
+
+      expect(osName).to.equal('Android');
+    });
+
+    it('shold return correct os name for ios', () => {
+      let userAgent = 'Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346 Safari/602.1';
+      let osName = spec.getOS(userAgent);
+
+      expect(osName).to.equal('iOS');
+    });
+
+    it('shold return correct os name for Linux', () => {
+      let userAgent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1';
+      let osName = spec.getOS(userAgent);
+
+      expect(osName).to.equal('Linux');
+    });
+  });
+
   describe('interpretResponse()', () => {
+    it('should return nbr to 0 when response not received', () => {
+      const requests = spec.buildRequests([bannerBid], bidderRequest);
+      const bids = spec.interpretResponse({ body: null }, requests[0]);
+
+      expect(bids[0]).to.equal(undefined);
+    });
+
     it('should correctly interpret valid banner response', () => {
       const response = utils.deepClone(bannerReponse);
       const requests = spec.buildRequests([bannerBid], bidderRequest);
@@ -252,6 +325,7 @@ describe('Silverpush Adapter', function () {
     it('should correctly interpret valid outstream video response', () => {
       const response = utils.deepClone(videoResponse);
       videoBid.mediaTypes.video.context = 'outstream';
+
       const requests = spec.buildRequests([videoBid], bidderRequest);
       const bids = spec.interpretResponse({ body: response }, requests[0]);
 
@@ -270,4 +344,35 @@ describe('Silverpush Adapter', function () {
       expect(bids[0].height).to.equal(768);
     });
   });
+
+  describe('onBidWon', function() {
+    let ajaxStub;
+
+    beforeEach(() => {
+      ajaxStub = sinon.stub(spec, 'getRequest')
+    })
+
+    afterEach(() => {
+      ajaxStub.restore()
+    })
+
+    it('Should not trigger pixel if bid does not contain burl', function() {
+      const result = spec.onBidWon({});
+
+      expect(ajaxStub.calledOnce).to.equal(false);
+    })
+
+    it('Should trigger pixel with correct macros if bid burl is present', function() {
+      const result = spec.onBidWon({
+        cpm: 1.5,
+        auctionId: 'auc123',
+        requestId: 'req123',
+        adId: 'ad1234',
+        seatBidId: 'sea123',
+        burl: 'http://won.foo.bar/trk?ap=${AUCTION_PRICE}&aid=${AUCTION_ID}&imp=${AUCTION_IMP_ID}&adid=${AUCTION_AD_ID}&sid=${AUCTION_SEAT_ID}'
+      });
+
+      expect(ajaxStub.calledOnceWith('http://won.foo.bar/trk?ap=1.5&aid=auc123&imp=req123&adid=ad1234&sid=sea123')).to.equal(true);
+    })
+  })
 });

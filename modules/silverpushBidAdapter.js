@@ -40,7 +40,13 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  onBidWon
+  onBidWon,
+  getRequest: function(endpoint) {
+    ajax(endpoint, null, undefined, {method: 'GET'});
+  },
+  getOS: function(ua) {
+    if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+  }
 };
 
 registerBidder(spec);
@@ -78,7 +84,8 @@ export const CONVERTER = ortbConverter({
       }
     })
 
-    utils.deepSetValue(req, 'device.os', getOS());
+    let userAgent = navigator.userAgent;
+    utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
     utils.deepSetValue(req, 'device.devicetype', _isMobile() ? 1 : _isConnectedTV() ? 3 : 2);
 
     const bid = context.bidRequests[0];
@@ -291,19 +298,18 @@ function interpretResponse(resp, req) {
   return CONVERTER.fromORTB({ request: req.data, response: resp.body });
 }
 
-function onBidWon(bid){
-  if(bid==null){ return; }
-  if(bid['burl']==null) { return ;}
+function onBidWon(bid) {
+  if (bid == null) { return; }
+  if (bid['burl'] == null) { return; }
 
   let burlMac = bid['burl'];
-  burlMac = burlMac.replace("${AUCTION_PRICE}", bid['cpm'])
-  burlMac = burlMac.replace("${AUCTION_ID}", bid['auctionId'] );
-  burlMac = burlMac.replace("${AUCTION_IMP_ID}", bid['requestId'] )
-  burlMac = burlMac.replace("${AUCTION_AD_ID}", bid['adId'] )
-  burlMac = burlMac.replace("${AUCTION_SEAT_ID}", bid['seatBidId'] )
+  burlMac = burlMac.replace('$' + '{AUCTION_PRICE}', bid['cpm']);
+  burlMac = burlMac.replace('$' + '{AUCTION_ID}', bid['auctionId']);
+  burlMac = burlMac.replace('$' + '{AUCTION_IMP_ID}', bid['requestId']);
+  burlMac = burlMac.replace('$' + '{AUCTION_AD_ID}', bid['adId']);
+  burlMac = burlMac.replace('$' + '{AUCTION_SEAT_ID}', bid['seatBidId']);
 
-
-  ajax(burlMac, null, undefined, {method: 'GET'});
+  spec.getRequest(burlMac);
 }
 
 function _isMobile() {
@@ -312,9 +318,4 @@ function _isMobile() {
 
 function _isConnectedTV() {
   return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
-}
-
-function getOS() {
-  let ua = navigator.userAgent;
-  if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
