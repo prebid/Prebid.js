@@ -253,7 +253,9 @@ describe('admaticBidAdapter', () => {
             'type': 'banner',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
-            'party_tag': '<div></div>'
+            'party_tag': '<div></div>',
+            'iurl': 'https://www.admatic.com.tr',
+            'type': "banner"
           }
         ],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
