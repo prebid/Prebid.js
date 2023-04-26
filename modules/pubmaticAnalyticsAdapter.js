@@ -483,8 +483,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 }
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
-//function auctionInitHandler(args) {
-getGlobal().onEvent(CONSTANTS.EVENTS.AUCTION_INIT, function(args){
+function auctionInitHandler(args) {
   s2sBidders = (function () {
     let s2sConf = config.getConfig('s2sConfig');
     return (s2sConf && isArray(s2sConf.bidders)) ? s2sConf.bidders : [];
@@ -499,10 +498,9 @@ getGlobal().onEvent(CONSTANTS.EVENTS.AUCTION_INIT, function(args){
   cacheEntry.origAdUnits = args.adUnits;
   cacheEntry.referer = args.bidderRequests[0].refererInfo.topmostLocation;
   cache.auctions[args.auctionId] = cacheEntry;
-});
+}
 
-//function bidRequestedHandler(args) {
-getGlobal().onEvent(CONSTANTS.EVENTS.BID_REQUESTED, function(args){
+function bidRequestedHandler(args) {
   args.bids.forEach(function(bid) {
     if (!cache.auctions[args.auctionId].adUnitCodes.hasOwnProperty(bid.adUnitCode)) {
       cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode] = {
@@ -516,10 +514,9 @@ getGlobal().onEvent(CONSTANTS.EVENTS.BID_REQUESTED, function(args){
       cache.auctions[args.auctionId].floorData['floorRequestData'] = bid.floorData;
     }
   })
-});
+}
 
-//function bidResponseHandler(args) {
-getGlobal().onEvent(CONSTANTS.EVENTS.BID_RESPONSE, function(args){
+function bidResponseHandler(args) {
   let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId][0];
   if (!bid) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
@@ -547,10 +544,9 @@ getGlobal().onEvent(CONSTANTS.EVENTS.BID_RESPONSE, function(args){
   setBidStatus(bid, args);
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
   bid.bidResponse = parseBidResponse(args);
-});
+}
 
-//function bidderDoneHandler(args) { 
-getGlobal().onEvent(CONSTANTS.EVENTS.BIDDER_DONE, function(args){
+function bidderDoneHandler(args) { 
   cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
     let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId];
@@ -564,26 +560,24 @@ getGlobal().onEvent(CONSTANTS.EVENTS.BIDDER_DONE, function(args){
       cachedBid.clientLatencyTimeMs = Date.now() - cache.auctions[bid.auctionId].timestamp;
     }
   });
-});
+}
 
-//function bidWonHandler(args) {
-getGlobal().onEvent(CONSTANTS.EVENTS.BID_WON, function(args){
+function bidWonHandler(args) {
   let auctionCache = cache.auctions[args.auctionId];
   auctionCache.adUnitCodes[args.adUnitCode].bidWon = args.requestId;
   auctionCache.adUnitCodes[args.adUnitCode].bidWonAdId = args.adId;
   executeBidWonLoggerCall(args.auctionId, args.adUnitCode);
-});
+}
 
-getGlobal().onEvent(CONSTANTS.EVENTS.AUCTION_END, function(args) {
+function auctionEndHandler(args) {
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
   }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
-});
+}
 
-//function bidTimeoutHandler(args) {
-getGlobal().onEvent(CONSTANTS.EVENTS.BID_TIMEOUT, function(args) {
+function bidTimeoutHandler(args) {
   // db = 1 and t = 1 means bidder did NOT respond with a bid but we got a timeout notification
   // db = 0 and t = 1 means bidder did  respond with a bid but post timeout
   args.forEach(badBid => {
@@ -598,7 +592,7 @@ getGlobal().onEvent(CONSTANTS.EVENTS.BID_TIMEOUT, function(args) {
       logWarn(LOG_PRE_FIX + 'bid not found');
     }
   });
-});
+}
 
 /// /////////// ADAPTER DEFINITION //////////////
 
@@ -648,25 +642,25 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
   }) {
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
-        //auctionInitHandler(args);
+        auctionInitHandler(args);
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
-        //bidRequestedHandler(args);
+        bidRequestedHandler(args);
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
-        //bidResponseHandler(args);
+        bidResponseHandler(args);
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
-        //bidderDoneHandler(args);
+        bidderDoneHandler(args);
         break;
       case CONSTANTS.EVENTS.BID_WON:
-        //bidWonHandler(args);
+        bidWonHandler(args);
         break;
       case CONSTANTS.EVENTS.AUCTION_END:
-        // auctionEndHandler(args);
+        auctionEndHandler(args);
         break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
-        //bidTimeoutHandler(args);
+        bidTimeoutHandler(args);
         break;
     }
   }
