@@ -876,7 +876,7 @@ if (typeof (window.top1.boost_poll) == 'undefined') {
   window.top1.realvu_aa.init();
   window.top1.boost_poll = setInterval(function () {
     window.top1 && window.top1.realvu_aa && window.top1.realvu_aa.poll();
-  }, 20);
+  }, 1000);
 }
 
 let _options = {};
