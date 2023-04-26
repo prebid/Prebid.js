@@ -1695,6 +1695,51 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].mediaType).to.equal(VIDEO);
     });
 
+    it('should properly parse a bid response with a outstream video', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            bidId: 'abc123',
+            cpm: 1.23,
+            displayurl: 'http://test-ad',
+            width: 728,
+            height: 90,
+            zoneid: 123,
+            video: true,
+            ext: {
+              videoPlayerType: 'RadiantMediaPlayer',
+              videoPlayerConfig: {
+
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          params: {
+            zoneId: 123,
+          },
+          mediaTypes: {
+            video: {
+              context: 'outstream'
+            }
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].vastUrl).to.equal('http://test-ad');
+      expect(bids[0].renderer.url).to.equal('https://static.criteo.net/js/ld/publishertag.renderer.js');
+      expect(typeof bids[0].renderer.config.documentResolver).to.equal('function');
+      expect(typeof bids[0].renderer._render).to.equal('function');
+    });
+
     it('should properly parse a bid response with native', function () {
       const response = {
         body: {
