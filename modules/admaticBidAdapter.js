@@ -109,8 +109,9 @@ export const spec = {
           meta: {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
-          ttl: 360,
-          bidder: bid.bidder
+          bidder: bid.bidder,
+          mediaType: bid.type,
+          ttl: 360
         };
 
         bidResponses.push(resbid);
@@ -168,6 +169,14 @@ function parseSize(size) {
 function buildRequestObject(bid) {
   const reqObj = {};
   reqObj.size = getSizes(bid);
+  if (bid.mediaTypes?.banner) {
+    reqObj.type = 'banner';
+    reqObj.mediatype = {};
+  }
+  if (bid.mediaTypes?.video) {
+    reqObj.type = 'video';
+    reqObj.mediatype = bid.mediaTypes.video;
+  }
   reqObj.id = getBidIdParameter('bidId', bid);
 
   enrichSlotWithFloors(reqObj, bid);
