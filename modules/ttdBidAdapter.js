@@ -155,11 +155,10 @@ function getSite(bidderRequest, firstPartyData) {
 
 function getImpression(bidRequest) {
   let impression = {
-    id: bidRequest.bidId,
+    id: bidRequest.bidId
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
-
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
     impression.tagid = tagid;

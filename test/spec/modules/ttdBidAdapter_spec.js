@@ -1405,21 +1405,20 @@ describe('ttdBidAdapter', function () {
       }
     };
 
-    const expectedBid =
-      {
-        'requestId': '2eabb87dfbcae4',
-        'cpm': 13.6,
-        'creativeId': 'mokivv6m',
-        'dealId': null,
-        'currency': 'USD',
-        'netRevenue': true,
-        'ttl': 500,
-        'width': 640,
-        'height': 480,
-        'mediaType': 'video',
-        'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
-        'meta': {}
-      };
+    const expectedBid = {
+      'requestId': '2eabb87dfbcae4',
+      'cpm': 13.6,
+      'creativeId': 'mokivv6m',
+      'dealId': null,
+      'currency': 'USD',
+      'netRevenue': true,
+      'ttl': 500,
+      'width': 640,
+      'height': 480,
+      'mediaType': 'video',
+      'vastUrl': 'https://insight.adsrvr.org/enduser/vast?iid=00000000-0000-0000-0000-000000000000&crid=v3pek2eh&wp=13.6&aid=&wpc=&sfe=0&puid=&tdid=00000000-0000-0000-0000-000000000000&pid=&ag=&adv=&sig=AAAAAAAAAAAAAA.&cf=&fq=0&td_s=&rcats=&mcat=&mste=&mfld=4&mssi=&mfsi=&uhow=&agsa=&rgco=&rgre=&rgme=&rgci=&rgz=&svbttd=0&dt=&osf=&os=&br=&rlangs=en&mlang=en&svpid=&did=&rcxt=&lat=&lon=&tmpc=&daid=&vp=0&osi=&osv=&dc=0&vcc=QAFIAVABiAECwAEDyAED0AED6AEG8AEBgAIDigIMCAIIBQgDCAYICwgMmgIECAEIAqACA6gCAsACAA..&sv=noop&pidi=&advi=&cmpi=&agi=&cridi=&svi=&cmp=&skip=1&c=&dur=&crrelr=',
+      'meta': {}
+    };
 
     it('should get the correct bid response if nurl is returned', function () {
       let result = spec.interpretResponse(incoming, serverRequest);
