@@ -31,7 +31,7 @@ const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
   'playbackmethod', 'protocols', 'startdelay'
 ];
-const GVLID = 1060
+const GVLID = 1060;
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
