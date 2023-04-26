@@ -6,8 +6,9 @@ const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
 var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
+const webpack = require('webpack');
 
-function newWebpackConfig(codeCoverage, disableFeatures) {
+function newWebpackConfig(codeCoverage, disableFeatures, shard) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
@@ -25,6 +26,9 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
       use.options = babelConfig({test: true, codeCoverage, disableFeatures});
     });
 
+  webpackConfig.plugins.push(new webpack.DefinePlugin({
+    TEST_SHARD: JSON.stringify(shard ? shard.toString() : null)
+  }))
   return webpackConfig;
 }
 
@@ -106,14 +110,14 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
-  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
+module.exports = function({coverage, browserstack, watch, file, disableFeatures, shard}) {
+  var webpackConfig = newWebpackConfig(coverage, disableFeatures, shard);
   var plugins = newPluginsArray(browserstack);
 
   var files = file ? ['test/test_deps.js', file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
-  if (watchMode) {
+  if (watch) {
     files.push('test/helpers/karma-init.js');
   }
 
@@ -166,7 +170,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: !watchMode,
+    singleRun: !watch,
     browserDisconnectTimeout: 3e5, // default 2000
     browserNoActivityTimeout: 3e5, // default 10000
     captureTimeout: 3e5, // default 60000,
@@ -185,7 +189,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     delete config.preprocessors['test/test_index.js'];
   }
 
-  setReporters(config, codeCoverage, browserstack);
+  setReporters(config, coverage, browserstack);
   setBrowsers(config, browserstack);
   return config;
 }

@@ -22,7 +22,14 @@
 
 require('./test_deps.js');
 
-var testsContext = require.context('.', true, /_spec$/);
-testsContext.keys().forEach(testsContext);
+const testsContext = require.context('.', true, /_spec$/);
+let specs = testsContext.keys().filter(fn => fn.startsWith('.'));
+
+if (TEST_SHARD) {
+  const [shard, numShards] = TEST_SHARD.split('.').map(el => parseInt(el, 10));
+  specs = specs.filter((el, i) => (i % numShards) + 1 === shard)
+}
+
+specs.forEach(testsContext);
 
 window.$$PREBID_GLOBAL$$.processQueue();

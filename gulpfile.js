@@ -335,7 +335,7 @@ function runWebdriver({file}) {
 function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
-  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  options = Object.assign({browsers: helpers.parseBrowserArgs(argv), shard: argv.shard}, options)
   const child = fork('./karmaRunner.js');
   child.on('exit', (exitCode) => {
     if (exitCode) {

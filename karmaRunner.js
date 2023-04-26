@@ -4,7 +4,7 @@ const karmaConfMaker = require('./karma.conf.maker.js');
 
 process.on('message', function(options) {
   try {
-    let cfg = karmaConfMaker(options.coverage, options.browserstack, options.watch, options.file, options.disableFeatures);
+    let cfg = karmaConfMaker(options);
     if (options.browsers && options.browsers.length) {
       cfg.browsers = options.browsers;
     }
