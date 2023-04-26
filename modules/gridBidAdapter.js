@@ -186,7 +186,8 @@ export const spec = {
           impObj.banner = banner;
         }
       }
-      if (mediaTypes && mediaTypes[VIDEO]) {
+
+      if (FEATURES.VIDEO && mediaTypes && mediaTypes[VIDEO]) {
         const video = createVideoRequest(videoParams, mediaTypes[VIDEO], bid.sizes);
         if (video) {
           impObj.video = video;
@@ -568,7 +569,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
         bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
       }
 
-      if (serverBid.content_type === 'video') {
+      if (FEATURES.VIDEO && serverBid.content_type === 'video') {
         if (serverBid.adm) {
           bidResponse.vastXml = serverBid.adm;
           bidResponse.adResponse = {
@@ -829,7 +830,7 @@ const criteoSpec = {
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: slot.adomain });
         }
-        if (slot.video) {
+        if (FEATURES.VIDEO && slot.video) {
           bid.vastUrl = slot.displayurl;
           bid.mediaType = VIDEO;
         } else {
@@ -971,7 +972,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         slot.sizes = [];
       }
 
-      if (hasVideoMediaType(bidRequest)) {
+      if (FEATURES.VIDEO && hasVideoMediaType(bidRequest)) {
         const video = {
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
@@ -1056,24 +1057,26 @@ function hasBannerMediaType(bidRequest) {
 }
 
 function hasValidVideoMediaType(bidRequest) {
-  let isValid = true;
+  if (FEATURES.VIDEO) {
+    let isValid = true;
 
-  var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
+    var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
-  requiredMediaTypesParams.forEach(function (param) {
-    if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
-      isValid = false;
-      logError('TheMediaGrid Bid Adapter (withCriteo mode): mediaTypes.video.' + param + ' is required');
-    }
-  });
+    requiredMediaTypesParams.forEach(function (param) {
+      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+        isValid = false;
+        logError('TheMediaGrid Bid Adapter (withCriteo mode): mediaTypes.video.' + param + ' is required');
+      }
+    });
 
-  if (isValid) {
-    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
-    // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context === 'instream' && videoPlacement === 1) {
-      return true;
-    } else if (bidRequest.mediaTypes.video.context === 'outstream' && videoPlacement !== 1) {
-      return true;
+    if (isValid) {
+      const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
+      // We do not support long form for now, also we have to check that context & placement are consistent
+      if (bidRequest.mediaTypes.video.context === 'instream' && videoPlacement === 1) {
+        return true;
+      } else if (bidRequest.mediaTypes.video.context === 'outstream' && videoPlacement !== 1) {
+        return true;
+      }
     }
   }
 
@@ -1091,7 +1094,7 @@ function enrichSlotWithFloors(slot, bidRequest) {
         bannerSizes.forEach(bannerSize => slotFloors.banner[parseSize(bannerSize).toString()] = bidRequest.getFloor({ size: bannerSize, mediaType: BANNER }));
       }
 
-      if (bidRequest.mediaTypes?.video) {
+      if (FEATURES.VIDEO && bidRequest.mediaTypes?.video) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
         videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
