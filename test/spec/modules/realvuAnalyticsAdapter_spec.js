@@ -41,10 +41,10 @@ describe('RealVu', function() {
   });
 
   after(function () {
+    clearInterval(window.top1.boost_poll);
     delete window.top1;
     delete window.realvu_aa_fifo;
     delete window.realvu_aa;
-    clearInterval(window.boost_poll);
     delete window.boost_poll;
   });
 
