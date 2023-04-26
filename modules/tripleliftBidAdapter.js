@@ -135,7 +135,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
       impExt = _getImpExt(bidRequest.ortb2Imp);
     }
 
-    if (typeof impExt !== 'undefined') {
+    if (!isEmpty(impExt)) {
       imp.ext = impExt;
     }
 
@@ -293,7 +293,7 @@ function _getAdUnitFpd(adUnitFpd) {
 function _getImpExt(ortb2Imp) {
   let ext = {};
 
-  if (!isEmpty(ortb2Imp.ext)) {
+  if (ortb2Imp.ext !== undefined) {
     ext = { ...ortb2Imp.ext }
   }
 

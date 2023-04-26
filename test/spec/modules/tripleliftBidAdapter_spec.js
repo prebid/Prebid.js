@@ -702,6 +702,12 @@ describe('triplelift adapter', function () {
       expect(request.data.imp[0].ext.tid).to.equal('173f49a8-7549-4218-a23c-e7ba59b47229');
     });
 
+    // it('should not add impression ext object if ortb2Imp.ext does not exist', function() {
+    //   const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+    //   expect(request.data.imp[2].ext).to.not.exist;
+    //   expect(request.data.imp[2].ext.tid).to.not.exist;
+    // });
+
     it('should copy entire impression ext object', function() {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[1].ext).to.haveOwnProperty('tid');
