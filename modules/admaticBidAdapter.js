@@ -113,7 +113,10 @@ export const spec = {
           ttl: 360
         };
 
-        if (resbid.mediaType === "video") {
+        if (resbid.mediaType === "video" && isUrl(bid.party_tag)) {
+          resbid.vastUrl = bid.party_tag;
+          resbid.vastImpUrl = bid.iurl;
+        } else if (resbid.mediaType === "video") {
           resbid.vastXml = bid.party_tag;
           resbid.vastImpUrl = bid.iurl;
         } else if (resbid.mediaType === "banner") {
@@ -124,6 +127,15 @@ export const spec = {
       });
     }
     return bidResponses;
+  }
+};
+
+function isUrl(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (error) {
+    return false;
   }
 };
 
