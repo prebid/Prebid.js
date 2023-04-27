@@ -255,7 +255,7 @@ describe('admaticBidAdapter', () => {
             'adomain': ['admatic.com.tr'],
             'party_tag': '<div></div>',
             'iurl': 'https://www.admatic.com.tr',
-            'type': "banner"
+            'type': 'banner'
           }
         ],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
@@ -276,7 +276,7 @@ describe('admaticBidAdapter', () => {
           meta: {
             advertiserDomains: ['admatic.com.tr']
           },
-          ttl: 360,
+          ttl: 60,
           bidder: 'admatic'
         }
       ];
