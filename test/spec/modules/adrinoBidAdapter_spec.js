@@ -54,7 +54,7 @@ describe('adrinoBidAdapter', function () {
     });
   });
 
-  describe('buildDisplayRequest', function () {
+  describe('buildBannerRequest', function () {
     const bidRequest = {
       bidder: 'adrino',
       params: {
