@@ -74,7 +74,12 @@ describe('adhashBidAdapter', function () {
         publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb'
       },
       sizes: [[300, 250]],
-      adUnitCode: 'adUnitCode'
+      adUnitCode: 'adUnitCode',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      }
     };
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
@@ -122,6 +127,11 @@ describe('adhashBidAdapter', function () {
         sizes: [[300, 250]],
         params: {
           platformURL: 'https://adhash.com/p/struma/'
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
         }
       }
     };

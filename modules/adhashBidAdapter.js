@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { includes } from '../src/polyfill.js';
-import { BANNER } from '../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const VERSION = '3.2';
 const BAD_WORD_STEP = 0.1;
@@ -130,13 +130,13 @@ function brandSafety(badWords, maxScore) {
 
 export const spec = {
   code: ADHASH_BIDDER_CODE,
-  supportedMediaTypes: [ BANNER ],
+  supportedMediaTypes: [ BANNER, VIDEO ],
 
   isBidRequestValid: (bid) => {
     try {
       const { publisherId, platformURL, bidderURL } = bid.params;
       return (
-        includes(Object.keys(bid.mediaTypes), BANNER) &&
+        (includes(Object.keys(bid.mediaTypes), BANNER) || includes(Object.keys(bid.mediaTypes), VIDEO)) &&
         typeof publisherId === 'string' &&
         publisherId.length === 42 &&
         typeof platformURL === 'string' &&
@@ -168,7 +168,14 @@ export const spec = {
       const url = `${bidderURL}/rtb?version=${VERSION}&prebid=true`;
       const index = Math.floor(Math.random() * validBidRequests[i].sizes.length);
       const size = validBidRequests[i].sizes[index].join('x');
-
+      const creativeData = includes(Object.keys(validBidRequests[i].mediaTypes), VIDEO) ? {
+        size: 'preroll',
+        position: validBidRequests[i].adUnitCode,
+        playerSize: size
+      } : {
+        size: size,
+        position: validBidRequests[i].adUnitCode
+      };
       let recentAds = [];
       if (storage.localStorageIsEnabled()) {
         const prefix = validBidRequests[i].params.prefix || 'adHash';
@@ -204,10 +211,7 @@ export const spec = {
             language: window.navigator.language,
             userAgent: window.navigator.userAgent
           },
-          creatives: [{
-            size: size,
-            position: validBidRequests[i].adUnitCode
-          }],
+          creatives: [creativeData],
           blockedCreatives: [],
           currentTimestamp: (new Date().getTime() / 1000) | 0,
           recentAds: recentAds,
@@ -229,7 +233,6 @@ export const spec = {
 
   interpretResponse: (serverResponse, request) => {
     const responseBody = serverResponse ? serverResponse.body : {};
-
     if (
       !responseBody.creatives ||
       responseBody.creatives.length === 0 ||
@@ -247,12 +250,9 @@ export const spec = {
     const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
     const requestData = JSON.stringify(request.data);
 
-    return [{
+    var response = {
       requestId: request.bidRequest.bidId,
       cpm: responseBody.creatives[0].costEUR,
-      ad:
-        `<div id="${oneTimeId}"></div>${globalScript}
-        <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`,
       width: request.bidRequest.sizes[0][0],
       height: request.bidRequest.sizes[0][1],
       creativeId: request.bidRequest.adUnitCode,
@@ -262,7 +262,20 @@ export const spec = {
       meta: {
         advertiserDomains: responseBody.advertiserDomains ? [responseBody.advertiserDomains] : []
       }
-    }];
+    };
+    if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && includes(Object.keys(request.bidRequest.mediaTypes), BANNER)) {
+      response = Object.assign({
+        ad:
+        `<div id="${oneTimeId}"></div>${globalScript}
+        <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`
+      }, response);
+    } else if (includes(Object.keys(request.bidRequest.mediaTypes), VIDEO)) {
+      response = Object.assign({
+        vastUrl: responseBody.creatives[0].vastURL,
+        mediaType: VIDEO
+      }, response);
+    }
+    return [response];
   }
 };
 
