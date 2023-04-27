@@ -17,12 +17,11 @@ export const log = getLogger();
 
 /**
  * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` event)
+ * @property {string} analyticsVersion - Version of the Prebid.js 33Across Analytics Adapter
  * @property {string} pid - Partner ID
  * @property {'pbjs'} src - Source of the report
- * @property {string} analyticsVersion - Version of the Prebid.js 33Across Analytics Adapter
  * @property {string} pbjsVersion - Version of Prebid.js
  * @property {Auction[]} auctions
- * @property {Bid[]} bidsWon
  */
 
 /**
@@ -36,38 +35,47 @@ export const log = getLogger();
  * @typedef {Object} Auction - Parsed auction data
  * @property {AdUnit[]} adUnits
  * @property {string} auctionId
- * @property {Object} userIds
+ * @property {string[]} userIds
+ */
+
+/**
+ * @typedef {`${number}x${number}`} AdUnitSize
+ */
+
+/**
+ * @typedef {('banner'|'native'|'video')} AdUnitMediaType
  */
 
 /**
  * @typedef {Object} BidResponse
  * @property {number} cpm
  * @property {string} cur
- * @property {number} cpmOrig
+ * @property {number} [cpmOrig]
  * @property {number} cpmFloor
- * @property {string} mediaType
- * @property {string} size
+ * @property {AdUnitMediaType} mediaType
+ * @property {AdUnitSize} size
  */
 
 /**
  * @typedef {Object} Bid - Parsed bid data
  * @property {string} bidder
+ * @property {string} bidId
  * @property {string} source
  * @property {string} status
- * @property {BidResponse} bidResponse
- * @property {string} [transactionId] - Only included for winning bids
+ * @property {BidResponse} [bidResponse]
+ * @property {1|0} [hasWon]
  */
 
 /**
  * @typedef {Object} AdUnit - Parsed adUnit data
- * @property {string} transactionId - Primary key for *this* auction/adUnit/bid combination
+ * @property {string} transactionId - Primary key for *this* auction/adUnit combination
  * @property {string} adUnitCode
  * @property {string} slotId - Equivalent to GPID. (Note that
  * GPID supports adUnits where multiple units have the same `code` values
  * by appending a `#UNIQUIFIER`. The value of the UNIQUIFIER is likely to be the div-id,
  * but, if div-id is randomized / unavailable, may be something else like the media size)
- * @property {Array<('banner'|'native'|'video')>} mediaTypes
- * @property {Array<`${number}x${number}`>} sizes
+ * @property {Array<AdUnitMediaType>} mediaTypes
+ * @property {Array<AdUnitSize>} sizes
  * @property {Array<Bid>} bids
  */
 
@@ -92,9 +100,7 @@ class TransactionManager {
 
     if (this.#pending <= 0) {
       this.#clearTimeout();
-
       this.#onComplete();
-
       this.#transactions = {};
     }
   }
@@ -104,12 +110,8 @@ class TransactionManager {
     this.#onComplete = onComplete;
   }
 
-  add(transactionId) {
-    if (this.#transactions[transactionId]) {
-      log.warn(`transactionId "${transactionId}" already exists`);
-
-      return;
-    }
+  initiate(transactionId) {
+    if (this.#transactions[transactionId]) return;
 
     this.#transactions[transactionId] = {
       status: 'waiting'
@@ -119,7 +121,7 @@ class TransactionManager {
     this.#restartSendTimeout();
   }
 
-  que(transactionId) {
+  complete(transactionId) {
     if (!this.#transactions[transactionId]) {
       log.warn(`transactionId "${transactionId}" was not found. Nothing to enqueue.`);
       return;
@@ -127,7 +129,15 @@ class TransactionManager {
     this.#transactions[transactionId].status = 'queued';
     --this.#unsent;
 
-    log.info(`Queued transaction "${transactionId}". ${this.#unsent} unsent.`, this.#transactions);
+    log.info(`Queued transaction "${transactionId}". ${this.#unsent} transactions pending.`, this.#transactions);
+  }
+
+  completeAll(reason) {
+    Object.keys(this.#transactions).forEach(transactionId => {
+      this.complete(transactionId);
+    });
+
+    log.info('All remaining transactions flushed.' + (reason ? ` Reason: ${reason}` : ''));
   }
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
@@ -154,14 +164,14 @@ class TransactionManager {
  * initialized during `enableAnalytics`
  */
 const locals = {
-  /** @type {Object<string, TransactionManager>} */
+  /** @type {Object<string, TransactionManager>} - one manager per auction */
   transactionManagers: {},
   /** @type {AnalyticsCache=} */
-  analyticsCache: undefined,
+  cache: undefined,
   /** sets all locals to undefined */
   reset() {
     this.transactionManagers = {};
-    this.analyticsCache = undefined;
+    this.cache = undefined;
   }
 }
 
@@ -214,7 +224,10 @@ function enableAnalyticsWrapper(config) {
   const timeout = calculateTransactionTimeout(options.timeout);
   this.getTimeout = () => timeout;
 
-  locals.analyticsCache = newAnalyticsCache(pid);
+  locals.cache = {
+    pid,
+    auctions: {},
+  };
 
   analyticsAdapter.originEnableAnalytics(config);
 }
@@ -267,24 +280,12 @@ adapterManager.registerAnalyticsAdapter({
 export default analyticsAdapter;
 
 /**
- * @param {string} pid Partner ID
- * @returns {AnalyticsCache}
- */
-function newAnalyticsCache(pid) {
-  return {
-    pid,
-    auctions: {},
-    bidsWon: {},
-  };
-}
-
-/**
  * @param {AnalyticsCache} analyticsCache
  * @param {string} completedAuctionId value of auctionId
  * @return {AnalyticsReport} Analytics report
  */
 function createReportFromCache(analyticsCache, completedAuctionId) {
-  const { pid, bidsWon, auctions } = analyticsCache;
+  const { pid, auctions } = analyticsCache;
 
   return {
     pid,
@@ -292,88 +293,22 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [ auctions[completedAuctionId] ],
-    bidsWon: bidsWon[completedAuctionId]
   }
 }
 
-/**
- * @param {Object} args
- * @param {Array} args.adUnits
- * @param {string} args.auctionId
- * @param {Array} args.bidderRequests
- * @returns {Auction}
- */
-function parseAuction({ adUnits, auctionId, bidderRequests }) {
-  if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
-    log.error('Analytics adapter failed to parse auction.');
-  }
-
-  return {
-    adUnits: adUnits.map(unit => parseAdUnit(unit)),
-    auctionId,
-    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {}))
-  }
+function getBidsForTransaction(auctionId, transactionId) {
+  const auction = locals.cache.auctions[auctionId];
+  return auction.adUnits.find(adUnit => adUnit.transactionId === transactionId).bids;
 }
 
-/**
- * @param {Object} args
- * @param {string} args.transactionId
- * @param {string} args.code
- * @param {Object} args.ortb2Imp
- * @param {Array<Object>} args.mediaTypes
- * @param {Array<[number,number]>} args.sizes
- * @returns {AdUnit}
- */
-function parseAdUnit({ transactionId, code, ortb2Imp, mediaTypes, sizes }) {
-  return {
-    transactionId,
-    adUnitCode: code,
-    // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
-    // The value of the UNIQUIFIER is likely to be the div-id,
-    // but, if div-id is randomized / unavailable, may be something else like the media size)
-    slotId: deepAccess(ortb2Imp, 'ext.gpid', code),
-    mediaTypes: Object.keys(mediaTypes),
-    sizes: sizes.map(size => size.join('x')),
-    bids: []
-  }
-}
-
-/**
- * @param {Object} args
- * @param {string} args.auctionId
- * @param {string} args.bidder
- * @param {string} args.source
- * @param {string} args.status
- * @param {Object} args.args
- * @returns {Bid}
- */
-function parseBid({ auctionId, bidder, source, status, ...args }) {
-  return {
-    bidder,
-    source,
-    status,
-    bidResponse: parseBidResponse(args)
-  }
-}
-
-/**
- * @param {Object} args
- * @param {number} args.cpm
- * @param {string} args.currency
- * @param {number} args.originalCpm
- * @param {Object} args.floorData
- * @param {string} args.mediaType
- * @param {string} args.size
- * @returns {BidResponse}
- */
-function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, size }) {
-  return {
-    cpm,
-    cur: currency,
-    cpmOrig: originalCpm,
-    cpmFloor: floorData?.cpmAfterAdjustments,
-    mediaType,
-    size
+function getBid(auctionId, bidId) {
+  const auction = locals.cache.auctions[auctionId];
+  for (let adUnit of auction.adUnits) {
+    for (let bid of adUnit.bids) {
+      if (bid.bidId === bidId) {
+        return bid;
+      }
+    }
   }
 }
 
@@ -383,65 +318,115 @@ function parseBidResponse({ cpm, currency, originalCpm, floorData, mediaType, si
  * @param {EVENTS[keyof EVENTS]} args.eventType
  */
 function analyticEventHandler({ eventType, args }) {
-  if (!locals.analyticsCache) {
+  if (!locals.cache) {
     log.error('Something went wrong. Analytics cache is not initialized.');
     return;
   }
 
   switch (eventType) {
     case EVENTS.AUCTION_INIT:
-      const auction = parseAuction(args);
-
-      locals.analyticsCache.auctions[auction.auctionId] = auction;
-      locals.analyticsCache.bidsWon[args.auctionId] = [];
-
-      locals.transactionManagers[args.auctionId] ||=
-        new TransactionManager({
-          timeout: analyticsAdapter.getTimeout(),
-          onComplete() {
-            sendReport(
-              createReportFromCache(locals.analyticsCache, auction.auctionId),
-              analyticsAdapter.getUrl()
-            );
-          }
-        });
-
+      onAuctionInit(args);
       break;
     case EVENTS.BID_REQUESTED:
-      args.bids.forEach((bid) => {
-        locals.transactionManagers[args.auctionId].add(bid.transactionId);
-      });
-
+      onBidRequested(args);
       break;
     case EVENTS.BID_RESPONSE:
-      const bidResponse = parseBid(args);
-      const cachedAuction = locals.analyticsCache.auctions[args.auctionId];
-      const cachedAdUnit = cachedAuction.adUnits.find(adUnit => adUnit.transactionId === args.transactionId);
-
-      if (!cachedAdUnit) {
-        log.error('Failed to find adUnit in analytics cache.');
-        return;
-      }
-
-      cachedAdUnit.bids.push(bidResponse);
-
+      onBidResponse(args);
       break;
     case EVENTS.BID_WON:
-      const bidWon = Object.assign(parseBid(args), {
-        transactionId: args.transactionId
-      });
-
-      const auctionBids = locals.analyticsCache.bidsWon[args.auctionId];
-
-      auctionBids.push(bidWon);
-
-      // eslint-disable-next-line no-unused-expressions
-      locals.transactionManagers[args.auctionId]?.que(bidWon.transactionId);
-
+      onBidWon(args);
+      break;
+    case EVENTS.AUCTION_END:
+      onAuctionEnd(args);
       break;
     default:
       break;
   }
+}
+
+function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
+  if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
+    log.error('Analytics adapter failed to parse auction.');
+  }
+
+  locals.cache.auctions[auctionId] = {
+    auctionId,
+    adUnits: adUnits.map(au => {
+      return {
+        transactionId: au.transactionId,
+        adUnitCode: au.code,
+        // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
+        // The value of the UNIQUIFIER is likely to be the div-id,
+        // but, if div-id is randomized / unavailable, may be something else like the media size)
+        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || deepAccess(au, 'ortb2Imp.ext.pbadslot'),
+        mediaTypes: Object.keys(au.mediaTypes),
+        sizes: au.sizes.map(size => size.join('x')),
+        bids: [],
+      }
+    }),
+    userIds: Object.keys(deepAccess(bidderRequests, '0.bids.0.userId', {})),
+  };
+
+  locals.transactionManagers[auctionId] ||=
+    new TransactionManager({
+      timeout: analyticsAdapter.getTimeout(),
+      onComplete() {
+        sendReport(
+          createReportFromCache(locals.cache, auctionId),
+          analyticsAdapter.getUrl()
+        );
+      }
+    });
+}
+
+function onBidRequested({ auctionId, bids }) {
+  for (let { bidder, bidId, transactionId, src } of bids) {
+    locals.transactionManagers[auctionId].initiate(transactionId);
+    getBidsForTransaction(auctionId, transactionId).push({
+      bidder,
+      bidId,
+      status: 'pending',
+      hasWon: 0,
+      source: src,
+    });
+  }
+}
+
+function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, source, status }) {
+  Object.assign(getBid(auctionId, requestId),
+    {
+      bidResponse: {
+        cpm,
+        cur: currency,
+        cpmOrig: originalCpm,
+        cpmFloor: floorData?.cpmAfterAdjustments,
+        mediaType,
+        size
+      },
+      status,
+      source
+    }
+  );
+}
+
+function onBidWon({ auctionId, requestId, transactionId }) {
+  const bid = getBid(auctionId, requestId);
+  if (!bid) {
+    log.error(`Cannot find bid "${requestId}". Auction ID: "${auctionId}". Transaction ID: "${transactionId}".`);
+    return;
+  }
+
+  Object.assign(bid,
+    {
+      hasWon: 1
+    }
+  );
+
+  locals.transactionManagers[auctionId]?.complete(transactionId);
+}
+
+function onAuctionEnd({ auctionId }) {
+  locals.transactionManagers[auctionId]?.completeAll('auctionEnd');
 }
 
 /**
