@@ -1,6 +1,8 @@
 import {isEmpty, parseUrl} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+
 const NETWORK_ID = 11090;
 const AD_TYPES = [4309, 641];
 const DTX_TYPES = [5061];
@@ -11,6 +13,41 @@ const DEFAULT_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_CREATIVE_TYPE = 'NativeX';
 const VALID_CREATIVE_TYPES = ['DTX', 'NativeX'];
+const FLIPP_USER_KEY = 'flipp-uid';
+
+let userKey = null;
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+
+export function getUserKey(options = {}) {
+  if (userKey) {
+    return userKey;
+  }
+
+  // If the partner provides the user key use it, otherwise fallback to cookies
+  if (options.userKey && isValidUserKey(options.userKey)) {
+    userKey = options.userKey;
+    return options.userKey;
+  }
+  // Grab from Cookie
+  const foundUserKey = storage.cookiesAreEnabled() && storage.getCookie(FLIPP_USER_KEY);
+  if (foundUserKey) {
+    return foundUserKey;
+  }
+
+  // Generate if none found
+  userKey = generateUUID();
+
+  // Set cookie
+  if (storage.cookiesAreEnabled()) {
+    storage.setCookie(FLIPP_USER_KEY, userKey);
+  }
+
+  return userKey;
+}
+
+function isValidUserKey(userKey) {
+  return !userKey.startsWith('#');
+}
 
 const generateUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -63,7 +100,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const urlParams = parseUrl(bidderRequest.refererInfo.page).search;
     const contentCode = urlParams['flipp-content-code'];
-    const userKey = isEmpty(validBidRequests[0]?.params.userKey) ? generateUUID() : validBidRequests[0]?.params.userKey;
+    const userKey = getUserKey(validBidRequests[0]?.params);
     const placements = validBidRequests.map((bid, index) => {
       return {
         divName: TARGET_NAME,
@@ -76,11 +113,11 @@ export const spec = {
           ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
         },
         prebid: {
-          creativeType: validateCreativeType(bid.params.creativeType),
           requestId: bid.bidId,
           publisherNameIdentifier: bid.params.publisherNameIdentifier,
           height: bid.mediaTypes.banner.sizes[index][0],
           width: bid.mediaTypes.banner.sizes[index][1],
+          creativeType: validateCreativeType(bid.params.creativeType),
         }
       }
     });
