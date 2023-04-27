@@ -67,7 +67,7 @@ describe('adrinoBidAdapter', function () {
       },
       sizes: [[300, 250], [970, 250]],
       userId: { criteoId: '2xqi3F94aHdwWnM3', pubcid: '3ec0b202-7697' },
-      adUnitCode: 'adunit-code-1',
+      adUnitCode: 'adunit-code-2',
       bidId: '12345678901234',
       bidderRequestId: '98765432109876',
       auctionId: '01234567891234',
