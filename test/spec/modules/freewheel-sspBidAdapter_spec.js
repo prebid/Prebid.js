@@ -256,7 +256,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const userSyncs = spec.getUserSyncs(syncOptions, null, null, null, gppConsent);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
-        url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid=[8]'
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid[]=8'
       }]);
     });
   })
