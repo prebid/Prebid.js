@@ -11,7 +11,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -139,7 +139,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]])
+    ...getPubCommonEids([bidRequests[0]]),
+    ...getUniversalEids(bidRequests[0])
   ];
 
   if (eids.length > 0) {
@@ -152,6 +153,10 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
   if (!isEmpty(ext)) {
     data.ext = ext;
+  }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
   }
   return data;
 }
@@ -189,6 +194,9 @@ function _getORTBVideo(bidRequest) {
       logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
       video.placement = 3
     }
+  }
+  if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
+    video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
 
   // clean up oRTB object
@@ -312,6 +320,24 @@ function getPubCommonEids(bidRequest) {
   return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
 }
 
+function getUniversalEids(bidRequest) {
+  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
+  let eids = [];
+  if (bidRequest.userIdAsEids) {
+    bidRequest.userIdAsEids.forEach(id => {
+      try {
+        if (common.indexOf(id.source) === -1) {
+          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+          eids.push({ source: id.source, uids });
+        }
+      } catch (err) {
+        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
+      }
+    });
+  }
+  return eids;
+}
+
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
@@ -412,6 +438,10 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
+    }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;

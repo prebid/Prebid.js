@@ -72,6 +72,7 @@ describe('sharethrough adapter spec', function () {
         {
           bidder: 'sharethrough',
           bidId: 'bidId1',
+          transactionId: 'transactionId1',
           sizes: [[300, 250], [300, 600]],
           params: {
             pkey: 'aaaa1111',
@@ -85,36 +86,114 @@ describe('sharethrough adapter spec', function () {
           },
           ortb2Imp: {
             ext: {
+              tid: 'transaction-id-1',
+              gpid: 'universal-id',
               data: {
-                pbadslot: 'universal-id',
+                pbadslot: 'pbadslot-id',
               },
             },
           },
-          userId: {
-            tdid: 'fake-tdid',
-            pubcid: 'fake-pubcid',
-            idl_env: 'fake-identity-link',
-            id5id: {
-              uid: 'fake-id5id',
-              ext: {
-                linkType: 2,
-              },
+          userIdAsEids: [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-pubcid'
+                },
+              ]
             },
-            lipb: {
-              lipbid: 'fake-lipbid',
+            {
+              'source': 'liveramp.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-identity-link'
+                }
+              ]
             },
-            criteoId: 'fake-criteo',
-            britepoolid: 'fake-britepool',
-            intentIqId: 'fake-intentiq',
-            lotamePanoramaId: 'fake-lotame',
-            parrableId: {
-              eid: 'fake-parrable',
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-id5id'
+                }
+              ]
             },
-            netId: 'fake-netid',
-            sharedid: {
-              id: 'fake-sharedid',
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-tdid'
+                }
+              ]
             },
-          },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-criteo'
+                }
+              ]
+            },
+            {
+              'source': 'britepool.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-britepool'
+                }
+              ]
+            },
+            {
+              'source': 'liveintent.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lipbid'
+                }
+              ]
+            },
+            {
+              'source': 'intentiq.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-intentiq'
+                }
+              ]
+            },
+            {
+              'source': 'crwdcntrl.net',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lotame'
+                }
+              ]
+            },
+            {
+              'source': 'parrable.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-parrable'
+                }
+              ]
+            },
+            {
+              'source': 'netid.de',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-netid'
+                }
+              ]
+            }
+          ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
@@ -136,6 +215,7 @@ describe('sharethrough adapter spec', function () {
           bidder: 'sharethrough',
           bidId: 'bidId2',
           sizes: [[600, 300]],
+          transactionId: 'transactionId2',
           params: {
             pkey: 'bbbb2222',
           },
@@ -168,6 +248,8 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
+        auctionId: 'auction-id',
+        timeout: 242
       };
     });
 
@@ -229,6 +311,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.auctionId);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
@@ -310,12 +393,28 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('transaction id at the impression level', () => {
+        it('should include transaction id when provided', () => {
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.tid).to.equal('transaction-id-1');
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+      });
+
       describe('universal id', () => {
         it('should include gpid when universal id is provided', () => {
           const requests = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
-          expect(requests[1].data.imp[0].ext).to.be.undefined;
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+
+        it('should include gpid when pbadslot is provided without universal id', () => {
+          delete bidRequests[0].ortb2Imp.ext.gpid;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.gpid).to.equal('pbadslot-id');
         });
       });
 

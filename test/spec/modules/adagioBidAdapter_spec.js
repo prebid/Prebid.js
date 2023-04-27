@@ -17,6 +17,7 @@ import * as utils from '../../../src/utils.js';
 import { config } from '../../../src/config.js';
 import { NATIVE } from '../../../src/mediaTypes.js';
 import { executeRenderer } from '../../../src/Renderer.js';
+import { userSync } from '../../../src/userSync.js';
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
   const defaults = {
@@ -149,8 +150,8 @@ describe('Adagio bid adapter', () => {
         site: {
           ext: {
             data: {
-              environment: 'desktop',
-              pagetype: 'abc'
+              pagetype: 'abc',
+              category: ['cat1', 'cat2', 'cat3']
             }
           }
         }
@@ -165,11 +166,11 @@ describe('Adagio bid adapter', () => {
         return utils.deepAccess(config, key);
       });
 
-      setExtraParam(bid, 'environment');
-      expect(bid.params.environment).to.equal('desktop');
-
       setExtraParam(bid, 'pagetype')
       expect(bid.params.pagetype).to.equal('article');
+
+      setExtraParam(bid, 'category');
+      expect(bid.params.category).to.equal('cat1'); // Only the first value is kept
     });
 
     it('should use the adUnit param unit if defined', function() {
@@ -266,7 +267,8 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
-      'data'
+      'data',
+      'usIfr'
     ];
 
     it('groups requests by organizationId', function() {
@@ -345,6 +347,76 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data.adUnits[0].features.url).to.not.exist;
     });
 
+    it('should force split keyword param into a string', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        splitKeyword: 1234
+      }).build();
+      const bid02 = new BidRequestBuilder().withParams({
+        splitKeyword: ['1234']
+      }).build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.exist;
+      expect(requests[0].data.adUnits[0].params.splitKeyword).to.equal('1234');
+      expect(requests[0].data.adUnits[1].params.splitKeyword).to.not.exist;
+    });
+
+    it('should force key and value from data layer param into a string', function() {
+      const bid01 = new BidRequestBuilder().withParams({
+        dataLayer: {
+          1234: 'dlparam',
+          goodkey: 1234,
+          objectvalue: {
+            random: 'result'
+          },
+          arrayvalue: ['1234']
+        }
+      }).build();
+
+      const bid02 = new BidRequestBuilder().withParams({
+        dataLayer: 'a random string'
+      }).build();
+
+      const bid03 = new BidRequestBuilder().withParams({
+        dataLayer: 1234
+      }).build();
+
+      const bid04 = new BidRequestBuilder().withParams({
+        dataLayer: ['an array']
+      }).build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01, bid02, bid03, bid04], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+      expect(requests[0].data.adUnits[0].params).to.exist;
+      expect(requests[0].data.adUnits[0].params.dataLayer).to.not.exist;
+      expect(requests[0].data.adUnits[0].params.dl).to.exist;
+      expect(requests[0].data.adUnits[0].params.dl['1234']).to.equal('dlparam');
+      expect(requests[0].data.adUnits[0].params.dl.goodkey).to.equal('1234');
+      expect(requests[0].data.adUnits[0].params.dl.objectvalue).to.not.exist;
+      expect(requests[0].data.adUnits[0].params.dl.arrayvalue).to.not.exist;
+
+      expect(requests[0].data.adUnits[1].params).to.exist;
+      expect(requests[0].data.adUnits[1].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[1].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[2].params).to.exist;
+      expect(requests[0].data.adUnits[2].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[2].params.dataLayer).to.not.exist;
+
+      expect(requests[0].data.adUnits[3].params).to.exist;
+      expect(requests[0].data.adUnits[3].params.dl).to.not.exist;
+      expect(requests[0].data.adUnits[3].params.dataLayer).to.not.exist;
+    });
+
     describe('With video mediatype', function() {
       context('Outstream video', function() {
         it('should logWarn if user does not set renderer.backupOnly: true', function() {
@@ -381,8 +453,8 @@ describe('Adagio bid adapter', () => {
               context: 'outstream',
               playerSize: [[300, 250]],
               mimes: ['video/mp4'],
-              api: 5, // will be removed because invalid
-              playbackmethod: [7], // will be removed because invalid
+              api: 'val', // will be removed because invalid
+              playbackmethod: ['val'], // will be removed because invalid
             }
           },
         }).withParams({
@@ -392,7 +464,7 @@ describe('Adagio bid adapter', () => {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: [3],
+            placement: 3,
             protocols: [8]
           }
         }).build();
@@ -407,7 +479,7 @@ describe('Adagio bid adapter', () => {
           skipafter: 4,
           minduration: 10,
           maxduration: 30,
-          placement: [3],
+          placement: 3,
           protocols: [8],
           w: 300,
           h: 250
@@ -561,15 +633,13 @@ describe('Adagio bid adapter', () => {
       it('should send the Coppa "required" flag set to "1" in the request', function () {
         const bidderRequest = new BidderRequestBuilder().build();
 
-        sinon.stub(config, 'getConfig')
-          .withArgs('coppa')
-          .returns(true);
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync').returns({ syncEnabled: true })
+          .withArgs('coppa').returns(true);
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.coppa.required).to.equal(1);
-
-        config.getConfig.restore();
       });
     });
 
@@ -614,32 +684,26 @@ describe('Adagio bid adapter', () => {
     });
 
     describe('with userID modules', function() {
-      const userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666'
-      };
+      const userIdAsEids = [{
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+          }
+        ]
+      }];
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bid01 = new BidRequestBuilder({
-          userId
+          userIdAsEids
         }).withParams().build();
 
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        const expected = [{
-          source: 'pubcid.org',
-          uids: [
-            {
-              atype: 1,
-              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
-            }
-          ]
-        }];
-
-        expect(requests[0].data.user.eids).to.have.lengthOf(1);
-        expect(requests[0].data.user.eids).to.deep.equal(expected);
+        expect(requests[0].data.user.eids).to.deep.equal(userIdAsEids);
       });
 
       it('should send an empty "user.eids" array in the request if userId module is unsupported', function() {
@@ -736,6 +800,46 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
+
+    describe('with user-sync iframe enabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "true" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(true);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(true);
+      });
+    });
+
+    describe('with user-sync iframe disabled', function () {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      it('should send the UsIfr flag set to "false" in the request', function () {
+        const bidderRequest = new BidderRequestBuilder().build();
+
+        sandbox.stub(config, 'getConfig')
+          .withArgs('userSync')
+          .returns({ syncEnabled: true });
+
+        sandbox.stub(userSync, 'canBidderRegisterSync')
+          .withArgs('iframe', 'adagio')
+          .returns(false);
+
+        const requests = spec.buildRequests([bid01], bidderRequest);
+
+        expect(requests[0].data.usIfr).to.equal(false);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
@@ -776,8 +880,6 @@ describe('Adagio bid adapter', () => {
             adUnitElementId: 'gpt-adunit-code',
             pagetype: 'ARTICLE',
             category: 'NEWS',
-            subcategory: 'SPORT',
-            environment: 'desktop',
             supportIObs: true
           },
           adUnitCode: 'adunit-code',
@@ -825,8 +927,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -860,8 +960,6 @@ describe('Adagio bid adapter', () => {
         site: 'SITE-NAME',
         pagetype: 'ARTICLE',
         category: 'NEWS',
-        subcategory: 'SPORT',
-        environment: 'desktop',
         aDomain: ['advertiser.com'],
         mediaType: 'banner',
         meta: {
@@ -1081,7 +1179,7 @@ describe('Adagio bid adapter', () => {
           impressionTrackers: [
             'https://eventrack.local/impression'
           ],
-          javascriptTrackers: '<script src=\"https://eventrack.local/impression\"></script>',
+          javascriptTrackers: '<script async src=\"https://eventrack.local/impression\"></script>',
           clickTrackers: [
             'https://i.am.a.clicktracker.url'
           ],
@@ -1103,6 +1201,19 @@ describe('Adagio bid adapter', () => {
         expect(r[0].mediaType).to.equal(NATIVE);
         expect(r[0].native).ok;
         expect(r[0].native).to.deep.equal(expected);
+      });
+
+      it('Should handle multiple javascriptTrackers in one single string', () => {
+        const serverResponseWithNativeCopy = utils.deepClone(serverResponseWithNative);
+        serverResponseWithNativeCopy.body.bids[0].admNative.eventtrackers.push(
+          {
+            event: 1,
+            method: 2,
+            url: 'https://eventrack.local/impression-2'
+          },)
+        const r = spec.interpretResponse(serverResponseWithNativeCopy, bidRequestNative);
+        const expected = '<script async src=\"https://eventrack.local/impression\"></script>\n<script async src=\"https://eventrack.local/impression-2\"></script>';
+        expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
   });
@@ -1244,6 +1355,29 @@ describe('Adagio bid adapter', () => {
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
     });
+
+    it('should return `adunit_position` feature when the slot is hidden', function () {
+      const elem = fixtures.getElementById();
+      sandbox.stub(window.top.document, 'getElementById').returns(elem);
+      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
+      sandbox.stub(utils, 'inIframe').returns(false);
+
+      const bidRequest = new BidRequestBuilder({
+        mediaTypes: {
+          banner: { sizes: [[300, 250]] },
+        },
+      })
+        .withParams()
+        .build();
+
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const result = requests[0].data.adUnits[0].features;
+
+      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
+      expect(elem.style.display).to.equal(null); // set null to reset style
+    });
   });
 
   describe('Adagio features when prebid in Safeframe', function() {
@@ -1344,44 +1478,6 @@ describe('Adagio bid adapter', () => {
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
       expect(result.adunit_position).to.not.exist;
-    });
-  });
-
-  describe.skip('optional params auto detection', function() {
-    it('should auto detect environment', function() {
-      const getDeviceStub = sandbox.stub(_features, 'getDevice');
-
-      getDeviceStub.returns(5);
-      expect(adagio.autoDetectEnvironment()).to.eq('tablet');
-
-      getDeviceStub.returns(4);
-      expect(adagio.autoDetectEnvironment()).to.eq('mobile');
-
-      getDeviceStub.returns(2);
-      expect(adagio.autoDetectEnvironment()).to.eq('desktop');
-    });
-
-    it('should auto detect adUnitElementId when GPT is used', function() {
-      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
-      expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');
-    });
-  });
-
-  describe.skip('print number handling', function() {
-    it('should return 1 if no adunit-code found. This means it is the first auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(1);
-    });
-
-    it('should increment the adunit print number when the adunit-code has already been used for an other auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-
-      window.top.ADAGIO.adUnits['adunit-code'] = {
-        pageviewId: 'abc-def',
-        printNumber: 1,
-      };
-
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(2);
     });
   });
 

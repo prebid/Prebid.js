@@ -8,7 +8,8 @@
 import { logError, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const PCID_EXPIRY = 365;
 
@@ -16,7 +17,7 @@ const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
 export var FIRST_PARTY_DATA_KEY = '_iiq_fdata';
 
-export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 const INVALID_ID = 'INVALID_ID';
 

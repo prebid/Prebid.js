@@ -102,7 +102,7 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
-            name: "cpexId"
+            name: "czechAdId"
         }, {
             name: 'mwOpenLinkId',
             params: {
@@ -374,7 +374,4 @@ providerId: "c8549079-f149-4529-a34b-3fa91ef257d1"
 syncDelay: 5000
 }
 });
-
-```
-
 ```

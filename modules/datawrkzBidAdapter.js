@@ -1,4 +1,4 @@
-import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains } from '../src/utils.js';
+import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -84,7 +84,7 @@ export const spec = {
 
 /* Generate bid request for banner adunit */
 function buildBannerRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let adW = 0;
   let adH = 0;
@@ -135,7 +135,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
   let counter = 0;
   let assets = [];
 
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let title = deepAccess(bidRequest, 'mediaTypes.native.title');
   if (title && title.len) {
@@ -162,10 +162,10 @@ function buildNativeRequest(bidRequest, bidderRequest) {
     assets.push(generateNativeDataObj(body, 'desc', ++counter));
   }
 
-  let request = JSON.stringify({assets: assets})
+  let request = JSON.stringify({assets: assets});
   const native = {
     request: request
-  }
+  };
 
   var deals = [];
   if (bidRequest.params.deals && bidRequest.params.deals.length > 0) {
@@ -196,7 +196,7 @@ function buildNativeRequest(bidRequest, bidderRequest) {
 
 /* Generate bid request for video adunit */
 function buildVideoRequest(bidRequest, bidderRequest) {
-  let bidFloor = Number(getBidIdParameter('bidfloor', bidRequest.params));
+  let bidFloor = getBidFloor(bidRequest);
 
   let sizeObj = getVideoAdUnitSize(bidRequest);
 
@@ -220,7 +220,7 @@ function buildVideoRequest(bidRequest, bidderRequest) {
   };
 
   let context = deepAccess(bidRequest, 'mediaTypes.video.context');
-  if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES
+  if (context == 'outstream' && !bidRequest.renderer) video.mimes = OUTSTREAM_MIMES;
 
   var imp = [];
   var deals = [];
@@ -293,7 +293,7 @@ function generatePayload(imp, bidderRequest) {
     publisher: {}
   };
 
-  let regs = {ext: {}}
+  let regs = {ext: {}};
 
   if (bidderRequest.uspConsent) {
     regs.ext.us_privacy = bidderRequest.uspConsent;
@@ -346,7 +346,7 @@ function generateNativeImgObj(obj, type, id) {
     type: parseInt(typeId),
     w: adW,
     h: adH
-  }
+  };
   return {
     id: id,
     required: required,
@@ -413,8 +413,9 @@ function buildBannerResponse(bidRequest, bidResponse) {
         return;
       }
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.auctionId = bidRequest.auctionId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
       bidResponse.size = bidSizes;
@@ -454,8 +455,9 @@ function buildNativeResponse(bidRequest, response) {
         bidResponses.push(bid);
         return;
       }
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.auctionId = bidRequest.auctionId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -506,8 +508,9 @@ function buildVideoResponse(bidRequest, response) {
       }
       let context = bidRequest.mediaTypes.video.context;
 
-      bidResponse.requestId = bidRequest.bidId
-      bidResponse.transactionId = bidRequest.transactionId
+      bidResponse.requestId = bidRequest.bidId;
+      bidResponse.auctionId = bidRequest.auctionId;
+      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -531,7 +534,7 @@ function buildVideoResponse(bidRequest, response) {
 
       switch (context) {
         case OUTSTREAM:
-          var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : ''
+          var outstreamType = contains(OUTSTREAM_TYPES, bidRequest.params.outstreamType) ? bidRequest.params.outstreamType : '';
           bidResponse.outstreamType = outstreamType;
           bidResponse.ad = vastXml;
           if (!bidRequest.renderer) {
@@ -542,7 +545,7 @@ function buildVideoResponse(bidRequest, response) {
               loaded: false,
               adUnitCode
             });
-            renderer.setRender(outstreamRender)
+            renderer.setRender(outstreamRender);
             bidResponse.renderer = renderer;
           } else { bidResponse.adResponse = vastXml; }
           break;
@@ -628,6 +631,23 @@ function getNativeAssestObj(obj, assets) {
       }
     }
   }
+}
+
+// BUILD REQUESTS: BIDFLOORS
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return (bid.params.bidfloor) ? bid.params.bidfloor : null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

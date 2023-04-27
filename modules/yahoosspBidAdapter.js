@@ -24,12 +24,13 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
   'crwdcntrl.net',
   'deepintent.com',
+  'epsilon.com',
   'hcn.health',
   'id5-sync.com',
   'idx.lat',
@@ -45,7 +46,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'novatiq.com',
   'parrable.com',
   'pubcid.org',
-  'quantcast.com',
   'quantcast.com',
   'tapad.com',
   'uidapi.com',
@@ -237,7 +237,9 @@ function generateOpenRtbObject(bidderRequest, bid) {
       device: {
         dnt: 0,
         ua: navigator.userAgent,
-        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
+        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
+        w: window.screen.width,
+        h: window.screen.height
       },
       regs: {
         ext: {
@@ -275,6 +277,11 @@ function generateOpenRtbObject(bidderRequest, bid) {
       }
     } else {
       outBoundBidRequest.site.id = bid.params.dcn;
+    };
+
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
     };
 
     if (bidderRequest.ortb2) {
@@ -488,7 +495,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
   })
