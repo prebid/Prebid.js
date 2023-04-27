@@ -303,46 +303,48 @@ describe('Silverpush Adapter', function () {
       expect(bids[0].width).to.equal(300);
     });
 
-    it('should correctly interpret valid instream video response', () => {
-      const response = utils.deepClone(videoResponse);
-      videoBid.mediaTypes.video.context = 'outstream';
-      const requests = spec.buildRequests([videoBid], bidderRequest);
-      const bids = spec.interpretResponse({ body: response }, requests[0]);
+    if (FEATURES.VIDEO) {
+      it('should correctly interpret valid instream video response', () => {
+        const response = utils.deepClone(videoResponse);
+        videoBid.mediaTypes.video.context = 'outstream';
+        const requests = spec.buildRequests([videoBid], bidderRequest);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
 
-      expect(bids[0].vastXml).to.equal('<VAST version="4.2"></VAST>\n');
-      expect(bids[0].burl).to.equal('http://0.0.0.0:8181/burl');
-      expect(bids[0].cpm).to.equal(1.09);
-      expect(bids[0].creativeId).to.equal('aaaaadddddddd');
-      expect(bids[0].currency).to.equal('USD');
-      expect(bids[0].mediaType).to.equal('video');
-      expect(bids[0].meta.advertiserDomains[0]).to.equal('https://www.exampleabc.com');
-      expect(bids[0].requestId).to.equal('281141d3541362');
-      expect(bids[0].seatBidId).to.equal('soCWeklh');
-      expect(bids[0].width).to.equal(1024);
-      expect(bids[0].height).to.equal(768);
-    });
+        expect(bids[0].vastXml).to.equal('<VAST version="4.2"></VAST>\n');
+        expect(bids[0].burl).to.equal('http://0.0.0.0:8181/burl');
+        expect(bids[0].cpm).to.equal(1.09);
+        expect(bids[0].creativeId).to.equal('aaaaadddddddd');
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].mediaType).to.equal('video');
+        expect(bids[0].meta.advertiserDomains[0]).to.equal('https://www.exampleabc.com');
+        expect(bids[0].requestId).to.equal('281141d3541362');
+        expect(bids[0].seatBidId).to.equal('soCWeklh');
+        expect(bids[0].width).to.equal(1024);
+        expect(bids[0].height).to.equal(768);
+      });
 
-    it('should correctly interpret valid outstream video response', () => {
-      const response = utils.deepClone(videoResponse);
-      videoBid.mediaTypes.video.context = 'outstream';
+      it('should correctly interpret valid outstream video response', () => {
+        const response = utils.deepClone(videoResponse);
+        videoBid.mediaTypes.video.context = 'outstream';
 
-      const requests = spec.buildRequests([videoBid], bidderRequest);
-      const bids = spec.interpretResponse({ body: response }, requests[0]);
+        const requests = spec.buildRequests([videoBid], bidderRequest);
+        const bids = spec.interpretResponse({ body: response }, requests[0]);
 
-      expect(bids[0].vastXml).to.equal('<VAST version="4.2"></VAST>\n');
-      expect(bids[0].rendererUrl).to.equal(SP_OUTSTREAM_PLAYER_URL);
-      expect(bids[0].renderer.url).to.equal(SP_OUTSTREAM_PLAYER_URL);
-      expect(bids[0].burl).to.equal('http://0.0.0.0:8181/burl');
-      expect(bids[0].cpm).to.equal(1.09);
-      expect(bids[0].creativeId).to.equal('aaaaadddddddd');
-      expect(bids[0].currency).to.equal('USD');
-      expect(bids[0].mediaType).to.equal('video');
-      expect(bids[0].meta.advertiserDomains[0]).to.equal('https://www.exampleabc.com');
-      expect(bids[0].requestId).to.equal('281141d3541362');
-      expect(bids[0].seatBidId).to.equal('soCWeklh');
-      expect(bids[0].width).to.equal(1024);
-      expect(bids[0].height).to.equal(768);
-    });
+        expect(bids[0].vastXml).to.equal('<VAST version="4.2"></VAST>\n');
+        expect(bids[0].rendererUrl).to.equal(SP_OUTSTREAM_PLAYER_URL);
+        expect(bids[0].renderer.url).to.equal(SP_OUTSTREAM_PLAYER_URL);
+        expect(bids[0].burl).to.equal('http://0.0.0.0:8181/burl');
+        expect(bids[0].cpm).to.equal(1.09);
+        expect(bids[0].creativeId).to.equal('aaaaadddddddd');
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].mediaType).to.equal('video');
+        expect(bids[0].meta.advertiserDomains[0]).to.equal('https://www.exampleabc.com');
+        expect(bids[0].requestId).to.equal('281141d3541362');
+        expect(bids[0].seatBidId).to.equal('soCWeklh');
+        expect(bids[0].width).to.equal(1024);
+        expect(bids[0].height).to.equal(768);
+      });
+    }
   });
 
   describe('onBidWon', function() {
