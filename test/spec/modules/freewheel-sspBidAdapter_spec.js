@@ -224,10 +224,39 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': [8]
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+
+      expect(payload.gpp).to.equal(consentString);
+      expect(payload.gpp_sid).to.deep.equal([8]);
+
+      let gppConsent = {
+        'applicableSections': [8],
+        'gppString': consentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid=[8]'
       }]);
     });
   })
@@ -318,7 +347,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
