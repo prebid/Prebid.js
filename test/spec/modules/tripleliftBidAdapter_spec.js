@@ -252,6 +252,11 @@ describe('triplelift adapter', function () {
           auctionId: '1d1a030790a475',
           userId: {},
           schain,
+          ortb2Imp: {
+            misc: {
+              test: 1
+            }
+          }
         },
         // incomplete banner and incomplete video
         {
@@ -700,6 +705,16 @@ describe('triplelift adapter', function () {
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.imp[0].ext.tid).to.exist.and.be.a('string');
       expect(request.data.imp[0].ext.tid).to.equal('173f49a8-7549-4218-a23c-e7ba59b47229');
+    });
+
+    it('should not add impression ext object if ortb2Imp does not exist', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[2].ext).to.not.exist;
+    });
+
+    it('should not add impression ext object if ortb2Imp.ext does not exist', function() {
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.imp[3].ext).to.not.exist;
     });
 
     it('should copy entire impression ext object', function() {

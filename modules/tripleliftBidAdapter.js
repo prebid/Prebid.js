@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn, deepClone } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -111,7 +111,6 @@ function _getSyncType(syncOptions) {
 
 function _buildPostBody(bidRequests, bidderRequest) {
   let data = {};
-  let impExt = {};
   let { schain } = bidRequests[0];
   const globalFpd = _getGlobalFpd(bidderRequest);
 
@@ -131,12 +130,13 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
+      // legacy method for extracting ortb2Imp.ext
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
-      impExt = _getImpExt(bidRequest.ortb2Imp);
-    }
 
-    if (typeof impExt !== 'undefined') {
-      imp.ext = impExt;
+      // preferred method for extracting ortb2Imp.ext
+      if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+        imp.ext = deepClone(bidRequest.ortb2Imp.ext)
+      }
     }
 
     return imp;
@@ -288,16 +288,6 @@ function _getAdUnitFpd(adUnitFpd) {
   }
 
   return fpd;
-}
-
-function _getImpExt(ortb2Imp) {
-  let ext = {};
-
-  if (!isEmpty(ortb2Imp.ext)) {
-    ext = { ...ortb2Imp.ext }
-  }
-
-  return ext;
 }
 
 function _addEntries(target, source) {
