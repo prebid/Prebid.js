@@ -1,4 +1,4 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn, deepClone } from '../src/utils.js';
+import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -135,7 +135,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
 
       // preferred method for extracting ortb2Imp.ext
       if (!isEmpty(bidRequest.ortb2Imp.ext)) {
-        imp.ext = deepClone(bidRequest.ortb2Imp.ext)
+        imp.ext = { ...bidRequest.ortb2Imp.ext };
       }
     }
 
