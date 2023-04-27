@@ -108,30 +108,30 @@ describe('admaticBidAdapter', () => {
             }
           },
           {
-            "size": [
+            'size': [
               {
-                "w": 338,
-                "h": 280
+                'w': 338,
+                'h': 280
               }
             ],
-            "type": "video",
-            "mediatype": {
-              "context": "instream",
-              "mimes": [
-                "video/mp4"
+            'type': 'video',
+            'mediatype': {
+              'context': 'instream',
+              'mimes': [
+                'video/mp4'
               ],
-              "maxduration": 240,
-              "api": [
+              'maxduration': 240,
+              'api': [
                 1,
                 2
               ],
-              "playerSize": [
+              'playerSize': [
                 [
                   338,
                   280
                 ]
               ],
-              "protocols": [
+              'protocols': [
                 1,
                 2,
                 3,
@@ -141,14 +141,14 @@ describe('admaticBidAdapter', () => {
                 7,
                 8
               ],
-              "skip": 1,
-              "playbackmethod": [
+              'skip': 1,
+              'playbackmethod': [
                 2
               ],
-              "linearity": 1,
-              "placement": 2
+              'linearity': 1,
+              'placement': 2
             },
-            "id": "45e86fc7ce7fc93"
+            'id': '45e86fc7ce7fc93'
           }
         ],
         'ext': {
@@ -218,30 +218,30 @@ describe('admaticBidAdapter', () => {
             }
           },
           {
-            "size": [
+            'size': [
               {
-                "w": 338,
-                "h": 280
+                'w': 338,
+                'h': 280
               }
             ],
-            "type": "video",
-            "mediatype": {
-              "context": "instream",
-              "mimes": [
-                "video/mp4"
+            'type': 'video',
+            'mediatype': {
+              'context': 'instream',
+              'mimes': [
+                'video/mp4'
               ],
-              "maxduration": 240,
-              "api": [
+              'maxduration': 240,
+              'api': [
                 1,
                 2
               ],
-              "playerSize": [
+              'playerSize': [
                 [
                   338,
                   280
                 ]
               ],
-              "protocols": [
+              'protocols': [
                 1,
                 2,
                 3,
@@ -251,14 +251,14 @@ describe('admaticBidAdapter', () => {
                 7,
                 8
               ],
-              "skip": 1,
-              "playbackmethod": [
+              'skip': 1,
+              'playbackmethod': [
                 2
               ],
-              "linearity": 1,
-              "placement": 2
+              'linearity': 1,
+              'placement': 2
             },
-            "id": "45e86fc7ce7fc93"
+            'id': '45e86fc7ce7fc93'
           }
         ],
         'ext': {
