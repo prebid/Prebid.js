@@ -9,7 +9,7 @@ import { config } from 'src/config.js';
 
 const ENDPOINT = 'https://ib.adnxs.com/ut/v3/prebid';
 
-describe('uolAdapter', function () {
+describe('UolAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -1874,7 +1874,7 @@ describe('uolAdapter', function () {
 
   describe('transformBidParams', function () {
     let gcStub;
-    let adUnit = { bids: [{ bidder: 'uol' }] }; ;
+    let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
 
     before(function () {
       gcStub = sinon.stub(config, 'getConfig');
@@ -1886,7 +1886,7 @@ describe('uolAdapter', function () {
 
     it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
       gcStub.withArgs('s2sConfig').returns({
-        bidders: ['uol'],
+        bidders: ['appnexus'],
         endpoint: {
           p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
         }
@@ -1905,7 +1905,7 @@ describe('uolAdapter', function () {
 
     it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
       gcStub.withArgs('s2sConfig').returns([{
-        bidders: ['uol'],
+        bidders: ['appnexus'],
         endpoint: {
           p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
         }
