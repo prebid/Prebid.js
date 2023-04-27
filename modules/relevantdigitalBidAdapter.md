@@ -36,7 +36,9 @@ var adUnits = [
 ];
 ```
 # Example setup using only bid params
-This method to set the global configuration parameters (like **pbsHost**) in **params** could simplify integration of a provider for some publishers. Setting different global config-parameters on different bids is not supported, as the first settings found will be used and any subsequent global settings will be ignored.
+This method to set the global configuration parameters (like **pbsHost**) in **params** could simplify integration of a provider for some publishers. Setting different global config-parameters on different bids is not supported in general*, as the first settings found will be used and any subsequent global settings will be ignored.
+
+  * _The exception is `useSourceBidderCode` which can be overriden individually per ad unit._ 
 ```javascript
 var adUnits = [
   {
@@ -103,6 +105,7 @@ var adUnits = [
 | `placementId`       | required | The placement id.  | `'6204e83a077c5825441b8508_620f9e8e4fe67c1f87cd30ed'`      | `String`     |
 | `pbsHost` | required if not set in config | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
 | `accountId`        | required if not set in config | The account id.  | `'6204e5fa70e3ad10821b84ff'`               | `String`      |
+| `useSourceBidderCode`        | optional | Set to `true` in order to use the bidder code of the actual server-side bidder in bid responses. You **MUST** also use `allowAlternateBidderCodes: true` in `bidderSettings` if you enabled this - as otherwise the bids will be rejected.| `true`               | `Boolean`      |
 
 # Config Parameters
 
@@ -111,3 +114,4 @@ var adUnits = [
 | `pbsHost` | required if not set in bid parameters | Host name of the server. | `'pbs-example.relevant-digital.com'`                | `String`     |
 | `accountId`        | required if not set in bid parameters | The account id.  | `'6204e5fa70e3ad10821b84ff'`               | `String`      |
 | `pbsBufferMs` | optional | How much less in *milliseconds* the server's internal timeout should be compared to the normal Prebid timeout. Default is *250*. To be increased in cases of frequent timeouts. | `250`                | `Integer`     |
+| `useSourceBidderCode`        | optional | Set to `true` in order to use the bidder code of the actual server-side bidder in bid responses. You **MUST** also use `allowAlternateBidderCodes: true` in `bidderSettings` if you enabled this - as otherwise the bids will be rejected.| `true`               | `Boolean`      |

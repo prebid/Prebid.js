@@ -7,22 +7,6 @@ import {deepSetValue, isEmpty, deepClone, shuffle, triggerPixel, deepAccess} fro
 
 const BIDDER_CODE = 'relevantdigital';
 
-const converter = ortbConverter({
-  context: {
-    netRevenue: true,
-    ttl: 300
-  },
-  processors: pbsExtensions,
-  imp(buildImp, bidRequest, context) {
-    // Set stored request id from placementId
-    const imp = buildImp(bidRequest, context);
-    const { placementId } = bidRequest.params;
-    deepSetValue(imp, 'ext.prebid.storedrequest.id', placementId);
-    delete imp.ext.prebid.bidder;
-    return imp;
-  },
-});
-
 /** Global settings per bidder-code for this adapter (which might be > 1 if using aliasing) */
 let configByBidder = {};
 
@@ -36,6 +20,7 @@ const FIELDS = [
   { name: 'pbsHost', checkParams: true, required: true },
   { name: 'accountId', checkParams: true, required: true },
   { name: 'pbsBufferMs', checkParams: false, required: false, default: 250 },
+  { name: 'useSourceBidderCode', checkParams: false, required: false, default: false },
 ];
 
 const SYNC_HTML = 'https://cdn.relevant-digital.com/resources/load-cookie.html';
@@ -72,6 +57,37 @@ const getBidderConfig = (bids) => {
   }
   return cfg;
 }
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 300
+  },
+  processors: pbsExtensions,
+  imp(buildImp, bidRequest, context) {
+    // Set stored request id from placementId
+    const imp = buildImp(bidRequest, context);
+    const { placementId } = bidRequest.params;
+    deepSetValue(imp, 'ext.prebid.storedrequest.id', placementId);
+    delete imp.ext.prebid.bidder;
+    return imp;
+  },
+  overrides: {
+    bidResponse: {
+      bidderCode(orig, bidResponse, bid, { bidRequest }) {
+        const { bidder, params = {} } = bidRequest || {};
+        let useSourceBidderCode = configByBidder[bidder]?.useSourceBidderCode;
+        if ('useSourceBidderCode' in params) {
+          useSourceBidderCode = params.useSourceBidderCode;
+        }
+        // Only use the orignal function when useSourceBidderCode is true, else our own bidder code will be used
+        if (useSourceBidderCode) {
+          orig.apply(this, [...arguments].slice(1));
+        }
+      },
+    },
+  }
+});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -115,31 +131,19 @@ export const spec = {
   interpretResponse(response, request) {
     const resp = deepClone(response.body);
     const { bidder } = request.data.ext.prebid.passthrough.relevant;
-    const editBid = (bid) => { // Modify bidder-codes in bid to the bidder code for this bidder
-      const { prebid = {} } = bid.ext || {};
-      const { meta, targeting } = prebid;
-      if (meta?.adaptercode) {
-        meta.adaptercode = bidder;
-      }
-      if (targeting?.hb_bidder) {
-        targeting.hb_bidder = bidder;
-      }
-      return bid;
+
+    // Modify response times / errors for actual PBS bidders into a single value
+    const MODIFIERS = {
+      responsetimemillis: (values) => Math.max(...values),
+      errors: (values) => [].concat(...values),
     };
-    // Create a single seat for this bidder - that holds the bids for all seats returned
-    if (Array.isArray(resp.seatbid)) {
-      resp.seatbid = [{
-        seat: bidder,
-        bid: [].concat(...resp.seatbid.map(({ bid }) => (bid || []).map(editBid))),
-      }];
-    }
-    // Modify response times for actual PBS bidders into a single value that should be the response-time for this bidder
-    const { responsetimemillis } = resp.ext || {};
-    if (!isEmpty(responsetimemillis)) {
-      resp.ext.responsetimemillis = {
-        [bidder]: Math.max(...Object.values(responsetimemillis)),
-      };
-    }
+    Object.entries(MODIFIERS).forEach(([field, combineFn]) => {
+      const obj = resp.ext?.[field];
+      if (!isEmpty(obj)) {
+        resp.ext[field] = {[bidder]: combineFn(Object.values(obj))};
+      }
+    });
+
     const bids = converter.fromORTB({response: resp, request: request.data}).bids;
     return bids;
   },

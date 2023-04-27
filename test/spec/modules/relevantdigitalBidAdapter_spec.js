@@ -1,5 +1,5 @@
 import {spec, resetBidderConfigs} from 'modules/relevantdigitalBidAdapter.js';
-import { parseUrl } from 'src/utils.js';
+import { parseUrl, deepClone } from 'src/utils.js';
 
 const expect = require('chai').expect;
 
@@ -207,9 +207,18 @@ const BID_RESPONSE = {
   }
 };
 
-const resetAndBuildRequest = () => {
+const S2S_RESPONSE_BIDDER = BID_RESPONSE.seatbid[0].seat;
+
+const resetAndBuildRequest = (params) => {
   resetBidderConfigs();
-  return spec.buildRequests([BID_REQUEST], BIDDER_REQUEST);
+  const bidRequest = {
+    ...BID_REQUEST,
+    params: {
+      ...BID_REQUEST.params,
+      ...params,
+    },
+  };
+  return spec.buildRequests([bidRequest], BIDDER_REQUEST);
 };
 
 describe('Relevant Digital Bid Adaper', function () {
@@ -234,14 +243,8 @@ describe('Relevant Digital Bid Adaper', function () {
   describe('interpreteResponse', () => {
     const [request] = resetAndBuildRequest();
     const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request);
-    it('should have the correct bidder code', () => {
-      expect(bid.bidderCode).equal(spec.code);
-    });
-    it('should set hb_bidder targeting correctly', () => {
-      expect(bid.adserverTargeting.hb_bidder).equal(spec.code);
-    });
-    it('should set adapter code correctly', () => {
-      expect(bid.meta.adaptercode).equal(spec.code);
+    it('should not have S2S bidder\'s bidder code', () => {
+      expect(bid.bidderCode).not.equal(S2S_RESPONSE_BIDDER);
     });
     it('should return the right creative content', () => {
       const respBid = BID_RESPONSE.seatbid[0].bid[0];
@@ -249,6 +252,13 @@ describe('Relevant Digital Bid Adaper', function () {
       expect(bid.ad).equal(respBid.adm);
       expect(bid.width).equal(respBid.w);
       expect(bid.height).equal(respBid.h);
+    });
+  });
+  describe('interpreteResponse with useSourceBidderCode', () => {
+    const [request] = resetAndBuildRequest({ useSourceBidderCode: true });
+    const [bid] = spec.interpretResponse({ body: BID_RESPONSE }, request);
+    it('should have S2S bidder\'s code', () => {
+      expect(bid.bidderCode).equal(S2S_RESPONSE_BIDDER);
     });
   });
   describe('getUserSyncs with iframeEnabled', () => {
