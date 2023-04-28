@@ -110,16 +110,16 @@ export const spec = {
           },
           bidder: bid.bidder,
           mediaType: bid.type,
-          ttl: 60
+          ttl: 360
         };
 
-        if (resbid.mediaType === 'video' && isUrl(bid.party_tag)) {
+        if (resbid.mediaType === "video" && isUrl(bid.party_tag)) {
           resbid.vastUrl = bid.party_tag;
           resbid.vastImpUrl = bid.iurl;
-        } else if (resbid.mediaType === 'video') {
+        } else if (resbid.mediaType === "video") {
           resbid.vastXml = bid.party_tag;
           resbid.vastImpUrl = bid.iurl;
-        } else if (resbid.mediaType === 'banner') {
+        } else if (resbid.mediaType === "banner") {
           resbid.ad = bid.party_tag;
         };
 
