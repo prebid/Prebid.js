@@ -20,7 +20,7 @@ import {
 import CONSTANTS from '../../src/constants.json';
 import adapterManager from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {isValid} from '../../src/adapters/bidderFactory.js';
+import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -469,9 +469,12 @@ export function PrebidServer() {
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
-        onResponse: function (isValid, requestedBidders) {
+        onResponse: function (isValid, requestedBidders, response) {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
+          }
+          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+            emitNonBids(response.ext.seatnonbid, bidRequests[0].auctionId);
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -493,6 +496,9 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
+        },
+        onFledge: ({adUnitCode, config}) => {
+          addComponentAuction(adUnitCode, config);
         }
       })
     }
@@ -518,7 +524,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid}) {
+export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -542,8 +548,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
+            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
+            if (fledgeAuctionConfigs) {
+              fledgeAuctionConfigs.forEach(onFledge);
+            }
           } catch (error) {
             logError(error);
           }
@@ -551,7 +560,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {
-            onResponse(true, requestedBidders);
+            onResponse(true, requestedBidders, result);
           }
         },
         error: function () {
@@ -566,6 +575,17 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
     logError('PBS request not made.  Check endpoints.');
   }
 }, 'processPBSRequest');
+
+function shouldEmitNonbids(s2sConfig, response) {
+  return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+}
+
+function emitNonBids(seatnonbid, auctionId) {
+  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+    seatnonbid,
+    auctionId
+  });
+}
 
 /**
  * Global setter that sets eids permissions for bidders

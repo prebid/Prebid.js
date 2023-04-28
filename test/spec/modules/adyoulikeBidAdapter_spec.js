@@ -672,10 +672,18 @@ describe('Adyoulike Adapter', function () {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'userId': {
-          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-          unsuported: '666'
-        }
+        'userIdAsEids':
+        [
+          {
+            'source': 'pubcid.org',
+            'uids': [
+              {
+                'atype': 1,
+                'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+              }
+            ]
+          }
+        ]
       };
 
       bidderRequest.bids = bidRequestWithSinglePlacement;
@@ -684,13 +692,7 @@ describe('Adyoulike Adapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([{
-        'source': 'pubcid.org',
-        'uids': [{
-          'atype': 1,
-          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
-        }]
-      }]);
+      expect(payload.userId).to.deep.equal(bidderRequest.userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {

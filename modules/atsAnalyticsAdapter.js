@@ -4,8 +4,11 @@ import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
-export const storage = getStorageManager();
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+const MODULE_CODE = 'atsAnalytics';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 /**
  * Analytics adapter for - https://liveramp.com
@@ -352,7 +355,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
     let bidWonTimeout = atsAnalyticsAdapter.context.bidWonTimeout ? atsAnalyticsAdapter.context.bidWonTimeout : 2000;
     let events = [];
     setTimeout(() => {
-      let winningBids = $$PREBID_GLOBAL$$.getAllWinningBids();
+      let winningBids = getGlobal().getAllWinningBids();
       logInfo('ATS Analytics - winning bids: ', winningBids)
       // prepare format data for sending to analytics endpoint
       if (handlerRequest.length) {
@@ -398,7 +401,7 @@ atsAnalyticsAdapter.callHandler = function (evtype, args) {
 
 adaptermanager.registerAnalyticsAdapter({
   adapter: atsAnalyticsAdapter,
-  code: 'atsAnalytics',
+  code: MODULE_CODE,
   gvlid: 97
 });
 

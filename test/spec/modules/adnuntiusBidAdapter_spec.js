@@ -8,26 +8,27 @@ import { getStorageManager } from 'src/storageManager.js';
 
 describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
+  const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const GVLID = 855;
   const usi = utils.generateUUID()
   const meta = [{ key: 'usi', value: usi }]
 
   before(() => {
-    const storage = getStorageManager({ gvlid: GVLID, moduleName: 'adnuntius' })
-    storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
-  });
-
-  beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
       adnuntius: {
         storageAllowed: true
       }
     };
+    const storage = getStorageManager({ bidderCode: 'adnuntius' })
+    storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
+  });
+
+  after(() => {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
 
   afterEach(function () {
     config.resetConfig();
-    $$PREBID_GLOBAL$$.bidderSettings = {};
   });
 
   const tzo = new Date().getTimezoneOffset();
@@ -35,7 +36,7 @@ describe('adnuntiusBidAdapter', function () {
   const ENDPOINT_URL_VIDEO = `${URL}${tzo}&format=json&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${URL}${tzo}&format=json&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${URL}${tzo}&format=json&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${URL}${tzo}&format=json&consentString=consentString&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=json&consentString=consentString&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [

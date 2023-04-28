@@ -124,6 +124,9 @@ export const spec = {
     const payload = {
       id: requestId,
       imp: conversantImps,
+      source: {
+        tid: requestId
+      },
       site: {
         id: siteId,
         mobile: document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
@@ -142,6 +145,10 @@ export const spec = {
     }
 
     if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        deepSetValue(payload, 'tmax', bidderRequest.timeout);
+      }
+
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;

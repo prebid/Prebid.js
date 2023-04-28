@@ -56,7 +56,7 @@ export const spec = {
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
-      source: mapSource(validBidRequests[0]),
+      source: mapSource(validBidRequests[0], bidderRequest),
     };
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
@@ -171,10 +171,12 @@ export const spec = {
 
     if (fledgeAuctionConfigs) {
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
+        return {
           bidId,
-          auctionSignals: {}
-        }, cfg);
+          config: Object.assign({
+            auctionSignals: {}
+          }, cfg)
+        }
       });
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
@@ -228,6 +230,13 @@ function mapImpression(slot, bidderRequest) {
       delete imp.ext.ae;
     }
   }
+
+  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
+  if (tid) {
+    imp.ext = imp.ext || {};
+    imp.ext.tid = tid;
+  }
+
   return imp;
 }
 
@@ -283,9 +292,9 @@ function mapSite(slot, bidderRequest) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Source by OpenRTB 2.5 §3.2.2
  */
-function mapSource(slot) {
+function mapSource(slot, bidderRequest) {
   const source = {
-    tid: slot.transactionId,
+    tid: bidderRequest?.auctionId || '',
   };
 
   return source;
@@ -470,7 +479,7 @@ function interpretNativeBid(serverBid) {
 function interpretNativeAd(adm) {
   const native = JSON.parse(adm).native;
   const result = {
-    clickUrl: encodeURIComponent(native.link.url),
+    clickUrl: encodeURI(native.link.url),
     impressionTrackers: native.imptrackers
   };
   native.assets.forEach(asset => {
@@ -480,14 +489,14 @@ function interpretNativeAd(adm) {
         break;
       case OPENRTB.NATIVE.ASSET_ID.IMAGE:
         result.image = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
       case OPENRTB.NATIVE.ASSET_ID.ICON:
         result.icon = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
