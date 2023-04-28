@@ -57,8 +57,7 @@ export const spec = {
       ext: {
         cur: currency,
         bidder: bidderName
-      },
-      tmax: bidderRequest.timeout
+      }
     };
 
     if (!isEmpty(blacklist.badv)) {
@@ -133,7 +132,7 @@ export const spec = {
 
 function isUrl(str) {
   try {
-    URL(str);
+    new URL(str);
     return true;
   } catch (error) {
     return false;
