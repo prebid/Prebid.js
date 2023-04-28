@@ -129,7 +129,7 @@ class TransactionManager {
     this.#transactions[transactionId].status = 'queued';
     --this.#unsent;
 
-    log.info(`Queued transaction "${transactionId}". ${this.#unsent} transactions pending.`, this.#transactions);
+    log.info(`Queued transaction "${transactionId}" for delivery. ${this.#unsent} transactions still pending.`, this.#transactions);
   }
 
   completeAll(reason) {
@@ -358,7 +358,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
         // Note: GPID supports adUnits that have matching `code` values by appending a `#UNIQUIFIER`.
         // The value of the UNIQUIFIER is likely to be the div-id,
         // but, if div-id is randomized / unavailable, may be something else like the media size)
-        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || deepAccess(au, 'ortb2Imp.ext.pbadslot'),
+        slotId: deepAccess(au, 'ortb2Imp.ext.gpid') || deepAccess(au, 'ortb2Imp.ext.data.pbadslot', au.code),
         mediaTypes: Object.keys(au.mediaTypes),
         sizes: au.sizes.map(size => size.join('x')),
         bids: [],

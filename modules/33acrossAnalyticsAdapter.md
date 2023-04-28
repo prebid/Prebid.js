@@ -39,7 +39,7 @@ pbjs.enableAnalytics({
         endpoint: 'https://localhost:9999/event',
         /** 
          * Timeout in milliseconds after which an auction report 
-         * will be sent regardless of auction state
+         * will be sent regardless of auction state.
          * [optional]
          */
         timeout: 3000
