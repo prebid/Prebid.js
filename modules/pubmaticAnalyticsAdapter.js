@@ -357,6 +357,14 @@ function getPSL(auctionId) {
   return pslTime;
 }
 
+function getTgid() {
+  var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+  if (testGroupId <= 15 && testGroupId >= 0) {
+    return testGroupId;
+  }
+  return 0;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   const HOSTNAME = window.location.host;
   const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
@@ -389,13 +397,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['bm'] = window.PWT && window.PWT.browserMapping;
   outputObj['ih'] = identityOnly;
-  outputObj['tgid'] = (function() {
-    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
-    if (testGroupId <= 15 && testGroupId >= 0) {
-      return testGroupId;
-    }
-    return 0;
-  })();
+  outputObj['tgid'] = getTgid();
 
   outputObj['tpv'] = frequencyDepth?.pageView;
   outputObj['trc'] = frequencyDepth?.slotCnt;
@@ -452,6 +454,9 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   const generatedBidId = winningBid.bidResponse && winningBid.bidResponse.prebidBidId;
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId);
   var origAdUnitId = origAdUnit.adUnitId || adUnitId;
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
+  let floorData = cache.auctions[auctionId].floorData;
+
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -470,6 +475,15 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
+
+  pixelURL += '&plt=' + enc(getDevicePlatform());
+  pixelURL += '&psz=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.dimensions.width + 'x' + winningBid.bidResponse.dimensions.height) : '0x0');
+  pixelURL += '&tgid=' + enc(getTgid());
+  pixelURL += '&adv=' + enc(winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined);
+  pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
+  pixelURL += '&ss=' + enc((s2sBidders.indexOf(winningBid.bidder) > -1) ? 1 : 0);
+  pixelURL += '&fskp=' + enc(floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined);
+  pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
   ajax(
     pixelURL,
