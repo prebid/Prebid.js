@@ -104,9 +104,7 @@ export const spec = {
           height: bid.height,
           currency: body.cur || 'TRY',
           netRevenue: true,
-          ad: bid.type == "banner" ? bid.party_tag : undefined,
-          vastXml: bid.type == "video" ? bid.party_tag : undefined,
-          vastImpUrl: bid.type == "video" ? bid.iurl : undefined,
+          ad: bid.party_tag,
           creativeId: bid.creative_id,
           meta: {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
