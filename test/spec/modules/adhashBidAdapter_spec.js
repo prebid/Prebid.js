@@ -277,5 +277,45 @@ describe('adhashBidAdapter', function () {
     it('should return empty array when something is not right', function () {
       expect(spec.interpretResponse(null, request).length).to.equal(0);
     });
+
+    it('should interpret the video response correctly', function () {
+      const result = spec.interpretResponse({
+        body: {
+          creatives: [{ costEUR: 1.234, vastURL: 'https://example.com/vast' }],
+          advertiserDomains: 'adhash.com'
+        }
+      }, {
+        data: { some: 'data' },
+        bidRequest: {
+          bidId: '12345678901234',
+          adUnitCode: 'adunit-code',
+          sizes: [[300, 250]],
+          params: {
+            platformURL: 'https://adhash.com/p/struma/'
+          },
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              playerSize: [300, 250],
+              mimes: ['video/mp4'],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              playbackmethod: [2],
+              skip: 1
+            }
+          }
+        }
+      });
+      expect(result.length).to.equal(1);
+      expect(result[0].requestId).to.equal('12345678901234');
+      expect(result[0].cpm).to.equal(1.234);
+      expect(result[0].width).to.equal(300);
+      expect(result[0].height).to.equal(250);
+      expect(result[0].creativeId).to.equal('adunit-code');
+      expect(result[0].netRevenue).to.equal(true);
+      expect(result[0].currency).to.equal('EUR');
+      expect(result[0].ttl).to.equal(60);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.com']);
+      expect(result[0].vastUrl).to.equal('https://example.com/vast');
+    });
   });
 });
