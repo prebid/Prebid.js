@@ -104,6 +104,9 @@ export const spec = {
           height: bid.height,
           currency: body.cur || 'TRY',
           netRevenue: true,
+          ad: bid.type == "banner" ? bid.party_tag : undefined,
+          vastXml: bid.type == "video" ? bid.party_tag : undefined,
+          vastImpUrl: bid.type == "video" ? bid.iurl : undefined,
           creativeId: bid.creative_id,
           meta: {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
@@ -111,13 +114,6 @@ export const spec = {
           bidder: bid.bidder,
           mediaType: bid.type,
           ttl: 360
-        };
-
-        if (resbid.mediaType === "video") {
-          resbid.vastXml = bid.party_tag;
-          resbid.vastImpUrl = bid.iurl;
-        } else if (resbid.mediaType === "banner") {
-          resbid.ad = bid.party_tag;
         };
 
         bidResponses.push(resbid);
