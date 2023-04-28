@@ -57,7 +57,8 @@ export const spec = {
       ext: {
         cur: currency,
         bidder: bidderName
-      }
+      },
+      tmax: bidderRequest.timeout
     };
 
     if (!isEmpty(blacklist.badv)) {
