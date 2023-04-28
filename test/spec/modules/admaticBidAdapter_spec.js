@@ -22,7 +22,6 @@ describe('admaticBidAdapter', () => {
         'host': 'layer.serve.admatic.com.tr'
       },
       'adUnitCode': 'adunit-code',
-      'mediaType': 'banner',
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
@@ -35,11 +34,15 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', function() {
-      let bid2 = {};
-      bid2.params = {
-        'someIncorrectParam': 0
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+
+      bid.params = {
+        'networkId': 0,
+        'host': 'layer.serve.admatic.com.tr'
       };
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -95,8 +98,6 @@ describe('admaticBidAdapter', () => {
                 'h': 90
               }
             ],
-            'mediatype': {},
-            'type': 'banner',
             'id': '2205da7a81846b',
             'floors': {
               'banner': {
@@ -162,8 +163,6 @@ describe('admaticBidAdapter', () => {
               }
             ],
             'id': '2205da7a81846b',
-            'mediatype': {},
-            'type': 'banner',
             'floors': {
               'banner': {
                 '300x250': { 'currency': 'USD', 'floor': 1 },
@@ -250,7 +249,6 @@ describe('admaticBidAdapter', () => {
             'width': 300,
             'height': 250,
             'price': 0.01,
-            'type': 'banner',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<div></div>'
@@ -267,7 +265,6 @@ describe('admaticBidAdapter', () => {
           width: 300,
           height: 250,
           currency: 'TRY',
-          mediaType: 'banner',
           netRevenue: true,
           ad: '<div></div>',
           creativeId: '374',
