@@ -93,7 +93,7 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    const body = response.body;
+    const body = response.body || response;
     const bidResponses = [];
     if (body && body?.data && isArray(body.data)) {
       body.data.forEach(bid => {
