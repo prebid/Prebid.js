@@ -75,7 +75,7 @@ const SOURCE_RTI_MAPPING = {
   'epsilon.com': '', // Publisher Link, publinkId
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
-  'trustpid.com': '', // Trustpid
+  'utiq.com': '', // Utiq
   'intimatemerger.com': ''
 };
 const PROVIDERS = [
