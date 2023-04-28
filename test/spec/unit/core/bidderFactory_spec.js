@@ -1,4 +1,11 @@
-import {newBidder, registerBidder, preloadBidderMappingFile, storage, isValid} from 'src/adapters/bidderFactory.js';
+import {
+  newBidder,
+  registerBidder,
+  preloadBidderMappingFile,
+  storage,
+  isValid,
+  addComponentAuction
+} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -1212,16 +1219,27 @@ describe('validate bid response: ', function () {
     };
     const fledgeAuctionConfig = {
       bidId: '1',
+      config: {
+        foo: 'bar'
+      }
     }
     describe('when response has FLEDGE auction config', function() {
-      let logInfoSpy;
+      let fledgeStub;
 
-      beforeEach(function () {
-        logInfoSpy = sinon.spy(utils, 'logInfo');
+      function fledgeHook(next, ...args) {
+        fledgeStub(...args);
+      }
+
+      before(() => {
+        addComponentAuction.before(fledgeHook);
       });
 
-      afterEach(function () {
-        logInfoSpy.restore();
+      after(() => {
+        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+      })
+
+      beforeEach(function () {
+        fledgeStub = sinon.stub();
       });
 
       it('should unwrap bids', function() {
@@ -1243,8 +1261,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.equal(true);
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       })
@@ -1257,8 +1275,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.be.true;
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(false);
       })
     })
@@ -1266,6 +1284,10 @@ describe('validate bid response: ', function () {
 });
 
 describe('preload mapping url hook', function() {
+  if (!FEATURES.VIDEO) {
+    return
+  }
+
   let fakeTranslationServer;
   let getLocalStorageStub;
   let adapterManagerStub;

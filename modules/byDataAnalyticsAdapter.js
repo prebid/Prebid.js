@@ -5,9 +5,10 @@ import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
@@ -16,7 +17,9 @@ const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
 const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
 const adunitsMap = {}
-const storage = getStorageManager();
+const MODULE_CODE = 'bydata';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+
 let initOptions = {}
 var payload = {}
 var winPayload = {}
@@ -391,7 +394,7 @@ function sendDataOnKf(dataObj) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: ascAdapter,
-  code: 'bydata'
+  code: MODULE_CODE,
 });
 
 function _logInfo(message, meta) {

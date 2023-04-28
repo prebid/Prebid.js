@@ -10,8 +10,9 @@ import {submodule} from '../src/hook.js';
 import { coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'pubCommonId'});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -38,12 +39,15 @@ function readValue(name, type) {
   }
 }
 
-function getIdCallback(pubcid, pixelCallback) {
-  return function (callback) {
-    if (typeof pixelCallback === 'function') {
-      pixelCallback();
+function getIdCallback(pubcid, pixelUrl) {
+  return function (callback, getStoredId) {
+    if (pixelUrl) {
+      queuePixelCallback(pixelUrl, pubcid, () => {
+        callback(getStoredId() || pubcid);
+      })();
+    } else {
+      callback(pubcid);
     }
-    callback(pubcid);
   }
 }
 
@@ -58,7 +62,7 @@ function queuePixelCallback(pixelUrl, id = '', callback) {
   const targetUrl = buildUrl(urlInfo);
 
   return function () {
-    triggerPixel(targetUrl);
+    triggerPixel(targetUrl, callback);
   };
 }
 
@@ -125,8 +129,7 @@ export const sharedIdSystemSubmodule = {
       if (!newId) newId = (create && hasDeviceAccess()) ? generateUUID() : undefined;
     }
 
-    const pixelCallback = queuePixelCallback(pixelUrl, newId);
-    return {id: newId, callback: getIdCallback(newId, pixelCallback)};
+    return {id: newId, callback: getIdCallback(newId, pixelUrl)};
   },
   /**
    * performs action to extend an id.  There are generally two ways to extend the expiration time

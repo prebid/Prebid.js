@@ -17,7 +17,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
@@ -382,10 +381,11 @@ function openRtbRequest(bidRequests, bidderRequest) {
   const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
+    tmax: bidderRequest.timeout || 400,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
-    device: openRtbDevice(bidRequests[0]),
+    device: deepAccess(bidderRequest, 'ortb2.device'),
     badv: bidRequests[0].params.badv || [],
     bcat: deepAccess(bidderRequest, 'bcat') || bidRequests[0].params.bcat || [],
     ext: {
@@ -505,17 +505,6 @@ function openRtbSite(bidRequest, bidderRequest) {
       .forEach(param => result[param] = siteParams[param]);
   }
   return result;
-}
-
-/**
- * @return Object OpenRTB's 'device' object
- */
-function openRtbDevice(bidRequest) {
-  const deviceObj = {
-    ua: navigator.userAgent,
-    language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
-  };
-  return deviceObj;
 }
 
 /**
@@ -662,8 +651,8 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId) || [];
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids || [];
   }
 };
 

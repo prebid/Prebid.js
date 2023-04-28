@@ -31,11 +31,9 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const bidRequests = [];
 
+    let bids = [];
     for (let i = 0; i < validBidRequests.length; i++) {
-      let host = this.getBidderConfig('host') || BIDDER_HOST;
-
       let requestData = {
         bidId: validBidRequests[i].bidId,
         nativeParams: validBidRequests[i].nativeParams,
@@ -52,27 +50,37 @@ export const spec = {
         }
       }
 
-      bidRequests.push({
-        method: REQUEST_METHOD,
-        url: host + '/bidder/bid/',
-        data: requestData,
-        options: {
-          contentType: 'application/json',
-          withCredentials: false,
-        }
-      });
+      bids.push(requestData);
     }
+
+    let host = this.getBidderConfig('host') || BIDDER_HOST;
+    let bidRequests = [];
+    bidRequests.push({
+      method: REQUEST_METHOD,
+      url: host + '/bidder/bids/',
+      data: bids,
+      options: {
+        contentType: 'application/json',
+        withCredentials: false,
+      }
+    });
 
     return bidRequests;
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
-    const bidResponses = [];
-    if (!response.noAd) {
-      bidResponses.push(response);
+    const output = [];
+
+    if (response.bidResponses) {
+      for (const bidResponse of response.bidResponses) {
+        if (!bidResponse.noAd) {
+          output.push(bidResponse);
+        }
+      }
     }
-    return bidResponses;
+
+    return output;
   },
 
   onBidWon: function (bid) {
