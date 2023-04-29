@@ -80,83 +80,81 @@ export const log = getLogger();
  */
 
 /**
- * After the first bid is initiated, we wait until every bid is completed before sending the report.
+ * After the first transaction begins, wait until all transactions are complete
+ * before calling `onComplete`. If the timeout is reached before all transactions
+ * are complete, send the report anyway.
  *
- * We will listen for the `bidWon` event to determine when all bids are complete.
+ * Use this to track all transactions per auction, and send the report as soon
+ * as all adUnits have been won (or after timeout) even if other bid/auction
+ * activity is still happening.
  */
 class TransactionManager {
+  /**
+   * Milliseconds between activity to allow until this collection automatically completes.
+   * @type {number}
+   */
+  #sendTimeout;
   #timeoutId;
-  #pending = 0;
-  #timeout;
-  #transactions = {};
+  #transactions = new Set();
+  #completed = new Set();
   #onComplete;
 
-  get #unsent() {
-    return this.#pending;
-  }
-
-  set #unsent(value) {
-    this.#pending = value;
-
-    if (this.#pending <= 0) {
-      this.#clearTimeout();
-      this.#onComplete();
-      this.#transactions = {};
-    }
-  }
-
   constructor({ timeout, onComplete }) {
-    this.#timeout = timeout;
+    this.#sendTimeout = timeout;
     this.#onComplete = onComplete;
   }
 
   initiate(transactionId) {
-    if (this.#transactions[transactionId]) return;
-
-    this.#transactions[transactionId] = {
-      status: 'waiting'
-    };
-    ++this.#unsent;
-
+    this.#transactions.add(transactionId);
     this.#restartSendTimeout();
   }
 
   complete(transactionId) {
-    if (!this.#transactions[transactionId]) {
-      log.warn(`transactionId "${transactionId}" was not found. Nothing to enqueue.`);
+    if (!this.#transactions.has(transactionId)) {
+      log.warn(`transactionId "${transactionId}" was not found. No transaction to mark as complete.`);
       return;
     }
-    this.#transactions[transactionId].status = 'queued';
-    --this.#unsent;
 
-    log.info(`Queued transaction "${transactionId}" for delivery. ${this.#unsent} transactions still pending.`, this.#transactions);
+    this.#transactions.delete(transactionId);
+    this.#completed.add(transactionId);
+    log.info(`Marked transaction "${transactionId}" as complete. ${this.#transactions.size} transaction(s) pending.`, {pending: this.#transactions, completed: this.#completed});
+
+    if (this.#transactions.size === 0) {
+      this.#flushTransactions();
+    }
   }
 
   completeAll(reason) {
-    Object.keys(this.#transactions).forEach(transactionId => {
+    for (let transactionId of this.#transactions) {
       this.complete(transactionId);
-    });
+    };
 
     log.info('All remaining transactions flushed.' + (reason ? ` Reason: ${reason}` : ''));
   }
 
+  #flushTransactions() {
+    this.#clearSendTimeout();
+    this.#transactions = new Set();
+    this.#onComplete();
+  }
+
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
   // eslint-disable-next-line no-dupe-class-members
-  #clearTimeout() {
+  #clearSendTimeout() {
     return window.clearTimeout(this.#timeoutId);
   }
 
   // eslint-disable-next-line no-dupe-class-members
   #restartSendTimeout() {
-    this.#clearTimeout();
+    this.#clearSendTimeout();
 
     this.#timeoutId = setTimeout(() => {
-      if (this.#timeout !== 0) {
+      if (this.#sendTimeout !== 0) {
         log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
       }
 
-      this.#unsent = 0;
-    }, this.#timeout);
+      this.#flushTransactions();
+    }, this.#sendTimeout);
   }
 }
 
@@ -375,6 +373,7 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
           createReportFromCache(locals.cache, auctionId),
           analyticsAdapter.getUrl()
         );
+        delete locals.transactionManagers[auctionId];
       }
     });
 }
