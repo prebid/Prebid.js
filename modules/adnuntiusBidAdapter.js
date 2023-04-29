@@ -9,7 +9,6 @@ const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
-// const DEFAULT_NATIVE = 'native'
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -28,32 +27,6 @@ const getSegmentsFromOrtb = function (ortb2) {
   }
   return segments
 }
-
-// function createNative(ad) {
-//   const native = {};
-//   const assets = ad.assets
-//   native.title = ad.text.title.content;
-//   native.image = {
-//     url: assets.image.cdnId,
-//     height: assets.image.height,
-//     width: assets.image.width,
-//   };
-//   if (assets.icon) {
-//     native.icon = {
-//       url: assets.icon.cdnId,
-//       height: assets.icon.height,
-//       width: assets.icon.width,
-//     };
-//   }
-
-//   native.sponsoredBy = ad.text.sponsoredBy?.content || '';
-//   native.body = ad.text.body?.content || '';
-//   native.cta = ad.text.cta?.content || '';
-//   native.clickUrl = ad.destinationUrls.destination || '';
-//   native.impressionTrackers = ad.impressionTrackingUrls || [ad.renderedPixel];
-
-//   return native;
-// }
 
 const handleMeta = function () {
   const storage = getStorageManager({ bidderCode: BIDDER_CODE })
@@ -110,10 +83,6 @@ export const spec = {
         network += '_video'
       }
 
-      // if (bid.mediaTypes && bid.mediaTypes.native) {
-      //   network += '_native'
-      // }
-
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
 
@@ -132,7 +101,6 @@ export const spec = {
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
       const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
-      // if (network.indexOf('_native') > -1) { networkRequest.push('tt=' + DEFAULT_NATIVE) }
       requests.push({
         method: 'POST',
         url: requestURL + '?' + networkRequest.join('&'),
@@ -172,9 +140,6 @@ export const spec = {
         if (adUnit.vastXml) {
           adResponse[adUnit.targetId].vastXml = adUnit.vastXml
           adResponse[adUnit.targetId].mediaType = VIDEO
-          // } else if (ad.assets && ad.assets.image && ad.text && ad.text.title && ad.text.body && ad.destinationUrls && ad.destinationUrls.destination) {
-          //   adResponse[adUnit.targetId].native = createNative(ad);
-          //   adResponse[adUnit.targetId].mediaType = NATIVE;
         } else {
           adResponse[adUnit.targetId].ad = adUnit.html
         }
