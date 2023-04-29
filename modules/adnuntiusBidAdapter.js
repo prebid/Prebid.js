@@ -5,10 +5,12 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
+const BIDDER_DEAL_ALIAS = 'adndeal';
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
+const MAXIMUM_DEALS_LIMIT = 5;
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -48,6 +50,7 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
+  aliases: [...Array(MAXIMUM_DEALS_LIMIT)].map((_, index) => BIDDER_DEAL_ALIAS + (index + 1)),
   isBidRequestValid: function (bid) {
     return !!(bid.bidId || (bid.params.member && bid.params.invCode));
   },
@@ -74,9 +77,11 @@ export const spec = {
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
     if (bidderConfig.useCookie === false) request.push('noCookies=true')
+    if (bidderConfig.maxDeals > 0) request.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT))
     for (var i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       let network = bid.params.network || 'network';
+      let maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
       const targeting = bid.params.targeting || {};
 
       if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context !== 'outstream') {
@@ -90,7 +95,7 @@ export const spec = {
       networks[network].adUnits = networks[network].adUnits || [];
       if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
       if (adnMeta) networks[network].metaData = adnMeta;
-      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.bidId }
+      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.bidId, maxDeals: maxDeals }
       if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) adUnit.dimensions = bid.mediaTypes.banner.sizes
       networks[network].adUnits.push(adUnit);
     }
@@ -114,47 +119,66 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const adUnits = serverResponse.body.adUnits;
+
+    function buildAdResponse(ad, adUnit, isDeal, dealCount) {
+      let destinationUrls = ad.destinationUrls || {};
+      let advertiserDomains = [];
+      for (const value of Object.values(destinationUrls)) {
+        advertiserDomains.push(value.split('/')[2])
+      }
+      let adResponse = {
+        bidderCode: isDeal ? BIDDER_DEAL_ALIAS + (dealCount || 1) : BIDDER_CODE,
+        requestId: adUnit.targetId,
+        cpm: (ad.bid) ? ad.bid.amount * 1000 : 0,
+        width: Number(ad.creativeWidth),
+        height: Number(ad.creativeHeight),
+        creativeId: ad.creativeId,
+        currency: (ad.bid) ? ad.bid.currency : 'EUR',
+        dealId: ad.dealId || '',
+        meta: {
+          advertiserDomains: advertiserDomains
+        },
+        netRevenue: false,
+        ttl: 360,
+      };
+      // Deal bids provide the rendered ad content along with the
+      // bid; whereas regular bids have it stored on the ad-unit.
+      let renderSource = isDeal ? ad : adUnit;
+      if (renderSource.vastXml) {
+        adResponse.vastXml = renderSource.vastXml
+        adResponse.mediaType = VIDEO
+      } else {
+        adResponse.ad = renderSource.html
+      }
+      return adResponse;
+    }
+
     const bidResponsesById = adUnits.reduce((response, adUnit) => {
-      if (adUnit.matchedAdCount >= 1) {
-        const ad = adUnit.ads[0];
-        const effectiveCpm = (ad.bid) ? ad.bid.amount * 1000 : 0;
-        const adResponse = {
+      let deals = adUnit.deals || [];
+      if ((adUnit.matchedAdCount + deals.length) > 0) {
+        let adResponses = [];
+        if (adUnit.matchedAdCount === 1) {
+          adResponses.push(buildAdResponse(adUnit.ads[0], adUnit, false, 0));
+        }
+        for (let i = 0; i < deals.length; i++) {
+          adResponses.push(buildAdResponse(deals[i], adUnit, true, i + 1));
+        }
+        return {
           ...response,
-          [adUnit.targetId]: {
-            requestId: adUnit.targetId,
-            cpm: effectiveCpm,
-            width: Number(ad.creativeWidth),
-            height: Number(ad.creativeHeight),
-            creativeId: ad.creativeId,
-            currency: (ad.bid) ? ad.bid.currency : 'EUR',
-            dealId: ad.dealId || '',
-            meta: {
-              advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
-
-            },
-            netRevenue: false,
-            ttl: 360,
-          }
-        }
-
-        if (adUnit.vastXml) {
-          adResponse[adUnit.targetId].vastXml = adUnit.vastXml
-          adResponse[adUnit.targetId].mediaType = VIDEO
-        } else {
-          adResponse[adUnit.targetId].ad = adUnit.html
-        }
-
-        return adResponse
-      } else return response
+          [adUnit.targetId]: adResponses
+        };
+      } else {
+        // No bids or deals returned
+        return response;
+      }
     }, {});
 
-    const bidResponse = bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
-      if (bidResponsesById[adunitId]) { request.push(bidResponsesById[adunitId]) }
-      return request
+    return bidRequest.bid.map(bid => bid.bidId).reduce((response, adUnitTargetId) => {
+      if (bidResponsesById[adUnitTargetId]) {
+        response.push(...bidResponsesById[adUnitTargetId])
+      }
+      return response
     }, []);
-
-    return bidResponse
-  },
-
+  }
 }
 registerBidder(spec);
