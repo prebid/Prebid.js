@@ -167,6 +167,19 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, getStandardAnalyticsReport());
         });
+
+        it('it calls "sendBeacon" as soon as all values are available (before timeout)', function () {
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
+
+          navigator.sendBeacon
+            .withArgs(endpoint, JSON.stringify(getStandardAnalyticsReport()));
+
+          performStandardAuction();
+          sandbox.clock.tick(1);
+
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, getStandardAnalyticsReport());
+        });
       });
     });
 
@@ -211,7 +224,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs a warning', function () {
             this.enableAnalytics({ timeout: 2000 });
 
-            performStandardAuction(['bidWon', 'auctionEnd']);
+            performStandardAuction({exclude:['bidWon', 'auctionEnd']});
 
             sandbox.clock.tick(this.defaultTimeout + 1);
 
@@ -225,7 +238,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs an error', function () {
             this.enableAnalytics();
 
-            performStandardAuction(['bidWon', 'auctionEnd']);
+            performStandardAuction({exclude:['bidWon', 'auctionEnd']});
 
             sandbox.clock.tick(this.defaultTimeout + 1);
 
@@ -250,7 +263,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
-          performStandardAuction(['bidWon', 'auctionEnd']);
+          performStandardAuction({exclude:['bidWon', 'auctionEnd']});
           sandbox.clock.tick(this.defaultTimeout + 10);
 
           assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, incompleteAnalyticsReport);
@@ -271,7 +284,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
-          performStandardAuction(['bidWon', 'auctionEnd']);
+          performStandardAuction({exclude:['bidWon', 'auctionEnd']});
           sandbox.clock.tick(this.defaultTimeout + 1);
 
           assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, incompleteAnalyticsReport);
@@ -281,7 +294,7 @@ describe('33acrossAnalyticsAdapter:', function () {
   });
 });
 
-function performStandardAuction(exclude = []) {
+function performStandardAuction({ exclude = [] } = {}) {
   const mockEvents = getMockEvents();
   const { prebid, gam } = mockEvents;
   const [auction] = prebid;
@@ -325,23 +338,6 @@ function mapToBids(auctions) {
       au => au.bids
     )
   );
-}
-
-function performAuctionWithMissingBidWon() {
-  const mockEvents = getMockEvents();
-  const { prebid } = mockEvents;
-  const [auction] = prebid;
-
-  events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-
-  auction.BID_REQUESTED.forEach((bidRequestedEvent) => {
-    events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
-  });
-  auction.BID_RESPONSE.forEach((bidResponseEvent) => {
-    events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
-  });
-
-  events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
 }
 
 function getLocalAssert() {
