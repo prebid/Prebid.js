@@ -980,6 +980,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           api: bidRequest.mediaTypes.video.api,
           skip: bidRequest.mediaTypes.video.skip,
           placement: bidRequest.mediaTypes.video.placement,
+          plcmt: bidRequest.mediaTypes.video.plcmt,
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay
