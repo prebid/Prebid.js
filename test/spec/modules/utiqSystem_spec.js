@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { trustpidSubmodule } from 'modules/trustpidSystem.js';
-import { storage } from 'modules/trustpidSystem.js';
+import { utiqSubmodule } from 'modules/utiqSystem.js';
+import { storage } from 'modules/utiqSystem.js';
 
-describe('trustpid System', () => {
+describe('utiqSystem', () => {
   const connectDataKey = 'fcIdConnectData';
   const connectDomainKey = 'fcIdConnectDomain';
 
@@ -18,10 +18,10 @@ describe('trustpid System', () => {
   };
 
   it('should have the correct module name declared', () => {
-    expect(trustpidSubmodule.name).to.equal('trustpid');
+    expect(utiqSubmodule.name).to.equal('utiq');
   });
 
-  describe('trustpid getId()', () => {
+  describe('utiq getId()', () => {
     afterEach(() => {
       storage.removeDataFromLocalStorage(connectDataKey);
       storage.removeDataFromLocalStorage(connectDomainKey);
@@ -32,13 +32,13 @@ describe('trustpid System', () => {
     })
 
     it('it should return object with key callback', () => {
-      expect(trustpidSubmodule.getId()).to.have.property('callback');
+      expect(utiqSubmodule.getId()).to.have.property('callback');
     });
 
     it('should return object with key callback with value type - function', () => {
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData()));
-      expect(trustpidSubmodule.getId()).to.have.property('callback');
-      expect(typeof trustpidSubmodule.getId().callback).to.be.equal('function');
+      expect(utiqSubmodule.getId()).to.have.property('callback');
+      expect(typeof utiqSubmodule.getId().callback).to.be.equal('function');
     });
 
     it('tests if localstorage & JSON works properly ', () => {
@@ -57,28 +57,28 @@ describe('trustpid System', () => {
       };
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
-      expect(trustpidSubmodule.getId()).to.have.property('callback');
+      expect(utiqSubmodule.getId()).to.have.property('callback');
     });
 
-    it('returns {id: {trustpid: data.trustpid}} if we have the right data stored in the localstorage ', () => {
+    it('returns {id: {utiq: data.utiq}} if we have the right data stored in the localstorage ', () => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
       };
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
-      const response = trustpidSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('id');
-      expect(response.id).to.have.property('trustpid');
-      expect(response.id.trustpid).to.be.equal('atidValue');
+      expect(response.id).to.have.property('utiq');
+      expect(response.id.utiq).to.be.equal('atidValue');
     });
 
-    it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after the callback is called', (done) => {
+    it('returns {utiq: data.utiq} if we have the right data stored in the localstorage right after the callback is called', (done) => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
       };
-      const response = trustpidSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -87,8 +87,8 @@ describe('trustpid System', () => {
         storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.null;
-          expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('atidValue');
+          expect(result).to.have.property('utiq');
+          expect(result.utiq).to.be.equal('atidValue');
           done()
         })
       }
@@ -102,7 +102,7 @@ describe('trustpid System', () => {
       storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
       storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
 
-      const response = trustpidSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -117,13 +117,13 @@ describe('trustpid System', () => {
       }
     });
 
-    it('returns {trustpid: data.trustpid} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
+    it('returns {utiq: data.utiq} if we have the right data stored in the localstorage right after 500ms delay', (done) => {
       const idGraph = {
         'domain': 'test.domain',
         'atid': 'atidValue',
       };
 
-      const response = trustpidSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -134,8 +134,8 @@ describe('trustpid System', () => {
         }, 500);
         response.callback(function (result) {
           expect(result).to.not.be.null;
-          expect(result).to.have.property('trustpid');
-          expect(result.trustpid).to.be.equal('atidValue');
+          expect(result).to.have.property('utiq');
+          expect(result.utiq).to.be.equal('atidValue');
           done()
         })
       }
@@ -147,7 +147,7 @@ describe('trustpid System', () => {
         'atid': 'atidValue',
       };
 
-      const response = trustpidSubmodule.getId({params: {maxDelayTime: 200}});
+      const response = utiqSubmodule.getId({params: {maxDelayTime: 200}});
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -164,37 +164,37 @@ describe('trustpid System', () => {
     });
   });
 
-  describe('trustpid decode()', () => {
+  describe('utiq decode()', () => {
     const VALID_API_RESPONSES = [
       {
         expected: '32a97f612',
         payload: {
-          trustpid: '32a97f612'
+          utiq: '32a97f612'
         }
       },
       {
         expected: '32a97f61',
         payload: {
-          trustpid: '32a97f61',
+          utiq: '32a97f61',
         }
       },
     ];
     VALID_API_RESPONSES.forEach(responseData => {
-      it('should return a newly constructed object with the trustpid for a payload with {trustpid: value}', () => {
-        expect(trustpidSubmodule.decode(responseData.payload)).to.deep.equal(
-          {trustpid: responseData.expected}
+      it('should return a newly constructed object with the utiq for a payload with {utiq: value}', () => {
+        expect(utiqSubmodule.decode(responseData.payload)).to.deep.equal(
+          {utiq: responseData.expected}
         );
       });
     });
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
       it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
-        expect(trustpidSubmodule.decode(response)).to.be.null;
+        expect(utiqSubmodule.decode(response)).to.be.null;
       });
     });
   });
 
-  describe('trustpid messageHandler', () => {
+  describe('utiq messageHandler', () => {
     afterEach(() => {
       storage.removeDataFromLocalStorage(connectDataKey);
       storage.removeDataFromLocalStorage(connectDomainKey);
@@ -211,7 +211,7 @@ describe('trustpid System', () => {
     ];
 
     domains.forEach(domain => {
-      it(`correctly sets trustpid value for domain name ${domain}`, (done) => {
+      it(`correctly sets utiq value for domain name ${domain}`, (done) => {
         const idGraph = {
           'domain': domain,
           'atid': 'atidValue',
@@ -226,10 +226,10 @@ describe('trustpid System', () => {
 
         window.dispatchEvent(new MessageEvent('message', eventData));
 
-        const response = trustpidSubmodule.getId();
+        const response = utiqSubmodule.getId();
         expect(response).to.have.property('id');
-        expect(response.id).to.have.property('trustpid');
-        expect(response.id.trustpid).to.be.equal('atidValue');
+        expect(response.id).to.have.property('utiq');
+        expect(response.id.utiq).to.be.equal('atidValue');
         done();
       });
     });
