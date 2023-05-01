@@ -14,6 +14,7 @@ const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_CREATIVE_TYPE = 'NativeX';
 const VALID_CREATIVE_TYPES = ['DTX', 'NativeX'];
 const FLIPP_USER_KEY = 'flipp-uid';
+const COMPACT_DEFAULT_HEIGHT = 600;
 
 let userKey = null;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -112,6 +113,7 @@ export const spec = {
         properties: {
           ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
         },
+        options: bid.params.options,
         prebid: {
           requestId: bid.bidId,
           publisherNameIdentifier: bid.params.publisherNameIdentifier,
@@ -142,20 +144,25 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     if (!serverResponse?.body) return [];
+    const placements = bidRequest.data.placements;
     const res = serverResponse.body;
     if (!isEmpty(res) && !isEmpty(res.decisions) && !isEmpty(res.decisions.inline)) {
-      return res.decisions.inline.map(decision => ({
-        bidderCode: BIDDER_CODE,
-        requestId: decision.prebid?.requestId,
-        cpm: decision.prebid?.cpm,
-        width: decision.width,
-        height: decision.height,
-        creativeId: decision.adId,
-        currency: DEFAULT_CURRENCY,
-        netRevenue: true,
-        ttl: DEFAULT_TTL,
-        ad: decision.prebid?.creative,
-      }));
+      return res.decisions.inline.map(decision => {
+        const placement = placements.find(p => p.prebid.requestId === decision.prebid?.requestId);
+        const height = placement.options?.startCompact ? COMPACT_DEFAULT_HEIGHT : decision.height;
+        return {
+          bidderCode: BIDDER_CODE,
+          requestId: decision.prebid?.requestId,
+          cpm: decision.prebid?.cpm,
+          width: decision.width,
+          height,
+          creativeId: decision.adId,
+          currency: DEFAULT_CURRENCY,
+          netRevenue: true,
+          ttl: DEFAULT_TTL,
+          ad: decision.prebid?.creative,
+        }
+      });
     }
     return [];
   },
