@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/ttdBidAdapter';
-import { deepClone, mergeDeep } from 'src/utils.js';
+import { deepClone } from 'src/utils.js';
 import { config } from 'src/config';
 import { detectReferer } from 'src/refererDetection.js';
 
