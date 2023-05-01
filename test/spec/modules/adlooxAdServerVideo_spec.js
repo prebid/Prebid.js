@@ -6,7 +6,6 @@ import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
-import {server} from 'test/mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -119,6 +118,16 @@ describe('Adloox Ad Server Video', function () {
   });
 
   describe('buildVideoUrl', function () {
+    beforeEach(() => {
+      sinon.stub(URL, 'createObjectURL');
+      sinon.stub(URL, 'revokeObjectURL');
+    });
+
+    afterEach(() => {
+      URL.createObjectURL.restore()
+      URL.revokeObjectURL.restore()
+    });
+
     describe('invalid arguments', function () {
       it('should require callback', function (done) {
         const ret = buildVideoUrl();
@@ -190,9 +199,11 @@ describe('Adloox Ad Server Video', function () {
     });
 
     describe('process VAST', function () {
+      let server = null;
       let BID = null;
       let getWinningBidsStub;
       beforeEach(function () {
+        server = sinon.createFakeServer();
         BID = utils.deepClone(bid);
         getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
@@ -201,6 +212,8 @@ describe('Adloox Ad Server Video', function () {
         getWinningBidsStub.restore();
         getWinningBidsStub = undefined;
         BID = null;
+        server.restore();
+        server = null;
       });
 
       it('should return URL unchanged for non-VAST', function (done) {
@@ -240,49 +253,16 @@ describe('Adloox Ad Server Video', function () {
           url: wrapperUrl,
           bid: BID
         };
+
+        URL.createObjectURL.callsFake(() => 'mock-blob-url');
+
         const ret = buildVideoUrl(options, function (url) {
           expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast);
-
-          const match = url.match(/[?&]vast=(blob%3A[^&]+)/);
-          expect(match).is.not.null;
-
-          const blob = decodeURIComponent(match[1]);
-
-          const xfr = sandbox.useFakeXMLHttpRequest();
-          xfr.useFilters = true;
-          xfr.addFilter(x => true);	// there is no network traffic for Blob URLs here
-
-          ajax(blob, {
-            success: (responseText, q) => {
-              try {
-                console.error('ADLOOX - response:', responseText)
-                expect(q.status).is.equal(200);
-                expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
-                clock.runAll();
-              } catch (e) {
-                console.error('ADLOOX - error:', e)
-                done(e);
-              }
-              console.error('ADLOOX - 2nd blob')
-              ajax(blob, {
-                success: (responseText, q) => {
-                  console.error('ADLOOX - final', responseText)
-                  xfr.useFilters = false;		// .restore() does not really work
-                  if (q.status == 0) return done();
-                  done(new Error('Blob should have expired'));
-                },
-                error: (statusText, q) => {
-                  console.error('ADLOOX - final', statusText)
-                  xfr.useFilters = false;
-                  done();
-                }
-              });
-            },
-            error: (statusText, q) => {
-              xfr.useFilters = false;
-              done(new Error(statusText));
-            }
-          });
+          expect(url).to.match(/[?&]vast=mock-blob-url/);
+          sinon.assert.calledWith(URL.createObjectURL, sinon.match((val) => val.type === vastHeaders['content-type']));
+          clock.runAll();
+          sinon.assert.calledWith(URL.revokeObjectURL, 'mock-blob-url');
+          done();
         });
         expect(ret).is.true;
 
