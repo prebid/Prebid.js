@@ -1,5 +1,4 @@
-import { logWarn } from '../src/utils.js';
-import {config} from '../src/config.js';
+import {logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 

@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'orbitsoft';
 let styleParamsMap = {

@@ -1,21 +1,18 @@
 import {
-  logMessage,
+  deepAccess,
   flatten,
-  parseSizesInput,
+  getWindowSelf,
+  getWindowTop,
   isGptPubadsDefined,
   isSlotMatchingAdUnitCode,
   logInfo,
+  logMessage,
   logWarn,
-  getWindowSelf,
-  getWindowTop,
-  deepAccess
+  parseSizesInput
 } from '../src/utils.js';
-import {
-  config
-} from '../src/config.js';
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
 const UDM_VENDOR_ID = '159';

@@ -1,5 +1,4 @@
-import {deepAccess, getBidIdParameter, logError, logMessage, logWarn, isFn} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {deepAccess, getBidIdParameter, isFn, logError, logMessage, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
