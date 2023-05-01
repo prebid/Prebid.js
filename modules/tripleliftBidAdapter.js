@@ -130,8 +130,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
+      // legacy method for extracting ortb2Imp.ext
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+
+      // preferred method for extracting ortb2Imp.ext
+      if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+        imp.ext = { ...bidRequest.ortb2Imp.ext };
+      }
     }
+
     return imp;
   });
 
