@@ -636,15 +636,12 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should set id and source.tid to auction ID', function () {
+    it('should pick source.tid from FPD', () => {
       config.setConfig({ s2sConfig: CONFIG });
-
-      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.id).to.equal(BID_REQUESTS[0].auctionId);
-      expect(requestBid.source.tid).to.equal(BID_REQUESTS[0].auctionId);
-    });
+      adapter.callBids({...REQUEST, ortb2Fragments: {global: {source: {tid: 'mock-tid'}}}}, BID_REQUESTS, addBidResponse, done, ajax);
+      const req = JSON.parse(server.requests[0].requestBody)
+      expect(req.source.tid).to.eql('mock-tid');
+    })
 
     it('should set tmax to s2sConfig.timeout', () => {
       const cfg = {...CONFIG, timeout: 123};
