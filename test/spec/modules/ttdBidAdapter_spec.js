@@ -576,12 +576,12 @@ describe('ttdBidAdapter', function () {
 
     it('adds secure to request', function () {
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].secure = 0;
+      clonedBannerRequests[0].ortb2Imp.secure = 0;
 
       let requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(0).to.equal(requestBody.imp[0].secure);
 
-      clonedBannerRequests[0].secure = 1;
+      clonedBannerRequests[0].ortb2Imp.secure = 1;
       requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(1).to.equal(requestBody.imp[0].secure);
     });

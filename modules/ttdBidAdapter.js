@@ -183,7 +183,8 @@ function getImpression(bidRequest) {
     impression.bidfloorcur = 'USD';
   }
 
-  impression.secure = isNumber(bidRequest.secure) ? bidRequest.secure : 1
+  const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
+  impression.secure = isNumber(secure) ? secure : 1
 
   utils.mergeDeep(impression, bidRequest.ortb2Imp)
 
