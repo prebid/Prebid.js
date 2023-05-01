@@ -150,7 +150,7 @@ export const spec = {
     for (const resp of response) {
       if (resp.requestId) {
         responses.push(Object.assign(resp, {
-          ttl: config.getConfig('_bidderTimeout')
+          ttl: 60
         }));
       }
     }

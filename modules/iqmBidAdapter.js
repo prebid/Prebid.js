@@ -155,7 +155,7 @@ export const spec = {
               auctionId: bidRequest.data.auctionId,
               mediaType: bidRequest.data.imp.mediatype,
 
-              ttl: bid.ttl || config.getConfig('_bidderTimeout')
+              ttl: bid.ttl || 60
             };
 
             if (bidRequest.data.imp.mediatype === VIDEO) {

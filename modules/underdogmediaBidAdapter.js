@@ -377,7 +377,7 @@ function makeNotification(bid, mid, bidParam) {
   url += `;version=${UDM_ADAPTER_VERSION}`;
   url += ';cb=' + Math.random();
   url += ';qqq=' + (1 / bid.cpm);
-  url += ';hbt=' + config.getConfig('_bidderTimeout');
+  url += ';hbt=' + config.getConfig('bidderTimeout');
   url += ';style=adapter';
   url += ';vis=' + encodeURIComponent(document.visibilityState);
 

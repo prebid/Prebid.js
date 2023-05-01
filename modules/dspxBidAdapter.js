@@ -183,7 +183,7 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         type: response.type,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         meta: {
           advertiserDomains: response.adomain || []
         }

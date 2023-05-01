@@ -77,7 +77,7 @@ export const spec = {
     const response = serverResponse.body;
 
     response.forEach(function(bid) {
-      bid.ttl = config.getConfig('_bidderTimeout');
+      bid.ttl = 60
       bidResponses.push(bid);
     });
     return bidResponses;

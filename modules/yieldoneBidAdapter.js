@@ -147,7 +147,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         referrer: referrer,
         meta: {
           advertiserDomains: response.adomain ? response.adomain : []
