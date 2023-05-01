@@ -3,7 +3,7 @@
     "base": "BrowserStack",
     "os_version": "11",
     "browser": "edge",
-    "browser_version": "latest",
+    "browser_version": "113",
     "device": null,
     "os": "Windows"
   }
