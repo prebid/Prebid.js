@@ -3,7 +3,7 @@ import {spec, storage} from 'modules/admaticBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {getStorageManager} from 'src/storageManager';
 
-const ENDPOINT = 'https://layer.serve.admatic.com.tr/pb?bidder=admatic';
+const ENDPOINT = 'https://layer.serve.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);
@@ -22,11 +22,13 @@ describe('admaticBidAdapter', () => {
         'host': 'layer.serve.admatic.com.tr'
       },
       'adUnitCode': 'adunit-code',
+      'mediaType': 'banner',
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-      'creativeId': 'er2ee'
+      'creativeId': 'er2ee',
+      'ortb2': { 'badv': ['admatic.com.tr'] }
     };
 
     it('should return true when required params found', function() {
@@ -34,15 +36,11 @@ describe('admaticBidAdapter', () => {
     });
 
     it('should return false when required params are not passed', function() {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-
-      bid.params = {
-        'networkId': 0,
-        'host': 'layer.serve.admatic.com.tr'
+      let bid2 = {};
+      bid2.params = {
+        'someIncorrectParam': 0
       };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid2)).to.equal(false);
     });
   });
 
@@ -54,6 +52,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2': { 'badv': ['admatic.com.tr'] },
         'mediaTypes': {
           'banner': {
             'sizes': [[300, 250], [728, 90]]
@@ -98,6 +97,8 @@ describe('admaticBidAdapter', () => {
                 'h': 90
               }
             ],
+            'mediatype': {},
+            'type': 'banner',
             'id': '2205da7a81846b',
             'floors': {
               'banner': {
@@ -105,6 +106,49 @@ describe('admaticBidAdapter', () => {
                 '728x90': { 'currency': 'USD', 'floor': 2 }
               }
             }
+          },
+          {
+            'size': [
+              {
+                'w': 338,
+                'h': 280
+              }
+            ],
+            'type': 'video',
+            'mediatype': {
+              'context': 'instream',
+              'mimes': [
+                'video/mp4'
+              ],
+              'maxduration': 240,
+              'api': [
+                1,
+                2
+              ],
+              'playerSize': [
+                [
+                  338,
+                  280
+                ]
+              ],
+              'protocols': [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              'skip': 1,
+              'playbackmethod': [
+                2
+              ],
+              'linearity': 1,
+              'placement': 2
+            },
+            'id': '45e86fc7ce7fc93'
           }
         ],
         'ext': {
@@ -118,6 +162,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2': { 'badv': ['admatic.com.tr'] },
         'mediaTypes': {
           'banner': {
             'sizes': [[300, 250], [728, 90]]
@@ -163,12 +208,57 @@ describe('admaticBidAdapter', () => {
               }
             ],
             'id': '2205da7a81846b',
+            'mediatype': {},
+            'type': 'banner',
             'floors': {
               'banner': {
                 '300x250': { 'currency': 'USD', 'floor': 1 },
                 '728x90': { 'currency': 'USD', 'floor': 2 }
               }
             }
+          },
+          {
+            'size': [
+              {
+                'w': 338,
+                'h': 280
+              }
+            ],
+            'type': 'video',
+            'mediatype': {
+              'context': 'instream',
+              'mimes': [
+                'video/mp4'
+              ],
+              'maxduration': 240,
+              'api': [
+                1,
+                2
+              ],
+              'playerSize': [
+                [
+                  338,
+                  280
+                ]
+              ],
+              'protocols': [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              'skip': 1,
+              'playbackmethod': [
+                2
+              ],
+              'linearity': 1,
+              'placement': 2
+            },
+            'id': '45e86fc7ce7fc93'
           }
         ],
         'ext': {
@@ -194,6 +284,7 @@ describe('admaticBidAdapter', () => {
               'sizes': [[300, 250], [728, 90]]
             }
           },
+          'ortb2': { 'badv': ['admatic.com.tr'] },
           getFloor: inputParams => {
             if (inputParams.mediaType === BANNER && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
               return {
@@ -217,6 +308,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2': { 'badv': ['admatic.com.tr'] },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [728, 90]],
         'bidId': '30b31c1838de1e',
@@ -249,9 +341,35 @@ describe('admaticBidAdapter', () => {
             'width': 300,
             'height': 250,
             'price': 0.01,
+            'type': 'banner',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
-            'party_tag': '<div></div>'
+            'party_tag': '<div></div>',
+            'iurl': 'https://www.admatic.com.tr'
+          },
+          {
+            'id': 2,
+            'creative_id': '3741',
+            'width': 300,
+            'height': 250,
+            'price': 0.01,
+            'type': 'video',
+            'bidder': 'admatic',
+            'adomain': ['admatic.com.tr'],
+            'party_tag': '<VAST></VAST>',
+            'iurl': 'https://www.admatic.com.tr'
+          },
+          {
+            'id': 3,
+            'creative_id': '3741',
+            'width': 300,
+            'height': 250,
+            'price': 0.01,
+            'type': 'video',
+            'bidder': 'admatic',
+            'adomain': ['admatic.com.tr'],
+            'party_tag': 'https://www.admatic.com.tr',
+            'iurl': 'https://www.admatic.com.tr'
           }
         ],
         'queryId': 'cdnbh24rlv0hhkpfpln0',
@@ -265,13 +383,48 @@ describe('admaticBidAdapter', () => {
           width: 300,
           height: 250,
           currency: 'TRY',
+          mediaType: 'banner',
           netRevenue: true,
           ad: '<div></div>',
           creativeId: '374',
           meta: {
             advertiserDomains: ['admatic.com.tr']
           },
-          ttl: 360,
+          ttl: 60,
+          bidder: 'admatic'
+        },
+        {
+          requestId: 2,
+          cpm: 0.01,
+          width: 300,
+          height: 250,
+          currency: 'TRY',
+          mediaType: 'video',
+          netRevenue: true,
+          vastImpUrl: 'https://www.admatic.com.tr',
+          vastXml: '<VAST></VAST>',
+          creativeId: '3741',
+          meta: {
+            advertiserDomains: ['admatic.com.tr']
+          },
+          ttl: 60,
+          bidder: 'admatic'
+        },
+        {
+          requestId: 3,
+          cpm: 0.01,
+          width: 300,
+          height: 250,
+          currency: 'TRY',
+          mediaType: 'video',
+          netRevenue: true,
+          vastImpUrl: 'https://www.admatic.com.tr',
+          vastXml: 'https://www.admatic.com.tr',
+          creativeId: '3741',
+          meta: {
+            advertiserDomains: ['admatic.com.tr']
+          },
+          ttl: 60,
           bidder: 'admatic'
         }
       ];

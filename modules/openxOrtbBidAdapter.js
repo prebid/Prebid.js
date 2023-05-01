@@ -29,9 +29,6 @@ const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (bidRequest.mediaTypes[VIDEO]?.context === 'outstream') {
-      imp.video.placement = imp.video.placement || 4;
-    }
     mergeDeep(imp, {
       tagid: bidRequest.params.unit,
       ext: {
@@ -55,6 +52,9 @@ const converter = ortbConverter({
       }
     })
     const bid = context.bidRequests[0];
+    if (bid.params.coppa) {
+      utils.deepSetValue(req, 'regs.coppa', 1);
+    }
     if (bid.params.doNotTrack) {
       utils.deepSetValue(req, 'device.dnt', 1);
     }
@@ -126,6 +126,22 @@ const converter = ortbConverter({
         setBidFloor(floor, bidRequest, {...context, currency: 'USD'});
         if (floor.bidfloorcur === 'USD') {
           Object.assign(imp, floor);
+        }
+      },
+      video(orig, imp, bidRequest, context) {
+        if (FEATURES.VIDEO) {
+          // `orig` is the video imp processor, which looks at bidRequest.mediaTypes[VIDEO]
+          // to populate imp.video
+          // alter its input `bidRequest` to also pick up parameters from `bidRequest.params`
+          let videoParams = bidRequest.mediaTypes[VIDEO];
+          if (videoParams) {
+            videoParams = Object.assign({}, videoParams, bidRequest.params.video);
+            bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+          }
+          orig(imp, bidRequest, context);
+          if (imp.video && videoParams?.context === 'outstream') {
+            imp.video.placement = imp.video.placement || 4;
+          }
         }
       }
     }

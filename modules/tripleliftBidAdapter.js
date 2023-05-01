@@ -11,7 +11,7 @@ const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600;
 let gdprApplies = true;
 let consentString = null;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -130,8 +130,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
+      // legacy method for extracting ortb2Imp.ext
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+
+      // preferred method for extracting ortb2Imp.ext
+      if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+        imp.ext = { ...bidRequest.ortb2Imp.ext };
+      }
     }
+
     return imp;
   });
 

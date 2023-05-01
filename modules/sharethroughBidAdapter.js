@@ -21,7 +21,7 @@ export const sharethroughAdapterSpec = {
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const timeout = config.getConfig('bidderTimeout');
+    const timeout = bidderRequest.timeout;
     const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;

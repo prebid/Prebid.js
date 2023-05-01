@@ -481,6 +481,14 @@ describe('TheMediaGrid Adapter', function () {
             'h': 600,
             'protocols': [1, 2, 3],
             'mimes': ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
+            'context': 'instream',
+            'maxduration': 30,
+            'minduration': 0,
+            'api': [1, 2],
+            'skip': 1,
+            'placement': 1,
+            'playbackmethod': 1,
+            'startdelay': 0
           }
         }, {
           'id': bidRequests[3].bidId,

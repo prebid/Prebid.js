@@ -5,13 +5,15 @@
  * @requires module:modules/userId
  */
 
-import { parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID } from '../src/utils.js';
+import {parseUrl, buildUrl, triggerPixel, logInfo, hasDeviceAccess, generateUUID} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
-import { coppaDataHandler } from '../src/adapterManager.js';
+import {coppaDataHandler} from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
 
-export const storage = getStorageManager({moduleName: 'pubCommonId', gvlid: VENDORLESS_GVLID});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'pubCommonId'});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -171,31 +173,7 @@ export const sharedIdSystemSubmodule = {
     }
   },
 
-  domainOverride: function () {
-    const domainElements = document.domain.split('.');
-    const cookieName = `_gd${Date.now()}`;
-    for (let i = 0, topDomain, testCookie; i < domainElements.length; i++) {
-      const nextDomain = domainElements.slice(i).join('.');
-
-      // write test cookie
-      storage.setCookie(cookieName, '1', undefined, undefined, nextDomain);
-
-      // read test cookie to verify domain was valid
-      testCookie = storage.getCookie(cookieName);
-
-      // delete test cookie
-      storage.setCookie(cookieName, '', 'Thu, 01 Jan 1970 00:00:01 GMT', undefined, nextDomain);
-
-      if (testCookie === '1') {
-        // cookie was written successfully using test domain so the topDomain is updated
-        topDomain = nextDomain;
-      } else {
-        // cookie failed to write using test domain so exit by returning the topDomain
-        return topDomain;
-      }
-    }
-  }
-
+  domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
 };
 
 submodule('userId', sharedIdSystemSubmodule);
