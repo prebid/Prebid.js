@@ -1,4 +1,4 @@
-import {detectReferer, ensureProtocol, parseDomain} from 'src/refererDetection.js';
+import {cacheWithLocation, detectReferer, ensureProtocol, parseDomain} from 'src/refererDetection.js';
 import {config} from 'src/config.js';
 import {expect} from 'chai';
 
@@ -493,3 +493,58 @@ describe('parseDomain', () => {
     })
   })
 });
+
+describe('cacheWithLocation', () => {
+  let fn, win, cached;
+  const RESULT = 'result';
+  beforeEach(() => {
+    fn = sinon.stub().callsFake(() => RESULT);
+    win = {
+      location: {
+      },
+      document: {
+        querySelector: sinon.stub()
+      }
+    }
+  });
+
+  describe('when window is not on top', () => {
+    beforeEach(() => {
+      win.top = {};
+      cached = cacheWithLocation(fn, win);
+    })
+
+    it('should not cache', () => {
+      win.top = {};
+      cached();
+      expect(cached()).to.eql(RESULT);
+      expect(fn.callCount).to.eql(2);
+    });
+  })
+
+  describe('when window is on top', () => {
+    beforeEach(() => {
+      win.top = win;
+      cached = cacheWithLocation(fn, win);
+    })
+
+    it('should not cache when canonical URL changes', () => {
+      let canonical = 'foo';
+      win.document.querySelector.callsFake(() => ({href: canonical}));
+      cached();
+      expect(cached()).to.eql(RESULT);
+      canonical = 'bar';
+      expect(cached()).to.eql(RESULT);
+      expect(fn.callCount).to.eql(2);
+    });
+
+    it('should not cache when location changes', () => {
+      win.location.href = 'foo';
+      cached();
+      expect(cached()).to.eql(RESULT);
+      win.location.href = 'bar';
+      expect(cached()).to.eql(RESULT);
+      expect(fn.callCount).to.eql(2);
+    })
+  });
+})

@@ -266,6 +266,27 @@ describe('onetag', function () {
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
+    it('Should send GPP consent data', function () {
+      let consentString = 'consentString';
+      let applicableSections = [1, 2, 3];
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gppConsent': {
+          gppString: consentString,
+          applicableSections: applicableSections
+        }
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload).to.exist;
+      expect(payload.gppConsent).to.exist;
+      expect(payload.gppConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gppConsent.applicableSections).to.have.same.members(applicableSections);
+    });
     it('Should send us privacy string', function () {
       let consentString = 'us_foo';
       let bidderRequest = {
@@ -374,6 +395,28 @@ describe('onetag', function () {
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.include(sync_endpoint);
       expect(syncs[0].url).to.not.match(/(?:[?&](?:gdpr_consent=([^&]*)|gdpr=([^&]*)))+$/);
+    });
+    it('Must pass gpp consent string when gppConsent object is available', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {}, {
+        gppString: 'foo'
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.match(/(?:[?&](?:gpp_consent=foo([^&]*)))+$/);
+    });
+    it('Must pass no gpp params when consentString is null', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {}, {
+        gppString: null
+      });
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gpp_consent=([^&]*)))+$/);
+    });
+    it('Must pass no gpp params when consentString is empty', function () {
+      const syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {}, {});
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.include(sync_endpoint);
+      expect(syncs[0].url).to.not.match(/(?:[?&](?:gpp_consent=([^&]*)))+$/);
     });
     it('Should send us privacy string', function () {
       let usConsentString = 'us_foo';

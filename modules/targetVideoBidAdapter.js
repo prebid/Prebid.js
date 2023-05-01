@@ -157,7 +157,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const sizes = getSizes(bidRequest);
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm * MARGIN,
+    cpm: rtbBid.cpm / MARGIN,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',

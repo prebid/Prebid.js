@@ -384,7 +384,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -400,7 +400,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    is_wrapper: !!generalBidParams.isWrapper,
+    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
     tmax: timeout
   };
 

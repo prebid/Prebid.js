@@ -93,31 +93,107 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
-          userId: {
-            tdid: 'fake-tdid',
-            pubcid: 'fake-pubcid',
-            idl_env: 'fake-identity-link',
-            id5id: {
-              uid: 'fake-id5id',
-              ext: {
-                linkType: 2,
-              },
+          userIdAsEids: [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-pubcid'
+                },
+              ]
             },
-            lipb: {
-              lipbid: 'fake-lipbid',
+            {
+              'source': 'liveramp.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-identity-link'
+                }
+              ]
             },
-            criteoId: 'fake-criteo',
-            britepoolid: 'fake-britepool',
-            intentIqId: 'fake-intentiq',
-            lotamePanoramaId: 'fake-lotame',
-            parrableId: {
-              eid: 'fake-parrable',
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-id5id'
+                }
+              ]
             },
-            netId: 'fake-netid',
-            sharedid: {
-              id: 'fake-sharedid',
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-tdid'
+                }
+              ]
             },
-          },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-criteo'
+                }
+              ]
+            },
+            {
+              'source': 'britepool.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-britepool'
+                }
+              ]
+            },
+            {
+              'source': 'liveintent.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lipbid'
+                }
+              ]
+            },
+            {
+              'source': 'intentiq.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-intentiq'
+                }
+              ]
+            },
+            {
+              'source': 'crwdcntrl.net',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lotame'
+                }
+              ]
+            },
+            {
+              'source': 'parrable.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-parrable'
+                }
+              ]
+            },
+            {
+              'source': 'netid.de',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-netid'
+                }
+              ]
+            }
+          ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
@@ -172,7 +248,8 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
-        auctionId: 'auction-id'
+        auctionId: 'auction-id',
+        timeout: 242
       };
     });
 
