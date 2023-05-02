@@ -6,7 +6,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'jixie';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -190,12 +189,10 @@ export const spec = {
     let miscDims = internal.getMiscDims();
     let schain = deepAccess(validBidRequests[0], 'schain');
 
+    let eids1 = validBidRequests[0].userIdAsEids
     // all available user ids are sent to our backend in the standard array layout:
-    if (validBidRequests[0].userId) {
-      let eids1 = createEidsArray(validBidRequests[0].userId);
-      if (eids1.length) {
-        eids = eids1;
-      }
+    if (eids1 && eids1.length) {
+      eids = eids1;
     }
     // we want to send this blob of info to our backend:
     let pg = config.getConfig('priceGranularity');
