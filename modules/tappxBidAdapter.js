@@ -252,6 +252,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
+  const ORTB2 = config.getConfig()?.ortb2;
 
   // let requests = [];
   let payload = {};
@@ -410,6 +411,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
+  let configGeo = {};
+  configGeo.country = ORTB2?.device?.geo;
+
+  if(typeof configGeo.country  !== 'undefined'){
+    device.geo = configGeo;
+  }else if(typeof geo.country  !== 'undefined' ){
+    device.geo = geo;
+  };
 
   // > GDPR
   let user = {};
