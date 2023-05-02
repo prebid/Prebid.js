@@ -396,24 +396,25 @@ export const spec = {
       if (config.getConfig('coppa')) {
         query.push('coppa=1')
       }
+      const q = query.join('&')
       if (syncOptions.iframeEnabled) {
         syncs.push({
           type: 'iframe',
-          url: 'https://cm.mgid.com/i.html?' + query.join('&').replace('{cbuster}', Math.round(new Date().getTime()))
+          url: 'https://cm.mgid.com/i.html?' + q.replace('{cbuster}', Math.round(new Date().getTime()))
         });
       } else if (syncOptions.pixelEnabled) {
         if (pixels.length === 0) {
           for (let i = 0; i < spb; i++) {
             syncs.push({
               type: 'image',
-              url: 'https://cm.mgid.com/i.gif?' + query.join('&').replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
+              url: 'https://cm.mgid.com/i.gif?' + q.replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
             });
           }
         } else {
           for (let i = 0; i < spb && i < pixels.length; i++) {
             syncs.push({
               type: 'image',
-              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + query.join('&').replace('{cbuster}', Math.round(new Date().getTime()))
+              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + q.replace('{cbuster}', Math.round(new Date().getTime()))
             });
           }
         }
