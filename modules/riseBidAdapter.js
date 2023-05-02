@@ -364,6 +364,13 @@ function generateBidParameters(bid, bidderRequest) {
     if (protocols) {
       bidObject.protocols = protocols;
     }
+
+    const coppa = deepAccess(bid, 'ortb2.regs.coppa')
+    if (coppa) {
+      bidObject.coppa = 1
+    } else {
+      bidObject.coppa = 0
+    }
   }
 
   return bidObject;
@@ -447,10 +454,6 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
     // TODO: does the fallback make sense here?
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
-  }
-
-  if (config.getConfig('coppa') === true) {
-    generalParams.coppa = 1;
   }
 
   return generalParams;
