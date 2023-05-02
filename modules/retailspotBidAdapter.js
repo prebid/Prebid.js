@@ -169,7 +169,7 @@ function createBid(response, bidRequests) {
 
   // retreive video response if present
   if (response.mediaType === 'video') {
-    bid.vastXml = response.vastXml;
+    bid.vastXml = window.atob(response.vastXml);
   } else {
     bid.ad = response.ad;
   }

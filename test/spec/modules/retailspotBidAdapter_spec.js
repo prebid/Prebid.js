@@ -193,7 +193,7 @@ describe('RetailSpot Adapter', function () {
   const responseWithSingleVideo = [{
     'requestId': 'bid_id_0',
     'placement': 'placement_0',
-    'vastXml': '<VAST>Empty sample</vast>',
+    'vastXml': 'PFZBU1Q+RW1wdHkgc2FtcGxlPC92YXN0Pg==',
     'cpm': 0.5,
     'height': 300,
     'width': 530,
