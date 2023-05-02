@@ -85,15 +85,12 @@ export const spec = {
     }
 
     const ortb2Params = bidderRequest?.ortb2 || {};
-    if (ortb2Params.site) {
-      mergeDeep(request, { site: ortb2Params.site });
-    }
-    if (ortb2Params.user) {
-      mergeDeep(request, { user: ortb2Params.user });
-    }
-    if (ortb2Params.device) {
-      mergeDeep(request, { device: ortb2Params.device });
-    }
+    ['site', 'user', 'device', 'bcat', 'badv'].forEach(entry => {
+      const ortb2Param = ortb2Params[entry];
+      if (ortb2Param) {
+        mergeDeep(request, { [entry]: ortb2Param });
+      }
+    });
 
     let computedEndpointUrl = ENDPOINT_URL;
 
@@ -479,7 +476,7 @@ function interpretNativeBid(serverBid) {
 function interpretNativeAd(adm) {
   const native = JSON.parse(adm).native;
   const result = {
-    clickUrl: encodeURIComponent(native.link.url),
+    clickUrl: encodeURI(native.link.url),
     impressionTrackers: native.imptrackers
   };
   native.assets.forEach(asset => {
@@ -489,14 +486,14 @@ function interpretNativeAd(adm) {
         break;
       case OPENRTB.NATIVE.ASSET_ID.IMAGE:
         result.image = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
       case OPENRTB.NATIVE.ASSET_ID.ICON:
         result.icon = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };

@@ -83,7 +83,7 @@ export const spec = {
           gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
-          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || ''
+          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
         }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
       };
@@ -525,7 +525,7 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
     deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
     deepSetValue(openRtbRequest, 'user.ext.consent', gdpr && gdpr.consentString ? gdpr.consentString : '');
   }
-  if (gppsid) {
+  if (gppsid && gppsid.length > 0) {
     deepSetValue(openRtbRequest, 'regs.ext.gpp_sid', gppsid);
   }
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
