@@ -42,7 +42,7 @@ pbjs.enableAnalytics({
          * will be sent regardless of auction state.
          * [optional]
          */
-        timeout: 3000
+        timeout: 10000
     }
 });
 ```

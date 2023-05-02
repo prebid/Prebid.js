@@ -110,7 +110,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
   describe('Event Handling', function () {
     beforeEach(function () {
-      this.defaultTimeout = 3000;
+      this.defaultTimeout = 10000;
       this.enableAnalytics = (options) => {
         analyticsAdapter.enableAnalytics({
           options: {
@@ -195,6 +195,100 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
     });
 
+    context('when an auction report was already sent', function () {
+      context('and a new bid won event is returned after the report completes', function () {
+        it('it finishes the auction without error', function () {
+          const incompleteAnalyticsReport = getStandardAnalyticsReport();
+          incompleteAnalyticsReport.auctions.forEach(auction => {
+            auction.adUnits.forEach(adUnit => {
+              adUnit.bids.forEach(bid => {
+                delete bid.bidResponse;
+                bid.hasWon = 0;
+                bid.status = 'pending';
+              });
+            });
+          });
+
+          this.enableAnalytics();
+          const { prebid: [auction] } = getMockEvents();
+
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          for (let bidRequestedEvent of auction.BID_REQUESTED) {
+            events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
+          };
+
+          sandbox.clock.tick(this.defaultTimeout + 1);
+
+          for (let bidResponseEvent of auction.BID_RESPONSE) {
+            events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
+          };
+          for (let bidWonEvent of auction.BID_WON) {
+            events.emit(EVENTS.BID_WON, bidWonEvent);
+          };
+
+          events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+
+          sandbox.clock.tick(1);
+
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', incompleteAnalyticsReport);
+        });
+      });
+
+      context('and another auction completes after that', function () {
+        it('it sends the new report', function () {
+          const endpoint = faker.internet.url();
+          this.enableAnalytics({ endpoint });
+
+          navigator.sendBeacon
+            .withArgs(endpoint, JSON.stringify(getStandardAnalyticsReport()));
+
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1);
+
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1);
+
+          assert.calledTwice(navigator.sendBeacon);
+        });
+      });
+    });
+
+    context('when two auctions overlap', function() {
+      it('it sends a report for each auction', function () {
+        const endpoint = faker.internet.url();
+        this.enableAnalytics({ endpoint });
+
+        navigator.sendBeacon
+          .withArgs(endpoint, JSON.stringify(getStandardAnalyticsReport()));
+
+        performStandardAuction();
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1);
+
+        assert.calledTwice(navigator.sendBeacon);
+      });
+    });
+
+    context('when an AUCTION_END event is received before BID_WON events', function () {
+      it('it sends a report with the bids that have won', function () {
+        const endpoint = faker.internet.url();
+        this.enableAnalytics({ endpoint });
+
+        navigator.sendBeacon
+          .withArgs(endpoint, JSON.stringify(getStandardAnalyticsReport()));
+
+        const { prebid: [auction] } = getMockEvents();
+
+        performStandardAuction({ exclude: [EVENTS.BID_WON] });
+
+        for (let bidWon of auction.BID_WON) {
+          events.emit(EVENTS.BID_WON, bidWon);
+        }
+
+        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, getStandardAnalyticsReport());
+      });
+    });
+
     context('when a BID_WON event is received', function () {
       context('and there is no record of that bid being requested', function () {
         it('logs a warning message', function () {
@@ -224,7 +318,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs a warning', function () {
             this.enableAnalytics({ timeout: 2000 });
 
-            performStandardAuction({exclude:['bidWon', 'auctionEnd']});
+            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
 
             sandbox.clock.tick(this.defaultTimeout + 1);
 
@@ -238,7 +332,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs an error', function () {
             this.enableAnalytics();
 
-            performStandardAuction({exclude:['bidWon', 'auctionEnd']});
+            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
 
             sandbox.clock.tick(this.defaultTimeout + 1);
 
@@ -263,8 +357,8 @@ describe('33acrossAnalyticsAdapter:', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
-          performStandardAuction({exclude:['bidWon', 'auctionEnd']});
-          sandbox.clock.tick(this.defaultTimeout + 10);
+          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          sandbox.clock.tick(this.defaultTimeout + 1);
 
           assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, incompleteAnalyticsReport);
         });
@@ -284,7 +378,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
-          performStandardAuction({exclude:['bidWon', 'auctionEnd']});
+          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
           sandbox.clock.tick(this.defaultTimeout + 1);
 
           assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, incompleteAnalyticsReport);
@@ -321,14 +415,16 @@ function performStandardAuction({ exclude = [] } = {}) {
     }
   }
 
+  // Note: AUCTION_END *frequently* (but not always) emits before BID_WON,
+  // even if the auction is ending because all bids have been won.
+  if (!exclude.includes(EVENTS.AUCTION_END)) {
+    events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+  }
+
   if (!exclude.includes(EVENTS.BID_WON)) {
     for (let bidWonEvent of auction.BID_WON) {
       events.emit(EVENTS.BID_WON, bidWonEvent);
     };
-  }
-
-  if (!exclude.includes(EVENTS.AUCTION_END)) {
-    events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
   }
 }
 
@@ -401,6 +497,7 @@ function getLocalAssert() {
   }
 
   function calledOnceWithStringJsonEquivalent(sinonSpy, ...args) {
+    sinon.assert.calledOnce(sinonSpy);
     args.forEach((arg, i) => {
       const stubCallArgs = sinonSpy.firstCall.args[i]
 
@@ -412,10 +509,9 @@ function getLocalAssert() {
     });
   }
 
+  sinon.assert.expose(assert, { prefix: '' });
   return {
     ...assert,
-    calledWithExactly: sinon.assert.calledWithExactly,
-    alwaysCalledWithExactly: sinon.assert.alwaysCalledWithExactly,
     calledOnceWithStringJsonEquivalent,
     isAnalyticsReport,
     isAuction,

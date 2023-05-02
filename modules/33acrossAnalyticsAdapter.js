@@ -10,7 +10,7 @@ const { EVENTS } = CONSTANTS;
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
-const DEFAULT_TRANSACTION_TIMEOUT = 3000;
+const DEFAULT_TRANSACTION_TIMEOUT = 10000;
 const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
 
 export const log = getLogger();
@@ -94,9 +94,9 @@ class TransactionManager {
    * @type {number}
    */
   #sendTimeout;
-  #timeoutId;
-  #transactions = new Set();
-  #completed = new Set();
+  #sendTimeoutId;
+  #transactionsPending = new Set();
+  #transactionsCompleted = new Set();
   #onComplete;
 
   constructor({ timeout, onComplete }) {
@@ -104,28 +104,34 @@ class TransactionManager {
     this.#onComplete = onComplete;
   }
 
+  status() {
+    return {
+      pending: [...this.#transactionsPending],
+      completed: [...this.#transactionsCompleted],
+    };
+  }
+
   initiate(transactionId) {
-    this.#transactions.add(transactionId);
+    this.#transactionsPending.add(transactionId);
     this.#restartSendTimeout();
   }
 
   complete(transactionId) {
-    if (!this.#transactions.has(transactionId)) {
+    if (!this.#transactionsPending.has(transactionId)) {
       log.warn(`transactionId "${transactionId}" was not found. No transaction to mark as complete.`);
       return;
     }
 
-    this.#transactions.delete(transactionId);
-    this.#completed.add(transactionId);
-    log.info(`Marked transaction "${transactionId}" as complete. ${this.#transactions.size} transaction(s) pending.`, {pending: this.#transactions, completed: this.#completed});
+    this.#transactionsPending.delete(transactionId);
+    this.#transactionsCompleted.add(transactionId);
 
-    if (this.#transactions.size === 0) {
+    if (this.#transactionsPending.size === 0) {
       this.#flushTransactions();
     }
   }
 
   completeAll(reason) {
-    for (let transactionId of this.#transactions) {
+    for (let transactionId of this.#transactionsPending) {
       this.complete(transactionId);
     };
 
@@ -134,21 +140,21 @@ class TransactionManager {
 
   #flushTransactions() {
     this.#clearSendTimeout();
-    this.#transactions = new Set();
+    this.#transactionsPending = new Set();
     this.#onComplete();
   }
 
   // gulp-eslint is using eslint 6, a version that doesn't support private method syntax
   // eslint-disable-next-line no-dupe-class-members
   #clearSendTimeout() {
-    return window.clearTimeout(this.#timeoutId);
+    return clearTimeout(this.#sendTimeoutId);
   }
 
   // eslint-disable-next-line no-dupe-class-members
   #restartSendTimeout() {
     this.#clearSendTimeout();
 
-    this.#timeoutId = setTimeout(() => {
+    this.#sendTimeoutId = setTimeout(() => {
       if (this.#sendTimeout !== 0) {
         log.warn(`Timed out waiting for ad transactions to complete. Sending report.`);
       }
@@ -256,7 +262,7 @@ function calculateTransactionTimeout(configTimeout) {
     return configTimeout;
   }
 
-  log.info(`Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.`);
+  log.info(`Invalid timeout provided for "options.timeout". Using default timeout of ${DEFAULT_TRANSACTION_TIMEOUT}ms.`);
 
   return DEFAULT_TRANSACTION_TIMEOUT;
 }
@@ -380,7 +386,6 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
 
 function onBidRequested({ auctionId, bids }) {
   for (let { bidder, bidId, transactionId, src } of bids) {
-    locals.transactionManagers[auctionId].initiate(transactionId);
     getBidsForTransaction(auctionId, transactionId).push({
       bidder,
       bidId,
@@ -388,6 +393,10 @@ function onBidRequested({ auctionId, bids }) {
       hasWon: 0,
       source: src,
     });
+
+    // if there is no manager for this auction, then the auction has already been completed
+    // eslint-disable-next-line no-unused-expressions
+    locals.transactionManagers[auctionId]?.initiate(transactionId);
   }
 }
 
@@ -421,11 +430,17 @@ function onBidWon({ auctionId, requestId, transactionId }) {
     }
   );
 
+  // eslint-disable-next-line no-unused-expressions
   locals.transactionManagers[auctionId]?.complete(transactionId);
 }
 
 function onAuctionEnd({ auctionId }) {
-  locals.transactionManagers[auctionId]?.completeAll('auctionEnd');
+  // auctionEnd event *sometimes* fires before bidWon events,
+  // even when auction is ending because all bids have been won.
+  setTimeout(() => {
+    // eslint-disable-next-line no-unused-expressions
+    locals.transactionManagers[auctionId]?.completeAll('auctionEnd');
+  }, 0);
 }
 
 /**
