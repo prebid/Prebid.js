@@ -397,7 +397,6 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let configGeo = {};
   configGeo.country = ORTB2?.device?.geo;
 
-  // > GDPR
   if(typeof configGeo.country  !== 'undefined'){
     device.geo = configGeo;
   }else if(typeof geo.country  !== 'undefined' ){
