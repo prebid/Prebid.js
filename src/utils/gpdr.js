@@ -7,6 +7,9 @@ import {deepAccess} from '../utils.js';
  * @returns {boolean} true if the gdprConsent is null-y; or GDPR does not apply; or if purpose 1 consent was given.
  */
 export function hasPurpose1Consent(gdprConsent) {
+  if(gdprConsent === null) {
+    return !(owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope === true)
+  }
   if (gdprConsent?.gdprApplies) {
     return deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true;
   }
