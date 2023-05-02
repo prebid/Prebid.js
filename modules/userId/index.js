@@ -1068,6 +1068,9 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
 
     // another consent check, this time each module is checked for consent with its own gvlid
     let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
+    logWarn("Privacy - Logging userIds allowed for syncup - "+userIdModules);
+    logWarn("Privacy - Logging hasValidated flag - "+hasValidated);
+    logWarn("Privacy - Logging consentData received - "+consentData);
     if (!hasValidated && !hasPurpose1Consent(consentData)) {
       logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
       return [];
