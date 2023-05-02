@@ -16,7 +16,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { setSizeConfig } from 'src/sizeMapping.js';
+import { setSizeConfig } from 'modules/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';

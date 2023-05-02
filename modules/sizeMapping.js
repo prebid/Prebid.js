@@ -1,8 +1,10 @@
-import {config} from './config.js';
-import {deepAccess, deepClone, deepSetValue, getWindowTop, isPlainObject, logInfo, logWarn} from './utils.js';
-import {includes} from './polyfill.js';
-import {BANNER, VIDEO} from './mediaTypes.js';
+import {config} from '../src/config.js';
+import {deepAccess, deepClone, deepSetValue, getWindowTop, logInfo, logWarn} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {setupAdUnitMediaTypes} from '../src/adapterManager.js';
 
+let installed = false;
 let sizeConfig = [];
 
 /**
@@ -22,6 +24,10 @@ let sizeConfig = [];
  */
 export function setSizeConfig(config) {
   sizeConfig = config;
+  if (!installed) {
+    setupAdUnitMediaTypes.before((next, adUnit, labels) => next(processAdUnitsForLabels(adUnit, labels), labels));
+    installed = true;
+  }
 }
 config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
 
@@ -71,10 +77,6 @@ if (FEATURES.VIDEO) {
  */
 export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
-
-  if (!isPlainObject(mediaTypes)) {
-    mediaTypes = {};
-  }
 
   let filtered = false;
   let hasSize = false;

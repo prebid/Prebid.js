@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {resolveStatus, setSizeConfig, sizeSupported} from 'src/sizeMapping.js';
+import {resolveStatus, setSizeConfig, sizeSupported} from 'modules/sizeMapping.js';
 import {includes} from 'src/polyfill.js';
 
-let utils = require('src/utils');
+let utils = require('src/utils.js');
 let deepClone = utils.deepClone;
 
 describe('sizeMapping', function () {
@@ -126,7 +126,6 @@ describe('sizeMapping', function () {
   Object.entries(suites).forEach(([mediaType, {mediaTypes, getSizes}]) => {
     describe(`for ${mediaType}`, () => {
       describe('when handling sizes', function () {
-
         it('when one mediaQuery block matches, it should filter the adUnit.sizes passed in', function () {
           matchMediaOverride = (str) => str === '(min-width: 1200px)' ? {matches: true} : {matches: false};
 
@@ -211,7 +210,6 @@ describe('sizeMapping', function () {
           expect(status.mediaTypes).to.deep.equal(mediaTypes);
         });
 
-
         it('should active/deactivate adUnits/bidders based on requestBids labels', function () {
           let activeLabels = ['us-visitor', 'desktop', 'smart'];
 
@@ -253,90 +251,92 @@ describe('sizeMapping', function () {
     });
   });
 
-  it('should activate/decactivate adUnits/bidders based on labels with multiformat ads', function () {
-    matchMediaOverride = (str) => str === '(min-width: 768px) and (max-width: 1199px)' ? {matches: true} : {matches: false};
+  if (FEATURES.VIDEO) {
+    it('should activate/decactivate adUnits/bidders based on labels with multiformat ads', function () {
+      matchMediaOverride = (str) => str === '(min-width: 768px) and (max-width: 1199px)' ? {matches: true} : {matches: false};
 
-    let multiFormatSizes = {
-      banner: {
-        sizes: [[728, 90], [300, 300]]
-      },
-      native: {
-        type: 'image'
-      },
-      video: {
-        context: 'outstream',
-        playerSize: [[728, 90], [300, 300]]
-      }
-    };
+      let multiFormatSizes = {
+        banner: {
+          sizes: [[728, 90], [300, 300]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [[728, 90], [300, 300]]
+        }
+      };
 
-    let status = resolveStatus({
-      labels: ['tablet', 'test'],
-      labelAll: true
-    }, multiFormatSizes, sizeConfigWithLabels);
+      let status = resolveStatus({
+        labels: ['tablet', 'test'],
+        labelAll: true
+      }, multiFormatSizes, sizeConfigWithLabels);
 
-    expect(status.active).to.equal(false);
-    expect(status.mediaTypes).to.deep.equal({
-      banner: {
-        sizes: [[728, 90]]
-      },
-      native: {
-        type: 'image'
-      },
-      video: {
-        context: 'outstream',
-        playerSize: [[728, 90]]
-      }
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[728, 90]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [[728, 90]]
+        }
+      });
+
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: [[728, 90]]
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: [[728, 90]]
+        }
+      });
+
+      [multiFormatSizes.banner.sizes, multiFormatSizes.video.playerSize].forEach(sz => sz.splice(0, 1, [728, 80]))
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(false);
+      expect(status.mediaTypes).to.deep.equal({
+        banner: {
+          sizes: []
+        },
+        native: {
+          type: 'image'
+        },
+        video: {
+          context: 'outstream',
+          playerSize: []
+        }
+      });
+
+      delete multiFormatSizes.banner;
+      delete multiFormatSizes.video;
+
+      status = resolveStatus({
+        labels: ['tablet']
+      }, multiFormatSizes, sizeConfigWithLabels);
+
+      expect(status.active).to.equal(true);
+      expect(status.mediaTypes).to.deep.equal({
+        native: {
+          type: 'image'
+        }
+      });
     });
-
-    status = resolveStatus({
-      labels: ['tablet']
-    }, multiFormatSizes, sizeConfigWithLabels);
-
-    expect(status.active).to.equal(true);
-    expect(status.mediaTypes).to.deep.equal({
-      banner: {
-        sizes: [[728, 90]]
-      },
-      native: {
-        type: 'image'
-      },
-      video: {
-        context: 'outstream',
-        playerSize: [[728, 90]]
-      }
-    });
-
-    [multiFormatSizes.banner.sizes, multiFormatSizes.video.playerSize].forEach(sz => sz.splice(0, 1, [728, 80]))
-    status = resolveStatus({
-      labels: ['tablet']
-    }, multiFormatSizes, sizeConfigWithLabels);
-
-    expect(status.active).to.equal(false);
-    expect(status.mediaTypes).to.deep.equal({
-      banner: {
-        sizes: []
-      },
-      native: {
-        type: 'image'
-      },
-      video: {
-        context: 'outstream',
-        playerSize: []
-      }
-    });
-
-    delete multiFormatSizes.banner;
-    delete multiFormatSizes.video;
-
-    status = resolveStatus({
-      labels: ['tablet']
-    }, multiFormatSizes, sizeConfigWithLabels);
-
-    expect(status.active).to.equal(true);
-    expect(status.mediaTypes).to.deep.equal({
-      native: {
-        type: 'image'
-      }
-    });
-  });
+  }
 });
