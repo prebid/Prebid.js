@@ -1,20 +1,19 @@
-import {newBidder, registerBidder, preloadBidderMappingFile, storage, isValid} from 'src/adapters/bidderFactory.js';
+import {isValid, newBidder, preloadBidderMappingFile, registerBidder, storage} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
-import { expect } from 'chai';
-import { userSync } from 'src/userSync.js'
+import {expect} from 'chai';
+import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
-import { bidderSettings } from '../../../../src/bidderSettings.js';
+import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
-import { adjustCpm } from 'src/utils/cpm.js';
-import { getGlobal } from 'src/prebidGlobal.js';
+import {adjustCpm} from 'src/utils/cpm.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -1201,53 +1200,56 @@ describe('validate bid response: ', function () {
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
-    it('bidderSettings scope should be set to the alternate bidder code when the adjustAlternateBids flag is true and the alternate bidder code exists in bidderSettings', function () {
-      const prebid = getGlobal();
-      prebid.bidderSettings = {
-        standard: {
-          allowAlternateBidderCodes: false,
-          bidCpmAdjustment: function() {}
-        },
-        someAdapterCode: {
-          allowAlternateBidderCodes: true,
-          adjustAlternateBids: true,
-          bidCpmAdjustment: function() {}
-        },
-        someValidAlternateBidderCode: {
-          bidCpmAdjustment: function() {}
+    describe('adjustCpm', () => {
+      let bs;
+      afterEach(() => {
+        bs = null;
+      });
+
+      function runAdjustment(cpm, bidderCode, adapterCode) {
+        return adjustCpm(cpm, {bidderCode, adapterCode}, null,{bs: new ScopedSettings(() => bs)});
+      }
+
+      it('should fall back to the adapter adjustment fn when adjustAlternateBids is true', () => {
+        bs = {
+          adapter: {
+            adjustAlternateBids: true,
+            bidCpmAdjustment: function (cpm) {
+              return cpm * 2;
+            }
+          },
+          bidder: {}
+        };
+        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(2);
+      });
+
+      it('should NOT fall back to the adapter adjustment fn when adjustAlternateBids is not true', () => {
+        bs = {
+          adapter: {
+            bidCpmAdjustment(cpm) {
+              return cpm * 2
+            }
+          }
         }
-      };
+        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(1);
+      });
 
-      const cpm = 1;
-      const testBidResponse = { adapterCode: 'someAdapterCode', bidderCode: 'someValidAlternateBidderCode' };
-
-      bidderSettingStub.withArgs(testBidResponse.adapterCode, 'adjustAlternateBids').returns(true);
-      adjustCpm(cpm, testBidResponse);
-
-      expect(bidderSettingStub.args[bidderSettingStub.args.length - 1][0]).to.equal('someValidAlternateBidderCode');
-    });
-
-    it('bidderSettings scope should be set to the adapter code when the adjustAlternateBids flag is true and the alternate bidder code does not exist in bidderSettings', function () {
-      const prebid = getGlobal();
-      prebid.bidderSettings = {
-        standard: {
-          allowAlternateBidderCodes: false,
-          bidCpmAdjustment: function() {}
-        },
-        someAdapterCode: {
-          allowAlternateBidderCodes: true,
-          adjustAlternateBids: true,
-          bidCpmAdjustment: function() {}
+      it('should prioritize bidder adjustment fn', () => {
+        bs = {
+          adapter: {
+            adjustAlternateBids: true,
+            bidCpmAdjustment(cpm) {
+              return cpm * 2
+            }
+          },
+          bidder: {
+            bidCpmAdjustment(cpm) {
+              return cpm * 3
+            }
+          }
         }
-      };
-
-      const cpm = 1;
-      const testBidResponse = { adapterCode: 'someAdapterCode', bidderCode: 'someValidAlternateBidderCode' };
-
-      bidderSettingStub.withArgs(testBidResponse.adapterCode, 'adjustAlternateBids').returns(true);
-      adjustCpm(cpm, testBidResponse);
-
-      expect(bidderSettingStub.args[bidderSettingStub.args.length - 1][0]).to.equal('someAdapterCode');
+        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(3);
+      });
     });
   });
 
