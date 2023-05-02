@@ -12,7 +12,7 @@ const BUNDLE = 'bundle';
 export const DEFAULT_INCLUDE_EVENTS = Object.values(CONSTANTS.EVENTS)
   .filter(ev => ev !== CONSTANTS.EVENTS.AUCTION_DEBUG);
 
-let debounceDelay = 100;
+let debounceDelay = 30;
 
 export function setDebounceDelay(delay) {
   debounceDelay = delay;
