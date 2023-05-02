@@ -93,7 +93,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             });
             analyticsAdapter.disableAnalytics();
 
-            assert.calledWithExactly(log.info, 'Invalid timeout provided for "options.timeout". Using default timeout of 3000ms.');
+            assert.calledWithExactly(log.info, 'Invalid timeout provided for "options.timeout". Using default timeout of 10000ms.');
             log.info.resetHistory();
           });
         });
