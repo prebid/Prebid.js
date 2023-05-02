@@ -264,6 +264,10 @@ function isEmptyObject(object) {
   return isObject(object) && Object.keys(object).length === 0;
 };
 
+function isS2SBidder(bidder) {
+  return (s2sBidders.indexOf(bidder) > -1) ? 1 : 0;
+}
+
 /**
  * Prepare meta object to pass in logger call
  * @param {*} meta
@@ -309,7 +313,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
-        'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
+        'ss': isS2SBidder(bid.bidder),
         't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
         'wb': (highestBid && highestBid.adId === bid.adId ? 1 : 0),
         'mi': bid.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]),
@@ -459,7 +463,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
-  pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
+  pixelURL += '&purl=' + enc(referrer);
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(auctionId);
   pixelURL += '&bidid=' + (generatedBidId ? enc(generatedBidId) : enc(winningBidId));
@@ -477,11 +481,12 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
-  pixelURL += '&psz=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.dimensions.width + 'x' + winningBid.bidResponse.dimensions.height) : '0x0');
+  pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x'
+    + (winningBid?.bidResponse?.dimensions?.height || '0'));
   pixelURL += '&tgid=' + enc(getTgid());
   pixelURL += '&adv=' + enc(winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined);
   pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
-  pixelURL += '&ss=' + enc((s2sBidders.indexOf(winningBid.bidder) > -1) ? 1 : 0);
+  pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
   pixelURL += '&fskp=' + enc(floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined);
   pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
