@@ -1,10 +1,10 @@
 import {
-  newBidder,
-  registerBidder,
-  preloadBidderMappingFile,
-  storage,
+  addComponentAuction,
   isValid,
-  addComponentAuction
+  newBidder,
+  preloadBidderMappingFile,
+  registerBidder,
+  storage
 } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
@@ -18,9 +18,8 @@ import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
-import {bidderSettings, ScopedSettings} from '../../../../src/bidderSettings.js';
+import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
-import {adjustCpm} from 'src/utils/cpm.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -1205,58 +1204,6 @@ describe('validate bid response: ', function () {
       expect(addBidResponseStub.called).to.equal(false);
       expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
-    });
-
-    describe('adjustCpm', () => {
-      let bs;
-      afterEach(() => {
-        bs = null;
-      });
-
-      function runAdjustment(cpm, bidderCode, adapterCode) {
-        return adjustCpm(cpm, {bidderCode, adapterCode}, null,{bs: new ScopedSettings(() => bs)});
-      }
-
-      it('should fall back to the adapter adjustment fn when adjustAlternateBids is true', () => {
-        bs = {
-          adapter: {
-            adjustAlternateBids: true,
-            bidCpmAdjustment: function (cpm) {
-              return cpm * 2;
-            }
-          },
-          bidder: {}
-        };
-        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(2);
-      });
-
-      it('should NOT fall back to the adapter adjustment fn when adjustAlternateBids is not true', () => {
-        bs = {
-          adapter: {
-            bidCpmAdjustment(cpm) {
-              return cpm * 2
-            }
-          }
-        }
-        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(1);
-      });
-
-      it('should prioritize bidder adjustment fn', () => {
-        bs = {
-          adapter: {
-            adjustAlternateBids: true,
-            bidCpmAdjustment(cpm) {
-              return cpm * 2
-            }
-          },
-          bidder: {
-            bidCpmAdjustment(cpm) {
-              return cpm * 3
-            }
-          }
-        }
-        expect(runAdjustment(1, 'bidder', 'adapter')).to.eql(3);
-      });
     });
   });
 
