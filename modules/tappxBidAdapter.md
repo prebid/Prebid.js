@@ -94,8 +94,8 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
 ```
 ### Configuration
 
-Use `setConfig` to configure this submodule ortb2.device.geo, by this way you will allow geolocation
-Goe setted in config object will be priorized
+Use `setConfig` to configure this submodule ortb2.device.geo, this will allow geolocation
+`Geo` object to bring First Party Information.
 
 ```javascript
 var TIMEOUT = 1000;
