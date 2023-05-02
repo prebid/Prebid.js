@@ -2007,45 +2007,6 @@ describe('adapterManager tests', function () {
         expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
       });
 
-      it('should not filter video bids', function () {
-        setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
-          'sizesSupported': [
-            [728, 90],
-            [300, 250]
-          ],
-          'labels': ['tablet', 'phone']
-        }]);
-
-        let videoAdUnits = [{
-          code: 'test_video',
-          mediaTypes: {
-            video: {
-              playerSize: [300, 300],
-              context: 'outstream'
-            }
-          },
-          bids: [{
-            bidder: 'appnexus',
-            params: {
-              placementId: 13232385,
-              video: {
-                skippable: true,
-                playback_method: ['auto_play_sound_off']
-              }
-            }
-          }]
-        }];
-        let bidRequests = adapterManager.makeBidRequests(
-          videoAdUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
-        expect(bidRequests[0].bids[0].sizes).to.deep.equal([300, 300]);
-      });
-
       it('should not filter native bids', function () {
         setSizeConfig([{
           'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',

@@ -1,7 +1,7 @@
-import { config } from './config.js';
-import {logWarn, logInfo, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import {config} from './config.js';
+import {deepAccess, deepClone, deepSetValue, getWindowTop, isPlainObject, logInfo, logWarn} from './utils.js';
 import {includes} from './polyfill.js';
-import {BANNER} from './mediaTypes.js';
+import {BANNER, VIDEO} from './mediaTypes.js';
 
 let sizeConfig = [];
 
@@ -52,6 +52,13 @@ export function sizeSupported(size, configs = sizeConfig) {
   return !!maps.sizesSupported[size];
 }
 
+const SIZE_PROPS = {
+  [BANNER]: 'banner.sizes'
+}
+if (FEATURES.VIDEO) {
+  SIZE_PROPS[VIDEO] = 'video.playerSize'
+}
+
 /**
  * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
  * @param {Array<string>} labels Labels specified on adUnit or bidder
@@ -62,33 +69,43 @@ export function sizeSupported(size, configs = sizeConfig) {
  * @param {Array<SizeConfig>} configs
  * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
  */
-export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, sizes, configs = sizeConfig) {
+export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);
 
   if (!isPlainObject(mediaTypes)) {
-    // add support for deprecated adUnit.sizes by creating correct banner mediaTypes if they don't already exist
-    if (sizes) {
-      mediaTypes = {
-        banner: {
-          sizes
-        }
-      };
-    } else {
-      mediaTypes = {};
-    }
+    mediaTypes = {};
   }
 
-  let oldSizes = deepAccess(mediaTypes, 'banner.sizes');
-  if (maps.shouldFilter && oldSizes) {
-    mediaTypes = deepClone(mediaTypes);
-    mediaTypes.banner.sizes = oldSizes.filter(size => maps.sizesSupported[size]);
+  let filtered = false;
+  let hasSize = false;
+  const filterResults = {before: {}, after: {}};
+
+  if (maps.shouldFilter) {
+    Object.entries(SIZE_PROPS).forEach(([mediaType, sizeProp]) => {
+      const oldSizes = deepAccess(mediaTypes, sizeProp);
+      if (oldSizes) {
+        if (!filtered) {
+          mediaTypes = deepClone(mediaTypes);
+          filtered = true;
+        }
+        const newSizes = oldSizes.filter(size => maps.sizesSupported[size]);
+        deepSetValue(mediaTypes, sizeProp, newSizes);
+        hasSize = hasSize || newSizes.length > 0;
+        if (oldSizes.length !== newSizes.length) {
+          filterResults.before[mediaType] = oldSizes;
+          filterResults.after[mediaType] = newSizes
+        }
+      }
+    })
+  } else {
+    hasSize = Object.values(SIZE_PROPS).find(prop => deepAccess(mediaTypes, prop)?.length) != null
   }
 
   let results = {
     active: (
-      !mediaTypes.hasOwnProperty(BANNER)
+      !Object.keys(SIZE_PROPS).find(mediaType => mediaTypes.hasOwnProperty(mediaType))
     ) || (
-      deepAccess(mediaTypes, 'banner.sizes.length') > 0 && (
+      hasSize && (
         labels.length === 0 || (
           (!labelAll && (
             labels.some(label => maps.labels[label]) ||
@@ -105,13 +122,9 @@ export function resolveStatus({labels = [], labelAll = false, activeLabels = []}
     mediaTypes
   };
 
-  if (oldSizes && oldSizes.length !== mediaTypes.banner.sizes.length) {
-    results.filterResults = {
-      before: oldSizes,
-      after: mediaTypes.banner.sizes
-    };
+  if (Object.keys(filterResults.before).length > 0) {
+    results.filterResults = filterResults;
   }
-
   return results;
 }
 
@@ -162,14 +175,13 @@ export function processAdUnitsForLabels(adUnits, activeLabels) {
     } = resolveStatus(
       getLabels(adUnit, activeLabels),
       adUnit.mediaTypes,
-      adUnit.sizes
     );
 
     if (!active) {
       logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
     } else {
       if (filterResults) {
-        logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+        logInfo(`Size mapping filtered adUnit "${adUnit.code}" sizes from `, filterResults.before, 'to ', filterResults.after);
       }
 
       adUnit.mediaTypes = mediaTypes;
@@ -185,7 +197,7 @@ export function processAdUnitsForLabels(adUnits, activeLabels) {
           logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
         } else {
           if (filterResults) {
-            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" sizes from `, filterResults.before, 'to ', filterResults.after);
             bid.mediaTypes = mediaTypes;
           }
           bids.push(bid);
