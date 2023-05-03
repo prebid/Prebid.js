@@ -1,7 +1,7 @@
 import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
-import { registerBidder, getIabSubCategory } from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
 import { auctionManager } from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
@@ -10,6 +10,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -57,7 +58,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/mediafuse-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
@@ -319,24 +319,6 @@ export const spec = {
     }
 
     return bids;
-  },
-
-  /**
-   * @typedef {Object} mappingFileInfo
-   * @property {string} url  mapping file json url
-   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
-   * @property {string} localStorageKey unique key to store your mapping json in localstorage
-   */
-
-  /**
-   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
-   * @returns {mappingFileInfo}
-   */
-  getMappingFileInfo: function () {
-    return {
-      url: mappingFileUrl,
-      refreshInDays: 2
-    }
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
@@ -621,7 +603,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        const primaryCatId = (APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id]) ? APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id] : null;
         bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
