@@ -26,7 +26,8 @@ export const storage = getStorageManager({
 });
 
 function getModuleUrl(publisherId) {
-  return `https://cdn.edkt.io/${publisherId}/edgekit.min.js`;
+  const path = publisherId ?? 'sdk';
+  return `https://cdn.edkt.io/${path}/edgekit.min.js`;
 }
 
 /**
