@@ -569,6 +569,12 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.height).to.equal(100);
       expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de');
       expect(result[0].native.impressionTrackers.length).to.equal(3);
+      const titleAsset = result[0].native.assets.find(asset => 'title' in asset);
+      const imageAsset = result[0].native.assets.find(asset => 'img' in asset);
+      const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
+      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
+      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
+      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
     });
 
     it('should add adUrl and default native assets when type is Native', () => {
