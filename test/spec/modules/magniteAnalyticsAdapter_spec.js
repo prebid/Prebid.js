@@ -28,7 +28,8 @@ const {
     BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
-    BILLABLE_EVENT
+    BILLABLE_EVENT,
+    SEAT_NON_BID
   }
 } = CONSTANTS;
 
@@ -159,6 +160,16 @@ const MOCK = {
     'size': '300x250',
     'status': 'rendered',
     getStatusCode: () => 1,
+  },
+  SEAT_NON_BID: {
+    auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+    seatnonbid: [{
+      seat: 'rubicon',
+      nonbid: [{
+        status: 1,
+        impid: 'box'
+      }]
+    }]
   },
   AUCTION_END: {
     'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
@@ -2038,5 +2049,122 @@ describe('magnite analytics adapter', function () {
         done();
       }
     })
+  });
+
+  describe('BID_RESPONSE events', () => {
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      config.setConfig({ rubicon: { updatePageView: true } });
+    });
+
+    it('should add a no-bid bid to the add unit if it recieves one from the server', () => {
+      const bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+
+      bidResponse.requestId = 'fakeId';
+      bidResponse.seatBidId = 'fakeId';
+
+      bidResponse.requestId = 'fakeId';
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, bidResponse)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(utils.generateUUID.called).to.equal(true);
+
+      expect(message.auctions[0].adUnits[0].bids[1]).to.deep.equal(
+        {
+          bidder: 'rubicon',
+          source: 'server',
+          status: 'success',
+          bidResponse: {
+            'bidPriceUSD': 3.4,
+            'dimensions': {
+              'height': 250,
+              'width': 300
+            },
+            'mediaType': 'banner'
+          },
+          oldBidId: 'fakeId',
+          unknownBid: true,
+          bidId: 'fakeId',
+          clientLatencyMillis: 271
+        }
+      );
+    });
+  });
+
+  describe('SEAT_NON_BID events', () => {
+    let seatnonbid;
+
+    const runNonBidAuction = () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(SEAT_NON_BID, seatnonbid)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+    };
+    const checkStatusAgainstCode = (status, code, error, index) => {
+      seatnonbid.seatnonbid[0].nonbid[0].status = code;
+      runNonBidAuction();
+      let message = JSON.parse(server.requests[index].requestBody);
+      let bid = message.auctions[0].adUnits[0].bids[1];
+
+      if (error) {
+        expect(bid.error).to.deep.equal(error);
+      } else {
+        expect(bid.error).to.equal(undefined);
+      }
+      expect(bid.source).to.equal('server');
+      expect(bid.status).to.equal(status);
+      expect(bid.isSeatNonBid).to.equal(true);
+    };
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      seatnonbid = utils.deepClone(MOCK.SEAT_NON_BID);
+    });
+
+    it('adds seatnonbid info to bids array', () => {
+      runNonBidAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[1]).to.deep.equal(
+        {
+          bidder: 'rubicon',
+          source: 'server',
+          status: 'no-bid',
+          isSeatNonBid: true,
+          clientLatencyMillis: -139101369960
+        }
+      );
+    });
+
+    it('adjusts the status according to the status map', () => {
+      const statuses = [
+        {code: 0, status: 'no-bid'},
+        {code: 100, status: 'error', error: {code: 'request-error', description: 'general error'}},
+        {code: 101, status: 'error', error: {code: 'timeout-error', description: 'prebid server timeout'}},
+        {code: 200, status: 'rejected'},
+        {code: 202, status: 'rejected'},
+        {code: 301, status: 'rejected-ipf'}
+      ];
+      statuses.forEach((info, index) => {
+        checkStatusAgainstCode(info.status, info.code, info.error, index);
+      });
+    });
   });
 });

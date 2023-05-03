@@ -17,7 +17,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
@@ -69,6 +68,7 @@ export const spec = {
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
+
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -81,7 +81,9 @@ export const spec = {
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
           gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
-          cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || ''
+          cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
+          gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
+          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
         }),
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
       };
@@ -515,12 +517,19 @@ function openRtbSite(bidRequest, bidderRequest) {
  */
 function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
   const gdpr = bidderRequest.gdprConsent;
-  if (gdpr && 'gdprApplies' in gdpr) {
-    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr.gdprApplies ? 1 : 0);
-    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr.consentString);
+  const gpp = deepAccess(bidderRequest, 'gppConsent.gppString');
+  const gppsid = deepAccess(bidderRequest, 'gppConsent.applicableSections');
+  if (gpp) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpp', gpp);
+  } else {
+    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
+    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr && gdpr.consentString ? gdpr.consentString : '');
+  }
+  if (gppsid && gppsid.length > 0) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpp_sid', gppsid);
   }
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
-  if (uspConsent) {
+  if (!gpp && uspConsent) {
     deepSetValue(openRtbRequest, 'regs.ext.us_privacy', uspConsent);
   }
 }
@@ -652,8 +661,8 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId) || [];
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids || [];
   }
 };
 

@@ -684,32 +684,26 @@ describe('Adagio bid adapter', () => {
     });
 
     describe('with userID modules', function() {
-      const userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666'
-      };
+      const userIdAsEids = [{
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+          }
+        ]
+      }];
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bid01 = new BidRequestBuilder({
-          userId
+          userIdAsEids
         }).withParams().build();
 
         const bidderRequest = new BidderRequestBuilder().build();
 
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        const expected = [{
-          source: 'pubcid.org',
-          uids: [
-            {
-              atype: 1,
-              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
-            }
-          ]
-        }];
-
-        expect(requests[0].data.user.eids).to.have.lengthOf(1);
-        expect(requests[0].data.user.eids).to.deep.equal(expected);
+        expect(requests[0].data.user.eids).to.deep.equal(userIdAsEids);
       });
 
       it('should send an empty "user.eids" array in the request if userId module is unsupported', function() {
@@ -1484,31 +1478,6 @@ describe('Adagio bid adapter', () => {
       expect(result.dom_loading).to.be.a('String');
       expect(result.user_timestamp).to.be.a('String');
       expect(result.adunit_position).to.not.exist;
-    });
-  });
-
-  describe.skip('optional params auto detection', function() {
-    it('should auto detect adUnitElementId when GPT is used', function() {
-      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
-      expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');
-    });
-  });
-
-  describe.skip('print number handling', function() {
-    it('should return 1 if no adunit-code found. This means it is the first auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(1);
-    });
-
-    it('should increment the adunit print number when the adunit-code has already been used for an other auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-
-      window.top.ADAGIO.adUnits['adunit-code'] = {
-        pageviewId: 'abc-def',
-        printNumber: 1,
-      };
-
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(2);
     });
   });
 

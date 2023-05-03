@@ -42,9 +42,11 @@ module.exports = function(api, options) {
   ];
 
   const PREBID_ROOT = path.resolve(__dirname, '..');
+  // on Windows, require paths are not filesystem paths
+  const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
 
   function relPath(from, toRelToProjectRoot) {
-    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot));
+    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
   }
 
   function getModuleName(filename) {

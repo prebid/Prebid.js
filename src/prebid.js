@@ -225,12 +225,15 @@ function validateAdUnit(adUnit) {
 export const adUnitSetupChecks = {
   validateAdUnit,
   validateBannerMediaType,
-  validateVideoMediaType,
   validateSizes
 };
 
 if (FEATURES.NATIVE) {
   Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+}
+
+if (FEATURES.VIDEO) {
+  Object.assign(adUnitSetupChecks, { validateVideoMediaType });
 }
 
 export const checkAdUnitSetup = hook('sync', function (adUnits) {
@@ -248,7 +251,7 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
       if (mediaTypes.banner.hasOwnProperty('pos')) validatedBanner = validateAdUnitPos(validatedBanner, 'banner');
     }
 
-    if (mediaTypes.video) {
+    if (FEATURES.VIDEO && mediaTypes.video) {
       validatedVideo = validatedBanner ? validateVideoMediaType(validatedBanner) : validateVideoMediaType(adUnit);
       if (mediaTypes.video.hasOwnProperty('pos')) validatedVideo = validateAdUnitPos(validatedVideo, 'video');
     }
@@ -530,12 +533,14 @@ pbjsInstance.renderAd = hook('async', function (doc, id, options) {
     const {height, width, ad, mediaType, adUrl, renderer} = bid;
 
     // video module
-    const adUnitCode = bid.adUnitCode;
-    const adUnit = pbjsInstance.adUnits.filter(adUnit => adUnit.code === adUnitCode);
-    const videoModule = pbjsInstance.videoModule;
-    if (adUnit.video && videoModule) {
-      videoModule.renderBid(adUnit.video.divId, bid);
-      return;
+    if (FEATURES.VIDEO) {
+      const adUnitCode = bid.adUnitCode;
+      const adUnit = pbjsInstance.adUnits.filter(adUnit => adUnit.code === adUnitCode);
+      const videoModule = pbjsInstance.videoModule;
+      if (adUnit.video && videoModule) {
+        videoModule.renderBid(adUnit.video.divId, bid);
+        return;
+      }
     }
 
     if (!doc) {
@@ -986,34 +991,34 @@ pbjsInstance.getHighestCpmBids = function (adUnitCode) {
   return targeting.getWinningBids(adUnitCode);
 };
 
-/**
- * Mark the winning bid as used, should only be used in conjunction with video
- * @typedef {Object} MarkBidRequest
- * @property {string} adUnitCode The ad unit code
- * @property {string} adId The id representing the ad we want to mark
- *
- * @alias module:pbjs.markWinningBidAsUsed
- */
-pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
-  let bids = [];
+if (FEATURES.VIDEO) {
+  /**
+   * Mark the winning bid as used, should only be used in conjunction with video
+   * @typedef {Object} MarkBidRequest
+   * @property {string} adUnitCode The ad unit code
+   * @property {string} adId The id representing the ad we want to mark
+   *
+   * @alias module:pbjs.markWinningBidAsUsed
+   */
+  pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
+    let bids = [];
 
-  if (markBidRequest.adUnitCode && markBidRequest.adId) {
-    bids = auctionManager.getBidsReceived()
-      .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
-  } else if (markBidRequest.adUnitCode) {
-    bids = targeting.getWinningBids(markBidRequest.adUnitCode);
-  } else if (markBidRequest.adId) {
-    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
-  } else {
-    logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-  }
+    if (markBidRequest.adUnitCode && markBidRequest.adId) {
+      bids = auctionManager.getBidsReceived()
+        .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
+    } else if (markBidRequest.adUnitCode) {
+      bids = targeting.getWinningBids(markBidRequest.adUnitCode);
+    } else if (markBidRequest.adId) {
+      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
+    } else {
+      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
+    }
 
-  if (bids.length > 0) {
-    const winningBid = bids[0];
-    auctionManager.addWinningBid(winningBid);
-    winningBid.status = CONSTANTS.BID_STATUS.RENDERED;
+    if (bids.length > 0) {
+      bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+    }
   }
-};
+}
 
 /**
  * Get Prebid config options
