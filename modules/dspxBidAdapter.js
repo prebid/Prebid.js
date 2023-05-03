@@ -1,5 +1,4 @@
-import {deepAccess, getBidIdParameter, logError, logMessage, logWarn, isFn} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {deepAccess, getBidIdParameter, isFn, logError, logMessage, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
@@ -183,7 +182,7 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         type: response.type,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         meta: {
           advertiserDomains: response.adomain || []
         }
@@ -481,7 +480,7 @@ function outstreamRender(bid) {
 function createOutstreamEmbedCode(bid) {
   const fragment = window.document.createDocumentFragment();
   let div = window.document.createElement('div');
-  div.innerHTML = deepAccess(bid, 'renderer.config.code', "");
+  div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
   fragment.appendChild(div);
 
   // run scripts

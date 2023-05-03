@@ -1,14 +1,14 @@
 import {
+  getCoreStorageManager, getStorageManager,
+  newStorageManager,
   resetData,
-  getCoreStorageManager,
   storageCallbacks,
-  getStorageManager,
-  newStorageManager, validateStorageEnforcement
+  validateStorageEnforcement
 } from 'src/storageManager.js';
-import { config } from 'src/config.js';
+import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
-import {VENDORLESS_GVLID} from '../../../../src/consentHandler.js';
+import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -34,7 +34,7 @@ describe('storage manager', function() {
 
   it('should add done callbacks to storageCallbacks array', function() {
     let noop = sinon.spy();
-    const coreStorage = getStorageManager();
+    const coreStorage = newStorageManager();
 
     coreStorage.setCookie('foo', 'bar', null, null, null, noop);
     coreStorage.getCookie('foo', noop);
@@ -50,17 +50,16 @@ describe('storage manager', function() {
 
   it('should allow bidder to access device if gdpr enforcement module is not included', function() {
     let deviceAccessSpy = sinon.spy(utils, 'hasDeviceAccess');
-    const storage = getStorageManager();
+    const storage = newStorageManager();
     storage.setCookie('foo1', 'baz1');
     expect(deviceAccessSpy.calledOnce).to.equal(true);
     deviceAccessSpy.restore();
   });
 
-  describe(`core storage`, () => {
-    let storage, validateHook;
+  describe(`enforcement`, () => {
+    let validateHook;
 
     beforeEach(() => {
-      storage = getCoreStorageManager();
       validateHook = sinon.stub().callsFake(function (next, ...args) {
         next.apply(this, args);
       });
@@ -72,15 +71,26 @@ describe('storage manager', function() {
       config.resetConfig();
     })
 
-    it('should respect (vendorless) consent enforcement', () => {
-      storage.localStorageIsEnabled();
-      expect(validateHook.args[0][1]).to.equal(VENDORLESS_GVLID); // gvlid should be set to VENDORLESS_GVLID
-    });
+    Object.entries({
+      'core': () => getCoreStorageManager('mock'),
+      'other': () => getStorageManager({moduleType: 'other', moduleName: 'mock'})
+    }).forEach(([moduleType, getMgr]) => {
+      describe(`for ${moduleType} modules`, () => {
+        let storage;
+        beforeEach(() => {
+          storage = getMgr();
+        });
+        it(`should pass '${moduleType}' module type to consent enforcement`, () => {
+          storage.localStorageIsEnabled();
+          expect(validateHook.args[0][1]).to.equal(moduleType);
+        });
 
-    it('should respect the deviceAccess flag', () => {
-      config.setConfig({deviceAccess: false});
-      expect(storage.localStorageIsEnabled()).to.be.false
-    })
+        it('should respect the deviceAccess flag', () => {
+          config.setConfig({deviceAccess: false});
+          expect(storage.localStorageIsEnabled()).to.be.false
+        });
+      });
+    });
   })
 
   describe('localstorage forbidden access in 3rd-party context', function() {
@@ -100,7 +110,7 @@ describe('storage manager', function() {
     })
 
     it('should not throw if the localstorage is not accessible when setting/getting/removing from localstorage', function() {
-      const coreStorage = getStorageManager();
+      const coreStorage = newStorageManager();
 
       coreStorage.setDataInLocalStorage('key', 'value');
       const val = coreStorage.getDataFromLocalStorage('key');
@@ -124,7 +134,7 @@ describe('storage manager', function() {
     })
 
     it('should remove side-effect after checking', function () {
-      const storage = getStorageManager();
+      const storage = newStorageManager();
 
       localStorage.setItem('unrelated', 'dummy');
       const val = storage.localStorageIsEnabled();
@@ -206,7 +216,7 @@ describe('storage manager', function() {
               let mgr;
 
               beforeEach(() => {
-                mgr = newStorageManager({bidderCode: bidderCode}, {bidderSettings: mockBidderSettings(configValue)});
+                mgr = newStorageManager({moduleType: MODULE_TYPE_BIDDER, moduleName: bidderCode}, {bidderSettings: mockBidderSettings(configValue)});
               })
 
               afterEach(() => {

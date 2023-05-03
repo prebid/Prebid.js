@@ -13,7 +13,6 @@ import {
   logError,
   logWarn,
   mergeDeep,
-  parseQueryStringParameters,
   safeJSONParse
 } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
@@ -102,11 +101,14 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
 let hasRegisteredHandler = false;
-export const storage = getStorageManager({ gvlid: GLOBAL_VENDOR_ID, bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
+  // Update with list of CFTs to be requested from Exchange
+  REQUESTED_FEATURE_TOGGLES: [],
+
   featureToggles: {},
   isFeatureEnabled: function (ft) {
-    return deepAccess(this.featureToggles, `features.${ft}.activated`)
+    return deepAccess(this.featureToggles, `features.${ft}.activated`, false)
   },
   getFeatureToggles: function () {
     if (storage.localStorageIsEnabled()) {
@@ -152,11 +154,6 @@ const MEDIA_TYPES = {
   Native: 4
 };
 
-let baseRequestSize = 0;
-let currentRequestSize = 0;
-let wasAdUnitImpressionsTrimmed = false;
-let currentImpressionSize = 0;
-
 /**
  * Transform valid bid request config object to banner impression object that will be sent to ad server.
  *
@@ -197,6 +194,9 @@ function bidToVideoImp(bid) {
   imp.video = videoParamRef ? deepClone(bid.params.video) : {};
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+
+  // AdUnit-Specific First Party Data
+  addAdUnitFPD(imp, bid)
 
   // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
@@ -270,6 +270,9 @@ function bidToNativeImp(bid) {
 
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+
+  // AdUnit-Specific First Party Data
+  addAdUnitFPD(imp, bid)
 
   _applyFloor(bid, imp, NATIVE);
 
@@ -598,18 +601,11 @@ function getEidInfo(allEids) {
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
-  baseRequestSize = 0;
-  currentRequestSize = 0;
-  wasAdUnitImpressionsTrimmed = false;
-  currentImpressionSize = 0;
-
   // Always use secure HTTPS protocol.
   let baseUrl = SECURE_BID_URL;
   // Get ids from Prebid User ID Modules
   let eidInfo = getEidInfo(deepAccess(validBidRequests, '0.userIdAsEids'));
   let userEids = eidInfo.toSend;
-
-  let MAX_REQUEST_SIZE = 8000;
 
   // RTI ids will be included in the bid request if the function getIdentityInfo() is loaded
   // and if the data for the partner exist
@@ -625,6 +621,9 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   const requests = [];
   let r = createRequest(validBidRequests);
 
+  // Add FTs to be requested from Exchange
+  r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
+
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
   let ixdiag = buildIXDiag(validBidRequests);
   for (var key in ixdiag) {
@@ -636,25 +635,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = applyRegulations(r, bidderRequest);
 
   let payload = {};
-  createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE);
+  createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload);
 
-  let requestSequenceNumber = 0;
   const transactionIds = Object.keys(impressions);
   let isFpdAdded = false;
 
   for (let adUnitIndex = 0; adUnitIndex < transactionIds.length; adUnitIndex++) {
-    // buildRequestV2 does not have request spliting logic.
-    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
-      if (currentRequestSize >= MAX_REQUEST_SIZE) {
-        break;
-      }
-    }
     if (requests.length >= MAX_REQUEST_LIMIT) {
       break;
     }
 
-    r = addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE);
-    currentRequestSize += currentImpressionSize;
+    r = addImpressions(impressions, transactionIds, r, adUnitIndex);
 
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
     const site = { ...(fpd.site || fpd.context) };
@@ -667,31 +658,17 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
       clonedRObject.site = mergeDeep({}, clonedRObject.site, site);
       clonedRObject.user = mergeDeep({}, clonedRObject.user, user);
 
-      const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
-
-      if (requestSize < MAX_REQUEST_SIZE) {
-        r.site = mergeDeep({}, r.site, site);
-        r.user = mergeDeep({}, r.user, user);
-        isFpdAdded = true;
-        const fpdRequestSize = encodeURIComponent(JSON.stringify({ ...site, ...user })).length;
-        currentRequestSize += fpdRequestSize;
-      } else {
-        logError('IX Bid Adapter: FPD request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.PB_FPD_EXCEEDS_MAX_SIZE });
-      }
+      r.site = mergeDeep({}, r.site, site);
+      r.user = mergeDeep({}, r.user, user);
+      isFpdAdded = true;
     }
 
     // add identifiers info to ixDiag
-    r = addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE);
+    r = addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl);
 
     const isLastAdUnit = adUnitIndex === transactionIds.length - 1;
 
-    if (wasAdUnitImpressionsTrimmed || isLastAdUnit) {
-      if (!isLastAdUnit || requestSequenceNumber) {
-        r.ext.ixdiag.sn = requestSequenceNumber;
-      }
-
-      requestSequenceNumber++;
-
+    if (isLastAdUnit) {
       requests.push({
         method: 'POST',
         url: baseUrl + '?s=' + siteID,
@@ -702,7 +679,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
         validBidRequests
       });
 
-      currentRequestSize = baseRequestSize;
       r.imp = [];
       isFpdAdded = false;
     }
@@ -749,6 +725,24 @@ function createRequest(validBidRequests) {
   r.imp = [];
   r.at = 1;
   return r
+}
+
+/**
+ * Adds requested feature toggles to the provided request object to be sent to Exchange.
+ * @param {object} r - The request object to add feature toggles to.
+ * @param {Array} requestedFeatureToggles - The list of feature toggles to add.
+ * @returns {object} The updated request object with the added feature toggles.
+ */
+function addRequestedFeatureToggles(r, requestedFeatureToggles) {
+  if (requestedFeatureToggles.length > 0) {
+    r.ext.features = {};
+    // Loop through each feature toggle and add it to the features object.
+    // Add current activation status as well.
+    requestedFeatureToggles.forEach(toggle => {
+      r.ext.features[toggle] = { activated: FEATURE_TOGGLES.isFeatureEnabled(toggle) };
+    });
+  }
+  return r;
 }
 
 /**
@@ -871,9 +865,8 @@ function applyRegulations(r, bidderRequest) {
  * @param  {string} baseUrl             Base exchagne URL.
  * @param  {array}  requests            List of request obejcts.
  * @param  {object} payload             Request payload object.
- * @param  {int}    MAX_REQUEST_SIZE    Maximum request size limit (buildrequest V1).
  */
-function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload, MAX_REQUEST_SIZE) {
+function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload) {
   // Use the siteId in the first bid request as the main siteId.
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
@@ -881,16 +874,6 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
   const otherIxConfig = config.getConfig(bidderCode);
-
-  baseRequestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(r) })}`.length;
-
-  if (baseRequestSize > MAX_REQUEST_SIZE) {
-    logError('IX Bid Adapter: Base request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.EXCEEDS_MAX_SIZE });
-    return requests;
-  }
-
-  currentRequestSize = baseRequestSize;
-  let fpdRequestSize = 0;
 
   if (otherIxConfig) {
     // Append firstPartyData to r.site.page if firstPartyData exists.
@@ -904,25 +887,10 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
       }
       firstPartyString = firstPartyString.slice(0, -1);
 
-      fpdRequestSize = encodeURIComponent(firstPartyString).length;
-
-      if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
-        if (fpdRequestSize < MAX_REQUEST_SIZE) {
-          if ('page' in r.site) {
-            r.site.page += firstPartyString;
-          } else {
-            r.site.page = firstPartyString;
-          }
-          currentRequestSize += fpdRequestSize;
-        } else {
-          logError('IX Bid Adapter: IX config FPD request size has exceeded maximum request size.', { bidder: BIDDER_CODE, code: ERROR_CODES.IX_FPD_EXCEEDS_MAX_SIZE });
-        }
+      if ('page' in r.site) {
+        r.site.page += firstPartyString;
       } else {
-        if ('page' in r.site) {
-          r.site.page += firstPartyString;
-        } else {
-          r.site.page = firstPartyString;
-        }
+        r.site.page = firstPartyString;
       }
     }
   }
@@ -935,29 +903,16 @@ function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, pa
  * @param  {array}  transactionIds     List of transaction Ids.
  * @param  {object} r                  Reuqest object.
  * @param  {int}    adUnitIndex        Index of the current add unit
- * @param  {int}    MAX_REQUEST_SIZE   Maximum request size limit (buildrequest V1).
  * @return {object}                    Reqyest object with added impressions describing the request to the server.
  */
-function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST_SIZE) {
+function addImpressions(impressions, transactionIds, r, adUnitIndex) {
   const adUnitImpressions = impressions[transactionIds[adUnitIndex]];
   const { missingImps: missingBannerImpressions = [], ixImps = [] } = adUnitImpressions;
-
-  let remainingRequestSize = MAX_REQUEST_SIZE - currentRequestSize;
   const sourceImpressions = { ixImps, missingBannerImpressions };
   const impressionObjects = Object.keys(sourceImpressions)
     .map((key) => sourceImpressions[key])
     .filter(item => Array.isArray(item))
     .reduce((acc, curr) => acc.concat(...curr), []);
-
-  currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
-
-  if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
-    while (impressionObjects.length && currentImpressionSize > remainingRequestSize) {
-      wasAdUnitImpressionsTrimmed = true;
-      impressionObjects.pop();
-      currentImpressionSize = encodeURIComponent(JSON.stringify({ impressionObjects })).length;
-    }
-  }
 
   const gpid = impressions[transactionIds[adUnitIndex]].gpid;
   const dfpAdUnitCode = impressions[transactionIds[adUnitIndex]].dfp_ad_unit_code;
@@ -1005,6 +960,11 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex, MAX_REQUEST
 
     if ('bidfloorcur' in impressionObjects[0]) {
       _bannerImpression.bidfloorcur = impressionObjects[0].bidfloorcur;
+    }
+
+    const adUnitFPD = impressions[transactionIds[adUnitIndex]].adUnitFPD
+    if (adUnitFPD) {
+      _bannerImpression.ext.data = adUnitFPD;
     }
 
     r.imp.push(_bannerImpression);
@@ -1063,6 +1023,19 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 }
 
 /**
+ * Adds First-Party Data (FPD) from the bid object to the imp object.
+ *
+ * @param {Object} imp - The imp object, representing an impression in the OpenRTB format.
+ * @param {Object} bid - The bid object, containing information about the bid request.
+ */
+function addAdUnitFPD(imp, bid) {
+  const adUnitFPD = deepAccess(bid, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    deepSetValue(imp, 'ext.data', adUnitFPD)
+  }
+}
+
+/**
  * addIdentifiersInfo adds indentifier info to ixDaig.
  *
  * @param  {array}  impressions        List of impressions to be added to the request.
@@ -1071,30 +1044,18 @@ function addFPD(bidderRequest, r, fpd, site, user) {
  * @param  {int}    adUnitIndex        Index of the current add unit
  * @param  {object} payload            Request payload object.
  * @param  {string} baseUrl            Base exchagne URL.
- * @param  {int}    MAX_REQUEST_SIZE   Maximum request size limit (buildrequest V1).
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
  */
-function addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl, MAX_REQUEST_SIZE) {
+function addIdentifiersInfo(impressions, r, transactionIds, adUnitIndex, payload, baseUrl) {
   const pbaAdSlot = impressions[transactionIds[adUnitIndex]].pbadslot;
   const tagId = impressions[transactionIds[adUnitIndex]].tagId;
   const adUnitCode = impressions[transactionIds[adUnitIndex]].adUnitCode;
   const divId = impressions[transactionIds[adUnitIndex]].divId;
   if (pbaAdSlot || tagId || adUnitCode || divId) {
-    const clonedRObject = deepClone(r);
-    const requestSize = `${baseUrl}${parseQueryStringParameters({ ...payload, r: JSON.stringify(clonedRObject) })}`.length;
-    if (!FEATURE_TOGGLES.isFeatureEnabled('pbjs_use_buildRequestV2')) {
-      if (requestSize < MAX_REQUEST_SIZE) {
-        r.ext.ixdiag.pbadslot = pbaAdSlot;
-        r.ext.ixdiag.tagid = tagId;
-        r.ext.ixdiag.adunitcode = adUnitCode;
-        r.ext.ixdiag.divId = divId;
-      }
-    } else {
-      r.ext.ixdiag.pbadslot = pbaAdSlot;
-      r.ext.ixdiag.tagid = tagId;
-      r.ext.ixdiag.adunitcode = adUnitCode;
-      r.ext.ixdiag.divId = divId;
-    }
+    r.ext.ixdiag.pbadslot = pbaAdSlot;
+    r.ext.ixdiag.tagid = tagId;
+    r.ext.ixdiag.adunitcode = adUnitCode;
+    r.ext.ixdiag.divId = divId;
   }
 
   return r;
@@ -1258,6 +1219,12 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps) {
   bannerImps[validBidRequest.transactionId].pbadslot = deepAccess(validBidRequest, 'ortb2Imp.ext.data.pbadslot');
   bannerImps[validBidRequest.transactionId].tagId = deepAccess(validBidRequest, 'params.tagId');
   bannerImps[validBidRequest.transactionId].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
+
+  // AdUnit-Specific First Party Data
+  const adUnitFPD = deepAccess(validBidRequest, 'ortb2Imp.ext.data');
+  if (adUnitFPD) {
+    bannerImps[validBidRequest.transactionId].adUnitFPD = adUnitFPD;
+  }
 
   const sid = deepAccess(validBidRequest, 'params.id');
   if (sid && (typeof sid === 'string' || typeof sid === 'number')) {

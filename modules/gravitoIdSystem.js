@@ -6,9 +6,11 @@
  */
 
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager();
+const MODULE_NAME = 'gravitompId';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 export const cookieKey = 'gravitompId';
 
@@ -17,7 +19,7 @@ export const gravitoIdSystemSubmodule = {
   * used to link submodule with config
   * @type {string}
   */
-  name: 'gravitompId',
+  name: MODULE_NAME,
 
   /**
   * performs action to obtain id
