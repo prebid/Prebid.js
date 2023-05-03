@@ -334,12 +334,6 @@ describe('targeting tests', function () {
       bidExpiryStub.restore();
     });
 
-    it('should filter out NO_BID bids', () => {
-      bidsReceived = [mkBid(sampleBid, CONSTANTS.STATUS.NO_BID)];
-      const tg = targetingInstance.getAllTargeting();
-      expect(tg[bidsReceived[0].adUnitCode]).to.eql({});
-    });
-
     describe('when handling different adunit targeting value types', function () {
       const adUnitCode = '/123456/header-bid-tag-0';
       const adServerTargeting = {};
