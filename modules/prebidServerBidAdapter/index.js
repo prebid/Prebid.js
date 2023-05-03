@@ -96,10 +96,8 @@ export const s2sDefaultConfig = {
   adapterOptions: {},
   syncUrlModifier: {},
   ortbNative: {
-    context: 1,
-    plcmttype: 1,
     eventtrackers: [
-      {event: 1, methods: [1]}
+      {event: 1, methods: [1, 2]}
     ],
   }
 };

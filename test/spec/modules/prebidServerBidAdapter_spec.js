@@ -1402,11 +1402,9 @@ describe('S2S Adapter', function () {
           const ortbReq = JSON.parse(requestBid.imp[0].native.request);
           expect(ortbReq).to.deep.equal({
             ...ORTB_NATIVE_REQ,
-            'context': 1,
-            'plcmttype': 1,
             'eventtrackers': [{
               event: 1,
-              methods: [1]
+              methods: [1, 2]
             }],
           });
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
