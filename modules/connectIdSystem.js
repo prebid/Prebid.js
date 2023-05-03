@@ -15,7 +15,12 @@ import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'connectId';
-const STORAGE_EXPIRY_DAYS = 14;
+const STORAGE_EXPIRY_DAYS = 365;
+const STORAGE_DURATION = 60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS;
+const ID_EXPIRY_DAYS = 14;
+const VALID_ID_DURATION = 60 * 60 * 24 * 1000 * ID_EXPIRY_DAYS;
+const PUID_EXPIRY_DAYS = 30;
+const PUID_EXPIRY = 60 * 60 * 24 * 1000 * PUID_EXPIRY_DAYS;
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
@@ -28,12 +33,11 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @param {Object} obj
  */
 function storeObject(obj) {
-  const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
+  const expires = Date.now() + STORAGE_DURATION;
   if (storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
   }
   if (storage.localStorageIsEnabled()) {
-    obj.expires = expires;
     storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
@@ -79,10 +83,10 @@ function getIdFromLocalStorage() {
       } catch (e) {
         logError(`${MODULE_NAME} module: error while reading the local storage data.`);
       }
-      if (isPlainObject(storedIdData) && storedIdData.expires &&
-          storedIdData.expires <= Date.now()) {
-        // storage.removeDataFromLocalStorage(MODULE_NAME);
-        // return null;
+      if (isPlainObject(storedIdData) && storedIdData.__expires &&
+          storedIdData.__expires <= Date.now()) {
+        storage.removeDataFromLocalStorage(MODULE_NAME);
+        return null;
       }
       return storedIdData;
     }
@@ -95,12 +99,13 @@ function syncLocalStorageToCookie() {
     return;
   }
   const value = getIdFromLocalStorage();
-  setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(value), new Date(value.expires), getSiteHostname());
+  const newCookieExpireTime = Date.now() + STORAGE_DURATION;
+  setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(value), new Date(newCookieExpireTime), getSiteHostname());
 }
 
 function isStale(storedIdData) {
-  if (isPlainObject(storedIdData) && storedIdData.expires &&
-    storedIdData.expires <= Date.now()) {
+  if (isPlainObject(storedIdData) && storedIdData.lastSynced &&
+    (storedIdData.lastSynced + VALID_ID_DURATION) <= Date.now()) {
     return true;
   }
   return false;
@@ -109,10 +114,8 @@ function isStale(storedIdData) {
 function getStoredId() {
   let storedId = getIdFromCookie();
   if (!storedId) {
-    logError('radu got  id from storage ');
     storedId = getIdFromLocalStorage();
-    if (storedId) {
-      logError('radu sync cookie from storage');
+    if (storedId && !isStale(storedId)) {
       syncLocalStorageToCookie();
     }
   }
@@ -155,30 +158,33 @@ export const connectIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config, consentData) {
-    logError('radu start');
     if (connectIdSubmodule.userHasOptedOut()) {
       return;
     }
-    logError('radu get id');
     const params = config.params || {};
     if (!params ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      logError(`${MODULE_NAME} module: configurataion requires the 'pixelId' and at ` +
-                `least one of the 'he' or 'puid' parameters to be defined.`);
+      logError(`${MODULE_NAME} module: configuration requires the 'pixelId'.`);
       return;
     }
 
     const storedId = getStoredId();
-    logError('radu got  id ', storedId);
 
-    let shouldResync = false;
+    let shouldResync = isStale(storedId);
 
-    if (storedId) {
+    if (storedId && !shouldResync) {
+      if (isPlainObject(storedId) && storedId.puid && storedId.lastUsed && !params.puid &&
+        (storedId.lastUsed + PUID_EXPIRY) <= Date.now()) {
+        delete storedId.puid;
+        shouldResync = true;
+      }
       if ((params.he && params.he !== storedId.he) ||
-        (params.puid && params.puid !== storedId.puid) || isStale(storedId)) {
+        (params.puid && params.puid !== storedId.puid)) {
         shouldResync = true;
       }
       if (!shouldResync) {
+        storedId.lastUsed = Date.now();
+        storeObject(storedId);
         return {id: storedId};
       }
     }
@@ -203,6 +209,14 @@ export const connectIdSubmodule = {
       }
     });
 
+    const hashedEmail = params.he || storedId?.he;
+    if (hashedEmail) {
+      data.he = hashedEmail;
+    }
+    if (!data.puid && storedId?.puid) {
+      data.puid = storedId.puid;
+    }
+
     const resp = function (callback) {
       const callbacks = {
         success: response => {
@@ -210,12 +224,12 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              responseObj = {
-                connectid: 'remote'
-              }
-              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0) {
+              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0 &&
+                 (!!responseObj.connectId || !!responseObj.connectid)) {
                 responseObj.he = params.he;
                 responseObj.puid = params.puid || responseObj.puid;
+                responseObj.lastSynced = Date.now();
+                responseObj.lastUsed = Date.now();
                 storeObject(responseObj);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
@@ -239,6 +253,7 @@ export const connectIdSubmodule = {
     if (shouldResync && storedId) {
       result.id = storedId;
     }
+
     return result;
   },
 
