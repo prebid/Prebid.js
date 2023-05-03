@@ -1,4 +1,11 @@
-import { newBidder, registerBidder, preloadBidderMappingFile, storage } from 'src/adapters/bidderFactory.js';
+import {
+  newBidder,
+  registerBidder,
+  preloadBidderMappingFile,
+  storage,
+  isValid,
+  addComponentAuction
+} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import { expect } from 'chai';
@@ -62,6 +69,7 @@ describe('bidders created by newBidder', function () {
     };
 
     addBidResponseStub = sinon.stub();
+    addBidResponseStub.reject = sinon.stub();
     doneStub = sinon.stub();
   });
 
@@ -508,7 +516,7 @@ describe('bidders created by newBidder', function () {
       expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
     });
 
-    it('should logError when required bid response params are missing', function () {
+    it('should logError and reject bid when required bid response params are missing', function () {
       const bidder = newBidder(spec);
 
       const bid = {
@@ -532,9 +540,10 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
-    it('should logError when required bid response params are undefined', function () {
+    it('should logError and reject bid when required response params are undefined', function () {
       const bidder = newBidder(spec);
 
       const bid = {
@@ -562,6 +571,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should require requestId from interpretResponse', () => {
@@ -586,6 +596,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.called).to.be.false;
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
   });
 
@@ -856,6 +867,7 @@ describe('validate bid response: ', function () {
     });
 
     addBidResponseStub = sinon.stub();
+    addBidResponseStub.reject = sinon.stub();
     doneStub = sinon.stub();
     ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
       const fakeResponse = sinon.stub();
@@ -954,7 +966,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logErrorSpy.calledWithMatch('Ignoring bid: Native bid missing some required properties.')).to.equal(true);
     });
   }
@@ -1074,7 +1087,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1085,7 +1099,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {
@@ -1096,7 +1111,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1147,7 +1163,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1159,7 +1176,7 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.called).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(0);
       expect(logErrorSpy.callCount).to.equal(0);
     });
@@ -1172,8 +1189,9 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
@@ -1183,7 +1201,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
   });
@@ -1200,16 +1219,27 @@ describe('validate bid response: ', function () {
     };
     const fledgeAuctionConfig = {
       bidId: '1',
+      config: {
+        foo: 'bar'
+      }
     }
     describe('when response has FLEDGE auction config', function() {
-      let logInfoSpy;
+      let fledgeStub;
 
-      beforeEach(function () {
-        logInfoSpy = sinon.spy(utils, 'logInfo');
+      function fledgeHook(next, ...args) {
+        fledgeStub(...args);
+      }
+
+      before(() => {
+        addComponentAuction.before(fledgeHook);
       });
 
-      afterEach(function () {
-        logInfoSpy.restore();
+      after(() => {
+        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+      })
+
+      beforeEach(function () {
+        fledgeStub = sinon.stub();
       });
 
       it('should unwrap bids', function() {
@@ -1231,8 +1261,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.equal(true);
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       })
@@ -1245,8 +1275,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.be.true;
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(false);
       })
     })
@@ -1254,6 +1284,10 @@ describe('validate bid response: ', function () {
 });
 
 describe('preload mapping url hook', function() {
+  if (!FEATURES.VIDEO) {
+    return
+  }
+
   let fakeTranslationServer;
   let getLocalStorageStub;
   let adapterManagerStub;
@@ -1384,4 +1418,43 @@ describe('preload mapping url hook', function() {
     expect(fakeTranslationServer.requests.length).to.equal(0);
     clock.restore();
   });
+});
+
+describe('bid response isValid', () => {
+  describe('size check', () => {
+    let req, index;
+
+    beforeEach(() => {
+      req = {
+        ...MOCK_BIDS_REQUEST.bids[0],
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 2], [3, 4]]
+          }
+        }
+      }
+    });
+
+    function mkResponse(width, height) {
+      return {
+        requestId: req.bidId,
+        width,
+        height,
+        cpm: 1,
+        ttl: 60,
+        creativeId: '123',
+        netRevenue: true,
+        currency: 'USD',
+        mediaType: 'banner',
+      }
+    }
+
+    function checkValid(bid) {
+      return isValid('au', bid, {index: stubAuctionIndex({bidRequests: [req]})});
+    }
+
+    it('should succeed when response has a size that was in request', () => {
+      expect(checkValid(mkResponse(3, 4))).to.be.true;
+    });
+  })
 });

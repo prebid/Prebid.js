@@ -109,6 +109,13 @@
  */
 
 /**
+ * @function?
+ * @summary on data deletion request
+ * @name RtdSubmodule#onDataDeletionRequest
+ * @param {SubmoduleConfig} config
+ */
+
+/**
  * @interface ModuleConfig
  */
 
@@ -156,9 +163,11 @@ import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
-import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -181,6 +190,7 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
   return function detach() {
     const idx = registeredSubModules.indexOf(submodule)
     if (idx >= 0) {
@@ -230,6 +240,7 @@ export function init(config) {
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
     getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
+    adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
     initSubModules();
   });
 }
@@ -238,6 +249,7 @@ function getConsentData() {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
+    gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
   }
 }
@@ -384,6 +396,19 @@ export function deepMerge(arr) {
     }
     return merged;
   }, {});
+}
+
+export function onDataDeletionRequest(next, ...args) {
+  subModules.forEach((sm) => {
+    if (typeof sm.onDataDeletionRequest === 'function') {
+      try {
+        sm.onDataDeletionRequest(sm.config);
+      } catch (e) {
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+      }
+    }
+  });
+  next.apply(this, args);
 }
 
 module('realTimeData', attachRealTimeDataProvider);

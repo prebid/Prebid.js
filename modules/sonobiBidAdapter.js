@@ -1,9 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
+import { bidderSettings } from '../src/bidderSettings.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -49,6 +50,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -93,7 +95,7 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
-
+      'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? JSON.stringify(loadOrCreateFirstPartyData()) : null,
     };
 
     const fpd = bidderRequest.ortb2;
@@ -131,15 +133,6 @@ export const spec = {
 
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain);
-    }
-    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      const userIds = deepClone(validBidRequests[0].userId);
-
-      if (userIds.id5id) {
-        userIds.id5id = deepAccess(userIds, 'id5id.uid');
-      }
-
-      payload.userid = JSON.stringify(userIds);
     }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
@@ -295,22 +288,29 @@ function _findBidderRequest(bidderRequests, bidId) {
   }
 }
 
+// This function takes all the possible sizes.
+// returns string csv.
 function _validateSize(bid) {
-  if (deepAccess(bid, 'mediaTypes.video')) {
-    return ''; // Video bids arent allowed to override sizes via the trinity request
+  let size = [];
+  if (deepAccess(bid, 'mediaTypes.video.playerSize')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.playerSize'))
   }
-
-  if (bid.params.sizes) {
-    return parseSizesInput(bid.params.sizes).join(',');
+  if (deepAccess(bid, 'mediaTypes.video.sizes')) {
+    size.push(deepAccess(bid, 'mediaTypes.video.sizes'))
+  }
+  if (deepAccess(bid, 'params.sizes')) {
+    size.push(deepAccess(bid, 'params.sizes'));
   }
   if (deepAccess(bid, 'mediaTypes.banner.sizes')) {
-    return parseSizesInput(deepAccess(bid, 'mediaTypes.banner.sizes')).join(',');
+    size.push(deepAccess(bid, 'mediaTypes.banner.sizes'))
   }
-
-  // Handle deprecated sizes definition
-  if (bid.sizes) {
-    return parseSizesInput(bid.sizes).join(',');
+  if (deepAccess(bid, 'sizes')) {
+    size.push(deepAccess(bid, 'sizes'))
   }
+  // Pass the 2d sizes array into parseSizeInput to flatten it into an array of x separated sizes.
+  // Then throw it into Set to uniquify it.
+  // Then spread it to an array again. Then join it into a csv of sizes.
+  return [...new Set(parseSizesInput(...size))].join(',');
 }
 
 function _validateSlot(bid) {
@@ -390,6 +390,67 @@ export function _getPlatform(context = window) {
   }
   return 'desktop';
 }
+/**
+ * Check for local storage
+ * Generate a UUID for the user if one does not exist in local storage
+ * Store the UUID in local storage for future use
+ * @return {object} firstPartyData - Data object containing first party information
+ */
+function loadOrCreateFirstPartyData() {
+  var localStorageEnabled;
+
+  var FIRST_PARTY_KEY = '_iiq_fdata';
+  var tryParse = function (data) {
+    try {
+      return JSON.parse(data);
+    } catch (err) {
+      return null;
+    }
+  };
+  var readData = function (key) {
+    if (hasLocalStorage()) {
+      return window.localStorage.getItem(key);
+    }
+    return null;
+  };
+  var hasLocalStorage = function () {
+    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
+      try {
+        localStorageEnabled = !!window.localStorage;
+        return localStorageEnabled;
+      } catch (e) {
+        localStorageEnabled = false;
+      }
+    }
+    return false;
+  };
+  var generateGUID = function () {
+    var d = new Date().getTime();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  };
+  var storeData = function (key, value) {
+    try {
+      if (hasLocalStorage()) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (error) {
+      return null;
+    }
+  };
+  var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+  if (!firstPartyData || !firstPartyData.pcid) {
+    var firstPartyId = generateGUID();
+    firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
+  } else if (firstPartyData && !firstPartyData.pcidDate) {
+    firstPartyData.pcidDate = Date.now();
+  }
+  storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+  return firstPartyData;
+};
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
   const renderer = Renderer.install({

@@ -7,6 +7,7 @@
 
 import {submodule} from '../src/hook.js';
 import { logInfo, isArray } from '../src/utils.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 const MODULE_NAME = 'pubProvidedId';
 
@@ -18,6 +19,7 @@ export const pubProvidedIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: VENDORLESS_GVLID,
 
   /**
    * decode the stored id value for passing to bid request

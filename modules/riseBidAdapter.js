@@ -309,6 +309,16 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.placementId = placementId;
   }
 
+  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
+  if (mimes) {
+    bidObject.mimes = mimes;
+  }
+
+  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
+  if (api) {
+    bidObject.api = api;
+  }
+
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
     let playbackMethodValue;
@@ -349,6 +359,11 @@ function generateBidParameters(bid, bidderRequest) {
     if (linearity) {
       bidObject.linearity = linearity;
     }
+
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
+    }
   }
 
   return bidObject;
@@ -369,7 +384,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -385,7 +400,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    is_wrapper: !!generalBidParams.isWrapper,
+    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
     tmax: timeout
   };
 

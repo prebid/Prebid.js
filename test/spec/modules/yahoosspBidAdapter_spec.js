@@ -2,6 +2,8 @@ import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { spec } from 'modules/yahoosspBidAdapter.js';
+import {createEidsArray} from '../../../modules/userId/eids';
+import {deepClone} from '../../../src/utils';
 
 const DEFAULT_BID_ID = '84ab500420319d';
 const DEFAULT_BID_DCN = '2093845709823475';
@@ -712,7 +714,7 @@ describe('YahooSSP Bid Adapter:', () => {
     });
   });
 
-  describe('GDPR & Consent:', () => {
+  describe('GDPR & Consent & GPP:', () => {
     it('should return request objects that do not send cookies if purpose 1 consent is not provided', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       bidderRequest.gdprConsent = {
@@ -729,6 +731,20 @@ describe('YahooSSP Bid Adapter:', () => {
       };
       const options = spec.buildRequests(validBidRequests, bidderRequest)[0].options;
       expect(options.withCredentials).to.be.false;
+    });
+
+    it('adds the ortb2 gpp consent info to the request', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      const ortb2 = {
+        regs: {
+          gpp: 'somegppstring',
+          gpp_sid: [6, 7]
+        }
+      };
+      let clonedBidderRequest = {...bidderRequest, ortb2};
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+      expect(data.regs.ext.gpp).to.equal('somegppstring');
+      expect(data.regs.ext.gpp_sid).to.eql([6, 7]);
     });
   });
 
@@ -832,6 +848,50 @@ describe('YahooSSP Bid Adapter:', () => {
           },
           withCredentials: true
         });
+    });
+  });
+
+  describe('User data', () => {
+    it('should set the allowed sources user eids', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        admixerId: 'admixerId_FROM_USER_ID_MODULE',
+        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE',
+        amxId: 'amxId_FROM_USER_ID_MODULE',
+        britepoolid: 'britepoolid_FROM_USER_ID_MODULE',
+        deepintentId: 'deepintentId_FROM_USER_ID_MODULE',
+        publinkId: 'publinkId_FROM_USER_ID_MODULE',
+        intentIqId: 'intentIqId_FROM_USER_ID_MODULE',
+        idl_env: 'idl_env_FROM_USER_ID_MODULE',
+        imuid: 'imuid_FROM_USER_ID_MODULE',
+        criteoId: 'criteoId_FROM_USER_ID_MODULE',
+        fabrickId: 'fabrickId_FROM_USER_ID_MODULE',
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'amxdt.net', uids: [{id: 'amxId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'britepool.com', uids: [{id: 'britepoolid_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'deepintent.com', uids: [{id: 'deepintentId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'epsilon.com', uids: [{id: 'publinkId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intentiq.com', uids: [{id: 'intentIqId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'liveramp.com', uids: [{id: 'idl_env_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'intimatemerger.com', uids: [{id: 'imuid_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'criteo.com', uids: [{id: 'criteoId_FROM_USER_ID_MODULE', atype: 1}]},
+        {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
+      ]);
+    });
+
+    it('should not set not allowed user eids sources', () => {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      validBidRequests[0].userIdAsEids = createEidsArray({
+        justId: 'justId_FROM_USER_ID_MODULE'
+      });
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+
+      expect(data.user.ext.eids).to.deep.equal([]);
     });
   });
 

@@ -45,6 +45,12 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
+  },
+
   // justId
   'justId': {
     source: 'justtag.com',
@@ -88,13 +94,13 @@ export const USER_IDS_CONFIG = {
     atype: 1,
     getValue: function(data) {
       let value = '';
-      if (data.DeviceID) {
-        value = data.DeviceID.join(',');
+      if (data && data.ext && data.ext.DeviceID) {
+        value = data.ext.DeviceID;
       }
       return value;
     },
     getUidExt: function(data) {
-      return 'DeviceID';
+      return data && data.ext;
     }
   },
 
@@ -143,6 +149,24 @@ export const USER_IDS_CONFIG = {
           segments: data.segments
         };
       }
+    }
+  },
+
+  // bidswitchId
+  'bidswitch': {
+    source: 'bidswitch.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
+  // medianetId
+  'medianet': {
+    source: 'media.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
     }
   },
 
@@ -250,10 +274,13 @@ export const USER_IDS_CONFIG = {
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
-      return data.snowflake
+      if (data.snowflake.id === undefined) {
+        return data.snowflake;
+      }
+
+      return data.snowflake.id;
     },
     source: 'novatiq.com',
-    atype: 1
   },
 
   'uid2': {
@@ -282,7 +309,7 @@ export const USER_IDS_CONFIG = {
   },
 
   amxId: {
-    source: 'amxrtb.com',
+    source: 'amxdt.net',
     atype: 1,
   },
 
@@ -345,8 +372,8 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // cpexId
-  'cpexId': {
+  // czechAdId
+  'czechAdId': {
     source: 'czechadid.cz',
     atype: 1
   },
@@ -418,18 +445,6 @@ export function createEidsArray(bidRequestUserId) {
     if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
       if (subModuleKey === 'pubProvidedId') {
         eids = eids.concat(bidRequestUserId['pubProvidedId']);
-      } else if (subModuleKey === 'ftrackId') {
-        // ftrack has multiple IDs so we add each one that exists
-        let eid = {
-          'atype': 1,
-          'id': (bidRequestUserId.ftrackId.DeviceID || []).join('|'),
-          'ext': {}
-        }
-        for (let id in bidRequestUserId.ftrackId) {
-          eid.ext[id] = (bidRequestUserId.ftrackId[id] || []).join('|');
-        }
-
-        eids.push(eid);
       } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
         bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
           const eid = createEidObject(config, subModuleKey);
@@ -446,6 +461,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 

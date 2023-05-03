@@ -24,6 +24,7 @@ const HOST_GETTERS = {
   pgam: () => 'ghb.pgamssp.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
+  '9dotsmedia': () => 'ghb.platform.audiodots.com'
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -39,12 +40,18 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+  aliases: [
+    'onefiftytwomedia',
+    'appaloosa',
+    'bidsxchange',
+    'streamkey',
+    'janet',
     { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
     'pgam',
     { code: 'ocm', gvlid: 1148 },
     { code: 'vidcrunchllc', gvlid: 1145 },
+    '9dotsmedia'
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {

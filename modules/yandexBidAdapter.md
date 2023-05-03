@@ -12,29 +12,66 @@ Yandex Bidder Adapter for Prebid.js.
 
 # Parameters
 
-| Name          | Scope    | Description             | Example   | Type      |
-|---------------|----------|-------------------------|-----------|-----------|
-| `pageId`      | required | Page ID                 | `123`     | `Integer` |
-| `impId`       | required | Block ID                | `1`       | `Integer` |
+| Name          | Required?                                  | Description | Example | Type      |
+|---------------|--------------------------------------------|-------------|---------|-----------|
+| `placementId` | Yes                                        | Block ID    | `123-1` | `String`  |
+| `pageId`      | No<br>Deprecated. Please use `placementId` | Page ID     | `123`   | `Integer` |
+| `impId`       | No<br>Deprecated. Please use `placementId` | Imp ID      | `1`     | `Integer` |
 
 # Test Parameters
 
-```
-var adUnits = [{
-  code: 'banner-1',
-  mediaTypes: {
-    banner: {
-      sizes: [[240, 400]],
-    }
+```javascript
+var adUnits = [
+  { // banner
+    code: 'banner-1',
+    mediaTypes: {
+      banner: {
+        sizes: [[240, 400], [300, 600]],
+      }
+    },
+    bids: [
+      {
+        bidder: 'yandex',
+        params: {
+          placementId: '346580-1'
+        },
+      }
+    ],
   },
-  bids: [{
-    {
-      bidder: 'yandex',
-      params: {
-        pageId: 346580,
-        impId: 143,
+  { // native
+    code: 'banner-2',
+    mediaTypes: {
+      native: {
+        title: {
+          required: true,
+          len: 25
+        },
+        image: {
+          required: true,
+          sizes: [300, 250],
+        },
+        icon: {
+          sizes: [32, 32],
+        },
+        body: {
+          len: 90
+        },
+        body2: {
+          len: 90
+        },
+        sponsoredBy: {
+          len: 25,
+        }
       },
-    }
-  }]
-}];
+    },
+    bids: [
+      {
+        bidder: 'yandex',
+        params: {
+          placementId: '346580-1'
+        },
+      }
+    ],
+  },
+];
 ```

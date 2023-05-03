@@ -109,7 +109,7 @@ function isValidDchain(bid) {
   }
 }
 
-export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid) {
+export const addBidResponseHook = timedBidResponseHook('dchain', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   const basicDchain = {
     ver: '1.0',
     complete: 0,
@@ -140,7 +140,7 @@ export const addBidResponseHook = timedBidResponseHook('dchain', function addBid
     bid.meta.dchain = basicDchain;
   }
 
-  fn(adUnitCode, bid);
+  fn(adUnitCode, bid, reject);
 });
 
 export function init() {

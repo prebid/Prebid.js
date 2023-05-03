@@ -5,10 +5,11 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({gvlid: RUBICON_GVL_ID, moduleName: 'rubicon'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'rubicon'});
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -62,15 +63,20 @@ const cache = {
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
-export let rubiConf = {
-  pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0,
-  dmBilling: {
-    enabled: false,
-    vendors: [],
-    waitForAuction: true
+export let rubiConf;
+export const resetRubiConf = () => {
+  rubiConf = {
+    pvid: generateUUID().slice(0, 8),
+    analyticsEventDelay: 0,
+    dmBilling: {
+      enabled: false,
+      vendors: [],
+      waitForAuction: true
+    }
   }
-};
+}
+resetRubiConf();
+
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -418,7 +424,7 @@ function getBidPrice(bid) {
   }
 }
 
-export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
+export function parseBidResponse(bid, previousBidResponse) {
   // The current bidResponse for this matching requestId/bidRequestId
   let responsePrice = getBidPrice(bid)
   // we need to compare it with the previous one (if there was one)

@@ -2,6 +2,9 @@ import { expect } from 'chai';
 import { spec } from 'modules/ttdBidAdapter';
 import { deepClone } from 'src/utils.js';
 import { config } from 'src/config';
+import { detectReferer } from 'src/refererDetection.js';
+
+import { buildWindowTree } from '../../helpers/refererDetectionHelper';
 
 describe('ttdBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
@@ -77,6 +80,18 @@ describe('ttdBidAdapter', function () {
         let bid = makeBid();
         delete bid.mediaTypes
         expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return false if bidfloor is passed incorrectly', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 'invalid bidfloor';
+        expect(spec.isBidRequestValid(bid)).to.equal(false);
+      });
+
+      it('should return true if bidfloor is passed correctly as a float', function () {
+        let bid = makeBid();
+        bid.params.bidfloor = 3.01;
+        expect(spec.isBidRequestValid(bid)).to.equal(true);
       });
     });
 
@@ -200,20 +215,15 @@ describe('ttdBidAdapter', function () {
       'bidRequestsCount': 1
     }];
 
+    const testWindow = buildWindowTree(['https://www.example.com/test', 'https://www.example.com/other/page', 'https://www.example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
+    const baseBidderRequestReferer = detectReferer(testWindow)();
     const baseBidderRequest = {
       'bidderCode': 'ttd',
       'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
-      'refererInfo': {
-        'page': 'https://www.example.com/test',
-        'reachedTop': true,
-        'numIframes': 0,
-        'stack': [
-          'https://www.example.com/test'
-        ]
-      },
+      'refererInfo': baseBidderRequestReferer,
       'start': 1540945362099,
       'doneCbCallCount': 0
     };
@@ -272,6 +282,21 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].ext.gpid).to.equal(gpid);
     });
 
+    it('sends rwdd in imp.rwdd if present', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const gpid = '/1111/home#header';
+      const rwdd = 1;
+      clonedBannerRequests[0].ortb2Imp = {
+        rwdd: rwdd,
+        ext: {
+          gpid: gpid
+        }
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].rwdd).to.be.not.null;
+      expect(requestBody.imp[0].rwdd).to.equal(1);
+    });
+
     it('sends auction id in source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
@@ -287,6 +312,11 @@ describe('ttdBidAdapter', function () {
     });
 
     it('includes the detected referer in the bid request', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.site.page).to.equal('https://www.example.com/test');
+    });
+
+    it('ensure top most location is used', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.site.page).to.equal('https://www.example.com/test');
     });
@@ -308,6 +338,43 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].banner.expdir).to.equal(expdir);
+    });
+
+    it('merges first party site data', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const baseBidderRequestWithoutRefererDomain = {
+        ...baseBidderRequest,
+        refererInfo: {
+          ...baseBannerBidRequests.referer,
+          domain: null
+        }
+      }
+      const requestBody = testBuildRequests(
+        baseBannerBidRequests, {...baseBidderRequestWithoutRefererDomain, ortb2}
+      ).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher).to.deep.equal({domain: 'https://foo.bar', id: '13144370'});
+    });
+
+    it('referer domain overrides first party site data publisher domain', function () {
+      const ortb2 = {
+        site: {
+          publisher: {
+            domain: 'https://foo.bar',
+          }
+        }
+      };
+      const requestBody = testBuildRequests(
+        baseBannerBidRequests, {...baseBidderRequest, ortb2}
+      ).data;
+      config.resetConfig();
+      expect(requestBody.site.publisher.domain).to.equal(baseBidderRequest.refererInfo.domain);
     });
 
     it('sets keywords properly if sent', function () {
@@ -387,6 +454,20 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.regs.coppa).to.equal(1);
     });
 
+    it('adds gpp consent info to the request', function () {
+      const ortb2 = {
+        regs: {
+          gpp: 'somegppstring',
+          gpp_sid: [6, 7]
+        }
+      };
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.regs.gpp).to.equal('somegppstring');
+      expect(requestBody.regs.gpp_sid).to.eql([6, 7]);
+    });
+
     it('adds schain info to the request', function () {
       const schain = {
         'ver': '1.0',
@@ -423,13 +504,7 @@ describe('ttdBidAdapter', function () {
       const TDID = '00000000-0000-0000-0000-000000000000';
       const UID2 = '99999999-9999-9999-9999-999999999999';
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
-      clonedBannerRequests[0].userId = {
-        tdid: TDID,
-        uid2: {
-          id: UID2
-        }
-      };
-      const expectedEids = [
+      clonedBannerRequests[0].userIdAsEids = [
         {
           source: 'adserver.org',
           uids: [
@@ -452,6 +527,7 @@ describe('ttdBidAdapter', function () {
           ]
         }
       ];
+      const expectedEids = clonedBannerRequests[0].userIdAsEids;
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
       expect(requestBody.user.ext.eids).to.deep.equal(expectedEids);
@@ -480,6 +556,17 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.site.page).to.equal('https://page.example.com/here.html');
       expect(requestBody.site.ref).to.equal('https://ref.example.com');
       expect(requestBody.site.keywords).to.equal('power tools, drills');
+    });
+
+    it('should fallback to floor module if no bidfloor is sent ', function () {
+      let clonedBannerRequests = deepClone(baseBannerBidRequests);
+      const bidfloor = 5.00;
+      clonedBannerRequests[0].getFloor = () => {
+        return { currency: 'USD', floor: bidfloor };
+      };
+      const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
+      config.resetConfig();
+      expect(requestBody.imp[0].bidfloor).to.equal(bidfloor);
     });
   });
 
@@ -804,6 +891,14 @@ describe('ttdBidAdapter', function () {
 
       const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].video.placement).to.equal(3);
+    });
+
+    it('sets plcmt correctly if sent', function () {
+      let clonedVideoRequests = deepClone(baseVideoBidRequests);
+      clonedVideoRequests[0].mediaTypes.video.plcmt = 3;
+
+      const requestBody = testBuildRequests(clonedVideoRequests, baseBidderRequest).data;
+      expect(requestBody.imp[0].video.plcmt).to.equal(3);
     });
   });
 
