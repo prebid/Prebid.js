@@ -8,22 +8,17 @@ import {isValidVideoBid} from '../video.js';
 import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
-import {ajax} from '../ajax.js';
 import {
-  deepAccess,
   delayExecution,
-  flatten,
   isArray,
   isPlainObject,
   logError,
   logWarn,
   parseQueryStringParameters,
   parseSizesInput,
-  timestamp,
   uniques
 } from '../utils.js';
-import {ADPOD} from '../mediaTypes.js';
-import {getHook, hook} from '../hook.js';
+import {hook} from '../hook.js';
 import {getCoreStorageManager} from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
@@ -154,8 +149,6 @@ export const storage = getCoreStorageManager('bidderFactory');
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
-
-const DEFAULT_REFRESHIN_DAYS = 1;
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -484,83 +477,6 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
 
 export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
 }, 'addComponentAuction');
-
-export function preloadBidderMappingFile(fn, adUnits) {
-  if (FEATURES.VIDEO) {
-    if (!config.getConfig('adpod.brandCategoryExclusion')) {
-      return fn.call(this, adUnits);
-    }
-
-    let adPodBidders = adUnits
-      .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-      .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
-      .reduce(flatten, [])
-      .filter(uniques);
-
-    adPodBidders.forEach(bidder => {
-      let bidderSpec = adapterManager.getBidAdapter(bidder);
-      if (bidderSpec.getSpec().getMappingFileInfo) {
-        let info = bidderSpec.getSpec().getMappingFileInfo();
-        let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
-        let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-        let mappingData = storage.getDataFromLocalStorage(key);
-        try {
-          mappingData = mappingData ? JSON.parse(mappingData) : undefined;
-          if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-            ajax(info.url,
-              {
-                success: (response) => {
-                  try {
-                    response = JSON.parse(response);
-                    let mapping = {
-                      lastUpdated: timestamp(),
-                      mapping: response.mapping
-                    }
-                    storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-                  } catch (error) {
-                    logError(`Failed to parse ${bidder} bidder translation mapping file`);
-                  }
-                },
-                error: () => {
-                  logError(`Failed to load ${bidder} bidder translation file`)
-                }
-              },
-            );
-          }
-        } catch (error) {
-          logError(`Failed to parse ${bidder} bidder translation mapping file`);
-        }
-      }
-    });
-    fn.call(this, adUnits);
-  } else {
-    return fn.call(this, adUnits)
-  }
-}
-
-getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
-
-/**
- * Reads the data stored in localstorage and returns iab subcategory
- * @param {string} bidderCode bidderCode
- * @param {string} category bidders category
- */
-export function getIabSubCategory(bidderCode, category) {
-  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
-  if (bidderSpec.getSpec().getMappingFileInfo) {
-    let info = bidderSpec.getSpec().getMappingFileInfo();
-    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = storage.getDataFromLocalStorage(key);
-    if (data) {
-      try {
-        data = JSON.parse(data);
-      } catch (error) {
-        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
-      }
-      return (data.mapping[category]) ? data.mapping[category] : null;
-    }
-  }
-}
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
