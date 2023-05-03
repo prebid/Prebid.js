@@ -492,26 +492,11 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
 
   function rejectBidResponse(adUnitCode, bid, reason) {
     return handleBidResponse(adUnitCode, bid, (done) => {
-      // return a "NO_BID" replacement that the caller can decide to continue with
-      // TODO: remove this in v8; see https://github.com/prebid/Prebid.js/issues/8956
-      const noBid = createBid(CONSTANTS.STATUS.NO_BID, bid.getIdentifiers?.());
-      Object.assign(noBid, Object.fromEntries(Object.entries(bid).filter(([k]) => !noBid.hasOwnProperty(k) && ![
-        'ad',
-        'adUrl',
-        'vastXml',
-        'vastUrl',
-        'native',
-      ].includes(k))));
-      noBid.status = CONSTANTS.BID_STATUS.BID_REJECTED;
-      noBid.cpm = 0;
-
       bid.rejectionReason = reason;
       logWarn(`Bid from ${bid.bidder || 'unknown bidder'} was rejected: ${reason}`, bid)
       events.emit(CONSTANTS.EVENTS.BID_REJECTED, bid);
       auctionInstance.addBidRejected(bid);
       done();
-
-      return noBid;
     })
   }
 
@@ -550,12 +535,12 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
         waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
           dispatch: acceptBidResponse,
         }, adUnitCode, bid, (() => {
-          let rejection;
+          let rejected = false;
           return (reason) => {
-            if (rejection == null) {
-              rejection = rejectBidResponse(adUnitCode, bid, reason);
+            if (!rejected) {
+              rejectBidResponse(adUnitCode, bid, reason);
+              rejected = true;
             }
-            return rejection;
           }
         })()));
       }
