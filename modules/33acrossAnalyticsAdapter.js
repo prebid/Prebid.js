@@ -1,6 +1,6 @@
 import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
+import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
 /**
@@ -29,6 +29,7 @@ export const log = getLogger();
  * @property {string} pid Partner ID
  * @property {Object<string, Auction>} auctions
  * @property {Object<string, Bid[]>} bidsWon
+ * @property {string} [usPrivacy]
  */
 
 /**
@@ -233,6 +234,11 @@ function enableAnalyticsWrapper(config) {
     auctions: {},
   };
 
+  const usPrivacy = uspDataHandler.getConsentData();
+  if (/^1[Y|N|-]{3}$/.test(usPrivacy)) {
+    locals.cache.usPrivacy = usPrivacy;
+  }
+
   analyticsAdapter.originEnableAnalytics(config);
 }
 
@@ -289,15 +295,20 @@ export default analyticsAdapter;
  * @return {AnalyticsReport} Analytics report
  */
 function createReportFromCache(analyticsCache, completedAuctionId) {
-  const { pid, auctions } = analyticsCache;
+  const { pid, auctions, usPrivacy } = analyticsCache;
 
-  return {
+  const report = {
     pid,
     src: 'pbjs',
     analyticsVersion: ANALYTICS_VERSION,
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [ auctions[completedAuctionId] ],
   }
+  if (usPrivacy) {
+    report.usPrivacy = usPrivacy;
+  }
+
+  return report;
 }
 
 function getBidsForTransaction(auctionId, transactionId) {

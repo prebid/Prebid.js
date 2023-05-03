@@ -4,6 +4,7 @@ import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
+import { uspDataHandler } from '../../../src/adapterManager';
 const { EVENTS, BID_STATUS } = CONSTANTS;
 
 describe('33acrossAnalyticsAdapter:', function () {
@@ -141,7 +142,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3);
         });
 
-        it('it calls "sendBeacon" with the appropriate string', function () {
+        it('it calls "sendBeacon" with the correct report string', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -179,6 +180,44 @@ describe('33acrossAnalyticsAdapter:', function () {
           sandbox.clock.tick(1);
 
           assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, getStandardAnalyticsReport());
+        });
+      });
+
+      context('and a valid US Privacy configuration is present', function () {
+        ['1YNY', '1---', '1NY-', '1Y--', '1--Y', '1N--', '1--N', '1NNN'].forEach(consent => {
+          it(`it calls "sendBeacon" with a report containing the "${consent}" privacy string`, function () {
+            sandbox.stub(uspDataHandler, 'getConsentData').returns(consent);
+            this.enableAnalytics();
+
+            const reportWithConsent = {
+              ...getStandardAnalyticsReport(),
+              usPrivacy: consent
+            };
+            navigator.sendBeacon
+              .withArgs('http://test-endpoint', reportWithConsent);
+
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1);
+
+            assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
+          });
+        });
+      });
+
+      context('and an *invalid* US Privacy configuration is present', function () {
+        ['2ABC', '1234', '1YNYN', '11YNY'].forEach(consent => {
+          it('it calls "sendBeacon" without the usPrivacy field', function () {
+            sandbox.stub(uspDataHandler, 'getConsentData').returns(consent);
+            this.enableAnalytics();
+
+            navigator.sendBeacon
+              .withArgs('http://test-endpoint', getStandardAnalyticsReport());
+
+            performStandardAuction();
+            sandbox.clock.tick(this.defaultTimeout + 1);
+
+            assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', getStandardAnalyticsReport());
+          });
         });
       });
     });
@@ -439,11 +478,14 @@ function mapToBids(auctions) {
 function getLocalAssert() {
   // Derived from ReportDefnition.cue -> AnalyticsReport
   function isAnalyticsReport(report) {
-    assert.hasAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
+    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
+    if ('usPrivacy' in report) {
+      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+    }
     assert.equal(report.analyticsVersion, '1.0.0');
     assert.isString(report.pid);
     assert.isString(report.src);
-    assert.isString(report.pbjsVersion);
+    assert.equal(report.pbjsVersion, '$prebid.version$');
     assert.isArray(report.auctions);
     assert.isAbove(report.auctions.length, 0);
     report.auctions.forEach(isAuction);
