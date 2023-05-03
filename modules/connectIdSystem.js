@@ -76,7 +76,7 @@ function getIdFromCookie() {
 
 function getIdFromLocalStorage() {
   if (storage.localStorageIsEnabled()) {
-    let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME); logError(storedIdData);
+    let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
     if (storedIdData) {
       try {
         storedIdData = JSON.parse(storedIdData);
