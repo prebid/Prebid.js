@@ -19,12 +19,9 @@ import {
   uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
-import {getCoreStorageManager} from '../storageManager.js';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
-
-export const storage = getCoreStorageManager('bidderFactory');
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
