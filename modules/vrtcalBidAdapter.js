@@ -27,6 +27,11 @@ export const spec = {
       let ccpa = '';
       let coppa = 0;
       let tmax = 0;
+      let eids = [];
+
+      if (bidRequests[0].userIdAsEids && bidRequests[0].userIdAsEids.length > 0) {
+        eids = bidRequests[0].userIdAsEids;
+      }
 
       if (bid && bid.gdprConsent) {
         gdprApplies = bid.gdprConsent.gdprApplies ? 1 : 0;
@@ -41,7 +46,7 @@ export const spec = {
         coppa = 1;
       }
 
-      tmax = config.getConfig('bidderTimeout');
+      tmax = bid.timeout;
 
       const params = {
         prebidJS: 1,
@@ -74,7 +79,8 @@ export const spec = {
         },
         user: {
           ext: {
-            consent: gdprConsent
+            consent: gdprConsent,
+            eids: eids
           }
         }
       };

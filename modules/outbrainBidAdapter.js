@@ -4,11 +4,13 @@
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray } from '../src/utils.js';
+import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
+import { OUTSTREAM } from '../src/video.js';
+import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { Renderer } from '../src/Renderer.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -22,11 +24,12 @@ const NATIVE_PARAMS = {
   body: { id: 4, name: 'data', type: 2 },
   cta: { id: 1, type: 12, name: 'data' }
 };
+const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER ],
+  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
   isBidRequestValid: (bid) => {
     if (typeof bid.params !== 'object') {
       return false;
@@ -50,7 +53,7 @@ export const spec = {
 
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!(bid.nativeParams || bid.sizes)
+      (!!(bid.nativeParams || bid.sizes) || isValidVideoRequest(bid))
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -85,6 +88,8 @@ export const spec = {
             assets: getNativeAssets(bid)
           })
         }
+      } else if (isVideoRequest(bid)) {
+        imp.video = getVideoAsset(bid);
       } else {
         imp.banner = {
           format: transformSizes(bid.sizes)
@@ -163,7 +168,12 @@ export const spec = {
     return bids.map((bid, id) => {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
-        const type = bid.nativeParams ? NATIVE : BANNER;
+        let type = BANNER;
+        if (bid.nativeParams) {
+          type = NATIVE;
+        } else if (isVideoRequest(bid)) {
+          type = VIDEO;
+        }
         const bidObject = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -176,10 +186,16 @@ export const spec = {
         };
         if (type === NATIVE) {
           bidObject.native = parseNative(bidResponse);
-        } else {
+        } else if (type === BANNER) {
           bidObject.ad = bidResponse.adm;
           bidObject.width = bidResponse.w;
           bidObject.height = bidResponse.h;
+        } else if (type === VIDEO) {
+          bidObject.vastXml = bidResponse.adm;
+          const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+          if (videoContext === OUTSTREAM) {
+            bidObject.renderer = createRenderer(bid);
+          }
         }
         bidObject.meta = {};
         if (bidResponse.adomain && bidResponse.adomain.length > 0) {
@@ -304,6 +320,27 @@ function getNativeAssets(bid) {
   }).filter(Boolean);
 }
 
+function getVideoAsset(bid) {
+  const sizes = flatten(bid.mediaTypes.video.playerSize);
+  return {
+    w: parseInt(sizes[0], 10),
+    h: parseInt(sizes[1], 10),
+    protocols: bid.mediaTypes.video.protocols,
+    playbackmethod: bid.mediaTypes.video.playbackmethod,
+    mimes: bid.mediaTypes.video.mimes,
+    skip: bid.mediaTypes.video.skip,
+    delivery: bid.mediaTypes.video.delivery,
+    api: bid.mediaTypes.video.api,
+    minbitrate: bid.mediaTypes.video.minbitrate,
+    maxbitrate: bid.mediaTypes.video.maxbitrate,
+    minduration: bid.mediaTypes.video.minduration,
+    maxduration: bid.mediaTypes.video.maxduration,
+    startdelay: bid.mediaTypes.video.startdelay,
+    placement: bid.mediaTypes.video.placement,
+    linearity: bid.mediaTypes.video.linearity
+  };
+}
+
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
   if (!isArray(requestSizes)) {
@@ -337,4 +374,64 @@ function _getFloor(bid, type) {
     return parseFloat(floorInfo.floor);
   }
   return null;
+}
+
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
+}
+
+function createRenderer(bid) {
+  let config = {};
+  let playerUrl = OUTSTREAM_RENDERER_URL;
+  let render = function (bid) {
+    bid.renderer.push(() => {
+      window.ANOutstreamVideo.renderAd({
+        sizes: bid.sizes,
+        targetId: bid.adUnitCode,
+        adResponse: { content: bid.vastXml }
+      });
+    });
+  };
+
+  let externalRenderer = deepAccess(bid, 'mediaTypes.video.renderer');
+  if (!externalRenderer) {
+    externalRenderer = deepAccess(bid, 'renderer');
+  }
+
+  if (externalRenderer) {
+    config = externalRenderer.options;
+    playerUrl = externalRenderer.url;
+    render = externalRenderer.render;
+  }
+
+  const renderer = Renderer.install({
+    id: bid.adUnitCode,
+    url: playerUrl,
+    config: config,
+    adUnitCode: bid.adUnitCode,
+    loaded: false
+  });
+  try {
+    renderer.setRender(render);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
+}
+
+function isValidVideoRequest(bid) {
+  const videoAdUnit = deepAccess(bid, 'mediaTypes.video')
+  if (!videoAdUnit) {
+    return false;
+  }
+
+  if (!Array.isArray(videoAdUnit.playerSize)) {
+    return false;
+  }
+
+  if (videoAdUnit.context == '') {
+    return false;
+  }
+
+  return true;
 }

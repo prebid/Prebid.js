@@ -172,6 +172,36 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('bidswitch', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('medianet', function() {
+    const userId = {
+      medianet: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
@@ -392,7 +422,7 @@ describe('eids array generation for known sub-modules', function() {
 
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
-      source: 'amxrtb.com',
+      source: 'amxdt.net',
       uids: [{
         atype: 1,
         id,
@@ -432,9 +462,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('cpexId', () => {
+  it('czechAdId', () => {
     const id = 'some-random-id-value'
-    const userId = { cpexId: id };
+    const userId = { czechAdId: id };
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
       source: 'czechadid.cz',
@@ -444,11 +474,15 @@ describe('eids array generation for known sub-modules', function() {
 
   describe('ftrackId', () => {
     it('should return the correct EID schema', () => {
+      // This is the schema returned from the ftrack decode() method
       expect(createEidsArray({
         ftrackId: {
-          DeviceID: ['aaa', 'bbb'],
-          SingleDeviceID: ['ccc', 'ddd'],
-          HHID: ['eee', 'fff']
+          uid: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
         },
         foo: {
           bar: 'baz'
@@ -457,13 +491,16 @@ describe('eids array generation for known sub-modules', function() {
           ipsum: ''
         }
       })).to.deep.equal([{
-        atype: 1,
-        id: 'aaa|bbb',
-        ext: {
-          DeviceID: 'aaa|bbb',
-          SingleDeviceID: 'ccc|ddd',
-          HHID: 'eee|fff'
-        }
+        source: 'flashtalking.com',
+        uids: [{
+          atype: 1,
+          id: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        }]
       }]);
     });
   });

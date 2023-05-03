@@ -1,37 +1,36 @@
 # Overview
-- Module Name: Conversant Bidder Adapter
+- Module Name: Epsilon Analytics Adapter
 - Module Type: Analytics Adapter
-- Maintainer: mediapsr@conversantmedia.com
+- Maintainer: mediapsr@epsilon.com
 
 ## Description
 
-Analytics adapter for Conversant is used to track performance of Prebid auctions.  See the usage below for how to 
+Analytics adapter for Epsilon (formerly Conversant) is used to track performance of Prebid auctions.  See the usage below for how to 
 configure the adapter for your webpage. To enable analytics and gain access to the data publishers will need
- to contact their Conversant representative.
+ to contact their Epsilon representative (publishersupport@epsilon.com).
 
 ## Setup
 
-Before any analytics are recorded for your website you will need to have a Conversant representative turn
+Before any analytics are recorded for your website you will need to have an Epsilon representative turn
 on Prebid analytics for your website.  
 
-The simplest configuration to add Conversant Prebid analytics to your page is as follows:
+The simplest configuration to add Epsilon Prebid analytics to your page is as follows:
 
 ```
     pbjs.que.push(function() {
         pbjs.enableAnalytics({
             provider: 'conversant',
             options: {
-                site_id: '<YOUR_SITE_ID>'
+                site_id: <YOUR_SITE_ID>
             }
         })
     });
 ```
 
-Additionally the following options are supported:
+Additionally, the following options are supported:
 
-- **sampleRate**: Expects an integer from 0 to 100. By default only 50% (corresponds to a value of 50) of instances are enabled
-for Conversant Prebid Analytics. This field allows the publisher to override that percentage to sample
-at a higher or lower rate. '0' would completely disable sampling and '100' would capture every instance.
+- **cnvr_sampling**: Sample rate for analytics data. Value should be between 0 and 1 (inclusive), 0 == never sample, 
+1 == always sample, 0.5 == send analytics 50% of the time.
 
 ### Complete Example
 ```
@@ -39,8 +38,8 @@ at a higher or lower rate. '0' would completely disable sampling and '100' would
         pbjs.enableAnalytics({
             provider: 'conversant',
             options: {
-                site_id: '1234',
-                sampleRate: 90
+                site_id: 1234,
+                cnvr_sampling: 0.9
             }
         })
     });

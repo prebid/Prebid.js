@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, isArray, isFn, isPlainObject} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -33,7 +34,7 @@ export const spec = {
         test: getTestFlag(),
         devw: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
         devh: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
-        version: $$PREBID_GLOBAL$$.version,
+        version: getGlobal().version,
         gdprApplies: gdprApplies,
         gdprConsentString: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.consentString') : undefined,
         gdprConsentProv: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.addtlConsent') : undefined,

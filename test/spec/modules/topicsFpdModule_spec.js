@@ -1,5 +1,15 @@
-import {getTopics, getTopicsData, processFpd} from '../../../modules/topicsFpdModule.js';
-import {deepClone} from '../../../src/utils.js';
+import {
+  getTopics,
+  getTopicsData,
+  processFpd,
+  hasGDPRConsent,
+  getCachedTopics,
+  receiveMessage,
+  topicStorageName
+} from '../../../modules/topicsFpdModule.js';
+import {deepClone, safeJSONParse} from '../../../src/utils.js';
+import {gdprDataHandler} from 'src/adapterManager.js';
+import {getCoreStorageManager} from 'src/storageManager.js';
 
 describe('getTopicsData', () => {
   function makeTopic(topic, modelv, taxv = '1') {
@@ -7,14 +17,14 @@ describe('getTopicsData', () => {
       topic,
       taxonomyVersion: taxv,
       modelVersion: modelv
-    }
+    };
   }
 
   function byTaxClass(segments) {
     return segments.reduce((memo, segment) => {
       memo[`${segment.ext.segtax}:${segment.ext.segclass}`] = segment;
       return memo;
-    }, {})
+    }, {});
   }
 
   [
@@ -144,16 +154,16 @@ describe('getTopicsData', () => {
         Object.entries(byTaxClass(actual)).forEach(([key, datum]) => {
           sinon.assert.match(datum, expected[key]);
           expect(datum.name).to.equal('mockName');
-        })
+        });
       });
 
       it('should not set name if null', () => {
         getTopicsData(null, topics).forEach((data) => {
           expect(data.hasOwnProperty('name')).to.be.false;
-        })
-      })
-    })
-  })
+        });
+      });
+    });
+  });
 });
 
 describe('getTopics', () => {
@@ -167,11 +177,13 @@ describe('getTopics', () => {
     'document that throws on featurePolicy': {
       browsingTopics: sinon.stub(),
       get featurePolicy() {
-        throw new Error()
+        throw new Error();
       }
     },
     'document that throws on browsingTopics': {
-      browsingTopics: sinon.stub().callsFake(() => { throw new Error(); }),
+      browsingTopics: sinon.stub().callsFake(() => {
+        throw new Error();
+      }),
       featurePolicy: {
         allowsFeature: sinon.stub().returns(true)
       }
@@ -181,11 +193,11 @@ describe('getTopics', () => {
       return getTopics(doc).then((topics) => {
         expect(topics).to.eql([]);
       });
-    })
+    });
   });
 
   it('should call `document.browsingTopics` when allowed', () => {
-    const topics = ['t1', 't2']
+    const topics = ['t1', 't2'];
     return getTopics({
       browsingTopics: sinon.stub().returns(Promise.resolve(topics)),
       featurePolicy: {
@@ -193,9 +205,9 @@ describe('getTopics', () => {
       }
     }).then((actual) => {
       expect(actual).to.eql(topics);
-    })
-  })
-})
+    });
+  });
+});
 
 describe('processFpd', () => {
   const mockData = [
@@ -234,6 +246,187 @@ describe('processFpd', () => {
     return processFpd({}, {global: {}}, {data: Promise.resolve([])})
       .then((data) => {
         expect(data.global).to.eql({});
+      });
+  });
+});
+
+describe('Topics Module GDPR consent check', () => {
+  let gdprDataHdlrStub;
+  beforeEach(() => {
+    gdprDataHdlrStub = sinon.stub(gdprDataHandler, 'getConsentData');
+  });
+
+  afterEach(() => {
+    gdprDataHdlrStub.restore();
+  });
+
+  it('should return false when GDPR is applied but consent string is not present', () => {
+    const consentString = '';
+    const consentConfig = {
+      consentString: consentString,
+      gdprApplies: true,
+      vendorData: {}
+    };
+    gdprDataHdlrStub.returns(consentConfig);
+    expect(hasGDPRConsent()).to.equal(false);
+  });
+
+  it('should return true when GDPR doesn\'t apply', () => {
+    const consentString = 'CPi8wgAPi8wgAADABBENCrCsAP_AAH_AAAAAISNB7D==';
+    const consentConfig = {
+      consentString: consentString,
+      gdprApplies: false,
+      vendorData: {}
+    };
+
+    gdprDataHdlrStub.returns(consentConfig);
+    expect(hasGDPRConsent()).to.equal(true);
+  });
+
+  it('should return true when GDPR is applied and purpose consent is true for all purpose[1,2,3,4]', () => {
+    const consentString = 'CPi8wgAPi8wgAADABBENCrCsAP_AAH_AAAAAISNB7D==';
+    const consentConfig = {
+      consentString: consentString,
+      gdprApplies: true,
+      vendorData: {
+        metadata: consentString,
+        gdprApplies: true,
+        purpose: {
+          consents: {
+            1: true,
+            2: true,
+            3: true,
+            4: true
+          }
+        }
+      }
+    };
+
+    gdprDataHdlrStub.returns(consentConfig);
+    expect(hasGDPRConsent()).to.equal(true);
+  });
+
+  it('should return false when GDPR is applied and purpose consent is false for one of the purpose[1,2,3,4]', () => {
+    const consentString = 'CPi8wgAPi8wgAADABBENCrCsAP_AAH_AAAAAISNB7D==';
+    const consentConfig = {
+      consentString: consentString,
+      gdprApplies: true,
+      vendorData: {
+        metadata: consentString,
+        gdprApplies: true,
+        purpose: {
+          consents: {
+            1: true,
+            2: true,
+            3: true,
+            4: false
+          }
+        }
+      }
+    };
+
+    gdprDataHdlrStub.returns(consentConfig);
+    expect(hasGDPRConsent()).to.equal(false);
+  });
+});
+
+describe('getCachedTopics()', () => {
+  const storage = getCoreStorageManager('topicsFpd');
+  const expected = [{
+    ext: {
+      segtax: 600,
+      segclass: '2206021246'
+    },
+    segment: [{
+      'id': '243'
+    }, {
+      'id': '265'
+    }],
+    name: 'ads.pubmatic.com'
+  }];
+  const consentString = 'CPi8wgAPi8wgAADABBENCrCsAP_AAH_AAAAAISNB7D==';
+  const consentConfig = {
+    consentString: consentString,
+    gdprApplies: true,
+    vendorData: {
+      metadata: consentString,
+      gdprApplies: true,
+      purpose: {
+        consents: {
+          1: true,
+          2: true,
+          3: true,
+          4: true
+        }
+      }
+    }
+  };
+  const mockData = [
+    {
+      name: 'domain',
+      segment: [{id: 123}]
+    },
+    {
+      name: 'domain',
+      segment: [{id: 321}],
+    }
+  ];
+
+  const evt = {
+    data: '{"segment":{"domain":"ads.pubmatic.com","topics":[{"configVersion":"chrome.1","modelVersion":"2206021246","taxonomyVersion":"1","topic":165,"version":"chrome.1:1:2206021246"}],"bidder":"pubmatic"},"date":1669743901858}',
+    origin: 'https://ads.pubmatic.com'
+  };
+
+  let gdprDataHdlrStub;
+  beforeEach(() => {
+    gdprDataHdlrStub = sinon.stub(gdprDataHandler, 'getConsentData');
+  });
+
+  afterEach(() => {
+    storage.removeDataFromLocalStorage(topicStorageName);
+    gdprDataHdlrStub.restore();
+  });
+
+  it('should return segments for bidder if GDPR consent is true and there is cached segments stored which is not expired', () => {
+    const storedSegments = JSON.stringify(
+      [['pubmatic', {
+        '2206021246': {
+          'ext': {'segtax': 600, 'segclass': '2206021246'},
+          'segment': [{'id': '243'}, {'id': '265'}],
+          'name': 'ads.pubmatic.com'
+        },
+        'lastUpdated': new Date().getTime()
+      }]]
+    );
+    storage.setDataInLocalStorage(topicStorageName, storedSegments);
+    gdprDataHdlrStub.returns(consentConfig);
+    assert.deepEqual(getCachedTopics(), expected);
+  });
+
+  it('should return empty segments for bidder if GDPR consent is true and there is cached segments stored which is expired', () => {
+    let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":10}]]';
+    storage.setDataInLocalStorage(topicStorageName, storedSegments);
+    gdprDataHdlrStub.returns(consentConfig);
+    assert.deepEqual(getCachedTopics(), []);
+  });
+
+  it('should stored segments if receiveMessage event is triggerred with segment data', () => {
+    return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
+      .then(({global}) => {
+        receiveMessage(evt);
+        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        expect(segments.has('pubmatic')).to.equal(true);
+      });
+  });
+
+  it('should update stored segments if receiveMessage event is triggerred with segment data', () => {
+    let storedSegments = '[["pubmatic",{"2206021246":{"ext":{"segtax":600,"segclass":"2206021246"},"segment":[{"id":"243"},{"id":"265"}],"name":"ads.pubmatic.com"},"lastUpdated":1669719242027}]]';
+    storage.setDataInLocalStorage(topicStorageName, storedSegments);
+    return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
+      .then(({global}) => {
+        receiveMessage(evt);
+        let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
+        expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
       });
   });
 });
