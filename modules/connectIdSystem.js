@@ -172,7 +172,7 @@ export const connectIdSubmodule = {
 
     let shouldResync = isStale(storedId);
 
-    if (storedId && !shouldResync) {
+    if (storedId) {
       if (isPlainObject(storedId) && storedId.puid && storedId.lastUsed && !params.puid &&
         (storedId.lastUsed + PUID_EXPIRY) <= Date.now()) {
         delete storedId.puid;
