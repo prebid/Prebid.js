@@ -104,6 +104,10 @@ describe('ttdBidAdapter', function () {
     });
 
     describe('video', function () {
+      if (!FEATURES.VIDEO) {
+        return;
+      }
+
       function makeBid() {
         return {
           'bidder': 'ttd',
@@ -683,6 +687,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('buildRequests-display-video-multiformat', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const baseMultiformatBidRequests = [{
       'bidder': 'ttd',
       'params': {
@@ -751,6 +759,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('buildRequests-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const baseVideoBidRequests = [{
       'bidder': 'ttd',
       'params': {
@@ -1186,6 +1198,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('interpretResponse-simple-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const incoming = {
       'body': {
         'cur': 'USD',
@@ -1318,6 +1334,10 @@ describe('ttdBidAdapter', function () {
   });
 
   describe('interpretResponse-display-and-video', function () {
+    if (!FEATURES.VIDEO) {
+      return;
+    }
+
     const incoming = {
       'body': {
         'id': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
