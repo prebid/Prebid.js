@@ -235,11 +235,6 @@ function enableAnalyticsWrapper(config) {
     auctions: {},
   };
 
-  const usPrivacy = uspDataHandler.getConsentData();
-  if (/^1[Y|N|-]{3}$/.test(usPrivacy)) {
-    locals.cache.usPrivacy = usPrivacy;
-  }
-
   analyticsAdapter.originEnableAnalytics(config);
 }
 
@@ -292,7 +287,7 @@ export default analyticsAdapter;
  * @return {AnalyticsReport} Analytics report
  */
 function createReportFromCache(analyticsCache, completedAuctionId) {
-  const { pid, auctions, usPrivacy } = analyticsCache;
+  const { pid, auctions } = analyticsCache;
 
   const report = {
     pid,
@@ -301,8 +296,8 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     pbjsVersion: '$prebid.version$', // Replaced by build script
     auctions: [ auctions[completedAuctionId] ],
   }
-  if (usPrivacy) {
-    report.usPrivacy = usPrivacy;
+  if (uspDataHandler.getConsentData()) {
+    report.usPrivacy = uspDataHandler.getConsentData();
   }
 
   return report;
@@ -471,7 +466,7 @@ function sendReport(report, endpoint) {
 }
 
 /**
- * Encapsute certain logger functions and add a prefix to the final messages.
+ * Encapsulate certain logger functions and add a prefix to the final messages.
  *
  * @return {Object} New logger functions
  */

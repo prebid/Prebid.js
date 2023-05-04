@@ -205,23 +205,6 @@ describe('33acrossAnalyticsAdapter:', function () {
           });
         });
       });
-
-      context('and an *invalid* US Privacy configuration is present', function () {
-        ['2ABC', '1234', '1YNYN', '11YNY'].forEach(consent => {
-          it('it calls "sendBeacon" without the usPrivacy field', function () {
-            sandbox.stub(uspDataHandler, 'getConsentData').returns(consent);
-            this.enableAnalytics();
-
-            navigator.sendBeacon
-              .withArgs('http://test-endpoint', createReportWithThreeBidWonEvents());
-
-            performStandardAuction();
-            sandbox.clock.tick(this.defaultTimeout + 1);
-
-            assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', createReportWithThreeBidWonEvents());
-          });
-        });
-      });
     });
 
     context('when an error occurs while sending the AnalyticsReport', function () {
