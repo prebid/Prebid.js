@@ -343,12 +343,12 @@ describe('riseAdapter', function () {
     });
 
     describe('COPPA Param', function() {
-      it('should not include coppa flag in bid request if coppa is set to false', function() {
+      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);
         expect(request.data.bids[0].coppa).to.be.equal(0);
       });
 
-      it('should include coppa flag in bid request if coppa is set to true', function() {
+      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
         const bid = utils.deepClone(bidRequests[0]);
         bid.ortb2 = {
           'regs': {
