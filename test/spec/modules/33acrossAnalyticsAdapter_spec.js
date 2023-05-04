@@ -11,6 +11,12 @@ describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
   let assert = getLocalAssert();
 
+  /* this is required in case other providers' tests do not clear state */
+  before(function () {
+    mockGpt.disable();
+    events.clearEvents();
+  });
+
   beforeEach(function () {
     mockGpt.enable();
 
