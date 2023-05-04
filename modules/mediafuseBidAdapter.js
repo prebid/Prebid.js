@@ -1,4 +1,4 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, transformBidderParamKeywords, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
+import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -11,6 +11,7 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
+import {transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';

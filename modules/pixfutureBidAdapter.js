@@ -10,11 +10,11 @@ import {
   isEmpty,
   isFn,
   isNumber,
-  isPlainObject,
-  transformBidderParamKeywords
+  isPlainObject
 } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});

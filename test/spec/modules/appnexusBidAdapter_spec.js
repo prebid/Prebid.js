@@ -18,6 +18,18 @@ describe('AppNexusAdapter', function () {
     });
   });
 
+  function expectKeywords(actual, expected) {
+    expect(actual.length).to.equal(expected.length);
+    actual.forEach(el => {
+      const match = expected.find(ob => ob.key === el.key);
+      if (el.value) {
+        expect(el.value).to.have.members(match.value);
+      } else {
+        expect(match.value).to.not.exist;
+      }
+    })
+  }
+
   describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'appnexus',
@@ -737,7 +749,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.keywords).to.deep.equal([{
+      expectKeywords(payload.keywords, [{
         'key': 'gender',
         'value': ['m']
       }, {
@@ -872,26 +884,28 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
-        'key': 'single',
-        'value': ['val']
-      }, {
-        'key': 'singleArr',
-        'value': ['val']
-      }, {
-        'key': 'singleArrNum',
-        'value': ['5']
-      }, {
-        'key': 'multiValMixed',
-        'value': ['value1', '2', 'value3']
-      }, {
-        'key': 'singleValNum',
-        'value': ['123']
-      }, {
-        'key': 'emptyStr'
-      }, {
-        'key': 'emptyArr'
-      }]);
+      expectKeywords(payload.tags[0].keywords, [
+        {
+          'key': 'single',
+          'value': ['val']
+        }, {
+          'key': 'singleArr',
+          'value': ['val']
+        }, {
+          'key': 'singleArrNum',
+          'value': ['5']
+        }, {
+          'key': 'multiValMixed',
+          'value': ['value1', '2', 'value3']
+        }, {
+          'key': 'singleValNum',
+          'value': ['123']
+        }, {
+          'key': 'emptyStr'
+        }, {
+          'key': 'emptyArr'
+        }
+      ])
     });
 
     it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
@@ -911,7 +925,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
+      expectKeywords(payload.tags[0].keywords, [{
         'key': 'ortb2',
         'value': ['yes']
       }, {
@@ -955,7 +969,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
+      expectKeywords(payload.tags[0].keywords, [{
         'key': 'single',
         'value': ['val']
       }, {

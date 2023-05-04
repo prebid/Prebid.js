@@ -20,8 +20,7 @@ import {
   isStr,
   logError,
   logInfo,
-  logMessage,
-  transformBidderParamKeywords
+  logMessage
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -32,6 +31,7 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
+import {transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
