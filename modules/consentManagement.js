@@ -81,7 +81,7 @@ function lookupIabConsent({onSuccess, onError, onEvent}) {
     logInfo('Received a response from CMP', tcfData);
     if (success) {
       onEvent(tcfData);
-      if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
+      if (tcfData && (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete')) {
         processCmpData(tcfData, {onSuccess, onError});
       }
     } else {
