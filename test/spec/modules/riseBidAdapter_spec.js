@@ -342,19 +342,23 @@ describe('riseAdapter', function () {
       expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
 
-    describe('COPPA param', function () {
-      it('should add COPPA param to payload when COPPA equal to true', function () {
-        config.setConfig({ coppa: true });
+    describe('COPPA Param', function() {
+      it('should not include coppa flag in bid request if coppa is set to false', function() {
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.params.coppa).to.equal(1);
+        expect(request.data.bids[0].coppa).to.be.equal(0);
       });
 
-      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
-        config.setConfig({ coppa: false });
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.params.coppa).to.be.undefined;
+      it('should include coppa flag in bid request if coppa is set to true', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        bid.ortb2 = {
+          'regs': {
+            'coppa': true,
+          }
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(1);
       });
-    })
+    });
   });
 
   describe('interpretResponse', function () {
