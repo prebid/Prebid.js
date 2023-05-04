@@ -11,12 +11,6 @@ describe('33acrossAnalyticsAdapter:', function () {
   let sandbox;
   let assert = getLocalAssert();
 
-  /* this is required in case other providers' tests do not clear state */
-  before(function () {
-    mockGpt.disable();
-    events.clearEvents();
-  });
-
   beforeEach(function () {
     mockGpt.enable();
 
@@ -25,6 +19,8 @@ describe('33acrossAnalyticsAdapter:', function () {
         now: new Date(2023, 3, 3, 0, 1, 33, 425),
       },
     });
+
+    sandbox.stub(events, 'getEvents').returns([]);
 
     sandbox.spy(log, 'info');
     sandbox.spy(log, 'warn');
@@ -41,7 +37,6 @@ describe('33acrossAnalyticsAdapter:', function () {
   afterEach(function () {
     analyticsAdapter.disableAnalytics();
     mockGpt.disable();
-    events.clearEvents();
     sandbox.restore();
   });
 
