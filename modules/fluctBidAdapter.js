@@ -125,7 +125,6 @@ export const spec = {
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
       let data = {
-        bidderCode: BIDDER_CODE,
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,

@@ -1211,7 +1211,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1251,7 +1250,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1293,7 +1291,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1347,7 +1344,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1359,7 +1355,6 @@ describe('Livewrapped adapter tests', function () {
         meta: undefined
       }, {
         requestId: '42e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 3.565917,
         width: 980,
         height: 240,
@@ -1398,7 +1393,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,

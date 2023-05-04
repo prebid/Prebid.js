@@ -736,7 +736,6 @@ const spec = {
               ttl: exp,
               width: w,
               height: h,
-              bidderCode: BIDDER_CODE,
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,

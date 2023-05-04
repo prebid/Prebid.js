@@ -1945,7 +1945,6 @@ describe('33acrossBidAdapter:', function () {
         };
         const bidResponse = {
           requestId: 'b1',
-          bidderCode: BIDDER_CODE,
           cpm: 0.0938,
           width: 300,
           height: 250,
@@ -1991,7 +1990,6 @@ describe('33acrossBidAdapter:', function () {
         };
         const bidResponse = {
           requestId: 'b1',
-          bidderCode: BIDDER_CODE,
           cpm: 0.0938,
           width: 300,
           height: 250,
@@ -2035,7 +2033,6 @@ describe('33acrossBidAdapter:', function () {
           // Bid response below doesn't contain meta.advertiserDomains
           const bidResponse = {
             requestId: 'b1',
-            bidderCode: BIDDER_CODE,
             cpm: 0.0938,
             width: 300,
             height: 250,
@@ -2115,7 +2112,6 @@ describe('33acrossBidAdapter:', function () {
         const bidResponse = [
           {
             requestId: 'b1',
-            bidderCode: BIDDER_CODE,
             cpm: 0.0940,
             width: 300,
             height: 250,
@@ -2128,7 +2124,6 @@ describe('33acrossBidAdapter:', function () {
           },
           {
             requestId: 'b2',
-            bidderCode: BIDDER_CODE,
             cpm: 0.0938,
             width: 300,
             height: 250,
@@ -2141,7 +2136,6 @@ describe('33acrossBidAdapter:', function () {
           },
           {
             requestId: 'b3',
-            bidderCode: BIDDER_CODE,
             cpm: 0.0938,
             width: 300,
             height: 250,

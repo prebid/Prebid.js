@@ -90,7 +90,6 @@ export const spec = {
       if (bid.adm && bid.price) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: spec.code,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,

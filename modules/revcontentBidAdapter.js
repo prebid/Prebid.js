@@ -120,8 +120,6 @@ export const spec = {
         currency: response.cur || 'USD',
         ttl: 360,
         netRevenue: true,
-        bidder: 'revcontent',
-        bidderCode: 'revcontent'
       };
       if ('banner' in imp) {
         prBid.mediaType = BANNER;

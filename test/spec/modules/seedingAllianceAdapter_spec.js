@@ -189,7 +189,6 @@ describe('SeedingAlliance adapter', function () {
       const resultNative = spec.interpretResponse(goodNativeResponse, bidNativeRequest);
       const bidNative = goodNativeResponse.body.seatbid[0].bid[0];
 
-      assert.deepEqual(resultNative[0].bidderCode, 'seedingAlliance');
       assert.deepEqual(resultNative[0].currency, goodNativeResponse.body.cur);
       assert.deepEqual(resultNative[0].requestId, bidNativeRequest.bidRequests[0].bidId);
       assert.deepEqual(resultNative[0].cpm, bidNative.price);
@@ -198,7 +197,6 @@ describe('SeedingAlliance adapter', function () {
 
       const resultBanner = spec.interpretResponse(goodBannerResponse, bidBannerRequest);
 
-      assert.deepEqual(resultBanner[0].bidderCode, 'seedingAlliance');
       assert.deepEqual(resultBanner[0].mediaType, 'banner');
       assert.deepEqual(resultBanner[0].width, bidBannerRequest.bidRequests[0].sizes[0]);
       assert.deepEqual(resultBanner[0].height, bidBannerRequest.bidRequests[0].sizes[1]);

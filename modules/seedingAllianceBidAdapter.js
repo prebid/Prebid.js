@@ -167,7 +167,6 @@ export const spec = {
             netRevenue: true,
             currency: cur,
             mediaType: type,
-            bidderCode: BIDDER_CODE,
             meta: {
               advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
             }

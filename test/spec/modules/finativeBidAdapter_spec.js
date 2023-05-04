@@ -166,7 +166,6 @@ describe('Finative adapter', function () {
       assert.deepEqual(result[0].cpm, bid.price);
       assert.deepEqual(result[0].creativeId, bid.crid);
       assert.deepEqual(result[0].mediaType, 'native');
-      assert.deepEqual(result[0].bidderCode, 'finative');
     });
 
     it('should return the correct tracking links', function () {

@@ -440,7 +440,6 @@ function _createBidResponse(bid) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: spec.code,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,

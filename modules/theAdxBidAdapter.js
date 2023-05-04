@@ -253,7 +253,6 @@ export const spec = {
         }
 
         let response = {
-          bidderCode: BIDDER_CODE,
           requestId: request.bidId,
           cpm: bid.price,
           width: bidWidth | 0,

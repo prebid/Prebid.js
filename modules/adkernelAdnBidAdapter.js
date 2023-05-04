@@ -99,7 +99,6 @@ function buildSite(refInfo) {
 function buildBid(tag) {
   let bid = {
     requestId: tag.impid,
-    bidderCode: spec.code,
     cpm: tag.bid,
     creativeId: tag.crid,
     currency: 'USD',
