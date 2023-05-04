@@ -11,7 +11,7 @@ const { EVENTS } = CONSTANTS;
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
 const DEFAULT_TRANSACTION_TIMEOUT = 10000;
-const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
+export const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
 
 export const log = getLogger();
 
@@ -246,8 +246,8 @@ function enableAnalyticsWrapper(config) {
  * @param {string} [endpoint]
  * @returns {string}
  */
-function calculateEndpoint(endpoint) {
-  if (typeof endpoint === 'string' && endpoint.length > 0 && endpoint.startsWith('http')) {
+function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
+  if (typeof endpoint === 'string' && endpoint.startsWith('http')) {
     return endpoint;
   }
 

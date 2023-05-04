@@ -5,6 +5,7 @@ import * as events from 'src/events.js';
 import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
 import { uspDataHandler } from '../../../src/adapterManager';
+import { DEFAULT_ENDPOINT } from '../../../modules/33acrossAnalyticsAdapter';
 const { EVENTS, BID_STATUS } = CONSTANTS;
 
 describe('33acrossAnalyticsAdapter:', function () {
@@ -43,14 +44,14 @@ describe('33acrossAnalyticsAdapter:', function () {
   describe('enableAnalytics:', function () {
     context('When pid is given', function () {
       context('but endpoint is not', function () {
-        it('it logs an info message', function () {
+        it('uses the default endpoint', function () {
           analyticsAdapter.enableAnalytics({
             options: {
               pid: 'test-pid',
             },
           });
 
-          assert.calledWithExactly(log.info, 'Invalid endpoint provided for "options.endpoint". Using default endpoint.');
+          assert.equal(analyticsAdapter.getUrl(), DEFAULT_ENDPOINT);
         });
       });
 
