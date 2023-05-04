@@ -10,6 +10,7 @@ const { EVENTS } = CONSTANTS;
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
+const GVLID = 58;
 const DEFAULT_TRANSACTION_TIMEOUT = 10000;
 export const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
 
@@ -259,11 +260,7 @@ function calculateEndpoint(endpoint = DEFAULT_ENDPOINT) {
  * @param {number} [configTimeout]
  * @returns {number} Transaction Timeout
  */
-function calculateTransactionTimeout(configTimeout) {
-  if (typeof configTimeout === 'undefined') {
-    return DEFAULT_TRANSACTION_TIMEOUT;
-  }
-
+function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT) {
   if (typeof configTimeout === 'number' && configTimeout >= 0) {
     return configTimeout;
   }
@@ -284,7 +281,7 @@ analyticsAdapter.disableAnalytics = function () {
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
   code: PROVIDER_NAME,
-  gvlid: 58,
+  gvlid: GVLID,
 });
 
 export default analyticsAdapter;
@@ -362,6 +359,7 @@ function analyticEventHandler({ eventType, args }) {
 function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
+    return;
   }
 
   locals.cache.auctions[auctionId] = {
@@ -406,8 +404,8 @@ function onBidRequested({ auctionId, bids }) {
     });
 
     // if there is no manager for this auction, then the auction has already been completed
-    // eslint-disable-next-line no-unused-expressions
-    locals.transactionManagers[auctionId]?.initiate(transactionId);
+    locals.transactionManagers[auctionId] &&
+      locals.transactionManagers[auctionId].initiate(transactionId);
   }
 }
 
@@ -428,29 +426,31 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
   );
 }
 
-function onBidWon({ auctionId, requestId, transactionId }) {
+function onBidWon(bidWon) {
+  const { auctionId, requestId, transactionId } = bidWon;
   const bid = getBid(auctionId, requestId);
   if (!bid) {
     log.error(`Cannot find bid "${requestId}". Auction ID: "${auctionId}". Transaction ID: "${transactionId}".`);
     return;
   }
 
-  Object.assign(bid,
-    {
-      hasWon: 1
+  for (let key in bid) {
+    if (key in bidWon) {
+      bid[key] = bidWon[key];
     }
-  );
+  }
+  bid.hasWon = 1;
 
-  // eslint-disable-next-line no-unused-expressions
-  locals.transactionManagers[auctionId]?.complete(transactionId);
+  locals.transactionManagers[auctionId] &&
+    locals.transactionManagers[auctionId].complete(transactionId);
 }
 
 function onAuctionEnd({ auctionId }) {
   // auctionEnd event *sometimes* fires before bidWon events,
   // even when auction is ending because all bids have been won.
   setTimeout(() => {
-    // eslint-disable-next-line no-unused-expressions
-    locals.transactionManagers[auctionId]?.completeAll('auctionEnd');
+    locals.transactionManagers[auctionId] &&
+      locals.transactionManagers[auctionId].completeAll('auctionEnd');
   }, 0);
 }
 
