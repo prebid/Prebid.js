@@ -228,6 +228,25 @@ describe('ttdBidAdapter', function () {
       'doneCbCallCount': 0
     };
 
+    const extFirstPartyDataValues = ['value', 'value2'];
+    const extFirstPartyData = {
+      data: {
+        firstPartyKey: 'firstPartyValue',
+        firstPartyKey2: extFirstPartyDataValues
+      },
+      custom: 'custom_data',
+      custom_kvp: {
+        customKey: 'customValue'
+      }
+    }
+
+    function validateExtFirstPartyData(ext) {
+      expect(ext.data.firstPartyKey).to.equal('firstPartyValue');
+      expect(ext.data.firstPartyKey2).to.eql(extFirstPartyDataValues);
+      expect(ext.custom).to.equal('custom_data');
+      expect(ext.custom_kvp.customKey).to.equal('customValue');
+    }
+
     it('sends bid request to our endpoint that makes sense', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest);
       expect(request.method).to.equal('POST');
@@ -586,18 +605,10 @@ describe('ttdBidAdapter', function () {
       expect(1).to.equal(requestBody.imp[0].secure);
     });
 
-    it('adds all of site including first party data to request', function() {
+    it('adds all of site first party data to request', function() {
       const ortb2 = {
         site: {
-          ext: {
-            data: {
-              firstPartyKey: 'firstPartyValue'
-            },
-            custom: 'custom_data',
-            custom_kvp: {
-              customKey: 'customValue'
-            }
-          },
+          ext: extFirstPartyData,
           search: 'test search'
         }
       };
@@ -605,94 +616,85 @@ describe('ttdBidAdapter', function () {
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
 
-      expect(requestBody.site.ext.data.firstPartyKey).to.equal('firstPartyValue');
-      expect(requestBody.site.ext.custom).to.equal('custom_data');
-      expect(requestBody.site.ext.custom_kvp.customKey).to.equal('customValue');
+      validateExtFirstPartyData(requestBody.site.ext)
       expect(requestBody.site.search).to.equal('test search')
     });
 
-    it('adds all of user including first party data to request', function() {
-      const values = ['value', 'value2'];
+    it('adds all of user first party data to request', function() {
       const ortb2 = {
         user: {
-          ext: {
-            data: {
-              firstPartyKey: 'firstPartyValue',
-              firstPartyKey2: values
-            },
-            custom: 'custom_data',
-            custom_kvp: {
-              customKey: 'customValue'
-            }
-          },
+          ext: extFirstPartyData,
           yob: 1998
         }
       };
 
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
-      expect(requestBody.user.ext.data.firstPartyKey).to.equal('firstPartyValue');
-      expect(requestBody.user.ext.data.firstPartyKey2).to.eql(values);
-      expect(requestBody.user.ext.custom).to.equal('custom_data');
-      expect(requestBody.user.ext.custom_kvp.customKey).to.equal('customValue');
+
+      validateExtFirstPartyData(requestBody.user.ext)
       expect(requestBody.user.yob).to.equal(1998)
     });
 
-    it('adds all of imp including first party data to request', function() {
-      const values = ['value', 'value2'];
+    it('adds all of imp first party data to request', function() {
       const metric = { type: 'viewability', value: 0.8 };
       let clonedBannerRequests = deepClone(baseBannerBidRequests);
       clonedBannerRequests[0].ortb2Imp = {
-        ext: {
-          data: {
-            firstPartyKey: 'firstPartyValue',
-            firstPartyKey2: values
-          },
-          custom: 'custom_data',
-          custom_kvp: {
-            customKey: 'customValue'
-          }
-        },
+        ext: extFirstPartyData,
         metric: [metric],
         clickbrowser: 1
       };
 
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest).data;
 
+      validateExtFirstPartyData(requestBody.imp[0].ext)
       expect(requestBody.imp[0].tagid).to.equal('1gaa015');
-      expect(requestBody.imp[0].ext.data.firstPartyKey).to.equal('firstPartyValue');
-      expect(requestBody.imp[0].ext.data.firstPartyKey2).to.eql(values);
-      expect(requestBody.imp[0].ext.custom).to.equal('custom_data');
-      expect(requestBody.imp[0].ext.custom_kvp.customKey).to.equal('customValue');
       expect(requestBody.imp[0].metric[0]).to.deep.equal(metric);
       expect(requestBody.imp[0].clickbrowser).to.equal(1)
     });
 
-    it('adds all of app including first party data to request', function() {
-      const values = ['value', 'value2'];
+    it('adds all of app first party data to request', function() {
       const ortb2 = {
         app: {
-          ext: {
-            data: {
-              firstPartyKey: 'firstPartyValue',
-              firstPartyKey2: values
-            },
-            custom: 'custom_data',
-            custom_kvp: {
-              customKey: 'customValue'
-            }
-          },
+          ext: extFirstPartyData,
           ver: 'v1.0'
         }
       };
 
       let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
       const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
-      expect(requestBody.app.ext.data.firstPartyKey).to.equal('firstPartyValue');
-      expect(requestBody.app.ext.data.firstPartyKey2).to.eql(values);
-      expect(requestBody.app.ext.custom).to.equal('custom_data');
-      expect(requestBody.app.ext.custom_kvp.customKey).to.equal('customValue');
+
+      validateExtFirstPartyData(requestBody.app.ext)
       expect(requestBody.app.ver).to.equal('v1.0')
+    });
+
+    it('adds all of device first party data to request', function() {
+      const ortb2 = {
+        device: {
+          ext: extFirstPartyData,
+          os: 'iPhone'
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.device.ext)
+      expect(requestBody.device.os).to.equal('iPhone')
+    });
+
+    it('adds all of pmp first party data to request', function() {
+      const ortb2 = {
+        pmp: {
+          ext: extFirstPartyData,
+          private_auction: 1
+        }
+      };
+
+      let clonedBidderRequest = {...deepClone(baseBidderRequest), ortb2};
+      const requestBody = testBuildRequests(baseBannerBidRequests, clonedBidderRequest).data;
+
+      validateExtFirstPartyData(requestBody.pmp.ext)
+      expect(requestBody.pmp.private_auction).to.equal(1)
     });
   });
 

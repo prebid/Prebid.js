@@ -76,7 +76,7 @@ function getSource(validBidRequests) {
   return source;
 }
 
-function getDevice() {
+function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   let device = {
     ua: navigator.userAgent,
@@ -84,6 +84,8 @@ function getDevice() {
     language: language,
     connectiontype: getConnectionType()
   };
+
+  utils.mergeDeep(device, firstPartyData.device)
 
   return device;
 };
@@ -404,9 +406,8 @@ export const spec = {
     let topLevel = {
       id: bidderRequest.auctionId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
-      app: firstPartyData.app || {},
       site: getSite(bidderRequest, firstPartyData),
-      device: getDevice(),
+      device: getDevice(firstPartyData),
       user: getUser(bidderRequest, firstPartyData),
       at: 1,
       cur: ['USD'],
@@ -421,6 +422,14 @@ export const spec = {
 
     if (firstPartyData && firstPartyData.badv) {
       topLevel.badv = firstPartyData.badv;
+    }
+
+    if (firstPartyData && firstPartyData.app) {
+      topLevel.app = firstPartyData.app
+    }
+
+    if (firstPartyData && firstPartyData.pmp) {
+      topLevel.pmp = firstPartyData.pmp
     }
 
     let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;
