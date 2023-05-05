@@ -2257,6 +2257,15 @@ describe('IndexexchangeAdapter', function () {
         expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
       });
 
+      it('should not overwrite existing query parameters with first party data', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'https://www.prebid.org/?key1=existingValue1'
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=existingValue1&key2=value2');
+      });
+
       it('should return the original URL if no first party data is available', () => {
         config.setConfig({ ix: {} });
         const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
