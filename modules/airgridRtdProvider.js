@@ -39,12 +39,12 @@ function getModuleUrl(accountId) {
 export function attachScriptTagToDOM(rtdConfig) {
   var edktInitializor = (window.edktInitializor = window.edktInitializor || {});
   if (!edktInitializor.invoked) {
+    edktInitializor.accountId = rtdConfig.params.accountId;
+    edktInitializor.publisherId = rtdConfig.params.publisherId;
+    edktInitializor.apiKey = rtdConfig.params.apiKey;
     const moduleSrc = getModuleUrl(rtdConfig.params.accountId);
     loadExternalScript(moduleSrc, SUBMODULE_NAME, () => {
       edktInitializor.invoked = true;
-      edktInitializor.accountId = rtdConfig.params.accountId;
-      edktInitializor.publisherId = rtdConfig.params.publisherId;
-      edktInitializor.apiKey = rtdConfig.params.apiKey;
     });
   }
 }
