@@ -42,10 +42,9 @@ export function attachScriptTagToDOM(rtdConfig) {
     edktInitializor.accountId = rtdConfig.params.accountId;
     edktInitializor.publisherId = rtdConfig.params.publisherId;
     edktInitializor.apiKey = rtdConfig.params.apiKey;
+    edktInitializor.invoked = true;
     const moduleSrc = getModuleUrl(rtdConfig.params.accountId);
-    loadExternalScript(moduleSrc, SUBMODULE_NAME, () => {
-      edktInitializor.invoked = true;
-    });
+    loadExternalScript(moduleSrc, SUBMODULE_NAME);
   }
 }
 
