@@ -15,7 +15,7 @@ const ENDPOINT_URL =
   'https://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 

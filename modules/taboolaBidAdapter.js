@@ -24,7 +24,7 @@ const COOKIE_KEY = 'trc_cookie_storage';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
   getUserId: () => {
     const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
 

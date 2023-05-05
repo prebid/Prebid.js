@@ -1,4 +1,4 @@
-import { logWarn, isArray, isFn, deepAccess } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -372,6 +372,15 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add GPP consent
+      if (bidderRequest && bidderRequest.gppConsent) {
+        requestParams.gpp = bidderRequest.gppConsent.gppString;
+        requestParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.gpp) {
+        requestParams.gpp = bidderRequest.ortb2.regs.gpp;
+        requestParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
+
       // Add schain object
       var schain = currentBidRequest.schain;
       if (schain) {
@@ -422,6 +431,14 @@ export const spec = {
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
+      }
+
+      // Add video context and placement in requestParams
+      if (currentBidRequest.mediaTypes.video) {
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : 'instream';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : 1;
+        requestParams.video_context = videoContext;
+        requestParams.video_placement = videoPlacement;
       }
 
       return {
@@ -518,26 +535,42 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
-    var gdprParams = '';
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
+    const params = {};
+
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr = Number(gdprConsent.gdprApplies);
+        params.gdpr_consent = gdprConsent.consentString;
       } else {
-        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr_consent = gdprConsent.consentString;
       }
+    }
+
+    if (gppConsent) {
+      if (typeof gppConsent.gppString === 'string') {
+        params.gpp = gppConsent.gppString;
+      }
+      if (gppConsent.applicableSections) {
+        params.gpp_sid = gppConsent.applicableSections;
+      }
+    }
+
+    var queryString = '';
+    if (params) {
+      queryString = '?' + `${formatQS(params)}`;
     }
 
     const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: USER_SYNC_URL + gdprParams
+        url: USER_SYNC_URL + queryString
       });
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + gdprParams
+        url: USER_SYNC_URL + queryString
       });
     }
 

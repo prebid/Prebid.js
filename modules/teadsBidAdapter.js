@@ -12,7 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
