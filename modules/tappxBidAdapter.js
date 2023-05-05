@@ -414,9 +414,9 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let configGeo = {};
   configGeo.country = ORTB2?.device?.geo;
 
-  if(typeof configGeo.country  !== 'undefined'){
+  if (typeof configGeo.country !== 'undefined') {
     device.geo = configGeo;
-  }else if(typeof geo.country  !== 'undefined' ){
+  } else if (typeof geo.country !== 'undefined') {
     device.geo = geo;
   };
 
