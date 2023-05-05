@@ -26,8 +26,8 @@ export const storage = getStorageManager({
   moduleName: SUBMODULE_NAME,
 });
 
-function getModuleUrl(publisherId) {
-  const path = publisherId ?? 'sdk';
+function getModuleUrl(accountId) {
+  const path = accountId ?? 'sdk';
   return `https://cdn.edkt.io/${path}/edgekit.min.js`;
 }
 
@@ -39,7 +39,7 @@ function getModuleUrl(publisherId) {
 export function attachScriptTagToDOM(rtdConfig) {
   var edktInitializor = (window.edktInitializor = window.edktInitializor || {});
   if (!edktInitializor.invoked) {
-    const moduleSrc = getModuleUrl(rtdConfig.params.publisherId);
+    const moduleSrc = getModuleUrl(rtdConfig.params.accountId);
     loadExternalScript(moduleSrc, SUBMODULE_NAME, () => {
       edktInitializor.invoked = true;
       edktInitializor.accountId = rtdConfig.params.accountId;
