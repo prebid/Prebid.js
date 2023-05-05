@@ -651,6 +651,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
     const site = { ...(fpd.site || fpd.context) };
 
+    // update page URL with IX FPD KVs if they exist
     site.page = getIxFirstPartyDataPageUrl(bidderRequest);
 
     const user = { ...fpd.user };
@@ -937,7 +938,7 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex) {
 
 /**
 This function retrieves the page URL and appends first party data query parameters
-to it without adding duplicate query parameters.
+to it without adding duplicate query parameters. Returns original referer URL if no IX FPD exists.
 @param {Object} bidderRequest - The bidder request object containing information about the bid and the page.
 @returns {string} - The modified page URL with first party data query parameters appended.
 */
