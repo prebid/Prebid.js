@@ -51,6 +51,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     sid: 'publisherId',
     shortname: 'test_shortname',
+    tagid: 'test_tag_id',
     site: {
       page: 'testPage'
     },
@@ -395,5 +396,12 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
 
     expect(payload.source.ext.schain).to.eql(schain);
+  });
+
+  it('Test tagid provided', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].tagid).to.eql(params.tagid);
   });
 });

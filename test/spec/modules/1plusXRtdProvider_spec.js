@@ -332,15 +332,16 @@ describe('1plusXRtdProvider', () => {
     }
 
     it('correctly builds URLs if gdpr parameters are present', () => {
-      const url1 = getPapiUrl(customer)
-      const url2 = getPapiUrl(customer, extractConsent(consent))
-      expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''))
+      const url1 = getPapiUrl(customer);
+      const url2 = getPapiUrl(customer, extractConsent(consent));
+      expect(['&consent_string=myConsent&gdpr_applies=1', '&gdpr_applies=1&consent_string=myConsent']).to.contain(url2.replace(url1, ''));
     })
 
-    it('correctly builds URLs if fpid parameters are present')
-    const url1 = getPapiUrl(customer)
-    const url2 = getPapiUrl(customer, {}, 'my_first_party_id')
-    expect(url2.replace(url1, '')).to.equal('&fpid=my_first_party_id')
+    it('correctly builds URLs if fpid parameters are present', () => {
+      const url1 = getPapiUrl(customer);
+      const url2 = getPapiUrl(customer, {}, 'my_first_party_id');
+      expect(url2.replace(url1, '')).to.equal('&fpid=my_first_party_id');
+    })
   })
 
   describe('updateBidderConfig', () => {

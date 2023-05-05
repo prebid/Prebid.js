@@ -1403,8 +1403,8 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.native.title, 'Sample title')
         assert.equal(addedBid.native.sponsoredBy, 'Sample sponsoredBy')
         assert.equal(addedBid.native.clickUrl, 'http://www.click.com')
-        assert.equal(addedBid.native.image, 'https://www.example.com/image.png')
-        assert.equal(addedBid.native.icon, 'https://www.example.com/icon.png')
+        assert.equal(addedBid.native.image.url, 'https://www.example.com/image.png')
+        assert.equal(addedBid.native.icon.url, 'https://www.example.com/icon.png')
         assert.equal(addedBid.native.impressionTrackers[0], 'http://www.imptracker.com')
         assert.equal(addedBid.native.javascriptTrackers, '<script async src="http://www.jstracker.com/file.js"></script>')
       });

@@ -42,9 +42,9 @@ export const spec = {
         pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
         debug: debugTurnedOn(),
-        uid: getUid(bidderRequest),
+        uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
-        adapterVersion: '1.1.1',
+        adapterVersion: '1.2.0',
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
@@ -158,16 +158,23 @@ export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 /**
  * Check or generate a UID for the current user.
  */
-function getUid(bidderRequest) {
+function getUid(bidderRequest, validBidRequests) {
   if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
     return false;
   }
 
-  const sharedId = deepAccess(bidderRequest, 'userId._sharedid.id');
+  /**
+   * check for shareId or pubCommonId before generating a new one
+   * sharedId: @see https://docs.prebid.org/dev-docs/modules/userId.html
+   * pubCid (no longer supported): @see https://docs.prebid.org/dev-docs/modules/pubCommonId.html#adapter-integration
+   */
+  const sharedId =
+    deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    deepAccess(validBidRequests[0], 'userId.pubcid')
+  const pubCid = deepAccess(validBidRequests[0], 'crumbs.pubcid');
 
-  if (sharedId) {
-    return sharedId;
-  }
+  if (sharedId) return sharedId;
+  if (pubCid) return pubCid;
 
   const LEGACY_CONCERT_UID_KEY = 'c_uid';
   const CONCERT_UID_KEY = 'vmconcert_uid';
