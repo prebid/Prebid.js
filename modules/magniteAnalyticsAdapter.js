@@ -1,14 +1,33 @@
-import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, deepSetValue, deepClone, logInfo, isGptPubadsDefined } from '../src/utils.js';
+import {
+  debugTurnedOn,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  generateUUID,
+  getWindowLocation,
+  isAdUnitCodeMatchingSlot,
+  isEmpty,
+  isGptPubadsDefined,
+  isNumber,
+  logError,
+  logInfo,
+  logWarn,
+  mergeDeep,
+  parseQS,
+  parseUrl,
+  pick
+} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({ gvlid: RUBICON_GVL_ID, moduleName: 'magnite' });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
 const COOKIE_NAME = 'mgniSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -37,7 +56,8 @@ const {
     BIDDER_DONE,
     BID_TIMEOUT,
     BID_WON,
-    BILLABLE_EVENT
+    BILLABLE_EVENT,
+    SEAT_NON_BID
   },
   STATUS: {
     GOOD,
@@ -305,6 +325,10 @@ const getTopLevelDetails = () => {
     }
   }
 
+  if (browser) {
+    deepSetValue(payload, rubiConf.pbaBrowserLocation || 'client.browser', browser);
+  }
+
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
     payload.wrapper = {
@@ -460,7 +484,7 @@ const findMatchingAdUnitFromAuctions = (matchesFunction, returnFirstMatch) => {
     }
   }
   return matches;
-}
+};
 
 const getRenderingIds = bidWonData => {
   // if bid caching off -> return the bidWon auction id
@@ -595,6 +619,28 @@ const subscribeToGamSlots = () => {
   });
 }
 
+/**
+ * Lazy parsing of UA to determine browser
+ * @param {string} userAgent string from prebid ortb ua or navigator
+ * @returns {string} lazily guessed browser name
+ */
+export const detectBrowserFromUa = userAgent => {
+  let normalizedUa = userAgent.toLowerCase();
+
+  if (normalizedUa.includes('edg')) {
+    return 'Edge';
+  } else if ((/opr|opera|opt/i).test(normalizedUa)) {
+    return 'Opera';
+  } else if ((/chrome|crios/i).test(normalizedUa)) {
+    return 'Chrome';
+  } else if ((/fxios|firefox/i).test(normalizedUa)) {
+    return 'Firefox';
+  } else if (normalizedUa.includes('safari') && !(/chromium|ucbrowser/i).test(normalizedUa)) {
+    return 'Safari';
+  }
+  return 'OTHER';
+}
+
 let accountId;
 let endpoint;
 
@@ -643,11 +689,20 @@ magniteAdapter.disableAnalytics = function () {
   accountId = undefined;
   resetConfs();
   magniteAdapter.originDisableAnalytics();
-}
+};
+
+magniteAdapter.onDataDeletionRequest = function () {
+  if (storage.localStorageIsEnabled()) {
+    storage.removeDataFromLocalStorage(COOKIE_NAME);
+  } else {
+    throw Error('Unable to access local storage, no data deleted');
+  }
+};
 
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
 
+let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
@@ -666,6 +721,12 @@ magniteAdapter.track = ({ eventType, args }) => {
         'timeout as clientTimeoutMillis',
       ]);
       auctionData.accountId = accountId;
+
+      // get browser
+      if (!browser) {
+        const userAgent = deepAccess(args, 'bidderRequests.0.ortb2.device.ua', navigator.userAgent) || '';
+        browser = detectBrowserFromUa(userAgent);
+      }
 
       // Order bidders were called
       auctionData.bidderOrder = args.bidderRequests.map(bidderRequest => bidderRequest.bidderCode);
@@ -780,7 +841,16 @@ magniteAdapter.track = ({ eventType, args }) => {
         auctionEntry.floors.dealsEnforced = args.floorData.enforcements.floorDeals;
       }
 
-      // Log error if no matching bid!
+      // no-bid from server. report it!
+      if (!bid && args.seatBidId) {
+        bid = adUnit.bids[args.seatBidId] = {
+          bidder: args.bidderCode,
+          source: 'server',
+          bidId: args.seatBidId,
+          unknownBid: true
+        };
+      }
+
       if (!bid) {
         logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
         break;
@@ -810,6 +880,9 @@ magniteAdapter.track = ({ eventType, args }) => {
       if (pbsBidId) {
         bid.pbsBidId = pbsBidId;
       }
+      break;
+    case SEAT_NON_BID:
+      handleNonBidEvent(args);
       break;
     case BIDDER_DONE:
       const serverError = deepAccess(args, 'serverErrors.0');
@@ -895,6 +968,66 @@ magniteAdapter.track = ({ eventType, args }) => {
         logInfo(`${MODULE_NAME}: Billing event ignored`, args);
       }
       break;
+  }
+};
+
+const handleNonBidEvent = function(args) {
+  const {seatnonbid, auctionId} = args;
+  const auction = deepAccess(cache, `auctions.${auctionId}.auction`);
+  // if no auction just bail
+  if (!auction) {
+    logWarn(`Unable to match nonbid to auction`);
+    return;
+  }
+  const adUnits = auction.adUnits;
+  seatnonbid.forEach(seatnonbid => {
+    let {seat} = seatnonbid;
+    seatnonbid.nonbid.forEach(nonbid => {
+      try {
+        const {status, impid} = nonbid;
+        const matchingTid = Object.keys(adUnits).find(tid => adUnits[tid].adUnitCode === impid);
+        const adUnit = adUnits[matchingTid];
+        const statusInfo = statusMap[status] || { status: 'no-bid' };
+        adUnit.bids[generateUUID()] = {
+          bidder: seat,
+          source: 'server',
+          isSeatNonBid: true,
+          clientLatencyMillis: Date.now() - auction.auctionStart,
+          ...statusInfo
+        };
+      } catch (error) {
+        logWarn(`Unable to match nonbid to adUnit`);
+      }
+    });
+  });
+};
+
+const statusMap = {
+  0: {
+    status: 'no-bid'
+  },
+  100: {
+    status: 'error',
+    error: {
+      code: 'request-error',
+      description: 'general error'
+    }
+  },
+  101: {
+    status: 'error',
+    error: {
+      code: 'timeout-error',
+      description: 'prebid server timeout'
+    }
+  },
+  200: {
+    status: 'rejected'
+  },
+  202: {
+    status: 'rejected'
+  },
+  301: {
+    status: 'rejected-ipf'
   }
 };
 

@@ -3,7 +3,7 @@ import {spec, storage} from 'modules/admaticBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {getStorageManager} from 'src/storageManager';
 
-const ENDPOINT = 'https://layer.serve.admatic.com.tr/pb?bidder=admatic';
+const ENDPOINT = 'https://layer.serve.admatic.com.tr/pb';
 
 describe('admaticBidAdapter', () => {
   const adapter = newBidder(spec);

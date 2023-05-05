@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -251,6 +252,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
+  const ORTB2 = config.getConfig()?.ortb2;
 
   // let requests = [];
   let payload = {};
@@ -409,6 +411,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
+  let configGeo = {};
+  configGeo.country = ORTB2?.device?.geo;
+
+  if(typeof configGeo.country  !== 'undefined'){
+    device.geo = configGeo;
+  }else if(typeof geo.country  !== 'undefined' ){
+    device.geo = geo;
+  };
 
   // > GDPR
   let user = {};
@@ -473,7 +483,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = ($$PREBID_GLOBAL$$.version !== null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
 
   return {
     method: 'POST',

@@ -25,6 +25,22 @@ describe('Zeta Ssp Bid Adapter', function () {
     }
   ];
 
+  const schain = {
+    complete: 1,
+    nodes: [
+      {
+        asi: 'asi1',
+        sid: 'sid1',
+        rid: 'rid1'
+      },
+      {
+        asi: 'asi2',
+        sid: 'sid2',
+        rid: 'rid2'
+      }
+    ]
+  };
+
   const params = {
     user: {
       uid: 222,
@@ -35,12 +51,14 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     sid: 'publisherId',
     shortname: 'test_shortname',
+    tagid: 'test_tag_id',
     site: {
       page: 'testPage'
     },
     app: {
       bundle: 'testBundle'
     },
+    bidfloor: 0.2,
     test: 1
   };
 
@@ -102,6 +120,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       gdprApplies: 1,
       consentString: 'consentString'
     },
+    schain: schain,
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
@@ -358,5 +377,31 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
 
     expect(payload.tmax).to.be.undefined;
+  });
+
+  it('Test provide bidfloor', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
+  });
+
+  it('Timeout should exists and be a function', function () {
+    expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    expect(spec.onTimeout({ timeout: 1000 })).to.be.undefined;
+  });
+
+  it('Test schain provided', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.source.ext.schain).to.eql(schain);
+  });
+
+  it('Test tagid provided', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.imp[0].tagid).to.eql(params.tagid);
   });
 });

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { spec } from 'modules/smartadserverBidAdapter.js';
 
@@ -56,18 +57,80 @@ describe('Smart bid adapter tests', function () {
     },
     requestId: 'efgh5678',
     transactionId: 'zsfgzzg',
-    userId: {
-      britepoolid: '1111',
-      criteoId: '1111',
-      digitrustid: { data: { id: 'DTID', keyv: 4, privacy: { optout: false }, producer: 'ABC', version: 2 } },
-      id5id: { uid: '1111' },
-      idl_env: '1111',
-      lipbid: '1111',
-      parrableid: 'eidVersion.encryptionKeyReference.encryptedValue',
-      pubcid: '1111',
-      tdid: '1111',
-      netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-    }
+    userIdAsEids: [
+      {
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'britepoolid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'id5id',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'idl_env',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'lipbid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'parrableid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': 'eidVersion.encryptionKeyReference.encryptedValue'
+          }
+        ]
+      },
+      {
+        'source': 'tdid',
+        'uids': [
+          {
+            'atype': 1,
+            'id': '1111'
+          }
+        ]
+      },
+      {
+        'source': 'netId',
+        'uids': [
+          {
+            'atype': 1,
+            'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg'
+          }
+        ]
+      }
+    ]
   }];
 
   // Default params without optional ones
@@ -158,12 +221,44 @@ describe('Smart bid adapter tests', function () {
     }
   };
 
+  var sellerDefinedAudience = [
+    {
+      'name': 'hearst.com',
+      'ext': { 'segtax': 1 },
+      'segment': [
+        { 'id': '1001' },
+        { 'id': '1002' }
+      ]
+    }
+  ];
+
+  var sellerDefinedContext = [
+    {
+      'name': 'cnn.com',
+      'ext': { 'segtax': 2 },
+      'segment': [
+        { 'id': '2002' }
+      ]
+    }
+  ];
+
   it('Verify build request', function () {
     config.setConfig({
       'currency': {
         'adServerCurrency': 'EUR'
+      },
+      ortb2: {
+        'user': {
+          'data': sellerDefinedAudience
+        },
+        'site': {
+          'content': {
+            'data': sellerDefinedContext
+          }
+        }
       }
     });
+
     const request = spec.buildRequests(DEFAULT_PARAMS);
     expect(request[0]).to.have.property('url').and.to.equal('https://prg.smartadserver.com/prebid/v1');
     expect(request[0]).to.have.property('method').and.to.equal('POST');
@@ -186,6 +281,8 @@ describe('Smart bid adapter tests', function () {
     expect(requestContent).to.have.property('buid').and.to.equal('7569');
     expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
     expect(requestContent).to.have.property('ckid').and.to.equal(42);
+    expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+    expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
   });
 
   it('Verify parse response with no ad', function () {
@@ -358,8 +455,8 @@ describe('Smart bid adapter tests', function () {
 
   describe('gdpr tests', function () {
     afterEach(function () {
+      config.setConfig({ ortb2: undefined });
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with GDPR', function () {
@@ -408,10 +505,33 @@ describe('Smart bid adapter tests', function () {
     });
   });
 
+  describe('GPP', function () {
+    it('should be added to payload when gppConsent available in bidder request', function () {
+      const options = {
+        gppConsent: {
+          gppString: 'some-gpp-string',
+          applicableSections: [3, 5]
+        }
+      };
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, options);
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload).to.have.property('gpp').and.to.equal(options.gppConsent.gppString);
+      expect(payload).to.have.property('gpp_sid').and.to.be.an('array');
+      expect(payload.gpp_sid).to.have.lengthOf(2).and.to.deep.equal(options.gppConsent.applicableSections);
+    });
+
+    it('should be undefined on payload when gppConsent unavailable in bidder request', function () {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL, {});
+      const payload = JSON.parse(request[0].data);
+
+      expect(payload.gpp).to.be.undefined;
+    });
+  });
+
   describe('ccpa/us privacy tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('Verify build request with us privacy', function () {
@@ -440,7 +560,6 @@ describe('Smart bid adapter tests', function () {
   describe('Instream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const INSTREAM_DEFAULT_PARAMS = [{
@@ -489,6 +608,16 @@ describe('Smart bid adapter tests', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
+        },
+        ortb2: {
+          'user': {
+            'data': sellerDefinedAudience
+          },
+          'site': {
+            'content': {
+              'data': sellerDefinedContext
+            }
+          }
         }
       });
       const request = spec.buildRequests(INSTREAM_DEFAULT_PARAMS);
@@ -507,6 +636,8 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('buid').and.to.equal('7569');
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(42);
+      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
       expect(requestContent).to.have.property('isVideo').and.to.equal(true);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
@@ -699,7 +830,6 @@ describe('Smart bid adapter tests', function () {
   describe('Outstream video tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     const OUTSTREAM_DEFAULT_PARAMS = [{
@@ -748,6 +878,16 @@ describe('Smart bid adapter tests', function () {
       config.setConfig({
         'currency': {
           'adServerCurrency': 'EUR'
+        },
+        ortb2: {
+          'user': {
+            'data': sellerDefinedAudience
+          },
+          'site': {
+            'content': {
+              'data': sellerDefinedContext
+            }
+          }
         }
       });
       const request = spec.buildRequests(OUTSTREAM_DEFAULT_PARAMS);
@@ -766,6 +906,8 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('buid').and.to.equal('7579');
       expect(requestContent).to.have.property('appname').and.to.equal('Mozilla');
       expect(requestContent).to.have.property('ckid').and.to.equal(43);
+      expect(requestContent).to.have.property('sda').and.to.deep.equal(sellerDefinedAudience);
+      expect(requestContent).to.have.property('sdc').and.to.deep.equal(sellerDefinedContext);
       expect(requestContent).to.have.property('isVideo').and.to.equal(false);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(7);
@@ -996,6 +1138,17 @@ describe('Smart bid adapter tests', function () {
   });
 
   describe('Floors module', function () {
+    const getFloor = (bid) => {
+      switch (bid.mediaType) {
+        case BANNER:
+          return { currency: 'USD', floor: 1.93 };
+        case VIDEO:
+          return { currency: 'USD', floor: 2.72 };
+        default:
+          return {};
+      }
+    };
+
     it('should include floor from bid params', function() {
       const bidRequest = JSON.parse((spec.buildRequests(DEFAULT_PARAMS))[0].data);
       expect(bidRequest.bidfloor).to.deep.equal(DEFAULT_PARAMS[0].params.bidfloor);
@@ -1035,12 +1188,91 @@ describe('Smart bid adapter tests', function () {
       const floor = spec.getBidFloor(bidRequest, null);
       expect(floor).to.deep.equal(0);
     });
+
+    it('should take floor from bidder params over ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73, bidfloor: 1.25 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(1.25);
+    });
+
+    it('should take floor from banner ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(1.93);
+    });
+
+    it('should take floor from video ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const request = spec.buildRequests(bidRequest);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('bidfloor').and.to.equal(2.72);
+    });
+
+    it('should take floor from multiple media type ad unit', function() {
+      const bidRequest = [{
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 600]]
+          },
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          }
+        },
+        getFloor,
+        params: { siteId: 1234, pageId: 678, formatId: 73 }
+      }];
+
+      const requests = spec.buildRequests(bidRequest);
+      expect(requests).to.have.lengthOf(2);
+
+      const requestContents = requests.map(r => JSON.parse(r.data));
+      const videoRequest = requestContents.filter(r => r.videoData)[0];
+      expect(videoRequest).to.not.equal(null).and.to.not.be.undefined;
+      expect(videoRequest).to.have.property('bidfloor').and.to.equal(2.72);
+
+      const bannerRequest = requestContents.filter(r => !r.videoData)[0];
+      expect(bannerRequest).to.not.equal(null).and.to.not.be.undefined;
+      expect(bannerRequest).to.have.property('bidfloor').and.to.equal(1.93);
+    });
   });
 
   describe('Verify bid requests with multiple mediaTypes', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     var DEFAULT_PARAMS_MULTIPLE_MEDIA_TYPES = [{

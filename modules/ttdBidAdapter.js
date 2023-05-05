@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -38,10 +37,19 @@ function getRegs(bidderRequest) {
   if (config.getConfig('coppa') === true) {
     regs.coppa = 1;
   }
+  if (bidderRequest.ortb2?.regs) {
+    utils.mergeDeep(regs, bidderRequest.ortb2.regs);
+  }
+
   return regs;
 }
 
 function getBidFloor(bid) {
+  // value from params takes precedance over value set by Floor Module
+  if (bid.params.bidfloor) {
+    return bid.params.bidfloor;
+  }
+
   if (!utils.isFn(bid.getFloor)) {
     return null;
   }
@@ -116,8 +124,8 @@ function getUser(bidderRequest) {
     user.buyeruid = bidderRequest.bids[0].userId.tdid;
   }
 
-  var eids = createEidsArray(utils.deepAccess(bidderRequest, 'bids.0.userId'))
-  if (eids.length) {
+  var eids = utils.deepAccess(bidderRequest, 'bids.0.userIdAsEids')
+  if (eids && eids.length) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
@@ -132,14 +140,15 @@ function getUser(bidderRequest) {
 }
 
 function getSite(bidderRequest, firstPartyData) {
-  var site = {
+  var site = utils.mergeDeep({
     page: utils.deepAccess(bidderRequest, 'refererInfo.page'),
     ref: utils.deepAccess(bidderRequest, 'refererInfo.ref'),
     publisher: {
       id: utils.deepAccess(bidderRequest, 'bids.0.params.publisherId'),
     },
-    ...firstPartyData.site
-  };
+  },
+  firstPartyData.site
+  );
 
   var publisherDomain = bidderRequest.refererInfo.domain;
   if (publisherDomain) {
@@ -155,15 +164,18 @@ function getImpression(bidRequest) {
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
   const tid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.tid');
+  const rwdd = utils.deepAccess(bidRequest, 'ortb2Imp.rwdd');
   if (gpid || tid) {
     impression.ext = {}
     if (gpid) { impression.ext.gpid = gpid }
     if (tid) { impression.ext.tid = tid }
   }
-
+  if (rwdd) {
+    impression.rwdd = rwdd;
+  }
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
-    impression.tagid = tagid
+    impression.tagid = tagid;
   }
 
   const mediaTypesVideo = utils.deepAccess(bidRequest, 'mediaTypes.video');
@@ -242,6 +254,7 @@ function video(bid) {
   const api = utils.deepAccess(bid, 'mediaTypes.video.api');
   const mimes = utils.deepAccess(bid, 'mediaTypes.video.mimes');
   const placement = utils.deepAccess(bid, 'mediaTypes.video.placement');
+  const plcmt = utils.deepAccess(bid, 'mediaTypes.video.plcmt');
   const protocols = utils.deepAccess(bid, 'mediaTypes.video.protocols');
   const playbackmethod = utils.deepAccess(bid, 'mediaTypes.video.playbackmethod');
   const pos = utils.deepAccess(bid, 'mediaTypes.video.pos');
@@ -276,6 +289,9 @@ function video(bid) {
 
   if (playbackmethod) {
     video.playbackmethod = playbackmethod;
+  }
+  if (plcmt) {
+    video.plcmt = plcmt;
   }
   if (pos) {
     video.pos = pos;
@@ -341,6 +357,11 @@ export const spec = {
     }
     if (bid.params.publisherId.length > 32) {
       utils.logWarn(BIDDER_CODE + ': params.publisherId must be 32 characters or less');
+      return false;
+    }
+
+    // optional parameters
+    if (bid.params.bidfloor && isNaN(parseFloat(bid.params.bidfloor))) {
       return false;
     }
 

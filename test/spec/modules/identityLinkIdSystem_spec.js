@@ -1,9 +1,9 @@
 import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
-import {getStorageManager} from '../../../src/storageManager.js';
+import {getCoreStorageManager} from '../../../src/storageManager.js';
 
-export const storage = getStorageManager();
+const storage = getCoreStorageManager();
 
 const pid = '14';
 let defaultConfigParams;
