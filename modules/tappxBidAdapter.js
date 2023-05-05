@@ -500,7 +500,7 @@ function getLanguage() {
 
 function getOs() {
   let ua = navigator.userAgent;
-  if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
 function getVendor() {
