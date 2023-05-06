@@ -1,24 +1,24 @@
 import {
-  newBidder,
-  registerBidder,
-  preloadBidderMappingFile,
-  storage,
+  addComponentAuction,
   isValid,
-  addComponentAuction
+  newBidder,
+  preloadBidderMappingFile,
+  registerBidder,
+  storage
 } from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
-import { expect } from 'chai';
-import { userSync } from 'src/userSync.js'
+import {expect} from 'chai';
+import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
-import { bidderSettings } from '../../../../src/bidderSettings.js';
+import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 
 const CODE = 'sampleBidder';
