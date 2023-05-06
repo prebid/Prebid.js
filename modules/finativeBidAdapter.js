@@ -174,7 +174,6 @@ export const spec = {
             netRevenue: (!bid.netRevenue || bid.netRevenue === 'net'),
             currency: cur,
             mediaType: NATIVE,
-            bidderCode: BIDDER_CODE,
             native: parseNative(bidResponse),
             meta: {
               advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []

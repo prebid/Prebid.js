@@ -157,7 +157,6 @@ describe('browsi Bid Adapter Test', function () {
       const actualBidResponse = bidResponses[0];
       const expectedBidResponse = {
         requestId: bidRequest.data.bidId,
-        bidderCode: 'browsi',
         bidId: 'bidId1',
         width: 300,
         height: 250,

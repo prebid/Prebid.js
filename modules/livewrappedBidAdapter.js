@@ -130,7 +130,6 @@ export const spec = {
     serverResponse.body.ads.forEach(function(ad) {
       var bidResponse = {
         requestId: ad.bidId,
-        bidderCode: BIDDER_CODE,
         cpm: ad.cpmBid,
         width: ad.width,
         height: ad.height,

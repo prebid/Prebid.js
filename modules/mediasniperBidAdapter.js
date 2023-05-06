@@ -116,7 +116,6 @@ export const spec = {
           bidderSeat.bid.forEach((bid) => {
             const newBid = {
               requestId: bid.impid,
-              bidderCode: spec.code,
               cpm: bid.price || 0,
               width: bid.w,
               height: bid.h,

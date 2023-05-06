@@ -86,7 +86,6 @@ export const spec = {
           bidId: bid.bidId,
           context: context,
           auctionId: bidderRequest.auctionId,
-          bidderCode: BIDDER_CODE,
           start: +new Date(),
           timeout: 3000,
           params: bid.params,

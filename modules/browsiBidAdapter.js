@@ -98,7 +98,6 @@ export const spec = {
       width: w,
       height: h,
       currency: cur,
-      bidderCode: BIDDER_CODE,
       ...extraParams
     };
     bidResponses.push(bidResponse);

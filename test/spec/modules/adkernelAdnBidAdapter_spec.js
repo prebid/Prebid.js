@@ -374,7 +374,6 @@ describe('AdkernelAdn adapter', function () {
 
     it('should return fully-initialized bid-response', function () {
       let resp = responses[0];
-      expect(resp).to.have.property('bidderCode', 'adkernelAdn');
       expect(resp).to.have.property('requestId', '2c5e951baeeadd');
       expect(resp).to.have.property('cpm', 5.0);
       expect(resp).to.have.property('width', 300);
@@ -394,7 +393,6 @@ describe('AdkernelAdn adapter', function () {
 
     it('should return fully-initialized video bid-response', function () {
       let resp = responses[2];
-      expect(resp).to.have.property('bidderCode', 'adkernelAdn');
       expect(resp).to.have.property('requestId', '57d602ad1c9545');
       expect(resp).to.have.property('cpm', 10.0);
       expect(resp).to.have.property('creativeId', '108_158802');

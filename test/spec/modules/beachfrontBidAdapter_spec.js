@@ -695,7 +695,6 @@ describe('BeachfrontAdapter', function () {
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         expect(bidResponse).to.deep.equal({
           requestId: bidRequest.bidId,
-          bidderCode: spec.code,
           cpm: serverResponse.bidPrice,
           creativeId: serverResponse.crid,
           vastUrl: serverResponse.url,
