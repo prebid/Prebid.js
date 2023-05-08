@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -28,7 +28,7 @@ export const SUPPORTED_ID_SYSTEMS = {
   'pubProvidedId': 1
 };
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
@@ -138,6 +138,12 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
 
   appendUserIdsToRequestPayload(data, userId);
 
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
+
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
       data.gdprConsent = bidderRequest.gdprConsent.consentString;
@@ -221,7 +227,7 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER} = result;
+      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, metaData, mediaType = BANNER} = result;
       if (!ad || !price) {
         return;
       }
@@ -235,10 +241,19 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        meta: {
-          advertiserDomains: advertiserDomains || []
-        }
       };
+
+      if (metaData) {
+        Object.assign(response, {
+          meta: metaData
+        })
+      } else {
+        Object.assign(response, {
+          meta: {
+            advertiserDomains: advertiserDomains || []
+          }
+        })
+      }
 
       if (mediaType === BANNER) {
         Object.assign(response, {

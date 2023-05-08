@@ -10,6 +10,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'teadsId';
 const GVL_ID = 132;
@@ -28,7 +29,7 @@ export const gdprReason = {
   GDPR_APPLIES_PUBLISHER_CLASSIC: 120,
 };
 
-export const storage = getStorageManager({gvlid: GVL_ID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const teadsIdSubmodule = {
