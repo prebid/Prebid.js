@@ -28,7 +28,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.4.0';
+    const ADGENE_PREBID_VERSION = '1.5.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
