@@ -1054,6 +1054,7 @@ export const spec = {
       refererInfo = bidderRequest.refererInfo;
     }
     var conf = _initConf(refererInfo);
+    conf.auctionId = bidderRequest.auctionId;
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
     var dctrArr = [];
@@ -1078,7 +1079,6 @@ export const spec = {
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
-      conf.auctionId = bid.auctionId;
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
