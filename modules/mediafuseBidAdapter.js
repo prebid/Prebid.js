@@ -11,7 +11,12 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
-import {transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {
+  convertKeywordStringToANMap,
+  getANKewyordParamFromMaps,
+  getANKeywordParam,
+  transformBidderParamKeywords
+} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'mediafuse';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -192,16 +197,8 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    let auctionKeywords = config.getConfig('mediafuseAuctionKeywords');
-    if (isPlainObject(auctionKeywords)) {
-      let aucKeywords = transformBidderParamKeywords(auctionKeywords);
-
-      if (aucKeywords.length > 0) {
-        aucKeywords.forEach(deleteValues);
-      }
-
-      payload.keywords = aucKeywords;
-    }
+    let mfKeywords = config.getConfig('mediafuseAuctionKeywords');
+    payload.keywords = getANKeywordParam(bidderRequest?.ortb2, mfKeywords);
 
     if (config.getConfig('adpod.brandCategoryExclusion')) {
       payload.brand_category_uniqueness = true;
@@ -344,10 +341,6 @@ export const spec = {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
 
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-
       Object.keys(params).forEach(paramKey => {
         let convertedKey = convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
@@ -370,16 +363,6 @@ export const spec = {
     }
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
 
 function reloadViewabilityScriptWithCorrectParameters(bid) {
   let viewJsPayload = getMediafuseViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
@@ -748,14 +731,8 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.externalImpId;
   }
   if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
+    tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;

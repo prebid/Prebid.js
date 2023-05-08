@@ -14,7 +14,7 @@ import {
 } from '../src/utils.js';
 import { auctionManager } from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -281,14 +281,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
