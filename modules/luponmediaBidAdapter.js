@@ -290,7 +290,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     id: bidRequest.transactionId,
     test: config.getConfig('debug') ? 1 : 0,
     source: {
-      tid: bidRequest.transactionId
+      tid: bidRequest.ortb2.source.tid
     },
     tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
