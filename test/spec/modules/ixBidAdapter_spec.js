@@ -2243,6 +2243,10 @@ describe('IndexexchangeAdapter', function () {
         config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
       });
 
+      afterEach(() => {
+        config.resetConfig();
+      });
+
       it('should return the modified URL with first party data query parameters appended', () => {
         const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
@@ -2281,6 +2285,16 @@ describe('IndexexchangeAdapter', function () {
         const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
         const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
         expect(pageUrl).to.equal('https://example.com');
+      });
+
+      it('should use referer URL if the provided ortb2.site.page URL is not valid', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'www.invalid-url*&?.com';
+        bidderRequest.refererInfo.page = 'https://www.prebid.org';
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
       });
     });
 

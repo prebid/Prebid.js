@@ -958,7 +958,7 @@ function getIxFirstPartyDataPageUrl (bidderRequest) {
     // Append firstPartyData to r.site.page if firstPartyData exists.
     if (typeof otherIxConfig.firstPartyData === 'object') {
       const firstPartyData = otherIxConfig.firstPartyData;
-      return appendQueryParams(pageUrl, firstPartyData);
+      return appendIXQueryParams(bidderRequest, pageUrl, firstPartyData);
     }
   }
 
@@ -967,12 +967,20 @@ function getIxFirstPartyDataPageUrl (bidderRequest) {
 
 /**
 This function appends the provided query parameters to the given URL without adding duplicate query parameters.
+@param {Object} bidderRequest - The bidder request object containing information about the bid and the page to be used as fallback in case url is not valid.
 @param {string} url - The base URL to which query parameters will be appended.
 @param {Object} params - An object containing key-value pairs of query parameters to append.
 @returns {string} - The modified URL with the provided query parameters appended.
 */
-function appendQueryParams(url, params) {
-  const urlObj = new URL(url);
+function appendIXQueryParams(bidderRequest, url, params) {
+  let urlObj;
+  try {
+    urlObj = new URL(url);
+  } catch (error) {
+    logWarn(`IX Bid Adapter: Invalid URL set in ortb2.site.page: ${url}. Using referer URL instead.`);
+    urlObj = new URL(deepAccess(bidderRequest, 'refererInfo.page'));
+  }
+
   const searchParams = new URLSearchParams(urlObj.search);
 
   // Loop through the provided query parameters and append them
