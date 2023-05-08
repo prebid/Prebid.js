@@ -13,7 +13,7 @@ Connects to FreePass service for bids. Only BANNER is currently supported.
 This BidAdapter requires the FreePass IdSystem to be configured. Please contact FreePass for proper setup.
 
 # Test Parameters
-```
+```javascript
     let adUnits = [
         {
             code: 'ad-banner-1', // ad slot HTML element ID
