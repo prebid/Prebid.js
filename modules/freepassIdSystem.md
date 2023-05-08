@@ -16,7 +16,7 @@ Maintainer: freepass-headerbidding@craid-inc.com
 
 First, make sure to add the FreePass ID submodule to your Prebid.js package with:
 
-```
+```shell
 gulp build --modules=freepassIdSystem,userId
 ```
 
