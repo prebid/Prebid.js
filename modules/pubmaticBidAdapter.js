@@ -1078,6 +1078,7 @@ export const spec = {
       conf.pubId = conf.pubId || bid.params.publisherId;
       conf = _handleCustomParams(bid.params, conf);
       conf.transactionId = bid.transactionId;
+      conf.auctionId = bid.auctionId;
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
@@ -1151,8 +1152,8 @@ export const spec = {
     // update device.language to ISO-639-1-alpha-2 (2 character language)
     payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
-    // passing transactionId in source.tid
-    deepSetValue(payload, 'source.tid', bid.ortb2.source.tid);
+    // passing auctionId in source.tid
+    deepSetValue(payload, 'source.tid', conf.auctionId);
 
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
