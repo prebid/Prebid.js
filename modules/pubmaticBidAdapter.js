@@ -1054,7 +1054,6 @@ export const spec = {
       refererInfo = bidderRequest.refererInfo;
     }
     var conf = _initConf(refererInfo);
-    conf.auctionId = bidderRequest.auctionId;
     var payload = _createOrtbTemplate(conf);
     var bidCurrency = '';
     var dctrArr = [];
@@ -1153,7 +1152,7 @@ export const spec = {
     payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
     // passing auctionId in source.tid
-    deepSetValue(payload, 'source.tid', conf.auctionId);
+    deepSetValue(payload, 'source.tid', bid.auctionId);
 
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
