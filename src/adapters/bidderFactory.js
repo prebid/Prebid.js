@@ -296,6 +296,7 @@ export function newBidder(spec) {
         return true;
       }
     }
+
     return false;
   }
 
