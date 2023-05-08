@@ -90,7 +90,7 @@ function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs
 
   // build source
   const source = {
-    tid: validBidRequest.ortb2.source.tid,
+    tid: validBidRequest.auctionId,
     fd: 1,
   }
 
