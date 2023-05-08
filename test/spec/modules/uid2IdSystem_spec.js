@@ -143,6 +143,7 @@ describe(`UID2 module`, function () {
     }
     coreStorage.setCookie(moduleCookieName, '', expireCookieDate);
     coreStorage.setCookie(publisherCookieName, '', expireCookieDate);
+    coreStorage.removeDataFromLocalStorage(moduleCookieName);
 
     debugOutput('----------------- END TEST ------------------');
   });

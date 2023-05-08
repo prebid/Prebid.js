@@ -46,8 +46,16 @@ function readModuleCookie() {
   return parseIfContainsBraces(readCookie(ADVERTISING_COOKIE));
 }
 
+function writeModuleCookie(value) {
+  storage.setCookie(ADVERTISING_COOKIE, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
+}
+
 function readModuleStorage() {
   return parseIfContainsBraces(readLocalStorage(ADVERTISING_COOKIE));
+}
+
+function writeModuleStorage(value) {
+  storage.setDataInLocalStorage(ADVERTISING_COOKIE, JSON.stringify(value));
 }
 
 function parseIfContainsBraces(value) {
@@ -119,8 +127,31 @@ function refreshTokenAndStore(baseUrl, token) {
   });
 }
 
+// TODO: Tests
 function getStoredValueWithFallback(preferLocalStorage) {
+  const preferredStorageLabel = preferLocalStorage ? 'local storage' : 'cookie';
+  const preferredStorageGet = preferLocalStorage ? readModuleStorage : readModuleCookie;
+  const preferredStorageSet = preferLocalStorage ? writeModuleStorage : writeModuleCookie;
+  const fallbackStorageGet = preferLocalStorage ? readModuleCookie : readModuleStorage;
 
+  const storedValue = preferredStorageGet();
+
+  if (!storedValue) {
+    const fallbackValue = fallbackStorageGet();
+    if (fallbackValue) {
+      _logInfo(`${preferredStorageLabel} was empty, but found a fallback value. Copying the fallback value to ${preferredStorageLabel}.`);
+      preferredStorageSet(fallbackValue);
+      return fallbackValue;
+    }
+  } else if (typeof storedValue === 'string') {
+    const fallbackValue = fallbackStorageGet();
+    if (fallbackValue && typeof fallbackValue === 'object') {
+      _logInfo(`${preferredStorageLabel} contained a basic token, but found a refreshable token fallback. Copying the fallback value to ${preferredStorageLabel}.`);
+      preferredStorageSet(fallbackValue);
+      return fallbackValue;
+    }
+  }
+  return storedValue;
 }
 
 function decodeImpl(value) {
@@ -153,7 +184,8 @@ function getIdImpl(config, consentData) {
       _logInfo('Read token from server-supplied cookie', suppliedToken);
     }
   }
-  let storedTokens = readModuleCookie() || readModuleStorage();
+  let storedTokens = getStoredValueWithFallback(preferLocalStorage);
+  console.log('Mod-stored value:', storedTokens);
   _logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
