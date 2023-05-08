@@ -1152,7 +1152,7 @@ export const spec = {
     payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
     // passing transactionId in source.tid
-    deepSetValue(payload, 'source.tid', conf.transactionId);
+    deepSetValue(payload, 'source.tid', bid.ortb2.source.tid);
 
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
