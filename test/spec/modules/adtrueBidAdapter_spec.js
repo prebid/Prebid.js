@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js'
 import * as utils from '../../../src/utils.js';
 import {config} from 'src/config.js';
 
-describe('AdTrueBidAdapter', function ()
+describe('AdTrueBidAdapter', function () {
   const adapter = newBidder(spec)
   let bidRequests;
   let bidResponses;
