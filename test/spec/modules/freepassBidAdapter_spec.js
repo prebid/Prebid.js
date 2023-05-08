@@ -36,12 +36,12 @@ describe('FreePass adapter', function () {
     let bidRequests, bidderRequest;
     beforeEach(function () {
       bidRequests = [{
-        "bidder": "freepass",
-        "userId": {
-          "freepassId": {
-            "userIp": "172.21.0.1",
-            "userId": "56c4c789-71ce-46f5-989e-9e543f3d5f96",
-            "commonId": "commonIdValue"
+        'bidder': 'freepass',
+        'userId': {
+          'freepassId': {
+            'userIp': '172.21.0.1',
+            'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
+            'commonId': 'commonIdValue'
           }
         }
       }];
@@ -113,30 +113,30 @@ describe('FreePass adapter', function () {
   describe('interpretResponse', function () {
     const bidRequest = spec.buildRequests(
       [{
-        "bidId": '28ffdf2a952532',
-        "bidder": "freepass",
-        "userId": {
-          "freepassId": {
-            "userIp": "172.21.0.1",
-            "userId": "56c4c789-71ce-46f5-989e-9e543f3d5f96",
-            "commonId": "commonIdValue"
+        'bidId': '28ffdf2a952532',
+        'bidder': 'freepass',
+        'userId': {
+          'freepassId': {
+            'userIp': '172.21.0.1',
+            'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
+            'commonId': 'commonIdValue'
           }
         }
       }],
       {}
     );
-    const ad = '<iframe src=\"http://127.0.0.1:8081/banner.html?w=300&h=250&cr=0\" width=\"300\" height=\"250\" style=\"border:none;\"></iframe>';
+    const ad = '<iframe src=\'http://127.0.0.1:8081/banner.html?w=300&h=250&cr=0\' width=\'300\' height=\'250\' style=\'border:none;\'></iframe>';
     const serverResponse = {
       body: {
-        "cur": "JPY",
-        "seatbid": [{
-          "bid": [{
-            "impid": '28ffdf2a952532',
-            "price": 97,
-            "adm": ad,
-            "w": 300,
-            "h": 250,
-            "crid": "creative0"
+        'cur': 'JPY',
+        'seatbid': [{
+          'bid': [{
+            'impid': '28ffdf2a952532',
+            'price': 97,
+            'adm': ad,
+            'w': 300,
+            'h': 250,
+            'crid': 'creative0'
           }]
         }]
       }
