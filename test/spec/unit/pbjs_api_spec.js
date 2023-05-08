@@ -888,16 +888,32 @@ describe('Unit: Prebid Module', function () {
 
     it('should only apply price granularity if bid media type matches', function () {
       initTestConfig({
-        adUnits: [ createAdUnit('div-gpt-ad-1460505748561-0', 'video') ],
+        adUnits: [createAdUnit('div-gpt-ad-1460505748561-0')],
         adUnitCodes: ['div-gpt-ad-1460505748561-0']
       });
 
-      response = videoResponse;
+      response = bannerResponse;
       response.tags[0].ads[0].cpm = 3.4288;
 
       auction.callBids(cbTimeout);
       let bidTargeting = targeting.getAllTargeting();
-      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.00');
+      expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.25');
+
+      if (FEATURES.VIDEO) {
+        ajaxStub.restore();
+
+        initTestConfig({
+          adUnits: [createAdUnit('div-gpt-ad-1460505748561-0', 'video')],
+          adUnitCodes: ['div-gpt-ad-1460505748561-0']
+        });
+
+        response = videoResponse;
+        response.tags[0].ads[0].cpm = 3.4288;
+
+        auction.callBids(cbTimeout);
+        let bidTargeting = targeting.getAllTargeting();
+        expect(bidTargeting['div-gpt-ad-1460505748561-0'][CONSTANTS.TARGETING_KEYS.PRICE_BUCKET]).to.equal('3.00');
+      }
     });
   });
 
@@ -2485,7 +2501,6 @@ describe('Unit: Prebid Module', function () {
         }];
         let adUnitCodes = ['adUnit-code'];
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-
         adUnits[0]['mediaTypes'] = { native: {} };
         adUnitCodes = ['adUnit-code'];
         let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
@@ -3528,6 +3543,65 @@ describe('Unit: Prebid Module', function () {
 
       expect(bids.length).to.equal(1);
       expect(bids[0].adId).to.equal('adid-1');
+    });
+  });
+
+  describe('deferred billing', function () {
+    const sandbox = sinon.createSandbox();
+
+    let adUnits = [
+      {
+        code: 'adUnit-code-1',
+        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+        transactionId: '1234567890',
+        bids: [
+          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1' }
+        ]
+      },
+      {
+        code: 'adUnit-code-2',
+        deferBilling: true,
+        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+        transactionId: '0987654321',
+        bids: [
+          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2' }
+        ]
+      }
+    ];
+
+    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', transactionId: '1234567890', adId: 'abcdefg' }
+    let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', transactionId: '0987654321' }
+    let adUnitCodes = ['adUnit-code-1', 'adUnit-code-2'];
+    let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+
+    beforeEach(function () {
+      sandbox.spy(adapterManager, 'callBidWonBidder');
+      sandbox.spy(adapterManager, 'callBidBillableBidder');
+      sandbox.stub(auctionManager, 'getBidsReceived').returns([winningBid1]);
+    });
+
+    afterEach(function () {
+      sandbox.resetHistory();
+      sandbox.restore();
+    });
+
+    it('should by default invoke callBidWonBidder and callBidBillableBidder', function () {
+      auction.addWinningBid(winningBid1);
+      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
+      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
+    });
+
+    it('should only invoke callBidWonBidder and NOT callBidBillableBidder if deferBilling is present and true within the winning adUnit object', function () {
+      auction.addWinningBid(winningBid2);
+      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
+      sinon.assert.notCalled(adapterManager.callBidBillableBidder);
+    });
+
+    it('should invoke callBidBillableBidder when pbjs.triggerBilling is invoked', function () {
+      $$PREBID_GLOBAL$$.triggerBilling(winningBid1);
+      sinon.assert.calledOnce(auctionManager.getBidsReceived);
+      sinon.assert.notCalled(adapterManager.callBidWonBidder);
+      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
     });
   });
 });
