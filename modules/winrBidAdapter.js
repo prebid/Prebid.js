@@ -5,7 +5,6 @@ import {
   getBidRequest,
   getParameterByName,
   isArray,
-  isEmpty,
   isFn,
   isNumber,
   isPlainObject,

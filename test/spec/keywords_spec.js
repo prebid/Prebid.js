@@ -53,6 +53,18 @@ describe('mergeKeywords', () => {
         'two',
         'three'
       ]
+    },
+    'mixed with arrays': {
+      input: [
+        ['one'],
+        'one, two',
+        ['three', 'two']
+      ],
+      output: [
+        'one',
+        'two',
+        'three'
+      ]
     }
   }).forEach(([t, {input, output}]) => {
     it(`can merge ${t}`, () => {

@@ -6,14 +6,14 @@ const ORTB_KEYWORDS_PATHS = ['user.keywords'].concat(
 );
 
 /**
- * @param commaSeparatedKeywords: any number of comma-separated keyword lists
+ * @param commaSeparatedKeywords: any number of either keyword arrays, or comma-separated keyword strings
  * @returns an array with all unique keywords contained across all inputs
  */
 export function mergeKeywords(...commaSeparatedKeywords) {
   const keywords = new Set();
   commaSeparatedKeywords
     .filter(kwds => kwds)
-    .flatMap(kwds => kwds.split(','))
+    .flatMap(kwds => Array.isArray(kwds) ? kwds : kwds.split(','))
     .map(kw => kw.replace(/^\s*/, '').replace(/\s*$/, ''))
     .filter(kw => kw)
     .forEach(kw => keywords.add(kw));

@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
-import {transformBidderParamKeywords} from '../../libraries/appnexusKeywords/anKeywords.js';
 
 var assert = require('assert');
 

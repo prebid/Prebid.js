@@ -22,8 +22,7 @@ import {
   logError,
   logInfo,
   logMessage,
-  logWarn,
-  mergeDeep
+  logWarn
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -38,7 +37,9 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {
-  convertKeywordStringToANMap, getANKewyordParamFromMaps, getANKeywordParam,
+  convertKeywordStringToANMap,
+  getANKewyordParamFromMaps,
+  getANKeywordParam,
   transformBidderParamKeywords
 } from '../libraries/appnexusKeywords/anKeywords.js';
 
@@ -467,10 +468,6 @@ export const spec = {
     return params;
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
 
 function strIsAppnexusViewabilityScript(str) {
   if (!str || str === '') return false;

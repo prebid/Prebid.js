@@ -1,11 +1,4 @@
-import {
-  convertCamelToUnderscore,
-  convertTypes,
-  getBidRequest,
-  isArray,
-  isEmpty,
-  logError
-} from '../src/utils.js';
+import {convertCamelToUnderscore, convertTypes, getBidRequest, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {auctionManager} from '../src/auctionManager.js';
@@ -13,7 +6,7 @@ import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'craft';

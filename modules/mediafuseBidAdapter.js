@@ -1,18 +1,40 @@
-import { convertCamelToUnderscore, isArray, isNumber, isPlainObject, logError, logInfo, deepAccess, logMessage, convertTypes, isStr, getParameterByName, deepClone, chunk, logWarn, getBidRequest, createTrackPixelHtml, isEmpty, getMaxValueFromArray, fill, getMinValueFromArray, isArrayOfNums, isFn } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO, ADPOD } from '../src/mediaTypes.js';
-import { auctionManager } from '../src/auctionManager.js';
-import {find, includes} from '../src/polyfill.js';
-import { OUTSTREAM, INSTREAM } from '../src/video.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { bidderSettings } from '../src/bidderSettings.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
 import {
-  convertKeywordStringToANMap,
+  chunk,
+  convertCamelToUnderscore,
+  convertTypes,
+  createTrackPixelHtml,
+  deepAccess,
+  deepClone,
+  fill,
+  getBidRequest,
+  getMaxValueFromArray,
+  getMinValueFromArray,
+  getParameterByName,
+  isArray,
+  isArrayOfNums,
+  isEmpty,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logInfo,
+  logMessage,
+  logWarn
+} from '../src/utils.js';
+import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {find, includes} from '../src/polyfill.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {bidderSettings} from '../src/bidderSettings.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
+import {
   getANKewyordParamFromMaps,
   getANKeywordParam,
   transformBidderParamKeywords

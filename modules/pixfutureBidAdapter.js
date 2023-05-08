@@ -1,20 +1,12 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { find, includes } from '../src/polyfill.js';
-import {
-  convertCamelToUnderscore,
-  deepAccess,
-  isArray,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject
-} from '../src/utils.js';
-import { auctionManager } from '../src/auctionManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
+import {convertCamelToUnderscore, deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
+import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -359,16 +351,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
 }
 
 registerBidder(spec);
