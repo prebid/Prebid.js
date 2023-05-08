@@ -149,6 +149,10 @@ export const CONVERTER = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
+      source: {
+        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
+        tid: context.bidRequests.auctionId,
+      },
       ext: {
         improvedigital: {
           sdk: {
