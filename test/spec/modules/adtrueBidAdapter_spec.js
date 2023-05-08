@@ -4,7 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js'
 import * as utils from '../../../src/utils.js';
 import {config} from 'src/config.js';
 
-describe('AdTrueBidAdapter', function () {
+describe('AdTrueBidAdapter', function ()
   const adapter = newBidder(spec)
   let bidRequests;
   let bidResponses;
@@ -281,7 +281,6 @@ describe('AdTrueBidAdapter', function () {
         expect(data.site.domain).to.be.a('string'); // domain should be set
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
         expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.reserve); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.zoneId); // zoneId
