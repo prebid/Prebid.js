@@ -92,7 +92,7 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.ortb2.source.tid,
+          tid: bidRequest.auctionId,
           ext: {
             schain: {}
           }
