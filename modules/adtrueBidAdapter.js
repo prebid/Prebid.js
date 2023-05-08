@@ -507,6 +507,7 @@ export const spec = {
     if (typeof config.getConfig('device') === 'object') {
       payload.device = Object.assign(payload.device, config.getConfig('device'));
     }
+
     // test bids
     if (window.location.href.indexOf('adtrueTest=true') !== -1) {
       payload.test = 1;
