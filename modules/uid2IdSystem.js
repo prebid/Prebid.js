@@ -6,10 +6,11 @@
  * @requires module:modules/userId
  */
 
-import { logInfo } from '../src/utils.js';
+import { logInfo, logWarn } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { Uid2ApiClient } from './uid2IdSystem_shared.js';
 
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = `1.0`;
@@ -24,42 +25,37 @@ const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
 const UID2_PROD_URL = 'https://prod.uidapi.com';
 const UID2_BASE_URL = UID2_PROD_URL;
 
-function getStorage() {
-  return getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
-}
-
-function createLogInfo(prefix) {
+function createLogger(logger, prefix) {
   return function (...strings) {
-    logInfo(prefix + ' ', ...strings);
+    logger(prefix + ' ', ...strings);
   }
 }
-export const storage = getStorage();
-const _logInfo = createLogInfo(LOG_PRE_FIX);
+const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
+const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
-function readFromLocalStorage() {
-  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(ADVERTISING_COOKIE) : null;
-}
-
-function readModuleCookie() {
-  const cookie = readCookie(ADVERTISING_COOKIE);
-  if (cookie && cookie.includes('{')) {
-    return JSON.parse(cookie);
-  }
-  return cookie;
-}
-
-function readJsonCookie(cookieName) {
-  return JSON.parse(readCookie(cookieName));
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+function readLocalStorage(key) {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
 }
 
 function readCookie(cookieName) {
-  const cookie = storage.cookiesAreEnabled() ? storage.getCookie(cookieName) : null;
-  if (!cookie) {
-    _logInfo(`Attempted to read UID2 from cookie '${cookieName}' but it was empty`);
-    return null;
-  };
-  _logInfo(`Read UID2 from cookie '${cookieName}'`);
-  return cookie;
+  return storage.cookiesAreEnabled() ? storage.getCookie(cookieName) : null;
+}
+
+function readModuleCookie() {
+  return parseIfContainsBraces(readCookie(ADVERTISING_COOKIE));
+}
+
+function readModuleStorage() {
+  return parseIfContainsBraces(readLocalStorage(ADVERTISING_COOKIE));
+}
+
+function parseIfContainsBraces(value) {
+  return (value?.includes('{')) ? JSON.parse(value) : value;
+}
+
+function readProvidedCookie(cookieName) {
+  return JSON.parse(readCookie(cookieName));
 }
 
 function storeValue(value) {
@@ -67,86 +63,6 @@ function storeValue(value) {
     storage.setCookie(ADVERTISING_COOKIE, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
   } else if (storage.localStorageIsEnabled()) {
     storage.setLocalStorage(ADVERTISING_COOKIE, value);
-  }
-}
-
-function isValidIdentity(identity) {
-  return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
-}
-
-// This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
-class Uid2ApiClient {
-  constructor(opts) {
-    this._baseUrl = opts.baseUrl ? opts.baseUrl : UID2_BASE_URL;
-    this._clientVersion = UID2_CLIENT_ID;
-  }
-  createArrayBuffer(text) {
-    const arrayBuffer = new Uint8Array(text.length);
-    for (let i = 0; i < text.length; i++) {
-      arrayBuffer[i] = text.charCodeAt(i);
-    }
-    return arrayBuffer;
-  }
-  hasStatusResponse(response) {
-    return typeof (response) === 'object' && response && response.status;
-  }
-  isValidRefreshResponse(response) {
-    return this.hasStatusResponse(response) && (
-      response.status === 'optout' || response.status === 'expired_token' || (response.status === 'success' && response.body && isValidIdentity(response.body))
-    );
-  }
-  ResponseToRefreshResult(response) {
-    if (this.isValidRefreshResponse(response)) {
-      if (response.status === 'success') { return { status: response.status, identity: response.body }; }
-      return response;
-    } else { return "Response didn't contain a valid status"; }
-  }
-  callRefreshApi(refreshDetails) {
-    const url = this._baseUrl + '/v2/token/refresh';
-    const req = new XMLHttpRequest();
-    req.overrideMimeType('text/plain');
-    req.open('POST', url, true);
-    req.setRequestHeader('X-UID2-Client-Version', this._clientVersion);
-    let resolvePromise;
-    let rejectPromise;
-    const promise = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-    req.onreadystatechange = () => {
-      if (req.readyState !== req.DONE) { return; }
-      try {
-        if (!refreshDetails.refresh_response_key || req.status !== 200) {
-          _logInfo('Error status OR no response decryption key available, assuming unencrypted JSON');
-          const response = JSON.parse(req.responseText);
-          const result = this.ResponseToRefreshResult(response);
-          if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
-        } else {
-          _logInfo('Decrypting refresh API response');
-          const encodeResp = this.createArrayBuffer(atob(req.responseText));
-          window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
-            _logInfo('Imported decryption key')
-            // returns the symmetric key
-            window.crypto.subtle.decrypt({
-              name: 'AES-GCM',
-              iv: encodeResp.slice(0, 12),
-              tagLength: 128, // The tagLength you used to encrypt (if any)
-            }, key, encodeResp.slice(12)).then((decrypted) => {
-              const decryptedResponse = String.fromCharCode(...new Uint8Array(decrypted));
-              _logInfo('Decrypted to:', decryptedResponse);
-              const response = JSON.parse(decryptedResponse);
-              const result = this.ResponseToRefreshResult(response);
-              if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
-            }, (reason) => console.warn(`Call to UID2 API failed`, reason));
-          }, (reason) => console.warn(`Call to UID2 API failed`, reason));
-        }
-      } catch (err) {
-        rejectPromise(err);
-      }
-    };
-    _logInfo('Sending refresh request', req);
-    req.send(refreshDetails.refresh_token);
-    return promise;
   }
 }
 
@@ -191,7 +107,7 @@ export const uid2IdSubmodule = {
 
 function refreshTokenAndStore(baseUrl, token) {
   _logInfo('UID2 base url provided: ', baseUrl);
-  const client = new Uid2ApiClient({baseUrl});
+  const client = new Uid2ApiClient({baseUrl}, UID2_CLIENT_ID, _logInfo, _logWarn);
   return client.callRefreshApi(token).then((response) => {
     _logInfo('Refresh endpoint responded with:', response);
     const tokens = {
@@ -203,9 +119,13 @@ function refreshTokenAndStore(baseUrl, token) {
   });
 }
 
+function getStoredValueWithFallback(preferLocalStorage) {
+
+}
+
 function decodeImpl(value) {
   if (typeof value === 'string') {
-    _logInfo('Found an old-style ID from an earlier version of the module. Refresh is unavailable for this token.');
+    _logInfo('Found directly-supplied token. Refresh is unavailable for this token.');
     const result = { uid2: { id: value } };
     return result;
   }
@@ -217,21 +137,27 @@ function decodeImpl(value) {
 
 function getIdImpl(config, consentData) {
   let suppliedToken = null;
+  const availableTokens = {};
+
   const uid2BaseUrl = config?.params?.uid2ApiBase ?? UID2_BASE_URL;
+  const preferLocalStorage = (config?.params?.storage !== 'cookie');
+
   if (config && config.params) {
     if (config.params.uid2Token) {
       suppliedToken = config.params.uid2Token;
+      availableTokens.fullFromConfig = config.params.uid2Token;
       _logInfo('Read token from params', suppliedToken);
     } else if (config.params.uid2ServerCookie) {
-      suppliedToken = readJsonCookie(config.params.uid2ServerCookie);
+      suppliedToken = readProvidedCookie(config.params.uid2ServerCookie);
+      availableTokens.fullFromCookie = suppliedToken;
       _logInfo('Read token from server-supplied cookie', suppliedToken);
     }
   }
-  let storedTokens = readModuleCookie() || readFromLocalStorage();
+  let storedTokens = readModuleCookie() || readModuleStorage();
   _logInfo('Loaded module-stored tokens:', storedTokens);
 
   if (storedTokens && typeof storedTokens === 'string') {
-    // Legacy value stored, this must be from an old integration. If no token supplied, just use the legacy value.
+    // Stored value is a plain token - if no token is supplied, just use the stored value.
 
     if (!suppliedToken) {
       _logInfo('Returning legacy cookie value.');
