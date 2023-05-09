@@ -11,7 +11,7 @@ import {
   logWarn,
   getWindowSelf,
   mergeDeep,
-  pick
+  pick, generateUUID
 } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -271,7 +271,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.site.ref = referer;
   }
 
-  ttxRequest.id = firstBidRequest.auctionId;
+  ttxRequest.id = generateUUID();
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {

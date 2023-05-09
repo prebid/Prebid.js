@@ -475,6 +475,7 @@ describe('33acrossBidAdapter:', function () {
     sandbox.stub(document, 'getElementById').returns(element);
     sandbox.stub(utils, 'getWindowTop').returns(win);
     sandbox.stub(utils, 'getWindowSelf').returns(win);
+    sandbox.stub(utils, 'generateUUID').returns('r1');
   });
 
   afterEach(function() {

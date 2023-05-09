@@ -15,7 +15,7 @@ import {
   isStr,
   mergeDeep,
   parseGPTSingleSizeArrayToRtbSize,
-  getDefinedParams
+  getDefinedParams, generateUUID
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -490,9 +490,9 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let {auctionId, timeout} = bidderRequest;
+  let {timeout} = bidderRequest;
   let request = {
-    'id': auctionId,
+    'id': generateUUID(),
     'imp': imps,
     'at': 1,
     'tmax': parseInt(timeout)

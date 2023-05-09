@@ -155,7 +155,7 @@ describe('Adf adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,device,source,ext,imp'.split(',');
+      let keys = 'id,site,device,source,ext,imp'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: { siteId: 'siteId' }
@@ -171,7 +171,10 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: { siteId: 'siteId' },
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, auctionId: 'tid' }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {
+        refererInfo: {page: 'page'},
+        ortb2: {source: {tid: 'tid'}}
+      }).data);
 
       assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);

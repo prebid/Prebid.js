@@ -1,4 +1,13 @@
-import { deepAccess, parseSizesInput, isArray, deepSetValue, isStr, isNumber, logInfo } from '../src/utils.js';
+import {
+  deepAccess,
+  parseSizesInput,
+  isArray,
+  deepSetValue,
+  isStr,
+  isNumber,
+  logInfo,
+  generateUUID
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -58,11 +67,11 @@ function canonicalizeSizesArray(sizes) {
 }
 
 function buildRequestParams(tags, bidderRequest) {
-  let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
+  let {gdprConsent, uspConsent, refererInfo, ortb2} = bidderRequest;
   let req = {
-    id: auctionId,
-    // TODO: transactionId is undefined here, should this be auctionId? see #8573
-    tid: transactionId,
+    id: generateUUID(),
+    // TODO: root-level `tid` is not ORTB; is this intentional?
+    tid: ortb2?.source?.tid,
     site: buildSite(refererInfo),
     imp: tags
   };
