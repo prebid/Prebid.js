@@ -244,9 +244,6 @@ export const spec = {
     const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
     const bidderURL = request.bidRequest.params.bidderURL || 'https://bidder.adhash.com';
     const oneTimeId = request.bidRequest.adUnitCode + Math.random().toFixed(16).replace('0.', '.');
-    const globalScript = !request.bidRequest.params.globalScript
-      ? `<script src="${bidderURL}/static/scripts/creative.min.js"></script>`
-      : '';
     const bidderResponse = JSON.stringify({ responseText: JSON.stringify(responseBody) });
     const requestData = JSON.stringify(request.data);
 
@@ -266,7 +263,8 @@ export const spec = {
     if (typeof request == 'object' && typeof request.bidRequest == 'object' && typeof request.bidRequest.mediaTypes == 'object' && includes(Object.keys(request.bidRequest.mediaTypes), BANNER)) {
       response = Object.assign({
         ad:
-        `<div id="${oneTimeId}"></div>${globalScript}
+        `<div id="${oneTimeId}"></div>
+        <script src="${bidderURL}/static/scripts/creative.min.js"></script>
         <script>callAdvertiser(${bidderResponse},['${oneTimeId}'],${requestData},${publisherURL})</script>`
       }, response);
     } else if (includes(Object.keys(request.bidRequest.mediaTypes), VIDEO)) {
