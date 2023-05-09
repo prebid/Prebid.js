@@ -28,14 +28,13 @@ import {
 import {
   addBidToAuction,
   AUCTION_IN_PROGRESS,
-  callPrebidCache,
   doCallbacksIfTimedout,
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
 import {checkAdUnitSetup} from '../src/prebid.js';
 import {checkVideoBidSetup} from '../src/video.js';
-import {module, setupBeforeHookFnOnce} from '../src/hook.js';
+import {getHook, module, setupBeforeHookFnOnce} from '../src/hook.js';
 import {store} from '../src/videoCache.js';
 import {config} from '../src/config.js';
 import {ADPOD} from '../src/mediaTypes.js';
@@ -424,7 +423,7 @@ config.getConfig('adpod', config => adpodSetConfig(config.adpod));
  * This function initializes the adpod module's hooks.  This is called by the corresponding adserver video module.
  */
 function initAdpodHooks() {
-  setupBeforeHookFnOnce(callPrebidCache, callPrebidCacheHook);
+  setupBeforeHookFnOnce(getHook('callPrebidCache'), callPrebidCacheHook);
   setupBeforeHookFnOnce(checkAdUnitSetup, checkAdUnitSetupHook);
   setupBeforeHookFnOnce(checkVideoBidSetup, checkVideoBidSetupHook);
 }

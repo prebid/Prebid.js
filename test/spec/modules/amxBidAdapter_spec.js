@@ -362,7 +362,10 @@ describe('AmxBidAdapter', () => {
 
       const base = { d: 2300, l: 2, e: true };
 
-      const tests = [[{
+      const tests = [[
+        undefined,
+        { ...base, t: 0 }
+      ], [{
         image: {
           bidders: '*',
           filter: 'include'

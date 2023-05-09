@@ -13,7 +13,6 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -80,7 +79,7 @@ function buildRequests(bidReqs, bidderRequest) {
         w: screen.width,
         h: screen.height
       },
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest?.timeout
     };
 
     return {
