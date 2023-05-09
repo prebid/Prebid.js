@@ -14,7 +14,7 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
+const LEGACY_SITE_KEYWORDS_BIDDERS = ['dummy'];
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
@@ -216,14 +216,6 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   return bidderConfigCopy;
 };
 
-const setAppnexusAudiences = (audiences) => {
-  config.setConfig({
-    appnexusAuctionKeywords: {
-      '1plusX': audiences,
-    },
-  });
-}
-
 /**
  * Updates bidder configs with the targeting data retreived from Profile API
  * @param {Object} papiResponse Response from Profile API
@@ -242,10 +234,6 @@ export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
         bidders: [bidder],
         config: updatedBidderConfig
       });
-    }
-    if (bidder === 'appnexus') {
-      // Do the legacy stuff for appnexus with segments
-      setAppnexusAudiences(segments);
     }
   }
 }
