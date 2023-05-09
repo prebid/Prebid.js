@@ -33,9 +33,9 @@ export const spec = {
   buildRequests: function(bidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-
+    const bidRequest = bidRequests[0];
     const tags = bidRequests.map(bidToTag);
-    const schain = bidRequests[0].schain;
+    const schain = bidRequest.schain;
     const payload = {
       tags: [...tags],
       ua: navigator.userAgent,
@@ -44,26 +44,31 @@ export const spec = {
       },
       schain: schain
     };
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      payload.gdpr_consent = {
-        consent_string: bidderRequest.gdprConsent.consentString,
-        consent_required: bidderRequest.gdprConsent.gdprApplies
-      };
-    }
-    if (bidderRequest && bidderRequest.uspConsent) {
-      payload.us_privacy = bidderRequest.uspConsent;
-    }
-    if (bidderRequest && bidderRequest.refererInfo) {
-      let refererinfo = {
-        // TODO: this collects everything it finds, except for the canonical URL
-        rd_ref: bidderRequest.refererInfo.topmostLocation,
-        rd_top: bidderRequest.refererInfo.reachedTop,
-        rd_ifs: bidderRequest.refererInfo.numIframes,
-      };
-      if (bidderRequest.refererInfo.stack) {
-        refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',');
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        payload.gdpr_consent = {
+          consent_string: bidderRequest.gdprConsent.consentString,
+          consent_required: bidderRequest.gdprConsent.gdprApplies
+        };
       }
-      payload.referrer_detection = refererinfo;
+      if (bidderRequest.uspConsent) {
+        payload.us_privacy = bidderRequest.uspConsent;
+      }
+      if (bidderRequest.refererInfo) {
+        let refererinfo = {
+          // TODO: this collects everything it finds, except for the canonical URL
+          rd_ref: bidderRequest.refererInfo.topmostLocation,
+          rd_top: bidderRequest.refererInfo.reachedTop,
+          rd_ifs: bidderRequest.refererInfo.numIframes,
+        };
+        if (bidderRequest.refererInfo.stack) {
+          refererinfo.rd_stk = bidderRequest.refererInfo.stack.join(',');
+        }
+        payload.referrer_detection = refererinfo;
+      }
+      if (bidRequest.userId) {
+        payload.userId = bidRequest.userId
+      }
     }
     const request = formatRequest(payload, bidderRequest);
     return request;
@@ -106,7 +111,7 @@ export const spec = {
     params = convertTypes({
       'sitekey': 'string',
       'placementId': 'string',
-      'keywords': transformBidderParamKeywords
+      'keywords': transformBidderParamKeywords,
     }, params);
     if (isOpenRtb) {
       if (isPopulatedArray(params.keywords)) {
@@ -148,11 +153,11 @@ function formatRequest(payload, bidderRequest) {
       withCredentials: false
     };
   }
-
+  const baseUrl = payload.tags[0].url || URL_BASE;
   const payloadString = JSON.stringify(payload);
   return {
     method: 'POST',
-    url: `${URL_BASE}/${payload.tags[0].sitekey}`,
+    url: `${baseUrl}/${payload.tags[0].sitekey}`,
     data: payloadString,
     bidderRequest,
     options

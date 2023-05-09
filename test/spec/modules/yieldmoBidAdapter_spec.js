@@ -212,7 +212,7 @@ describe('YieldmoAdapter', function () {
         expect(data.hasOwnProperty('h')).to.be.true;
         expect(data.hasOwnProperty('w')).to.be.true;
         expect(data.hasOwnProperty('pubcid')).to.be.true;
-        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":""}');
+        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":"","gpp":"","gpp_sid":[]}');
         expect(data.us_privacy).to.equal('');
       });
 
@@ -262,6 +262,24 @@ describe('YieldmoAdapter', function () {
           JSON.stringify({
             gdprApplies: true,
             cmp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+            gpp: '',
+            gpp_sid: [],
+          })
+        );
+      });
+
+      it('should add gpp information to request if available', () => {
+        const gppConsent = {
+          'gppString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'applicableSections': [8]
+        };
+        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({gppConsent}));
+        expect(data.userConsent).equal(
+          JSON.stringify({
+            gdprApplies: '',
+            cmp: '',
+            gpp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+            gpp_sid: [8],
           })
         );
       });
@@ -371,7 +389,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the banner bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
@@ -532,7 +558,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the video bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{

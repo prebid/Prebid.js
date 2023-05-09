@@ -83,7 +83,7 @@ export const spec = {
         domain: parseUrl(page).hostname,
         page: page,
       },
-      tmax: bidderRequest.timeout || config.getConfig('bidderTimeout') || 500,
+      tmax: bidderRequest.timeout,
       imp
     };
 
