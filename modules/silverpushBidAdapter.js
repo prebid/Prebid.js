@@ -141,7 +141,8 @@ function isBidRequestValid(bidRequest) {
 }
 
 function isPublisherIdValid(bidRequest) {
-  return (utils.deepAccess(bidRequest, 'params.publisherId') != null && utils.isStr(utils.deepAccess(bidRequest, 'params.publisherId')) && utils.deepAccess(bidRequest, 'params.publisherId') != '')
+  let pubId = utils.deepAccess(bidRequest, 'params.publisherId');
+  return (pubId != null && utils.isStr(pubId) && pubId != '');
 }
 
 function isValidBannerRequest(bidRequest) {
