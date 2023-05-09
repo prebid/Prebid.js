@@ -12,7 +12,7 @@ const bidderConfig = 'sp_pb_ortb';
 const bidderVersion = '1.0.0';
 const DEFAULT_CURRENCY = 'USD';
 
-export const REQUEST_URL = 'https://apac.chocolateplatform.com/bidder/?identifier=prebidchoc';
+export const REQUEST_URL = 'http://localhost:9002/bidder/';
 export const SP_OUTSTREAM_PLAYER_URL = 'https://xaido.sgp1.cdn.digitaloceanspaces.com/prebid/spoutstream.min.js';
 
 const VIDEO_ORTB_PARAMS = [
@@ -85,6 +85,7 @@ export const CONVERTER = ortbConverter({
     })
 
     let userAgent = navigator.userAgent;
+    utils.deepSetValue(req, 'device.ip', '3.109.191.0');
     utils.deepSetValue(req, 'device.os', spec.getOS(userAgent));
     utils.deepSetValue(req, 'device.devicetype', _isMobile() ? 1 : _isConnectedTV() ? 3 : 2);
 
@@ -137,7 +138,11 @@ export const CONVERTER = ortbConverter({
 });
 
 function isBidRequestValid(bidRequest) {
-  return (utils.deepAccess(bidRequest, 'params.publisherId') != null && (isValidBannerRequest(bidRequest) || isValidVideoRequest(bidRequest)));
+  return (isPublisherIdValid(bidRequest) && (isValidBannerRequest(bidRequest) || isValidVideoRequest(bidRequest)));
+}
+
+function isPublisherIdValid(bidRequest) {
+  return (utils.deepAccess(bidRequest, 'params.publisherId') != null && utils.isStr(utils.deepAccess(bidRequest, 'params.publisherId')) && utils.deepAccess(bidRequest, 'params.publisherId') != '')
 }
 
 function isValidBannerRequest(bidRequest) {

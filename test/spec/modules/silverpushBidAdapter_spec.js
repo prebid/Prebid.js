@@ -123,6 +123,20 @@ describe('Silverpush Adapter', function () {
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
 
+    it('should return false when publisherId is empty string', () => {
+      const bid = utils.deepClone(bannerBid);
+      bid.params.publisherId = '';
+
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
+    it('should return false when publisherId is a number', () => {
+      const bid = utils.deepClone(bannerBid);
+      bid.params.publisherId = 12345;
+
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+
     it('should return false when there is no banner in mediaTypes', () => {
       const bid = utils.deepClone(bannerBid);
       delete bid.mediaTypes.banner;
