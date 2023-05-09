@@ -55,7 +55,7 @@ export const spec = {
       const asi = getBidIdParameter('asi', bidRequest.params);
       queryString = tryAppendQueryString(queryString, 'asi', asi);
       queryString = tryAppendQueryString(queryString, 'skt', SDKType);
-      queryString = tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
+      queryString = tryAppendQueryString(queryString, 'tid', bidRequest.ortb2Imp?.ext?.tid)
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 

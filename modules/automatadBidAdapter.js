@@ -1,4 +1,4 @@
-import { logInfo } from '../src/utils.js';
+import {generateUUID, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {BANNER} from '../src/mediaTypes.js'
 import {ajax} from '../src/ajax.js'
@@ -57,7 +57,7 @@ export const spec = {
 
     // params from bid request
     const openrtbRequest = {
-      id: validBidRequests[0].auctionId,
+      id: generateUUID(),
       imp: impressions,
       site: {
         id: siteId,
