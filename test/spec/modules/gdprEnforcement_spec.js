@@ -1,26 +1,33 @@
 import {
   deviceAccessHook,
-  setEnforcementConfig,
-  userSyncHook,
-  userIdHook,
-  makeBidRequestsHook,
-  validateRules,
+  enableAnalyticsHook,
   enforcementRules,
+  getGvlid,
+  getGvlidFromAnalyticsAdapter,
+  makeBidRequestsHook,
   purpose1Rule,
   purpose2Rule,
-  enableAnalyticsHook,
-  getGvlid,
-  internal, STRICT_STORAGE_ENFORCEMENT
+  setEnforcementConfig,
+  STRICT_STORAGE_ENFORCEMENT,
+  userIdHook,
+  userSyncHook,
+  validateRules
 } from 'modules/gdprEnforcement.js';
-import { config } from 'src/config.js';
-import adapterManager, { gdprDataHandler } from 'src/adapterManager.js';
+import {config} from 'src/config.js';
+import adapterManager, {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import { validateStorageEnforcement } from 'src/storageManager.js';
+import {
+  MODULE_TYPE_ANALYTICS,
+  MODULE_TYPE_BIDDER,
+  MODULE_TYPE_CORE,
+  MODULE_TYPE_UID
+} from '../../../src/activities/modules.js';
 import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
-import 'src/prebid.js'
+import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
-import {VENDORLESS_GVLID} from '../../../src/consentHandler.js';
+import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
+import {validateStorageEnforcement} from '../../../src/storageManager.js';
 
 describe('gdpr enforcement', function () {
   let nextFnSpy;
@@ -100,6 +107,7 @@ describe('gdpr enforcement', function () {
       }
     }
   };
+  let gvlids;
 
   before(() => {
     hook.ready();
@@ -111,31 +119,28 @@ describe('gdpr enforcement', function () {
     adapterManager.makeBidRequests.getHooks({ hook: makeBidRequestsHook }).remove();
   })
 
+  beforeEach(() => {
+    gvlids = {};
+    sinon.stub(GDPR_GVLIDS, 'get').callsFake((name) => ({gvlid: gvlids[name], modules: {}}));
+  });
+
+  afterEach(() => {
+    GDPR_GVLIDS.get.restore();
+  });
+
   describe('deviceAccessHook', function () {
-    let adapterManagerStub;
-
-    function getBidderSpec(gvlid) {
-      return {
-        getSpec: () => {
-          return {
-            gvlid
-          }
-        }
-      }
-    }
-
     beforeEach(function () {
       nextFnSpy = sinon.spy();
       gdprDataHandlerStub = sinon.stub(gdprDataHandler, 'getConsentData');
       logWarnSpy = sinon.spy(utils, 'logWarn');
-      adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
     });
+
     afterEach(function () {
       config.resetConfig();
       gdprDataHandler.getConsentData.restore();
       logWarnSpy.restore();
-      adapterManagerStub.restore();
     });
+
     it('should not allow device access when device access flag is set to false', function () {
       config.setConfig({
         deviceAccess: false,
@@ -161,8 +166,10 @@ describe('gdpr enforcement', function () {
     });
 
     it('should only check for consent for vendor exceptions when enforcePurpose and enforceVendor are false', function () {
-      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
-      adapterManagerStub.withArgs('rubicon').returns(getBidderSpec(5));
+      Object.assign(gvlids, {
+        appnexus: 1,
+        rubicon: 5
+      });
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -179,14 +186,16 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 5, 'rubicon');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(0);
     });
 
     it('should check consent for all vendors when enforcePurpose and enforceVendor are true', function () {
-      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
-      adapterManagerStub.withArgs('rubicon').returns(getBidderSpec(3));
+      Object.assign(gvlids, {
+        appnexus: 1,
+        rubicon: 3
+      });
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -202,13 +211,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
-      deviceAccessHook(nextFnSpy, 3, 'rubicon');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'rubicon');
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
     it('should allow device access when gdprApplies is false and hasDeviceAccess flag is true', function () {
-      adapterManagerStub.withArgs('appnexus').returns(getBidderSpec(1));
+      gvlids.appnexus = 1;
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -225,13 +234,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 1, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
     });
 
     it('should use gvlMapping set by publisher', function() {
@@ -256,13 +265,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
       config.resetConfig();
     });
 
@@ -291,13 +300,13 @@ describe('gdpr enforcement', function () {
       consentData.apiVersion = 2;
       gdprDataHandlerStub.returns(consentData);
 
-      deviceAccessHook(nextFnSpy, 1, 'appnexus');
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus');
       expect(nextFnSpy.calledOnce).to.equal(true);
       let result = {
         hasEnforcementHook: true,
         valid: true
       }
-      sinon.assert.calledWith(nextFnSpy, 4, 'appnexus', result);
+      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_BIDDER, 'appnexus', result);
       config.resetConfig();
       curBidderStub.restore();
     });
@@ -310,9 +319,9 @@ describe('gdpr enforcement', function () {
       }
       gdprDataHandlerStub.returns(consentData);
       const validate = sinon.stub().callsFake(() => false);
-      deviceAccessHook(nextFnSpy, VENDORLESS_GVLID, 'mockModule', undefined, {validate});
+      deviceAccessHook(nextFnSpy, MODULE_TYPE_CORE, 'mockModule', undefined, {validate});
       sinon.assert.callCount(validate, 0);
-      sinon.assert.calledWith(nextFnSpy, VENDORLESS_GVLID, 'mockModule', {hasEnforcementHook: true, valid: true});
+      sinon.assert.calledWith(nextFnSpy, MODULE_TYPE_CORE, 'mockModule', {hasEnforcementHook: true, valid: true});
     })
   });
 
@@ -354,23 +363,11 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub.returns(consentData);
 
       curBidderStub.returns('sampleBidder1');
-      adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 1
-          }
-        }
-      });
+      gvlids.sampleBidder1 = 1;
       userSyncHook(nextFnSpy);
 
       curBidderStub.returns('sampleBidder2');
-      adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 3
-          }
-        }
-      });
+      gvlids.sampleBidder2 = 3;
       userSyncHook(nextFnSpy);
       expect(nextFnSpy.calledTwice).to.equal(true);
     });
@@ -393,23 +390,11 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub.returns(consentData);
 
       curBidderStub.returns('sampleBidder1');
-      adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 1
-          }
-        }
-      });
+      gvlids.sampleBidder1 = 1;
       userSyncHook(nextFnSpy);
 
       curBidderStub.returns('sampleBidder2');
-      adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 3
-          }
-        }
-      });
+      gvlids.sampleBidder2 = 3;
       userSyncHook(nextFnSpy);
       expect(nextFnSpy.calledOnce).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(1);
@@ -433,23 +418,11 @@ describe('gdpr enforcement', function () {
       gdprDataHandlerStub.returns(consentData);
 
       curBidderStub.returns('sampleBidder1');
-      adapterManagerStub.withArgs('sampleBidder1').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 1
-          }
-        }
-      });
+      gvlids.sampleBidder1 = 1;
       userSyncHook(nextFnSpy);
 
       curBidderStub.returns('sampleBidder2');
-      adapterManagerStub.withArgs('sampleBidder2').returns({
-        getSpec: function () {
-          return {
-            'gvlid': 3
-          }
-        }
-      });
+      gvlids.sampleBidder2 = 3;
       userSyncHook(nextFnSpy);
       expect(nextFnSpy.calledTwice).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(0);
@@ -486,6 +459,7 @@ describe('gdpr enforcement', function () {
           name: 'sampleUserId'
         }
       }]
+      gvlids.sampleUserId = 1;
       userIdHook(nextFnSpy, submodules, consentData);
       // Should pass back hasValidated flag since version 2
       const args = nextFnSpy.getCalls()[0].args;
@@ -501,6 +475,7 @@ describe('gdpr enforcement', function () {
           name: 'sampleUserId'
         }
       }];
+      gvlids.sampleUserId = 1;
       let consentData = null;
       userIdHook(nextFnSpy, submodules, consentData);
       // Should not pass back hasValidated flag since version 2
@@ -537,6 +512,10 @@ describe('gdpr enforcement', function () {
           name: 'sampleUserId1'
         }
       }]
+      Object.assign(gvlids, {
+        sampleUserId: 1,
+        sampleUserId1: 3
+      });
       userIdHook(nextFnSpy, submodules, consentData);
       expect(logWarnSpy.callCount).to.equal(1);
       let expectedSubmodules = [{
@@ -602,20 +581,9 @@ describe('gdpr enforcement', function () {
       consentData.gdprApplies = true;
 
       gdprDataHandlerStub.returns(consentData);
-      adapterManagerStub.withArgs('bidder_1').returns({
-        getSpec: function () {
-          return { 'gvlid': 4 }
-        }
-      });
-      adapterManagerStub.withArgs('bidder_2').returns({
-        getSpec: function () {
-          return { 'gvlid': 5 }
-        }
-      });
-      adapterManagerStub.withArgs('bidder_3').returns({
-        getSpec: function () {
-          return { 'gvlid': undefined }
-        }
+      Object.assign(gvlids, {
+        bidder_1: 4,
+        bidder_2: 5,
       });
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
@@ -660,21 +628,10 @@ describe('gdpr enforcement', function () {
       consentData.gdprApplies = true;
 
       gdprDataHandlerStub.returns(consentData);
-      adapterManagerStub.withArgs('bidder_1').returns({
-        getSpec: function () {
-          return { 'gvlid': 4 }
-        }
-      });
-      adapterManagerStub.withArgs('bidder_2').returns({
-        getSpec: function () {
-          return { 'gvlid': 5 }
-        }
-      });
-      adapterManagerStub.withArgs('bidder_3').returns({
-        getSpec: function () {
-          return { 'gvlid': undefined }
-        }
-      });
+      Object.assign(gvlids, {
+        bidder_1: 4,
+        bidder_2: 5,
+      })
 
       makeBidRequestsHook(nextFnSpy, MOCK_AD_UNITS, []);
 
@@ -771,9 +728,11 @@ describe('gdpr enforcement', function () {
       consentData.gdprApplies = true;
 
       gdprDataHandlerStub.returns(consentData);
-      adapterManagerStub.withArgs('analyticsAdapter_A').returns({ gvlid: 3 });
-      adapterManagerStub.withArgs('analyticsAdapter_B').returns({ gvlid: 5 });
-      adapterManagerStub.withArgs('analyticsAdapter_C').returns({ gvlid: 1 });
+      Object.assign(gvlids, {
+        analyticsAdapter_A: 3,
+        analyticsAdapter_B: 5,
+        analyticsAdapter_C: 1
+      });
 
       enableAnalyticsHook(nextFnSpy, MOCK_ANALYTICS_ADAPTER_CONFIG);
 
@@ -1142,13 +1101,13 @@ describe('gdpr enforcement', function () {
     });
 
     describe('getGvlid', function() {
-      let getGvlidForBidAdapterStub;
-      let getGvlidForUserIdModuleStub;
-      let getGvlidForAnalyticsAdapterStub;
+      const MOCK_MODULE = 'moduleA';
+      let entry;
+
       beforeEach(function() {
-        getGvlidForBidAdapterStub = sandbox.stub(internal, 'getGvlidForBidAdapter');
-        getGvlidForUserIdModuleStub = sandbox.stub(internal, 'getGvlidForUserIdModule');
-        getGvlidForAnalyticsAdapterStub = sandbox.stub(internal, 'getGvlidForAnalyticsAdapter');
+        entry = {modules: {}};
+        GDPR_GVLIDS.get.reset();
+        GDPR_GVLIDS.get.callsFake((mod) => mod === MOCK_MODULE ? entry : {modules: {}});
       });
 
       it('should return "null" if called without passing any argument', function() {
@@ -1156,46 +1115,63 @@ describe('gdpr enforcement', function () {
         expect(gvlid).to.equal(null);
       });
 
-      it('should return "null" if GVL ID is not defined for any of these modules: Bid adapter, UserId submodule and Analytics adapter', function() {
-        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(null);
-
-        const gvlid = getGvlid('moduleA');
+      it('should return "null" if no GVL ID was registered', function() {
+        const gvlid = getGvlid('type', MOCK_MODULE);
         expect(gvlid).to.equal(null);
       });
 
-      it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
-        config.setConfig({
-          gvlMapping: {
-            moduleA: 1
-          }
-        });
+      it('should return null if the wrong GVL ID was registered', () => {
+        entry = {gvlid: 123};
+        expect(getGvlid('type', 'someOtherModule')).to.equal(null);
+      })
 
-        // Actual GVL ID for moduleA is 2, as defined on its the bidAdapter.js file.
-        getGvlidForBidAdapterStub.withArgs('moduleA').returns(2);
+      Object.entries({
+        'without fallback': null,
+        'with fallback': () => 'shouldBeIgnored'
+      }).forEach(([t, fallbackFn]) => {
+        describe(t, () => {
+          it('should return the GVL ID from gvlMapping if it is defined in setConfig', function() {
+            config.setConfig({
+              gvlMapping: {
+                [MOCK_MODULE]: 1
+              }
+            });
 
-        const gvlid = getGvlid('moduleA');
-        expect(gvlid).to.equal(1);
-      });
+            entry = {gvlid: 2};
 
-      it('should return the GVL ID by calling getGvlidForBidAdapter -> getGvlidForUserIdModule -> getGvlidForAnalyticsAdapter in sequence', function() {
-        getGvlidForBidAdapterStub.withArgs('moduleA').returns(null);
-        getGvlidForUserIdModuleStub.withArgs('moduleA').returns(null);
-        getGvlidForAnalyticsAdapterStub.withArgs('moduleA').returns(7);
+            const gvlid = getGvlid('type', MOCK_MODULE, fallbackFn);
+            expect(gvlid).to.equal(1);
+          });
 
-        expect(getGvlid('moduleA')).to.equal(7);
-      });
+          it('should return the GVL ID that was registered', function() {
+            entry = {gvlid: 7};
+            expect(getGvlid('type', MOCK_MODULE, fallbackFn)).to.equal(7);
+          });
 
-      it('should pass extra arguments to analytics\' getGvlid', () => {
-        getGvlidForAnalyticsAdapterStub.withArgs('analytics').returns(321);
-        const cfg = {some: 'args'};
-        getGvlid('analytics', cfg);
-        sinon.assert.calledWith(getGvlidForAnalyticsAdapterStub, 'analytics', cfg);
+          it('should return VENDORLESS_GVLID for core modules', () => {
+            entry = {gvlid: 123};
+            expect(getGvlid(MODULE_TYPE_CORE, MOCK_MODULE, fallbackFn)).to.equal(VENDORLESS_GVLID);
+          });
+
+          describe('multiple GVL IDs are found', () => {
+            it('should use bidder over others', () => {
+              entry = {modules: {[MODULE_TYPE_BIDDER]: 123, [MODULE_TYPE_UID]: 321}};
+              expect(getGvlid(MODULE_TYPE_UID, MOCK_MODULE, fallbackFn)).to.equal(123);
+            });
+            it('should use uid over analytics', () => {
+              entry = {modules: {[MODULE_TYPE_UID]: 123, [MODULE_TYPE_ANALYTICS]: 321}};
+              expect(getGvlid(MODULE_TYPE_ANALYTICS, MOCK_MODULE, fallbackFn)).to.equal(123);
+            })
+          })
+        })
+      })
+
+      it('should use fallbackFn if no other lookup produces a gvl id', () => {
+        expect(getGvlid('type', MOCK_MODULE, () => 321)).to.equal(321);
       });
     });
 
-    describe('getGvlidForAnalyticsAdapter', () => {
+    describe('getGvlidFromAnalyticsConfig', () => {
       let getAnalyticsAdapter, adapter, adapterEntry;
 
       beforeEach(() => {
@@ -1207,26 +1183,20 @@ describe('gdpr enforcement', function () {
         getAnalyticsAdapter.withArgs('analytics').returns(adapterEntry);
       });
 
-      it('should return gvlid from adapterManager if defined', () => {
-        adapterEntry.gvlid = 123;
-        adapter.gvlid = 321
-        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(123);
-      });
-
       it('should return gvlid from adapter if defined', () => {
         adapter.gvlid = 321;
-        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.equal(321);
+        expect(getGvlidFromAnalyticsAdapter('analytics')).to.equal(321);
       });
 
       it('should invoke adapter.gvlid if it\'s a function', () => {
         adapter.gvlid = (cfg) => cfg.k
         const cfg = {k: 231};
-        expect(internal.getGvlidForAnalyticsAdapter('analytics', cfg)).to.eql(231);
+        expect(getGvlidFromAnalyticsAdapter('analytics', cfg)).to.eql(231);
       });
 
       it('should not choke if adapter gvlid fn throws', () => {
         adapter.gvlid = () => { throw new Error(); };
-        expect(internal.getGvlidForAnalyticsAdapter('analytics')).to.not.be.ok;
+        expect(getGvlidFromAnalyticsAdapter('analytics')).to.not.be.ok;
       });
     });
   })

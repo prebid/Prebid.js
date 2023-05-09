@@ -601,33 +601,29 @@ describe('mediakeysBidAdapter', function () {
     });
 
     describe('should support userId modules', function() {
-      const userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666'
-      };
+      const userIdAsEids = [{
+        source: 'pubcid.org',
+        uids: [
+          {
+            atype: 1,
+            id: '01EAJWWNEPN3CYMM5N8M5VXY22'
+          }
+        ]
+      }];
 
       it('should send "user.eids" in the request for Prebid.js supported modules only', function() {
         const bidCopy = utils.deepClone(bid);
-        bidCopy.userId = userId;
+        bidCopy.userIdAsEids = userIdAsEids;
 
         const bidderRequestCopy = utils.deepClone(bidderRequest);
-        bidderRequestCopy.bids[0].userId = userId;
+        bidderRequestCopy.bids[0].userIdAsEids = userIdAsEids;
 
         const bidRequests = [utils.deepClone(bidCopy)];
         const request = spec.buildRequests(bidRequests, bidderRequestCopy);
         const data = request.data;
 
-        const expected = [{
-          source: 'pubcid.org',
-          uids: [
-            {
-              atype: 1,
-              id: '01EAJWWNEPN3CYMM5N8M5VXY22'
-            }
-          ]
-        }];
+        const expected = userIdAsEids;
         expect(data.user.ext).to.exist;
-        expect(data.user.ext.eids).to.have.lengthOf(1);
         expect(data.user.ext.eids).to.deep.equal(expected);
       });
     });

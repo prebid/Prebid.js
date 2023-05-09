@@ -194,7 +194,7 @@ describe('oolo Prebid Analytic', () => {
       })
 
       const conf = {}
-      const pbjsConfig = config.getConfig()
+      const pbjsConfig = JSON.parse(JSON.stringify(config.getConfig()))
 
       Object.keys(pbjsConfig).forEach(key => {
         if (key[0] !== '_') {

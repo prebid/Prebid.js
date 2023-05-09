@@ -366,26 +366,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].pmp.deals[1].id).to.be.equal(dealIds2[1]);
     });
 
-    it('should read timeout from config', function () {
-      const timeout = 4000;
-      const validBidRequests = [createValidBidRequest()];
-      // No timeout field
-      const bidderRequest = {
-        auctionId: 'c1243d83-0bed-4fdb-8c76-42b456be17d0',
-        refererInfo: {
-          page: 'example.com'
-        }
-      };
-      config.setConfig({
-        bidderTimeout: timeout
-      });
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.tmax).to.be.equal(timeout);
-    });
-
     it('should read floor price using floors module', function () {
       const floorPriceFor580x400 = 6.5148;
       const floorPriceForAnySize = 4.2343;

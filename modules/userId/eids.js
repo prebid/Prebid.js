@@ -45,6 +45,12 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
+  },
+
   // justId
   'justId': {
     source: 'justtag.com',
@@ -143,6 +149,24 @@ export const USER_IDS_CONFIG = {
           segments: data.segments
         };
       }
+    }
+  },
+
+  // bidswitchId
+  'bidswitch': {
+    source: 'bidswitch.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
+  // medianetId
+  'medianet': {
+    source: 'media.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
     }
   },
 
