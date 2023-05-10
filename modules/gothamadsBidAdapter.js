@@ -104,7 +104,7 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidRequest.auctionId
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,

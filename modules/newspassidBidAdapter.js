@@ -283,7 +283,7 @@ export const spec = {
       npRequestSingle.auctionId = imp.ext['newspassid'].transactionId; // not sure if this should be here?
       npRequestSingle.imp = [imp];
       npRequestSingle.ext = extObj;
-      deepSetValue(npRequestSingle, 'source.tid', imp.ext['newspassid'].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(npRequestSingle, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(npRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', npRequestSingle);
       return {

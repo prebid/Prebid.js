@@ -92,7 +92,7 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId,
+          tid: bidRequest.auctionId,
           ext: {
             schain: {}
           }
