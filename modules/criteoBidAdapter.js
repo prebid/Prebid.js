@@ -6,10 +6,8 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
-
 const GVLID = 91;
 export const ADAPTER_VERSION = 35;
 const BIDDER_CODE = 'criteo';
@@ -146,9 +144,6 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (bidRequests, bidderRequest) => {
-    // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-
     let url;
     let data;
     let fpd = bidderRequest.ortb2 || {};
@@ -223,7 +218,7 @@ export const spec = {
           creativeId: slot.creativecode,
           width: slot.width,
           height: slot.height,
-          dealId: slot.dealCode,
+          dealId: slot.deal,
         };
         if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
           const pafResponseMeta = {
@@ -439,6 +434,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }
+      if (bidRequest.nativeOrtbRequest?.assets) {
+        slot.ext = Object.assign({}, slot.ext, {assets: bidRequest.nativeOrtbRequest.assets});
+      }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
@@ -513,6 +511,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   }
   if (bidderRequest && bidderRequest.uspConsent) {
     request.user.uspIab = bidderRequest.uspConsent;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
   }
   return request;
 }

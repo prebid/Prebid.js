@@ -6,6 +6,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
+const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
 // const DEFAULT_NATIVE = 'native'
@@ -130,10 +131,11 @@ export const spec = {
       const network = networkKeys[j];
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
+      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       // if (network.indexOf('_native') > -1) { networkRequest.push('tt=' + DEFAULT_NATIVE) }
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL + '?' + networkRequest.join('&'),
+        url: requestURL + '?' + networkRequest.join('&'),
         data: JSON.stringify(networks[network]),
         bid: bidRequests[network]
       });

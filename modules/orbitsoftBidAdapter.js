@@ -1,6 +1,5 @@
 import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'orbitsoft';
 let styleParamsMap = {
@@ -122,7 +121,7 @@ export const spec = {
     const HEIGHT = serverBody.height;
     const CREATIVE = serverBody.content_url;
     const CALLBACK_UID = serverBody.callback_uid;
-    const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
+    const TIME_TO_LIVE = 60;
     const REFERER = utils.getWindowTop();
     let bidRequest = request.bidRequest;
     if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {

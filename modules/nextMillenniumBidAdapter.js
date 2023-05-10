@@ -31,6 +31,7 @@ const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
   'playbackmethod', 'protocols', 'startdelay'
 ];
+const GVLID = 1060;
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -44,6 +45,7 @@ events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     return !!(
