@@ -8,14 +8,89 @@
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {includes} from '../src/polyfill.js';
-import {formatQS, logError} from '../src/utils.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'connectId';
+const STORAGE_EXPIRY_DAYS = 14;
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
 const OVERRIDE_OPT_OUT_KEY = 'connectIdOptOut';
 const INPUT_PARAM_KEYS = ['pixelId', 'he', 'puid'];
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+
+/**
+ * @function
+ * @param {Object} obj
+ */
+function storeObject(obj) {
+  const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
+  if (storage.cookiesAreEnabled()) {
+    setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
+  } else if (storage.localStorageIsEnabled()) {
+    obj.__expires = expires;
+    storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
+  }
+}
+
+/**
+ * Attempts to store a cookie on eTLD + 1
+ *
+ * @function
+ * @param {String} key
+ * @param {String} value
+ * @param {Date} expirationDate
+ * @param {String} hostname
+ */
+function setEtldPlusOneCookie(key, value, expirationDate, hostname) {
+  const subDomains = hostname.split('.');
+  for (let i = 0; i < subDomains.length; ++i) {
+    const domain = subDomains.slice(subDomains.length - i - 1, subDomains.length).join('.');
+    try {
+      storage.setCookie(key, value, expirationDate.toUTCString(), null, '.' + domain);
+      const storedCookie = storage.getCookie(key);
+      if (storedCookie && storedCookie === value) {
+        break;
+      }
+    } catch (error) {}
+  }
+}
+
+function getIdFromCookie() {
+  if (storage.cookiesAreEnabled()) {
+    try {
+      return JSON.parse(storage.getCookie(MODULE_NAME));
+    } catch {}
+  }
+  return null;
+}
+
+function getIdFromLocalStorage() {
+  if (storage.localStorageIsEnabled()) {
+    let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
+    if (storedIdData) {
+      try {
+        storedIdData = JSON.parse(storedIdData);
+      } catch {}
+      if (isPlainObject(storedIdData) && storedIdData.__expires &&
+          storedIdData.__expires <= Date.now()) {
+        storage.removeDataFromLocalStorage(MODULE_NAME);
+        return null;
+      }
+      return storedIdData;
+    }
+  }
+  return null;
+}
+
+function getSiteHostname() {
+  const pageInfo = parseUrl(getRefererInfo().page);
+  return pageInfo.hostname;
+}
 
 /** @type {Submodule} */
 export const connectIdSubmodule = {
@@ -37,8 +112,8 @@ export const connectIdSubmodule = {
     if (connectIdSubmodule.userHasOptedOut()) {
       return undefined;
     }
-    return (typeof value === 'object' && value.connectid)
-      ? {connectId: value.connectid} : undefined;
+    return (isPlainObject(value) && (value.connectId || value.connectid))
+      ? {connectId: value.connectId || value.connectid} : undefined;
   },
   /**
    * Gets the Yahoo ConnectID
@@ -54,21 +129,28 @@ export const connectIdSubmodule = {
     const params = config.params || {};
     if (!params || (typeof params.he !== 'string' && typeof params.puid !== 'string') ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      logError('The connectId submodule requires the \'pixelId\' and at least one of the \'he\' ' +
-               'or \'puid\' parameters to be defined.');
+      logError(`${MODULE_NAME} module: configurataion requires the 'pixelId' and at ` +
+                `least one of the 'he' or 'puid' parameters to be defined.`);
       return;
     }
 
+    const storedId = getIdFromCookie() || getIdFromLocalStorage();
+    if (storedId) {
+      return {id: storedId};
+    }
+
+    const uspString = uspDataHandler.getConsentData() || '';
     const data = {
+      v: '1',
       '1p': includes([1, '1', true], params['1p']) ? '1' : '0',
       gdpr: connectIdSubmodule.isEUConsentRequired(consentData) ? '1' : '0',
-      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.gdpr.consentString : '',
-      us_privacy: consentData && consentData.uspConsent ? consentData.uspConsent : ''
+      gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.consentString : '',
+      us_privacy: uspString
     };
 
-    if (connectIdSubmodule.isUnderGPPJurisdiction(consentData)) {
-      data.gpp = consentData.gppConsent.gppString;
-      data.gpp_sid = encodeURIComponent(consentData.gppConsent.applicableSections.join(','));
+    let topmostLocation = getRefererInfo().topmostLocation;
+    if (typeof topmostLocation === 'string') {
+      data.url = topmostLocation.split('?')[0];
     }
 
     INPUT_PARAM_KEYS.forEach(key => {
@@ -84,6 +166,11 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
+              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0) {
+                storeObject(responseObj);
+              } else {
+                logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
+              }
             } catch (error) {
               logError(error);
             }
@@ -91,7 +178,7 @@ export const connectIdSubmodule = {
           callback(responseObj);
         },
         error: error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          logError(`${MODULE_NAME} module: ID fetch encountered an error`, error);
           callback();
         }
       };
@@ -108,16 +195,7 @@ export const connectIdSubmodule = {
    * @returns {Boolean}
    */
   isEUConsentRequired(consentData) {
-    return !!(consentData && consentData.gdpr && consentData.gdpr.gdprApplies);
-  },
-
-  /**
-   * Utility function that returns a boolean flag indicating if the opportunity
-   * is subject to GPP jurisdiction.
-   * @returns {Boolean}
-   */
-  isUnderGPPJurisdiction(consentData) {
-    return !!(consentData && consentData.gppConsent && consentData.gppConsent.gppString);
+    return !!(consentData?.gdprApplies);
   },
 
   /**

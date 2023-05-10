@@ -1,10 +1,10 @@
-import { getBidRequest, logWarn, _each, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques, isPlainObject, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import CONSTANTS from '../src/constants.json';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -20,6 +20,7 @@ const PREBID_NATIVE_HELP_LINK = 'http://prebid.org/dev-docs/show-native-ads.html
 const PUBLICATION = 'pubmatic'; // Your publication on Blue Billywig, potentially with environment (e.g. publication.bbvms.com or publication.test.bbvms.com)
 const RENDERER_URL = 'https://pubmatic.bbvms.com/r/'.concat('$RENDERER', '.js'); // URL of the renderer application
 const MSG_VIDEO_PLACEMENT_MISSING = 'Video.Placement param missing';
+
 const CUSTOM_PARAMS = {
   'kadpageurl': '', // Custom page url
   'gender': '', // User gender
@@ -55,55 +56,10 @@ const VIDEO_CUSTOM_PARAMS = {
   'skip': DATA_TYPES.NUMBER
 }
 
-const NATIVE_ASSETS = {
-  'TITLE': { ID: 1, KEY: 'title', TYPE: 0 },
-  'IMAGE': { ID: 2, KEY: 'image', TYPE: 0 },
-  'ICON': { ID: 3, KEY: 'icon', TYPE: 0 },
-  'SPONSOREDBY': { ID: 4, KEY: 'sponsoredBy', TYPE: 1 }, // please note that type of SPONSORED is also 1
-  'BODY': { ID: 5, KEY: 'body', TYPE: 2 }, // please note that type of DESC is also set to 2
-  'CLICKURL': { ID: 6, KEY: 'clickUrl', TYPE: 0 },
-  'VIDEO': { ID: 7, KEY: 'video', TYPE: 0 },
-  'EXT': { ID: 8, KEY: 'ext', TYPE: 0 },
-  'DATA': { ID: 9, KEY: 'data', TYPE: 0 },
-  'LOGO': { ID: 10, KEY: 'logo', TYPE: 0 },
-  'SPONSORED': { ID: 11, KEY: 'sponsored', TYPE: 1 }, // please note that type of SPONSOREDBY is also set to 1
-  'DESC': { ID: 12, KEY: 'data', TYPE: 2 }, // please note that type of BODY is also set to 2
-  'RATING': { ID: 13, KEY: 'rating', TYPE: 3 },
-  'LIKES': { ID: 14, KEY: 'likes', TYPE: 4 },
-  'DOWNLOADS': { ID: 15, KEY: 'downloads', TYPE: 5 },
-  'PRICE': { ID: 16, KEY: 'price', TYPE: 6 },
-  'SALEPRICE': { ID: 17, KEY: 'saleprice', TYPE: 7 },
-  'PHONE': { ID: 18, KEY: 'phone', TYPE: 8 },
-  'ADDRESS': { ID: 19, KEY: 'address', TYPE: 9 },
-  'DESC2': { ID: 20, KEY: 'desc2', TYPE: 10 },
-  'DISPLAYURL': { ID: 21, KEY: 'displayurl', TYPE: 11 },
-  'CTA': { ID: 22, KEY: 'cta', TYPE: 12 }
-};
-
 const NATIVE_ASSET_IMAGE_TYPE = {
   'ICON': 1,
-  'LOGO': 2,
   'IMAGE': 3
 }
-
-// check if title, image can be added with mandatory field default values
-const NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS = [
-  {
-    id: NATIVE_ASSETS.SPONSOREDBY.ID,
-    required: true,
-    data: {
-      type: 1
-    }
-  },
-  {
-    id: NATIVE_ASSETS.TITLE.ID,
-    required: true,
-  },
-  {
-    id: NATIVE_ASSETS.IMAGE.ID,
-    required: true,
-  }
-]
 
 const NET_REVENUE = true;
 const dealChannelValues = {
@@ -175,15 +131,8 @@ const MEDIATYPE = [
 
 let publisherId = 0;
 let isInvalidNativeRequest = false;
-let NATIVE_ASSET_ID_TO_KEY_MAP = {};
-let NATIVE_ASSET_KEY_TO_ASSET_MAP = {};
 let biddersList = ['pubmatic'];
 const allBiddersList = ['all'];
-
-// loading NATIVE_ASSET_ID_TO_KEY_MAP
-_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAsset.KEY });
-// loading NATIVE_ASSET_KEY_TO_ASSET_MAP
-_each(NATIVE_ASSETS, anAsset => { NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export function _getDomainFromURL(url) {
   let anchor = document.createElement('a');
@@ -355,133 +304,189 @@ function _checkParamDataType(key, value, datatype) {
   return UNDEFINED;
 }
 
-function _commonNativeRequestObject(nativeAsset, params) {
-  var key = nativeAsset.KEY;
-  return {
-    id: nativeAsset.ID,
-    required: params[key].required ? 1 : 0,
-    data: {
-      type: nativeAsset.TYPE,
-      len: params[key].len,
-      ext: params[key].ext
-    }
-  };
-}
+// TODO delete this code when removing native 1.1 support
+const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
+  'desc': 'desc',
+  'desc2': 'desc2',
+  'body': 'desc',
+  'body2': 'desc2',
+  'sponsoredBy': 'sponsored',
+  'cta': 'ctatext',
+  'rating': 'rating',
+  'address': 'address',
+  'downloads': 'downloads',
+  'likes': 'likes',
+  'phone': 'phone',
+  'price': 'price',
+  'salePrice': 'saleprice',
+  'displayUrl': 'displayurl',
+  'saleprice': 'saleprice',
+  'displayurl': 'displayurl'
+};
 
-function _createNativeRequest(params) {
-  var nativeRequestObject = {
+const { NATIVE_IMAGE_TYPES, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS, NATIVE_ASSET_TYPES } = CONSTANTS;
+const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
+
+// TODO remove this function when the support for 1.1 is removed
+/**
+ * Copy of the function toOrtbNativeRequest from core native.js to handle the title len/length
+ * and ext and mimes parameters from legacy assets.
+ * @param {object} legacyNativeAssets
+ * @returns an OpenRTB format of the same bid request
+ */
+export function toOrtbNativeRequest(legacyNativeAssets) {
+  if (!legacyNativeAssets && !isPlainObject(legacyNativeAssets)) {
+    logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or not an object: ${legacyNativeAssets}`);
+    isInvalidNativeRequest = true;
+    return;
+  }
+  const ortb = {
+    ver: '1.2',
     assets: []
   };
-  for (var key in params) {
-    if (params.hasOwnProperty(key)) {
-      var assetObj = {};
-      if (!(nativeRequestObject.assets && nativeRequestObject.assets.length > 0 && nativeRequestObject.assets.hasOwnProperty(key))) {
-        switch (key) {
-          case NATIVE_ASSETS.TITLE.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.TITLE.ID,
-              required: params[key].required ? 1 : 0,
-              title: {
-                len: params[key].len || params[key].length,
-                ext: params[key].ext
-              }
-            };
-            break;
-          case NATIVE_ASSETS.IMAGE.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.IMAGE.ID,
-              required: params[key].required ? 1 : 0,
-              img: {
-                type: NATIVE_ASSET_IMAGE_TYPE.IMAGE,
-                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-                wmin: params[key].wmin || params[key].minimumWidth || (params[key].minsizes ? params[key].minsizes[0] : UNDEFINED),
-                hmin: params[key].hmin || params[key].minimumHeight || (params[key].minsizes ? params[key].minsizes[1] : UNDEFINED),
-                mimes: params[key].mimes,
-                ext: params[key].ext,
-              }
-            };
-            break;
-          case NATIVE_ASSETS.ICON.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.ICON.ID,
-              required: params[key].required ? 1 : 0,
-              img: {
-                type: NATIVE_ASSET_IMAGE_TYPE.ICON,
-                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED),
-              }
-            };
-            break;
-          case NATIVE_ASSETS.VIDEO.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.VIDEO.ID,
-              required: params[key].required ? 1 : 0,
-              video: {
-                minduration: params[key].minduration,
-                maxduration: params[key].maxduration,
-                protocols: params[key].protocols,
-                mimes: params[key].mimes,
-                ext: params[key].ext
-              }
-            };
-            break;
-          case NATIVE_ASSETS.EXT.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.EXT.ID,
-              required: params[key].required ? 1 : 0,
-            };
-            break;
-          case NATIVE_ASSETS.LOGO.KEY:
-            assetObj = {
-              id: NATIVE_ASSETS.LOGO.ID,
-              required: params[key].required ? 1 : 0,
-              img: {
-                type: NATIVE_ASSET_IMAGE_TYPE.LOGO,
-                w: params[key].w || params[key].width || (params[key].sizes ? params[key].sizes[0] : UNDEFINED),
-                h: params[key].h || params[key].height || (params[key].sizes ? params[key].sizes[1] : UNDEFINED)
-              }
-            };
-            break;
-          case NATIVE_ASSETS.SPONSOREDBY.KEY:
-          case NATIVE_ASSETS.BODY.KEY:
-          case NATIVE_ASSETS.RATING.KEY:
-          case NATIVE_ASSETS.LIKES.KEY:
-          case NATIVE_ASSETS.DOWNLOADS.KEY:
-          case NATIVE_ASSETS.PRICE.KEY:
-          case NATIVE_ASSETS.SALEPRICE.KEY:
-          case NATIVE_ASSETS.PHONE.KEY:
-          case NATIVE_ASSETS.ADDRESS.KEY:
-          case NATIVE_ASSETS.DESC2.KEY:
-          case NATIVE_ASSETS.DISPLAYURL.KEY:
-          case NATIVE_ASSETS.CTA.KEY:
-            assetObj = _commonNativeRequestObject(NATIVE_ASSET_KEY_TO_ASSET_MAP[key], params);
-            break;
+  for (let key in legacyNativeAssets) {
+    // skip conversion for non-asset keys
+    if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
+    if (!NATIVE_KEYS.hasOwnProperty(key) && !PREBID_NATIVE_DATA_KEY_VALUES.includes(key)) {
+      logWarn(`${LOG_WARN_PREFIX}: Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
+
+    const asset = legacyNativeAssets[key];
+    let required = 0;
+    if (asset.required && isBoolean(asset.required)) {
+      required = Number(asset.required);
+    }
+    const ortbAsset = {
+      id: ortb.assets.length,
+      required
+    };
+    // data cases
+    if (key in PREBID_NATIVE_DATA_KEYS_TO_ORTB) {
+      ortbAsset.data = {
+        type: NATIVE_ASSET_TYPES[PREBID_NATIVE_DATA_KEYS_TO_ORTB[key]]
+      }
+      if (asset.len || asset.length) {
+        ortbAsset.data.len = asset.len || asset.length;
+      }
+      if (asset.ext) {
+        ortbAsset.data.ext = asset.ext;
+      }
+    // icon or image case
+    } else if (key === 'icon' || key === 'image') {
+      ortbAsset.img = {
+        type: key === 'icon' ? NATIVE_IMAGE_TYPES.ICON : NATIVE_IMAGE_TYPES.MAIN,
+      }
+      // if min_width and min_height are defined in aspect_ratio, they are preferred
+      if (asset.aspect_ratios) {
+        if (!isArray(asset.aspect_ratios)) {
+          logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's not a an array: ${asset.aspect_ratios}`);
+        } else if (!asset.aspect_ratios.length) {
+          logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios was passed, but it's empty: ${asset.aspect_ratios}`);
+        } else {
+          const { min_width: minWidth, min_height: minHeight } = asset.aspect_ratios[0];
+          if (!isInteger(minWidth) || !isInteger(minHeight)) {
+            logWarn(`${LOG_WARN_PREFIX}: image.aspect_ratios min_width or min_height are invalid: ${minWidth}, ${minHeight}`);
+          } else {
+            ortbAsset.img.wmin = minWidth;
+            ortbAsset.img.hmin = minHeight;
+          }
+          const aspectRatios = asset.aspect_ratios
+            .filter((ar) => ar.ratio_width && ar.ratio_height)
+            .map(ratio => `${ratio.ratio_width}:${ratio.ratio_height}`);
+          if (aspectRatios.length > 0) {
+            ortbAsset.img.ext = {
+              aspectratios: aspectRatios
+            }
+          }
         }
       }
-    }
-    if (assetObj && assetObj.id) {
-      nativeRequestObject.assets[nativeRequestObject.assets.length] = assetObj;
-    }
-  };
 
-  // for native image adtype prebid has to have few required assests i.e. title,sponsoredBy, image
-  // if any of these are missing from the request then request will not be sent
-  var requiredAssetCount = NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.length;
-  var presentrequiredAssetCount = 0;
-  NATIVE_MINIMUM_REQUIRED_IMAGE_ASSETS.forEach(ele => {
-    var lengthOfExistingAssets = nativeRequestObject.assets.length;
-    for (var i = 0; i < lengthOfExistingAssets; i++) {
-      if (ele.id == nativeRequestObject.assets[i].id) {
-        presentrequiredAssetCount++;
-        break;
+      ortbAsset.img.w = asset.w || asset.width;
+      ortbAsset.img.h = asset.h || asset.height;
+      ortbAsset.img.wmin = asset.wmin || asset.minimumWidth || (asset.minsizes ? asset.minsizes[0] : UNDEFINED);
+      ortbAsset.img.hmin = asset.hmin || asset.minimumHeight || (asset.minsizes ? asset.minsizes[1] : UNDEFINED);
+
+      // if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin
+      if (asset.sizes) {
+        if (asset.sizes.length !== 2 || !isInteger(asset.sizes[0]) || !isInteger(asset.sizes[1])) {
+          logWarn(`${LOG_WARN_PREFIX}: image.sizes was passed, but its value is not an array of integers: ${asset.sizes}`);
+        } else {
+          logInfo(`${LOG_WARN_PREFIX}: if asset.sizes exist, by OpenRTB spec we should remove wmin and hmin`);
+          ortbAsset.img.w = asset.sizes[0];
+          ortbAsset.img.h = asset.sizes[1];
+          delete ortbAsset.img.hmin;
+          delete ortbAsset.img.wmin;
+        }
+      }
+      asset.ext && (ortbAsset.img.ext = asset.ext);
+      asset.mimes && (ortbAsset.img.mimes = asset.mimes);
+    // title case
+    } else if (key === 'title') {
+      ortbAsset.title = {
+        // in openRTB, len is required for titles, while in legacy prebid was not.
+        // for this reason, if len is missing in legacy prebid, we're adding a default value of 140.
+        len: asset.len || asset.length || 140
+      }
+      asset.ext && (ortbAsset.title.ext = asset.ext);
+    // all extensions to the native bid request are passed as is
+    } else if (key === 'ext') {
+      ortbAsset.ext = asset;
+      // in `ext` case, required field is not needed
+      delete ortbAsset.required;
+    }
+    ortb.assets.push(ortbAsset);
+  }
+
+  if (ortb.assets.length < 1) {
+    logWarn(`${LOG_WARN_PREFIX}: Could not find any valid asset`);
+    isInvalidNativeRequest = true;
+    return;
+  }
+
+  return ortb;
+}
+// TODO delete this code when removing native 1.1 support
+
+function _createNativeRequest(params) {
+  var nativeRequestObject;
+
+  // TODO delete this code when removing native 1.1 support
+  if (!params.ortb) { // legacy assets definition found
+    nativeRequestObject = toOrtbNativeRequest(params);
+  } else { // ortb assets definition found
+    params = params.ortb;
+    // TODO delete this code when removing native 1.1 support
+    nativeRequestObject = { ver: '1.2', ...params, assets: [] };
+    const { assets } = params;
+
+    const isValidAsset = (asset) => asset.title || asset.img || asset.data || asset.video;
+
+    if (assets.length < 1 || !assets.some(asset => isValidAsset(asset))) {
+      logWarn(`${LOG_WARN_PREFIX}: Native assets object is empty or contains some invalid object`);
+      isInvalidNativeRequest = true;
+      return nativeRequestObject;
+    }
+
+    assets.forEach(asset => {
+      var assetObj = asset;
+      if (assetObj.img) {
+        if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.IMAGE) {
+          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+          assetObj.wmin = assetObj.wmin || assetObj.minimumWidth || (assetObj.minsizes ? assetObj.minsizes[0] : UNDEFINED);
+          assetObj.hmin = assetObj.hmin || assetObj.minimumHeight || (assetObj.minsizes ? assetObj.minsizes[1] : UNDEFINED);
+        } else if (assetObj.img.type == NATIVE_ASSET_IMAGE_TYPE.ICON) {
+          assetObj.w = assetObj.w || assetObj.width || (assetObj.sizes ? assetObj.sizes[0] : UNDEFINED);
+          assetObj.h = assetObj.h || assetObj.height || (assetObj.sizes ? assetObj.sizes[1] : UNDEFINED);
+        }
+      }
+
+      if (assetObj && assetObj.id !== undefined && isValidAsset(assetObj)) {
+        nativeRequestObject.assets.push(assetObj);
       }
     }
-  });
-  if (requiredAssetCount == presentrequiredAssetCount) {
-    isInvalidNativeRequest = false;
-  } else {
-    isInvalidNativeRequest = true;
+    );
   }
   return nativeRequestObject;
 }
@@ -529,7 +534,7 @@ function _createBannerRequest(bid) {
 
 export function checkVideoPlacement(videoData, adUnitCode) {
   // Check for video.placement property. If property is missing display log message.
-  if (!deepAccess(videoData, 'placement')) {
+  if (FEATURES.VIDEO && !deepAccess(videoData, 'placement')) {
     logWarn(MSG_VIDEO_PLACEMENT_MISSING + ' for ' + adUnitCode);
   };
 }
@@ -538,7 +543,7 @@ function _createVideoRequest(bid) {
   var videoData = mergeDeep(deepAccess(bid.mediaTypes, 'video'), bid.params.video);
   var videoObj;
 
-  if (videoData !== UNDEFINED) {
+  if (FEATURES.VIDEO && videoData !== UNDEFINED) {
     videoObj = {};
     checkVideoPlacement(videoData, bid.adUnitCode);
     for (var key in VIDEO_CUSTOM_PARAMS) {
@@ -624,7 +629,7 @@ function _addJWPlayerSegmentData(imp, bid) {
   ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
-function _createImpressionObject(bid, conf) {
+function _createImpressionObject(bid) {
   var impObj = {};
   var bannerObj;
   var videoObj;
@@ -657,14 +662,18 @@ function _createImpressionObject(bid, conf) {
           }
           break;
         case NATIVE:
+          // TODO uncomment below line when removing native 1.1 support
+          // nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeOrtbRequest));
+          // TODO delete below line when removing native 1.1 support
           nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
           if (!isInvalidNativeRequest) {
             impObj.native = nativeObj;
           } else {
             logWarn(LOG_WARN_PREFIX + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
+            isInvalidNativeRequest = false;
           }
           break;
-        case VIDEO:
+        case FEATURES.VIDEO && VIDEO:
           videoObj = _createVideoRequest(bid);
           if (videoObj !== UNDEFINED) {
             impObj.video = videoObj;
@@ -700,7 +709,7 @@ function _createImpressionObject(bid, conf) {
 
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
-            impObj.hasOwnProperty(VIDEO) ? impObj : UNDEFINED;
+          (FEATURES.VIDEO && impObj.hasOwnProperty(VIDEO)) ? impObj : UNDEFINED;
 }
 
 function _addImpressionFPD(imp, bid) {
@@ -801,7 +810,7 @@ function _checkMediaType(bid, newBid) {
     var videoRegex = new RegExp(/VAST\s+version/);
     if (adm.indexOf('span class="PubAPIAd"') >= 0) {
       newBid.mediaType = BANNER;
-    } else if (videoRegex.test(adm)) {
+    } else if (FEATURES.VIDEO && videoRegex.test(adm)) {
       newBid.mediaType = VIDEO;
     } else {
       try {
@@ -817,7 +826,6 @@ function _checkMediaType(bid, newBid) {
 }
 
 function _parseNativeResponse(bid, newBid) {
-  newBid.native = {};
   if (bid.hasOwnProperty('adm')) {
     var adm = '';
     try {
@@ -826,53 +834,15 @@ function _parseNativeResponse(bid, newBid) {
       logWarn(LOG_WARN_PREFIX + 'Error: Cannot parse native reponse for ad response: ' + newBid.adm);
       return;
     }
-    if (adm && adm.native && adm.native.assets && adm.native.assets.length > 0) {
-      newBid.mediaType = NATIVE;
-      for (let i = 0, len = adm.native.assets.length; i < len; i++) {
-        switch (adm.native.assets[i].id) {
-          case NATIVE_ASSETS.TITLE.ID:
-            newBid.native.title = adm.native.assets[i].title && adm.native.assets[i].title.text;
-            break;
-          case NATIVE_ASSETS.IMAGE.ID:
-            newBid.native.image = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
-            };
-            break;
-          case NATIVE_ASSETS.ICON.ID:
-            newBid.native.icon = {
-              url: adm.native.assets[i].img && adm.native.assets[i].img.url,
-              height: adm.native.assets[i].img && adm.native.assets[i].img.h,
-              width: adm.native.assets[i].img && adm.native.assets[i].img.w,
-            };
-            break;
-          case NATIVE_ASSETS.SPONSOREDBY.ID:
-          case NATIVE_ASSETS.BODY.ID:
-          case NATIVE_ASSETS.LIKES.ID:
-          case NATIVE_ASSETS.DOWNLOADS.ID:
-          case NATIVE_ASSETS.PRICE:
-          case NATIVE_ASSETS.SALEPRICE.ID:
-          case NATIVE_ASSETS.PHONE.ID:
-          case NATIVE_ASSETS.ADDRESS.ID:
-          case NATIVE_ASSETS.DESC2.ID:
-          case NATIVE_ASSETS.CTA.ID:
-          case NATIVE_ASSETS.RATING.ID:
-          case NATIVE_ASSETS.DISPLAYURL.ID:
-            newBid.native[NATIVE_ASSET_ID_TO_KEY_MAP[adm.native.assets[i].id]] = adm.native.assets[i].data && adm.native.assets[i].data.value;
-            break;
-        }
-      }
-      newBid.native.clickUrl = adm.native.link && adm.native.link.url;
-      newBid.native.clickTrackers = (adm.native.link && adm.native.link.clicktrackers) || [];
-      newBid.native.impressionTrackers = adm.native.imptrackers || [];
-      newBid.native.jstracker = adm.native.jstracker || [];
-      if (!newBid.width) {
-        newBid.width = DEFAULT_WIDTH;
-      }
-      if (!newBid.height) {
-        newBid.height = DEFAULT_HEIGHT;
-      }
+    newBid.native = {
+      ortb: { ...adm.native }
+    };
+    newBid.mediaType = NATIVE;
+    if (!newBid.width) {
+      newBid.width = DEFAULT_WIDTH;
+    }
+    if (!newBid.height) {
+      newBid.height = DEFAULT_HEIGHT;
     }
   }
 }
@@ -926,7 +896,10 @@ function _assignRenderer(newBid, request) {
     for (let bidderRequestBidsIndex = 0; bidderRequestBidsIndex < request.bidderRequest.bids.length; bidderRequestBidsIndex++) {
       if (request.bidderRequest.bids[bidderRequestBidsIndex].bidId === newBid.requestId) {
         bidParams = request.bidderRequest.bids[bidderRequestBidsIndex].params;
-        context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+
+        if (FEATURES.VIDEO) {
+          context = request.bidderRequest.bids[bidderRequestBidsIndex].mediaTypes[VIDEO].context;
+        }
         adUnitCode = request.bidderRequest.bids[bidderRequestBidsIndex].adUnitCode;
       }
     }
@@ -946,7 +919,7 @@ function _assignRenderer(newBid, request) {
  * @returns
  */
 export function assignDealTier(newBid, bid, request) {
-  if (!bid?.ext?.prebiddealpriority) return;
+  if (!bid?.ext?.prebiddealpriority || !FEATURES.VIDEO) return;
   const bidRequest = getBidRequest(newBid.requestId, [request.bidderRequest]);
   const videoObj = deepAccess(bidRequest, 'mediaTypes.video');
   if (videoObj?.context != ADPOD) return;
@@ -1029,7 +1002,7 @@ export const spec = {
         return false;
       }
       // video ad validation
-      if (bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
+      if (FEATURES.VIDEO && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty(VIDEO)) {
         // bid.mediaTypes.video.mimes OR bid.params.video.mimes should be present and must be a non-empty array
         let mediaTypesVideoMimes = deepAccess(bid.mediaTypes, 'video.mimes');
         let paramsVideoMimes = deepAccess(bid, 'params.video.mimes');
@@ -1075,7 +1048,7 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    // validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     var refererInfo;
     if (bidderRequest && bidderRequest.refererInfo) {
       refererInfo = bidderRequest.refererInfo;
@@ -1121,7 +1094,7 @@ export const spec = {
       if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
         allowedIabCategories = allowedIabCategories.concat(bid.params.acat);
       }
-      var impObj = _createImpressionObject(bid, conf);
+      var impObj = _createImpressionObject(bid);
       if (impObj) {
         payload.imp.push(impObj);
       }
@@ -1241,7 +1214,7 @@ export const spec = {
     // bidderRequest has timeout property if publisher sets during calling requestBids function from page
     // if not bidderRequest contains global value set by Prebid
     if (bidderRequest?.timeout) {
-      payload.tmax = bidderRequest.timeout || config.getConfig('bidderTimeout');
+      payload.tmax = bidderRequest.timeout;
     } else {
       payload.tmax = window?.PWT?.versionDetails?.timeout;
     }
@@ -1314,7 +1287,7 @@ export const spec = {
                     switch (newBid.mediaType) {
                       case BANNER:
                         break;
-                      case VIDEO:
+                      case FEATURES.VIDEO && VIDEO:
                         newBid.width = bid.hasOwnProperty('w') ? bid.w : req.video.w;
                         newBid.height = bid.hasOwnProperty('h') ? bid.h : req.video.h;
                         newBid.vastXml = bid.adm;

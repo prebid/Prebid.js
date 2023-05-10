@@ -68,11 +68,23 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
   }
 
+  if (ortb2.device?.ifa !== undefined) {
+    deepSetValue(requestTemplate, 'device.ifa', ortb2.device.ifa);
+  }
+
+  if (ortb2.device?.geo !== undefined) {
+    deepSetValue(requestTemplate, 'device.geo', ortb2.device.geo);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa');
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+    if (!deepAccess(requestTemplate, 'device.geo')) {
+      const geo = deepAccess(bidRequest, 'params.app.geo');
+      deepSetValue(requestTemplate, 'device.geo', geo);
+    }
+    if (!deepAccess(requestTemplate, 'device.ifa')) {
+      const ifa = deepAccess(bidRequest, 'params.app.ifa');
+      deepSetValue(requestTemplate, 'device.ifa', ifa);
+    }
   }
 
   const eids = deepAccess(bidRequest, 'userIdAsEids');
