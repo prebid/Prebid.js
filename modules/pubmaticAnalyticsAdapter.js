@@ -460,6 +460,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   var origAdUnitId = origAdUnit.adUnitId || adUnitId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let floorData = cache.auctions[auctionId].floorData;
+  let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
+  let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
 
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
@@ -484,10 +486,10 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x'
     + (winningBid?.bidResponse?.dimensions?.height || '0'));
   pixelURL += '&tgid=' + enc(getTgid());
-  pixelURL += '&adv=' + enc(winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined);
+  adv && (pixelURL += '&adv=' + enc(adv));
   pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
   pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
-  pixelURL += '&fskp=' + enc(floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined);
+  fskp && (pixelURL += '&fskp=' + enc(fskp));
   pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
   ajax(
