@@ -25,8 +25,9 @@ const getFutureCookieExpiry = () => new Date(Date.now() + msIn12Hours).toUTCStri
 const setPublisherCookie = (token) => coreStorage.setCookie(publisherCookieName, JSON.stringify(token), getFutureCookieExpiry());
 
 const makePrebidIdentityContainer = (token) => ({uid2: {id: token}});
+let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
-  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params}] }, debug, ...extraSettings
+  userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug, ...extraSettings
 });
 
 const initialToken = `initial-advertising-token`;
@@ -40,6 +41,12 @@ const makeUid2Token = (token = initialToken, shouldRefresh = false, expired = fa
   refresh_expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
   refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==',
 });
+
+const getFromAppropriateStorage = () => {
+  if (useLocalStorage) return coreStorage.getDataFromLocalStorage(moduleCookieName);
+  else return coreStorage.getCookie(moduleCookieName);
+}
+
 const expectInitialToken = (bid) => expect(bid?.userId ?? {}).to.deep.include(makePrebidIdentityContainer(initialToken));
 const expectRefreshedToken = (bid) => expect(bid?.userId ?? {}).to.deep.include(makePrebidIdentityContainer(refreshedToken));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
@@ -47,9 +54,9 @@ const expectGlobalToHaveRefreshedIdentity = () => expect(getGlobal().getUserIds(
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
 const expectLegacyToken = (bid) => expect(bid.userId).to.deep.include(makePrebidIdentityContainer(legacyToken));
 const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makePrebidIdentityContainer(legacyToken));
-const expectModuleCookieEmptyOrMissing = () => expect(coreStorage.getCookie(moduleCookieName)).to.be.null;
-const expectModuleCookieToContain = (initialIdentity, latestIdentity) => {
-  const cookie = JSON.parse(coreStorage.getCookie(moduleCookieName));
+const expectModuleStorageEmptyOrMissing = () => expect(getFromAppropriateStorage()).to.be.null;
+const expectModuleStorageToContain = (initialIdentity, latestIdentity) => {
+  const cookie = JSON.parse(getFromAppropriateStorage());
   if (initialIdentity) expect(cookie.originalToken.advertising_token).to.equal(initialIdentity);
   if (latestIdentity) expect(cookie.latestToken.advertising_token).to.equal(latestIdentity);
 }
@@ -92,6 +99,28 @@ const testApiSuccessAndFailure = (act, testDescription, failTestDescription, onl
     await act(false);
   });
 }
+
+const testCookieAndLocalStorage = (description, test, only = false) => {
+  const testFn = only ? describe.only : describe; // TODO: This is a describeFn now, not a testFn
+  testFn(`Using cookies: ${description}`, async function() {
+    before(function() {
+      useLocalStorage = false;
+    });
+    await test();
+  });
+  testFn(`Using local storage: ${description}`, async function() {
+    before(function() {
+      console.log('Setting local true');
+      useLocalStorage = true;
+    });
+    after(function() {
+      console.log('Setting local false');
+      useLocalStorage = false;
+    });
+    await test();
+  });
+};
+
 describe(`UID2 module`, function () {
   let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
   before(function () {
@@ -200,7 +229,11 @@ describe(`UID2 module`, function () {
   let scenarios = [
     {
       name: 'Token provided in config call',
-      setConfig: (token, extraConfig = {}) => config.setConfig(makePrebidConfig({uid2Token: token}, extraConfig)),
+      setConfig: (token, extraConfig = {}) => {
+        const gen = makePrebidConfig({uid2Token: token}, extraConfig);
+        console.log('GENERATED CONFIG', gen.userSync.userIds[0].params);
+        return config.setConfig(gen);
+      },
     },
     {
       name: 'Token provided in server-set cookie',
@@ -212,7 +245,7 @@ describe(`UID2 module`, function () {
   ]
 
   scenarios.forEach(function(scenario) {
-    describe(scenario.name, function() {
+    testCookieAndLocalStorage(scenario.name, function() {
       describe(`When an expired token which can be refreshed is provided`, function() {
         describe('When the refresh is available in time', function() {
           testApiSuccessAndFailure(async function(apiSucceeds) {
@@ -230,11 +263,11 @@ describe(`UID2 module`, function () {
 
             await runAuction();
             if (apiSucceeds) {
-              expectModuleCookieToContain(initialToken, refreshedToken);
+              expectModuleStorageToContain(initialToken, refreshedToken);
             } else {
-              expectModuleCookieEmptyOrMissing();
+              expectModuleStorageEmptyOrMissing();
             }
-          }, 'the refreshed token should be stored in the module cookie', 'the module cookie should not be set');
+          }, 'the refreshed token should be stored in the module storage', 'the module storage should not be set');
         });
         describe(`when the response doesn't arrive before the auction timer`, function() {
           testApiSuccessAndFailure(async function() {
@@ -295,9 +328,9 @@ describe(`UID2 module`, function () {
           await runAuction();
           await promise;
           if (success) {
-            expectModuleCookieToContain(initialToken, refreshedToken);
+            expectModuleStorageToContain(initialToken, refreshedToken);
           } else {
-            expectModuleCookieToContain(initialToken, initialToken);
+            expectModuleStorageToContain(initialToken, initialToken);
           }
         }, 'the refreshed token should be stored in the module cookie after the auction runs', 'the module cookie should only have the original token');
 

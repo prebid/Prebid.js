@@ -79,3 +79,67 @@ export class Uid2ApiClient {
     return promise;
   }
 }
+export class UidStorageManager {
+  constructor(storage, preferLocalStorage, storageName, logInfo) {
+    this._storage = storage;
+    this._preferLocalStorage = preferLocalStorage;
+    this._storageName = storageName;
+    this._logInfo = logInfo;
+  }
+  readCookie(cookieName) {
+    return this._storage.cookiesAreEnabled() ? this._storage.getCookie(cookieName) : null;
+  }
+  readLocalStorage(key) {
+    return this._storage.localStorageIsEnabled() ? this._storage.getDataFromLocalStorage(key) : null;
+  }
+  readModuleCookie() {
+    return this.parseIfContainsBraces(this.readCookie(this._storageName));
+  }
+  writeModuleCookie(value) {
+    this._storage.setCookie(this._storageName, JSON.stringify(value), Date.now() + 60 * 60 * 24 * 1000);
+  }
+  readModuleStorage() {
+    return this.parseIfContainsBraces(this.readLocalStorage(this._storageName));
+  }
+  writeModuleStorage(value) {
+    this._storage.setDataInLocalStorage(this._storageName, JSON.stringify(value));
+  }
+  readProvidedCookie(cookieName) {
+    return JSON.parse(this.readCookie(cookieName));
+  }
+  parseIfContainsBraces(value) {
+    return (value?.includes('{')) ? JSON.parse(value) : value;
+  }
+  storeValue(value) {
+    if (this._preferLocalStorage) {
+      this.writeModuleStorage(value);
+    } else {
+      this.writeModuleCookie(value);
+    }
+  }
+  getStoredValueWithFallback() {
+    const preferredStorageLabel = this._preferLocalStorage ? 'local storage' : 'cookie';
+    const preferredStorageGet = (this._preferLocalStorage ? this.readModuleStorage : this.readModuleCookie).bind(this);
+    const preferredStorageSet = (this._preferLocalStorage ? this.writeModuleStorage : this.writeModuleCookie).bind(this);
+    const fallbackStorageGet = (this._preferLocalStorage ? this.readModuleCookie : this.readModuleStorage).bind(this);
+
+    const storedValue = preferredStorageGet();
+
+    if (!storedValue) {
+      const fallbackValue = fallbackStorageGet();
+      if (fallbackValue) {
+        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value. Copying the fallback value to ${preferredStorageLabel}.`);
+        preferredStorageSet(fallbackValue);
+        return fallbackValue;
+      }
+    } else if (typeof storedValue === 'string') {
+      const fallbackValue = fallbackStorageGet();
+      if (fallbackValue && typeof fallbackValue === 'object') {
+        this._logInfo(`${preferredStorageLabel} contained a basic token, but found a refreshable token fallback. Copying the fallback value to ${preferredStorageLabel}.`);
+        preferredStorageSet(fallbackValue);
+        return fallbackValue;
+      }
+    }
+    return storedValue;
+  }
+}
