@@ -115,6 +115,14 @@ userIdAsEids = [
     },
     
     {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    
+    {
         source: 'media.net',
         uids: [{
             id: 'some-random-id-value',
