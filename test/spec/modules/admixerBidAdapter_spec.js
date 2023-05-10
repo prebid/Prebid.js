@@ -100,33 +100,72 @@ describe('AdmixerAdapter', function () {
     });
   });
 
-  describe('buildRequestsAdmixerADX', function () {
-    let validRequest = [
-      {
-        bidder: BIDDER_CODE_ADX,
-        params: {
-          zone: ZONE_ID,
+  describe('buildRequests URL check', function () {
+    const requestParamsFor = (bidder) => ({
+      validRequest: [
+        {
+          bidder: bidder,
+          params: {
+            zone: ZONE_ID,
+          },
+          adUnitCode: 'adunit-code',
+          sizes: [
+            [300, 250],
+            [300, 600],
+          ],
+          bidId: '30b31c1838de1e',
+          bidderRequestId: '22edbae2733bf6',
+          auctionId: '1d1a030790a475',
         },
-        adUnitCode: 'adunit-code',
-        sizes: [
-          [300, 250],
-          [300, 600],
-        ],
-        bidId: '30b31c1838de1e',
-        bidderRequestId: '22edbae2733bf6',
-        auctionId: '1d1a030790a475',
-      },
-    ];
-    let bidderRequest = {
-      bidderCode: BIDDER_CODE_ADX,
-      refererInfo: {
-        page: 'https://example.com',
-      },
-    };
+      ],
+      bidderRequest: {
+        bidderCode: bidder,
+        refererInfo: {
+          page: 'https://example.com',
+        },
+      }
+    })
 
-    it('sends bid request to ADX ENDPOINT', function () {
-      const request = spec.buildRequests(validRequest, bidderRequest);
-      expect(request.url).to.equal(ENDPOINT_URL_ADX);
+    it('build request for admixer', function () {
+      const requestParams = requestParamsFor('admixer');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://inv-nets.admixer.net/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for go2net', function () {
+      const requestParams = requestParamsFor('go2net');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://ads.go2net.com.ua/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for adblender', function () {
+      const requestParams = requestParamsFor('adblender');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://inv-nets.admixer.net/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for adsyield', function () {
+      const requestParams = requestParamsFor('adsyield');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://ads.adsyield.com/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for futureads', function () {
+      const requestParams = requestParamsFor('futureads');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://ads.futureads.io/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for smn', function () {
+      const requestParams = requestParamsFor('smn');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://ads.smn.rs/prebid.1.2.aspx');
+      expect(request.method).to.equal('POST');
+    });
+    it('build request for admixeradx', function () {
+      const requestParams = requestParamsFor('admixeradx');
+      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
+      expect(request.url).to.equal('https://inv-nets.admixer.net/adxprebid.1.2.aspx');
       expect(request.method).to.equal('POST');
     });
   });
