@@ -3430,6 +3430,74 @@ describe('the rubicon adapter', function () {
             // cleanup
             adUnit.parentNode.removeChild(adUnit);
           });
+
+          it('should render ad with Magnite renderer without video object', function () {
+            delete bidderRequest.bids[0].params.video;
+            bidderRequest.bids[0].params.bidonmultiformat = true;
+            bidderRequest.bids[0].mediaTypes.video.placement = 3;
+            bidderRequest.bids[0].mediaTypes.video.playerSize = [640, 480];
+
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
+                    }
+                  },
+                  nurl: 'https://test.com/vast.xml'
+                }],
+                group: 0,
+                seat: 'rubicon'
+              }],
+            };
+
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            sinon.spy(window.MagniteApex, 'renderAd');
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            const bid = bids[0];
+            bid.adUnitCode = 'outstream_video1_placement';
+            const adUnit = document.createElement('div');
+            adUnit.id = bid.adUnitCode;
+            document.body.appendChild(adUnit);
+
+            bid.renderer.render(bid);
+
+            const renderCall = window.MagniteApex.renderAd.getCall(0);
+            expect(renderCall.args[0]).to.deep.equal({
+              closeButton: true,
+              collapse: true,
+              height: 480,
+              label: undefined,
+              placement: {
+                align: 'left',
+                attachTo: adUnit,
+                position: 'append',
+              },
+              vastUrl: 'https://test.com/vast.xml',
+              width: 640
+            });
+            // cleanup
+            adUnit.parentNode.removeChild(adUnit);
+          });
         });
       }
 
