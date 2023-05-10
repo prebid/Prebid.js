@@ -77,6 +77,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
+      if (params.tagid) {
+        impData.tagid = params.tagid;
+      }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
           switch (mediaType) {
@@ -144,6 +147,15 @@ export const spec = {
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // schain
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      }
     }
 
     if (bidderRequest?.timeout) {

@@ -7,11 +7,10 @@ import CONSTANTS from '../src/constants.json';
 
 export const DATA_PROVIDER = 'neuwo.ai';
 const SEGTAX_IAB = 6 // IAB - Content Taxonomy version 2
-const CATTAX_IAB = 6 // IAB Tech Lab Content Taxonomy 2.2
 const RESPONSE_IAB_TIER_1 = 'marketing_categories.iab_tier_1'
 const RESPONSE_IAB_TIER_2 = 'marketing_categories.iab_tier_2'
 
-function init(config = {}, userConsent = '') {
+function init(config = {}, userConsent) {
   config.params = config.params || {}
   // ignore module if publicToken is missing (module setup failure)
   if (!config.params.publicToken) {
@@ -30,9 +29,10 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   logInfo('NeuwoRTDModule', 'starting getBidRequestData')
 
   const wrappedArgUrl = encodeURIComponent(config.params.argUrl || getRefererInfo().page);
-  const url = config.params.apiUrl + [
+  /* adjust for pages api.url?prefix=test (to add params with '&') as well as api.url (to add params with '?') */
+  const joiner = config.params.apiUrl.indexOf('?') < 0 ? '?' : '&'
+  const url = config.params.apiUrl + joiner + [
     'token=' + config.params.publicToken,
-    'lang=en',
     'url=' + wrappedArgUrl
   ].join('&')
   const billingId = generateUUID();
@@ -105,7 +105,6 @@ export function injectTopics(topics, bidsConfig) {
 
   // upgrade category taxonomy to IAB 2.2, inject result to page categories
   if (segment.length > 0) {
-    addFragment(bidsConfig.ortb2Fragments.global, 'site.cattax', CATTAX_IAB)
     addFragment(bidsConfig.ortb2Fragments.global, 'site.pagecat', segment.map(s => s.id))
   }
 
