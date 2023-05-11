@@ -79,7 +79,7 @@ export class Uid2ApiClient {
     return promise;
   }
 }
-export class UidStorageManager {
+export class Uid2StorageManager {
   constructor(storage, preferLocalStorage, storageName, logInfo) {
     this._storage = storage;
     this._preferLocalStorage = preferLocalStorage;
@@ -117,6 +117,8 @@ export class UidStorageManager {
       this.writeModuleCookie(value);
     }
   }
+
+  // TODO: Tests
   getStoredValueWithFallback() {
     const preferredStorageLabel = this._preferLocalStorage ? 'local storage' : 'cookie';
     const preferredStorageGet = (this._preferLocalStorage ? this.readModuleStorage : this.readModuleCookie).bind(this);
@@ -142,4 +144,85 @@ export class UidStorageManager {
     }
     return storedValue;
   }
+}
+
+function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
+  _logInfo('UID2 base url provided: ', baseUrl);
+  const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
+  return client.callRefreshApi(token).then((response) => {
+    _logInfo('Refresh endpoint responded with:', response);
+    const tokens = {
+      originalToken: token,
+      latestToken: response.identity,
+    };
+    storageManager.storeValue(tokens);
+    return tokens;
+  });
+}
+
+export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
+  let suppliedToken = null;
+  const preferLocalStorage = (config.storage !== 'cookie');
+  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
+  _logInfo(`UID2 module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
+
+  if (config.paramToken) {
+    suppliedToken = config.paramToken;
+    _logInfo('Read token from params', suppliedToken);
+  } else if (config.serverCookieName) {
+    suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
+    _logInfo('Read token from server-supplied cookie', suppliedToken);
+  }
+  let storedTokens = storageManager.getStoredValueWithFallback();
+  _logInfo('Loaded module-stored tokens:', storedTokens);
+
+  if (storedTokens && typeof storedTokens === 'string') {
+    // Stored value is a plain token - if no token is supplied, just use the stored value.
+
+    if (!suppliedToken) {
+      _logInfo('Returning legacy cookie value.');
+      return { id: storedTokens };
+    }
+    // Otherwise, ignore the legacy value - it should get over-written later anyway.
+    _logInfo('Discarding superseded legacy cookie.');
+    storedTokens = null;
+  }
+
+  if (suppliedToken && storedTokens) {
+    if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
+      _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+      // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
+      storedTokens = null;
+    }
+  }
+  // At this point, any legacy values or superseded stored tokens have been nulled out.
+  const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
+  const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
+  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  console.log('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
+    _logInfo('Newest available token is expired and not refreshable.');
+    return { id: null };
+  }
+  if (Date.now() > newestAvailableToken.identity_expires) {
+    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+    _logInfo('Token is expired but can be refreshed, attempting refresh.');
+    return { callback: (cb) => {
+      promise.then((result) => {
+        _logInfo('Refresh reponded, passing the updated token on.', result);
+        cb(result);
+      });
+    } };
+  }
+  // If should refresh (but don't need to), refresh in the background.
+  if (Date.now() > newestAvailableToken.refresh_from) {
+    _logInfo(`Refreshing token in background with low priority.`);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  }
+  const tokens = {
+    originalToken: suppliedToken ?? storedTokens?.originalToken,
+    latestToken: newestAvailableToken,
+  };
+  storageManager.storeValue(tokens);
+  return { id: tokens };
 }

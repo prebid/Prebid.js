@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 /**
- * This module adds uid2 ID support to the User ID module
+ * This module adds EUID ID support to the User ID module. It shares significant functionality with the UID2 module.
  * The {@link module:modules/userId} module is required.
- * @module modules/uid2IdSystem
+ * @module modules/euidIdSystem
  * @requires module:modules/userId
  */
 
@@ -12,18 +12,18 @@ import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { Uid2ApiClient, Uid2StorageManager, Uid2GetId } from './uid2IdSystem_shared.js';
 
-const MODULE_NAME = 'uid2';
-const MODULE_REVISION = `1.0`;
+const MODULE_NAME = 'euid';
+const MODULE_REVISION = `2.0`;
 const PREBID_VERSION = '$prebid.version$';
-const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`;
-const GVLID = 887;
-const LOG_PRE_FIX = 'UID2: ';
-const ADVERTISING_COOKIE = '__uid2_advertising_token';
+const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`;
+const GVLID = 21; // The Trade Desk - is this correct? Found it from https://iabeurope.eu/vendor-list-tcf-v2-0/
+const LOG_PRE_FIX = 'EUID: ';
+const ADVERTISING_COOKIE = '__euid_advertising_token';
 
 // eslint-disable-next-line no-unused-vars
-const UID2_TEST_URL = 'https://operator-integ.uidapi.com';
-const UID2_PROD_URL = 'https://prod.uidapi.com';
-const UID2_BASE_URL = UID2_PROD_URL;
+const EUID_TEST_URL = 'https://integ.euid.eu/v2';
+const EUID_PROD_URL = 'https://prod.euid.eu/v2';
+const EUID_BASE_URL = EUID_PROD_URL;
 
 function createLogger(logger, prefix) {
   return function (...strings) {
@@ -36,7 +36,7 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
-export const uid2IdSubmodule = {
+export const euidIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
@@ -52,11 +52,11 @@ export const uid2IdSubmodule = {
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
-   * @returns {{uid2:{ id: string } }} or undefined if value doesn't exists
+   * @returns {{euid:{ id: string } }} or undefined if value doesn't exists
    */
   decode(value) {
     const result = decodeImpl(value);
-    _logInfo('UID2 decode returned', result);
+    _logInfo('EUID decode returned', result);
     return result;
   },
 
@@ -65,37 +65,34 @@ export const uid2IdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [configparams]
    * @param {ConsentData|undefined} consentData
-   * @returns {uid2Id}
+   * @returns {euidId}
    */
   getId(config, consentData) {
-    // TODO: handle old uid2ApiBase
     const mappedConfig = {
-      apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
-      paramToken: config?.params?.uid2Token,
-      serverCookieName: config?.params?.uid2ServerCookie,
+      apiBaseUrl: config?.params?.euidApiBase ?? EUID_BASE_URL,
+      paramToken: config?.params?.euidToken,
+      serverCookieName: config?.params?.euidServerCookie,
       storage: config?.params?.storage ?? 'localStorage',
-      clientId: UID2_CLIENT_ID,
+      clientId: EUID_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
-    _logInfo(`UID2 getId returned`, result);
+    _logInfo(`EUID getId returned`, result);
     return result;
   },
 };
 
-// TODO: Tests
-
 function decodeImpl(value) {
   if (typeof value === 'string') {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
-    const result = { uid2: { id: value } };
+    const result = { euid: { id: value } };
     return result;
   }
   if (Date.now() < value.latestToken.identity_expires) {
-    return { uid2: { id: value.latestToken.advertising_token } };
+    return { euid: { id: value.latestToken.advertising_token } };
   }
   return null;
 }
 
 // Register submodule for userId
-submodule('userId', uid2IdSubmodule);
+submodule('userId', euidIdSubmodule);

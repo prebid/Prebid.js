@@ -291,6 +291,14 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  'euid': {
+    source: 'euid.eu', // TODO: Is this correct?
+    atype: 3, // TODO: What is this?
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
