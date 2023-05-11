@@ -1,4 +1,4 @@
-import { getWindowTop, isGptPubadsDefined, deepAccess, getAdUnitSizes, isEmpty } from '../src/utils.js';
+import {getWindowTop, isGptPubadsDefined, deepAccess, getAdUnitSizes, isEmpty, generateUUID} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
@@ -229,6 +229,7 @@ export const spec = {
       let scope = this;
       if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
           });
@@ -400,7 +401,7 @@ export const spec = {
       method: 'POST',
       url: `https://${host}/openrtb/?sid=${sourceId}`,
       data: {
-        id: bidderRequest.auctionId,
+        id: generateUUID(),
         imp: imps,
         site: site,
         device: device
