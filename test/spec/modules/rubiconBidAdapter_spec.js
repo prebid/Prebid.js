@@ -89,6 +89,7 @@ describe('the rubicon adapter', function () {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
+      ortb2: { source: {tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'}},
       bids: [
         {
           bidder: 'rubicon',
@@ -346,6 +347,7 @@ describe('the rubicon adapter', function () {
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
+      ortb2: { source: {tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'}},
       start: 1472239426002,
       auctionStart: 1472239426000,
       timeout: 5000
@@ -619,7 +621,6 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
-            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -2276,6 +2277,8 @@ describe('the rubicon adapter', function () {
       });
 
       describe('createSlotParams', function () {
+        const localBidderRequest = Object.assign({}, bidderRequest);
+        localBidderRequest.ortb2 = {source: {tid: 'faked707-a418-42ec-b8a7-b70a6c6fab0b'}};
         it('should return a valid slot params object', function () {
           let expectedQuery = {
             'account_id': '14062',
@@ -2286,7 +2289,8 @@ describe('the rubicon adapter', function () {
             'p_pos': 'atf',
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'faked707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -2299,7 +2303,7 @@ describe('the rubicon adapter', function () {
             'rf': 'localhost'
           };
 
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
