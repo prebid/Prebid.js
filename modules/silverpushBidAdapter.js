@@ -110,7 +110,7 @@ export const CONVERTER = ortbConverter({
       bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
     }
 
-    bidResponse = buildVideoVastRespose(bidResponse)
+    bidResponse = buildVideoVastResponse(bidResponse)
     bidResponse = buildVideoOutstreamResponse(bidResponse, context)
 
     return bidResponse;
@@ -220,7 +220,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
 }
 
-function buildVideoVastRespose(bidResponse) {
+function buildVideoVastResponse(bidResponse) {
   if (bidResponse.mediaType == VIDEO && bidResponse.vastXml) {
     bidResponse.vastUrl = bidResponse.vastXml;
   }
