@@ -153,7 +153,7 @@ function isValidBannerRequest(bidRequest) {
 
 function isValidVideoRequest(bidRequest) {
   const videoSizes = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.playerSize`);
-  const PARAM_EXISTS = VIDEO_ORTB_REQUIRED.every(param => utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.${param}`) != null)
+  const PARAM_EXISTS = VIDEO_ORTB_REQUIRED.every(param => utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}.${param}`) != null);
 
   return PARAM_EXISTS && utils.isArray(videoSizes) && videoSizes.length > 0 && videoSizes.every(size => utils.isNumber(size[0]) && utils.isNumber(size[1]));
 }
