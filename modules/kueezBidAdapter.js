@@ -249,7 +249,7 @@ function generateBidParameters(bid, bidderRequest) {
     floorPrice: Math.max(getFloorPrice(bid, mediaType), paramsFloorPrice),
     mediaType,
     sizes: sizesArray,
-    transactionId: getBidIdParameter('transactionId', bid)
+    transactionId: bid.ortb2Imp?.ext?.tid || ''
   };
 
   if (pos) {

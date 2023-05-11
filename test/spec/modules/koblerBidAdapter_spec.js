@@ -4,6 +4,7 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
+import {sandbox} from 'sinon';
 
 function createBidderRequest(auctionId, timeout, pageUrl) {
   return {
@@ -37,6 +38,16 @@ function createValidBidRequest(params, bidId, sizes) {
 }
 
 describe('KoblerAdapter', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore()
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -207,7 +218,7 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.tmax).to.be.equal(timeout);
-      expect(openRtbRequest.id).to.be.equal(auctionId);
+      expect(openRtbRequest.id).to.exist;
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
     });
 
@@ -431,11 +442,13 @@ describe('KoblerAdapter', function () {
         'bid.kobler.no'
       );
 
+      sandbox.stub(utils, 'generateUUID').returns('mock-uuid');
+
       const result = spec.buildRequests(validBidRequests, bidderRequest);
       const openRtbRequest = JSON.parse(result.data);
 
       const expectedOpenRtbRequest = {
-        id: '9ff580cf-e10e-4b66-add7-40ac0c804e21',
+        id: 'mock-uuid',
         at: 1,
         tmax: 4500,
         cur: ['USD'],

@@ -7,7 +7,7 @@ import {
   isPlainObject,
   isStr,
   isNumber,
-  isArray, logMessage
+  isArray, logMessage, generateUUID
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -423,7 +423,7 @@ function buildBannerRequestData(bidRequests, bidderRequest) {
   }));
 
   const openrtbRequest = {
-    id: bidderRequest.auctionId,
+    id: generateUUID(),
     imp: impr,
     site: {
       domain: bidderRequest.refererInfo?.domain,

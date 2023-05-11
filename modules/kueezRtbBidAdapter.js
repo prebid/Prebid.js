@@ -108,6 +108,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     schain: schain,
     mediaTypes: mediaTypes,
     gpid: gpid,
+    // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: auctionId,
     transactionId: transactionId,
     bidderRequestId: bidderRequestId,

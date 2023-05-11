@@ -3,7 +3,7 @@ import {
   cleanObj,
   deepAccess,
   deepClone,
-  deepSetValue,
+  deepSetValue, generateUUID,
   getDNT,
   inIframe,
   isArray,
@@ -606,10 +606,8 @@ export const spec = {
 
     const payload = createOrtbTemplate();
 
-    // Pass the auctionId as ortb2 id
-    // See https://github.com/prebid/Prebid.js/issues/6563
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
-    deepSetValue(payload, 'source.tid', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', generateUUID());
+    deepSetValue(payload, 'source.tid', bidderRequest.ortb2?.source?.tid);
 
     validBidRequests.forEach(validBid => {
       let bid = deepClone(validBid);

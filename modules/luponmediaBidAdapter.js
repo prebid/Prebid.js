@@ -287,10 +287,10 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   const data = {
-    id: bidRequest.transactionId,
+    id: generateUUID(),
     test: config.getConfig('debug') ? 1 : 0,
     source: {
-      tid: bidRequest.transactionId
+      tid: bidderRequest.ortb2?.source?.tid,
     },
     tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
