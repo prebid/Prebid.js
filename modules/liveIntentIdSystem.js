@@ -107,6 +107,12 @@ function initializeLiveConnect(configParams) {
   }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+
+  if (!liveConnectConfig.appId && configParams.distributorId) {
+    liveConnectConfig.distributorId = configParams.distributorId;
+    identityResolutionConfig.source = configParams.distributorId;
+  }
+
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
