@@ -3,7 +3,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE } from '../src/mediaTypes.js';
-import { _map, deepSetValue, isEmpty, deepAccess } from '../src/utils.js';
+import {_map, deepSetValue, isEmpty, deepAccess, generateUUID} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -63,7 +63,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = bidderRequest.auctionId;
+    const tid = bidderRequest.ortb2?.source?.tid;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
     let url = bidderRequest.refererInfo.referer;
 
@@ -104,6 +104,7 @@ export const spec = {
       return {
         id: String(id + 1),
         tagid: bid.params.adUnitId,
+        // TODO: `tid` is not under `imp` in ORTB, is this intentional?
         tid: tid,
         pt: pt,
         native: {
@@ -115,7 +116,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       site: {
         page: url
       },

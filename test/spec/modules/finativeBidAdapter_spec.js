@@ -38,7 +38,7 @@ describe('Finative adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'site,device,cur,imp,user,regs'.split(',');
+      let keys = 'id,site,device,cur,imp,user,regs'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: {}
@@ -47,17 +47,6 @@ describe('Finative adapter', function () {
       let data = Object.keys(request);
 
       assert.deepEqual(keys, data);
-    });
-
-    it('Verify the auction ID', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {},
-        auctionId: 'auctionId'
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' }, auctionId: validBidRequests[0].auctionId }).data);
-
-      assert.equal(request.id, validBidRequests[0].auctionId);
     });
 
     it('Verify the device', function () {

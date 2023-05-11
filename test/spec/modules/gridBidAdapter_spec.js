@@ -22,7 +22,6 @@ describe('TheMediaGrid Adapter', function () {
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
     };
 
     it('should return true when required params found', function () {
@@ -47,8 +46,12 @@ describe('TheMediaGrid Adapter', function () {
       refererInfo: { page: 'https://example.com' },
       bidderRequestId: '22edbae2733bf6',
       transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
-      auctionId: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
-      timeout: 3000
+      timeout: 3000,
+      ortb2: {
+        source: {
+          tid: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
+        }
+      }
     };
     const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
@@ -152,7 +155,7 @@ describe('TheMediaGrid Adapter', function () {
         },
         'tmax': bidderRequest.timeout,
         'source': {
-          'tid': bidderRequest.auctionId,
+          'tid': bidderRequest.ortb2.source.tid,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
         },
         'user': {

@@ -98,7 +98,7 @@ export const spec = {
     let userExt = null;
     let endpoint = null;
     let forceBidderName = false;
-    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
+    let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
     const tmax = timeout;
@@ -121,9 +121,6 @@ export const spec = {
       }
       if (!bidderRequestId) {
         bidderRequestId = bid.bidderRequestId;
-      }
-      if (!auctionId) {
-        auctionId = bid.auctionId;
       }
       if (!schain) {
         schain = bid.schain;
@@ -247,7 +244,7 @@ export const spec = {
     }
 
     const reqSource = {
-      tid: auctionId && auctionId.toString(),
+      tid: bidderRequest?.ortb2?.source?.tid,
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
