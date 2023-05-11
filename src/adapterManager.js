@@ -585,9 +585,11 @@ function invokeBidderMethod(bidder, method, spec, fn, ...params) {
 }
 
 function tryCallBidderMethod(bidder, method, param) {
-  const target = getBidderMethod(bidder, method);
-  if (target != null) {
-    invokeBidderMethod(bidder, method, ...target, param);
+  if (param?.src !== CONSTANTS.S2S.SRC) {
+    const target = getBidderMethod(bidder, method);
+    if (target != null) {
+      invokeBidderMethod(bidder, method, ...target, param);
+    }
   }
 }
 
