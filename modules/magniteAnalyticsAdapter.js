@@ -868,7 +868,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       handleBidResponse(args, 'success');
       break;
     case BID_REJECTED:
-      const bidStatus = args.rejectionReason && args.rejectionReason.includes('floor') ? BID_REJECTED_IPF : 'rejected';
+      const bidStatus = args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
       handleBidResponse(args, bidStatus);
       break;
     case SEAT_NON_BID:
