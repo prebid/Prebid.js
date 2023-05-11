@@ -1,4 +1,22 @@
-import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, isEmpty, _each, convertTypes, parseUrl, mergeDeep, buildUrl, _map, logError, isFn, isPlainObject } from '../src/utils.js';
+import {
+  logWarn,
+  isStr,
+  deepAccess,
+  isArray,
+  getBidIdParameter,
+  deepSetValue,
+  isEmpty,
+  _each,
+  convertTypes,
+  parseUrl,
+  mergeDeep,
+  buildUrl,
+  _map,
+  logError,
+  isFn,
+  isPlainObject,
+  generateUUID
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -56,7 +74,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.page : '';
     let siteId = '';
-    let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
     let bidurl = URL;
@@ -66,8 +83,6 @@ export const spec = {
 
       siteId = getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = getBidIdParameter('pubcid_name', bid.params) || pubcidName;
-
-      requestId = bid.auctionId;
 
       const imp = {
         id: bid.bidId,
@@ -122,10 +137,10 @@ export const spec = {
     });
 
     const payload = {
-      id: requestId,
+      id: generateUUID(),
       imp: conversantImps,
       source: {
-        tid: requestId
+        tid: bidderRequest.ortb2?.source?.tid,
       },
       site: {
         id: siteId,

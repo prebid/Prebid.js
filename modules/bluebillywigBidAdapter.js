@@ -1,4 +1,4 @@
-import {deepAccess, deepClone, deepSetValue, logError, logWarn} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, generateUUID, logError, logWarn} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {VIDEO} from '../src/mediaTypes.js';
@@ -276,8 +276,8 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
-      source: {tid: bidderRequest.auctionId},
+      id: generateUUID(),
+      source: {tid: bidderRequest.ortb2?.source?.tid},
       tmax: BB_CONSTANTS.DEFAULT_TIMEOUT,
       imp: imps,
       test: DEV_MODE ? 1 : 0,
