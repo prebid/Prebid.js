@@ -489,7 +489,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   adv && (pixelURL += '&adv=' + enc(adv));
   pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
   pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
-  fskp && (pixelURL += '&fskp=' + enc(fskp));
+  (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
   pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
   ajax(
