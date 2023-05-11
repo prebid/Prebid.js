@@ -637,6 +637,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let payload = {};
   createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload);
 
+  // TODO: this logic should stop relying on `transactionId` always being available; see: https://github.com/prebid/Prebid.js/issues/9781
   const transactionIds = Object.keys(impressions);
   let isFpdAdded = false;
 
@@ -777,7 +778,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 
   // set source.tid to auctionId for outgoing request to Exchange.
   r.source = {
-    tid: validBidRequests[0].auctionId,
+    tid: bidderRequest?.ortb2?.source?.tid
   }
 
   // if an schain is provided, send it along

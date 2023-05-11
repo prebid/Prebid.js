@@ -2,6 +2,7 @@ import { assert, expect } from 'chai';
 import { BANNER } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { spec } from 'modules/imdsBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('imdsBidAdapter ', function () {
   describe('isBidRequestValid', function () {
@@ -281,6 +282,14 @@ describe('imdsBidAdapter ', function () {
       bidfloor: 0.5
     };
 
+    beforeEach(() => {
+      sinon.stub(utils, 'generateUUID').returns(bidderRequest.auctionId);
+    });
+
+    afterEach(() => {
+      utils.generateUUID.restore();
+    });
+
     it('should return valid request when valid bids are used', function () {
       // banner test
       let req = spec.buildRequests([validBidRequest], bidderRequest);
@@ -299,7 +308,6 @@ describe('imdsBidAdapter ', function () {
       expect(reqVideo).to.have.property('url');
       expect(reqVideo.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(reqVideo.data).to.exist.and.to.be.an('object');
-      expect(reqVideo.data.id).to.equal('VideoAuctionId124');
       expect(reqVideo.data.imp).to.eql([expectedDataVideo1]);
     });
 

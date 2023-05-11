@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, generateUUID, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
@@ -39,7 +39,7 @@ export const spec = {
     }
     const refererInfo = bidderRequest.refererInfo;
     const openRtbBidRequest = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       site: {
         // TODO: does the fallback make sense here?
         domain: refererInfo.domain || location.hostname,

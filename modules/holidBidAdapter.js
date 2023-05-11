@@ -1,10 +1,10 @@
 import {
-  deepAccess,
+  deepAccess, generateUUID,
   getBidIdParameter,
   isStr,
   logMessage,
   triggerPixel,
-} from '../src/utils.js'
+} from '../src/utils.js';
 import * as events from '../src/events.js'
 import CONSTANTS from '../src/constants.json'
 import { BANNER } from '../src/mediaTypes.js'
@@ -33,7 +33,7 @@ export const spec = {
     return validBidRequests.map((bid) => {
       const requestData = {
         ...bid.ortb2,
-        id: bid.auctionId,
+        id: generateUUID(),
         imp: [getImp(bid)],
       }
 
@@ -56,6 +56,7 @@ export const spec = {
     serverResponse.body.seatbid.map((response) => {
       response.bid.map((bid) => {
         const requestId = bidRequest.bidId
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         const auctionId = bidRequest.auctionId
         const wurl = deepAccess(bid, 'ext.prebid.events.win')
         const bidResponse = {

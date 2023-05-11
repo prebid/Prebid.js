@@ -41,11 +41,11 @@ const getFloor = (bid) => {
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
   let request = {
-    id: bidderRequest.auctionId,
+    id: generateUUID(),
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: {tid: bidderRequest.auctionId}
+    source: {tid: bidderRequest.ortb2?.source?.tid}
   };
 
   // Get the url parameters
