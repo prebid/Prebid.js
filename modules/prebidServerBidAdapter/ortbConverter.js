@@ -167,7 +167,11 @@ const PBS_CONVERTER = ortbConverter({
           deepSetValue(ortbRequest, 'ext.prebid', mergeDeep(ortbRequest.ext?.prebid || {}, context.s2sBidRequest.s2sConfig.extPrebid));
         }
 
-        const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).map(([bidder, ortb2]) => ({
+        const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).filter(([bidder]) => {
+          const bidders = context.s2sBidRequest.s2sConfig.bidders;
+          const allowUnknownBidderCodes = context.s2sBidRequest.s2sConfig.allowUnknownBidderCodes;
+          return allowUnknownBidderCodes || (bidders && bidders.includes(bidder));
+        }).map(([bidder, ortb2]) => ({
           bidders: [bidder],
           config: {ortb2}
         }));
