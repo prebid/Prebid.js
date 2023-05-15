@@ -207,11 +207,13 @@ export const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
+
+    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth') || bidResponse.playerWidth;
+    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight') || bidResponse.playerHeight;
+
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
     }
-    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth');
-    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight');
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
       deepSetValue(bidResponse, 'meta.advertiserId', bid.ext.bidder.rp.advid);
@@ -464,7 +466,7 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': bidRequest.transactionId,
+      'x_source.tid': deepAccess(bidderRequest, 'ortb2.source.tid'),
       'x_imp.ext.tid': bidRequest.transactionId,
       'l_pb_bid_id': bidRequest.bidId,
       'p_screen_res': _getScreenResolution(),
