@@ -127,6 +127,5 @@ export default {
   setupPage,
   subscribeToConfiantCommFrame,
   setUpMutationObserver,
-  reportBillableEvents,
   registerConfiantSubmodule
 };
