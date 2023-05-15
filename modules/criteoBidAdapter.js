@@ -230,6 +230,9 @@ export const spec = {
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
+        if (slot.ext?.meta?.networkName) {
+          bid.meta = Object.assign({}, bid.meta, {networkName: slot.ext.meta.networkName})
+        }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);

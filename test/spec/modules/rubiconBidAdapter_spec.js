@@ -89,6 +89,7 @@ describe('the rubicon adapter', function () {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
+      ortb2: { source: { tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b' } },
       bids: [
         {
           bidder: 'rubicon',
@@ -346,6 +347,7 @@ describe('the rubicon adapter', function () {
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
+      ortb2: { source: { tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b' } },
       start: 1472239426002,
       auctionStart: 1472239426000,
       timeout: 5000
@@ -428,7 +430,7 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -618,8 +620,7 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -970,7 +971,7 @@ describe('the rubicon adapter', function () {
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
-              'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+              'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
               'p_screen_res': /\d+x\d+/,
               'tk_user_key': '12346',
               'kw': 'a,b,c',
@@ -2276,6 +2277,8 @@ describe('the rubicon adapter', function () {
       });
 
       describe('createSlotParams', function () {
+        const localBidderRequest = Object.assign({}, bidderRequest);
+        localBidderRequest.ortb2 = {source: {tid: 'faked707-a418-42ec-b8a7-b70a6c6fab0b'}};
         it('should return a valid slot params object', function () {
           let expectedQuery = {
             'account_id': '14062',
@@ -2286,7 +2289,8 @@ describe('the rubicon adapter', function () {
             'p_pos': 'atf',
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+            'x_source.tid': 'faked707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -2299,7 +2303,7 @@ describe('the rubicon adapter', function () {
             'rf': 'localhost'
           };
 
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -3418,6 +3422,74 @@ describe('the rubicon adapter', function () {
               closeButton: true,
               collapse: true,
               height: 320,
+              label: undefined,
+              placement: {
+                align: 'left',
+                attachTo: adUnit,
+                position: 'append',
+              },
+              vastUrl: 'https://test.com/vast.xml',
+              width: 640
+            });
+            // cleanup
+            adUnit.parentNode.removeChild(adUnit);
+          });
+
+          it('should render ad with Magnite renderer without video object', function () {
+            delete bidderRequest.bids[0].params.video;
+            bidderRequest.bids[0].params.bidonmultiformat = true;
+            bidderRequest.bids[0].mediaTypes.video.placement = 3;
+            bidderRequest.bids[0].mediaTypes.video.playerSize = [640, 480];
+
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
+                    }
+                  },
+                  nurl: 'https://test.com/vast.xml'
+                }],
+                group: 0,
+                seat: 'rubicon'
+              }],
+            };
+
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            sinon.spy(window.MagniteApex, 'renderAd');
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            const bid = bids[0];
+            bid.adUnitCode = 'outstream_video1_placement';
+            const adUnit = document.createElement('div');
+            adUnit.id = bid.adUnitCode;
+            document.body.appendChild(adUnit);
+
+            bid.renderer.render(bid);
+
+            const renderCall = window.MagniteApex.renderAd.getCall(0);
+            expect(renderCall.args[0]).to.deep.equal({
+              closeButton: true,
+              collapse: true,
+              height: 480,
               label: undefined,
               placement: {
                 align: 'left',
