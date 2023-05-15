@@ -410,6 +410,7 @@ function checkNativeSendId(bidRequest) {
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
+  let userIdAsEids;
   const request = {
     publisher: {
       url: context.url,
@@ -421,6 +422,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
+      if (!userIdAsEids) {
+        userIdAsEids = bidRequest.userIdAsEids;
+      }
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
       const slot = {
@@ -438,7 +442,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }
       if (bidRequest.nativeOrtbRequest?.assets) {
-        slot.ext = Object.assign({}, slot.ext, {assets: bidRequest.nativeOrtbRequest.assets});
+        slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
@@ -518,6 +522,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
     request.user.ext = request.user.ext || {};
     request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
+  }
+  if (userIdAsEids) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.eids = [...userIdAsEids];
   }
   return request;
 }

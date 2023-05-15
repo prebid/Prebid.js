@@ -710,6 +710,42 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].native).to.equal(true);
     });
 
+    it('should properly forward eids', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          userIdAsEids: [
+            {
+              source: 'criteo.com',
+              uids: [{
+                id: 'abc',
+                atype: 1
+              }]
+            }
+          ],
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.user.ext.eids).to.deep.equal([
+        {
+          source: 'criteo.com',
+          uids: [{
+            id: 'abc',
+            atype: 1
+          }]
+        }
+      ]);
+    });
+
     it('should properly detect and forward native flag', function () {
       const bidRequests = [
         {
