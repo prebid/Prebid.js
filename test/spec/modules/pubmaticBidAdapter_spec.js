@@ -1123,8 +1123,6 @@ describe('PubMatic adapter', function () {
           auctionId: 'new-auction-id'
         });
         let data = JSON.parse(request.data);
-        // eslint-disable-next-line no-console
-        console.log({blahblahblah: data.source})
   		  expect(data.at).to.equal(1); // auction type
   		  expect(data.cur[0]).to.equal('USD'); // currency
   		  expect(data.site.domain).to.be.a('string'); // domain should be set
