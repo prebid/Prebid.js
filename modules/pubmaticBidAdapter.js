@@ -1151,7 +1151,9 @@ export const spec = {
     // update device.language to ISO-639-1-alpha-2 (2 character language)
     payload.device.language = payload.device.language && payload.device.language.split('-')[0];
 
-    // passing nothing in source.tid -- Pubmatic can correct in a future PR
+    // passing auctionId in source.tid
+    if (bidderRequest) deepSetValue(payload, 'source.tid', bidderRequest.auctionId);
+
     // test bids
     if (window.location.href.indexOf('pubmaticTest=true') !== -1) {
       payload.test = 1;
