@@ -59,7 +59,7 @@ export const spec = {
       data = tryAppendQueryString(data, 'adgext_id5_id_link_type', id5LinkType);
       data = tryAppendQueryString(data, 'adgext_imuid', imuid);
       data = tryAppendQueryString(data, 'adgext_uid2', validReq.userId ? validReq.userId.uid2 : null);
-      data = tryAppendQueryString(data, 'gpid', gpid);
+      data = tryAppendQueryString(data, 'gpid', gpid ? encodeURIComponent(gpid) : null);
       data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
       data = tryAppendQueryString(data, 'schain', validReq.schain ? encodeURIComponent(JSON.stringify(validReq.schain)) : null);
 
