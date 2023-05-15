@@ -35,6 +35,9 @@
     "mediafuseBidAdapter",
     "freewheel-sspBidAdapter",
     "adyoulikeBidAdapter",
+    "minutemediaBidAdapter",
+    "sharethroughBidAdapter",
+    "insticatorBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
@@ -45,5 +48,7 @@
     "userId",
     "criteoIdSystem",
     "sharedIdSystem",
-    "uid2IdSystem"
+    "uid2IdSystem",
+    "rtdModule",
+    "permutiveRtdProvider"
 ]
