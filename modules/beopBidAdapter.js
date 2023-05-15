@@ -37,6 +37,8 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const firstPartyData = bidderRequest.ortb2;
+    const psegs = (firstPartyData && firstPartyData.user) ? firstPartyData.user.psegs : undefined;
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
@@ -66,6 +68,10 @@ export const spec = {
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
+    if (psegs) {
+      Object.assign(payloadObject, {psegs: psegs});
+    }
 
     const payloadString = JSON.stringify(payloadObject);
     return {
