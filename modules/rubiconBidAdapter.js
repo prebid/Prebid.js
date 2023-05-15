@@ -208,8 +208,8 @@ export const converter = ortbConverter({
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
 
-    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth') || bidResponse.playerWidth;
-    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight') || bidResponse.playerHeight;
+    bidResponse.width = bid.w || parseSizes(bidRequest, VIDEO) || bidResponse.playerWidth;
+    bidResponse.height = bid.h || parseSizes(bidRequest, VIDEO) || bidResponse.playerHeight;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
