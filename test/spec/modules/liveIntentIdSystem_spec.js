@@ -100,6 +100,14 @@ describe('LiveIntentId', function() {
     }, 200);
   });
 
+  it('should fire an event with the provided distributorId', function (done) {
+    liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111' } });
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*did=did-1111.*&wpn=prebid.*/);
+      done();
+    }, 200);
+  });
+
   it('should fire an event without the provided distributorId when appId is provided', function (done) {
     liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } });
     setTimeout(() => {
