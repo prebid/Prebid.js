@@ -1,7 +1,7 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { mergeDeep } from '../../src/utils.js';
+import { mergeDeep, logWarn } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
@@ -143,6 +143,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     if (!video.context) {
       video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
+    }
+
+    if (!video.plcmt) {
+      logWarn('Video.plcmt has not been set. Failure to set a value may result in loss of bids');
     }
 
     const width = ortbVideo.w;
