@@ -207,11 +207,13 @@ export const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
+
+    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth') || bidResponse.playerWidth;
+    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight') || bidResponse.playerHeight;
+
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
     }
-    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth');
-    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight');
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
       deepSetValue(bidResponse, 'meta.advertiserId', bid.ext.bidder.rp.advid);
