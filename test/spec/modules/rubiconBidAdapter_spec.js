@@ -89,7 +89,7 @@ describe('the rubicon adapter', function () {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
-      ortb2: { source: {tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'}},
+      ortb2: { source: { tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b' } },
       bids: [
         {
           bidder: 'rubicon',
@@ -347,7 +347,7 @@ describe('the rubicon adapter', function () {
           transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
         }
       ],
-      ortb2: { source: {tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'}},
+      ortb2: { source: { tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b' } },
       start: 1472239426002,
       auctionStart: 1472239426000,
       timeout: 5000
