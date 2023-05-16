@@ -66,6 +66,17 @@ describe('OguryBidAdapter', function () {
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
 
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    sandbox.stub(utils, 'generateUUID').returns('mock-uuid');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  })
+
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {
       let validBid = utils.deepClone(bidRequests[0]);
@@ -262,7 +273,7 @@ describe('OguryBidAdapter', function () {
 
     const defaultTimeout = 1000;
     const expectedRequestObject = {
-      id: bidRequests[0].auctionId,
+      id: 'mock-uuid',
       at: 1,
       tmax: defaultTimeout,
       imp: [{

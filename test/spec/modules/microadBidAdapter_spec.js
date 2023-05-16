@@ -12,7 +12,11 @@ describe('microadBidAdapter', () => {
       spot: 'spot-code'
     },
     bidId: 'bid-id',
-    transactionId: 'transaction-id'
+    ortb2Imp: {
+      ext: {
+        tid: 'transaction-id'
+      }
+    }
   };
 
   describe('isBidRequestValid', () => {

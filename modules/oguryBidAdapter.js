@@ -1,7 +1,7 @@
 'use strict';
 
 import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
+import {getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf, generateUUID} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { ajax } from '../src/ajax.js'
 
@@ -66,7 +66,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
-    id: bidderRequest.auctionId,
+    id: generateUUID(),
     tmax: DEFAULT_TIMEOUT,
     at: 1,
     regs: {

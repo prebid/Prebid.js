@@ -10,7 +10,7 @@ import {
   parseUrl,
   triggerPixel,
   getDefinedParams,
-  parseGPTSingleSizeArrayToRtbSize,
+  parseGPTSingleSizeArrayToRtbSize, generateUUID,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
@@ -69,7 +69,7 @@ export const spec = {
       const device = getDeviceObj();
 
       const postBody = {
-        'id': bid.auctionId,
+        'id': generateUUID(),
         'ext': {
           'prebid': {
             'storedrequest': {
@@ -174,6 +174,7 @@ export const spec = {
         const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         addWurl({auctionId, requestId, wurl});
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
