@@ -208,8 +208,10 @@ export const converter = ortbConverter({
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
 
-    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth') || bidResponse.playerWidth;
-    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight') || bidResponse.playerHeight;
+    let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
+
+    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth;
+    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight;
 
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
@@ -466,7 +468,7 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': deepAccess(bidderRequest, 'ortb2.source.tid'),
+      'x_source.tid': bidRequest.transactionId,
       'x_imp.ext.tid': bidRequest.transactionId,
       'l_pb_bid_id': bidRequest.bidId,
       'p_screen_res': _getScreenResolution(),
