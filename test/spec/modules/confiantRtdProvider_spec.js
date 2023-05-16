@@ -46,6 +46,7 @@ describe('Confiant RTD module', function () {
       let listenerCallback;
       const mockWindow = { addEventListener: (a, cb) => (listenerCallback = cb) };
       let billableEventsCounter = 0;
+      const propertyId = 'fff';
 
       events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (e) => {
         if (e.vendor === 'confiant') {
@@ -57,15 +58,17 @@ describe('Confiant RTD module', function () {
         }
       });
 
-      subscribeToConfiantCommFrame(mockWindow);
+      subscribeToConfiantCommFrame(mockWindow, propertyId);
       listenerCallback({
         data: {
+          type: 'cnft:reportBillableEvent:' + propertyId,
           auctionId: 'auctionId',
           transactionId: 'transactionId'
         }
       });
       listenerCallback({
         data: {
+          type: 'cnft:reportBillableEvent:' + propertyId,
           auctionId: 'auctionId',
           transactionId: 'transactionId'
         }
