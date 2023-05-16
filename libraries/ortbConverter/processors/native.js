@@ -26,6 +26,10 @@ export function fillNativeResponse(bidResponse, bid) {
       ortb = bid.adm;
     }
 
+    if (ortb?.native) {
+      ortb = ortb.native;
+    }
+
     if (isPlainObject(ortb) && Array.isArray(ortb.assets)) {
       bidResponse.native = {
         ortb,

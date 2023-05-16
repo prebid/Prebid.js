@@ -64,7 +64,9 @@ describe('ortb -> ortb native response', () => {
   }
   Object.entries({
     'serialized': JSON.stringify(MOCK_NATIVE_RESPONSE),
-    'an object': MOCK_NATIVE_RESPONSE
+    'serialized_with_top_native': JSON.stringify({native: MOCK_NATIVE_RESPONSE}),
+    'an object': MOCK_NATIVE_RESPONSE,
+    'an object_with_top_native': {native: MOCK_NATIVE_RESPONSE},
   }).forEach(([t, adm]) => {
     describe(`when adm is ${t}`, () => {
       let bid;
