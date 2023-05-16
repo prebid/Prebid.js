@@ -53,5 +53,7 @@
     "yieldmoBidAdapter",
     "ttdBidAdapter",
     "adyoulikeBidAdapter",
-    "sizeMappingV2"
+    "sizeMappingV2",
+    "videojsVideoProvider",
+    "dfpAdServerVideo"
 ]

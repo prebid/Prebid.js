@@ -6,7 +6,8 @@
   "scripts": {
     "serve": "gulp serve",
     "test": "gulp test",
-    "lint": "gulp lint"
+    "lint": "gulp lint",
+    "build": "gulp build --modules=modules.json"
   },
   "repository": {
     "type": "git",
