@@ -6,7 +6,10 @@ import {
   generateUUID,
   mergeDeep,
   logWarn,
-  parseUrl, isArray, isNumber
+  parseUrl,
+  isArray,
+  isNumber,
+  isStr
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
@@ -31,7 +34,7 @@ const TIME_TO_LIVE = 360;
 const USER_ID_KEY = 'tmguid';
 const GVLID = 686;
 const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
@@ -52,7 +55,12 @@ const ALIAS_CONFIG = {
     bidResponseExternal: {
       netRevenue: false
     }
-  }
+  },
+  'gridNM': {
+    defaultParams: {
+      multiRequest: true
+    }
+  },
 };
 
 let hasSynced = false;
@@ -60,7 +68,7 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', { code: 'trustx', skipPbsAliasing: true }],
+  aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -93,7 +101,7 @@ export const spec = {
     let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout || config.getConfig('bidderTimeout');
+    const tmax = timeout;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -126,8 +134,9 @@ export const spec = {
       if (!endpoint) {
         endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
-      const { params: { uid, keywords, forceBidder, multiRequest }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
-      const { secid, pubid, source, content: bidParamsContent } = bid.params;
+      const { params, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
+      const { defaultParams } = ALIAS_CONFIG[bid.bidder] || {};
+      const { secid, pubid, source, uid, keywords, forceBidder, multiRequest, content: bidParamsContent, video: videoParams } = { ...defaultParams, ...params };
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting && !content && jwTargeting.content) {
@@ -145,12 +154,18 @@ export const spec = {
         if (ortb2Imp.instl) {
           impObj.instl = ortb2Imp.instl;
         }
-        if (ortb2Imp.ext && ortb2Imp.ext.data) {
-          impObj.ext.data = ortb2Imp.ext.data;
-          if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-            impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-          } else {
-            impObj.ext.gpid = ortb2Imp.ext.data.pbadslot && ortb2Imp.ext.data.pbadslot.toString();
+
+        if (ortb2Imp.ext) {
+          if (ortb2Imp.ext.data) {
+            impObj.ext.data = ortb2Imp.ext.data;
+            if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
+              impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
+            } else if (ortb2Imp.ext.data.pbadslot) {
+              impObj.ext.gpid = ortb2Imp.ext.data.pbadslot.toString();
+            }
+          }
+          if (ortb2Imp.ext.gpid) {
+            impObj.ext.gpid = ortb2Imp.ext.gpid.toString();
           }
         }
       }
@@ -172,7 +187,7 @@ export const spec = {
         }
       }
       if (mediaTypes && mediaTypes[VIDEO]) {
-        const video = createVideoRequest(bid, mediaTypes[VIDEO]);
+        const video = createVideoRequest(videoParams, mediaTypes[VIDEO], bid.sizes);
         if (video) {
           impObj.video = video;
         }
@@ -582,27 +597,41 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
   }
 }
 
-function createVideoRequest(bid, mediaType) {
-  const { playerSize, mimes, durationRangeSec, protocols } = mediaType;
-  const size = (playerSize || bid.sizes || [])[0];
-  if (!size) return;
-
-  let result = parseGPTSingleSizeArrayToRtbSize(size);
-
-  if (mimes) {
-    result.mimes = mimes;
+function createVideoRequest(videoParams, mediaType, bidSizes) {
+  const { mind, maxd, size, playerSize, protocols, durationRangeSec = [], ...videoData } = { ...mediaType, ...videoParams };
+  if (size && isStr(size)) {
+    const sizeArray = size.split('x');
+    if (sizeArray.length === 2 && parseInt(sizeArray[0]) && parseInt(sizeArray[1])) {
+      videoData.w = parseInt(sizeArray[0]);
+      videoData.h = parseInt(sizeArray[1]);
+    }
+  }
+  if (!videoData.w || !videoData.h) {
+    const pSizesString = (playerSize || bidSizes || []).toString();
+    const pSizeString = (pSizesString.match(/^\d+,\d+/) || [])[0];
+    const pSize = pSizeString && pSizeString.split(',').map((d) => parseInt(d));
+    if (pSize && pSize.length === 2) {
+      Object.assign(videoData, parseGPTSingleSizeArrayToRtbSize(pSize));
+    }
   }
 
-  if (durationRangeSec && durationRangeSec.length === 2) {
-    result.minduration = durationRangeSec[0];
-    result.maxduration = durationRangeSec[1];
+  if (!videoData.w || !videoData.h) return;
+
+  const minDur = mind || durationRangeSec[0] || videoData.minduration;
+  const maxDur = maxd || durationRangeSec[1] || videoData.maxduration;
+
+  if (minDur) {
+    videoData.minduration = minDur;
+  }
+  if (maxDur) {
+    videoData.maxduration = maxDur;
   }
 
   if (protocols && protocols.length) {
-    result.protocols = protocols;
+    videoData.protocols = protocols;
   }
 
-  return result;
+  return videoData;
 }
 
 function createBannerRequest(bid, mediaType) {

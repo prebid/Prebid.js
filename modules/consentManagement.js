@@ -11,6 +11,7 @@ import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -367,7 +368,7 @@ export function setConsentConfig(config) {
     }
   }
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    getGlobal().requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
   gdprDataHandler.enable();

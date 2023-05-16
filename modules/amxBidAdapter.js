@@ -1,21 +1,21 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {
-  parseUrl,
-  deepAccess,
   _each,
+  deepAccess,
   formatQS,
   getUniqueIdentifierStr,
-  triggerPixel,
+  isArray,
   isFn,
   logError,
-  isArray,
+  parseUrl,
+  triggerPixel,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {config} from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
-const storage = getStorageManager({ gvlid: 737, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
 const VERSION = 'pba1.3.2';
@@ -194,6 +194,8 @@ function resolveSize(bid, request, bidId) {
 }
 
 function isSyncEnabled(syncConfigP, syncType) {
+  if (syncConfigP == null) return false;
+
   const syncConfig = syncConfigP[syncType];
   if (syncConfig == null) {
     return false;
@@ -330,7 +332,7 @@ export const spec = {
       m: createBidMap(bidRequests),
       cpp: config.getConfig('coppa') ? 1 : 0,
       fpd2: bidderRequest.ortb2,
-      tmax: config.getConfig('bidderTimeout'),
+      tmax: bidderRequest.timeout,
       amp: refInfo(bidderRequest, 'isAmp', null),
       ri: buildReferrerInfo(bidderRequest),
       sync: getSyncSettings(),

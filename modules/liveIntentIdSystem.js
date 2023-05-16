@@ -9,11 +9,12 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
@@ -185,6 +186,14 @@ export const liveIntentIdSubmodule = {
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
         result.uid2 = { 'id': value.uid2 }
+      }
+
+      if (value.bidswitch) {
+        result.bidswitch = { 'id': value.bidswitch }
+      }
+
+      if (value.medianet) {
+        result.medianet = { 'id': value.medianet }
       }
 
       return result

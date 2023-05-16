@@ -53,6 +53,8 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 let assert = require('chai').assert;
 let expect = require('chai').expect;
@@ -165,6 +167,20 @@ describe('User ID', function () {
   afterEach(() => {
     sandbox.restore();
   });
+
+  describe('GVL IDs', () => {
+    beforeEach(() => {
+      sinon.stub(GDPR_GVLIDS, 'register');
+    });
+    afterEach(() => {
+      GDPR_GVLIDS.register.restore();
+    });
+
+    it('are registered when ID submodule is registered', () => {
+      attachIdSystem({name: 'gvlidMock', gvlid: 123});
+      sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    })
+  })
 
   describe('Decorate Ad Units', function () {
     beforeEach(function () {
@@ -423,6 +439,58 @@ describe('User ID', function () {
       return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
         // ppid should have been set without dashes and stuff
         expect(window.googletag._ppid).to.equal('pubCommonidvaluepubCommonidvalue');
+      });
+    });
+
+    describe('submodule callback', () => {
+      const TEST_KEY = 'testKey';
+
+      function setVal(val) {
+        if (val) {
+          coreStorage.setDataInLocalStorage(TEST_KEY, val);
+          coreStorage.setDataInLocalStorage(TEST_KEY + '_exp', '');
+        } else {
+          coreStorage.removeDataFromLocalStorage(TEST_KEY);
+          coreStorage.removeDataFromLocalStorage(TEST_KEY + '_exp');
+        }
+      }
+      afterEach(() => {
+        setVal(null);
+      })
+
+      it('should be able to re-read ID changes', (done) => {
+        setVal(null);
+        init(config);
+        setSubmoduleRegistry([{
+          name: 'mockId',
+          getId: function (_1, _2, storedId) {
+            expect(storedId).to.not.exist;
+            setVal('laterValue');
+            return {
+              callback(_, readId) {
+                expect(readId()).to.eql('laterValue');
+                done();
+              }
+            }
+          },
+          decode(d) {
+            return d
+          }
+        }]);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [
+              {
+                name: 'mockId',
+                storage: {
+                  type: 'html5',
+                  name: TEST_KEY
+                }
+              }
+            ]
+          }
+        });
       });
     });
 

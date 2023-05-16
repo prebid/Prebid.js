@@ -1,9 +1,10 @@
 {
   "name": "prebid.js",
-  "version": "7.42.0",
+  "version": "7.48.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
+    "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint"
   },
@@ -28,6 +29,7 @@
     "prebid"
   ],
   "globalVarName": "fsprebid",
+  "defineGlobal": true,
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
