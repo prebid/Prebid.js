@@ -1487,6 +1487,73 @@ describe('The Criteo bidding adapter', function () {
         }
       });
     });
+
+    it('should properly build a request when imp.rwdd is present', function () {
+      const bidderRequest = {};
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            rwdd: 1,
+            ext: {
+              data: {
+                someContextAttribute: 'abc'
+              }
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].rwdd).to.be.not.null;
+      expect(request.data.slots[0].rwdd).to.equal(1);
+    });
+
+    it('should properly build a request when imp.rwdd is false', function () {
+      const bidderRequest = {};
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            rwdd: 0,
+            ext: {
+              data: {
+                someContextAttribute: 'abc'
+              }
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].rwdd).to.be.undefined;
+    });
   });
 
   describe('interpretResponse', function () {
