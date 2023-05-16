@@ -92,15 +92,11 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
-    source: 'prebid',
     publisherId: publisherId,
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
-  }
-  if (configParams.partner) {
-    identityResolutionConfig.source = configParams.partner
   }
   if (configParams.ajaxTimeout) {
     identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
@@ -111,6 +107,8 @@ function initializeLiveConnect(configParams) {
   if (!liveConnectConfig.appId && configParams.distributorId) {
     liveConnectConfig.distributorId = configParams.distributorId;
     identityResolutionConfig.source = configParams.distributorId;
+  } else {
+    identityResolutionConfig.source = configParams.partner || 'prebid'
   }
 
   liveConnectConfig.wrapperName = 'prebid';
