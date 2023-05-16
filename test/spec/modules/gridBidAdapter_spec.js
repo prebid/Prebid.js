@@ -423,6 +423,7 @@ describe('TheMediaGrid Adapter', function () {
               api: [1, 2],
               skip: 1,
               placement: 1,
+              plcmt: 2,
               minduration: 0,
               playbackmethod: 1,
               startdelay: 0
@@ -480,6 +481,15 @@ describe('TheMediaGrid Adapter', function () {
             'h': 600,
             'protocols': [1, 2, 3],
             'mimes': ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
+            'context': 'instream',
+            'maxduration': 30,
+            'minduration': 0,
+            'api': [1, 2],
+            'skip': 1,
+            'placement': 1,
+            'plcmt': 2,
+            'playbackmethod': 1,
+            'startdelay': 0
           }
         }, {
           'id': bidRequests[3].bidId,
@@ -531,6 +541,7 @@ describe('TheMediaGrid Adapter', function () {
             ],
             'minduration': 0,
             'placement': 1,
+            'plcmt': 2,
             'playbackmethod': 1,
             'playersizes': [
               '400x600'

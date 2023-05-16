@@ -1481,31 +1481,6 @@ describe('Adagio bid adapter', () => {
     });
   });
 
-  describe.skip('optional params auto detection', function() {
-    it('should auto detect adUnitElementId when GPT is used', function() {
-      sandbox.stub(utils, 'getGptSlotInfoForAdUnitCode').withArgs('banner').returns({divId: 'gpt-banner'});
-      expect(adagio.autoDetectAdUnitElementId('banner')).to.eq('gpt-banner');
-    });
-  });
-
-  describe.skip('print number handling', function() {
-    it('should return 1 if no adunit-code found. This means it is the first auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(1);
-    });
-
-    it('should increment the adunit print number when the adunit-code has already been used for an other auction', function() {
-      sandbox.stub(adagio, 'getPageviewId').returns('abc-def');
-
-      window.top.ADAGIO.adUnits['adunit-code'] = {
-        pageviewId: 'abc-def',
-        printNumber: 1,
-      };
-
-      expect(adagio.computePrintNumber('adunit-code')).to.eql(2);
-    });
-  });
-
   describe('site information using refererDetection or window.top', function() {
     it('should returns domain, page and window.referrer in a window.top context', function() {
       const bidderRequest = new BidderRequestBuilder({

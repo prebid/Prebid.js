@@ -6,7 +6,10 @@ import {
   generateUUID,
   mergeDeep,
   logWarn,
-  parseUrl, isArray, isNumber
+  parseUrl,
+  isArray,
+  isNumber,
+  isStr
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
@@ -52,7 +55,12 @@ const ALIAS_CONFIG = {
     bidResponseExternal: {
       netRevenue: false
     }
-  }
+  },
+  'gridNM': {
+    defaultParams: {
+      multiRequest: true
+    }
+  },
 };
 
 let hasSynced = false;
@@ -60,7 +68,7 @@ let hasSynced = false;
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['playwire', 'adlivetech', { code: 'trustx', skipPbsAliasing: true }],
+  aliases: ['playwire', 'adlivetech', 'gridNM', { code: 'trustx', skipPbsAliasing: true }],
   supportedMediaTypes: [ BANNER, VIDEO ],
   /**
    * Determines whether or not the given bid request is valid.
@@ -126,8 +134,9 @@ export const spec = {
       if (!endpoint) {
         endpoint = ALIAS_CONFIG[bid.bidder] && ALIAS_CONFIG[bid.bidder].endpoint;
       }
-      const { params: { uid, keywords, forceBidder, multiRequest }, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
-      const { secid, pubid, source, content: bidParamsContent } = bid.params;
+      const { params, mediaTypes, bidId, adUnitCode, rtd, ortb2Imp } = bid;
+      const { defaultParams } = ALIAS_CONFIG[bid.bidder] || {};
+      const { secid, pubid, source, uid, keywords, forceBidder, multiRequest, content: bidParamsContent, video: videoParams } = { ...defaultParams, ...params };
       const bidFloor = _getFloor(mediaTypes || {}, bid);
       const jwTargeting = rtd && rtd.jwplayer && rtd.jwplayer.targeting;
       if (jwTargeting && !content && jwTargeting.content) {
@@ -178,7 +187,7 @@ export const spec = {
         }
       }
       if (mediaTypes && mediaTypes[VIDEO]) {
-        const video = createVideoRequest(bid, mediaTypes[VIDEO]);
+        const video = createVideoRequest(videoParams, mediaTypes[VIDEO], bid.sizes);
         if (video) {
           impObj.video = video;
         }
@@ -588,27 +597,41 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
   }
 }
 
-function createVideoRequest(bid, mediaType) {
-  const { playerSize, mimes, durationRangeSec, protocols } = mediaType;
-  const size = (playerSize || bid.sizes || [])[0];
-  if (!size) return;
-
-  let result = parseGPTSingleSizeArrayToRtbSize(size);
-
-  if (mimes) {
-    result.mimes = mimes;
+function createVideoRequest(videoParams, mediaType, bidSizes) {
+  const { mind, maxd, size, playerSize, protocols, durationRangeSec = [], ...videoData } = { ...mediaType, ...videoParams };
+  if (size && isStr(size)) {
+    const sizeArray = size.split('x');
+    if (sizeArray.length === 2 && parseInt(sizeArray[0]) && parseInt(sizeArray[1])) {
+      videoData.w = parseInt(sizeArray[0]);
+      videoData.h = parseInt(sizeArray[1]);
+    }
+  }
+  if (!videoData.w || !videoData.h) {
+    const pSizesString = (playerSize || bidSizes || []).toString();
+    const pSizeString = (pSizesString.match(/^\d+,\d+/) || [])[0];
+    const pSize = pSizeString && pSizeString.split(',').map((d) => parseInt(d));
+    if (pSize && pSize.length === 2) {
+      Object.assign(videoData, parseGPTSingleSizeArrayToRtbSize(pSize));
+    }
   }
 
-  if (durationRangeSec && durationRangeSec.length === 2) {
-    result.minduration = durationRangeSec[0];
-    result.maxduration = durationRangeSec[1];
+  if (!videoData.w || !videoData.h) return;
+
+  const minDur = mind || durationRangeSec[0] || videoData.minduration;
+  const maxDur = maxd || durationRangeSec[1] || videoData.maxduration;
+
+  if (minDur) {
+    videoData.minduration = minDur;
+  }
+  if (maxDur) {
+    videoData.maxduration = maxDur;
   }
 
   if (protocols && protocols.length) {
-    result.protocols = protocols;
+    videoData.protocols = protocols;
   }
 
-  return result;
+  return videoData;
 }
 
 function createBannerRequest(bid, mediaType) {
@@ -961,6 +984,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay
         };
+        if ('plcmt' in bidRequest.mediaTypes.video) {
+          video.plcmt = bidRequest.mediaTypes.video.plcmt;
+        }
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
           video.skip = video.skip || paramsVideo.skip || 0;

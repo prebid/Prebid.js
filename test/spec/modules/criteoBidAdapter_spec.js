@@ -710,6 +710,42 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].native).to.equal(true);
     });
 
+    it('should properly forward eids', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          userIdAsEids: [
+            {
+              source: 'criteo.com',
+              uids: [{
+                id: 'abc',
+                atype: 1
+              }]
+            }
+          ],
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.user.ext.eids).to.deep.equal([
+        {
+          source: 'criteo.com',
+          uids: [{
+            id: 'abc',
+            atype: 1
+          }]
+        }
+      ]);
+    });
+
     it('should properly detect and forward native flag', function () {
       const bidRequests = [
         {
@@ -726,6 +762,62 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const ortbRequest = request.data;
       expect(ortbRequest.slots[0].native).to.equal(true);
+    });
+
+    it('should map ortb native assets to slot ext assets', function () {
+      const assets = [{
+        required: 1,
+        id: 1,
+        img: {
+          type: 3,
+          wmin: 100,
+          hmin: 100,
+        }
+      },
+      {
+        required: 1,
+        id: 2,
+        title: {
+          len: 140,
+        }
+      },
+      {
+        required: 1,
+        id: 3,
+        data: {
+          type: 1,
+        }
+      },
+      {
+        required: 0,
+        id: 4,
+        data: {
+          type: 2,
+        }
+      },
+      {
+        required: 0,
+        id: 5,
+        img: {
+          type: 1,
+          wmin: 20,
+          hmin: 20,
+        }
+      }];
+      const bidRequests = [
+        {
+          nativeOrtbRequest: {
+            assets: assets
+          },
+          params: {
+            nativeCallback: function () { }
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].native).to.equal(true);
+      expect(ortbRequest.slots[0].ext.assets).to.deep.equal(assets);
     });
 
     it('should properly build a networkId request', function () {
@@ -881,6 +973,38 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.user).to.not.be.null;
       expect(request.data.user.uspIab).to.equal('1YNY');
+    });
+
+    it('should properly build a request with device sua field', function () {
+      const sua = {}
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        timeout: 3000,
+        uspConsent: '1YNY',
+        ortb2: {
+          device: {
+            sua: sua
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.sua).to.not.be.null;
+      expect(request.data.user.ext.sua).to.equal(sua);
     });
 
     it('should properly build a request with gpp consent field', function () {
@@ -1475,8 +1599,13 @@ describe('The Criteo bidding adapter', function () {
             creativecode: 'test-crId',
             width: 728,
             height: 90,
-            dealCode: 'myDealCode',
+            deal: 'myDealCode',
             adomain: ['criteo.com'],
+            ext: {
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
           }],
         },
       };
@@ -1499,6 +1628,7 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].height).to.equal(90);
       expect(bids[0].dealId).to.equal('myDealCode');
       expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
+      expect(bids[0].meta.networkName).to.equal('Criteo');
     });
 
     it('should properly parse a bid response with a zoneId', function () {

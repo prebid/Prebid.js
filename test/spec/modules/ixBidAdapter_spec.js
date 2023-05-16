@@ -725,6 +725,11 @@ describe('IndexexchangeAdapter', function () {
     refererInfo: {
       page: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      }
     }
   };
 
@@ -1703,6 +1708,63 @@ describe('IndexexchangeAdapter', function () {
       expect(r.regs.gpp_sid).to.be.an('array');
       expect(r.regs.gpp_sid).to.include(1);
     });
+
+    it('should add adunit specific data to imp ext for banner', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam banner',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam banner');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for native', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_NATIVE_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam native',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam native');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
+
+    it('should add adunit specific data to imp ext for video', function () {
+      const AD_UNIT_CODE = '/19968336/some-adunit-path';
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      validBids[0].ortb2Imp = {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam video',
+              adslot: AD_UNIT_CODE
+            }
+          }
+        }
+      };
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const imp = extractPayload(requests[0]).imp[0];
+      expect(deepAccess(imp, 'ext.data.adserver.name')).to.equal('gam video');
+      expect(deepAccess(imp, 'ext.data.adserver.adslot')).to.equal(AD_UNIT_CODE);
+    });
   });
 
   describe('buildRequests', function () {
@@ -2078,7 +2140,7 @@ describe('IndexexchangeAdapter', function () {
 
         const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = extractPayload(requestWithFirstPartyData).site.page;
-        const expectedPageUrl = DEFAULT_OPTION.refererInfo.page + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
+        const expectedPageUrl = DEFAULT_OPTION.ortb2.site.page + '/?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
         expect(pageUrl).to.equal(expectedPageUrl);
       });
 
@@ -2173,6 +2235,66 @@ describe('IndexexchangeAdapter', function () {
         const requestStringTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
 
         expect(requestStringTimeout.data.t).to.be.undefined;
+      });
+    });
+
+    describe('getIxFirstPartyDataPageUrl', () => {
+      beforeEach(() => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should return the modified URL with first party data query parameters appended', () => {
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
+      });
+
+      it('should return the modified URL with first party data query parameters appended but not duplicated', () => {
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'https://www.prebid.org/?key1=value1'
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
+      });
+
+      it('should not overwrite existing query parameters with first party data', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'https://www.prebid.org/?key1=existingValue1'
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=existingValue1&key2=value2');
+      });
+
+      it('should return the original URL if no first party data is available', () => {
+        config.setConfig({ ix: {} });
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org');
+      });
+
+      it('should return the original URL referer page url if ortb2 does not exist', () => {
+        config.setConfig({ ix: {} });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        delete bidderRequest.ortb2;
+        bidderRequest.refererInfo.page = 'https://example.com';
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://example.com');
+      });
+
+      it('should use referer URL if the provided ortb2.site.page URL is not valid', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'www.invalid-url*&?.com';
+        bidderRequest.refererInfo.page = 'https://www.prebid.org';
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
       });
     });
 

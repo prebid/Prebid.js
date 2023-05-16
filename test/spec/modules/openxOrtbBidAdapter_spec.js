@@ -1096,45 +1096,6 @@ describe('OpenxRtbAdapter', function () {
         });
       });
     }
-
-    it.skip('should send ad unit ids when any are defined', function () {
-      const bidRequestsWithUnitIds = [{
-        bidder: 'openx',
-        params: {
-          delDomain: 'test-del-domain'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          }
-        },
-        bidId: 'test-bid-id-1',
-        bidderRequestId: 'test-bid-request-1',
-        auctionId: 'test-auction-1',
-        transactionId: 'test-transaction-id-1'
-      }, {
-        bidder: 'openx',
-        params: {
-          unit: '22',
-          delDomain: 'test-del-domain'
-        },
-        adUnitCode: 'adunit-code',
-        mediaTypes: {
-          banner: {
-            sizes: [[728, 90]]
-          }
-        },
-        bidId: 'test-bid-id-2',
-        bidderRequestId: 'test-bid-request-2',
-        auctionId: 'test-auction-2',
-        transactionId: 'test-transaction-id-2'
-      }];
-      mockBidderRequest.bids = bidRequestsWithUnitIds;
-      const request = spec.buildRequests(bidRequestsWithUnitIds, mockBidderRequest);
-      expect(request[0].data.imp[1].tagid).to.equal(bidRequestsWithUnitIds[1].params.unit);
-      expect(request[0].data.imp[1].ext.divid).to.equal(bidRequestsWithUnitIds[1].params.adUnitCode);
-    });
   });
 
   describe('interpretResponse()', function () {

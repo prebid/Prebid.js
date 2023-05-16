@@ -263,6 +263,7 @@ describe('Conversant adapter tests', function() {
     const payload = request.data;
 
     expect(payload).to.have.property('id', 'req000');
+    expect(payload.source).to.have.property('tid', 'req000');
     expect(payload).to.have.property('at', 1);
     expect(payload).to.have.property('imp');
     expect(payload.imp).to.be.an('array').with.lengthOf(8);

@@ -110,6 +110,7 @@ export const spec = {
     { code: 'oftmedia', gvlid: 32 },
     { code: 'adasta', gvlid: 32 },
     { code: 'beintoo', gvlid: 618 },
+    { code: 'projectagora', gvlid: 1032 },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -333,14 +334,16 @@ export const spec = {
       payload.referrer_detection = refererinfo;
     }
 
-    const hasAdPodBid = find(bidRequests, hasAdPod);
-    if (hasAdPodBid) {
-      bidRequests.filter(hasAdPod).forEach(adPodBid => {
-        const adPodTags = createAdPodRequest(tags, adPodBid);
-        // don't need the original adpod placement because it's in adPodTags
-        const nonPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
-        payload.tags = [...nonPodTags, ...adPodTags];
-      });
+    if (FEATURES.VIDEO) {
+      const hasAdPodBid = find(bidRequests, hasAdPod);
+      if (hasAdPodBid) {
+        bidRequests.filter(hasAdPod).forEach(adPodBid => {
+          const adPodTags = createAdPodRequest(tags, adPodBid);
+          // don't need the original adpod placement because it's in adPodTags
+          const nonPodTags = payload.tags.filter(tag => tag.uuid !== adPodBid.bidId);
+          payload.tags = [...nonPodTags, ...adPodTags];
+        });
+      }
     }
 
     if (bidRequests[0].userId) {
@@ -653,7 +656,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     bid.meta = Object.assign({}, bid.meta, { brandId: rtbBid.brand_id });
   }
 
-  if (rtbBid.rtb.video) {
+  if (FEATURES.VIDEO && rtbBid.rtb.video) {
     // shared video properties used for all 3 contexts
     Object.assign(bid, {
       width: rtbBid.rtb.video.player_width,
@@ -865,107 +868,111 @@ function bidToTag(bid) {
     }
   }
 
-  const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
-  const context = deepAccess(bid, 'mediaTypes.video.context');
+  if (FEATURES.VIDEO) {
+    const videoMediaType = deepAccess(bid, `mediaTypes.${VIDEO}`);
+    const context = deepAccess(bid, 'mediaTypes.video.context');
 
-  if (videoMediaType && context === 'adpod') {
-    tag.hb_source = 7;
+    if (videoMediaType && context === 'adpod') {
+      tag.hb_source = 7;
+    } else {
+      tag.hb_source = 1;
+    }
+    if (bid.mediaType === VIDEO || videoMediaType) {
+      tag.ad_types.push(VIDEO);
+    }
+
+    // instream gets vastUrl, outstream gets vastXml
+    if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
+      tag.require_asset_url = true;
+    }
+
+    if (bid.params.video) {
+      tag.video = {};
+      // place any valid video params on the tag
+      Object.keys(bid.params.video)
+        .filter(param => includes(VIDEO_TARGETING, param))
+        .forEach(param => {
+          switch (param) {
+            case 'context':
+            case 'playback_method':
+              let type = bid.params.video[param];
+              type = (isArray(type)) ? type[0] : type;
+              tag.video[param] = VIDEO_MAPPING[param][type];
+              break;
+            // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
+            case 'frameworks':
+              break;
+            default:
+              tag.video[param] = bid.params.video[param];
+          }
+        });
+
+      if (bid.params.video.frameworks && isArray(bid.params.video.frameworks)) {
+        tag['video_frameworks'] = bid.params.video.frameworks;
+      }
+    }
+
+    // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
+    if (videoMediaType) {
+      tag.video = tag.video || {};
+      Object.keys(videoMediaType)
+        .filter(param => includes(VIDEO_RTB_TARGETING, param))
+        .forEach(param => {
+          switch (param) {
+            case 'minduration':
+            case 'maxduration':
+              if (typeof tag.video[param] !== 'number') tag.video[param] = videoMediaType[param];
+              break;
+            case 'skip':
+              if (typeof tag.video['skippable'] !== 'boolean') tag.video['skippable'] = (videoMediaType[param] === 1);
+              break;
+            case 'skipafter':
+              if (typeof tag.video['skipoffset'] !== 'number') tag.video['skippoffset'] = videoMediaType[param];
+              break;
+            case 'playbackmethod':
+              if (typeof tag.video['playback_method'] !== 'number') {
+                let type = videoMediaType[param];
+                type = (isArray(type)) ? type[0] : type;
+
+                // we only support iab's options 1-4 at this time.
+                if (type >= 1 && type <= 4) {
+                  tag.video['playback_method'] = type;
+                }
+              }
+              break;
+            case 'api':
+              if (!tag['video_frameworks'] && isArray(videoMediaType[param])) {
+                // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
+                let apiTmp = videoMediaType[param].map(val => {
+                  let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
+
+                  if (v >= 1 && v <= 5) {
+                    return v;
+                  }
+                }).filter(v => v);
+                tag['video_frameworks'] = apiTmp;
+              }
+              break;
+
+            case 'startdelay':
+            case 'placement':
+              const contextKey = 'context';
+              if (typeof tag.video[contextKey] !== 'number') {
+                const placement = videoMediaType['placement'];
+                const startdelay = videoMediaType['startdelay'];
+                const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
+                tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
+              }
+              break;
+          }
+        });
+    }
+
+    if (bid.renderer) {
+      tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
+    }
   } else {
     tag.hb_source = 1;
-  }
-  if (bid.mediaType === VIDEO || videoMediaType) {
-    tag.ad_types.push(VIDEO);
-  }
-
-  // instream gets vastUrl, outstream gets vastXml
-  if (bid.mediaType === VIDEO || (videoMediaType && context !== 'outstream')) {
-    tag.require_asset_url = true;
-  }
-
-  if (bid.params.video) {
-    tag.video = {};
-    // place any valid video params on the tag
-    Object.keys(bid.params.video)
-      .filter(param => includes(VIDEO_TARGETING, param))
-      .forEach(param => {
-        switch (param) {
-          case 'context':
-          case 'playback_method':
-            let type = bid.params.video[param];
-            type = (isArray(type)) ? type[0] : type;
-            tag.video[param] = VIDEO_MAPPING[param][type];
-            break;
-          // Deprecating tags[].video.frameworks in favor of tags[].video_frameworks
-          case 'frameworks':
-            break;
-          default:
-            tag.video[param] = bid.params.video[param];
-        }
-      });
-
-    if (bid.params.video.frameworks && isArray(bid.params.video.frameworks)) {
-      tag['video_frameworks'] = bid.params.video.frameworks;
-    }
-  }
-
-  // use IAB ORTB values if the corresponding values weren't already set by bid.params.video
-  if (videoMediaType) {
-    tag.video = tag.video || {};
-    Object.keys(videoMediaType)
-      .filter(param => includes(VIDEO_RTB_TARGETING, param))
-      .forEach(param => {
-        switch (param) {
-          case 'minduration':
-          case 'maxduration':
-            if (typeof tag.video[param] !== 'number') tag.video[param] = videoMediaType[param];
-            break;
-          case 'skip':
-            if (typeof tag.video['skippable'] !== 'boolean') tag.video['skippable'] = (videoMediaType[param] === 1);
-            break;
-          case 'skipafter':
-            if (typeof tag.video['skipoffset'] !== 'number') tag.video['skippoffset'] = videoMediaType[param];
-            break;
-          case 'playbackmethod':
-            if (typeof tag.video['playback_method'] !== 'number') {
-              let type = videoMediaType[param];
-              type = (isArray(type)) ? type[0] : type;
-
-              // we only support iab's options 1-4 at this time.
-              if (type >= 1 && type <= 4) {
-                tag.video['playback_method'] = type;
-              }
-            }
-            break;
-          case 'api':
-            if (!tag['video_frameworks'] && isArray(videoMediaType[param])) {
-              // need to read thru array; remove 6 (we don't support it), swap 4 <> 5 if found (to match our adserver mapping for these specific values)
-              let apiTmp = videoMediaType[param].map(val => {
-                let v = (val === 4) ? 5 : (val === 5) ? 4 : val;
-
-                if (v >= 1 && v <= 5) {
-                  return v;
-                }
-              }).filter(v => v);
-              tag['video_frameworks'] = apiTmp;
-            }
-            break;
-
-          case 'startdelay':
-          case 'placement':
-            const contextKey = 'context';
-            if (typeof tag.video[contextKey] !== 'number') {
-              const placement = videoMediaType['placement'];
-              const startdelay = videoMediaType['startdelay'];
-              const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
-              tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
-            }
-            break;
-        }
-      });
-  }
-
-  if (bid.renderer) {
-    tag.video = Object.assign({}, tag.video, { custom_renderer_present: true });
   }
 
   if (bid.params.frameworks && isArray(bid.params.frameworks)) {
