@@ -1112,7 +1112,11 @@ export const spec = {
     payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     // eslint-disable-next-line no-undef
     payload.ext.wrapper.wv = $$REPO_AND_VERSION$$;
-    payload.ext.wrapper.transactionId = conf.transactionId;
+
+    if (bidderRequest) {
+      payload.ext.wrapper.transactionId = bidderRequest.auctionId;
+    }
+
     payload.ext.wrapper.wp = 'pbjs';
     const allowAlternateBidder = bidderRequest ? bidderSettings.get(bidderRequest.bidderCode, 'allowAlternateBidderCodes') : undefined;
     if (allowAlternateBidder !== undefined) {
