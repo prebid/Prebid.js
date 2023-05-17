@@ -6,6 +6,8 @@ import adapterManager from '../src/adapterManager.js';
 import {logInfo, logWarn, logError, logMessage, deepAccess, isInteger} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
+// Maintainer: mediapsr@epsilon.com
+
 const {
   EVENTS: { AUCTION_END, AD_RENDER_FAILED, BID_TIMEOUT, BID_WON, BIDDER_ERROR }
 } = CONSTANTS;

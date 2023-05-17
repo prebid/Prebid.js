@@ -3,6 +3,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+// Maintainer: mediapsr@epsilon.com
+
 const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
