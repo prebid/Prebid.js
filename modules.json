@@ -55,5 +55,6 @@
     "adyoulikeBidAdapter",
     "sizeMappingV2",
     "videojsVideoProvider",
-    "dfpAdServerVideo"
+    "dfpAdServerVideo",
+    "pairIdSystem"
 ]
