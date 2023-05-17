@@ -87,7 +87,7 @@ describe('Yahoo ConnectID Submodule', () => {
         {
           detail: 'cookie data over local storage data',
           cookie: '{"connectId":"foo"}',
-          localStorage: {connectId: 'bar'},
+          localStorage: JSON.stringify({connectId: 'bar'}),
           expected: {connectId: 'foo'}
         },
         {
@@ -99,7 +99,7 @@ describe('Yahoo ConnectID Submodule', () => {
         {
           detail: 'local storage data if only it local storage data exists',
           cookie: undefined,
-          localStorage: {connectId: 'bar'},
+          localStorage: JSON.stringify({connectId: 'bar'}),
           expected: {connectId: 'bar'}
         },
         {
