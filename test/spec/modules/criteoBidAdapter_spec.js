@@ -304,7 +304,8 @@ describe('The Criteo bidding adapter', function () {
             placement: 1,
             minduration: 0,
             playbackmethod: 1,
-            startdelay: 0
+            startdelay: 0,
+            plcmt: 1
           }
         },
         params: {
@@ -1007,7 +1008,8 @@ describe('The Criteo bidding adapter', function () {
               mimes: ['video/mp4', 'video/x-flv'],
               maxduration: 30,
               api: [1, 2],
-              protocols: [2, 3]
+              protocols: [2, 3],
+              plcmt: 3
             }
           },
           params: {
@@ -1037,6 +1039,7 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.startdelay).to.equal(5);
       expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
+      expect(ortbRequest.slots[0].video.plcmt).to.equal(3);
     });
 
     it('should properly build a video request with more than one player size', function () {
