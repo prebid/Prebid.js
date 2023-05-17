@@ -31,10 +31,12 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {GdprConsentHandler, UspConsentHandler} from './consentHandler.js';
+import {GdprConsentHandler, UspConsentHandler, GppConsentHandler, GDPR_GVLIDS} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
+import {auctionManager} from './auctionManager.js';
+import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from './activities/modules.js';
 
 export const PARTITIONS = {
   CLIENT: 'client',
@@ -64,15 +66,21 @@ var _analyticsRegistry = {};
 
 function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}) {
   return adUnits.reduce((result, adUnit) => {
-    result.push(adUnit.bids.filter(bid => bid.bidder === bidderCode)
-      .reduce((bids, bid) => {
-        bid = Object.assign({}, bid, getDefinedParams(adUnit, [
-          'nativeParams',
-          'nativeOrtbRequest',
-          'ortb2Imp',
-          'mediaType',
-          'renderer'
-        ]));
+    const bids = adUnit.bids.filter(bid => bid.bidder === bidderCode);
+    if (bidderCode == null && bids.length === 0 && adUnit.s2sBid != null) {
+      bids.push({bidder: null});
+    }
+    result.push(
+      bids.reduce((bids, bid) => {
+        bid = Object.assign({}, bid,
+          {ortb2Imp: mergeDeep({}, adUnit.ortb2Imp, bid.ortb2Imp)},
+          getDefinedParams(adUnit, [
+            'nativeParams',
+            'nativeOrtbRequest',
+            'mediaType',
+            'renderer'
+          ])
+        );
 
         const mediaTypes = bid.mediaTypes == null ? adUnit.mediaTypes : bid.mediaTypes
 
@@ -127,9 +135,18 @@ export const filterBidsForAdUnit = hook('sync', _filterBidsForAdUnit, 'filterBid
 
 function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
   let adUnitsCopy = deepClone(adUnits);
+  let hasModuleBids = false;
 
   adUnitsCopy.forEach((adUnit) => {
     // filter out client side bids
+    const s2sBids = adUnit.bids.filter((b) => b.module === 'pbsBidAdapter' && b.params?.configName === s2sConfig.configName);
+    if (s2sBids.length === 1) {
+      adUnit.s2sBid = s2sBids[0];
+      hasModuleBids = true;
+      adUnit.ortb2Imp = mergeDeep({}, adUnit.s2sBid.ortb2Imp, adUnit.ortb2Imp);
+    } else if (s2sBids.length > 1) {
+      logWarn('Multiple "module" bids for the same s2s configuration; all will be ignored', s2sBids);
+    }
     adUnit.bids = filterBidsForAdUnit(adUnit.bids, s2sConfig)
       .map((bid) => {
         bid.bid_id = getUniqueIdentifierStr();
@@ -139,9 +156,9 @@ function getAdUnitCopyForPrebidServer(adUnits, s2sConfig) {
 
   // don't send empty requests
   adUnitsCopy = adUnitsCopy.filter(adUnit => {
-    return adUnit.bids.length !== 0;
+    return adUnit.bids.length !== 0 || adUnit.s2sBid != null;
   });
-  return adUnitsCopy;
+  return {adUnits: adUnitsCopy, hasModuleBids};
 }
 
 function getAdUnitCopyForClientAdapters(adUnits) {
@@ -160,6 +177,7 @@ function getAdUnitCopyForClientAdapters(adUnits) {
 
 export let gdprDataHandler = new GdprConsentHandler();
 export let uspDataHandler = new UspConsentHandler();
+export let gppDataHandler = new GppConsentHandler();
 
 export let coppaDataHandler = {
   getCoppa: function() {
@@ -242,11 +260,12 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
   _s2sConfigs.forEach(s2sConfig => {
     if (s2sConfig && s2sConfig.enabled) {
-      let adUnitsS2SCopy = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
+      let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function
       let uniquePbsTid = generateUUID();
-      serverBidders.forEach(bidderCode => {
+
+      (serverBidders.length === 0 && hasModuleBids ? [null] : serverBidders).forEach(bidderCode => {
         const bidderRequestId = getUniqueIdentifierStr();
         const metrics = auctionMetrics.fork();
         const bidderRequest = addOrtb2({
@@ -277,7 +296,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
       bidRequests.forEach(request => {
         if (request.adUnitsS2SCopy === undefined) {
-          request.adUnitsS2SCopy = adUnitsS2SCopy.filter(adUnitCopy => adUnitCopy.bids.length > 0);
+          request.adUnitsS2SCopy = adUnitsS2SCopy.filter(au => au.bids.length > 0 || au.s2sBid != null);
         }
       });
     }
@@ -308,23 +327,16 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     }
   });
 
-  if (gdprDataHandler.getConsentData()) {
-    bidRequests.forEach(bidRequest => {
-      bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
-    });
-  }
-
-  if (uspDataHandler.getConsentData()) {
-    bidRequests.forEach(bidRequest => {
-      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
-    });
-  }
-
   bidRequests.forEach(bidRequest => {
-    config.runWithBidder(bidRequest.bidderCode, () => {
-      const fledgeEnabledFromConfig = config.getConfig('fledgeEnabled');
-      bidRequest['fledgeEnabled'] = navigator.runAdAuction && fledgeEnabledFromConfig
-    });
+    if (gdprDataHandler.getConsentData()) {
+      bidRequest['gdprConsent'] = gdprDataHandler.getConsentData();
+    }
+    if (uspDataHandler.getConsentData()) {
+      bidRequest['uspConsent'] = uspDataHandler.getConsentData();
+    }
+    if (gppDataHandler.getConsentData()) {
+      bidRequest['gppConsent'] = gppDataHandler.getConsentData();
+    }
   });
 
   return bidRequests;
@@ -441,7 +453,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
 
 function getSupportedMediaTypes(bidderCode) {
   let supportedMediaTypes = [];
-  if (includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
+  if (FEATURES.VIDEO && includes(adapterManager.videoAdapters, bidderCode)) supportedMediaTypes.push('video');
   if (FEATURES.NATIVE && includes(nativeAdapters, bidderCode)) supportedMediaTypes.push('native');
   return supportedMediaTypes;
 }
@@ -452,8 +464,9 @@ adapterManager.registerBidAdapter = function (bidAdapter, bidderCode, {supported
   if (bidAdapter && bidderCode) {
     if (typeof bidAdapter.callBids === 'function') {
       _bidderRegistry[bidderCode] = bidAdapter;
+      GDPR_GVLIDS.register(MODULE_TYPE_BIDDER, bidderCode, bidAdapter.getSpec?.().gvlid);
 
-      if (includes(supportedMediaTypes, 'video')) {
+      if (FEATURES.VIDEO && includes(supportedMediaTypes, 'video')) {
         adapterManager.videoAdapters.push(bidderCode);
       }
       if (FEATURES.NATIVE && includes(supportedMediaTypes, 'native')) {
@@ -521,6 +534,7 @@ adapterManager.registerAnalyticsAdapter = function ({adapter, code, gvlid}) {
     if (typeof adapter.enableAnalytics === 'function') {
       adapter.code = code;
       _analyticsRegistry[code] = { adapter, gvlid };
+      GDPR_GVLIDS.register(MODULE_TYPE_ANALYTICS, code, gvlid);
     } else {
       logError(`Prebid Error: Analytics adaptor error for analytics "${code}"
         analytics adapter must implement an enableAnalytics() function`);
@@ -553,16 +567,27 @@ adapterManager.getAnalyticsAdapter = function(code) {
   return _analyticsRegistry[code];
 }
 
-function tryCallBidderMethod(bidder, method, param) {
+function getBidderMethod(bidder, method) {
+  const adapter = _bidderRegistry[bidder];
+  const spec = adapter?.getSpec && adapter.getSpec();
+  if (spec && spec[method] && typeof spec[method] === 'function') {
+    return [spec, spec[method]]
+  }
+}
+
+function invokeBidderMethod(bidder, method, spec, fn, ...params) {
   try {
-    const adapter = _bidderRegistry[bidder];
-    const spec = adapter.getSpec();
-    if (spec && spec[method] && typeof spec[method] === 'function') {
-      logInfo(`Invoking ${bidder}.${method}`);
-      config.runWithBidder(bidder, bind.call(spec[method], spec, param));
-    }
+    logInfo(`Invoking ${bidder}.${method}`);
+    config.runWithBidder(bidder, fn.bind(spec, ...params));
   } catch (e) {
     logWarn(`Error calling ${method} of ${bidder}`);
+  }
+}
+
+function tryCallBidderMethod(bidder, method, param) {
+  const target = getBidderMethod(bidder, method);
+  if (target != null) {
+    invokeBidderMethod(bidder, method, ...target, param);
   }
 }
 
@@ -587,6 +612,10 @@ adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 
+adapterManager.callBidBillableBidder = function(bid) {
+  tryCallBidderMethod(bid.bidder, 'onBidBillable', bid);
+};
+
 adapterManager.callSetTargetingBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onSetTargeting', bid);
 };
@@ -599,5 +628,42 @@ adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   const param = { error, bidderRequest };
   tryCallBidderMethod(bidder, 'onBidderError', param);
 };
+
+function resolveAlias(alias) {
+  const seen = new Set();
+  while (_aliasRegistry.hasOwnProperty(alias) && !seen.has(alias)) {
+    seen.add(alias);
+    alias = _aliasRegistry[alias];
+  }
+  return alias;
+}
+/**
+ * Ask every adapter to delete PII.
+ * See https://github.com/prebid/Prebid.js/issues/9081
+ */
+adapterManager.callDataDeletionRequest = hook('sync', function (...args) {
+  const method = 'onDataDeletionRequest';
+  Object.keys(_bidderRegistry)
+    .filter((bidder) => !_aliasRegistry.hasOwnProperty(bidder))
+    .forEach(bidder => {
+      const target = getBidderMethod(bidder, method);
+      if (target != null) {
+        const bidderRequests = auctionManager.getBidsRequested().filter((br) =>
+          resolveAlias(br.bidderCode) === bidder
+        );
+        invokeBidderMethod(bidder, method, ...target, bidderRequests, ...args);
+      }
+    });
+  Object.entries(_analyticsRegistry).forEach(([name, entry]) => {
+    const fn = entry?.adapter?.[method];
+    if (typeof fn === 'function') {
+      try {
+        fn.apply(entry.adapter, args);
+      } catch (e) {
+        logError(`error calling ${method} of ${name}`, e);
+      }
+    }
+  });
+});
 
 export default adapterManager;

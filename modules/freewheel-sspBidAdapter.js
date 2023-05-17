@@ -1,6 +1,7 @@
-import { logWarn, isArray } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
 
@@ -213,6 +214,27 @@ function getAPIName(componentId) {
   return componentId.replace('-', '');
 }
 
+function getBidFloor(bid, config) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: getFloorCurrency(config),
+      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (e) {
+    return -1;
+  }
+}
+
+function getFloorCurrency(config) {
+  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+}
+
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
@@ -317,13 +339,18 @@ export const spec = {
       var zone = currentBidRequest.params.zoneId;
       var timeInMillis = new Date().getTime();
       var keyCode = hashcode(zone + '' + timeInMillis);
+      var bidfloor = getBidFloor(currentBidRequest, config);
+
       var requestParams = {
         reqType: 'AdsSetup',
-        protocolVersion: '2.0',
+        protocolVersion: '4.2',
         zoneId: zone,
         componentId: 'prebid',
         componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
+        _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
+        _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
+        pbjs_version: '$prebid.version$',
         pKey: keyCode
       };
 
@@ -345,10 +372,31 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add GPP consent
+      if (bidderRequest && bidderRequest.gppConsent) {
+        requestParams.gpp = bidderRequest.gppConsent.gppString;
+        requestParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.gpp) {
+        requestParams.gpp = bidderRequest.ortb2.regs.gpp;
+        requestParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
+
       // Add schain object
       var schain = currentBidRequest.schain;
       if (schain) {
-        requestParams.schain = schain;
+        try {
+          requestParams.schain = JSON.stringify(schain);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
+        }
+      }
+
+      if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
+        try {
+          requestParams._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error);
+        }
       }
 
       var vastParams = currentBidRequest.params.vastUrlParams;
@@ -383,6 +431,14 @@ export const spec = {
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
+      }
+
+      // Add video context and placement in requestParams
+      if (currentBidRequest.mediaTypes.video) {
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : 'instream';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : 1;
+        requestParams.video_context = videoContext;
+        requestParams.video_placement = videoPlacement;
       }
 
       return {
@@ -479,26 +535,42 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
-    var gdprParams = '';
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
+    const params = {};
+
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr = Number(gdprConsent.gdprApplies);
+        params.gdpr_consent = gdprConsent.consentString;
       } else {
-        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr_consent = gdprConsent.consentString;
       }
+    }
+
+    if (gppConsent) {
+      if (typeof gppConsent.gppString === 'string') {
+        params.gpp = gppConsent.gppString;
+      }
+      if (gppConsent.applicableSections) {
+        params.gpp_sid = gppConsent.applicableSections;
+      }
+    }
+
+    var queryString = '';
+    if (params) {
+      queryString = '?' + `${formatQS(params)}`;
     }
 
     const syncs = [];
     if (syncOptions && syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: USER_SYNC_URL + gdprParams
+        url: USER_SYNC_URL + queryString
       });
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_URL + gdprParams
+        url: USER_SYNC_URL + queryString
       });
     }
 

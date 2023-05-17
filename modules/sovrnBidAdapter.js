@@ -15,7 +15,6 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
-import {createEidsArray} from './userId/eids.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -90,8 +89,8 @@ export const spec = {
       let criteoId;
 
       _each(bidReqs, function (bid) {
-        if (!eids && bid.userId) {
-          eids = createEidsArray(bid.userId)
+        if (!eids && bid.userIdAsEids) {
+          eids = bid.userIdAsEids;
           eids.forEach(function (id) {
             if (id.uids && id.uids[0]) {
               if (id.source === 'criteo.com') {
@@ -173,6 +172,10 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+      if (bidderRequest.gppConsent) {
+        deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
+        deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
       }
 
       if (eids) {

@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
+const PREBID_VERSION = '$prebid.version$';
 
 describe('freewheelSSP BidAdapter Test', () => {
   const adapter = newBidder(spec);
@@ -84,7 +86,8 @@ describe('freewheelSSP BidAdapter Test', () => {
       {
         'bidder': 'freewheel-ssp',
         'params': {
-          'zoneId': '277225'
+          'zoneId': '277225',
+          'bidfloor': 2.00,
         },
         'adUnitCode': 'adunit-code',
         'mediaTypes': {
@@ -114,21 +117,63 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
+    it('should get bidfloor value from params if no getFloor method', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(2.00);
+      expect(payload._fw_bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should get bidfloor value from getFloor method if available', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.getFloor = () => ({ currency: 'USD', floor: 1.16 });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(1.16);
+      expect(payload._fw_bidfloorcur).to.deep.equal('USD');
+    });
+
+    it('should pass 3rd party IDs with the request when present', function () {
+      const bidRequest = bidRequests[0];
+      bidRequest.userIdAsEids = createEidsArray({
+        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
+        admixerId: 'admixerId_FROM_USER_ID_MODULE',
+        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE'
+      });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ]));
+    });
+
+    it('should return empty bidFloorCurrency when bidfloor <= 0', () => {
+      const bidRequest = bidRequests[0];
+      bidRequest.getFloor = () => ({ currency: 'USD', floor: -1 });
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_bidfloor).to.equal(0);
+      expect(payload._fw_bidfloorcur).to.deep.equal('');
+    });
+
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+      expect(payload.pbjs_version).to.equal(PREBID_VERSION);
     });
 
     it('should return a properly formatted request with schain defined', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload.schain).to.deep.equal(bidRequests[0].schain)
+      expect(payload.schain).to.deep.equal('{\"ver\":\"1.0\",\"complete\":1,\"nodes\":[{\"asi\":\"example.com\",\"sid\":\"0\",\"hp\":1,\"rid\":\"bidrequestid\",\"domain\":\"example.com\"}]}');
     });
 
     it('sends bid request to ENDPOINT via GET', () => {
@@ -144,7 +189,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -164,7 +209,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -179,10 +224,39 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': [8]
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+
+      expect(payload.gpp).to.equal(consentString);
+      expect(payload.gpp_sid).to.deep.equal([8]);
+
+      let gppConsent = {
+        'applicableSections': [8],
+        'gppString': consentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid[]=8'
       }]);
     });
   })
@@ -207,11 +281,18 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
+    it('should return context and placement with default values', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.video_context).to.equal('instream'); ;
+      expect(payload.video_placement).to.equal(1);
+    });
+
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -231,7 +312,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -251,7 +332,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = request[0].data;
       expect(payload.reqType).to.equal('AdsSetup');
-      expect(payload.protocolVersion).to.equal('2.0');
+      expect(payload.protocolVersion).to.equal('4.2');
       expect(payload.zoneId).to.equal('277225');
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
@@ -266,11 +347,41 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
       }]);
+    });
+  })
+
+  describe('buildRequestsForVideoWithContextAndPlacement', () => {
+    let bidRequests = [
+      {
+        'bidder': 'freewheel-ssp',
+        'params': {
+          'zoneId': '277225'
+        },
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'placement': 2,
+            'playerSize': [300, 600],
+          }
+        },
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    it('should return input context and placement', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.video_context).to.equal('outstream'); ;
+      expect(payload.video_placement).to.equal(2);
     });
   })
 
@@ -337,7 +448,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'>' +
+    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
@@ -422,7 +533,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(formattedBidRequests);
-      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
+      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);
@@ -503,7 +614,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'>' +
+    let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'>' +
     '<Ad id=\'AdswizzAd28517153\'>' +
     '  <InLine>' +
     '   <AdSystem>Adswizz</AdSystem>' +
@@ -599,7 +710,7 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('handles nobid responses', () => {
       var request = spec.buildRequests(formattedBidRequests);
-      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'2.0\'></VAST>';
+      let response = '<?xml version=\'1.0\' encoding=\'UTF-8\'?><VAST version=\'4.2\'></VAST>';
 
       let result = spec.interpretResponse(response, request[0]);
       expect(result.length).to.equal(0);

@@ -110,9 +110,10 @@ describe('user sync', function () {
     expect(insertUserSyncIframeStub.getCall(0).args[0]).to.equal('http://example.com/iframe');
   });
 
-  it('should only trigger syncs once per page per bidder', function () {
+  it('should stop triggering user syncs after bidderDone', function () {
     const userSync = newTestUserSync({ pixelEnabled: true });
     userSync.registerSync('image', 'testBidder', 'http://example.com/1');
+    userSync.bidderDone('testBidder');
     userSync.syncUsers();
     userSync.registerSync('image', 'testBidder', 'http://example.com/2');
     userSync.registerSync('image', 'testBidder2', 'http://example.com/3');
