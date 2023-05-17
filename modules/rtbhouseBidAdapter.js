@@ -1,4 +1,4 @@
-import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
+import {deepAccess, mergeDeep, isArray, logError, logInfo, generateUUID} from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -51,7 +51,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const request = {
-      id: validBidRequests[0].auctionId,
+      id: generateUUID(),
       imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,

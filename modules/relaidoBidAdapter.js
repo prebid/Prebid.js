@@ -85,9 +85,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       bid_id: bidRequest.bidId,
       placement_id: getBidIdParameter('placementId', bidRequest.params),
-      transaction_id: bidRequest.transactionId,
+      transaction_id: bidRequest.ortb2Imp?.ext?.tid,
       bidder_request_id: bidRequest.bidderRequestId,
       ad_unit_code: bidRequest.adUnitCode,
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auction_id: bidRequest.auctionId,
       player: bidRequest.params.player,
       width: width,

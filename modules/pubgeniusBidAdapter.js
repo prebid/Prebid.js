@@ -4,7 +4,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   deepAccess,
-  deepSetValue,
+  deepSetValue, generateUUID,
   inIframe,
   isArrayOfNums,
   isFn,
@@ -41,7 +41,7 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const data = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       imp: bidRequests.map(buildImp),
       tmax: bidderRequest.timeout,
       ext: {

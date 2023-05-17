@@ -3,7 +3,15 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { triggerPixel, isFn, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, _map } from '../src/utils.js';
+import {
+  triggerPixel,
+  isFn,
+  deepAccess,
+  getAdUnitSizes,
+  parseGPTSingleSizeArrayToRtbSize,
+  _map,
+  generateUUID
+} from '../src/utils.js';
 import {parseDomain} from '../src/refererDetection.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -65,7 +73,7 @@ export const spec = {
     const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
     let data = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       imp: imp,
       site: {
         id: widgetId,
@@ -215,8 +223,9 @@ function buildImp(bid, id) {
     id: id + 1,
     tagid: bid.adUnitCode,
     bidderRequestId: bid.bidderRequestId,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
-    transactionId: bid.transactionId,
+    transactionId: bid.ortb2Imp?.ext?.tid,
     instl: 0,
     bidfloor: bidfloor,
     secure: '1'

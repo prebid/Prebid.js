@@ -6,7 +6,7 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
 import { OUTSTREAM } from '../src/video.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn } from '../src/utils.js';
+import {deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn, generateUUID} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -107,7 +107,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       site: { page, publisher },
       device: { ua },
       source: { fd: 1 },
