@@ -153,6 +153,7 @@ function getPageUrl(bidderRequest) {
 function buildWinNotice(bid) {
   const params = bid.params[0];
   const app = deepAccess(bid, 'meta.ext.app')
+  const winNoticeExt = deepAccess(bid, 'meta.ext.win_notice_ext')
   return {
     publisherId: params.publisherId,
     siteId: params.siteId,
@@ -170,7 +171,8 @@ function buildWinNotice(bid) {
     responseTimestamp: bid.responseTimestamp,
     mediatype: bid.mediaType,
     environment: app ? 'app' : 'web',
-    ...app
+    ...app,
+    ext: winNoticeExt,
   };
 }
 
