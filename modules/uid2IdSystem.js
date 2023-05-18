@@ -10,10 +10,10 @@ import { logInfo, logWarn } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { Uid2ApiClient, Uid2StorageManager, Uid2GetId } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
 
 const MODULE_NAME = 'uid2';
-const MODULE_REVISION = `1.0`;
+const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
 const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`;
 const GVLID = 887;
@@ -82,8 +82,6 @@ export const uid2IdSubmodule = {
     return result;
   },
 };
-
-// TODO: Tests
 
 function decodeImpl(value) {
   if (typeof value === 'string') {

@@ -1,3 +1,6 @@
+/* eslint-disable no-console */
+export const Uid2CodeVersion = '1.1';
+
 function isValidIdentity(identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
@@ -199,7 +202,6 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
   _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
-  console.log('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
   if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
     _logInfo('Newest available token is expired and not refreshable.');
     return { id: null };

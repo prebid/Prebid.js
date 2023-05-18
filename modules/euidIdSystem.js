@@ -10,10 +10,10 @@ import { logInfo, logWarn } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { Uid2ApiClient, Uid2StorageManager, Uid2GetId } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
 
 const MODULE_NAME = 'euid';
-const MODULE_REVISION = `2.0`;
+const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
 const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`;
 const GVLID = 21; // The Trade Desk - is this correct? Found it from https://iabeurope.eu/vendor-list-tcf-v2-0/
@@ -21,8 +21,8 @@ const LOG_PRE_FIX = 'EUID: ';
 const ADVERTISING_COOKIE = '__euid_advertising_token';
 
 // eslint-disable-next-line no-unused-vars
-const EUID_TEST_URL = 'https://integ.euid.eu/v2';
-const EUID_PROD_URL = 'https://prod.euid.eu/v2';
+const EUID_TEST_URL = 'https://integ.euid.eu';
+const EUID_PROD_URL = 'https://prod.euid.eu';
 const EUID_BASE_URL = EUID_PROD_URL;
 
 function createLogger(logger, prefix) {
@@ -44,7 +44,7 @@ export const euidIdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * Vendor id of Prebid
+   * Vendor id of The Trade Desk
    * @type {Number}
    */
   gvlid: GVLID,
