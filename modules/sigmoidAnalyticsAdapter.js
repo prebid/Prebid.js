@@ -1,13 +1,15 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
 import {includes} from '../src/polyfill.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {generateUUID, logError, logInfo} from '../src/utils.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storage = getStorageManager();
+const MODULE_CODE = 'sigmoid';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
@@ -285,7 +287,7 @@ function pushEvent(eventType, args) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: sigmoidAdapter,
-  code: 'sigmoid'
+  code: MODULE_CODE,
 });
 
 export default sigmoidAdapter;

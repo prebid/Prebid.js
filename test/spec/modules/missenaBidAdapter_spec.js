@@ -13,6 +13,8 @@ describe('Missena Adapter', function () {
     sizes: [[1, 1]],
     params: {
       apiKey: 'PA-34745704',
+      placement: 'sticky',
+      formats: ['sticky-banner'],
     },
   };
 
@@ -49,7 +51,7 @@ describe('Missena Adapter', function () {
         gdprApplies: true,
       },
       refererInfo: {
-        referer: 'https://referer',
+        topmostLocation: 'https://referer',
         canonicalUrl: 'https://canonical',
       },
     };
@@ -70,6 +72,14 @@ describe('Missena Adapter', function () {
       expect(payload.request_id).to.equal(bidId);
     });
 
+    it('should send placement', function () {
+      expect(payload.placement).to.equal('sticky');
+    });
+
+    it('should send formats', function () {
+      expect(payload.formats).to.eql(['sticky-banner']);
+    });
+
     it('should send referer information to the request', function () {
       expect(payload.referer).to.equal('https://referer');
       expect(payload.referer_canonical).to.equal('https://canonical');
@@ -88,7 +98,7 @@ describe('Missena Adapter', function () {
       currency: 'USD',
       ad: '<!-- -->',
       meta: {
-        advertiserDomains: ['missena.com']
+        advertiserDomains: ['missena.com'],
       },
     };
 
@@ -129,6 +139,51 @@ describe('Missena Adapter', function () {
         bid
       );
       expect(result).to.deep.equal([]);
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncFrameUrl = 'https://sync.missena.io/iframe';
+    const consentString = 'sampleString';
+    const iframeEnabledOptions = {
+      iframeEnabled: true,
+    };
+    const iframeDisabledOptions = {
+      iframeEnabled: false,
+    };
+
+    it('should return userSync when iframeEnabled', function () {
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, []);
+
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(syncFrameUrl);
+    });
+
+    it('should return empty array when iframeEnabled is false', function () {
+      const userSync = spec.getUserSyncs(iframeDisabledOptions, []);
+      expect(userSync.length).to.be.equal(0);
+    });
+
+    it('sync frame url should contain gdpr data when present', function () {
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
+        gdprApplies: true,
+        consentString,
+      });
+      const expectedUrl = `${syncFrameUrl}?gdpr=1&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
+    });
+    it('sync frame url should contain gdpr data when present (gdprApplies false)', function () {
+      const userSync = spec.getUserSyncs(iframeEnabledOptions, [], {
+        gdprApplies: false,
+        consentString,
+      });
+      const expectedUrl = `${syncFrameUrl}?gdpr=0&gdpr_consent=${consentString}`;
+      expect(userSync.length).to.be.equal(1);
+      expect(userSync[0].type).to.be.equal('iframe');
+      expect(userSync[0].url).to.be.equal(expectedUrl);
     });
   });
 });

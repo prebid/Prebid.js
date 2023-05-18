@@ -445,6 +445,10 @@ describe('sizeMappingV2', function () {
     });
 
     describe('video mediaTypes checks', function () {
+      if (!FEATURES.VIDEO) {
+        return;
+      }
+
       beforeEach(function () {
         sinon.spy(adUnitSetupChecks, 'validateVideoMediaType');
       });
@@ -616,6 +620,9 @@ describe('sizeMappingV2', function () {
     });
 
     describe('native mediaTypes checks', function () {
+      if (!FEATURES.NATIVE) {
+        return;
+      }
       beforeEach(function () {
         sinon.spy(adUnitSetupChecks, 'validateNativeMediaType');
       });

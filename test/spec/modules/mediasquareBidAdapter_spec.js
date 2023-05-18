@@ -78,7 +78,8 @@ describe('MediaSquare bid adapter tests', function () {
       owner: 'test',
       code: 'publishername_atf_desktop_rg_pave'
     },
-    getFloor: function (a) { return { currency: 'EUR', floor: 1.0 }; },
+    sizes: [[300, 250]],
+    getFloor: function (a) { return { currency: 'USD', floor: 1.0 }; },
   }];
   var BID_RESPONSE = {'body': {
     'responses': [{
@@ -88,6 +89,8 @@ describe('MediaSquare bid adapter tests', function () {
       'height': 250,
       'creative_id': '158534630',
       'currency': 'USD',
+      'originalCpm': 25.0123,
+      'originalCurrency': 'USD',
       'net_revenue': true,
       'ttl': 300,
       'ad': '< --- creative code --- >',
@@ -140,7 +143,7 @@ describe('MediaSquare bid adapter tests', function () {
     const requestfloor = spec.buildRequests(FLOORS_PARAMS, DEFAULT_OPTIONS);
     const responsefloor = JSON.parse(requestfloor.data);
     expect(responsefloor.codes[0]).to.have.property('floor').exist;
-    expect(responsefloor.codes[0].floor).to.have.property('floor').and.to.equal(1.0);
+    expect(responsefloor.codes[0].floor).to.have.property('300x250').and.to.have.property('floor').and.to.equal(1);
   });
 
   it('Verify parse response', function () {
@@ -237,6 +240,7 @@ describe('MediaSquare bid adapter tests', function () {
     const bid = response[0];
     expect(bid).to.have.property('vastXml');
     expect(bid).to.have.property('vastUrl');
+    expect(bid).to.have.property('renderer');
     delete BID_RESPONSE.body.responses[0].video;
   });
 });

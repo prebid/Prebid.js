@@ -209,7 +209,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -221,7 +222,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -233,7 +235,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -245,7 +248,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -257,7 +261,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -269,7 +274,8 @@ describe('SSPBC adapter', function () {
       gdprConsent,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -280,7 +286,8 @@ describe('SSPBC adapter', function () {
       bids: bids_test,
       refererInfo: {
         reachedTop: true,
-        referer: 'https://test.site.pl/',
+        page: 'https://test.site.pl/',
+        domain: 'test.site.pl',
         stack: ['https://test.site.pl/'],
       }
     };
@@ -395,6 +402,7 @@ describe('SSPBC adapter', function () {
             'ext': {
               'siteid': '8816',
               'slotid': '150',
+              'cache': 'https://video.tag.cache'
             },
           }],
           'seat': 'dsp1',
@@ -510,7 +518,7 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send page url from refererInfo', function () {
-      expect(payload.site.page).to.equal(bidRequest.refererInfo.referer);
+      expect(payload.site.page).to.equal(bidRequest.refererInfo.page);
     });
 
     it('should send gdpr data', function () {
@@ -549,6 +557,7 @@ describe('SSPBC adapter', function () {
       const nativeAssets = payloadNative.imp && payloadNative.imp[0].native.request;
 
       expect(payloadNative.imp.length).to.equal(1);
+
       expect(nativeAssets).to.contain('{"id":0,"required":true,"title":{"len":80}}');
       expect(nativeAssets).to.contain('{"id":2,"required":true,"img":{"type":1,"w":50,"h":50}}');
       expect(nativeAssets).to.contain('{"id":3,"required":true,"img":{"type":3,"w":150,"h":50}}');
@@ -602,14 +611,14 @@ describe('SSPBC adapter', function () {
 
       expect(result.length).to.equal(bids.length);
       expect(resultSingle.length).to.equal(1);
-      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl');
+      expect(resultSingle[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls');
     });
 
     it('should create bid from OneCode (parameter-less) request, if response contains siteId', function () {
       let resultOneCode = spec.interpretResponse(serverResponseOneCode, requestOneCode);
 
       expect(resultOneCode.length).to.equal(1);
-      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl');
+      expect(resultOneCode[0]).to.have.keys('ad', 'cpm', 'width', 'height', 'bidderCode', 'mediaType', 'meta', 'requestId', 'creativeId', 'currency', 'netRevenue', 'ttl', 'vurls');
     });
 
     it('should not create bid from OneCode (parameter-less) request, if response does not contain siteId', function () {
@@ -631,6 +640,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.contain('window.mcad');
       expect(adcode).to.contain('window.gdpr');
       expect(adcode).to.contain('window.page');
+      expect(adcode).to.contain('window.requestPVID');
     });
 
     it('should create a correct video bid', function () {
@@ -639,11 +649,12 @@ describe('SSPBC adapter', function () {
       expect(resultVideo.length).to.equal(1);
 
       let videoBid = resultVideo[0];
-      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml');
+      expect(videoBid).to.have.keys('adType', 'bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'vastContent', 'vastXml', 'vastUrl', 'vurls');
       expect(videoBid.adType).to.equal('instream');
       expect(videoBid.mediaType).to.equal('video');
       expect(videoBid.vastXml).to.match(/^<\?xml.*<\/VAST>$/);
       expect(videoBid.vastContent).to.match(/^<\?xml.*<\/VAST>$/);
+      expect(videoBid.vastUrl).to.equal('https://video.tag.cache');
     });
 
     it('should create a correct native bid', function () {
@@ -652,8 +663,8 @@ describe('SSPBC adapter', function () {
       expect(resultNative.length).to.equal(1);
 
       let nativeBid = resultNative[0];
-      expect(nativeBid).to.have.keys('bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native');
-      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers');
+      expect(nativeBid).to.have.keys('bidderCode', 'cpm', 'creativeId', 'currency', 'width', 'height', 'meta', 'mediaType', 'netRevenue', 'requestId', 'ttl', 'native', 'vurls');
+      expect(nativeBid.native).to.have.keys('image', 'icon', 'title', 'sponsoredBy', 'body', 'clickUrl', 'impressionTrackers', 'javascriptTrackers', 'clickTrackers');
     });
   });
 
@@ -668,8 +679,8 @@ describe('SSPBC adapter', function () {
     });
 
     it('should send no syncs, if frame sync is not allowed', function () {
-      expect(syncResultImage).to.have.length(0); ;
-      expect(syncResultNone).to.have.length(0); ;
+      expect(syncResultImage).to.have.length(0);
+      expect(syncResultNone).to.have.length(0);
     });
   });
 

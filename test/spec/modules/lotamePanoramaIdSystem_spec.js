@@ -18,6 +18,7 @@ describe('LotameId', function() {
   let removeFromLocalStorageStub;
   let timeStampStub;
   let uspConsentDataStub;
+  let requestHost;
 
   const nowTimestamp = new Date().getTime();
 
@@ -33,6 +34,11 @@ describe('LotameId', function() {
     );
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
+    if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+      requestHost = 'https://c.ltmsphrcl.net/id';
+    } else {
+      requestHost = 'https://id.crwdcntrl.net/id';
+    }
   });
 
   afterEach(function () {
@@ -69,8 +75,7 @@ describe('LotameId', function() {
     });
 
     it('should call the remote server when getId is called', function () {
-      expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
-
+      expect(request.url).to.be.eq(`${requestHost}`);
       expect(callBackSpy.calledOnce).to.be.true;
     });
 
@@ -440,7 +445,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_applies=true&gdpr_consent=consentGiven`
       );
     });
   });
@@ -472,7 +477,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_applies=true&gdpr_consent=consentGiven`
       );
     });
   });
@@ -504,7 +509,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true&gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_applies=true&gdpr_consent=consentGiven`
       );
     });
   });
@@ -532,7 +537,7 @@ describe('LotameId', function() {
 
     it('should not include the gdpr consent string on the url', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_applies=true'
+        `${requestHost}?gdpr_applies=true`
       );
     });
   });
@@ -561,7 +566,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_consent=consentGiven`
       );
     });
   });
@@ -590,7 +595,7 @@ describe('LotameId', function() {
 
     it('should pass the gdpr consent string back', function() {
       expect(request.url).to.be.eq(
-        'https://id.crwdcntrl.net/id?gdpr_consent=consentGiven'
+        `${requestHost}?gdpr_consent=consentGiven`
       );
     });
   });
@@ -614,7 +619,7 @@ describe('LotameId', function() {
     });
 
     it('should pass the gdpr consent string back', function() {
-      expect(request.url).to.be.eq('https://id.crwdcntrl.net/id');
+      expect(request.url).to.be.eq(`${requestHost}`);
     });
   });
 
@@ -836,7 +841,7 @@ describe('LotameId', function() {
 
         it('should pass the usp consent string and client id back', function () {
           expect(request.url).to.be.eq(
-            'https://id.crwdcntrl.net/id?gdpr_applies=false&us_privacy=1NNN&c=1234'
+            `${requestHost}?gdpr_applies=false&us_privacy=1NNN&c=1234`
           );
         });
 
@@ -924,7 +929,7 @@ describe('LotameId', function() {
 
       it('should pass client id back', function () {
         expect(request.url).to.be.eq(
-          'https://id.crwdcntrl.net/id?gdpr_applies=false&c=1234'
+          `${requestHost}?gdpr_applies=false&c=1234`
         );
       });
 

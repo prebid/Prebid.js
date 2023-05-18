@@ -1,15 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import {
-  NATIVE, BANNER, VIDEO
-} from '../src/mediaTypes.js';
-import { mergeDeep, _map, deepAccess, parseSizesInput, deepSetValue } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {deepAccess, deepSetValue, mergeDeep, parseSizesInput, deepClone} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {Renderer} from '../src/Renderer.js';
 
 const { getConfig } = config;
 
@@ -19,38 +15,7 @@ const BIDDER_ALIAS = [
   { code: 'adformOpenRTB', gvlid: GVLID },
   { code: 'adform', gvlid: GVLID }
 ];
-const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
-const NATIVE_PARAMS = {
-  title: {
-    id: 0,
-    name: 'title'
-  },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
-  },
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
-  },
-  sponsoredBy: {
-    id: 5,
-    name: 'data',
-    type: 1
-  },
-  body: {
-    id: 4,
-    name: 'data',
-    type: 2
-  },
-  cta: {
-    id: 1,
-    type: 12,
-    name: 'data'
-  }
-};
+
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
 export const spec = {
@@ -66,7 +31,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     let app, site;
 
-    const commonFpd = getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     let { user } = commonFpd;
 
     if (typeof getConfig('app') === 'object') {
@@ -81,7 +46,7 @@ export const spec = {
       }
 
       if (!site.page) {
-        site.page = bidderRequest.refererInfo.referer;
+        site.page = bidderRequest.refererInfo.page;
       }
     }
 
@@ -93,7 +58,7 @@ export const spec = {
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = validBidRequests[0].transactionId;
+    const tid = bidderRequest.auctionId;
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
@@ -123,45 +88,28 @@ export const spec = {
         }
       };
 
-      const assets = _map(bid.nativeParams, (bidParams, key) => {
-        const props = NATIVE_PARAMS[key];
-        const asset = {
-          required: bidParams.required & 1,
-        };
-        if (props) {
-          asset.id = props.id;
-          let wmin, hmin, w, h;
-          let aRatios = bidParams.aspect_ratios;
+      if (bid.nativeOrtbRequest && bid.nativeOrtbRequest.assets) {
+        let assets = bid.nativeOrtbRequest.assets;
+        let requestAssets = [];
+        for (let i = 0; i < assets.length; i++) {
+          let asset = deepClone(assets[i]);
+          let img = asset.img;
+          if (img) {
+            let aspectratios = img.ext && img.ext.aspectratios;
 
-          if (aRatios && aRatios[0]) {
-            aRatios = aRatios[0];
-            wmin = aRatios.min_width || 0;
-            hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
+            if (aspectratios) {
+              let ratioWidth = parseInt(aspectratios[0].split(':')[0], 10);
+              let ratioHeight = parseInt(aspectratios[0].split(':')[1], 10);
+              img.wmin = img.wmin || 0;
+              img.hmin = ratioHeight * img.wmin / ratioWidth | 0;
+            }
           }
-
-          if (bidParams.sizes) {
-            const sizes = flatten(bidParams.sizes);
-            w = sizes[0];
-            h = sizes[1];
-          }
-
-          asset[props.name] = {
-            len: bidParams.len,
-            type: props.type,
-            wmin,
-            hmin,
-            w,
-            h
-          };
-
-          return asset;
+          requestAssets.push(asset);
         }
-      }).filter(Boolean);
 
-      if (assets.length) {
         imp.native = {
           request: {
-            assets
+            assets: requestAssets
           }
         };
       }
@@ -206,6 +154,11 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
+
+    if (config.getConfig('coppa')) {
+      deepSetValue(request, 'regs.coppa', 1);
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') !== undefined) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1);
@@ -227,9 +180,6 @@ export const spec = {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
       data: JSON.stringify(request),
-      options: {
-        contentType: 'application/json'
-      },
       bids: validBidRequests
     };
   },
@@ -266,7 +216,9 @@ export const spec = {
         };
 
         if (bidResponse.native) {
-          result.native = parseNative(bidResponse);
+          result.native = {
+            ortb: bidResponse.native
+          };
         } else {
           result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
         }
@@ -283,25 +235,6 @@ export const spec = {
 };
 
 registerBidder(spec);
-
-function parseNative(bid) {
-  const { assets, link, imptrackers, jstracker } = bid.native;
-  const result = {
-    clickUrl: link.url,
-    clickTrackers: link.clicktrackers || undefined,
-    impressionTrackers: imptrackers || undefined,
-    javascriptTrackers: jstracker ? [ jstracker ] : undefined
-  };
-  assets.forEach(asset => {
-    const kind = NATIVE_ASSET_IDS[asset.id];
-    const content = kind && asset[NATIVE_PARAMS[kind].name];
-    if (content) {
-      result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
-    }
-  });
-
-  return result;
-}
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {

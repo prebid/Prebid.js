@@ -1,14 +1,15 @@
 import { generateUUID, mergeDeep, deepAccess, parseUrl, logError, pick, isEmpty, logWarn, debugTurnedOn, parseQS, getWindowLocation, isAdUnitCodeMatchingSlot, isNumber, isGptPubadsDefined, _each, deepSetValue, deepClone, logInfo } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const RUBICON_GVL_ID = 52;
-export const storage = getStorageManager({gvlid: RUBICON_GVL_ID, moduleName: 'rubicon'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'rubicon'});
 const COOKIE_NAME = 'rpaSession';
 const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
@@ -62,15 +63,20 @@ const cache = {
 
 const BID_REJECTED_IPF = 'rejected-ipf';
 
-export let rubiConf = {
-  pvid: generateUUID().slice(0, 8),
-  analyticsEventDelay: 0,
-  dmBilling: {
-    enabled: false,
-    vendors: [],
-    waitForAuction: true
+export let rubiConf;
+export const resetRubiConf = () => {
+  rubiConf = {
+    pvid: generateUUID().slice(0, 8),
+    analyticsEventDelay: 0,
+    dmBilling: {
+      enabled: false,
+      vendors: [],
+      waitForAuction: true
+    }
   }
-};
+}
+resetRubiConf();
+
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -124,9 +130,9 @@ function formatSource(src) {
 }
 
 function getBillingPayload(event) {
-  // for now we are mapping all events to type "general", later we will expand support for specific types
   let billingEvent = deepClone(event);
-  billingEvent.type = 'general';
+  // Pass along type if is string and not empty else general
+  billingEvent.type = (typeof event.type === 'string' && event.type) || 'general';
   billingEvent.accountId = accountId;
   // mark as sent
   deepSetValue(cache.billing, `${event.vendor}.${event.billingId}`, true);
@@ -148,7 +154,7 @@ function sendBillingEvent(event) {
 
 function getBasicEventDetails(auctionId, trigger) {
   let auctionCache = cache.auctions[auctionId];
-  let referrer = config.getConfig('pageUrl') || pageReferer || (auctionCache && auctionCache.referrer);
+  let referrer = pageReferer || (auctionCache && auctionCache.referrer);
   let message = {
     timestamps: {
       prebidLoaded: rubiconAdapter.MODULE_INITIALIZED_TIME,
@@ -418,7 +424,7 @@ function getBidPrice(bid) {
   }
 }
 
-export function parseBidResponse(bid, previousBidResponse, auctionFloorData) {
+export function parseBidResponse(bid, previousBidResponse) {
   // The current bidResponse for this matching requestId/bidRequestId
   let responsePrice = getBidPrice(bid)
   // we need to compare it with the previous one (if there was one)
@@ -676,7 +682,8 @@ let rubiconAdapter = Object.assign({}, baseAdapter, {
         cacheEntry.bids = {};
         cacheEntry.bidsWon = {};
         cacheEntry.gamHasRendered = {};
-        cacheEntry.referrer = pageReferer = deepAccess(args, 'bidderRequests.0.refererInfo.referer');
+        // TODO: is 'page' the right value here?
+        cacheEntry.referrer = pageReferer = deepAccess(args, 'bidderRequests.0.refererInfo.page');
         cacheEntry.bidderOrder = [];
         const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (floorData) {

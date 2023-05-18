@@ -2,8 +2,8 @@
  * Adapter to send bids to Undertone
  */
 
-import { deepAccess, parseUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {deepAccess, parseUrl} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'undertone';
@@ -24,18 +24,6 @@ function getBidFloor(bidRequest, mediaType) {
   });
 
   return (floor && floor.currency === 'USD' && floor.floor) || 0;
-}
-
-function getCanonicalUrl() {
-  try {
-    let doc = window.top.document;
-    let element = doc.querySelector("link[rel='canonical']");
-    if (element !== null) {
-      return element.href;
-    }
-  } catch (e) {
-  }
-  return null;
 }
 
 function extractDomainFromHost(pageHost) {
@@ -88,6 +76,7 @@ function getBannerCoords(id) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
@@ -111,8 +100,8 @@ export const spec = {
       'x-ut-hb-params': [],
       'commons': commons
     };
-    const referer = bidderRequest.refererInfo.referer;
-    const canonicalUrl = getCanonicalUrl();
+    const referer = bidderRequest.refererInfo.topmostLocation;
+    const canonicalUrl = bidderRequest.refererInfo.canonicalUrl;
     if (referer) {
       commons.referrer = referer;
     }

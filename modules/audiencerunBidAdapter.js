@@ -1,18 +1,17 @@
 import {
+  _each,
   deepAccess,
+  formatQS,
+  getBidIdParameter,
+  getValue,
+  isArray,
   isFn,
   logError,
-  getValue,
-  getBidIdParameter,
-  _each,
-  isArray,
   triggerPixel,
-  formatQS,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
@@ -71,12 +70,7 @@ function getPageReferer() {
  * @return {string}
  */
 function getPageUrl(bidderRequest) {
-  return (
-    config.getConfig('pageUrl') ||
-    deepAccess(bidderRequest, 'refererInfo.referer') ||
-    getPageReferer() ||
-    null
-  );
+  return bidderRequest?.refererInfo?.page
 }
 
 export const spec = {
@@ -127,10 +121,12 @@ export const spec = {
 
     const payload = {
       libVersion: this.version,
-      pageUrl: config.getConfig('pageUrl'),
+      pageUrl: bidderRequest?.refererInfo?.page,
+      // TODO: does it make sense to find a half-way referer? what should these parameters pick
       pageReferer: getPageReferer(),
-      referer: deepAccess(bidderRequest, 'refererInfo.referer'),
-      refererInfo: deepAccess(bidderRequest, 'refererInfo'),
+      referer: deepAccess(bidderRequest, 'refererInfo.topmostLocation'),
+      // TODO: please do not send internal data structures over the network
+      refererInfo: deepAccess(bidderRequest, 'refererInfo.legacy'),
       currencyCode: config.getConfig('currency.adServerCurrency'),
       timeout: config.getConfig('bidderTimeout'),
       bids,
@@ -138,7 +134,7 @@ export const spec = {
 
     payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
     payload.schain = deepAccess(bidRequests, '0.schain');
-    payload.userId = deepAccess(bidRequests, '0.userId') ? createEidsArray(bidRequests[0].userId) : [];
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

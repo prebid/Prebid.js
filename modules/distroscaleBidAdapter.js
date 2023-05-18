@@ -129,7 +129,26 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    var pageUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || window.location.href;
+    // TODO: does the fallback to window.location make sense?
+    var pageUrl = bidderRequest?.refererInfo?.page || window.location.href;
+
+    // check if dstag is already loaded in ancestry tree
+    var dsloaded = 0;
+    try {
+      var win = window;
+      while (true) {
+        if (win.vx.cs_loaded) {
+          dsloaded = 1;
+        }
+        if (win != win.parent) {
+          win = win.parent;
+        } else {
+          break;
+        }
+      }
+    } catch (error) {
+      // ignore exception
+    }
 
     var payload = {
       id: '' + (new Date()).getTime(),
@@ -148,7 +167,9 @@ export const spec = {
       },
       imp: [],
       user: {},
-      ext: {}
+      ext: {
+        dsloaded: dsloaded
+      }
     };
 
     validBidRequests.forEach(b => {
@@ -197,7 +218,7 @@ export const spec = {
     }
 
     // First Party Data
-    const commonFpd = config.getConfig('ortb2') || {};
+    const commonFpd = bidderRequest.ortb2 || {};
     if (commonFpd.site) {
       mergeDeep(payload, {site: commonFpd.site});
     }

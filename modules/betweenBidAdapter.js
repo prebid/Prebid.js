@@ -1,7 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput } from '../src/utils.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import {includes} from '../src/polyfill.js'
+import {getAdUnitSizes, parseSizesInput} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
@@ -29,7 +28,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     let requests = [];
     const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
-    const refInfo = getRefererInfo();
+    const refInfo = bidderRequest?.refererInfo;
 
     validBidRequests.forEach((i) => {
       const video = i.mediaTypes && i.mediaTypes.video;
@@ -60,9 +59,9 @@ export const spec = {
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
-      if (i.params.cur !== undefined) {
-        params.cur = i.params.cur;
-      }
+
+      params.cur = i.params.cur || 'USD';
+
       if (i.params.subid !== undefined) {
         params.subid = i.params.subid;
       }
@@ -79,7 +78,8 @@ export const spec = {
         params.schain = encodeToBase64WebSafe(JSON.stringify(i.schain));
       }
 
-      if (refInfo && refInfo.referer) params.ref = refInfo.referer;
+      // TODO: is 'page' the right value here?
+      if (refInfo && refInfo.page) params.ref = refInfo.page;
 
       if (gdprConsent) {
         if (typeof gdprConsent.gdprApplies !== 'undefined') {
@@ -90,7 +90,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({data: params});
     })
     return {
       method: 'POST',

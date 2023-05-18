@@ -8,11 +8,12 @@
 import { logError, isPlainObject } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'adriverId';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const adriverIdSubmodule = {
@@ -73,7 +74,8 @@ export const adriverIdSubmodule = {
             callback();
           }
         };
-        ajax(url, callbacks, undefined, {method: 'GET'});
+        let newUrl = url + '&cid=' + (storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid'));
+        ajax(newUrl, callbacks, undefined, {method: 'GET'});
       }
     };
     return {callback: resp};

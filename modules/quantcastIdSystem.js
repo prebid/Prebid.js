@@ -6,9 +6,10 @@
  */
 
 import {submodule} from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const QUANTCAST_FPA = '__qca';
 const DEFAULT_COOKIE_EXP_DAYS = 392; // (13 months - 2 days)
@@ -23,8 +24,9 @@ const QC_TCF_CONSENT_FIRST_PURPOSES = [PURPOSE_DATA_COLLECT];
 const QC_TCF_CONSENT_ONLY_PUPROSES = [PURPOSE_DATA_COLLECT];
 const GDPR_PRIVACY_STRING = gdprDataHandler.getConsentData();
 const US_PRIVACY_STRING = uspDataHandler.getConsentData();
+const MODULE_NAME = 'quantcastId';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 export function firePixel(clientId, cookieExpDays = DEFAULT_COOKIE_EXP_DAYS) {
   // check for presence of Quantcast Measure tag _qevent obj and publisher provided clientID
@@ -74,13 +76,7 @@ export function hasGDPRConsent(gdprConsent) {
     if (!gdprConsent.vendorData) {
       return false;
     }
-    if (gdprConsent.apiVersion === 1) {
-      // We are not supporting TCF v1
-      return false;
-    }
-    if (gdprConsent.apiVersion === 2) {
-      return checkTCFv2(gdprConsent.vendorData);
-    }
+    return checkTCFv2(gdprConsent.vendorData);
   }
   return true;
 }
@@ -166,7 +162,7 @@ export const quantcastIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'quantcastId',
+  name: MODULE_NAME,
 
   /**
    * Vendor id of Quantcast
@@ -217,7 +213,7 @@ export const quantcastIdSubmodule = {
       });
     }
 
-    return { id: fpa ? { quantcastId: fpa } : undefined }
+    return { id: fpa ? { quantcastId: fpa } : undefined };
   }
 };
 

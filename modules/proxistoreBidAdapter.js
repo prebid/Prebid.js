@@ -3,9 +3,9 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'proxistore';
 const PROXISTORE_VENDOR_ID = 418;
-const COOKIE_BASE_URL = 'https://abs.proxistore.com/v3/rtb/prebid/multi';
+const COOKIE_BASE_URL = 'https://api.proxistore.com/v3/rtb/prebid/multi';
 const COOKIE_LESS_URL =
-  'https://abs.cookieless-proxistore.com/v3/rtb/prebid/multi';
+  'https://api.cookieless-proxistore.com/v3/rtb/prebid/multi';
 
 function _createServerRequest(bidRequests, bidderRequest) {
   var sizeIds = [];
@@ -54,10 +54,8 @@ function _createServerRequest(bidRequests, bidderRequest) {
 
     if (gdprConsent.vendorData) {
       var vendorData = gdprConsent.vendorData;
-      var apiVersion = gdprConsent.apiVersion;
 
       if (
-        apiVersion === 2 &&
         vendorData.vendor &&
         vendorData.vendor.consents &&
         typeof vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)] !==
@@ -65,14 +63,6 @@ function _createServerRequest(bidRequests, bidderRequest) {
       ) {
         payload.gdpr.consentGiven =
           !!vendorData.vendor.consents[PROXISTORE_VENDOR_ID.toString(10)];
-      } else if (
-        apiVersion === 1 &&
-        vendorData.vendorConsents &&
-        typeof vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)] !==
-          'undefined'
-      ) {
-        payload.gdpr.consentGiven =
-          !!vendorData.vendorConsents[PROXISTORE_VENDOR_ID.toString(10)];
       }
     }
   }

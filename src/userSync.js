@@ -109,10 +109,7 @@ export function newUserSync(userSyncDependencies) {
     // Randomize the order of the pixels before firing
     // This is to avoid giving any bidder who has registered multiple syncs
     // any preferential treatment and balancing them out
-    shuffle(queue).forEach((sync) => {
-      fn(sync);
-      hasFiredBidder.add(sync[0]);
-    });
+    shuffle(queue).forEach(fn);
   }
 
   /**
@@ -213,6 +210,12 @@ export function newUserSync(userSyncDependencies) {
   };
 
   /**
+   * Mark a bidder as done with its user syncs - no more will be accepted from them in this session.
+   * @param {string} bidderCode
+   */
+  publicApi.bidderDone = hasFiredBidder.add.bind(hasFiredBidder);
+
+  /**
    * @function shouldBidderBeBlocked
    * @summary Check filterSettings logic to determine if the bidder should be prevented from registering their userSync tracker
    * @private
@@ -311,16 +314,20 @@ export function newUserSync(userSyncDependencies) {
       }
     }
     return true;
-  }
+  };
   return publicApi;
 }
 
-const browserSupportsCookies = !isSafariBrowser() && storage.cookiesAreEnabled();
-
-export const userSync = newUserSync({
+export const userSync = newUserSync(Object.defineProperties({
   config: config.getConfig('userSync'),
-  browserSupportsCookies: browserSupportsCookies
-});
+}, {
+  browserSupportsCookies: {
+    get: function() {
+      // call storage lazily to give time for consent data to be available
+      return !isSafariBrowser() && storage.cookiesAreEnabled();
+    }
+  }
+}));
 
 /**
  * @typedef {Object} UserSyncDependencies

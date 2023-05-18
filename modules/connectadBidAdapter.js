@@ -2,8 +2,6 @@ import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../sr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
-import {createEidsArray} from './userId/eids.js';
-
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
@@ -35,9 +33,11 @@ export const spec = {
       placements: [],
       time: Date.now(),
       user: {},
-      url: (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : window.location.href,
-      referrer: window.document.referrer,
-      referrer_info: bidderRequest.refererInfo,
+      // TODO: does the fallback to window.location make sense?
+      url: bidderRequest.refererInfo?.page || window.location.href,
+      referrer: bidderRequest.refererInfo?.ref,
+      // TODO: please do not send internal data structures over the network
+      referrer_info: bidderRequest.refererInfo?.legacy,
       screensize: getScreenSize(),
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       language: navigator.language,
@@ -71,8 +71,8 @@ export const spec = {
     }
 
     // EIDS Support
-    if (validBidRequests[0].userId) {
-      deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+    if (validBidRequests[0].userIdAsEids) {
+      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
     validBidRequests.map(bid => {

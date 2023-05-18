@@ -54,6 +54,59 @@ describe('iasRtdProvider is a RTD provider that', function () {
       const value = iasSubModule.init(config);
       expect(value).to.equal(true);
     });
+    it('returns true with the pubId, keyMappings and adUnitPath params', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {'one-div-id': '/012345/ad/unit/path'}
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
+    it('returns true with the pubId and adUnitPath params with multiple keys', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {
+            'one-div-id': '/012345/ad/unit/path',
+            'another-div-id': '/012345/ad/unit/path',
+            'third-div-id': '/012345/another/ad/unit/path'
+          }
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
+    it('returns true with the pubId and adUnitPath params with empty values', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          },
+          adUnitPath: {
+            'one-div-id': '/012345/ad/unit/path',
+            'another-div-id': '',
+            'third-div-id': ''
+          }
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
   });
   describe('has a method `getBidRequestData` that', function () {
     it('exists', function () {
@@ -73,6 +126,7 @@ describe('iasRtdProvider is a RTD provider that', function () {
       request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
       expect(request.url).to.be.include(`https://pixel.adsafeprotected.com/services/pub?anId=1234`);
+      expect(request.url).to.be.include('url=https%253A%252F%252Fintegralads.com%252Ftest')
       expect(adUnits).to.length(2);
       expect(adUnits[0]).to.be.eq(adUnitsOriginal[0]);
       const targetingKeys = Object.keys(iasTargeting);
@@ -136,6 +190,10 @@ const config = {
     pubId: 1234,
     keyMappings: {
       'id': 'ias_id'
+    },
+    pageUrl: 'https://integralads.com/test',
+    adUnitPath: {
+      'one-div-id': '/012345/ad/unit/path'
     }
   }
 };

@@ -15,23 +15,25 @@ import {
   isFn,
   isInteger,
   isNumber,
+  isArrayOfNums,
   logError,
   logInfo,
   logWarn,
   mergeDeep,
-  parseUrl
+  isStr,
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getRefererInfo} from '../src/refererDetection.js';
-import {createEidsArray} from './userId/eids.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { userSync } from '../src/userSync.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -41,40 +43,39 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
 const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
 const GVLID = 617;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const RENDERER_URL = 'https://script.4dex.io/outstream-player.js';
 const MAX_SESS_DURATION = 30 * 60 * 1000;
 const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation
-// of OpenRTB 2.5 options used by the Adagio SSP.
-// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
+// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
-  'protocols': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].indexOf(v) !== -1),
+  'protocols': (value) => isArrayOfNums(value),
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5].indexOf(v) !== -1),
-  'linearity': (value) => [1, 2].indexOf(value) !== -1,
-  'skip': (value) => [0, 1].indexOf(value) !== -1,
+  'placement': (value) => isInteger(value),
+  'linearity': (value) => isInteger(value),
+  'skip': (value) => isInteger(value),
   'skipmin': (value) => isInteger(value),
   'skipafter': (value) => isInteger(value),
   'sequence': (value) => isInteger(value),
-  'battr': (value) => Array.isArray(value) && value.every(v => Array.from({length: 17}, (_, i) => i + 1).indexOf(v) !== -1),
+  'battr': (value) => isArrayOfNums(value),
   'maxextended': (value) => isInteger(value),
   'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'boxingallowed': (value) => [0, 1].indexOf(value) !== -1,
-  'playbackmethod': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1),
-  'playbackend': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'delivery': (value) => [1, 2, 3].indexOf(value) !== -1,
-  'pos': (value) => [0, 1, 2, 3, 4, 5, 6, 7].indexOf(value) !== -1,
-  'api': (value) => Array.isArray(value) && value.every(v => [1, 2, 3, 4, 5, 6].indexOf(v) !== -1)
+  'boxingallowed': (value) => isInteger(value),
+  'playbackmethod': (value) => isArrayOfNums(value),
+  'playbackend': (value) => isInteger(value),
+  'delivery': (value) => isInteger(value),
+  'pos': (value) => isInteger(value),
+  'api': (value) => isArrayOfNums(value)
 };
 
 let currentWindow;
@@ -269,32 +270,12 @@ function getDevice() {
 };
 
 function getSite(bidderRequest) {
-  let domain = '';
-  let page = '';
-  let referrer = '';
-
   const { refererInfo } = bidderRequest;
-
-  if (canAccessTopWindow()) {
-    const wt = getWindowTop();
-    domain = wt.location.hostname;
-    page = wt.location.href;
-    referrer = wt.document.referrer || '';
-  } else if (refererInfo.reachedTop) {
-    const url = parseUrl(refererInfo.referer);
-    domain = url.hostname;
-    page = refererInfo.referer;
-  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    // important note check if refererInfo.stack[0] is 'thruly' because a `null` value
-    // will be considered as "localhost" by the parseUrl function.
-    const url = parseUrl(refererInfo.stack[0]);
-    domain = url.hostname;
-  }
-
   return {
-    domain,
-    page,
-    referrer
+    domain: parseDomain(refererInfo.topmostLocation) || '',
+    page: refererInfo.topmostLocation || '',
+    referrer: refererInfo.ref || getWindowSelf().document.referrer || '',
+    top: refererInfo.reachedTop
   };
 };
 
@@ -419,8 +400,8 @@ function _getSchain(bidRequest) {
 }
 
 function _getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId);
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
   }
 }
 
@@ -552,7 +533,12 @@ function _parseNativeBidResponse(bid) {
           native.impressionTrackers.push(tracker.url);
           break;
         case 2:
-          native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+          const script = `<script async src=\"${tracker.url}\"></script>`;
+          if (!native.javascriptTrackers) {
+            native.javascriptTrackers = script;
+          } else {
+            native.javascriptTrackers += `\n${script}`;
+          }
           break;
       }
     });
@@ -639,11 +625,20 @@ export function setExtraParam(bid, paramName) {
   }
 
   const adgGlobalConf = config.getConfig('adagio') || {};
-  const ortb2Conf = config.getConfig('ortb2');
+  const ortb2Conf = bid.ortb2;
 
   const detected = adgGlobalConf[paramName] || deepAccess(ortb2Conf, `site.ext.data.${paramName}`, null);
   if (detected) {
-    bid.params[paramName] = detected;
+    // First Party Data can be an array.
+    // As we consider that params detected from FPD are fallbacks, we just keep the 1st value.
+    if (Array.isArray(detected)) {
+      if (detected.length) {
+        bid.params[paramName] = detected[0].toString();
+      }
+      return;
+    }
+
+    bid.params[paramName] = detected.toString();
   }
 }
 
@@ -675,10 +670,8 @@ function autoFillParams(bid) {
   }
 
   // extra params
-  setExtraParam(bid, 'environment');
   setExtraParam(bid, 'pagetype');
   setExtraParam(bid, 'category');
-  setExtraParam(bid, 'subcategory');
 }
 
 function getPageDimensions() {
@@ -767,45 +760,51 @@ function getSlotPosition(adUnitElementId) {
     position.x = Math.round(sfGeom.t);
     position.y = Math.round(sfGeom.l);
   } else if (canAccessTopWindow()) {
-    // window.top based computing
-    const wt = getWindowTop();
-    const d = wt.document;
+    try {
+      // window.top based computing
+      const wt = getWindowTop();
+      const d = wt.document;
 
-    let domElement;
+      let domElement;
 
-    if (inIframe() === true) {
-      const ws = getWindowSelf();
-      const currentElement = ws.document.getElementById(adUnitElementId);
-      domElement = internal.getElementFromTopWindow(currentElement, ws);
-    } else {
-      domElement = wt.document.getElementById(adUnitElementId);
-    }
+      if (inIframe() === true) {
+        const ws = getWindowSelf();
+        const currentElement = ws.document.getElementById(adUnitElementId);
+        domElement = internal.getElementFromTopWindow(currentElement, ws);
+      } else {
+        domElement = wt.document.getElementById(adUnitElementId);
+      }
 
-    if (!domElement) {
+      if (!domElement) {
+        return '';
+      }
+
+      let box = domElement.getBoundingClientRect();
+
+      const docEl = d.documentElement;
+      const body = d.body;
+      const clientTop = d.clientTop || body.clientTop || 0;
+      const clientLeft = d.clientLeft || body.clientLeft || 0;
+      const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
+      const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
+
+      const elComputedStyle = wt.getComputedStyle(domElement, null);
+      const elComputedDisplay = elComputedStyle.display || 'block';
+      const mustDisplayElement = elComputedDisplay === 'none';
+
+      if (mustDisplayElement) {
+        domElement.style = domElement.style || {};
+        const originalDisplay = domElement.style.display;
+        domElement.style.display = 'block';
+        box = domElement.getBoundingClientRect();
+        domElement.style.display = originalDisplay || null;
+      }
+      position.x = Math.round(box.left + scrollLeft - clientLeft);
+      position.y = Math.round(box.top + scrollTop - clientTop);
+    } catch (err) {
+      logError(LOG_PREFIX, err);
       return '';
     }
-
-    let box = domElement.getBoundingClientRect();
-
-    const docEl = d.documentElement;
-    const body = d.body;
-    const clientTop = d.clientTop || body.clientTop || 0;
-    const clientLeft = d.clientLeft || body.clientLeft || 0;
-    const scrollTop = wt.pageYOffset || docEl.scrollTop || body.scrollTop;
-    const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
-
-    const elComputedStyle = wt.getComputedStyle(domElement, null);
-    const elComputedDisplay = elComputedStyle.display || 'block';
-    const mustDisplayElement = elComputedDisplay === 'none';
-
-    if (mustDisplayElement) {
-      domElement.style = domElement.style || {};
-      domElement.style.display = 'block';
-      box = domElement.getBoundingClientRect();
-      domElement.style.display = elComputedDisplay;
-    }
-    position.x = Math.round(box.left + scrollLeft - clientLeft);
-    position.y = Math.round(box.top + scrollTop - clientTop);
   } else {
     return '';
   }
@@ -902,6 +901,9 @@ export const spec = {
   },
 
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const secure = (location.protocol === 'https:') ? 1 : 0;
     const device = internal.getDevice();
     const site = internal.getSite(bidderRequest);
@@ -911,6 +913,8 @@ export const spec = {
     const coppa = _getCoppa();
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
+    const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
+    const usIfr = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
 
     const adUnits = _map(validBidRequests, (bidRequest) => {
       const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
@@ -919,6 +923,46 @@ export const spec = {
         print_number: getPrintNumber(bidRequest.adUnitCode, bidderRequest).toString(),
         adunit_position: getSlotPosition(bidRequest.params.adUnitElementId) // adUnitElementId à déplacer ???
       };
+
+      // Force the Split Keyword to be a String
+      if (bidRequest.params.splitKeyword) {
+        if (isStr(bidRequest.params.splitKeyword) || isNumber(bidRequest.params.splitKeyword)) {
+          bidRequest.params.splitKeyword = bidRequest.params.splitKeyword.toString();
+        } else {
+          delete bidRequest.params.splitKeyword;
+
+          logWarn(LOG_PREFIX, 'The splitKeyword param have been removed because the type is invalid, accepted type: number or string.');
+        }
+      }
+
+      // Force the Data Layer key and value to be a String
+      if (bidRequest.params.dataLayer) {
+        if (isStr(bidRequest.params.dataLayer) || isNumber(bidRequest.params.dataLayer) || isArray(bidRequest.params.dataLayer) || isFn(bidRequest.params.dataLayer)) {
+          logWarn(LOG_PREFIX, 'The dataLayer param is invalid, only object is accepted as a type.');
+          delete bidRequest.params.dataLayer;
+        } else {
+          let invalidDlParam = false;
+
+          bidRequest.params.dl = bidRequest.params.dataLayer
+          // Remove the dataLayer from the BidRequest to send the `dl` instead of the `dataLayer`
+          delete bidRequest.params.dataLayer
+
+          Object.keys(bidRequest.params.dl).forEach((key) => {
+            if (bidRequest.params.dl[key]) {
+              if (isStr(bidRequest.params.dl[key]) || isNumber(bidRequest.params.dl[key])) {
+                bidRequest.params.dl[key] = bidRequest.params.dl[key].toString();
+              } else {
+                invalidDlParam = true;
+                delete bidRequest.params.dl[key];
+              }
+            }
+          });
+
+          if (invalidDlParam) {
+            logWarn(LOG_PREFIX, 'Some parameters of the dataLayer property have been removed because the type is invalid, accepted type: number or string.');
+          }
+        }
+      }
 
       Object.keys(features).forEach((prop) => {
         if (features[prop] === '') {
@@ -996,6 +1040,8 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
+      delete adUnitCopy.userId
+      delete adUnitCopy.userIdAsEids
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
@@ -1027,7 +1073,8 @@ export const spec = {
             eids: eids
           },
           prebidVersion: '$prebid.version$',
-          featuresVersion: FEATURES_VERSION
+          featuresVersion: FEATURES_VERSION,
+          usIfr: usIfr
         },
         options: {
           contentType: 'text/plain'
@@ -1089,8 +1136,6 @@ export const spec = {
               bidObj.placement = bidReq.params.placement;
               bidObj.pagetype = bidReq.params.pagetype;
               bidObj.category = bidReq.params.category;
-              bidObj.subcategory = bidReq.params.subcategory;
-              bidObj.environment = bidReq.params.environment;
             }
             bidResponses.push(bidObj);
           });
@@ -1138,7 +1183,7 @@ export const spec = {
         ...globalFeatures,
         print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
         adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      }
+      };
 
       adagioBid.params.pageviewId = internal.getPageviewId();
       adagioBid.params.prebidVersion = '$prebid.version$';
