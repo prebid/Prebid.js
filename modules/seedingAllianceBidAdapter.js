@@ -3,7 +3,7 @@
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { _map, isArray, isEmpty, deepSetValue, replaceAuctionPrice } from '../src/utils.js';
+import {_map, isArray, isEmpty, deepSetValue, replaceAuctionPrice, generateUUID} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
@@ -110,7 +110,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       site: {
         page: url
       },

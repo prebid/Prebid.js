@@ -1,4 +1,18 @@
-import { deepAccess, isNumber, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {
+  deepAccess,
+  isNumber,
+  getDNT,
+  deepSetValue,
+  logInfo,
+  logError,
+  isEmpty,
+  getAdUnitSizes,
+  fill,
+  chunk,
+  getMaxValueFromArray,
+  getMinValueFromArray,
+  generateUUID
+} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -13,7 +27,7 @@ const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
-    id: bidderRequest.auctionId,
+    id: generateUUID(),
     at: 1,
     cur: [CURRENCY],
     tmax: bidderRequest.timeout,

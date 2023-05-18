@@ -110,7 +110,7 @@ function buildBidRequest(validBidRequest) {
 
   const bidRequest = {
     id: validBidRequest.bidId,
-    transactionId: validBidRequest.transactionId,
+    transactionId: validBidRequest.ortb2Imp?.ext?.tid,
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
