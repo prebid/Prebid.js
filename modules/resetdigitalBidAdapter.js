@@ -1,15 +1,15 @@
-import { timestamp, deepAccess, isStr, deepClone } from "../src/utils.js";
-import { getOrigin } from "../libraries/getOrigin/index.js";
-import { config } from "../src/config.js";
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { BANNER } from "../src/mediaTypes.js";
+import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
+import { config } from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = "resetdigital";
-const CURRENCY = "USD";
+const BIDDER_CODE = 'resetdigital';
+const CURRENCY = 'USD';
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: ["banner", "video", "audio"],
+  supportedMediaTypes: ['banner', 'video', 'audio'],
   isBidRequestValid: function (bid) {
     return !!(bid.params.pubId || bid.params.zoneId);
   },
@@ -20,9 +20,9 @@ export const spec = {
         : [];
 
     let spb =
-      config.getConfig("userSync") &&
-      config.getConfig("userSync").syncsPerBidder
-        ? config.getConfig("userSync").syncsPerBidder
+      config.getConfig('userSync') &&
+      config.getConfig('userSync').syncsPerBidder
+        ? config.getConfig('userSync').syncsPerBidder
         : 5;
 
     const payload = {
@@ -33,7 +33,7 @@ export const spec = {
         iframe: !bidderRequest.refererInfo.reachedTop,
         // TODO: the last element in refererInfo.stack is window.location.href, that's unlikely to have been the intent here
         url: stack && stack.length > 0 ? [stack.length - 1] : null,
-        https: window.location.protocol === "https:",
+        https: window.location.protocol === 'https:',
         // TODO: is 'page' the right value here?
         referrer: bidderRequest.refererInfo.page,
       },
@@ -55,11 +55,11 @@ export const spec = {
 
     function getOrtb2Keywords(ortb2Obj) {
       const fields = [
-        "site.keywords",
-        "site.content.keywords",
-        "user.keywords",
-        "app.keywords",
-        "app.content.keywords",
+        'site.keywords',
+        'site.content.keywords',
+        'user.keywords',
+        'app.keywords',
+        'app.content.keywords',
       ];
       let result = [];
 
@@ -74,9 +74,9 @@ export const spec = {
     let ortb2 = deepClone(bidderRequest && bidderRequest.ortb2);
     let ortb2KeywordsList = getOrtb2Keywords(ortb2);
     // get meta keywords data (if it exists)
-    let metaKeywords = document.getElementsByTagName("meta")["keywords"];
+    let metaKeywords = document.getElementsByTagName('meta')['keywords'];
     if (metaKeywords && metaKeywords.content) {
-      metaKeywords = metaKeywords.content.split(",");
+      metaKeywords = metaKeywords.content.split(',');
     }
 
     for (let x = 0; x < validBidRequests.length; x++) {
@@ -85,14 +85,14 @@ export const spec = {
       let bidFloor = req.params.bidFloor ? req.params.bidFloor : null;
       let bidFloorCur = req.params.bidFloor ? req.params.bidFloorCur : null;
 
-      if (typeof req.getFloor === "function") {
+      if (typeof req.getFloor === 'function') {
         const floorInfo = req.getFloor({
           currency: CURRENCY,
           mediaType: BANNER,
-          size: "*",
+          size: '*',
         });
         if (
-          typeof floorInfo === "object" &&
+          typeof floorInfo === 'object' &&
           floorInfo.currency === CURRENCY &&
           !isNaN(parseFloat(floorInfo.floor))
         ) {
@@ -103,7 +103,7 @@ export const spec = {
 
       // get param kewords (if it exists)
       let paramsKeywords = req.params.keywords
-        ? req.params.keywords.split(",")
+        ? req.params.keywords.split(',')
         : [];
       // merge all keywords
       let keywords = ortb2KeywordsList
@@ -120,21 +120,21 @@ export const spec = {
         lat_long: req.params.latLong ? req.params.latLong : null,
         inventory: req.params.inventory ? req.params.inventory : null,
         visitor: req.params.visitor ? req.params.visitor : null,
-        keywords: keywords.join(","),
+        keywords: keywords.join(','),
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,
-        coppa: config.getConfig("coppa") === true ? 1 : 0,
-        media_types: deepAccess(req, "mediaTypes"),
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        media_types: deepAccess(req, 'mediaTypes'),
       });
     }
 
     let params = validBidRequests[0].params;
-    let url = params.endpoint ? params.endpoint : "//ads.resetsrv.com";
+    let url = params.endpoint ? params.endpoint : '//ads.resetsrv.com';
     return {
-      method: "POST",
+      method: 'POST',
       url: url,
       data: JSON.stringify(payload),
       bids: validBidRequests,
@@ -167,7 +167,7 @@ export const spec = {
         creativeId: bid.crid,
         dealId: bid.deal_id,
         netRevenue: true,
-        currency: "USD",
+        currency: 'USD',
         meta: {
           advertiserDomains: bid.adomain,
         },
@@ -190,7 +190,7 @@ export const spec = {
 
     let gdprParams = null;
     if (gdprConsent) {
-      if (typeof gdprConsent.gdprApplies === "boolean") {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
         gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
           gdprConsent.consentString
         }`;
@@ -203,11 +203,11 @@ export const spec = {
       let pixel = pixels[x];
 
       if (
-        (pixel.type === "iframe" && syncOptions.iframeEnabled) ||
-        (pixel.type === "image" && syncOptions.pixelEnabled)
+        (pixel.type === 'iframe' && syncOptions.iframeEnabled) ||
+        (pixel.type === 'image' && syncOptions.pixelEnabled)
       ) {
         if (gdprParams && gdprParams.length) {
-          pixel = (pixel.indexOf("?") === -1 ? "?" : "&") + gdprParams;
+          pixel = (pixel.indexOf('?') === -1 ? '?' : '&') + gdprParams;
         }
         syncs.push(pixel);
       }
