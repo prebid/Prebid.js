@@ -3,7 +3,6 @@ import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
 import {server} from '../../mocks/xhr';
 import {parseQS, parseUrl} from 'src/utils.js';
 import {uspDataHandler} from 'src/adapterManager.js';
-import {Obj} from '../../../libraries/ortb2.5StrictTranslator/dsl';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 
