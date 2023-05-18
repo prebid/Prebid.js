@@ -1,31 +1,26 @@
-import {addSegmentData, getSegmentsAndCategories, sirdataSubmodule, setBidderOrtb2} from 'modules/sirdataRtdProvider.js';
+import {addSegmentData, getSegmentsAndCategories, sirdataSubmodule} from 'modules/sirdataRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
 
 describe('sirdataRtdProvider', function () {
   describe('sirdataSubmodule', function () {
-    it('exists', function () {
-      expect(sirdataSubmodule.init).to.be.a('function');
-    });
     it('successfully instantiates', function () {
       expect(sirdataSubmodule.init()).to.equal(true);
-    });
-    it('has the correct module name', function () {
-      expect(sirdataSubmodule.name).to.equal('SirdataRTDModule');
     });
   });
 
   describe('Add Segment Data', function () {
     it('adds segment data', function () {
-      const firstConfig = {
+      const config = {
         params: {
-          partnerId: 1,
-          key: 1,
-          setGptKeyValues: true,
-          gptCurationId: 27449,
+          setGptKeyValues: false,
           contextualMinRelevancyScore: 50,
-          bidders: []
+          bidders: [{
+            bidder: 'appnexus'
+          }, {
+            bidder: 'other'
+          }]
         }
       };
 
@@ -42,47 +37,21 @@ describe('sirdataRtdProvider', function () {
         }
       ];
 
-      let firstReqBidsConfigObj = {
-        adUnits: adUnits,
-        ortb2Fragments: {
-          global: {}
-        }
-      };
-
-      let firstData = {
+      let data = {
         segments: [111111, 222222],
-        contextual_categories: {'333333': 100},
-        'segtaxid': null,
-        'cattaxid': null,
-        'shared_taxonomy': {
-          '27449': {
-            'segments': [444444, 555555],
-            'segtaxid': null,
-            'cattaxid': null,
-            'contextual_categories': {'666666': 100}
-          }
-        },
-        'global_taxonomy': {
-          '9998': {
-            'segments': [123, 234],
-            'segtaxid': 4,
-            'cattaxid': 7,
-            'contextual_categories': {'345': 100, '456': 100}
-          }
-        }
+        contextual_categories: {'333333': 100}
       };
 
-      addSegmentData(firstReqBidsConfigObj, firstData, firstConfig, () => {
+      addSegmentData({adUnits}, data, config, () => {
       });
-
-      expect(firstReqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
+      expect(adUnits[0].bids[0].params.keywords).to.have.deep.property('sd_rtd', ['111111', '222222', '333333']);
     });
   });
 
   describe('Get Segments And Categories', function () {
     it('gets data from async request and adds segment data', function () {
       const overrideAppnexus = function (adUnit, list, data, bid) {
-        deepSetValue(bid, 'params.keywords.custom', list.segments.concat(list.categories));
+        deepSetValue(bid, 'params.keywords.custom', list);
       }
 
       const config = {
@@ -91,21 +60,16 @@ describe('sirdataRtdProvider', function () {
           contextualMinRelevancyScore: 50,
           bidders: [{
             bidder: 'appnexus',
-            customFunction: overrideAppnexus,
-            curationId: 27446
+            customFunction: overrideAppnexus
           }, {
-            bidder: 'smartadserver',
-            curationId: 27440
+            bidder: 'smartadserver'
           }, {
             bidder: 'ix',
             sizeLimit: 1200,
-            curationId: 27248
           }, {
             bidder: 'rubicon',
-            curationId: 27452
           }, {
             bidder: 'proxistore',
-            curationId: 27484
           }]
         }
       };
@@ -182,12 +146,6 @@ describe('sirdataRtdProvider', function () {
             'segtaxid': 552,
             'cattaxid': 553,
             'contextual_categories': {'666666': 100}
-          },
-          '27446': {
-            'segments': [777777, 888888],
-            'segtaxid': 552,
-            'cattaxid': 553,
-            'contextual_categories': {'999999': 100}
           }
         },
         'global_taxonomy': {
@@ -206,6 +164,8 @@ describe('sirdataRtdProvider', function () {
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));
 
+      expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.have.deep.property('target', 'sd_rtd=111111;sd_rtd=222222;sd_rtd=333333;sd_rtd=444444;sd_rtd=555555;sd_rtd=666666');
+
       expect(reqBidsConfigObj.ortb2Fragments.global.site.content.data[0].name).to.equal(
         'sirdata.com'
       );
@@ -223,59 +183,6 @@ describe('sirdataRtdProvider', function () {
         {id: '234'}
       ]);
       expect(reqBidsConfigObj.ortb2Fragments.global.user.data[0].ext.segtax).to.equal(4);
-    });
-  });
-
-  describe('Set ortb2 for bidder', function () {
-    it('set ortb2 for a givent bidder', function () {
-      const config = {
-        params: {
-          setGptKeyValues: false,
-          contextualMinRelevancyScore: 50,
-          bidders: [{
-            bidder: 'appnexus',
-          }]
-        }
-      };
-
-      let reqBidsConfigObj = {
-        adUnits: [{
-          bids: [{
-            bidder: 'appnexus',
-            params: {
-              placementId: 13144370
-            }
-          }]
-        }],
-        ortb2Fragments: {
-          global: {}
-        }
-      };
-
-      let data = {
-        'segments': [111111, 222222],
-        'segtaxid': null,
-        'cattaxid': null,
-        'contextual_categories': {'333333': 100},
-        'shared_taxonomy': {
-          '27440': {
-            'segments': [444444, 555555],
-            'segtaxid': null,
-            'cattaxid': null,
-            'contextual_categories': {'666666': 100}
-          }
-        },
-        'global_taxonomy': {}
-      };
-
-      window.googletag = window.googletag || {};
-      window.googletag.cmd = window.googletag.cmd || [];
-
-      let test = setBidderOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', []);
-      expect(test).to.be.false;
-
-      test = setBidderOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', ['1']);
-      expect(test).to.be.true;
     });
   });
 });
