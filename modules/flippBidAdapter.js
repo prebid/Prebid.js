@@ -103,6 +103,10 @@ export const spec = {
     const contentCode = urlParams['flipp-content-code'];
     const userKey = getUserKey(validBidRequests[0]?.params);
     const placements = validBidRequests.map((bid, index) => {
+      const options = bid.params.options || {};
+      if (!options.hasOwnProperty('startCompact')) {
+        options.startCompact = true;
+      }
       return {
         divName: TARGET_NAME,
         networkId: NETWORK_ID,
@@ -113,7 +117,7 @@ export const spec = {
         properties: {
           ...(!isEmpty(contentCode) && {contentCode: contentCode.slice(0, 32)}),
         },
-        options: bid.params.options,
+        options,
         prebid: {
           requestId: bid.bidId,
           publisherNameIdentifier: bid.params.publisherNameIdentifier,
