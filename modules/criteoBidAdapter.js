@@ -438,6 +438,11 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (deepAccess(bidRequest, 'ortb2Imp.ext')) {
         slot.ext = bidRequest.ortb2Imp.ext;
       }
+
+      if (deepAccess(bidRequest, 'ortb2Imp.rwdd')) {
+        slot.rwdd = bidRequest.ortb2Imp.rwdd;
+      }
+
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }

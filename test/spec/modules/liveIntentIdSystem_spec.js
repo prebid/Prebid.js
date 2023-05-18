@@ -100,6 +100,23 @@ describe('LiveIntentId', function() {
     }, 200);
   });
 
+  it('should fire an event with the provided distributorId', function (done) {
+    liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111' } });
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*did=did-1111.*&wpn=prebid.*/);
+      done();
+    }, 200);
+  });
+
+  it('should fire an event without the provided distributorId when appId is provided', function (done) {
+    liveIntentIdSubmodule.decode({}, { params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } });
+    setTimeout(() => {
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
+      expect(server.requests[0].url).to.not.match(/.*did=*/);
+      done();
+    }, 200);
+  });
+
   it('should initialize LiveConnect and emit an event with a privacy string when decode', function(done) {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
@@ -155,6 +172,34 @@ describe('LiveIntentId', function() {
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq('https://dummy.liveintent.com/idex/prebid/89899?resolve=nonId');
+    request.respond(
+      204,
+      responseHeader
+    );
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
+  });
+
+  it('should call the Identity Exchange endpoint with the privided distributorId', function() {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111' } }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/did-1111/any?did=did-1111&resolve=nonId');
+    request.respond(
+      204,
+      responseHeader
+    );
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
+  });
+
+  it('should call the Identity Exchange endpoint without the privided distributorId when appId is provided', function() {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/any?resolve=nonId');
     request.respond(
       204,
       responseHeader
