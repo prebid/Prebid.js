@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, generateUUID, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -114,7 +114,7 @@ export const spec = {
     });
 
     let payload = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       cur: [DEFAULT_CUR],
       imp: imps,
       site: params.site ? params.site : {},

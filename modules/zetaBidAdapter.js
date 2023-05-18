@@ -1,4 +1,4 @@
-import { logWarn, deepAccess } from '../src/utils.js';
+import {logWarn, deepAccess, generateUUID} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
@@ -71,7 +71,7 @@ export const spec = {
       banner: buildBanner(request)
     };
     let payload = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       imp: [impData],
       site: params.site ? params.site : {},
       app: params.app ? params.app : {},

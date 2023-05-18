@@ -461,6 +461,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < Payload Ext
 
   // > Payload
+  // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
   payload.id = validBidRequests.auctionId;
   payload.test = deepAccess(validBidRequests, 'params.test') ? 1 : 0;
   payload.at = 1;

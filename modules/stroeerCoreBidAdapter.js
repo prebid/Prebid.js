@@ -49,6 +49,7 @@ export const spec = {
     const refererInfo = bidderRequest.refererInfo;
 
     const basePayload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: bidderRequest.auctionId,
       ref: refererInfo.ref,
       ssl: isSecureWindow(),

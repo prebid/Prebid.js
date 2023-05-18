@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
+import {deepAccess, generateUUID, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 
@@ -120,7 +120,7 @@ export const spec = {
     };
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       imp: imps,
       site,
       device,
