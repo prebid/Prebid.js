@@ -312,6 +312,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.lt = lt;
     data.to = to;
 
+    // ADJS-1286 Read id5 id linktype field
+    if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
+      data.id5Id = userId.id5id.uid || null
+      data.id5IdLinkType = userId.id5id.ext.linkType || null
+    }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;
 
