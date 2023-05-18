@@ -53,7 +53,8 @@ describe('33acrossBidAdapter:', function () {
             brand: 'macOS',
             version: ['11', '6', '8']
           },
-          model: ''
+          model: '',
+          mobile: 0
         }
       },
       id: 'r1',
@@ -337,7 +338,7 @@ describe('33acrossBidAdapter:', function () {
                 version: ['11', '6', '8']
               },
               model: '',
-              mobile: false
+              mobile: 0
             }
           }
         }
@@ -369,7 +370,7 @@ describe('33acrossBidAdapter:', function () {
                 version: ['11', '6', '8']
               },
               model: '',
-              mobile: false
+              mobile: 0
             }
           }
         },

@@ -149,6 +149,9 @@ export const CONVERTER = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
+      source: {
+
+      },
       ext: {
         improvedigital: {
           sdk: {

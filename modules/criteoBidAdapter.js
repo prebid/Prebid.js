@@ -230,6 +230,9 @@ export const spec = {
         if (slot.adomain) {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
+        if (slot.ext?.meta?.networkName) {
+          bid.meta = Object.assign({}, bid.meta, {networkName: slot.ext.meta.networkName})
+        }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
             bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -407,6 +410,7 @@ function checkNativeSendId(bidRequest) {
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
+  let userIdAsEids;
   const request = {
     publisher: {
       url: context.url,
@@ -418,6 +422,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
+      if (!userIdAsEids) {
+        userIdAsEids = bidRequest.userIdAsEids;
+      }
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
       const slot = {
@@ -432,11 +439,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (deepAccess(bidRequest, 'ortb2Imp.ext')) {
         slot.ext = bidRequest.ortb2Imp.ext;
       }
+
+      if (deepAccess(bidRequest, 'ortb2Imp.rwdd')) {
+        slot.rwdd = bidRequest.ortb2Imp.rwdd;
+      }
+
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }
       if (bidRequest.nativeOrtbRequest?.assets) {
-        slot.ext = Object.assign({}, slot.ext, {assets: bidRequest.nativeOrtbRequest.assets});
+        slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
@@ -516,6 +528,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
     request.user.ext = request.user.ext || {};
     request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
+  }
+  if (userIdAsEids) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.eids = [...userIdAsEids];
   }
   return request;
 }

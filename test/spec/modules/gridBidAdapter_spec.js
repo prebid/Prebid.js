@@ -447,6 +447,7 @@ describe('TheMediaGrid Adapter', function () {
               api: [1, 2],
               skip: 1,
               placement: 1,
+              plcmt: 2,
               minduration: 0,
               playbackmethod: 1,
               startdelay: 0
@@ -510,6 +511,7 @@ describe('TheMediaGrid Adapter', function () {
             'api': [1, 2],
             'skip': 1,
             'placement': 1,
+            'plcmt': 2,
             'playbackmethod': 1,
             'startdelay': 0
           }
@@ -565,6 +567,7 @@ describe('TheMediaGrid Adapter', function () {
             ],
             'minduration': 0,
             'placement': 1,
+            'plcmt': 2,
             'playbackmethod': 1,
             'playersizes': [
               '400x600'

@@ -982,6 +982,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay
         };
+        if ('plcmt' in bidRequest.mediaTypes.video) {
+          video.plcmt = bidRequest.mediaTypes.video.plcmt;
+        }
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
           video.skip = video.skip || paramsVideo.skip || 0;

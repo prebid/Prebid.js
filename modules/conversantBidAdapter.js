@@ -30,7 +30,7 @@ const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['cnvr'], // short code
+  aliases: ['cnvr', 'epsilon'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

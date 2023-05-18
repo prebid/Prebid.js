@@ -435,6 +435,43 @@ pbjs.setConfig({
             }
         });
 ```
+
+Notes: The first party site info is filtered and only the following specific keys are allowed in the bidRequests:
+
+| Field                       | Type   |
+|-----------------------------|--------|
+| site.name                   | String |
+| site.domain                 | String |
+| site.page                   | String |
+| site.ref                    | String |
+| site.keywords               | String |
+| site.search                 | String |
+| site.cat                    | Array  |
+| site.sectioncat             | Array  |
+| site.pagecat                | Array  |
+| site.ext                    | Object |
+| site.publisher.ext          | Object |
+| site.content.id             | String |
+| site.content.title          | String |
+| site.content.series         | String |
+| site.content.season         | String |
+| site.content.genre          | String |
+| site.content.contentrating  | String |
+| site.content.language       | String |
+| site.content.episode        | Number |
+| site.content.prodq          | Number |
+| site.content.context        | Number |
+| site.content.livestream     | Number |
+| site.content.len            | Number |
+| site.content.cat            | Array  |
+| site.content.ext            | Object |
+| site.content.data           | Array  |
+| site.content.data[].id      | String |
+| site.content.data[].name    | String |
+| site.content.data[].segment | Array  |
+| site.content.data[].ext     | Object |
+
+
 ### Passing First Party "user" data:
 ```javascript
 pbjs.setConfig({

@@ -382,7 +382,7 @@ export const spec = {
       ozoneRequestSingle.auctionId = imp.ext[whitelabelBidder].transactionId; // not sure if this should be here?
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
-      deepSetValue(ozoneRequestSingle, 'source.tid', imp.ext[whitelabelBidder].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(ozoneRequestSingle, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', ozoneRequestSingle);
       return {

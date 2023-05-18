@@ -100,7 +100,7 @@ function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs
 
   // build source
   const source = {
-    tid: validBidRequest.transactionId,
+    tid: validBidRequest.auctionId,
     fd: 1,
   }
 

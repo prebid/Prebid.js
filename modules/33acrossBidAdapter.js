@@ -764,7 +764,7 @@ function _buildDeviceORTB(device = {}) {
   }
 
   if (device.sua) {
-    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
   }
 
   return deviceProps;
