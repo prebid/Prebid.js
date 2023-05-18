@@ -10,10 +10,12 @@ import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 const gvlid = 91;
 const bidderCode = 'criteo';
-export const storage = getStorageManager({ gvlid: gvlid, moduleName: bidderCode });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: bidderCode });
 
 const bididStorageKey = 'cto_bidid';
 const bundleStorageKey = 'cto_bundle';
@@ -76,16 +78,32 @@ function getCriteoDataFromAllStorages() {
   }
 }
 
-function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent, gdprString) {
-  const url = 'https://gum.criteo.com/sid/json?origin=prebid' +
+function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
+  let url = 'https://gum.criteo.com/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +
     `${dnaBundle ? '&info=' + encodeURIComponent(dnaBundle) : ''}` +
-    `${gdprString ? '&gdprString=' + encodeURIComponent(gdprString) : ''}` +
     `${areCookiesWriteable ? '&cw=1' : ''}` +
     `${isPublishertagPresent ? '&pbt=1' : ''}` +
     `${isLocalStorageWritable ? '&lsw=1' : ''}`;
+
+  const usPrivacyString = uspDataHandler.getConsentData();
+  if (usPrivacyString) {
+    url = url + `&us_privacy=${encodeURIComponent(usPrivacyString)}`;
+  }
+
+  const gdprConsent = gdprDataHandler.getConsentData()
+  if (gdprConsent) {
+    url = url + `${gdprConsent.consentString ? '&gdprString=' + encodeURIComponent(gdprConsent.consentString) : ''}`;
+    url = url + `&gdpr=${gdprConsent.gdprApplies === true ? 1 : 0}`;
+  }
+
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    url = url + `${gppConsent.gppString ? '&gpp=' + encodeURIComponent(gppConsent.gppString) : ''}`;
+    url = url + `${gppConsent.applicableSections ? '&gpp_sid=' + encodeURIComponent(gppConsent.applicableSections) : ''}`;
+  }
 
   return url;
 }
@@ -102,6 +120,9 @@ function callSyncPixel(domain, pixel) {
               saveOnAllStorages(pixel.storageKeyName, jsonResponse[pixel.bundlePropertyName], domain);
             }
           }
+        },
+        error: error => {
+          logError(`criteoIdSystem: unable to sync user id`, error);
         }
       },
       undefined,
@@ -112,7 +133,7 @@ function callSyncPixel(domain, pixel) {
   }
 }
 
-function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
+function callCriteoUserSync(parsedCriteoData, callback) {
   const cw = storage.cookiesAreEnabled();
   const lsw = storage.localStorageIsEnabled();
   const topUrl = extractProtocolHost(getRefererInfo().page);
@@ -127,8 +148,7 @@ function callCriteoUserSync(parsedCriteoData, gdprString, callback) {
     parsedCriteoData.dnaBundle,
     cw,
     lsw,
-    isPublishertagPresent,
-    gdprString
+    isPublishertagPresent
   );
 
   const callbacks = {
@@ -187,13 +207,10 @@ export const criteoIdSubmodule = {
    * @param {ConsentData} [consentData]
    * @returns {{id: {criteoId: string} | undefined}}}
    */
-  getId(config, consentData) {
-    const hasGdprData = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
-    const gdprConsentString = hasGdprData ? consentData.consentString : undefined;
-
+  getId() {
     let localData = getCriteoDataFromAllStorages();
 
-    const result = (callback) => callCriteoUserSync(localData, gdprConsentString, callback);
+    const result = (callback) => callCriteoUserSync(localData, callback);
 
     return {
       id: localData.bidId ? { criteoId: localData.bidId } : undefined,

@@ -1,4 +1,4 @@
-import pubmaticAnalyticsAdapter from 'modules/pubmaticAnalyticsAdapter.js';
+import pubmaticAnalyticsAdapter, { getMetadata } from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -371,7 +371,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
       expect(data.s[0].ps).to.be.an('array');
-      expect(data.s[0].ps.length).to.equal(1);
+	  expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
+	  expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bc).to.equal('pubmatic');
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
@@ -481,6 +482,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
       expect(data.s[0].ps).to.be.an('array');
+	  expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bc).to.equal('pubmatic');
@@ -553,6 +555,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].sz).to.deep.equal(['640x480']);
       expect(data.s[0].ps).to.be.an('array');
       expect(data.s[0].ps.length).to.equal(1);
+	  expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bc).to.equal('pubmatic');
       expect(data.s[0].ps[0].bidid).to.equal('2ecff0db240757');
@@ -1029,6 +1032,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
       expect(data.s[0].ps).to.be.an('array');
+	  expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bc).to.equal('pubmatic_alias');
@@ -1147,6 +1151,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].fskp).to.equal(0);
       expect(data.s[0].sz).to.deep.equal(['640x480']);
       expect(data.s[0].ps).to.be.an('array');
+	  expect(data.s[0].au).to.equal('/19968336/header-bid-tag-0');
       expect(data.s[0].ps.length).to.equal(1);
       expect(data.s[0].ps[0].pn).to.equal('pubmatic');
       expect(data.s[0].ps[0].bc).to.equal('groupm');
@@ -1217,6 +1222,61 @@ describe('pubmatic analytics adapter', function () {
       expect(data.eg).to.equal('1.23');
       expect(data.en).to.equal('1.23');
       expect(data.piid).to.equal('partnerImpressionID-1');
+    });
+  });
+
+  describe('Get Metadata function', function () {
+    it('should get the metadata object', function () {
+      const meta = {
+        networkId: 'nwid',
+        advertiserId: 'adid',
+        networkName: 'nwnm',
+        primaryCatId: 'pcid',
+        advertiserName: 'adnm',
+        agencyId: 'agid',
+        agencyName: 'agnm',
+        brandId: 'brid',
+        brandName: 'brnm',
+        dchain: 'dc',
+        demandSource: 'ds',
+        secondaryCatIds: ['secondaryCatIds']
+      };
+      const metadataObj = getMetadata(meta);
+
+      expect(metadataObj.nwid).to.equal('nwid');
+      expect(metadataObj.adid).to.equal('adid');
+      expect(metadataObj.nwnm).to.equal('nwnm');
+      expect(metadataObj.pcid).to.equal('pcid');
+      expect(metadataObj.adnm).to.equal('adnm');
+      expect(metadataObj.agid).to.equal('agid');
+      expect(metadataObj.agnm).to.equal('agnm');
+      expect(metadataObj.brid).to.equal('brid');
+      expect(metadataObj.brnm).to.equal('brnm');
+      expect(metadataObj.dc).to.equal('dc');
+      expect(metadataObj.ds).to.equal('ds');
+      expect(metadataObj.scids).to.be.an('array').with.length.above(0);
+      expect(metadataObj.scids[0]).to.equal('secondaryCatIds');
+    });
+
+    it('should return undefined if meta is null', function () {
+      const meta = null;
+      const metadataObj = getMetadata(meta);
+      expect(metadataObj).to.equal(undefined);
+    });
+
+    it('should return undefined if meta is a empty object', function () {
+      const meta = {};
+      const metadataObj = getMetadata(meta);
+      expect(metadataObj).to.equal(undefined);
+    });
+
+    it('should return undefined if meta object has different properties', function () {
+      const meta = {
+        a: 123,
+        b: 456
+      };
+      const metadataObj = getMetadata(meta);
+      expect(metadataObj).to.equal(undefined);
     });
   });
 });
