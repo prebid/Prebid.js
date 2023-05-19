@@ -1,8 +1,18 @@
 import {deepAccess, isEmpty, isStr, logWarn, parseSizesInput} from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { Renderer } from '../src/Renderer.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory').UserSync} UserSync
+ * @typedef {import('../src/auction').BidderRequest} BidderRequest
+ */
 
 /**
  * @typedef {import('../src/adapters/bidderFactory').Bid} Bid
@@ -53,7 +63,7 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const transactionId = bidRequest.transactionId;
       const unitCode = bidRequest.adUnitCode;
-      const timeout = config.getConfig('bidderTimeout');
+      const timeout = bidderRequest.timeout;
       const language = window.navigator.language;
       const screenSize = window.screen.width + 'x' + window.screen.height;
       const payload = {
@@ -147,7 +157,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         referrer: referrer,
         meta: {
           advertiserDomains: response.adomain ? response.adomain : []

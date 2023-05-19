@@ -94,6 +94,7 @@ import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {createBid} from './bidfactory.js';
 import {adjustCpm} from './utils/cpm.js';
+import {getGlobal} from './prebidGlobal.js';
 
 const { syncUsers } = userSync;
 
@@ -110,6 +111,8 @@ const MAX_REQUESTS_PER_ORIGIN = 4;
 const outstandingRequests = {};
 const sourceInfo = {};
 const queuedCalls = [];
+
+const pbjsInstance = getGlobal();
 
 /**
  * Clear global state for tests
@@ -216,7 +219,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
             const bids = _bidsReceived
               .filter(bind.call(adUnitsFilter, this, adUnitCodes))
               .reduce(groupByPlacement, {});
-            _callback.apply($$PREBID_GLOBAL$$, [bids, timedOut, _auctionId]);
+            _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;
           }
         } catch (e) {
@@ -473,7 +476,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
 
-      if (bidResponse.mediaType === VIDEO) {
+      if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
         if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
@@ -620,7 +623,7 @@ const addLegacyFieldsIfNeeded = (bidResponse) => {
   }
 }
 
-const storeInCache = (batch) => {
+const _storeInCache = (batch) => {
   store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
@@ -646,6 +649,8 @@ const storeInCache = (batch) => {
     });
   });
 };
+
+const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {};
 
 let batchSize, batchTimeout;
 config.getConfig('cache', (cacheConfig) => {
@@ -782,7 +787,7 @@ function setupBidTargeting(bidObject) {
  */
 export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGranularity) {
   if (mediaType && mediaTypePriceGranularity) {
-    if (mediaType === VIDEO) {
+    if (FEATURES.VIDEO && mediaType === VIDEO) {
       const context = deepAccess(mediaTypes, `${VIDEO}.context`, 'instream');
       if (mediaTypePriceGranularity[`${VIDEO}-${context}`]) {
         return mediaTypePriceGranularity[`${VIDEO}-${context}`];
@@ -891,7 +896,7 @@ export function getStandardBidderSettings(mediaType, bidderCode) {
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
   }
 
-  if (mediaType === 'video') {
+  if (FEATURES.VIDEO && mediaType === 'video') {
     const adserverTargeting = standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING].slice();
     standardSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING] = adserverTargeting;
 

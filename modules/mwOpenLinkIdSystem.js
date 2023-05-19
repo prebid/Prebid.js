@@ -8,14 +8,15 @@
 import { timestamp, logError, deepClone, generateUUID, isPlainObject } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const openLinkID = {
   name: 'mwol',
   cookie_expiration: (86400 * 1000 * 365 * 1) // 1 year
 }
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: openLinkID.name});
 
 function getExpirationDate() {
   return (new Date(timestamp() + openLinkID.cookie_expiration)).toGMTString();

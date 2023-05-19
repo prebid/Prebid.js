@@ -2,19 +2,28 @@ import { getBidIdParameter, tryAppendQueryString, createTrackPixelHtml, logError
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const BIDDER_CODE = 'aja';
+const BidderCode = 'aja';
 const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
-const SDK_TYPE = 5;
-const AD_TYPE = {
-  BANNER: 1,
-  NATIVE: 2,
-  VIDEO: 3,
+const SDKType = 5;
+const AdType = {
+  Banner: 1,
+  Native: 2,
+  Video: 3,
 };
 
+const BannerSizeMap = {
+  '970x250': 1,
+  '300x250': 2,
+  '320x50': 3,
+  '728x90': 4,
+  '320x100': 6,
+  '336x280': 31,
+  '300x600': 32,
+}
+
 export const spec = {
-  code: BIDDER_CODE,
+  code: BidderCode,
   supportedMediaTypes: [VIDEO, BANNER, NATIVE],
 
   /**
@@ -36,9 +45,6 @@ export const spec = {
    * @returns {ServerRequest|ServerRequest[]}
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-
     const bidRequests = [];
     const pageUrl = bidderRequest?.refererInfo?.page || undefined;
 
@@ -48,7 +54,7 @@ export const spec = {
 
       const asi = getBidIdParameter('asi', bidRequest.params);
       queryString = tryAppendQueryString(queryString, 'asi', asi);
-      queryString = tryAppendQueryString(queryString, 'skt', SDK_TYPE);
+      queryString = tryAppendQueryString(queryString, 'skt', SDKType);
       queryString = tryAppendQueryString(queryString, 'tid', bidRequest.transactionId)
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
@@ -57,11 +63,32 @@ export const spec = {
         queryString = tryAppendQueryString(queryString, 'page_url', pageUrl);
       }
 
+      const banner = deepAccess(bidRequest, `mediaTypes.${BANNER}`)
+      if (banner) {
+        const adFormatIDs = [];
+        for (const size of banner.sizes || []) {
+          if (size.length !== 2) {
+            continue
+          }
+
+          const adFormatID = BannerSizeMap[`${size[0]}x${size[1]}`];
+          if (adFormatID) {
+            adFormatIDs.push(adFormatID);
+          }
+        }
+        queryString = tryAppendQueryString(queryString, 'ad_format_ids', adFormatIDs.join(','));
+      }
+
       const eids = bidRequest.userIdAsEids;
       if (eids && eids.length) {
         queryString = tryAppendQueryString(queryString, 'eids', JSON.stringify({
           'eids': eids,
-        }))
+        }));
+      }
+
+      const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+      if (sua) {
+        queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
       }
 
       const sua = deepAccess(bidRequest, 'ortb2.device.sua');
@@ -101,7 +128,7 @@ export const spec = {
       },
     }
 
-    if (AD_TYPE.VIDEO === ad.ad_type) {
+    if (AdType.Video === ad.ad_type) {
       const videoAd = bidderResponseBody.ad.video;
       Object.assign(bid, {
         vastXml: videoAd.vtag,
@@ -113,7 +140,7 @@ export const spec = {
       });
 
       Array.prototype.push.apply(bid.meta.advertiserDomains, videoAd.adomain)
-    } else if (AD_TYPE.BANNER === ad.ad_type) {
+    } else if (AdType.Banner === ad.ad_type) {
       const bannerAd = bidderResponseBody.ad.banner;
       Object.assign(bid, {
         width: bannerAd.w,
@@ -131,7 +158,7 @@ export const spec = {
       }
 
       Array.prototype.push.apply(bid.meta.advertiserDomains, bannerAd.adomain)
-    } else if (AD_TYPE.NATIVE === ad.ad_type) {
+    } else if (AdType.Native === ad.ad_type) {
       const nativeAds = ad.native.template_and_ads.ads;
       if (nativeAds.length === 0) {
         return [];

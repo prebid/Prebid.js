@@ -1,14 +1,31 @@
-import { _each, deepAccess, isPlainObject, isArray, isStr, logInfo, parseUrl, isEmpty, triggerPixel, logWarn, getBidIdParameter, isFn, isNumber } from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  isPlainObject,
+  isArray,
+  isStr,
+  logInfo,
+  parseUrl,
+  isEmpty,
+  triggerPixel,
+  logWarn,
+  getBidIdParameter,
+  isFn,
+  isNumber,
+  isBoolean,
+  isInteger, deepSetValue,
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
 
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';
 const BIDDER_CODE = 'mgid';
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ENDPOINT_URL = 'https://prebid.mgid.com/prebid/';
 const LOG_WARN_PREFIX = '[MGID warn]: ';
 const LOG_INFO_PREFIX = '[MGID info]: ';
@@ -64,7 +81,7 @@ _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAs
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.5',
+  VERSION: '1.6',
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
@@ -115,22 +132,19 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {BidRequest[]} validBidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-
+    const [bidRequest] = validBidRequests;
     logInfo(LOG_INFO_PREFIX + `buildRequests`);
     if (validBidRequests.length === 0) {
       return;
     }
     const info = pageInfo();
-    // TODO: the fallback seems to never be used here, and probably in the wrong order
-    const page = info.location || deepAccess(bidderRequest, 'refererInfo.page')
-    const hostname = parseUrl(page).hostname;
-    let domain = extractDomainFromHost(hostname) || hostname;
     const accountId = setOnAny(validBidRequests, 'params.accountId');
     const muid = getLocalStorageSafely('mgMuidn');
     let url = (setOnAny(validBidRequests, 'params.bidUrl') || ENDPOINT_URL) + accountId;
@@ -182,31 +196,108 @@ export const spec = {
 
     let request = {
       id: deepAccess(bidderRequest, 'bidderRequestId'),
-      site: {domain, page},
+      site: ortb2Data?.site || {},
       cur: [cur],
       geo: {utcoffset: info.timeOffset},
-      device: {
-        ua: navigator.userAgent,
-        js: 1,
-        dnt: (navigator.doNotTrack === 'yes' || navigator.doNotTrack === '1' || navigator.msDoNotTrack === '1') ? 1 : 0,
-        h: screen.height,
-        w: screen.width,
-        language: getLanguage()
-      },
+      device: ortb2Data?.device || {},
       ext: {
         mgid_ver: spec.VERSION,
         prebid_ver: '$prebid.version$',
-        ...ortb2Data
       },
-      imp
+      imp,
+      tmax: bidderRequest?.timeout || config.getConfig('bidderTimeout') || 500,
     };
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      request.user = {ext: {consent: bidderRequest.gdprConsent.consentString}};
-      request.regs = {ext: {gdpr: (bidderRequest.gdprConsent.gdprApplies ? 1 : 0)}}
+    // request level
+    const bcat = ortb2Data?.bcat || bidRequest?.params?.bcat || [];
+    const badv = ortb2Data?.badv || bidRequest?.params?.badv || [];
+    const wlang = ortb2Data?.wlang || bidRequest?.params?.wlang || [];
+    if (bcat.length > 0) {
+      request.bcat = bcat;
     }
-    if (info.referrer) {
-      request.site.ref = info.referrer
+    if (badv.length > 0) {
+      request.badv = badv;
     }
+    if (wlang.length > 0) {
+      request.wlang = wlang;
+    }
+    // site level
+    const page = deepAccess(bidderRequest, 'refererInfo.page') || info.location
+    if (!isStr(deepAccess(request.site, 'domain'))) {
+      const hostname = parseUrl(page).hostname;
+      request.site.domain = extractDomainFromHost(hostname) || hostname
+    }
+    if (!isStr(deepAccess(request.site, 'page'))) {
+      request.site.page = page
+    }
+    if (!isStr(deepAccess(request.site, 'ref'))) {
+      const ref = deepAccess(bidderRequest, 'refererInfo.ref') || info.referrer;
+      if (ref) {
+        request.site.ref = ref
+      }
+    }
+    // device level
+    if (!isStr(deepAccess(request.device, 'ua'))) {
+      request.device.ua = navigator.userAgent;
+    }
+    request.device.js = 1;
+    if (!isInteger(deepAccess(request.device, 'dnt'))) {
+      request.device.dnt = (navigator?.doNotTrack === 'yes' || navigator?.doNotTrack === '1' || navigator?.msDoNotTrack === '1') ? 1 : 0;
+    }
+    if (!isInteger(deepAccess(request.device, 'h'))) {
+      request.device.h = screen.height;
+    }
+    if (!isInteger(deepAccess(request.device, 'w'))) {
+      request.device.w = screen.width;
+    }
+    if (!isStr(deepAccess(request.device, 'language'))) {
+      request.device.language = getLanguage();
+    }
+    // user & regs & privacy
+    if (isPlainObject(ortb2Data?.user)) {
+      request.user = ortb2Data.user;
+    }
+    if (isPlainObject(ortb2Data?.regs)) {
+      request.regs = ortb2Data.regs;
+    }
+    if (bidderRequest && isPlainObject(bidderRequest.gdprConsent)) {
+      if (!isStr(deepAccess(request.user, 'ext.consent'))) {
+        deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent?.consentString);
+      }
+      if (!isBoolean(deepAccess(request.regs, 'ext.gdpr'))) {
+        deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent?.gdprApplies ? 1 : 0);
+      }
+    }
+    const userId = deepAccess(bidderRequest, 'userId')
+    if (isStr(userId)) {
+      deepSetValue(request, 'user.id', userId);
+    }
+    const eids = setOnAny(validBidRequests, 'userIdAsEids')
+    if (eids && eids.length > 0) {
+      deepSetValue(request, 'user.ext.eids', eids);
+    }
+    if (bidderRequest && isStr(bidderRequest.uspConsent)) {
+      if (!isBoolean(deepAccess(request.regs, 'ext.us_privacy'))) {
+        deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+    }
+    if (bidderRequest && isPlainObject(bidderRequest.gppConsent)) {
+      if (!isStr(deepAccess(request.regs, 'gpp'))) {
+        deepSetValue(request, 'regs.gpp', bidderRequest.gppConsent?.gppString);
+      }
+      if (!isArray(deepAccess(request.regs, 'gpp_sid'))) {
+        deepSetValue(request, 'regs.gpp_sid', bidderRequest.gppConsent?.applicableSections);
+      }
+    }
+    if (config.getConfig('coppa')) {
+      if (!isInteger(deepAccess(request.regs, 'coppa'))) {
+        deepSetValue(request, 'regs.coppa', 1);
+      }
+    }
+    const schain = setOnAny(validBidRequests, 'schain');
+    if (schain) {
+      deepSetValue(request, 'source.ext.schain', schain);
+    }
+
     logInfo(LOG_INFO_PREFIX + `buildRequest:`, request);
     return {
       method: 'POST',
@@ -218,6 +309,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param bidRequests
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, bidRequests) => {
@@ -268,8 +360,66 @@ export const spec = {
     }
     logInfo(LOG_INFO_PREFIX + `onBidWon`);
   },
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     logInfo(LOG_INFO_PREFIX + `getUserSyncs`);
+    const spb = isPlainObject(config.getConfig('userSync')) &&
+        isNumber(config.getConfig('userSync').syncsPerBidder)
+      ? config.getConfig('userSync').syncsPerBidder : USERSYNC_DEFAULT_CONFIG.syncsPerBidder;
+
+    if (spb > 0 && isPlainObject(syncOptions) && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
+      let pixels = [];
+      if (serverResponses &&
+        isArray(serverResponses) &&
+        serverResponses.length > 0 &&
+        isPlainObject(serverResponses[0].body) &&
+        isPlainObject(serverResponses[0].body.ext) &&
+        isArray(serverResponses[0].body.ext.cm) &&
+        serverResponses[0].body.ext.cm.length > 0) {
+        pixels = serverResponses[0].body.ext.cm;
+      }
+
+      const syncs = [];
+      const query = [];
+      query.push('cbuster=' + Math.round(new Date().getTime()));
+      query.push('consentData=' + encodeURIComponent(isPlainObject(gdprConsent) && isStr(gdprConsent?.consentString) ? gdprConsent.consentString : ''));
+      if (isPlainObject(gdprConsent) && typeof gdprConsent?.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
+        query.push('gdprApplies=1');
+      } else {
+        query.push('gdprApplies=0');
+      }
+      if (isPlainObject(uspConsent) && uspConsent?.consentString) {
+        query.push(`uspString=${encodeURIComponent(uspConsent?.consentString)}`);
+      }
+      if (isPlainObject(gppConsent) && gppConsent?.gppString) {
+        query.push(`gppString=${encodeURIComponent(gppConsent?.gppString)}`);
+      }
+      if (config.getConfig('coppa')) {
+        query.push('coppa=1')
+      }
+      if (syncOptions.iframeEnabled) {
+        syncs.push({
+          type: 'iframe',
+          url: 'https://cm.mgid.com/i.html?' + query.join('&')
+        });
+      } else if (syncOptions.pixelEnabled) {
+        if (pixels.length === 0) {
+          for (let i = 0; i < spb; i++) {
+            syncs.push({
+              type: 'image',
+              url: 'https://cm.mgid.com/i.gif?' + query.join('&') // randomly selects partner if sync required
+            });
+          }
+        } else {
+          for (let i = 0; i < spb && i < pixels.length; i++) {
+            syncs.push({
+              type: 'image',
+              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + query.join('&')
+            });
+          }
+        }
+      }
+      return syncs;
+    }
   }
 };
 
@@ -287,6 +437,7 @@ function setOnAny(collection, key) {
 /**
  * Unpack the Server's Bid into a Prebid-compatible one.
  * @param serverBid
+ * @param cur
  * @return Bid
  */
 function prebidBid(serverBid, cur) {
@@ -330,7 +481,7 @@ function setMediaType(bid, newBid) {
 }
 
 function extractDomainFromHost(pageHost) {
-  if (pageHost == 'localhost') {
+  if (pageHost === 'localhost') {
     return 'localhost'
   }
   let domain = null;
@@ -600,6 +751,7 @@ function pageInfo() {
  * Get the floor price from bid.params for backward compatibility.
  * If not found, then check floor module.
  * @param bid A valid bid object
+ * @param cur
  * @returns {*|number} floor price
  */
 function getBidFloor(bid, cur) {

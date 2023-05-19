@@ -61,6 +61,8 @@ Below, the list of Adagio params and where they can be set.
 | debug                          |               | x             |
 | video                          |               | x             |
 | native                         |               | x             |
+| splitKeyword                   |               | x             |
+| dataLayer                      |               | x             |
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 
@@ -90,7 +92,6 @@ pbjs.setConfig({
 ```
 
 #### Ad-unit configuration
-
 ```javascript
 var adUnits = [
   {
@@ -116,6 +117,10 @@ var adUnits = [
           context: 1,
           plcmttype: 2
         },
+        splitKeyword: 'splitrule-one',
+        dl: {
+          placement: '1234'
+        }
       }
     }]
   }
