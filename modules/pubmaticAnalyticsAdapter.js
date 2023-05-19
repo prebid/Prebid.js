@@ -264,6 +264,10 @@ function isEmptyObject(object) {
   return isObject(object) && Object.keys(object).length === 0;
 };
 
+function isS2SBidder(bidder) {
+  return (s2sBidders.indexOf(bidder) > -1) ? 1 : 0;
+}
+
 /**
  * Prepare meta object to pass in logger call
  * @param {*} meta
@@ -309,7 +313,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
-        'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
+        'ss': isS2SBidder(bid.bidder),
         't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
         'wb': (highestBid && highestBid.adId === bid.adId ? 1 : 0),
         'mi': bid.bidResponse ? bid.bidResponse.mi : (window.matchedimpressions && window.matchedimpressions[bid.bidder]),
@@ -357,6 +361,14 @@ function getPSL(auctionId) {
   return pslTime;
 }
 
+function getTgid() {
+  var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+  if (testGroupId <= 15 && testGroupId >= 0) {
+    return testGroupId;
+  }
+  return 0;
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   const HOSTNAME = window.location.host;
   const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
@@ -389,13 +401,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['bm'] = window.PWT && window.PWT.browserMapping;
   outputObj['ih'] = identityOnly;
-  outputObj['tgid'] = (function() {
-    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
-    if (testGroupId <= 15 && testGroupId >= 0) {
-      return testGroupId;
-    }
-    return 0;
-  })();
+  outputObj['tgid'] = getTgid();
 
   outputObj['tpv'] = frequencyDepth?.pageView;
   outputObj['trc'] = frequencyDepth?.slotCnt;
@@ -452,9 +458,14 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   const generatedBidId = winningBid.bidResponse && winningBid.bidResponse.prebidBidId;
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId);
   var origAdUnitId = origAdUnit.adUnitId || adUnitId;
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
+  let floorData = cache.auctions[auctionId].floorData;
+  let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
+  let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
+
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
-  pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
+  pixelURL += '&purl=' + enc(referrer);
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
   pixelURL += '&iid=' + enc(auctionId);
   pixelURL += '&bidid=' + (generatedBidId ? enc(generatedBidId) : enc(winningBidId));
@@ -470,6 +481,16 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
+
+  pixelURL += '&plt=' + enc(getDevicePlatform());
+  pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x'
+    + (winningBid?.bidResponse?.dimensions?.height || '0'));
+  pixelURL += '&tgid=' + enc(getTgid());
+  adv && (pixelURL += '&adv=' + enc(adv));
+  pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
+  pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
+  (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
+  pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
 
   ajax(
     pixelURL,
