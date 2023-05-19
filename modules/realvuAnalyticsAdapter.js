@@ -2,9 +2,12 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { logMessage, logError } from '../src/utils.js';
-const storage = getStorageManager();
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+const MODULE_CODE = 'realvuAnalytics';
+
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 let realvuAnalyticsAdapter = adapter({
   global: 'realvuAnalytics',
@@ -967,7 +970,7 @@ realvuAnalyticsAdapter.disableAnalytics = function () {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: realvuAnalyticsAdapter,
-  code: 'realvuAnalytics'
+  code: MODULE_CODE,
 });
 
 export default realvuAnalyticsAdapter;
