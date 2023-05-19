@@ -1,7 +1,7 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { mergeDeep } from '../../src/utils.js';
+import { mergeDeep, logWarn } from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
@@ -20,7 +20,7 @@ import { videoCoreFactory } from './coreVideo.js';
 import { gamSubmoduleFactory } from './gamAdServerSubmodule.js';
 import { videoImpressionVerifierFactory } from './videoImpressionVerifier.js';
 import { AdQueueCoordinator } from './adQueue.js';
-import { getExternalVideoEventName } from '../../libraries/video/shared/helpers.js'
+import { getExternalVideoEventName, getExternalVideoEventPayload } from '../../libraries/video/shared/helpers.js'
 
 const allVideoEvents = Object.keys(videoEvents).map(eventKey => videoEvents[eventKey]);
 events.addEvents(allVideoEvents.concat([AUCTION_AD_LOAD_ATTEMPT, AUCTION_AD_LOAD_QUEUED, AUCTION_AD_LOAD_ABORT, BID_IMPRESSION, BID_ERROR]).map(getExternalVideoEventName));
@@ -54,7 +54,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         adQueueCoordinator.registerProvider(divId);
         videoCore.initProvider(divId);
         videoCore.onEvents(videoEvents, (type, payload) => {
-          pbEvents.emit(getExternalVideoEventName(type), payload);
+          pbEvents.emit(getExternalVideoEventName(type), getExternalVideoEventPayload(type, payload));
         }, divId);
 
         const adServerConfig = provider.adServer;
@@ -145,6 +145,10 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       video.context = ortbVideo.placement === PLACEMENT.INSTREAM ? 'instream' : 'outstream';
     }
 
+    if (!video.plcmt) {
+      logWarn('Video.plcmt has not been set. Failure to set a value may result in loss of bids');
+    }
+
     const width = ortbVideo.w;
     const height = ortbVideo.h;
     if (!video.playerSize && width && height) {
@@ -199,7 +203,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const highestCpmBids = pbGlobal.getHighestCpmBids(adUnitCode);
     if (!highestCpmBids.length) {
-      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), options);
+      pbEvents.emit(getExternalVideoEventName(AUCTION_AD_LOAD_ABORT), getExternalVideoEventPayload(AUCTION_AD_LOAD_ABORT, options));
       return;
     }
 
@@ -223,7 +227,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     pbGlobal.markWinningBidAsUsed(bid);
-    pbEvents.emit(getExternalVideoEventName(eventName), { bid, adEvent: adEventPayload });
+    pbEvents.emit(getExternalVideoEventName(eventName), getExternalVideoEventPayload(eventName, { bid, adEvent: adEventPayload }));
   }
 
   function getBid(adPayload) {

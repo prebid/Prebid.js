@@ -212,7 +212,7 @@ describe('YieldmoAdapter', function () {
         expect(data.hasOwnProperty('h')).to.be.true;
         expect(data.hasOwnProperty('w')).to.be.true;
         expect(data.hasOwnProperty('pubcid')).to.be.true;
-        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":"","gpp":"","gpp_sid":""}');
+        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":"","gpp":"","gpp_sid":[]}');
         expect(data.us_privacy).to.equal('');
       });
 
@@ -263,7 +263,7 @@ describe('YieldmoAdapter', function () {
             gdprApplies: true,
             cmp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
             gpp: '',
-            gpp_sid: '',
+            gpp_sid: [],
           })
         );
       });
