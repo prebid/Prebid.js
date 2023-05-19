@@ -95,10 +95,10 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
   context.s2sBidRequest.ad_units.forEach(adUnit => {
     const videoParams = deepAccess(adUnit, 'mediaTypes.video');
     const bannerParams = deepAccess(adUnit, 'mediaTypes.banner');
-    const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
-    if (nativeParams) {
-      logWarn('OW server side dose not support native media types');
-    }
+    // const nativeParams = processNativeAdUnitParams(deepAccess(adUnit, 'mediaTypes.native'));
+    // if (nativeParams) {
+    //   logWarn('OW server side dose not support native media types');
+    // }
 
     if (bannerParams && bannerParams.sizes) {
       // when profile is for banner delete macros from extPrebid object.
