@@ -340,6 +340,7 @@ export const spec = {
       var timeInMillis = new Date().getTime();
       var keyCode = hashcode(zone + '' + timeInMillis);
       var bidfloor = getBidFloor(currentBidRequest, config);
+      var format = currentBidRequest.params.format;
 
       var requestParams = {
         reqType: 'AdsSetup',
@@ -435,8 +436,12 @@ export const spec = {
 
       // Add video context and placement in requestParams
       if (currentBidRequest.mediaTypes.video) {
-        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : 'instream';
-        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : 1;
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
+        if (format == 'inbanner') {
+          videoPlacement = 2;
+          videoContext = 'In-Banner';
+        }
         requestParams.video_context = videoContext;
         requestParams.video_placement = videoPlacement;
       }
