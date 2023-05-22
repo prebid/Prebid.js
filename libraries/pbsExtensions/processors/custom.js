@@ -1,6 +1,5 @@
 import adapterManager from '../../../src/adapterManager.js';
-import {deepAccess, timestamp, isEmpty, isPlainObject, getParameterByName, logWarn} from '../../../src/utils.js';
-import {processNativeAdUnitParams} from '../../../src/native.js';
+import {deepAccess, timestamp, isEmpty, isPlainObject, getParameterByName} from '../../../src/utils.js';
 
 let defaultAliases = {
   adg: 'adgeneration',

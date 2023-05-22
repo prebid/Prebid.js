@@ -1,5 +1,5 @@
 import { _each, pick, logWarn, isStr, isArray, logError, isFn } from '../src/utils.js';
-import { default as adapter , setDebounceDelay } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { default as adapter, setDebounceDelay } from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
@@ -483,8 +483,8 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&rf=' + enc(origAdUnit?.pubmaticAutoRefresh?.isRefreshed ? 1 : 0);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
-  pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x'
-    + (winningBid?.bidResponse?.dimensions?.height || '0'));
+  pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
+    (winningBid?.bidResponse?.dimensions?.height || '0'));
   pixelURL += '&tgid=' + enc(getTgid());
   adv && (pixelURL += '&adv=' + enc(adv));
   pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
@@ -567,7 +567,7 @@ function bidResponseHandler(args) {
   bid.bidResponse = parseBidResponse(args);
 }
 
-function bidderDoneHandler(args) { 
+function bidderDoneHandler(args) {
   cache.auctions[args.auctionId].bidderDonePendingCount--;
   args.bids.forEach(bid => {
     let cachedBid = cache.auctions[bid.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId || bid.requestId];
