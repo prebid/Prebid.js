@@ -874,6 +874,17 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[CONSTANTS.TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
+      it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
+        let hasBid = false;
+        const eventHandler = function(bid) {
+          const storedBid = auction.getBidsReceived().pop();
+          hasBid = storedBid === bid;
+        }
+        events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler);
+        auction.callBids();
+        events.off(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler);
+        assert.ok(hasBid, 'Bid not available');
+      });
 
       describe('install publisher-defined renderers', () => {
         Object.entries({
