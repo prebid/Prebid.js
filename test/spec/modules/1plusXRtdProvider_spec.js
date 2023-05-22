@@ -454,7 +454,7 @@ describe('1plusXRtdProvider', () => {
     }
 
     it('sets the config for the selected bidders', () => {
-      const bidders = ['appnexus', 'rubicon'];
+      const bidders = ['rubicon'];
       // setting initial config for those bidders
       config.setBidderConfig({
         bidders,
