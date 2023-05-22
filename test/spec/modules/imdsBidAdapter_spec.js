@@ -178,7 +178,7 @@ describe('imdsBidAdapter ', function () {
     };
 
     let bidderRequest = {
-      auctionId: 'xyz123',
+      bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       }
@@ -193,7 +193,7 @@ describe('imdsBidAdapter ', function () {
     };
 
     let bidderRequestWithCCPA = {
-      auctionId: 'xyz123',
+      bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       },
@@ -281,14 +281,6 @@ describe('imdsBidAdapter ', function () {
       tagid: '1234',
       bidfloor: 0.5
     };
-
-    beforeEach(() => {
-      sinon.stub(utils, 'generateUUID').returns(bidderRequest.auctionId);
-    });
-
-    afterEach(() => {
-      utils.generateUUID.restore();
-    });
 
     it('should return valid request when valid bids are used', function () {
       // banner test

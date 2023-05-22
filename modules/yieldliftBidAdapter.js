@@ -1,4 +1,4 @@
-import {deepSetValue, logInfo, deepAccess, generateUUID} from '../src/utils.js';
+import {deepAccess, deepSetValue, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -41,7 +41,7 @@ export const spec = {
     }));
 
     const openrtbRequest = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
         domain: bidderRequest.refererInfo?.domain,

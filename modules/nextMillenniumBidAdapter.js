@@ -1,25 +1,25 @@
 import {
-  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
-  isStr,
-  getWindowTop,
   getBidIdParameter,
+  getDefinedParams,
+  getWindowTop,
+  isArray,
+  isStr,
   logMessage,
+  parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
-  getDefinedParams,
-  parseGPTSingleSizeArrayToRtbSize, generateUUID,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -69,7 +69,7 @@ export const spec = {
       const device = getDeviceObj();
 
       const postBody = {
-        'id': generateUUID(),
+        'id': bidderRequest?.bidderRequestId,
         'ext': {
           'prebid': {
             'storedrequest': {

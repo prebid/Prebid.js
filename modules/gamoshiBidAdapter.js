@@ -1,6 +1,6 @@
 import {
   deepAccess,
-  deepSetValue, generateUUID,
+  deepSetValue,
   getDNT,
   inIframe,
   isArray,
@@ -84,7 +84,7 @@ export const spec = {
       const baseEndpoint = params['rtbEndpoint'] || ENDPOINTS['gamoshi'];
       const rtbEndpoint = `${baseEndpoint}/r/${params.supplyPartnerId}/bidr?rformat=open_rtb&reqformat=rtb_json&bidder=prebid` + (params.query ? '&' + params.query : '');
       const rtbBidRequest = {
-        id: generateUUID(),
+        id: bidderRequest.bidderRequestId,
         site: {
           domain: bidderRequest.refererInfo.domain,
           page: bidderRequest.refererInfo.page,

@@ -1,7 +1,7 @@
-import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
+import {deepAccess, deepSetValue, generateUUID} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -41,7 +41,7 @@ const getFloor = (bid) => {
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
   let request = {
-    id: generateUUID(),
+    id: bidderRequest.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],

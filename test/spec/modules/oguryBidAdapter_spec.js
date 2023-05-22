@@ -62,20 +62,10 @@ describe('OguryBidAdapter', function () {
   ];
 
   bidderRequest = {
+    bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
-
-  let sandbox;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-    sandbox.stub(utils, 'generateUUID').returns('mock-uuid');
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-  })
 
   describe('isBidRequestValid', function () {
     it('should validate correct bid', () => {

@@ -155,7 +155,7 @@ describe('Adf adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'id,site,device,source,ext,imp'.split(',');
+      let keys = 'site,device,source,ext,imp'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: { siteId: 'siteId' }

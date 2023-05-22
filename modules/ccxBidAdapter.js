@@ -1,4 +1,4 @@
-import {_each, deepAccess, generateUUID, isArray, isEmpty, logWarn} from '../src/utils.js';
+import {_each, deepAccess, isArray, isEmpty, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -178,7 +178,7 @@ export const spec = {
       requestBody.imp = []
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
-      requestBody.id = generateUUID()
+      requestBody.id = bidderRequest.bidderRequestId;
       requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
 
       // Attaching GDPR Consent Params

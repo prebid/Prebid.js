@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepSetValue, mergeDeep, parseSizesInput, deepClone, generateUUID} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 
@@ -139,7 +139,7 @@ export const spec = {
     });
 
     const request = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       site,
       app,
       user,

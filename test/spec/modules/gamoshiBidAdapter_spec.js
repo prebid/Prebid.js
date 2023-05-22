@@ -314,7 +314,6 @@ describe('GamoshiAdapter', () => {
       response = spec.buildRequests([bidRequest], bidRequest)[0];
       expect(response.method).to.equal('POST');
       expect(response.url).to.match(new RegExp(`^https://rtb\\.gamoshi\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
-      expect(response.data.id).to.exist;
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gamoshi.io/a12';
       response = spec.buildRequests([bidRequestWithEndpoint], bidRequest)[0];

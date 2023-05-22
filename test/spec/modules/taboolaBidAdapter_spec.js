@@ -9,7 +9,6 @@ describe('Taboola Adapter', function () {
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    sandbox.stub(utils, 'generateUUID').returns('mock-uuid')
     hasLocalStorage = sandbox.stub(userData.storageManager, 'hasLocalStorage');
     cookiesAreEnabled = sandbox.stub(userData.storageManager, 'cookiesAreEnabled');
     getCookie = sandbox.stub(userData.storageManager, 'getCookie');
@@ -121,6 +120,7 @@ describe('Taboola Adapter', function () {
     }
 
     const commonBidderRequest = {
+      bidderRequestId: 'mock-uuid',
       refererInfo: {
         page: 'https://example.com/ref',
         ref: 'https://ref',

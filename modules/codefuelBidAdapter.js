@@ -1,4 +1,4 @@
-import {deepAccess, generateUUID, isArray} from '../src/utils.js';
+import {deepAccess, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -58,7 +58,7 @@ export const spec = {
     });
 
     const request = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       site: { page, domain, publisher },
       device: { ua, devicetype },
       source: { fd: 1 },

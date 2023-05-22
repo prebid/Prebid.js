@@ -1,4 +1,4 @@
-import {generateUUID, isNumber, logWarn} from '../src/utils.js';
+import {isNumber, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -49,7 +49,7 @@ export const spec = {
     return ret;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest);
+    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest, bidderRequest);
     let payload = aux.payload;
     return {
       method: 'POST',
@@ -71,7 +71,7 @@ export const spec = {
   }
 };
 
-function parseRequestPrebidjsToOpenRTB(prebidRequest) {
+function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   let ret = {
     payload: {},
     partnerId: null
@@ -81,7 +81,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   let domain = window.location.hostname;
   let secure = (window.location.protocol == 'https:' ? 1 : 0);
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
-  openRTBRequest.id = generateUUID();
+  openRTBRequest.id = bidderRequest.bidderRequestId;
   openRTBRequest.ext = {
     // TODO: please do not send internal data structures over the network
     refererInfo: prebidRequest.refererInfo.legacy,

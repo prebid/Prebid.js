@@ -1,11 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE } from '../src/mediaTypes.js';
-import {_map, deepSetValue, isEmpty, deepAccess, generateUUID} from '../src/utils.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {NATIVE} from '../src/mediaTypes.js';
+import {_map, deepAccess, deepSetValue, isEmpty} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'finative';
 const DEFAULT_CUR = 'EUR';
@@ -116,7 +116,7 @@ export const spec = {
     });
 
     const request = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       site: {
         page: url
       },

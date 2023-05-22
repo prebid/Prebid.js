@@ -173,7 +173,7 @@ describe('nextMillenniumBidAdapterTests', function() {
   });
 
   it('validate_generated_params', function() {
-    const request = spec.buildRequests(bidRequestData);
+    const request = spec.buildRequests(bidRequestData, {bidderRequestId: 'mock-uuid'});
     expect(request[0].bidId).to.equal('bid1234');
     expect(JSON.parse(request[0].data).id).to.exist;
   });

@@ -139,14 +139,11 @@ describe('pubGENIUS adapter', () => {
       });
     });
 
-    let sandbox = null;
     let bidRequest = null;
     let bidderRequest = null;
     let expectedRequest = null;
 
     beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'generateUUID').returns('fake-uuid')
       bidRequest = {
         adUnitCode: 'test-div',
         auctionId: 'fake-auction-id',
@@ -179,7 +176,7 @@ describe('pubGENIUS adapter', () => {
         method: 'POST',
         url: 'https://auction.adpearl.io/prebid/auction',
         data: {
-          id: 'fake-uuid',
+          id: 'fakebidderrequestid',
           imp: [
             {
               id: 'fakebidid',
@@ -205,10 +202,6 @@ describe('pubGENIUS adapter', () => {
         coppa: undefined,
       });
     });
-
-    afterEach(() => {
-      sandbox.restore();
-    })
 
     it('should build basic requests correctly', () => {
       expect(buildRequests([bidRequest], bidderRequest)).to.deep.equal(expectedRequest);

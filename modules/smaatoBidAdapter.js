@@ -1,22 +1,21 @@
 import {
-  deepAccess,
-  isNumber,
-  getDNT,
-  deepSetValue,
-  logInfo,
-  logError,
-  isEmpty,
-  getAdUnitSizes,
-  fill,
   chunk,
+  deepAccess,
+  deepSetValue,
+  fill,
+  getAdUnitSizes,
+  getDNT,
   getMaxValueFromArray,
   getMinValueFromArray,
-  generateUUID
+  isEmpty,
+  isNumber,
+  logError,
+  logInfo
 } from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
 
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
@@ -27,7 +26,7 @@ const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
-    id: generateUUID(),
+    id: bidderRequest.bidderRequestId,
     at: 1,
     cur: [CURRENCY],
     tmax: bidderRequest.timeout,

@@ -1,10 +1,11 @@
-import {getWindowTop, isGptPubadsDefined, deepAccess, getAdUnitSizes, isEmpty, generateUUID} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {deepAccess, getAdUnitSizes, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 
 const NATIVE_ID_MAP = {};
@@ -401,7 +402,7 @@ export const spec = {
       method: 'POST',
       url: `https://${host}/openrtb/?sid=${sourceId}`,
       data: {
-        id: generateUUID(),
+        id: bidderRequest.bidderRequestId,
         imp: imps,
         site: site,
         device: device

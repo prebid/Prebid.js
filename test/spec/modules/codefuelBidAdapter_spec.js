@@ -145,6 +145,7 @@ describe('Codefuel Adapter', function () {
 
       const commonBidderRequest = {
         timeout: 500,
+        bidderRequestId: 'mock-uuid',
         auctionId: '12043683-3254-4f74-8934-f941b085579e',
         refererInfo: {
           page: 'https://example.com/',
@@ -157,7 +158,6 @@ describe('Codefuel Adapter', function () {
           ...commonBidRequest,
           ...displayBidRequestParams,
         }
-        sandbox.stub(utils, 'generateUUID').returns('mock-uuid')
         const expectedData = {
           cur: [
             'USD'

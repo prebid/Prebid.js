@@ -1,10 +1,10 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {
   deepAccess,
-  deepSetValue, generateUUID,
+  deepSetValue,
   inIframe,
   isArrayOfNums,
   isFn,
@@ -41,7 +41,7 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const data = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       imp: bidRequests.map(buildImp),
       tmax: bidderRequest.timeout,
       ext: {

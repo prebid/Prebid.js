@@ -1,7 +1,7 @@
-import {generateUUID, logInfo} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {BANNER} from '../src/mediaTypes.js'
-import {ajax} from '../src/ajax.js'
+import {logInfo} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER = 'automatad'
 
@@ -57,7 +57,7 @@ export const spec = {
 
     // params from bid request
     const openrtbRequest = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
         id: siteId,

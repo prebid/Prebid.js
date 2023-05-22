@@ -5,11 +5,10 @@ import {
   deepSetValue,
   getDNT,
   isBoolean,
-  isStr,
   isNumber,
+  isStr,
   logError,
-  logInfo,
-  generateUUID
+  logInfo
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -214,7 +213,7 @@ function getMediaType(bidRequest) {
 function getPrebidRequestFields(bidderRequest, bidRequests) {
   const payload = {};
   // Base Payload Data
-  deepSetValue(payload, 'id', generateUUID());
+  deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
   // Impressions
   setPrebidImpressionObject(bidRequests, payload);
   // Device

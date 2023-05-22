@@ -66,16 +66,6 @@ describe('Outbrain Adapter', function () {
       }
     }
 
-    let sandbox;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(utils, 'generateUUID').returns('mock-uuid');
-    });
-
-    afterEach(() => {
-      sandbox.restore();
-    })
-
     describe('isBidRequestValid', function () {
       before(() => {
         config.setConfig({
@@ -238,6 +228,7 @@ describe('Outbrain Adapter', function () {
       })
 
       const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
         refererInfo: {
           page: 'https://example.com/'
         }

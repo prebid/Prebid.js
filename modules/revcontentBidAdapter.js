@@ -2,18 +2,10 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import {
-  triggerPixel,
-  isFn,
-  deepAccess,
-  getAdUnitSizes,
-  parseGPTSingleSizeArrayToRtbSize,
-  _map,
-  generateUUID
-} from '../src/utils.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {_map, deepAccess, getAdUnitSizes, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel} from '../src/utils.js';
 import {parseDomain} from '../src/refererDetection.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -73,7 +65,7 @@ export const spec = {
     const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
     let data = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       imp: imp,
       site: {
         id: widgetId,

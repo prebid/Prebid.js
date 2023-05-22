@@ -5,7 +5,6 @@ import {
   _map,
   createTrackPixelHtml,
   deepAccess,
-  generateUUID,
   isFn,
   isNumber,
   logError,
@@ -37,7 +36,7 @@ function isBidRequestValid(bid) {
 function buildRequests(validBidRequests, bidderRequest) {
   /** == shared ==**/
   // -- build id
-  const id = generateUUID();
+  const id = bidderRequest.bidderRequestId;
 
   // -- build site
   const publisherId = setOnAny(validBidRequests, 'params.publisherId');

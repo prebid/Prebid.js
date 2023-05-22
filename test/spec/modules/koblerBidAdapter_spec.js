@@ -4,10 +4,10 @@ import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getRefererInfo} from 'src/refererDetection.js';
-import {sandbox} from 'sinon';
 
 function createBidderRequest(auctionId, timeout, pageUrl) {
   return {
+    bidderRequestId: 'mock-uuid',
     auctionId: auctionId || 'c1243d83-0bed-4fdb-8c76-42b456be17d0',
     timeout: timeout || 2000,
     refererInfo: {
@@ -441,8 +441,6 @@ describe('KoblerAdapter', function () {
         4500,
         'bid.kobler.no'
       );
-
-      sandbox.stub(utils, 'generateUUID').returns('mock-uuid');
 
       const result = spec.buildRequests(validBidRequests, bidderRequest);
       const openRtbRequest = JSON.parse(result.data);

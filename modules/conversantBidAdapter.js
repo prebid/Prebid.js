@@ -15,7 +15,6 @@ import {
   logError,
   isFn,
   isPlainObject,
-  generateUUID
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -137,7 +136,7 @@ export const spec = {
     });
 
     const payload = {
-      id: generateUUID(),
+      id: bidderRequest.bidderRequestId,
       imp: conversantImps,
       source: {
         tid: bidderRequest.ortb2?.source?.tid,

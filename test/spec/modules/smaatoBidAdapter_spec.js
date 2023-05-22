@@ -13,6 +13,7 @@ const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
 const AUCTION_ID = '6653';
 
 const defaultBidderRequest = {
+  bidderRequestId: 'mock-uuid',
   gdprConsent: {
     consentString: CONSENT_STRING,
     gdprApplies: true

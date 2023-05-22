@@ -38,7 +38,7 @@ describe('SeedingAlliance adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'id,site,cur,imp,regs'.split(',');
+      let keys = 'site,cur,imp,regs'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: {}

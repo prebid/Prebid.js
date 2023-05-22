@@ -38,7 +38,7 @@ describe('Finative adapter', function () {
     });
 
     it('should have default request structure', function () {
-      let keys = 'id,site,device,cur,imp,user,regs'.split(',');
+      let keys = 'site,device,cur,imp,user,regs'.split(',');
       let validBidRequests = [{
         bidId: 'bidId',
         params: {}

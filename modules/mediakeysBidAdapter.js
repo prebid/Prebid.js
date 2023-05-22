@@ -3,7 +3,7 @@ import {
   cleanObj,
   deepAccess,
   deepClone,
-  deepSetValue, generateUUID,
+  deepSetValue,
   getDNT,
   inIframe,
   isArray,
@@ -20,7 +20,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -606,8 +606,8 @@ export const spec = {
 
     const payload = createOrtbTemplate();
 
-    deepSetValue(payload, 'id', generateUUID());
-    deepSetValue(payload, 'source.tid', bidderRequest.ortb2?.source?.tid);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
+    deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
       let bid = deepClone(validBid);

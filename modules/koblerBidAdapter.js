@@ -1,5 +1,5 @@
 import {
-  deepAccess, generateUUID,
+  deepAccess,
   getWindowSelf,
   isArray,
   isStr,
@@ -127,7 +127,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest)
   const request = {
-    id: generateUUID(),
+    id: bidderRequest.bidderRequestId,
     at: 1,
     tmax: timeout,
     cur: [SUPPORTED_CURRENCY],

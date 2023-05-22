@@ -1,15 +1,9 @@
-import {
-  deepAccess, generateUUID,
-  getBidIdParameter,
-  isStr,
-  logMessage,
-  triggerPixel,
-} from '../src/utils.js';
-import * as events from '../src/events.js'
-import CONSTANTS from '../src/constants.json'
-import { BANNER } from '../src/mediaTypes.js'
+import {deepAccess, getBidIdParameter, isStr, logMessage, triggerPixel, } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
+import {BANNER} from '../src/mediaTypes.js';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js'
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'holid'
 const GVLID = 1177
@@ -33,7 +27,7 @@ export const spec = {
     return validBidRequests.map((bid) => {
       const requestData = {
         ...bid.ortb2,
-        id: generateUUID(),
+        id: _bidderRequest.bidderRequestId,
         imp: [getImp(bid)],
       }
 
