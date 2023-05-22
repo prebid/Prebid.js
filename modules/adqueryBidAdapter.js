@@ -197,7 +197,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   }
 
   return {
-    v: $$PREBID_GLOBAL$$.version,
+    v: '$prebid.version$',
     placementCode: bid.params.placementId,
     auctionId: bid.auctionId,
     type: bid.params.type,
