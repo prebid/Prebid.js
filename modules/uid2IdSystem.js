@@ -77,6 +77,7 @@ export const uid2IdSubmodule = {
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
+    _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
     _logInfo(`UID2 getId returned`, result);
     return result;

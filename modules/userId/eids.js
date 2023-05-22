@@ -292,8 +292,8 @@ export const USER_IDS_CONFIG = {
   },
 
   'euid': {
-    source: 'euid.eu', // TODO: Is this correct?
-    atype: 3, // TODO: What is this?
+    source: 'euid.eu',
+    atype: 3,
     getValue: function(data) {
       return data.id;
     }

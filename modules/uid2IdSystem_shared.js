@@ -32,7 +32,7 @@ export class Uid2ApiClient {
     if (this.isValidRefreshResponse(response)) {
       if (response.status === 'success') { return { status: response.status, identity: response.body }; }
       return response;
-    } else { return "Response didn't contain a valid status"; }
+    } else { return `Response didn't contain a valid status`; }
   }
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
@@ -77,7 +77,7 @@ export class Uid2ApiClient {
         rejectPromise(err);
       }
     };
-    this._logInfo('Sending refresh request', req);
+    this._logInfo('Sending refresh request', refreshDetails);
     req.send(refreshDetails.refresh_token);
     return promise;
   }
@@ -167,7 +167,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
-  _logInfo(`UID2 module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
+  _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
   if (config.paramToken) {
     suppliedToken = config.paramToken;

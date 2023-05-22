@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * This module adds EUID ID support to the User ID module. It shares significant functionality with the UID2 module.
  * The {@link module:modules/userId} module is required.

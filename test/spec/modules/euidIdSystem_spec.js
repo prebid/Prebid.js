@@ -49,7 +49,6 @@ describe('EUID module', function() {
   });
   after(function() {
     suiteSandbox.restore();
-    // timerSpy.restore();
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
   beforeEach(function() {
