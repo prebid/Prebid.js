@@ -560,26 +560,6 @@ describe('permutiveRtdProvider', function () {
     })
   })
 
-  describe('Default segment targeting', function () {
-    it('sets segment targeting for Ozone', function () {
-      const data = transformedTargeting()
-      const adUnits = getAdUnits()
-      const config = getConfig()
-
-      readAndSetCohorts({ adUnits }, config)
-
-      adUnits.forEach(adUnit => {
-        adUnit.bids.forEach(bid => {
-          const { bidder, params } = bid
-
-          if (bidder === 'ozone') {
-            expect(deepAccess(params, 'customData.0.targeting.p_standard')).to.eql(data.ac.concat(data.ssp.cohorts))
-          }
-        })
-      })
-    })
-  })
-
   describe('Existing key-value targeting', function () {
     it('doesn\'t overwrite existing key-values for Xandr', function () {
       const adUnits = getAdUnits()

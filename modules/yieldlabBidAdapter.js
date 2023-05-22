@@ -184,13 +184,12 @@ export const spec = {
 
         if (isNative(bidRequest, adType)) {
           // there may be publishers still rely on it
-          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
-          bidResponse.adUrl = url;
+          bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2);
+          const nativeImageAssetObj = find(matchedBid.native.assets, asset => isMainImage(asset));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
-          const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1);
-          const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3);
+          const nativeTitleAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'title'));
+          const nativeBodyAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
@@ -201,6 +200,7 @@ export const spec = {
             },
             clickUrl: matchedBid.native.link.url,
             impressionTrackers: matchedBid.native.imptrackers,
+            assets: matchedBid.native.assets,
           };
         }
 
@@ -503,6 +503,28 @@ function getBidFloor(bid, sizes) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;
+}
+
+/**
+ * Checks if an object has a property with a given name and the property value is not null or undefined.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {string} propName - The name of the property to check.
+ * @returns {boolean} Returns true if the object has a property with the given name and the property value is not null or undefined, otherwise false.
+ */
+function hasValidProperty(obj, propName) {
+  return obj.hasOwnProperty(propName) && obj[propName] != null;
+}
+
+/**
+ * Checks if an asset object is a main image.
+ * A main image is defined as an image asset whose type value is 3.
+ *
+ * @param {Object} asset - The asset object to check.
+ * @returns {boolean} Returns true if the object has a property img.type with a value of 3, otherwise false.
+ */
+function isMainImage(asset) {
+  return asset?.img?.type === 3
 }
 
 registerBidder(spec);
