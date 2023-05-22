@@ -359,6 +359,9 @@ const WIN_NOTICE_APP = {
         'app_name': '{{APP_NAME}}',
         'app_store_url': '{{APP_STORE_URL}}',
         'inventory_source': '{{INVENTORY_SOURCE}}'
+      },
+      'win_notice_ext': {
+        'seatid': '{{SEAT_ID}}'
       }
     }
   },

@@ -86,7 +86,7 @@ describe('Yahoo ConnectID Submodule', () => {
         {
           detail: 'cookie data over local storage data',
           cookie: '{"connectId":"foo"}',
-          localStorage: {connectId: 'bar'},
+          localStorage: JSON.stringify({connectId: 'bar'}),
           expected: {connectId: 'foo'}
         },
         {
@@ -98,7 +98,7 @@ describe('Yahoo ConnectID Submodule', () => {
         {
           detail: 'local storage data if only it local storage data exists',
           cookie: undefined,
-          localStorage: {connectId: 'bar'},
+          localStorage: JSON.stringify({connectId: 'bar'}),
           expected: {connectId: 'bar'}
         },
         {
@@ -441,10 +441,10 @@ describe('Yahoo ConnectID Submodule', () => {
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
           const upsResponse = {connectid: 'barfoo'};
-          const expectedStoredData = {
+          const expectedStoredData = JSON.stringify({
             connectid: 'barfoo',
             __expires: 60 * 60 * 24 * 14 * 1000
-          };
+          });
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID

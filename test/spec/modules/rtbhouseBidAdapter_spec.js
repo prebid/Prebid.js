@@ -282,6 +282,28 @@ describe('RTBHouseAdapter', () => {
       expect(data.source).to.not.have.property('ext');
     });
 
+    it('should include first party data', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      const localBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
+          site: { ext: { data: 'some site data' } },
+          device: { ext: { data: 'some device data' } },
+          user: { ext: { data: 'some user data' } }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.bcat).to.deep.equal(localBidderRequest.ortb2.bcat);
+      expect(data.badv).to.deep.equal(localBidderRequest.ortb2.badv);
+      expect(data.site).to.nested.include({'ext.data': 'some site data'});
+      expect(data.device).to.nested.include({'ext.data': 'some device data'});
+      expect(data.user).to.nested.include({'ext.data': 'some user data'});
+    });
+
     context('FLEDGE', function() {
       afterEach(function () {
         config.resetConfig();

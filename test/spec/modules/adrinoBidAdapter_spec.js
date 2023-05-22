@@ -43,7 +43,7 @@ describe('adrinoBidAdapter', function () {
 
     it('should return false when unsupported media type is requested', function () {
       const bid = { ...validBid };
-      bid.mediaTypes = { banner: { sizes: [[300, 250]] } };
+      bid.mediaTypes = { video: {} };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
@@ -54,7 +54,46 @@ describe('adrinoBidAdapter', function () {
     });
   });
 
-  describe('buildRequests', function () {
+  describe('buildBannerRequest', function () {
+    const bidRequest = {
+      bidder: 'adrino',
+      params: {
+        hash: 'abcdef123456'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [970, 250]]
+        }
+      },
+      sizes: [[300, 250], [970, 250]],
+      userId: { criteoId: '2xqi3F94aHdwWnM3', pubcid: '3ec0b202-7697' },
+      adUnitCode: 'adunit-code-2',
+      bidId: '12345678901234',
+      bidderRequestId: '98765432109876',
+      auctionId: '01234567891234',
+    };
+
+    it('should build the request correctly', function () {
+      const result = spec.buildRequests(
+        [ bidRequest ],
+        { refererInfo: { page: 'http://example.com/' } }
+      );
+      expect(result.length).to.equal(1);
+      expect(result[0].method).to.equal('POST');
+      expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].bidId).to.equal('12345678901234');
+      expect(result[0].data[0].placementHash).to.equal('abcdef123456');
+      expect(result[0].data[0].referer).to.equal('http://example.com/');
+      expect(result[0].data[0].userAgent).to.equal(navigator.userAgent);
+      expect(result[0].data[0]).to.have.property('bannerParams');
+      expect(result[0].data[0].bannerParams.sizes.length).to.equal(2);
+      expect(result[0].data[0]).to.have.property('userId');
+      expect(result[0].data[0].userId.criteoId).to.equal('2xqi3F94aHdwWnM3');
+      expect(result[0].data[0].userId.pubcid).to.equal('3ec0b202-7697');
+    });
+  });
+
+  describe('buildNativeRequest', function () {
     const bidRequest = {
       bidder: 'adrino',
       params: {
@@ -69,6 +108,15 @@ describe('adrinoBidAdapter', function () {
             required: true,
             sizes: [[300, 150], [300, 210]]
           }
+        }
+      },
+      nativeParams: {
+        title: {
+          required: true
+        },
+        image: {
+          required: true,
+          sizes: [[300, 150], [300, 210]]
         }
       },
       userId: { criteoId: '2xqi3F94aHdwWnM3', pubcid: '3ec0b202-7697' },

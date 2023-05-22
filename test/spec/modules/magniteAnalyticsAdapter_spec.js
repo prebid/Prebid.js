@@ -9,10 +9,6 @@ import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import {
-  setConfig,
-  addBidResponseHook,
-} from 'modules/currency.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { deepAccess } from '../../../src/utils.js';
 
@@ -35,6 +31,16 @@ const {
 
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
+const metrics = {
+  getMetrics: () => {
+    return {
+      'adapter.client.total': 271,
+      'adapter.client.net': 240,
+      'adapter.s2s.total': 371,
+      'adapter.s2s.net': 340
+    }
+  }
+}
 // Mock Event Data
 const MOCK = {
   AUCTION_INIT: {
@@ -160,6 +166,7 @@ const MOCK = {
     'size': '300x250',
     'status': 'rendered',
     getStatusCode: () => 1,
+    metrics
   },
   SEAT_NON_BID: {
     auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
@@ -186,6 +193,7 @@ const MOCK = {
         'bidId': '23fcd8cf4bf0d7',
         'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
         'src': 'client',
+        metrics
       }
     ]
   },
@@ -262,6 +270,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'status': 'success',
               'clientLatencyMillis': 271,
+              'httpLatencyMillis': 240,
               'bidResponse': {
                 'bidPriceUSD': 3.4,
                 'mediaType': 'banner',
@@ -298,6 +307,7 @@ const ANALYTICS_MESSAGE = {
       'source': 'client',
       'status': 'success',
       'clientLatencyMillis': 271,
+      'httpLatencyMillis': 240,
       'bidResponse': {
         'bidPriceUSD': 3.4,
         'mediaType': 'banner',
@@ -1353,9 +1363,6 @@ describe('magnite analytics adapter', function () {
       // adunit should be marked as error
       expectedMessage.auctions[0].adUnits[0].status = 'error';
 
-      // timed out in 1000 ms
-      expectedMessage.auctions[0].adUnits[0].bids[0].clientLatencyMillis = 1000;
-
       expectedMessage.auctions[0].auctionStart = auctionStart;
 
       expect(message).to.deep.equal(expectedMessage);
@@ -1437,34 +1444,6 @@ describe('magnite analytics adapter', function () {
       expectedMessage.bidsWon[0].bidId = '1a2b3c4d5e6f7g8h9';
 
       expect(message).to.deep.equal(expectedMessage);
-    });
-
-    it('should pass bidderDetail for multibid auctions', function () {
-      // Set the rates
-      setConfig({
-        adServerCurrency: 'JPY',
-        rates: {
-          USD: {
-            JPY: 100
-          }
-        }
-      });
-
-      // set our bid response to JPY
-      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
-      bidResponse.currency = 'JPY';
-      bidResponse.cpm = 100;
-
-      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
-      let innerBid;
-      addBidResponseHook(function (adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bidResponse);
-
-      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
-      const bidResponseObj = parseBidResponse(innerBid);
-      expect(bidResponseObj).to.have.property('bidPriceUSD');
-      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
     });
 
     it('should use the integration type provided in the config instead of the default', () => {
@@ -2096,7 +2075,8 @@ describe('magnite analytics adapter', function () {
           oldBidId: 'fakeId',
           unknownBid: true,
           bidId: 'fakeId',
-          clientLatencyMillis: 271
+          clientLatencyMillis: 271,
+          httpLatencyMillis: 240
         }
       );
     });
