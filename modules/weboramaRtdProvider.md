@@ -578,7 +578,6 @@ pbjs.que.push(function () {
 We currently support the following bidder adapters:
 
 * SmartADServer SSP
-* PubMatic SSP
 * AppNexus SSP
 * Rubicon SSP
 
@@ -605,6 +604,7 @@ We also set the bidder (and global, if no specific bidders are set on `sendToBid
 * Opt Out Advertising
 * Ozone Project
 * Proxistore
+* PubMatic SSP
 * Rise
 * Smaato
 * Sonobi

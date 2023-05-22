@@ -693,9 +693,6 @@ class WeboramaRtdProvider {
       case 'appnexus':
         this.#handleAppnexusBid(bid, profile);
         break;
-      case 'pubmatic':
-        this.#handlePubmaticBid(bid, profile);
-        break;
       case 'smartadserver':
         this.#handleSmartadserverBid(bid, profile);
         break;
@@ -729,34 +726,6 @@ class WeboramaRtdProvider {
   #handleAppnexusBid(bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
-  }
-
-  /** handle pubmatic bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.dctr
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handlePubmaticBid(bid, profile) {
-    const sep = '|';
-    const subsep = ',';
-
-    bid.params ||= {};
-
-    const data = bid.params.dctr || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      const value = values.join(subsep);
-      const keyword = `${key}=${value}`;
-      target.add(keyword);
-    });
-
-    bid.params.dctr = Array.from(target).join(sep);
   }
 
   /** handle smartadserver bid
