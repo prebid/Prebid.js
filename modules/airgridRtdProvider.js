@@ -95,23 +95,23 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
   const agKeywords = audiences.map(
     (audienceId) => `perid=${audienceId}`
   ).join(',');
-  deepSetValue(agOrtb2, 'ortb2.user.keywords', agKeywords);
+  deepSetValue(agOrtb2, 'user.keywords', agKeywords);
 
   // Is this correct?
   const agUserData = [
     {
       id: AG_TCF_ID, // Not sure of this value
       name: 'airgrid', // Not sure of this value
-      segment: [
-        {
+      segment: audiences.map((audienceId) => {
+        return {
           id: 'perid', // Not sure of this value
           name: 'perid', // Not sure of this value
-          value: audiences,
-        }
-      ]
+          value: audienceId,
+        };
+      })
     }
   ]
-  deepSetValue(agOrtb2, 'ortb2.user.data', agUserData);
+  deepSetValue(agOrtb2, 'user.data', agUserData);
 
   const bidderConfig = Object.fromEntries(
     bidders.map((bidder) => [bidder, agOrtb2])
