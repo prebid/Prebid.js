@@ -14,7 +14,6 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['dummy'];
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
