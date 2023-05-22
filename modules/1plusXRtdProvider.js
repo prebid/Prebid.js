@@ -151,17 +151,6 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
-  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
-  // Therefore, writing them in `site.keywords` until it's supported
-  // Other bidAdapters do fine with `site.content.data.segment`
-  const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
-  if (writeToLegacySiteKeywords) {
-    const site = {
-      keywords: topics.join(',')
-    };
-    return { site };
-  }
-
   const userData = {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
