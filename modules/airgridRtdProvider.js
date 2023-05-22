@@ -100,7 +100,7 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
   // Is this correct?
   const agUserData = [
     {
-      id: AG_TCF_ID, // Not sure of this value
+      id: String(AG_TCF_ID), // Not sure of this value
       name: 'airgrid', // Not sure of this value
       segment: audiences.map((audienceId) => {
         return {
