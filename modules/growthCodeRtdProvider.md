@@ -3,7 +3,7 @@
 The [GrowthCode](https://growthcode.io) real-time data module in Prebid enables publishers to fully 
 leverage the potential of their first-party audiences and contextual data. 
 With an integrated cookieless GrowthCode identity, this module offers real-time 
-contextual and audience segmentation capabilities that can seamlessly 
+contextual and audience segmentation (IAB Taxonomy 2.2, cattax: 6) capabilities, and HEMs that can seamlessly 
 integrate into your existing Prebid deployment, making it easy to maximize 
 your advertising strategies.
 
@@ -11,7 +11,7 @@ your advertising strategies.
 
 Compile the GrowthCode RTD module into your Prebid build:
 
-`gulp build --modules=userId,rtdModule,growthCodeRtdProvider,appnexusBidAdapter`
+`gulp serve --modules=userId,rtdModule,appnexusBidAdapter,growthCodeRtdProvider,sharedIdSystem,criteoBidAdapter`
 
 Please visit https://growthcode.io/ for more information.
 
