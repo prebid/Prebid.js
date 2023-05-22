@@ -134,7 +134,11 @@ describe('BeOp Bid Adapter tests', () => {
       {
         'ortb2': {
           'user': {
-            'psegs': [1234, 5678, 910]
+            'ext': {
+              'data': {
+                'p_standard': [1234, 5678, 910]
+              }
+            }
           }
         }
       };
