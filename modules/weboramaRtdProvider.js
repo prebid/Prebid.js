@@ -693,9 +693,6 @@ class WeboramaRtdProvider {
       case 'appnexus':
         this.#handleAppnexusBid(bid, profile);
         break;
-      case 'smartadserver':
-        this.#handleSmartadserverBid(bid, profile);
-        break;
       case 'rubicon':
         this.#handleRubiconBid(bid, profile, metadata);
         break;
@@ -726,34 +723,6 @@ class WeboramaRtdProvider {
   #handleAppnexusBid(bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
-  }
-
-  /** handle smartadserver bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.target
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleSmartadserverBid(bid, profile) {
-    const sep = ';';
-
-    bid.params ||= {};
-
-    const data = bid.params.target || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      values.forEach(value => {
-        const keyword = `${key}=${value}`;
-        target.add(keyword);
-      })
-    });
-
-    bid.params.target = Array.from(target).join(sep);
   }
 
   /** handle rubicon bid

@@ -130,8 +130,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
@@ -217,8 +217,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_vctx=foo;webo_vctx=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
@@ -304,8 +304,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_vctx=foo;webo_vctx=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data
@@ -1105,7 +1105,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
@@ -1196,8 +1196,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_ctx=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile
@@ -1316,8 +1316,8 @@ describe('weboramaRtdProvider', function() {
 
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids.length).to.equal(5);
-          expect(adUnit.bids[0].params.target).to.equal('webo_ctx=foo;webo_ctx=bar;webo_ds=baz');
-          expect(adUnit.bids[1]).to.not.have.property('params');
+          expect(adUnit.bids[0].params).to.be.undefined;
+          expect(adUnit.bids[1].params).to.be.undefined;
           expect(adUnit.bids[3].params).to.deep.equal({
             inventory: data
           });
@@ -1414,8 +1414,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: data
@@ -2109,7 +2109,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;webo_cs=foo;webo_cs=bar;webo_audiences=baz');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
@@ -2187,8 +2187,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
@@ -2261,8 +2261,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('webo_audiences=baz');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           visitor: defaultProfile
@@ -2383,8 +2383,8 @@ describe('weboramaRtdProvider', function() {
 
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids.length).to.equal(5);
-          expect(adUnit.bids[0].params.target).to.equal('webo_cs=foo;webo_cs=bar;webo_audiences=baz');
-          expect(adUnit.bids[1]).to.not.have.property('params');
+          expect(adUnit.bids[0].params).to.be.undefined;
+          expect(adUnit.bids[1].params).to.be.undefined;
           expect(adUnit.bids[3].params).to.deep.equal({
             visitor: data
           });
@@ -2480,8 +2480,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_occupation=gérant;lite_occupation=bénévole;lite_hobbies=sport;lite_hobbies=cinéma');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: data,
@@ -3173,7 +3173,7 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar;lite_occupation=gérant;lite_occupation=bénévole;lite_hobbies=sport;lite_hobbies=cinéma');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
@@ -3250,8 +3250,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile,
@@ -3323,8 +3323,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile,
@@ -3403,8 +3403,8 @@ describe('weboramaRtdProvider', function() {
         });
 
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('lite_hobbies=sport;lite_hobbies=cinéma');
-        expect(reqBidsConfigObj.adUnits[0].bids[1]).to.not.have.property('params');
+        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: defaultProfile,
@@ -3523,8 +3523,8 @@ describe('weboramaRtdProvider', function() {
 
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids.length).to.equal(5);
-          expect(adUnit.bids[0].params.target).to.equal('lite_occupation=gérant;lite_occupation=bénévole;lite_hobbies=sport;lite_hobbies=cinéma');
-          expect(adUnit.bids[1]).to.not.have.property('params');
+          expect(adUnit.bids[0].params).to.be.undefined;
+          expect(adUnit.bids[1].params).to.be.undefined;
           expect(adUnit.bids[3].params).to.deep.equal({
             inventory: data,
           });
