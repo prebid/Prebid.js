@@ -438,12 +438,15 @@ export const spec = {
       if (currentBidRequest.mediaTypes.video) {
         var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
         var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
+        var videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
+
         if (format == 'inbanner') {
           videoPlacement = 2;
           videoContext = 'In-Banner';
         }
         requestParams.video_context = videoContext;
         requestParams.video_placement = videoPlacement;
+        requestParams.video_plcmt = videoPlcmt;
       }
 
       return {
