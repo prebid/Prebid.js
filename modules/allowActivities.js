@@ -1,4 +1,5 @@
-import {config} from '../config.js';
+import {config} from '../src/config.js';
+import {registerActivityControl} from '../src/activities/rules.js';
 
 const CFG_NAME = 'allowActivities';
 const RULE_NAME = `${CFG_NAME} config`;
@@ -50,14 +51,14 @@ export function updateRulesFromConfig(registerRule) {
 
   config.getConfig(CFG_NAME, (cfg) => {
     clearAllRules();
-    Object.entries(cfg[CFG_NAME]).forEach(([activity, cfg]) => {
-      if (cfg.default === false) {
+    Object.entries(cfg[CFG_NAME]).forEach(([activity, activityCfg]) => {
+      if (activityCfg.default === false) {
         setupDefaultRule(activity);
       }
       const rules = new Map();
       rulesByActivity.set(activity, rules);
 
-      (cfg.rules || []).forEach(rule => {
+      (activityCfg.rules || []).forEach(rule => {
         const priority = rule.priority == null ? DEFAULT_PRIORITY : rule.priority;
         if (!rules.has(priority)) {
           rules.set(priority, [])
@@ -69,3 +70,5 @@ export function updateRulesFromConfig(registerRule) {
     });
   })
 }
+
+updateRulesFromConfig(registerActivityControl);

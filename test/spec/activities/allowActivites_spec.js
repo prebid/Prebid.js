@@ -1,6 +1,6 @@
 import {config} from 'src/config.js';
 import {ruleRegistry} from '../../../src/activities/rules.js';
-import {updateRulesFromConfig} from '../../../src/activities/cfg.js';
+import {updateRulesFromConfig} from '../../../modules/allowActivities.js';
 import {activityParams} from '../../../src/activities/activityParams.js';
 
 describe('allowActivities config', () => {
