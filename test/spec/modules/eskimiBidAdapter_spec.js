@@ -251,7 +251,6 @@ describe('Eskimi bid adapter', function () {
         expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
         expect(bids[0].ttl).to.equal(30);
         expect(bids[0].netRevenue).to.equal(true);
-
       });
 
       it('should handle empty bid response', function () {
@@ -284,8 +283,6 @@ describe('Eskimi bid adapter', function () {
           expect(bids[0].meta.advertiserDomains[0]).to.equal('https://dummydomain.com');
           expect(bids[0].ttl).to.equal(30);
           expect(bids[0].netRevenue).to.equal(true);
-  
-
         });
       });
     }
