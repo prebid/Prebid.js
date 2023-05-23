@@ -1,0 +1,23 @@
+name: Build & Publish to GCP
+on:
+  pull_request:
+    branches:
+      - develop
+
+env:
+  PROJECT_ID: ${{ secrets.GCR_PROJECT }}
+  APPLICATION_CREDENTIALS: ${{ secrets.GCR_JSON_KEY }}
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          always-auth: true
+          node-version: '14.x'
+          registry-url: https://npm.pkg.github.com
+          scope: '@freestarcapital'
+      - run: npm install
+      - run: gulp build --modules=modules.json
