@@ -186,13 +186,21 @@ export const spec = {
           // there may be publishers still rely on it
           bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeImageAssetObj = find(matchedBid.native.assets, asset => isMainImage(asset));
+          const nativeIconAssetObj = find(matchedBid.native.assets, asset => isImageAssetOfType(asset, 1));
+          const nativeImageAssetObj = find(matchedBid.native.assets, asset => isImageAssetOfType(asset, 3));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
           const nativeTitleAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'title'));
           const nativeBodyAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            ...nativeIconAssetObj?.img && {
+              icon: {
+                url: nativeIconAssetObj.img.url,
+                width: nativeIconAssetObj.img.w,
+                height: nativeIconAssetObj.img.h,
+              },
+            },
             image: {
               url: nativeImageAsset.url,
               width: nativeImageAsset.w,
@@ -517,14 +525,14 @@ function hasValidProperty(obj, propName) {
 }
 
 /**
- * Checks if an asset object is a main image.
- * A main image is defined as an image asset whose type value is 3.
+ * Checks if an asset object is of the given type.
  *
  * @param {Object} asset - The asset object to check.
- * @returns {boolean} Returns true if the object has a property img.type with a value of 3, otherwise false.
+ * @param {number} type - The type number to compare.
+ * @returns {boolean} Returns true if the object has a property img.type with a value of the given type, otherwise false.
  */
-function isMainImage(asset) {
-  return asset?.img?.type === 3
+function isImageAssetOfType(asset, type) {
+  return asset?.img?.type === type
 }
 
 registerBidder(spec);
