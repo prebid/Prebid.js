@@ -15,13 +15,15 @@ Banner and video formats are supported.
         code: '/19968336/prebid_banner_example_1',
         mediaTypes: {
             banner: {
-                sizes: [[ 300, 250 ]]
+                sizes: [[ 300, 250 ]],
+                ... // battr
             }
-        }
+        },
         bids: [{
             bidder: 'eskimi',
             params: {
-                placementId: 612
+                placementId: 612,
+                ... // bcat, badv, bapp
             }
         }]
     }, {
@@ -31,13 +33,14 @@ Banner and video formats are supported.
                 context: 'outstream',
                 mimes: ['video/mp4'],
                 api: [1, 2, 4, 6],
-                ... // Aditional ORTB video params
+                ... // Aditional ORTB video params (including battr)
             }
-        }
+        },
         bids: [{
             bidder: 'eskimi',
             params: {
-                placementId: 612
+                placementId: 612,
+                ... // bcat, badv, bapp
             }
         }]
     }];
@@ -46,4 +49,5 @@ Banner and video formats are supported.
 Where:
 
 * placementId - Placement ID of the ad unit (required)
+* bcat, badv, bapp, battr - ORTB blocking parameters as specified by OpenRTB 2.5
 

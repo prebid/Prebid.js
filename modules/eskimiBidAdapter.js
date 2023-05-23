@@ -26,8 +26,13 @@ const VIDEO_ORTB_PARAMS = [
   'delivery',
   'playbackmethod',
   'api',
-  'linearity'
+  'linearity',
+  'battr'
 ];
+
+const BANNER_ORTB_PARAMS = [
+  'battr'
+]
 
 export const spec = {
   code: BIDDER_CODE,
@@ -139,12 +144,23 @@ function buildVideoImp(bidRequest, imp) {
 }
 
 function buildBannerImp(bidRequest, imp) {
+  const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
+  const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
+
+  const bannerParams = { ...bannerAdUnitParams, ...bannerBidderParams };
+
   let sizes = bidRequest.mediaTypes.banner.sizes;
 
   if (sizes) {
     utils.deepSetValue(imp, 'banner.w', sizes[0][0]);
     utils.deepSetValue(imp, 'banner.h', sizes[0][1]);
   }
+
+  BANNER_ORTB_PARAMS.forEach((param) => {
+    if (bannerParams.hasOwnProperty(param)) {
+      utils.deepSetValue(imp, `banner.${param}`, bannerParams[param]);
+    }
+  });
 
   return { ...imp };
 }
@@ -164,6 +180,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     data.user.ext.consent = bidderRequest.gdprConsent.consentString;
     data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
   }
+
+  if (bid.bcat) data.bcat = bid.bcat;
+  if (bid.badv) data.badv = bid.badv;
+  if (bid.bapp) data.bapp = bid.bapp;
 
   return {
     method: 'POST',
