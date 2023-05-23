@@ -120,7 +120,6 @@ export const intentIqIdSubmodule = {
       return;
     }
     const cookieStorageEnabled = typeof configParams.enableCookieStorage === 'boolean' ? configParams.enableCookieStorage : false
-    
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
