@@ -111,6 +111,14 @@ describe('gumgumAdapter', function () {
             sizes: sizesArray
           }
         },
+        userId: {
+          id5id: {
+            uid: 'uid-string',
+            ext: {
+              linkType: 2
+            }
+          }
+        },
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
@@ -157,6 +165,12 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+    });
+    it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.id5Id).to.equal(bidRequests[0].userId.id5id.uid);
+      expect(bidRequest.data.id5IdLinkType).to.equal(bidRequests[0].userId.id5id.ext.linkType);
     });
 
     it('should set pubId param if found', function () {

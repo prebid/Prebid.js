@@ -402,6 +402,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const bid = {
     adType: rtbBid.ad_type,
     requestId: serverBid.uuid,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequest.auctionId,
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,

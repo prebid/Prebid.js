@@ -530,7 +530,6 @@ describe('kulturemediaBidAdapter:', function () {
         let o = {
           requestId: serverResponse.seatbid[0].bid[0].impid,
           ad: '<VAST></VAST>',
-          bidderCode: spec.code,
           cpm: serverResponse.seatbid[0].bid[0].price,
           creativeId: serverResponse.seatbid[0].bid[0].crid,
           vastXml: serverResponse.seatbid[0].bid[0].adm,

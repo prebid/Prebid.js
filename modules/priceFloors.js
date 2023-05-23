@@ -151,8 +151,9 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     matchingRule
   };
   // use adUnit floorMin as priority!
-  if (typeof deepAccess(bidObject, 'ortb2Imp.ext.prebid.floorMin') === 'number') {
-    matchingData.floorMin = bidObject.ortb2Imp.ext.prebid.floorMin;
+  const floorMin = deepAccess(bidObject, 'ortb2Imp.ext.prebid.floors.floorMin');
+  if (typeof floorMin === 'number') {
+    matchingData.floorMin = floorMin;
   }
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed

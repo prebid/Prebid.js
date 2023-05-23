@@ -29,6 +29,7 @@ export const spec = {
       const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
       const pbcode = bidRequest.adUnitCode || false; // div id
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       const auctionId = bidRequest.auctionId || false;
       const isDev = params.devMode || false;
 

@@ -481,6 +481,23 @@ describe('YahooSSP Bid Adapter:', () => {
       });
     });
 
+    const VALID_PUBLISHER_OBJECTS = ['ext'];
+    VALID_PUBLISHER_OBJECTS.forEach(param => {
+      it(`should determine that the ortb2.site.publisher Object key is valid and append to the bid-request:  ${JSON.stringify(param)}`, () => {
+        const ortb2 = {
+          site: {
+            publisher: {
+              [param]: {a: '123', b: '456'}
+            }
+          }
+        };
+        const { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+        const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+        expect(data.site.publisher[param]).to.be.a('object');
+        expect(data.site.publisher[param]).to.be.equal(ortb2.site.publisher[param]);
+      });
+    });
+
     const VALID_CONTENT_ARRAYS = ['cat'];
     VALID_CONTENT_ARRAYS.forEach(param => {
       it(`should determine that the ortb2.site Array key is valid and append to the bid-request: ${JSON.stringify(param)}`, () => {
@@ -512,7 +529,6 @@ describe('YahooSSP Bid Adapter:', () => {
         const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
         expect(data.site.content[param]).to.be.a('object');
         expect(data.site.content[param]).to.be.equal(ortb2.site.content[param]);
-        config.setConfig({ortb2: {}});
       });
     });
   });
@@ -957,6 +973,49 @@ describe('YahooSSP Bid Adapter:', () => {
       validBidRequests[0].params.siteId = '1234567';
       const data = spec.buildRequests(validBidRequests, bidderRequest).data;
       expect(data.site.id).to.equal('1234567');
+    });
+
+    it('should use site publisher ortb2 config in default integration mode', () => {
+      const ortb2 = {
+        site: {
+          publisher: {
+            ext: {
+              publisherblob: 'pblob',
+              bucket: 'bucket'
+            }
+          }
+        }
+      }
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({ortb2});
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      expect(data.site.publisher).to.deep.equal({
+        ext: {
+          publisherblob: 'pblob',
+          bucket: 'bucket'
+        }
+      });
+    });
+
+    it('should use site publisher ortb2 config when using "pubId" integration mode', () => {
+      const ortb2 = {
+        site: {
+          publisher: {
+            ext: {
+              publisherblob: 'pblob',
+              bucket: 'bucket'
+            }
+          }
+        }
+      }
+      let { validBidRequests, bidderRequest } = generateBuildRequestMock({pubIdMode: true, ortb2});
+      const data = spec.buildRequests(validBidRequests, bidderRequest).data;
+      expect(data.site.publisher).to.deep.equal({
+        id: DEFAULT_PUBID,
+        ext: {
+          publisherblob: 'pblob',
+          bucket: 'bucket'
+        }
+      });
     });
 
     it('should use placementId value as imp.tagid in the outbound bid-request when using "pubId" integration mode', () => {

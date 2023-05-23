@@ -66,7 +66,7 @@ export const spec = {
       let slot = {
         name: bidRequest.adUnitCode,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         sizes: bidRequest.params.sizes || bidRequest.sizes,
         partnerId: bidRequest.params.partnerId,
         slotType: bidRequest.params.slotType,

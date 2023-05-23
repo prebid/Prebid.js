@@ -194,7 +194,7 @@ export const spec = {
       _parseAdSlot(bid);
 
       conf = _handleCustomParams(bid.params, conf);
-      conf.transactionId = bid.transactionId;
+      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       bidCurrency = bid.params.currency || UNDEFINED;
       bid.params.currency = bidCurrency;
 
@@ -242,7 +242,7 @@ export const spec = {
     }
 
     // passing transactionId in source.tid
-    deepSetValue(payload, 'source.tid', bidderRequest?.auctionId);
+    deepSetValue(payload, 'source.tid', bidderRequest?.ortb2?.source?.tid);
 
     // schain
     if (validBidRequests[0].schain) {
@@ -528,7 +528,7 @@ function _createImpressionObject(bid, conf) {
     secure: 1,
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY, // capitalization dicated by 3.2.4 spec
     ext: {
-      tid: (bid.transactionId ? bid.transactionId : '')
+      tid: bid.ortb2Imp?.ext?.tid || ''
     }
   };
 

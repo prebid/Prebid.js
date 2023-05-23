@@ -98,7 +98,7 @@ export const spec = {
     let userExt = null;
     let endpoint = null;
     let forceBidderName = false;
-    let {bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
+    let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
     const tmax = timeout;
@@ -121,9 +121,6 @@ export const spec = {
       }
       if (!bidderRequestId) {
         bidderRequestId = bid.bidderRequestId;
-      }
-      if (!auctionId) {
-        auctionId = bid.auctionId;
       }
       if (!schain) {
         schain = bid.schain;
@@ -196,7 +193,7 @@ export const spec = {
       if (impObj.banner || impObj.video) {
         if (multiRequest) {
           const reqSource = {
-            tid: bid.auctionId && bid.auctionId.toString(),
+            tid: bidderRequest?.ortb2?.source?.tid?.toString?.(),
             ext: {
               wrapper: 'Prebid_js',
               wrapper_version: '$prebid.version$'
@@ -247,7 +244,7 @@ export const spec = {
     }
 
     const reqSource = {
-      tid: auctionId && auctionId.toString(),
+      tid: bidderRequest?.ortb2?.source?.tid?.toString?.(),
       ext: {
         wrapper: 'Prebid_js',
         wrapper_version: '$prebid.version$'
@@ -949,7 +946,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
-        transactionid: bidRequest.transactionId,
+        transactionid: bidRequest.ortb2Imp?.ext?.tid,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidRequest.auctionId,
       };
       if (bidRequest.params.zoneId) {
@@ -984,6 +982,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay
         };
+        if ('plcmt' in bidRequest.mediaTypes.video) {
+          video.plcmt = bidRequest.mediaTypes.video.plcmt;
+        }
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
           video.skip = video.skip || paramsVideo.skip || 0;

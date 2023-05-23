@@ -1,4 +1,21 @@
-import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, isEmpty, _each, convertTypes, parseUrl, mergeDeep, buildUrl, _map, logError, isFn, isPlainObject } from '../src/utils.js';
+import {
+  logWarn,
+  isStr,
+  deepAccess,
+  isArray,
+  getBidIdParameter,
+  deepSetValue,
+  isEmpty,
+  _each,
+  convertTypes,
+  parseUrl,
+  mergeDeep,
+  buildUrl,
+  _map,
+  logError,
+  isFn,
+  isPlainObject,
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -12,7 +29,7 @@ const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['cnvr'], // short code
+  aliases: ['cnvr', 'epsilon'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -56,7 +73,6 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.page : '';
     let siteId = '';
-    let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
     let bidurl = URL;
@@ -66,8 +82,6 @@ export const spec = {
 
       siteId = getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = getBidIdParameter('pubcid_name', bid.params) || pubcidName;
-
-      requestId = bid.auctionId;
 
       const imp = {
         id: bid.bidId,
@@ -122,10 +136,10 @@ export const spec = {
     });
 
     const payload = {
-      id: requestId,
+      id: bidderRequest.bidderRequestId,
       imp: conversantImps,
       source: {
-        tid: requestId
+        tid: bidderRequest.ortb2?.source?.tid,
       },
       site: {
         id: siteId,

@@ -108,6 +108,8 @@ pbjs.requestBids({
 
 ## Install
 
+
+
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
     $ npm ci
@@ -358,3 +360,4 @@ Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
+### END

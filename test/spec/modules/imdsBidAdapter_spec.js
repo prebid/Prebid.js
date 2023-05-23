@@ -2,6 +2,7 @@ import { assert, expect } from 'chai';
 import { BANNER } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
 import { spec } from 'modules/imdsBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('imdsBidAdapter ', function () {
   describe('isBidRequestValid', function () {
@@ -177,7 +178,7 @@ describe('imdsBidAdapter ', function () {
     };
 
     let bidderRequest = {
-      auctionId: 'xyz123',
+      bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       }
@@ -192,7 +193,7 @@ describe('imdsBidAdapter ', function () {
     };
 
     let bidderRequestWithCCPA = {
-      auctionId: 'xyz123',
+      bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       },
@@ -299,7 +300,6 @@ describe('imdsBidAdapter ', function () {
       expect(reqVideo).to.have.property('url');
       expect(reqVideo.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(reqVideo.data).to.exist.and.to.be.an('object');
-      expect(reqVideo.data.id).to.equal('VideoAuctionId124');
       expect(reqVideo.data.imp).to.eql([expectedDataVideo1]);
     });
 

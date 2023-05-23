@@ -25,6 +25,7 @@ export const spec = {
     let siteId = deepAccess(validBidRequests[0], 'params.site_id');
 
     // TODO: should this use auctionId? see #8573
+    // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     let url = BIDDER_URL + siteId + '?hb=1&transactionId=' + validBidRequests[0].transactionId;
 
     return {

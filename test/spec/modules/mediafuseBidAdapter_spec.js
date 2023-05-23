@@ -1021,16 +1021,13 @@ describe('MediaFuseAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
     let bidderSettingsStorage;
 
     before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
       bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
-      bfStub.restore();
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
@@ -1275,7 +1272,6 @@ describe('MediaFuseAdapter', function () {
           }
         }]
       };
-      bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');
