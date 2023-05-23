@@ -19,12 +19,21 @@ export function ruleRegistry(logger = prefixLog('Activity control:')) {
     return res && Object.assign({activity, name, component: params[ACTIVITY_PARAM_COMPONENT]}, res);
   }
 
+  const dupes = {};
+  const DEDUPE_INTERVAL = 1000;
+
   function logResult({activity, name, allow, reason, component}) {
-    const msg = [
-      `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`
-    ];
-    reason && msg.push(reason);
-    (allow ? logger.logInfo : logger.logWarn).apply(logger, msg);
+    const msg = `${name} ${allow ? 'allowed' : 'denied'} '${activity}' for '${component}'${reason ? ':' : ''}`;
+    const deduping = dupes.hasOwnProperty(msg);
+    if (deduping) {
+      clearTimeout(dupes[msg]);
+    }
+    dupes[msg] = setTimeout(() => delete dupes[msg], DEDUPE_INTERVAL);
+    if (!deduping) {
+      const parts = [msg];
+      reason && parts.push(reason);
+      (allow ? logger.logInfo : logger.logWarn).apply(logger, parts);
+    }
   }
 
   return [

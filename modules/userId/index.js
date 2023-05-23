@@ -966,7 +966,7 @@ const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
 function canUseStorage(submodule) {
   switch (submodule.config?.storage?.type) {
     case LOCAL_STORAGE:
-      if (submodule.storageMgr.cookiesAreEnabled()) {
+      if (submodule.storageMgr.localStorageIsEnabled()) {
         if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
           logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
           return false

@@ -97,4 +97,39 @@ describe('Activity control rules', () => {
     isAllowed(MOCK_ACTIVITY, {});
     sinon.assert.calledWithMatch(logger.logWarn, new RegExp(MOCK_RULE), /fail/);
   });
+
+  describe('log message deduping', () => {
+    let clock, allow;
+    beforeEach(() => {
+      allow = false;
+      registerRule(MOCK_ACTIVITY, MOCK_RULE, () => ({ allow }));
+      clock = sinon.useFakeTimers();
+    });
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('is applied to identical messages that are close in time', () => {
+      isAllowed(MOCK_ACTIVITY, {});
+      clock.tick(100);
+      isAllowed(MOCK_ACTIVITY, {});
+      expect(logger.logWarn.callCount).to.equal(1);
+    });
+
+    it('not to messages that show different results', () => {
+      isAllowed(MOCK_ACTIVITY, {});
+      allow = true;
+      clock.tick(100);
+      isAllowed(MOCK_ACTIVITY, {});
+      expect(logger.logWarn.callCount).to.equal(1);
+      expect(logger.logInfo.callCount).to.equal(1);
+    });
+
+    it('not to messages that are further apart in time', () => {
+      isAllowed(MOCK_ACTIVITY, {});
+      clock.tick(2000);
+      isAllowed(MOCK_ACTIVITY, {});
+      expect(logger.logWarn.callCount).to.equal(2);
+    })
+  })
 });
