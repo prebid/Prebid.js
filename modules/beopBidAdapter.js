@@ -38,7 +38,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const firstPartyData = bidderRequest.ortb2;
-    const psegs = (firstPartyData && firstPartyData.user && firstPartyData.user.ext && firstPartyData.user.ext.data) ? firstPartyData.user.ext.data.p_standard : undefined;
+    const psegs = (firstPartyData && firstPartyData.user && firstPartyData.user.ext && firstPartyData.user.ext.data) ? firstPartyData.user.ext.data.permutive : undefined;
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];

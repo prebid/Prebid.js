@@ -136,7 +136,7 @@ describe('BeOp Bid Adapter tests', () => {
           'user': {
             'ext': {
               'data': {
-                'p_standard': [1234, 5678, 910]
+                'permutive': [1234, 5678, 910]
               }
             }
           }
