@@ -72,7 +72,7 @@ export const uid2IdSubmodule = {
     const mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,
-      serverCookieName: config?.params?.uid2ServerCookie,
+      serverCookieName: config?.params?.uid2Cookie ?? config?.params?.uid2ServerCookie,
       storage: config?.params?.storage ?? 'localStorage',
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE

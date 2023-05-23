@@ -25,7 +25,8 @@ const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
 
 const legacyConfigParams = null;
-const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName }
+const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
+const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
 let useLocalStorage = false;
@@ -187,8 +188,10 @@ describe(`UID2 module`, function () {
       createLegacyTest(legacyConfigParams, [expectLegacyToken]));
     it('and a server cookie config is used without a valid server cookie, it should provide the legacy cookie',
       createLegacyTest(serverCookieConfigParams, [expectLegacyToken]));
-    it('and a server cookie is used with a valid server cookie, it should provide the server cookie',
+    it('and a server cookie is used with a valid server cookie configured using the new param name, it should provide the server cookie',
       async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(serverCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
+    it('and a server cookie is used with a valid server cookie, it should provide the server cookie',
+      async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a token is provided in config, it should provide the config token',
       createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
   });

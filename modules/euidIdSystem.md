@@ -125,7 +125,7 @@ The below parameters apply only to the EUID User ID Module integration.
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the EUID module - `"euid"` | `"euid"` |
 | value | Optional, Server only | Object | An object containing the value for the advertising token. | See the example above. |
-| params.euidToken | Optional, Client refresh | Object | The initial UID2 token. This should be `body` element of the decrypted response from a call to the `/token/generate` or `/token/refresh` endpoint. | See the sample token above. |
+| params.euidToken | Optional, Client refresh | Object | The initial EUID token. This should be `body` element of the decrypted response from a call to the `/token/generate` or `/token/refresh` endpoint. | See the sample token above. |
 | params.euidCookie | Optional, Client refresh | String | The name of a cookie which holds the initial EUID token, set by the server. The cookie should contain JSON in the same format as the euidToken param. **If euidToken is supplied, this param is ignored.** | See the sample token above. |
-| params.euidApiBase | Optional, Client refresh | String | Overrides the default UID2 API endpoint. | `"https://prod.uidapi.com"` _(default)_|
+| params.euidApiBase | Optional, Client refresh | String | Overrides the default EUID API endpoint. | `"https://prod.euid.eu"` _(default)_|
 | params.storage | Optional, Client refresh | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `localStorage` _(default)_ |
