@@ -735,7 +735,7 @@ describe('UnderdogMedia adapter', function () {
             },
           },
           refererInfo: {
-            ref: 'www.example.com'
+            page: 'www.example.com'
           }
         }
 

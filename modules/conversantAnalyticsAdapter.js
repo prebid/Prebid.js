@@ -18,6 +18,7 @@ const DOMAIN = 'https://web.hb.ad.cpe.dotomi.com/';
 const ANALYTICS_URL = DOMAIN + 'cvx/event/prebidanalytics';
 const ERROR_URL = DOMAIN + 'cvx/event/prebidanalyticerrors';
 const ANALYTICS_CODE = 'conversant';
+const ANALYTICS_ALIASES = [ANALYTICS_CODE, 'epsilon', 'cnvr'];
 
 export const CNVR_CONSTANTS = {
   LOG_PREFIX: 'Conversant analytics adapter: ',
@@ -688,11 +689,12 @@ conversantAnalytics.disableAnalytics = function () {
   conversantAnalyticsEnabled = false;
   conversantAnalytics.originDisableAnalytics();
 };
-
-adapterManager.registerAnalyticsAdapter({
-  adapter: conversantAnalytics,
-  code: ANALYTICS_CODE,
-  gvlid: GVLID
+ANALYTICS_ALIASES.forEach(alias => {
+  adapterManager.registerAnalyticsAdapter({
+    adapter: conversantAnalytics,
+    code: alias,
+    gvlid: GVLID
+  });
 });
 
 export default conversantAnalytics;
