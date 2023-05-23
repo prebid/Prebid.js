@@ -92,7 +92,6 @@ import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
-import {createBid} from './bidfactory.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
 
