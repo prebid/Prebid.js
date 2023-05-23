@@ -77,6 +77,7 @@ export const spec = {
     }
 
     const payload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId ? auctionId.auctionId : undefined,
       publisherId: publisherId ? publisherId.params.publisherId : undefined,
       userId: userId ? userId.params.userId : (pubcid ? pubcid.crumbs.pubcid : undefined),
@@ -230,7 +231,7 @@ function bidToAdRequest(bid, currency) {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
-    transactionId: bid.transactionId,
+    transactionId: bid.ortb2Imp?.ext?.tid,
     formats: getSizes(bid).map(sizeToFormat),
     flr: getBidFloor(bid, currency),
     options: bid.params.options

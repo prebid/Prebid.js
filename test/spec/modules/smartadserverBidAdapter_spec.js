@@ -29,7 +29,11 @@ describe('Smart bid adapter tests', function () {
       ckId: 42
     },
     requestId: 'efgh5678',
-    transactionId: 'zsfgzzg'
+    ortb2Imp: {
+      ext: {
+        tid: 'zsfgzzg'
+      }
+    },
   }];
 
   var DEFAULT_PARAMS_WITH_EIDS = [{
@@ -586,7 +590,11 @@ describe('Smart bid adapter tests', function () {
         }
       },
       requestId: 'efgh5678',
-      transactionId: 'zsfgzzg'
+      ortb2Imp: {
+        ext: {
+          tid: 'zsfgzzg',
+        }
+      },
     }];
 
     var INSTREAM_BID_RESPONSE = {
@@ -855,7 +863,11 @@ describe('Smart bid adapter tests', function () {
           protocol: 7
         }
       },
-      requestId: 'efgh5679',
+      ortb2Imp: {
+        ext: {
+          tid: 'efgh5679',
+        }
+      },
       transactionId: 'zsfgzzga'
     }];
 

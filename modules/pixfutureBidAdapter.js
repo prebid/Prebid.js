@@ -136,8 +136,9 @@ export const spec = {
           v: getGlobal().version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
@@ -302,7 +303,7 @@ function bidToTag(bid) {
   if (bid.params.frameworks && isArray(bid.params.frameworks)) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
-
+  // TODO: why does this need to iterate through every adUnit?
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);

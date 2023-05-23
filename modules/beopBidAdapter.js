@@ -64,6 +64,7 @@ export const spec = {
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
+      gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
 
@@ -121,6 +122,7 @@ function buildTrackingParams(data, info, value) {
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     aid: data.auctionId,
     se_ca: 'bid',
     se_ac: info,
@@ -149,8 +151,9 @@ function beOpRequestSlotsMaker(bid) {
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
     name: getBidIdParameter('adUnitCode', bid),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     aid: getBidIdParameter('auctionId', bid),
-    tid: getBidIdParameter('transactionId', bid),
+    tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),

@@ -59,7 +59,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = createOrtbTemplate();
 
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
 
     validBidRequests.forEach((validBid) => {
       let bid = deepClone(validBid);

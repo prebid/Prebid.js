@@ -23,6 +23,7 @@ export const spec = {
       url: `${ENDPOINT}`,
       data: {
         request: {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidderRequest.auctionId
         },
         gdprConsent: {

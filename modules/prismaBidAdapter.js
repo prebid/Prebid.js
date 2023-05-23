@@ -70,8 +70,9 @@ export const spec = {
         tagId: adunitValue.params.tagId,
         label: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         bidfloor: 0,
         bidfloorCurrency: 'USD',

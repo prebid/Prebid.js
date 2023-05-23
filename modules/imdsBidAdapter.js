@@ -39,7 +39,7 @@ export const spec = {
     }
     const refererInfo = bidderRequest.refererInfo;
     const openRtbBidRequest = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         // TODO: does the fallback make sense here?
         domain: refererInfo.domain || location.hostname,

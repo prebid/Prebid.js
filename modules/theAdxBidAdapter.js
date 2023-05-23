@@ -166,6 +166,7 @@ export const spec = {
             requestId: bidderRequest.bidderRequestId,
             bidId: bidRequest.bidId,
             adUnitCode: bidRequest['adUnitCode'],
+            // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
             auctionId: bidRequest['auctionId'],
           };
         }

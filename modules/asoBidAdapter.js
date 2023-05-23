@@ -299,7 +299,7 @@ function createBasePayload(bidRequest, bidderRequest) {
   const urlsInfo = getUrlsInfo(bidderRequest);
 
   const payload = {
-    id: bidRequest.auctionId + '_' + bidRequest.bidId,
+    id: bidRequest.bidId,
     at: 1,
     tmax: bidderRequest.timeout,
     site: {

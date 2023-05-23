@@ -207,6 +207,7 @@ function bidToTag(bid) {
     }
     tag.keywords = keywords;
   }
+  // TODO: why does this need to iterate through every ad unit?
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);

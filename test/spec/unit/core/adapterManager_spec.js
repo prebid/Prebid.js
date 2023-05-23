@@ -353,103 +353,79 @@ describe('adapterManager tests', function () {
     });
   }); // end callTimedOutBidders
 
-  describe('onBidWon', function () {
-    var criteoSpec = { onBidWon: sinon.stub() }
-    var criteoAdapter = {
-      bidder: 'criteo',
-      getSpec: function() { return criteoSpec; }
-    }
+  describe('bidder spec methods', () => {
+    let adUnits, bids, criteoSpec;
     before(function () {
       config.setConfig({s2sConfig: { enabled: false }});
     });
 
-    beforeEach(function () {
-      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
+    beforeEach(() => {
+      criteoSpec = {}
+      adapterManager.bidderRegistry['criteo'] = {
+        bidder: 'criteo',
+        getSpec: function() { return criteoSpec; },
+      }
+      bids = [
+        {bidder: 'criteo', params: {placementId: 'id'}},
+      ];
+      adUnits = [{
+        code: 'adUnit-code',
+        sizes: [[728, 90]],
+        bids
+      }];
     });
 
     afterEach(function () {
       delete adapterManager.bidderRegistry['criteo'];
     });
 
-    it('should call spec\'s onBidWon callback when a bid is won', function () {
-      const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
-      ];
-      const adUnits = [{
-        code: 'adUnit-code',
-        sizes: [[728, 90]],
-        bids
-      }];
+    describe('onBidWon', function () {
+      beforeEach(() => {
+        criteoSpec.onBidWon = sinon.stub()
+      });
+      it('should call spec\'s onBidWon callback when a bid is won', function () {
+        adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
+        sinon.assert.called(criteoSpec.onBidWon);
+      });
 
-      adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
-      sinon.assert.called(criteoSpec.onBidWon);
-    });
-  }); // end onBidWon
-
-  describe('onSetTargeting', function () {
-    var criteoSpec = { onSetTargeting: sinon.stub() }
-    var criteoAdapter = {
-      bidder: 'criteo',
-      getSpec: function() { return criteoSpec; }
-    }
-    before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
+      it('should NOT call onBidWon when the bid is S2S', () => {
+        bids[0].src = CONSTANTS.S2S.SRC
+        adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
+        sinon.assert.notCalled(criteoSpec.onBidWon);
+      })
     });
 
-    beforeEach(function () {
-      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
-    });
+    describe('onSetTargeting', function () {
+      beforeEach(() => {
+        criteoSpec.onSetTargeting = sinon.stub()
+      })
 
-    afterEach(function () {
-      delete adapterManager.bidderRegistry['criteo'];
-    });
+      it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
+        adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
+        sinon.assert.called(criteoSpec.onSetTargeting);
+      });
 
-    it('should call spec\'s onSetTargeting callback when setTargeting is called', function () {
-      const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
-      ];
-      const adUnits = [{
-        code: 'adUnit-code',
-        sizes: [[728, 90]],
-        bids
-      }];
-      adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
-      sinon.assert.called(criteoSpec.onSetTargeting);
+      it('should NOT call onSetTargeting when bid is S2S', () => {
+        bids[0].src = CONSTANTS.S2S.SRC;
+        adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
+        sinon.assert.notCalled(criteoSpec.onSetTargeting);
+      })
+    }); // end onSetTargeting
+    describe('onBidViewable', function () {
+      beforeEach(() => {
+        criteoSpec.onBidViewable = sinon.stub();
+      })
+      it('should call spec\'s onBidViewable callback when callBidViewableBidder is called', function () {
+        adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
+        sinon.assert.called(criteoSpec.onBidViewable);
+      });
+      it('should NOT call onBidViewable when bid is S2S', () => {
+        bids[0].src = CONSTANTS.S2S.SRC;
+        adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
+        sinon.assert.notCalled(criteoSpec.onBidViewable);
+      })
     });
-  }); // end onSetTargeting
-
-  describe('onBidViewable', function () {
-    var criteoSpec = { onBidViewable: sinon.stub() }
-    var criteoAdapter = {
-      bidder: 'criteo',
-      getSpec: function() { return criteoSpec; }
-    }
-    before(function () {
-      config.setConfig({s2sConfig: { enabled: false }});
-    });
-
-    beforeEach(function () {
-      adapterManager.bidderRegistry['criteo'] = criteoAdapter;
-    });
-
-    afterEach(function () {
-      delete adapterManager.bidderRegistry['criteo'];
-    });
-
-    it('should call spec\'s onBidViewable callback when callBidViewableBidder is called', function () {
-      const bids = [
-        {bidder: 'criteo', params: {placementId: 'id'}},
-      ];
-      const adUnits = [{
-        code: 'adUnit-code',
-        sizes: [[728, 90]],
-        bids
-      }];
-      adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
-      sinon.assert.called(criteoSpec.onBidViewable);
-    });
-  }); // end onBidViewable
-
+  })
   describe('onBidderError', function () {
     const bidder = 'appnexus';
     const appnexusSpec = { onBidderError: sinon.stub() };

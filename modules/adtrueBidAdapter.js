@@ -469,7 +469,7 @@ export const spec = {
       conf.zoneId = conf.zoneId || bid.params.zoneId;
       conf.pubId = conf.pubId || bid.params.publisherId;
 
-      conf.transactionId = bid.transactionId;
+      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
@@ -492,7 +492,7 @@ export const spec = {
     payload.ext.wrapper = {};
 
     payload.ext.wrapper.transactionId = conf.transactionId;
-    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
+    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.ortb2?.ext?.tid;
     payload.ext.wrapper.wp = 'pbjs';
 
     payload.user.geo = {};

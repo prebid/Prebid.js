@@ -103,13 +103,13 @@ export const spec = {
     { code: 'appnexusAst', gvlid: 32 },
     { code: 'emxdigital', gvlid: 183 },
     { code: 'pagescience', gvlid: 32 },
-    { code: 'defymedia', gvlid: 32 },
     { code: 'gourmetads', gvlid: 32 },
     { code: 'matomy', gvlid: 32 },
     { code: 'featureforward', gvlid: 32 },
     { code: 'oftmedia', gvlid: 32 },
     { code: 'adasta', gvlid: 32 },
     { code: 'beintoo', gvlid: 618 },
+    { code: 'projectagora', gvlid: 1032 },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -960,6 +960,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
+  // TODO: why does this need to iterate through every ad unit?
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);

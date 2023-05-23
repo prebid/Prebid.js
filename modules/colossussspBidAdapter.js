@@ -125,7 +125,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        tid: bid.transactionId,
+        tid: bid.ortb2Imp?.ext?.tid,
         eids: [],
         floor: {}
       };

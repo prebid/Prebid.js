@@ -220,7 +220,7 @@ describe('AdkernelAdn adapter', function () {
   }
 
   describe('banner request building', function () {
-    let [_, tagRequests] = buildRequest([bid1_pub1]);
+    let [_, tagRequests] = buildRequest([bid1_pub1], {ortb2: {source: {tid: 'mock-tid'}}});
     let tagRequest = tagRequests[0];
 
     it('should have request id', function () {

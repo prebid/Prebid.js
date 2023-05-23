@@ -36,6 +36,7 @@ export const spec = {
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
         currencyCode: config.getConfig('currency.adServerCurrency'),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -46,7 +47,7 @@ export const spec = {
         // TODO: is 'page' the right value here?
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),

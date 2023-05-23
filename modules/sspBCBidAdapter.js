@@ -104,6 +104,7 @@ const getNotificationPayload = bidData => {
 
         // basic notification data
         const bidBasicData = {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           requestId: auctionId || result.requestId,
           timeout: timeout || result.timeout,
           pvid: pageView.id,

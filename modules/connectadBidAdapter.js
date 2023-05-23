@@ -77,6 +77,7 @@ export const spec = {
 
     validBidRequests.map(bid => {
       const placement = Object.assign({
+        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bid.transactionId,
         divName: bid.bidId,
         pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],

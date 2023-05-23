@@ -738,14 +738,34 @@ const handleBidResponse = (args, bidStatus) => {
 
   // set bid status
   bid.status = bidStatus;
-
-  bid.clientLatencyMillis = args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
+  const latencies = getLatencies(args, auctionEntry.auctionStart);
+  bid.clientLatencyMillis = latencies.total;
+  bid.httpLatencyMillis = latencies.net;
   bid.bidResponse = parseBidResponse(args, bid.bidResponse);
 
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
   if (pbsBidId) {
     bid.pbsBidId = pbsBidId;
+  }
+}
+
+const getLatencies = (args, auctionStart) => {
+  try {
+    const metrics = args.metrics.getMetrics();
+    const src = args.src || args.source;
+    return {
+      total: parseInt(metrics[`adapter.${src}.total`]),
+      // If it is array, get slowest
+      net: parseInt(Array.isArray(metrics[`adapter.${src}.net`]) ? metrics[`adapter.${src}.net`][metrics[`adapter.${src}.net`].length - 1] : metrics[`adapter.${src}.net`])
+    }
+  } catch (error) {
+    // default to old way if not able to get better ones
+    const latency = Date.now() - auctionStart;
+    return {
+      total: latency,
+      net: latency
+    }
   }
 }
 
@@ -894,8 +914,10 @@ magniteAdapter.track = ({ eventType, args }) => {
         }
 
         // set client latency if not done yet
-        if (!cachedBid.clientLatencyMillis) {
-          cachedBid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
+        if (!cachedBid.clientLatencyMillis || !cachedBid.httpLatencyMillis) {
+          const latencies = getLatencies(bid, deepAccess(cache, `auctions.${args.auctionId}.auction.auctionStart`));
+          cachedBid.clientLatencyMillis = cachedBid.clientLatencyMillis || latencies.total;
+          cachedBid.httpLatencyMillis = cachedBid.httpLatencyMillis || latencies.net;
         }
       });
       break;
