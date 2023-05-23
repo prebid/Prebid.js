@@ -2,7 +2,7 @@ name: Build & Publish to GCP
 on:
   pull_request:
     branches:
-      - develop
+      - main
 
 env:
   PROJECT_ID: ${{ secrets.GCR_PROJECT }}
