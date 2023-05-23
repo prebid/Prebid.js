@@ -85,7 +85,7 @@ describe('EUID module', function() {
   it('When a valid response body is provided via cookie, it is available to the auction', async function() {
     const euidToken = apiHelpers.makeTokenResponse(initialToken, false, false);
     cookieHelpers.setPublisherCookie(publisherCookieName, euidToken);
-    config.setConfig(makePrebidConfig({euidServerCookie: publisherCookieName}));
+    config.setConfig(makePrebidConfig({euidCookie: publisherCookieName}));
     const bid = await runAuction();
     expectToken(bid, initialToken);
   })

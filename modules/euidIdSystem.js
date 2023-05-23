@@ -15,7 +15,7 @@ const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
 const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`;
-const GVLID = 21; // The Trade Desk - is this correct? Found it from https://iabeurope.eu/vendor-list-tcf-v2-0/
+const GVLID = 21; // The Trade Desk
 const LOG_PRE_FIX = 'EUID: ';
 const ADVERTISING_COOKIE = '__euid_advertising_token';
 
@@ -70,7 +70,7 @@ export const euidIdSubmodule = {
     const mappedConfig = {
       apiBaseUrl: config?.params?.euidApiBase ?? EUID_BASE_URL,
       paramToken: config?.params?.euidToken,
-      serverCookieName: config?.params?.euidServerCookie,
+      serverCookieName: config?.params?.euidCookie,
       storage: config?.params?.storage ?? 'localStorage',
       clientId: EUID_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
