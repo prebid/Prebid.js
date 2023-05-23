@@ -115,6 +115,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 10,
             maxbitrate: 10
           }
@@ -166,6 +167,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -386,6 +388,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -512,6 +515,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -581,6 +585,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -2747,6 +2752,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[1]['video']['linearity']).to.equal(multipleMediaRequests[1].params.video['linearity']);
           expect(data.imp[1]['video']['placement']).to.equal(multipleMediaRequests[1].params.video['placement']);
+          expect(data.imp[1]['video']['plcmt']).to.equal(multipleMediaRequests[1].params.video['plcmt']);
           expect(data.imp[1]['video']['minbitrate']).to.equal(multipleMediaRequests[1].params.video['minbitrate']);
           expect(data.imp[1]['video']['maxbitrate']).to.equal(multipleMediaRequests[1].params.video['maxbitrate']);
 
@@ -3042,6 +3048,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[0]['video']['linearity']).to.equal(videoBidRequests[0].params.video['linearity']);
           expect(data.imp[0]['video']['placement']).to.equal(videoBidRequests[0].params.video['placement']);
+          expect(data.imp[0]['video']['plcmt']).to.equal(videoBidRequests[0].params.video['plcmt']);
           expect(data.imp[0]['video']['minbitrate']).to.equal(videoBidRequests[0].params.video['minbitrate']);
           expect(data.imp[0]['video']['maxbitrate']).to.equal(videoBidRequests[0].params.video['maxbitrate']);
 

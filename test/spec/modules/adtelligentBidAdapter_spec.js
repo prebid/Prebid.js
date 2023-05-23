@@ -22,6 +22,7 @@ const aliasEP = {
   'ocm': 'https://ghb.cenarius.orangeclickmedia.com/v2/auction/',
   'vidcrunchllc': 'https://ghb.platform.vidcrunch.com/v2/auction/',
   '9dotsmedia': 'https://ghb.platform.audiodots.com/v2/auction/',
+  'copper6': 'https://ghb.app.copper6.com/v2/auction/',
 };
 
 const DEFAULT_ADATPER_REQ = { bidderCode: 'adtelligent' };
