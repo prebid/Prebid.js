@@ -235,7 +235,7 @@ function generateUrl(bid, bidderRequest) {
 
     url += `${getUrlParams(params, bid.schain)}`;
 
-    url += (`&transactionId=${bid.transactionId}`);
+    url += (`&transactionId=${bid.ortb2Imp?.ext?.tid}`);
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {

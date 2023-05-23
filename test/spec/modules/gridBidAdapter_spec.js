@@ -22,7 +22,6 @@ describe('TheMediaGrid Adapter', function () {
       'sizes': [[300, 250], [300, 600]],
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
-      'auctionId': '1d1a030790a475',
     };
 
     it('should return true when required params found', function () {
@@ -47,8 +46,13 @@ describe('TheMediaGrid Adapter', function () {
       refererInfo: { page: 'https://example.com' },
       bidderRequestId: '22edbae2733bf6',
       transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
+      timeout: 3000,
       auctionId: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
-      timeout: 3000
+      ortb2: {
+        source: {
+          tid: '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
+        }
+      }
     };
     const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
@@ -69,6 +73,11 @@ describe('TheMediaGrid Adapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
         transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
+        ortb2Imp: {
+          ext: {
+            tid: '1239bd74-4511-4335-af21-e828852e25d7',
+          }
+        }
       },
       {
         'bidder': 'grid',
@@ -81,6 +90,11 @@ describe('TheMediaGrid Adapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
         transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
+        ortb2Imp: {
+          ext: {
+            tid: '1239bd74-4511-4335-af21-e828852e25d7',
+          }
+        }
       },
       {
         'bidder': 'grid',
@@ -99,6 +113,11 @@ describe('TheMediaGrid Adapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
         transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
+        ortb2Imp: {
+          ext: {
+            tid: '1239bd74-4511-4335-af21-e828852e25d7',
+          }
+        }
       },
       {
         'bidder': 'grid',
@@ -120,6 +139,11 @@ describe('TheMediaGrid Adapter', function () {
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '9e2dfbfe-00c7-4f5e-9850-4044df3229c7',
         transactionId: '1239bd74-4511-4335-af21-e828852e25d7',
+        ortb2Imp: {
+          ext: {
+            tid: '1239bd74-4511-4335-af21-e828852e25d7',
+          }
+        }
       }
     ];
 
@@ -152,7 +176,7 @@ describe('TheMediaGrid Adapter', function () {
         },
         'tmax': bidderRequest.timeout,
         'source': {
-          'tid': bidderRequest.auctionId,
+          'tid': bidderRequest.ortb2.source.tid,
           'ext': {'wrapper': 'Prebid_js', 'wrapper_version': '$prebid.version$'}
         },
         'user': {
@@ -520,10 +544,12 @@ describe('TheMediaGrid Adapter', function () {
         'slots': [{
           'impid': bidRequests[0].adUnitCode,
           'transactionid': bidderRequest.transactionId,
+          ext: bidRequests[0].ortb2Imp.ext,
           'auctionId': bidderRequest.auctionId,
           'sizes': ['300x250', '300x600']
         }, {
           'impid': bidRequests[2].adUnitCode,
+          ext: bidRequests[2].ortb2Imp.ext,
           'transactionid': bidderRequest.transactionId,
           'auctionId': bidderRequest.auctionId,
           'sizes': [],
@@ -600,7 +626,13 @@ describe('TheMediaGrid Adapter', function () {
 
     it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
       let consentString = 'abc1234';
-      const gppBidderRequest = Object.assign({ortb2: {regs: {gpp: consentString, gpp_sid: [8]}}}, bidderRequest);
+      const gppBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          regs: {gpp: consentString, gpp_sid: [8]},
+          ...bidderRequest.ortb2
+        }
+      };
 
       const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
       const payload = JSON.parse(request.data);
@@ -897,7 +929,7 @@ describe('TheMediaGrid Adapter', function () {
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
-        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: {...bid.ortb2Imp, ...ortb2Imp[ind]} } : {});
       });
       const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
       expect(request.data).to.be.an('string');
@@ -934,7 +966,7 @@ describe('TheMediaGrid Adapter', function () {
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
-        return Object.assign(ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {}, bid);
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: ortb2Imp[ind] } : {});
       });
       const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
       expect(request.data).to.be.an('string');
@@ -966,8 +998,12 @@ describe('TheMediaGrid Adapter', function () {
       const bidderRequestWithNumId = {
         refererInfo: {page: 'https://example.com'},
         bidderRequestId: 345345345,
-        auctionId: 654645,
-        timeout: 3000
+        timeout: 3000,
+        ortb2: {
+          source: {
+            tid: 654645
+          }
+        }
       };
       const parsedReferrer = encodeURIComponent(bidderRequestWithNumId.refererInfo.page);
       const [request] = spec.buildRequests([bidRequestWithNumId], bidderRequestWithNumId);

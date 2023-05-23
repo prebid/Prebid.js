@@ -262,6 +262,7 @@ export const spec = {
       obj.placementId = placementId;
       deepSetValue(obj, 'ext.prebid', {'storedrequest': {'id': placementId}});
       obj.ext[whitelabelBidder] = {};
+      // TODO: fix auctionId/transactionID leak: https://github.com/prebid/Prebid.js/issues/9781
       obj.ext[whitelabelBidder].adUnitCode = ozoneBidRequest.adUnitCode; // eg. 'mpu'
       obj.ext[whitelabelBidder].transactionId = ozoneBidRequest.transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {

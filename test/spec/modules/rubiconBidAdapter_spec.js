@@ -87,13 +87,13 @@ describe('the rubicon adapter', function () {
   function getBidderRequest() {
     return {
       bidderCode: 'rubicon',
-      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-      bidderRequestId: '178e34bad3658f',
       ortb2: {
         source: {
-          tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          tid: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
         }
       },
+      auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      bidderRequestId: '178e34bad3658f',
       bids: [
         {
           bidder: 'rubicon',
@@ -125,7 +125,11 @@ describe('the rubicon adapter', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          ortb2Imp: {
+            ext: {
+              tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            }
+          },
         }
       ],
       start: 1472239426002,
@@ -324,6 +328,11 @@ describe('the rubicon adapter', function () {
     bidderRequest = {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      ortb2: {
+        source: {
+          tid: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+        }
+      },
       bidderRequestId: '178e34bad3658f',
       bids: [
         {
@@ -356,14 +365,13 @@ describe('the rubicon adapter', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          ortb2Imp: {
+            ext: {
+              tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            }
+          },
         }
       ],
-      ortb2: {
-        source: {
-          tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
-        }
-      },
       start: 1472239426002,
       auctionStart: 1472239426000,
       timeout: 5000
@@ -446,7 +454,7 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -636,7 +644,8 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -987,7 +996,7 @@ describe('the rubicon adapter', function () {
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
-              'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+              'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
               'p_screen_res': /\d+x\d+/,
               'tk_user_key': '12346',
               'kw': 'a,b,c',
@@ -2293,9 +2302,8 @@ describe('the rubicon adapter', function () {
       });
 
       describe('createSlotParams', function () {
-        const localBidderRequest = Object.assign({}, bidderRequest);
-        localBidderRequest.ortb2 = {source: {tid: 'faked707-a418-42ec-b8a7-b70a6c6fab0b'}};
         it('should return a valid slot params object', function () {
+          const localBidderRequest = Object.assign({}, bidderRequest);
           let expectedQuery = {
             'account_id': '14062',
             'site_id': '70608',
@@ -2305,8 +2313,7 @@ describe('the rubicon adapter', function () {
             'p_pos': 'atf',
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'faked707-a418-42ec-b8a7-b70a6c6fab0b',
-            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',

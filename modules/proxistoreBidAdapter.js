@@ -24,8 +24,9 @@ function _createServerRequest(bidRequests, bidderRequest) {
     sizeIds.push(sizeId);
   });
   var payload = {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequests[0].auctionId,
-    transactionId: bidRequests[0].auctionId,
+    transactionId: bidRequests[0].ortb2Imp?.ext?.tid,
     bids: sizeIds,
     website: bidRequests[0].params.website,
     language: bidRequests[0].params.language,

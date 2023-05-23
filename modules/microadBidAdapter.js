@@ -73,7 +73,7 @@ export const spec = {
         url: bidderRequest.refererInfo.page || window.location.href,
         referrer: bidderRequest.refererInfo.ref,
         bid_id: bid.bidId,
-        transaction_id: bid.transactionId,
+        transaction_id: bid.ortb2Imp?.ext?.tid,
         media_types: convertMediaTypes(bid),
         cbt: createCBT()
       };

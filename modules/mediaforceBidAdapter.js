@@ -137,7 +137,7 @@ export const spec = {
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
-            transactionId: bid.transactionId
+            transactionId: bid.ortb2Imp?.ext?.tid,
           }
         }
 
@@ -177,6 +177,7 @@ export const spec = {
           },
           ext: {
             mediaforce: {
+              // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
               hb_key: auctionId
             }
           },

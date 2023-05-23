@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/operaadsBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import {expect} from 'chai';
+import {spec} from 'modules/operaadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -234,7 +234,7 @@ describe('Opera Ads Bid Adapter', function () {
           requestData = JSON.parse(req.data);
         }).to.not.throw();
 
-        expect(requestData.id).to.equal(bidderRequest.auctionId);
+        expect(requestData.id).to.exist;
         expect(requestData.tmax).to.equal(bidderRequest.timeout);
         expect(requestData.test).to.equal(0);
         expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);

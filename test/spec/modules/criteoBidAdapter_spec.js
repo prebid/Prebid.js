@@ -609,7 +609,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -628,7 +632,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -841,7 +849,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [728, 90]]
@@ -880,7 +892,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -893,7 +909,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-234',
-          transactionId: 'transaction-234',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-234',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [728, 90]]

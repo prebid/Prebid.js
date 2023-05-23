@@ -729,6 +729,9 @@ describe('IndexexchangeAdapter', function () {
     ortb2: {
       site: {
         page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
       }
     }
   };
@@ -1894,7 +1897,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
-      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
+      expect(payload.source.tid).to.equal(DEFAULT_OPTION.ortb2.source.tid);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {

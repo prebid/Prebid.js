@@ -58,7 +58,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: { page, domain, publisher },
       device: { ua, devicetype },
       source: { fd: 1 },

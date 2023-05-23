@@ -866,6 +866,7 @@ function storeRequestInAdagioNS(bidRequest) {
       bidder: bidRequest.bidder,
       params: bidRequest.params // use the updated bid.params object with auto-detected params
     }],
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bidRequest.auctionId,
     pageviewId: internal.getPageviewId(),
     printNumber,
