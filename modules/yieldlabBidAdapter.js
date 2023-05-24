@@ -12,6 +12,8 @@ const CURRENCY_CODE = 'EUR';
 const OUTSTREAMPLAYER_URL = 'https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event';
 const GVLID = 70;
 const DIMENSION_SIGN = 'x';
+const IMG_TYPE_ICON = 1;
+const IMG_TYPE_MAIN = 3;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -183,14 +185,15 @@ export const spec = {
         }
 
         if (isNative(bidRequest, adType)) {
-          // there may be publishers still rely on it
+          const { native } = matchedBid;
+          const { assets } = native;
           bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeIconAssetObj = find(matchedBid.native.assets, asset => isImageAssetOfType(asset, 1));
-          const nativeImageAssetObj = find(matchedBid.native.assets, asset => isImageAssetOfType(asset, 3));
+          const nativeIconAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_ICON));
+          const nativeImageAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_MAIN));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
-          const nativeTitleAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'title'));
-          const nativeBodyAsset = find(matchedBid.native.assets, asset => hasValidProperty(asset, 'data'));
+          const nativeTitleAsset = find(assets, asset => hasValidProperty(asset, 'title'));
+          const nativeBodyAsset = find(assets, asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
@@ -206,9 +209,9 @@ export const spec = {
               width: nativeImageAsset.w,
               height: nativeImageAsset.h,
             },
-            clickUrl: matchedBid.native.link.url,
-            impressionTrackers: matchedBid.native.imptrackers,
-            assets: matchedBid.native.assets,
+            clickUrl: native.link.url,
+            impressionTrackers: native.imptrackers,
+            assets: assets,
           };
         }
 
@@ -525,14 +528,12 @@ function hasValidProperty(obj, propName) {
 }
 
 /**
- * Checks if an asset object is of the given type.
- *
- * @param {Object} asset - The asset object to check.
- * @param {number} type - The type number to compare.
- * @returns {boolean} Returns true if the object has a property img.type with a value of the given type, otherwise false.
+ * Returns a filtering function for image assets based on type.
+ * @param {number} type - The desired asset type to filter for i.e. IMG_TYPE_ICON = 1, IMG_TYPE_MAIN = 3
+ * @returns {function} - A filtering function that accepts an asset and checks if its img.type matches the desired type.
  */
-function isImageAssetOfType(asset, type) {
-  return asset?.img?.type === type
+function isImageAssetOfType(type) {
+  return asset => asset?.img?.type === type;
 }
 
 registerBidder(spec);
