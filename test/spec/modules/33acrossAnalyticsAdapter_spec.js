@@ -1,3 +1,4 @@
+// @ts-nocheck
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
 import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
@@ -166,7 +167,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             .returns(true);
 
           performStandardAuction();
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, createReportWithThreeBidWonEvents());
         });
@@ -199,7 +200,7 @@ describe('33acrossAnalyticsAdapter:', function () {
               .withArgs('http://test-endpoint', reportWithConsent);
 
             performStandardAuction();
-            sandbox.clock.tick(this.defaultTimeout + 1);
+            sandbox.clock.tick(this.defaultTimeout + 1000);
 
             assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
           });
@@ -213,7 +214,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         navigator.sendBeacon.returns(false);
 
         performStandardAuction();
-        sandbox.clock.tick(this.defaultTimeout + 1);
+        sandbox.clock.tick(this.defaultTimeout + 1000);
 
         assert.calledWithExactly(log.error, 'Analytics report exceeded User-Agent data limits and was not sent.', createReportWithThreeBidWonEvents());
       });
@@ -241,7 +242,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
           };
 
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           for (let bidResponseEvent of auction.BID_RESPONSE) {
             events.emit(EVENTS.BID_RESPONSE, bidResponseEvent);
@@ -267,10 +268,10 @@ describe('33acrossAnalyticsAdapter:', function () {
             .withArgs(endpoint, JSON.stringify(createReportWithThreeBidWonEvents()));
 
           performStandardAuction();
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           performStandardAuction();
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledTwice(navigator.sendBeacon);
         });
@@ -287,14 +288,14 @@ describe('33acrossAnalyticsAdapter:', function () {
 
         performStandardAuction();
         performStandardAuction();
-        sandbox.clock.tick(this.defaultTimeout + 1);
+        sandbox.clock.tick(this.defaultTimeout + 1000);
 
         assert.calledTwice(navigator.sendBeacon);
       });
     });
 
     context('when an AUCTION_END event is received before BID_WON events', function () {
-      it('it sends a report with the bids that have won', function () {
+      it('it sends a report with the bids that have won after timeout', function () {
         const endpoint = faker.internet.url();
         this.enableAnalytics({ endpoint });
 
@@ -309,6 +310,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           events.emit(EVENTS.BID_WON, bidWon);
         }
 
+        sandbox.clock.tick(this.defaultTimeout);
         assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
       });
     });
@@ -340,13 +342,33 @@ describe('33acrossAnalyticsAdapter:', function () {
       context('and a timeout config value has been given', function () {
         context('and the timeout value has elapsed', function () {
           it('logs a warning', function () {
-            this.enableAnalytics({ timeout: 2000 });
+            const timeout = 2000;
+            this.enableAnalytics({ timeout });
 
-            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
 
-            sandbox.clock.tick(this.defaultTimeout + 1);
+            sandbox.clock.tick(timeout + 1000);
 
             assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
+          });
+
+          it(`marks timed out bids as "timeout"`, function () {
+            const timeout = 2000;
+            this.enableAnalytics({ timeout });
+            const request = getMockEvents().prebid[0].BID_REQUESTED[0];
+            const bidToTimeout = request.bids[0];
+
+            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
+            sandbox.clock.tick(1);
+            events.emit(EVENTS.BID_TIMEOUT, {
+              auctionId: request.auctionId,
+              bidId: bidToTimeout.bidId,
+              transactionId: bidToTimeout.transactionId,
+            });
+            sandbox.clock.tick(timeout + 1000);
+
+            const timeoutBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0];
+            assert.strictEqual(timeoutBid.status, 'timeout');
           });
         })
       });
@@ -356,9 +378,9 @@ describe('33acrossAnalyticsAdapter:', function () {
           it('logs an error', function () {
             this.enableAnalytics();
 
-            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+            performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
 
-            sandbox.clock.tick(this.defaultTimeout + 1);
+            sandbox.clock.tick(this.defaultTimeout + 1000);
 
             assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
@@ -372,7 +394,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           this.enableAnalytics();
 
           performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
           assert.strictEqual(incompleteSentBid.hasWon, 0);
@@ -385,7 +407,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           this.enableAnalytics({ endpoint });
 
           performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
-          sandbox.clock.tick(this.defaultTimeout + 1);
+          sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledWith(log.info, `Analytics report sent to ${endpoint}`);
         });
@@ -415,10 +437,14 @@ function performStandardAuction({ exclude = [] } = {}) {
     };
   }
 
-  // Note: AUCTION_END *frequently* (but not always) emits before BID_WON,
-  // even if the auction is ending because all bids have been won.
   if (!exclude.includes(EVENTS.AUCTION_END)) {
     events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+  }
+
+  if (!exclude.includes('slotRenderEnded')) {
+    for (let gEvent of gam.slotRenderEnded) {
+      mockGpt.emitEvent('slotRenderEnded', gEvent);
+    }
   }
 
   if (!exclude.includes(EVENTS.BID_WON)) {
@@ -438,17 +464,23 @@ function mapToBids(auctions) {
 
 function getLocalAssert() {
   function isValidAnalyticsReport(report) {
-    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
-    if ('usPrivacy' in report) {
-      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+    try {
+      assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
+      if ('usPrivacy' in report) {
+        assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
+      }
+      assert.equal(report.analyticsVersion, '1.0.0');
+      assert.isString(report.pid);
+      assert.isString(report.src);
+      assert.equal(report.pbjsVersion, '$prebid.version$');
+      assert.isArray(report.auctions);
+      assert.isAbove(report.auctions.length, 0);
+      report.auctions.forEach(isValidAuction);
+    } catch (e) {
+      e.name = 'ValidationError';
+      e.message = `Malformed AnalyticsReport: ${e.message}`;
+      throw e;
     }
-    assert.equal(report.analyticsVersion, '1.0.0');
-    assert.isString(report.pid);
-    assert.isString(report.src);
-    assert.equal(report.pbjsVersion, '$prebid.version$');
-    assert.isArray(report.auctions);
-    assert.isAbove(report.auctions.length, 0);
-    report.auctions.forEach(isValidAuction);
   }
   function isValidAuction(auction) {
     assert.hasAllKeys(auction, ['adUnits', 'auctionId', 'userIds']);
@@ -477,7 +509,7 @@ function getLocalAssert() {
     assert.isString(bid.bidder);
     assert.isString(bid.bidId);
     assert.isString(bid.source);
-    assert.oneOf(bid.status, [...Object.values(BID_STATUS), 'pending']);
+    assert.oneOf(bid.status, ['pending', 'timeout', 'targetingSet', 'rendered', 'success', 'rejected', 'no-bid', 'error']);
     assert.oneOf(bid.hasWon, [0, 1]);
   }
   function isValidBidResponse(bidResponse) {
@@ -525,6 +557,7 @@ function getLocalAssert() {
   }
 };
 
+const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2'];
 function createReportWithThreeBidWonEvents() {
   return {
     pid: 'test-pid',
@@ -534,8 +567,8 @@ function createReportWithThreeBidWonEvents() {
     auctions: [{
       adUnits: [{
         transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
-        adUnitCode: '/19968336/header-bid-tag-0',
-        slotId: '/19968336/header-bid-tag-0',
+        adUnitCode: adUnitCodes[0],
+        slotId: adUnitCodes[0],
         mediaTypes: ['banner'],
         sizes: ['300x250', '300x600'],
         bids: [{
@@ -555,8 +588,8 @@ function createReportWithThreeBidWonEvents() {
         }]
       }, {
         transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
-        adUnitCode: '/19968336/header-bid-tag-1',
-        slotId: '/19968336/header-bid-tag-1',
+        adUnitCode: adUnitCodes[1],
+        slotId: adUnitCodes[1],
         mediaTypes: ['banner'],
         sizes: ['728x90', '970x250'],
         bids: [{
@@ -576,15 +609,15 @@ function createReportWithThreeBidWonEvents() {
         }]
       }, {
         transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
-        adUnitCode: '/17118521/header-bid-tag-2',
-        slotId: '/17118521/header-bid-tag-2',
+        adUnitCode: adUnitCodes[2],
+        slotId: adUnitCodes[2],
         mediaTypes: ['banner'],
         sizes: ['300x250'],
         bids: [{
           bidder: 'bidder0',
           bidId: '22108ac7b778717',
           source: 'client',
-          status: 'targetingSet',
+          status: 'rendered',
           bidResponse: {
             cpm: 1.5,
             cur: 'USD',
@@ -611,12 +644,62 @@ function getMockEvents() {
   };
 
   return {
+    gam: {
+      slotRenderEnded: [
+        {
+          serviceName: 'publisher_ads',
+          slot: mockGpt.makeSlot({ code: adUnitCodes[0] }),
+          isEmpty: true,
+          slotContentChanged: true,
+          size: null,
+          advertiserId: null,
+          campaignId: null,
+          creativeId: null,
+          creativeTemplateId: null,
+          labelIds: null,
+          lineItemId: null,
+          isBackfill: false,
+        },
+        {
+          serviceName: 'publisher_ads',
+          slot: mockGpt.makeSlot({ code: adUnitCodes[1] }),
+          isEmpty: false,
+          slotContentChanged: true,
+          size: [1, 1],
+          advertiserId: 12345,
+          campaignId: 400000001,
+          creativeId: 6789,
+          creativeTemplateId: null,
+          labelIds: null,
+          lineItemId: 1011,
+          isBackfill: false,
+          yieldGroupIds: null,
+          companyIds: null,
+        },
+        {
+          serviceName: 'publisher_ads',
+          slot: mockGpt.makeSlot({ code: adUnitCodes[2] }),
+          isEmpty: false,
+          slotContentChanged: true,
+          size: [728, 90],
+          advertiserId: 12346,
+          campaignId: 299999000,
+          creativeId: 6790,
+          creativeTemplateId: null,
+          labelIds: null,
+          lineItemId: 1012,
+          isBackfill: false,
+          yieldGroupIds: null,
+          companyIds: null,
+        },
+      ],
+    },
     prebid: [{
       AUCTION_INIT: {
         auctionId,
         adUnits: [
           {
-            code: '/19968336/header-bid-tag-0',
+            code: adUnitCodes[0],
             mediaTypes: {
               banner: {
                 sizes: [
@@ -638,12 +721,12 @@ function getMockEvents() {
             transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
             ortb2Imp: {
               ext: {
-                gpid: '/19968336/header-bid-tag-0',
+                gpid: adUnitCodes[0],
               },
             },
           },
           {
-            code: '/19968336/header-bid-tag-1',
+            code: adUnitCodes[1],
             mediaTypes: {
               banner: {
                 sizes: [
@@ -665,12 +748,12 @@ function getMockEvents() {
             transactionId: 'abab4423-d962-41aa-adc7-0681f686c330',
             ortb2Imp: {
               ext: {
-                gpid: '/19968336/header-bid-tag-1',
+                gpid: adUnitCodes[1],
               },
             },
           },
           {
-            code: '/17118521/header-bid-tag-2',
+            code: adUnitCodes[2],
             mediaTypes: {
               banner: {
                 sizes: [[300, 250]],
@@ -690,7 +773,7 @@ function getMockEvents() {
             transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
             ortb2Imp: {
               ext: {
-                gpid: '/17118521/header-bid-tag-2',
+                gpid: adUnitCodes[2],
               },
             },
           },
@@ -739,7 +822,7 @@ function getMockEvents() {
         requestId: '20661fc5fbb5d9b',
         size: '300x250',
         source: 'client',
-        status: 'rendered'
+        status: 'targetingSet'
       },
       {
         auctionId,
@@ -811,12 +894,12 @@ function getMockEvents() {
         requestId: '22108ac7b778717',
         size: '728x90',
         source: 'client',
-        status: 'targetingSet',
+        status: 'rendered',
         transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
       }],
       AUCTION_END: {
         auctionId,
       },
-    }]
+    }],
   };
 }
