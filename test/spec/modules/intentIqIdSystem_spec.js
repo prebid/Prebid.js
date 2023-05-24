@@ -1,15 +1,17 @@
 import { expect } from 'chai';
-import { intentIqIdSubmodule, readData, FIRST_PARTY_KEY } from 'modules/intentIqIdSystem.js';
+import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
 const partner = 10;
 const pai = '11';
 const pcid = '12';
+const enableCookieStorage = true;
 const defaultConfigParams = { params: { partner: partner } };
 const paiConfigParams = { params: { partner: partner, pai: pai } };
 const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
-const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid } };
+const enableCookieConfigParams = { params: { partner: partner, enableCookieStorage: enableCookieStorage } };
+const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid, enableCookieStorage: enableCookieStorage } };
 const responseHeader = { 'Content-Type': 'application/json' }
 
 describe('IntentIQ tests', function () {
@@ -60,6 +62,38 @@ describe('IntentIQ tests', function () {
     let submodule = intentIqIdSubmodule.getId({ params: { partner: '10' } });
     expect(logErrorStub.calledOnce).to.be.true;
     expect(submodule).to.be.undefined;
+  });
+
+  it('should not save data in cookie if enableCookieStorage configParam not set', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(storage.getCookie('_iiq_fdata_' + partner)).to.equal(null);
+  });
+
+  it('should save data in cookie if enableCookieStorage configParam set to true', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    const cookieValue = storage.getCookie('_iiq_fdata_' + partner)
+    expect(cookieValue).to.not.equal(null)
+    expect(JSON.parse(cookieValue).data).to.be.equal('test_personid');
   });
 
   it('should call the IntentIQ endpoint with only partner', function () {
