@@ -133,8 +133,11 @@ export class Uid2StorageManager {
     if (!storedValue) {
       const fallbackValue = fallbackStorageGet();
       if (fallbackValue) {
-        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value. Copying the fallback value to ${preferredStorageLabel}.`);
-        preferredStorageSet(fallbackValue);
+        this._logInfo(`${preferredStorageLabel} was empty, but found a fallback value.`)
+        if (typeof fallbackValue === 'object') {
+          this._logInfo(`Copying the fallback value to ${preferredStorageLabel}.`);
+          preferredStorageSet(fallbackValue);
+        }
         return fallbackValue;
       }
     } else if (typeof storedValue === 'string') {

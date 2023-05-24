@@ -24,7 +24,7 @@ const initialToken = `initial-advertising-token`;
 const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
 
-const legacyConfigParams = null;
+const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
 const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 
@@ -194,6 +194,21 @@ describe(`UID2 module`, function () {
       async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a token is provided in config, it should provide the config token',
       createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
+
+    it.only('multiple runs do not change the value', async function() {
+      coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
+      config.setConfig(makePrebidConfig(legacyConfigParams));
+
+      const bid = await runAuction();
+
+      console.log('Storage', coreStorage.getDataFromLocalStorage(moduleCookieName));
+      init(config);
+      setSubmoduleRegistry([uid2IdSubmodule]);
+      config.setConfig(makePrebidConfig(legacyConfigParams));
+      const bid2 = await runAuction();
+
+      expect(bid.userId.uid2.id).to.equal(bid2.userId.uid2.id);
+    });
   });
 
   // This setup runs all of the functional tests with both types of config - the full token response in params, or a server cookie with the cookie name provided
