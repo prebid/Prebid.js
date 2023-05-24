@@ -52,7 +52,7 @@ export const pairIdSubmodule = {
       try {
         ids = ids.concat(JSON.parse(atob(pairIdsString)))
       } catch (error) {
-        logError(error)
+        logInfo(error)
       }
     }
 
@@ -64,12 +64,12 @@ export const pairIdSubmodule = {
         const obj = JSON.parse(atob(liverampValue));
         ids = ids.concat(obj.envelope);
       } catch (error) {
-        logError(error)
+        logInfo(error)
       }
     }
 
     if (ids.length == 0) {
-      logError('PairId not found.')
+      logInfo('PairId not found.')
       return undefined;
     }
     return {'id': ids};
