@@ -1002,22 +1002,22 @@ describe('validate native', function () {
 
     expect(oldNativeRequest.image).to.deep.include({
       required: false,
-      aspect_ratios: {
+      aspect_ratios: [{
         min_width: 836,
         min_height: 627,
-        ratio_width: 836,
-        ratio_height: 627
-      }
+        ratio_width: 4,
+        ratio_height: 3
+      }]
     });
 
     expect(oldNativeRequest.icon).to.deep.include({
       required: true,
-      aspect_ratios: {
+      aspect_ratios: [{
         min_width: 50,
         min_height: 50,
-        ratio_width: 50,
-        ratio_height: 50
-      }
+        ratio_width: 1,
+        ratio_height: 1
+      }]
     });
     expect(oldNativeRequest.sponsoredBy).to.include({
       required: true,
@@ -1119,12 +1119,12 @@ describe('validate native', function () {
         },
         icon: {
           required: true,
-          aspect_ratios: {
+          aspect_ratios: [{
             min_width: 50,
             min_height: 50,
-            ratio_width: 50,
-            ratio_height: 50
-          }
+            ratio_width: 1,
+            ratio_height: 1
+          }]
         },
         sponsoredBy: {
           required: true,
