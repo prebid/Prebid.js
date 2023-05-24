@@ -24,12 +24,11 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       const requestParent = { adUnits: [], meta: {} };
       const bid = validBidRequests[i]
-
-      requestParent.meta = { adUnitCode, auctionId, bidId, bidder, bidderRequestId, ortb2 } = bid;
+      const { adUnitCode, auctionId, bidId, bidder, bidderRequestId, ortb2 } = bid
+      requestParent.meta = { adUnitCode, auctionId, bidId, bidder, bidderRequestId, ortb2 }
 
       const { site, adunit } = bid.params
       const adUnit = { site, adunit, targetId: bid.bidId }
-      
       if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) adUnit.dimensions = bid.mediaTypes.banner.sizes
       requestParent.adUnits.push(adUnit);
       requests.push({
