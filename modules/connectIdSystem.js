@@ -33,7 +33,7 @@ function storeObject(obj) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
   } else if (storage.localStorageIsEnabled()) {
     obj.__expires = expires;
-    storage.setDataInLocalStorage(MODULE_NAME, obj);
+    storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
 
@@ -71,8 +71,11 @@ function getIdFromCookie() {
 
 function getIdFromLocalStorage() {
   if (storage.localStorageIsEnabled()) {
-    const storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
+    let storedIdData = storage.getDataFromLocalStorage(MODULE_NAME);
     if (storedIdData) {
+      try {
+        storedIdData = JSON.parse(storedIdData);
+      } catch {}
       if (isPlainObject(storedIdData) && storedIdData.__expires &&
           storedIdData.__expires <= Date.now()) {
         storage.removeDataFromLocalStorage(MODULE_NAME);

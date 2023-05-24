@@ -1085,7 +1085,7 @@ module('userId', attachIdSystem);
 
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');
-  if (eids) {
+  if (eids && Object.keys(eids).length > 0) {
     deepSetValue(ortbRequest, 'user.ext.eids', eids);
   }
 }

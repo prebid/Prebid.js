@@ -191,6 +191,7 @@ const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
           url: 'https://localhost:8080/yl-logo100x100.jpg',
           w: 100,
           h: 100,
+          type: 3,
         },
       },
       {
@@ -557,7 +558,6 @@ describe('yieldlabBidAdapter', () => {
 
     it('should add adUrl and native assets when type is Native', () => {
       const result = spec.interpretResponse({body: [NATIVE_RESPONSE]}, {validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS});
-
       expect(result[0].requestId).to.equal('2d925f27f5079f');
       expect(result[0].cpm).to.equal(0.01);
       expect(result[0].mediaType).to.equal('native');
@@ -569,6 +569,13 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.height).to.equal(100);
       expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de');
       expect(result[0].native.impressionTrackers.length).to.equal(3);
+      expect(result[0].native.assets.length).to.equal(3);
+      const titleAsset = result[0].native.assets.find(asset => 'title' in asset);
+      const imageAsset = result[0].native.assets.find(asset => 'img' in asset);
+      const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
+      expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
+      expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
+      expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
     });
 
     it('should add adUrl and default native assets when type is Native', () => {
