@@ -7,7 +7,7 @@
 
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js'
-import { logError } from '../src/utils.js';
+import { logInfo } from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'pairId';
@@ -17,11 +17,11 @@ const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function pairIdFromLocalStorage(key) {
-  return storage.localStorageIsEnabled ? storage.getDataFromLocalStorage(key) : null;
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(key) : null;
 }
 
 function pairIdFromCookie(key) {
-  return storage.cookiesAreEnabled ? storage.getCookie(key) : null;
+  return storage.cookiesAreEnabled() ? storage.getCookie(key) : null;
 }
 
 /** @type {Submodule} */
