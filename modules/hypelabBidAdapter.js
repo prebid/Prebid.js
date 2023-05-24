@@ -24,8 +24,8 @@ function isBidRequestValid(request) {
   return true;
 }
 
-function buildRequests(validRequests, request) {
-  const result = validRequests.map((request) => {
+function buildRequests(validBidRequests, bidderRequest) {
+  const result = validBidRequests.map((request) => {
     const uids = (request.userIdAsEids || []).reduce((a, c) => {
       const ids = c.uids.map((uid) => uid.id);
       return [...a, ...ids];
@@ -33,14 +33,16 @@ function buildRequests(validRequests, request) {
 
     const uuid = uids[0] ? uids[0] : generateTemporaryUUID();
 
-    const hypelabRequest = {
+    const payload = {
       property_slug: request.params.property_slug,
       placement_slug: request.params.placement_slug,
       provider_version: request.params.provider_version,
       provider_name: request.params.provider_name,
+      referrer: bidderRequest.refererInfo?.ref,
       sdk_version: request.params.sdk_version,
       sizes: request.sizes,
       wids: [],
+      url: bidderRequest.refererInfo?.page || window.location.href,
       uuid,
     };
 
@@ -48,7 +50,7 @@ function buildRequests(validRequests, request) {
       method: 'POST',
       url: url(REQUEST_ROUTE),
       options: { contentType: 'application/json', withCredentials: false },
-      data: hypelabRequest,
+      data: payload,
       bidId: request.bidId,
     };
   });
