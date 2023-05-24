@@ -48,6 +48,15 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  * }} AuctionEventArgs
  */
 
+export const getAdIndex = (adUnit, zoneConfig = {}) =>
+  zoneConfig && zoneConfig.index ? Number(zoneConfig.index) : null
+
+export const filterDuplicateAdUnits = (adUnits, zoneMap = {}) =>
+  Array.from(new Map(adUnits.map(adUnit => [
+    adUnit.code + getAdIndex(adUnit, zoneMap[adUnit.code]),
+    adUnit
+  ])).values())
+
 /**
  * // cpmms, zoneIndexes, and zoneNames all have the same length
  * @typedef {{
@@ -57,7 +66,6 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  *   zoneNames?: string[]
  * }} AuctionInitSummary
  */
-
 /**
  * @param {AuctionEventArgs} args
  * @param {MavenDistributionAdapterConfig} adapterConfig
@@ -231,9 +239,21 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
     const {eventType, args} = typeAndArgs
     let eventToSend
     if (eventType === AUCTION_INIT) {
-      eventToSend = summarizeAuctionInit(args, this.adapterConfig)
+      eventToSend = summarizeAuctionInit(
+        {
+          ...args,
+          adUnits: filterDuplicateAdUnits(args.adUnits, this.adapterConfig.options.zoneMap),
+        },
+        this.adapterConfig
+      )
     } else if (eventType === AUCTION_END) {
-      eventToSend = summarizeAuctionEnd(args, this.adapterConfig)
+      eventToSend = summarizeAuctionEnd(
+        {
+          ...args,
+          adUnits: filterDuplicateAdUnits(args.adUnits, this.adapterConfig.options.zoneMap),
+        },
+        this.adapterConfig
+      )
     }
     if (eventToSend !== undefined) {
       this.batch[eventType] ||= []

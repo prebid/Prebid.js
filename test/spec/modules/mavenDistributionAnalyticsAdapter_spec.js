@@ -1,6 +1,8 @@
-import { createSendOptionsFromBatch, summarizeAuctionEnd, testables } from '../../../modules/mavenDistributionAnalyticsAdapter.js';
+import { filterDuplicateAdUnits, getAdIndex, createSendOptionsFromBatch, summarizeAuctionEnd, testables } from '../../../modules/mavenDistributionAnalyticsAdapter.js';
 
 var assert = require('assert');
+var adUnits = require('./mavenDistributionAnalyticsAdapter_adUnits.json');
+var zoneMap = require('./mavenDistributionAnalyticsAdapter_zoneMap.json');
 
 describe('MavenDistributionAnalyticsAdapter', function () {
   describe('LiftIgniterWrapper', () => {
@@ -85,6 +87,40 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const liftIgniterWrapper = new testables.LiftIgniterWrapper()
       assert.equal(liftIgniterWrapper._state, 'loaded')
       assert.equal(liftIgniterWrapper.checkIsLoaded(), true)
+    })
+  })
+  describe('filterDuplicateAdUnits', function() {
+    it('should filter duplicates', function() {
+      var actual = filterDuplicateAdUnits(adUnits, zoneMap)
+      var set = new Set(adUnits.map(a => a.code))
+      assert.ok(adUnits.length > actual.length)
+      assert.equal(actual.length, set.size)
+    })
+    it('should handle undefined zoneMap', function() {
+      var actual = filterDuplicateAdUnits(adUnits)
+      assert.ok(adUnits.length > actual.length)
+    })
+    it('should handle empty arrays', function() {
+      var actual = filterDuplicateAdUnits([])
+      assert.ok(Array.isArray(actual))
+      assert.equal(actual.length, 0)
+    })
+  })
+  describe('getAdIndex', function() {
+    it('should return an adindex', function() {
+      var adUnit = adUnits[4];
+      var actual = getAdIndex(adUnit, zoneMap[adUnit.code]);
+      assert.equal(actual, 0)
+    })
+    it('should return null for undefined adzones', function() {
+      var adUnit = adUnits[4];
+      var actual = getAdIndex(adUnit);
+      assert.equal(actual, null)
+    })
+    it('should cast a string to a number for found indices', function() {
+      var adUnit = adUnits[4];
+      var actual = getAdIndex(adUnit, {index: '1'});
+      assert.strictEqual(actual, 1)
     })
   })
   describe('summarizeAuctionEnd', function () {

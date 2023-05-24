@@ -1,0 +1,202 @@
+{
+  "ad-0c3f8c8aebe141cf83f84a839d317f6d": {
+    "zone": "header",
+    "index": 0
+  },
+  "ad-0823608c897e416b9caa684d315422ce": {
+    "zone": "header",
+    "index": 0
+  },
+  "ad-f6ff03aa653d41b0a7a0eb2aceddcd93": {
+    "zone": "header",
+    "index": 0
+  },
+  "ad-3baba609392c4c2198f431e40745f34c": {
+    "zone": "header",
+    "index": 0
+  },
+  "ad-14c970ca6cb048b2a29555bb359ad58b": {
+    "zone": "fixed_bottom",
+    "index": 0
+  },
+  "ad-3afe9058622e4ee2aa0b1b976bf446bd": {
+    "zone": "fixed_bottom",
+    "index": 0
+  },
+  "ad-8929222df13e49feb8b5b4bf35df69b3": {
+    "zone": "fixed_bottom",
+    "index": 0
+  },
+  "ad-c12dffc2abfd4f9f803ee1aa1f10d03f": {
+    "zone": "fixed_bottom",
+    "index": 0
+  },
+  "ad-536e8410f7974345a83c45fd02bc7c12": {
+    "zone": "atf_sidebar",
+    "index": 0
+  },
+  "ad-4776edcc0f564efb99b28a58e6d9222b": {
+    "zone": "atf_sidebar",
+    "index": 0
+  },
+  "ad-e47867a131874469a747bc08bfc1e984": {
+    "zone": "sidebar",
+    "index": 0
+  },
+  "ad-1e99036f93714196b1282cef91b526bc": {
+    "zone": "sidebar",
+    "index": 0
+  },
+  "ad-b38a17c084484dd7b26abb2c7417b7db": {
+    "zone": "in_content",
+    "index": "0"
+  },
+  "ad-d7bdaa7ca7394b668bd3c69858159265": {
+    "zone": "in_content",
+    "index": "0"
+  },
+  "ad-b248bc8f8334427484d4abeaba6d5c09": {
+    "zone": "in_content",
+    "index": "0"
+  },
+  "ad-695c015617754d1696f53c0e73c49eaf": {
+    "zone": "in_content",
+    "index": "0"
+  },
+  "ad-952fe2be0cc646a78ea90d718ceea949": {
+    "zone": "in_content",
+    "index": "1"
+  },
+  "ad-cddf6e4338254b25ad9f9fb16a26cd27": {
+    "zone": "in_content",
+    "index": "1"
+  },
+  "ad-96901a80108945b6827e977dc2933265": {
+    "zone": "in_content",
+    "index": "1"
+  },
+  "ad-7f2fa146829a4fe78a2d1ef4a6e212f3": {
+    "zone": "in_content",
+    "index": "1"
+  },
+  "ad-0c21622d10ea4314aab2924d647c3853": {
+    "zone": "in_content",
+    "index": "2"
+  },
+  "ad-32a2f0a854ea40e79d44d6b895ff02e8": {
+    "zone": "in_content",
+    "index": "2"
+  },
+  "ad-bb0c516daca04d0fb392a07716ddb967": {
+    "zone": "in_content",
+    "index": "2"
+  },
+  "ad-1724a61f39794a9dbee2ade73605b4b9": {
+    "zone": "in_content",
+    "index": "2"
+  },
+  "ad-39d3d60e1926486ca2901a7ca3314d98": {
+    "zone": "in_content",
+    "index": "3"
+  },
+  "ad-a0f573d48ad34e29a29d76784301115a": {
+    "zone": "in_content",
+    "index": "3"
+  },
+  "ad-4a3e52bf33d442ada6e6f1c6de40c245": {
+    "zone": "in_content",
+    "index": "3"
+  },
+  "ad-7dc2f7d3053b47f888e87b581fc4d4bb": {
+    "zone": "in_content",
+    "index": "3"
+  },
+  "ad-8e928c436a4c41309981c8bdb61534c6": {
+    "zone": "in_content",
+    "index": "4"
+  },
+  "ad-d14dec857a52429981ce97333ef7f2e8": {
+    "zone": "in_content",
+    "index": "4"
+  },
+  "ad-d71366a35be34b31b33c33f52eb9ec6a": {
+    "zone": "in_content",
+    "index": "4"
+  },
+  "ad-97d9aaf7170c48c1b9dcae5a129f2a2d": {
+    "zone": "in_content",
+    "index": "4"
+  },
+  "ad-6061fa6d335e4626b5c52d3e7888c3c0": {
+    "zone": "in_content",
+    "index": "5"
+  },
+  "ad-85df5a2acec74ae8ae0496403ec7aa4b": {
+    "zone": "in_content",
+    "index": "5"
+  },
+  "ad-508707fc999143039bbb574633309f7f": {
+    "zone": "in_content",
+    "index": "5"
+  },
+  "ad-3aa790e601d84dd48b41c84d688350c8": {
+    "zone": "in_content",
+    "index": "5"
+  },
+  "ad-cf4a293c5ea84b24a58c541540e07077": {
+    "zone": "in_content",
+    "index": "6"
+  },
+  "ad-fd717e2462c24c74b111ee6f62723ca8": {
+    "zone": "in_content",
+    "index": "6"
+  },
+  "ad-5312768460f54b6f923d97c5a4b05dbd": {
+    "zone": "in_content",
+    "index": "6"
+  },
+  "ad-1ed058d535464e35b74d690f74cdd2c1": {
+    "zone": "in_content",
+    "index": "6"
+  },
+  "ad-20fc6629ba034736af30f357535cfb3a": {
+    "zone": "in_content",
+    "index": "7"
+  },
+  "ad-23c9cd48f82c4f66897778d736b04def": {
+    "zone": "in_content",
+    "index": "7"
+  },
+  "ad-78258c0367474531b0a0fa62695295de": {
+    "zone": "in_content",
+    "index": "7"
+  },
+  "ad-d1e6ff2b5aff436f8af68f6864343a84": {
+    "zone": "in_content",
+    "index": "7"
+  },
+  "ad-e78d89660ed64ef0bc8c301ebc318398": {
+    "zone": "in_content",
+    "index": "8"
+  },
+  "ad-7ac458981321460bb7d0cc8473d7f110": {
+    "zone": "in_content",
+    "index": "8"
+  },
+  "ad-53695f3736b84268a68145a22d0ddab6": {
+    "zone": "in_content",
+    "index": "8"
+  },
+  "ad-299ef6b034674d5ab492fdedf5ce3195": {
+    "zone": "in_content",
+    "index": "8"
+  },
+  "ad-9ea4571a29ec4795a95b27f8ac632877": {
+    "zone": "adhesion",
+    "index": 0
+  },
+  "ad-ce6372b6d6b54d83b0e09ce803f87a03": {
+    "zone": "preroll",
+    "index": 0
+  }
+}
