@@ -474,8 +474,8 @@ function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
-    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...args),
-    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...args),
-    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...args),
+    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
+    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
+    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
   }
 }
