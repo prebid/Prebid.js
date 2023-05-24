@@ -23,34 +23,34 @@ export const storage = getStorageManager({
  * @returns {{utiq: (*|string)}}
  */
 function getUtiqFromStorage() {
-  let fcIdConnectObject;
-  let fcIdConnectData = JSON.parse(
-    storage.getDataFromLocalStorage('fcIdConnectData')
+  let utiqPass;
+  let utiqPassStorage = JSON.parse(
+    storage.getDataFromLocalStorage('utiqPass')
   );
   logInfo(
-    `${LOG_PREFIX}: Local storage fcIdConnectData: ${JSON.stringify(
-      fcIdConnectData
+    `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
+      utiqPassStorage
     )}`
   );
 
   if (
-    fcIdConnectData &&
-    fcIdConnectData.connectId &&
-    Array.isArray(fcIdConnectData.connectId.idGraph) &&
-    fcIdConnectData.connectId.idGraph.length > 0
+    utiqPassStorage &&
+    utiqPassStorage.connectId &&
+    Array.isArray(utiqPassStorage.connectId.idGraph) &&
+    utiqPassStorage.connectId.idGraph.length > 0
   ) {
-    fcIdConnectObject = fcIdConnectData.connectId.idGraph[0];
+    utiqPass = utiqPassStorage.connectId.idGraph[0];
   }
   logInfo(
-    `${LOG_PREFIX}: Local storage fcIdConnectObject: ${JSON.stringify(
-      fcIdConnectObject
+    `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
+      utiqPass
     )}`
   );
 
   return {
     utiq:
-      fcIdConnectObject && fcIdConnectObject.atid
-        ? fcIdConnectObject.atid
+      utiqPass && utiqPass.atid
+        ? utiqPass.atid
         : null,
   };
 }
