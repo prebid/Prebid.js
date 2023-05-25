@@ -200,7 +200,7 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
     ];
     deepSetValue(bidderConfigCopy, userDataPath, updatedUserData);
   }
-  
+
   if (site) {
     // Legacy : cf. comment on buildOrtb2Updates
     const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
