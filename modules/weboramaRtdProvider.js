@@ -736,14 +736,27 @@ class WeboramaRtdProvider {
     if (isBoolean(metadata.user)) {
       logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
       const section = metadata.user ? 'user' : 'site';
-      const base = `${bidder}.${section}.ext.data`;
+      const path = `${section}.ext.data`;
 
-      this.#assignProfileToObject(reqBidsConfigObj.ortb2Fragments?.bidder, base, profile);
+      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile)
     } else {
       logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
     }
   }
-
+  /**
+   * set bidder ortb2 data
+   * @method
+   * @private
+   * @param {Object} bidderOrtb2Fragments
+   * @param {string} bidder
+   * @param {string} path
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  #setBidderOrtb2(bidderOrtb2Fragments, bidder, path, profile) {
+    const base = `${bidder}.${path}`;
+    this.#assignProfileToObject(bidderOrtb2Fragments, base, profile)
+  }
   /**
    * assign profile to object
    * @method
