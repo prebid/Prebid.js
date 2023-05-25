@@ -689,13 +689,8 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    switch (bidder) {
-      case 'appnexus':
-        this.#handleAppnexusBid(bid, profile);
-        break;
-      case 'rubicon':
-        this.#handleRubiconBid(bid, profile, metadata);
-        break;
+    if (bidder == 'appnexus') {
+      this.#handleAppnexusBid(bid, profile);
     }
   }
 
@@ -723,26 +718,6 @@ class WeboramaRtdProvider {
   #handleAppnexusBid(bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
-  }
-
-  /** handle rubicon bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {string} bid.bidder
-   * @param {Profile} profile
-   * @param {dataCallbackMetadata} metadata
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleRubiconBid(bid, profile, metadata) {
-    if (isBoolean(metadata.user)) {
-      const section = metadata.user ? 'visitor' : 'inventory';
-      const base = `params.${section}`;
-      this.#assignProfileToObject(bid, base, profile);
-    } else {
-      logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-    }
   }
 
   /** handle generic bid via ortb2 arbitrary data
