@@ -16,7 +16,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { setSizeConfig } from 'src/sizeMapping.js';
+import { setSizeConfig } from 'modules/sizeMapping.js';
 import {find, includes} from 'src/polyfill.js';
 import s2sTesting from 'modules/s2sTesting.js';
 import {hook} from '../../../../src/hook.js';
@@ -1981,45 +1981,6 @@ describe('adapterManager tests', function () {
         expect(appnexusBidRequests.bids.length).to.equal(2);
         expect(appnexusBidRequests.bids[0].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[0].adUnitCode).mediaTypes);
         expect(appnexusBidRequests.bids[1].mediaTypes).to.deep.equal(find(adUnits, adUnit => adUnit.code === appnexusBidRequests.bids[1].adUnitCode).mediaTypes);
-      });
-
-      it('should not filter video bids', function () {
-        setSizeConfig([{
-          'mediaQuery': '(min-width: 768px) and (max-width: 1199px)',
-          'sizesSupported': [
-            [728, 90],
-            [300, 250]
-          ],
-          'labels': ['tablet', 'phone']
-        }]);
-
-        let videoAdUnits = [{
-          code: 'test_video',
-          mediaTypes: {
-            video: {
-              playerSize: [300, 300],
-              context: 'outstream'
-            }
-          },
-          bids: [{
-            bidder: 'appnexus',
-            params: {
-              placementId: 13232385,
-              video: {
-                skippable: true,
-                playback_method: ['auto_play_sound_off']
-              }
-            }
-          }]
-        }];
-        let bidRequests = adapterManager.makeBidRequests(
-          videoAdUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
-        expect(bidRequests[0].bids[0].sizes).to.deep.equal([300, 300]);
       });
 
       it('should not filter native bids', function () {

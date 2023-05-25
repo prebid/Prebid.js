@@ -12,7 +12,7 @@ import {
   getUniqueIdentifierStr,
   getUserConfiguredParams,
   groupBy,
-  isArray,
+  isArray, isPlainObject,
   isValidMediaTypes,
   logError,
   logInfo,
@@ -22,7 +22,6 @@ import {
   shuffle,
   timestamp,
 } from './utils.js';
-import {processAdUnitsForLabels} from './sizeMapping.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
@@ -193,7 +192,7 @@ export let coppaDataHandler = {
  * they should be exposed under `adUnit.bids[].mediaTypes`.
  */
 export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
-  return processAdUnitsForLabels(adUnits, labels);
+  return adUnits;
 }, 'setupAdUnitMediaTypes')
 
 /**
@@ -237,6 +236,11 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   if (FEATURES.NATIVE) {
     decorateAdUnitsWithNativeParams(adUnits);
   }
+  adUnits.forEach(au => {
+    if (!isPlainObject(au.mediaTypes)) {
+      au.mediaTypes = {};
+    }
+  })
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
   let {[PARTITIONS.CLIENT]: clientBidders, [PARTITIONS.SERVER]: serverBidders} = partitionBidders(adUnits, _s2sConfigs);
