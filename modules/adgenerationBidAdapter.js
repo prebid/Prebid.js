@@ -28,7 +28,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.4.0';
+    const ADGENE_PREBID_VERSION = '1.5.0';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -59,7 +59,6 @@ export const spec = {
         data = tryAppendQueryString(data, 'imark', '1');
       }
 
-      // TODO: is 'page' the right value here?
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
       if (isIos()) {
         const hyperId = getHyperId(validReq);
@@ -210,35 +209,45 @@ function appendChildToBody(ad, data) {
   return ad.replace(/<\/\s?body>/, `${data}</body>`);
 }
 
+/**
+ * create APVTag
+ * @return {string}
+ */
 function createAPVTag() {
   const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js';
-  let apvScript = document.createElement('script');
-  apvScript.type = 'text/javascript';
-  apvScript.id = 'apv';
-  apvScript.src = APVURL;
-  return apvScript.outerHTML;
+  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`
 }
 
+/**
+ * create ADGBrowserMTag
+ * @return {string}
+ */
 function createADGBrowserMTag() {
   const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
   return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
 }
 
+/**
+ * create APVTag & insertVast
+ * @param targetId
+ * @param vastXml
+ * @return {string}
+ */
 function insertVASTMethodForAPV(targetId, vastXml) {
   let apvVideoAdParam = {
     s: targetId
   };
-  let script = document.createElement(`script`);
-  script.type = 'text/javascript';
-  script.innerHTML = `(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
-  return script.outerHTML;
+  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`
 }
 
+/**
+ * create ADGBrowserMTag & insertVast
+ * @param vastXml
+ * @param marginTop
+ * @return {string}
+ */
 function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
-  const script = document.createElement(`script`);
-  script.type = 'text/javascript';
-  script.innerHTML = `window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});`;
-  return script.outerHTML;
+  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`
 }
 
 /**

@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {
   spec as adapter,
-  SUPPORTED_ID_SYSTEMS,
   createDomain,
   hashCode,
   extractPID,
@@ -20,6 +19,8 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -110,6 +111,24 @@ const BIDDER_REQUEST = {
     'regs': {
       'gpp': 'gpp_string',
       'gpp_sid': [7]
+    },
+    'device': {
+      'sua': {
+        'source': 2,
+        'platform': {
+          'brand': 'Android',
+          'version': ['8', '0', '0']
+        },
+        'browsers': [
+          {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+          {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+          {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+        ],
+        'mobile': 1,
+        'model': 'SM-G955U',
+        'bitness': '64',
+        'architecture': ''
+      }
     }
   },
 };
@@ -281,6 +300,22 @@ describe('VidazooBidAdapter', function () {
           schain: VIDEO_BID.schain,
           sessionId: '',
           sizes: ['545x307'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
@@ -330,6 +365,22 @@ describe('VidazooBidAdapter', function () {
           transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
           bidderRequestId: '1fdb5ff1b6eaa7',
           sizes: ['300x250', '300x600'],
+          sua: {
+            'source': 2,
+            'platform': {
+              'brand': 'Android',
+              'version': ['8', '0', '0']
+            },
+            'browsers': [
+              {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+              {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+              {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+            ],
+            'mobile': 1,
+            'model': 'SM-G955U',
+            'bitness': '64',
+            'architecture': ''
+          },
           url: 'https%3A%2F%2Fwww.greatsite.com',
           referrer: 'https://www.somereferrer.com',
           cb: 1000,
@@ -427,6 +478,19 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['vidazoo.com'],
+        agencyName: 'Agency Name'
+      });
+    });
+
     it('should return an array of interpreted video responses', function () {
       const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
@@ -457,7 +521,7 @@ describe('VidazooBidAdapter', function () {
   });
 
   describe('user id system', function () {
-    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
 

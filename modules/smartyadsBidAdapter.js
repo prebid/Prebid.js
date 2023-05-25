@@ -17,7 +17,7 @@ function isBidResponseValid(bid) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
     case NATIVE:
       return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
     default:
