@@ -99,7 +99,8 @@ export const spec = {
     {code: 'displayioads'},
     {code: 'rtbdemand_com'},
     {code: 'bidbuddy'},
-    {code: 'adliveconnect'}
+    {code: 'adliveconnect'},
+    {code: 'didnadisplay'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
