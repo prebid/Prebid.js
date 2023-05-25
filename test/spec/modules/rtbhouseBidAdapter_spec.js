@@ -53,16 +53,18 @@ describe('RTBHouseAdapter', () => {
 
   describe('buildRequests', function () {
     let bidRequests;
-    const bidderRequest = {
-      'refererInfo': {
-        'numIframes': 0,
-        'reachedTop': true,
-        'referer': 'https://example.com',
-        'stack': ['https://example.com']
-      }
-    };
+    let bidderRequest;
 
     beforeEach(() => {
+      bidderRequest = {
+        'auctionId': 'bidderrequest-auction-id',
+        'refererInfo': {
+          'numIframes': 0,
+          'reachedTop': true,
+          'referer': 'https://example.com',
+          'stack': ['https://example.com']
+        }
+      };
       bidRequests = [
         {
           'bidder': 'rtbhouse',
@@ -82,6 +84,11 @@ describe('RTBHouseAdapter', () => {
           'bidderRequestId': '22edbae2733bf6',
           'auctionId': '1d1a030790a475',
           'transactionId': 'example-transaction-id',
+          'ortb2Imp': {
+            'ext': {
+              'tid': 'ortb2Imp-transaction-id-1'
+            }
+          },
           'schain': {
             'ver': '1.0',
             'complete': 1,
@@ -203,7 +210,7 @@ describe('RTBHouseAdapter', () => {
       const bidRequest = Object.assign([], bidRequests);
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
-      expect(data.source.tid).to.equal('example-transaction-id');
+      expect(data.source.tid).to.equal('bidderrequest-auction-id');
     });
 
     it('should include bidfloor from floor module if avaiable', () => {
@@ -256,6 +263,13 @@ describe('RTBHouseAdapter', () => {
       expect(data.source).to.have.deep.property('tid');
     });
 
+    it('should include impression level transaction id when provided', () => {
+      const bidRequest = Object.assign([], bidRequests);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.tid).to.equal('ortb2Imp-transaction-id-1');
+    });
+
     it('should not include invalid schain', () => {
       const bidRequest = Object.assign([], bidRequests);
       bidRequest[0].schain = {
@@ -266,6 +280,28 @@ describe('RTBHouseAdapter', () => {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const data = JSON.parse(request.data);
       expect(data.source).to.not.have.property('ext');
+    });
+
+    it('should include first party data', function () {
+      const bidRequest = Object.assign([], bidRequests);
+      const localBidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
+          site: { ext: { data: 'some site data' } },
+          device: { ext: { data: 'some device data' } },
+          user: { ext: { data: 'some user data' } }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequest, localBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.bcat).to.deep.equal(localBidderRequest.ortb2.bcat);
+      expect(data.badv).to.deep.equal(localBidderRequest.ortb2.badv);
+      expect(data.site).to.nested.include({'ext.data': 'some site data'});
+      expect(data.device).to.nested.include({'ext.data': 'some device data'});
+      expect(data.user).to.nested.include({'ext.data': 'some user data'});
     });
 
     context('FLEDGE', function() {
@@ -617,10 +653,10 @@ describe('RTBHouseAdapter', () => {
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['rtbhouse.com']);
         expect(bids[0].native).to.deep.equal({
           title: 'Title text',
-          clickUrl: encodeURIComponent('https://example.com'),
+          clickUrl: encodeURI('https://example.com'),
           impressionTrackers: ['https://example.com/imptracker'],
           image: {
-            url: encodeURIComponent('https://example.com/image.jpg'),
+            url: encodeURI('https://example.com/image.jpg'),
             width: 150,
             height: 50
           },

@@ -152,6 +152,8 @@ function getPageUrl(bidderRequest) {
 
 function buildWinNotice(bid) {
   const params = bid.params[0];
+  const app = deepAccess(bid, 'meta.ext.app')
+  const winNoticeExt = deepAccess(bid, 'meta.ext.win_notice_ext')
   return {
     publisherId: params.publisherId,
     siteId: params.siteId,
@@ -167,6 +169,10 @@ function buildWinNotice(bid) {
     ttl: bid.ttl,
     requestTimestamp: bid.requestTimestamp,
     responseTimestamp: bid.responseTimestamp,
+    mediatype: bid.mediaType,
+    environment: app ? 'app' : 'web',
+    ...app,
+    ext: winNoticeExt,
   };
 }
 
@@ -348,6 +354,7 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
   logInfo('AIDEM Bid Adapter meta', openRTBResponseBidObject);
   deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', deepAccess(openRTBResponseBidObject, 'meta.advertiserDomains'));
+  deepSetValue(prebidResponseBidObject, 'meta.ext', deepAccess(openRTBResponseBidObject, 'meta.ext'));
   if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
     const primaryCatId = openRTBResponseBidObject.cat.shift();
     deepSetValue(prebidResponseBidObject, 'meta.primaryCatId', primaryCatId);
