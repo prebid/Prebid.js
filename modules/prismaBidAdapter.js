@@ -1,8 +1,8 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import { transformBidderParamKeywords } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getANKeywordParam} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'prisma';
 const BIDDER_URL = 'https://prisma.nexx360.io/prebid';
@@ -76,7 +76,7 @@ export const spec = {
         mediatypes: adunitValue.mediaTypes,
         bidfloor: 0,
         bidfloorCurrency: 'USD',
-        keywords: adunitValue.params.keywords ? transformBidderParamKeywords(adunitValue.params.keywords) : [],
+        keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
       }
       adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;

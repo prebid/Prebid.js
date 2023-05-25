@@ -20,6 +20,7 @@ import {
   mergeDeep,
   parseSizesInput, _each
 } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -168,7 +169,7 @@ export const converter = ortbConverter({
       deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
     }
 
-    addOrtbFirstPartyData(data, bidRequests);
+    addOrtbFirstPartyData(data, bidRequests, bidderRequest.ortb2);
 
     delete data?.ext?.prebid?.storedrequest;
 
@@ -1191,9 +1192,9 @@ function setBidFloors(bidRequest, imp) {
   }
 }
 
-function addOrtbFirstPartyData(data, nonBannerRequests) {
+function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   let fpd = {};
-  const keywords = new Set();
+  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
       user: {ext: {data: {...bidRequest.params.visitor}}},
@@ -1208,10 +1209,6 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
       }
     }
 
-    if (bidRequest.params.keywords) {
-      const keywordsArray = (!Array.isArray(bidRequest.params.keywords) ? bidRequest.params.keywords.split(',') : bidRequest.params.keywords);
-      keywordsArray.forEach(keyword => keywords.add(keyword));
-    }
     fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);
 
     // add user.id from config.
@@ -1222,8 +1219,8 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
 
   mergeDeep(data, fpd);
 
-  if (keywords && keywords.size) {
-    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  if (keywords && keywords.length) {
+    deepSetValue(data, 'site.keywords', keywords.join(','));
   }
   delete data?.ext?.prebid?.storedrequest;
 }
