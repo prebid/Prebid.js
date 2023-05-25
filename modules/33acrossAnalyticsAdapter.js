@@ -1,6 +1,6 @@
 import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
+import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
 /**
@@ -298,6 +298,22 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
   }
   if (uspDataHandler.getConsentData()) {
     report.usPrivacy = uspDataHandler.getConsentData();
+  }
+
+  const gdprConsentData = gdprDataHandler.getConsentData();
+  const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
+  report.gdpr = Number(gdprApplies);
+  if (gdprApplies) {
+    report.gdprConsent = gdprConsentData.consentString || '';
+  }
+
+  if (gppDataHandler.getConsentData()) {
+    report.gpp = gppDataHandler.getConsentData().gpp;
+    report.gppSid = gppDataHandler.getConsentData().applicableSections.join(',');
+  }
+
+  if (coppaDataHandler.getCoppa()) {
+    report.coppa = Number(coppaDataHandler.getCoppa());
   }
 
   return report;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
 import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
@@ -438,10 +439,22 @@ function mapToBids(auctions) {
 
 function getLocalAssert() {
   function isValidAnalyticsReport(report) {
-    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
+    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions', 'gdpr']);
     if ('usPrivacy' in report) {
       assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
     }
+    assert.oneOf(report.gdpr, [0, 1]);
+    if (report.gdpr === 1) {
+      assert.isString(report.gdprConsent);
+    }
+    if ('gpp' in report) {
+      assert.isString(report.gpp);
+      assert.isString(report.gppSid);
+    }
+    if ('coppa' in report) {
+      assert.oneOf(report.coppa, [0, 1]);
+    }
+
     assert.equal(report.analyticsVersion, '1.0.0');
     assert.isString(report.pid);
     assert.isString(report.src);
@@ -599,6 +612,7 @@ function createReportWithThreeBidWonEvents() {
       auctionId: 'auction-000',
       userIds: ['33acrossId']
     }],
+    gdpr: 0,
   };
 }
 
