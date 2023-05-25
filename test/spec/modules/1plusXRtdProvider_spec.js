@@ -178,7 +178,7 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('buildOrtb2Updates', () => {
-    it('fills site.content.data & user.data in the ortb2 config', () => {
+    it('fills site.content.data, user.data & site.keywords in the ortb2 config', () => {
       const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
       const ortb2Updates = buildOrtb2Updates(rtdData, randomBidder());
 
@@ -191,15 +191,7 @@ describe('1plusXRtdProvider', () => {
         userData: {
           name: '1plusX.com',
           segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
-        }
-      }
-      expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
-    });
-    it('fills site.keywords in the ortb2 config (appnexus specific)', () => {
-      const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
-      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
-
-      const expectedOutput = {
+        },
         site: {
           keywords: rtdData.topics.join(','),
         }
@@ -220,6 +212,9 @@ describe('1plusXRtdProvider', () => {
         userData: {
           name: '1plusX.com',
           segment: []
+        },
+        site: {
+          keywords: rtdData.topics.join(','),
         }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
@@ -238,15 +233,7 @@ describe('1plusXRtdProvider', () => {
         userData: {
           name: '1plusX.com',
           segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
-        }
-      }
-      expect(ortb2Updates).to.deep.include(expectedOutput);
-    })
-    it('defaults to empty string if no topic is given (appnexus specific)', () => {
-      const rtdData = { segments: fakeResponse.s };
-      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
-
-      const expectedOutput = {
+        },
         site: {
           keywords: '',
         }
@@ -271,6 +258,7 @@ describe('1plusXRtdProvider', () => {
       expect(expectedOutput).to.deep.include(output)
       expect(output).to.deep.include(expectedOutput)
     })
+
     it('extracts null if consent object is empty', () => {
       const consent1 = {}
       expect(extractConsent(consent1)).to.equal(null)
@@ -345,15 +333,6 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('updateBidderConfig', () => {
-    const ortb2UpdatesAppNexus = {
-      site: {
-        keywords: fakeResponse.t.join(','),
-      },
-      userData: {
-        name: '1plusX.com',
-        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
-      }
-    }
     const ortb2Updates = {
       siteContentData: {
         name: '1plusX.com',
@@ -363,7 +342,10 @@ describe('1plusXRtdProvider', () => {
       userData: {
         name: '1plusX.com',
         segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
-      }
+      },
+      site: {
+        keywords: fakeResponse.t.join(','),
+      },
     }
 
     it('merges fetched data in bidderConfig for configured bidders', () => {
@@ -379,24 +361,7 @@ describe('1plusXRtdProvider', () => {
       expect(newBidderConfig).not.to.be.null;
       expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
       expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
-      // Check that existing config didn't get erased
-      expect(newBidderConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
-      expect(newBidderConfig.ortb2.user).to.deep.include(bidderConfigInitial.ortb2.user);
-    })
-
-    it('merges fetched data in bidderConfig for configured bidders (appnexus specific)', () => {
-      const bidder = 'appnexus';
-      // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitial
-      });
-      // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2UpdatesAppNexus, config.getBidderConfig());
-
-      // Check that the targeting data has been set in the config
-      expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2UpdatesAppNexus.site);
+      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2Updates.site);
       // Check that existing config didn't get erased
       expect(newBidderConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
       expect(newBidderConfig.ortb2.user).to.deep.include(bidderConfigInitial.ortb2.user);
@@ -486,10 +451,11 @@ describe('1plusXRtdProvider', () => {
     }
     const expectedOrtb2 = {
       appnexus: {
-        site: { keywords: expectedKeywords }
+        site: { content: expectedSiteContentObj, keywords: expectedKeywords },
+        user: expectedUserObj
       },
       rubicon: {
-        site: { content: expectedSiteContentObj },
+        site: { content: expectedSiteContentObj, keywords: expectedKeywords },
         user: expectedUserObj
       }
     }

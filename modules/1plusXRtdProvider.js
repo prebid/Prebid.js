@@ -14,7 +14,6 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
@@ -152,17 +151,6 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
-  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
-  // Therefore, writing them in `site.keywords` until it's supported
-  // Other bidAdapters do fine with `site.content.data.segment`
-  const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
-  if (writeToLegacySiteKeywords) {
-    const site = {
-      keywords: topics.join(',')
-    };
-    return { site };
-  }
-
   const userData = {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
@@ -172,7 +160,14 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
     segment: topics.map((topicId) => ({ id: topicId })),
     ext: { segtax: segtaxes.CONTENT }
   }
-  return { userData, siteContentData };
+  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
+  // Therefore, writing them in `site.keywords` until it's supported
+  // Other bidAdapters do fine with `site.content.data.segment`
+  const site = {
+    keywords: topics.join(',')
+  };
+
+  return { userData, siteContentData, site };
 }
 
 /**
@@ -185,13 +180,6 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
 export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
   const { site, siteContentData, userData } = ortb2Updates;
   const bidderConfigCopy = mergeDeep({}, bidderConfigs[bidder]);
-
-  if (site) {
-    // Legacy : cf. comment on buildOrtb2Updates first lines
-    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
-    const updatedSite = mergeDeep(currentSite, site);
-    deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
-  }
 
   if (siteContentData) {
     const siteDataPath = 'ortb2.site.content.data';
@@ -211,6 +199,13 @@ export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
       userData
     ];
     deepSetValue(bidderConfigCopy, userDataPath, updatedUserData);
+  }
+  
+  if (site) {
+    // Legacy : cf. comment on buildOrtb2Updates
+    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
+    const updatedSite = mergeDeep(currentSite, site);
+    deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
   }
 
   return bidderConfigCopy;
@@ -238,14 +233,11 @@ export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
     const ortb2Updates = buildOrtb2Updates({ segments, topics }, bidder);
     const updatedBidderConfig = updateBidderConfig(bidder, ortb2Updates, bidderConfigs);
     if (updatedBidderConfig) {
+      setAppnexusAudiences(segments);
       config.setBidderConfig({
         bidders: [bidder],
         config: updatedBidderConfig
       });
-    }
-    if (bidder === 'appnexus') {
-      // Do the legacy stuff for appnexus with segments
-      setAppnexusAudiences(segments);
     }
   }
 }
