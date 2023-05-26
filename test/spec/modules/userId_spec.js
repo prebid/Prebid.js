@@ -2491,7 +2491,7 @@ describe('User ID', function () {
 
               expect(bid).to.have.deep.nested.property('userId.qid');
               expect(bid.userId.qid).to.equal('testqid');
-              expect(bid.userIdAsEids.length).to.equal(16);
+              expect(bid.userIdAsEids.length).to.equal(17);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
