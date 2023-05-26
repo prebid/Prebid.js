@@ -1,7 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { logInfo, buildUrl, triggerPixel, parseSizesInput } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
@@ -86,17 +86,6 @@ export const spec = {
     };
     bidResponses.push(bidResponse);
     logInfo('bidResponses', bidResponses);
-
-    if (res && res.qid) {
-      if (storage.getDataFromLocalStorage('qid')) {
-        qid = storage.getDataFromLocalStorage('qid');
-        if (qid && qid.includes('%7B%22')) {
-          storage.setDataInLocalStorage('qid', res.qid);
-        }
-      } else {
-        storage.setDataInLocalStorage('qid', res.qid);
-      }
-    }
 
     return bidResponses;
   },
@@ -189,8 +178,16 @@ export const spec = {
   }
 
 };
+
 function buildRequest(validBidRequests, bidderRequest) {
   let bid = validBidRequests;
+  logInfo('buildRequest: ', bid);
+
+  let userId = null;
+  if (bid.userId && bid.userId.qid) {
+    userId = bid.userId.qid
+  }
+
   let pageUrl = '';
   if (bidderRequest && bidderRequest.refererInfo) {
     pageUrl = bidderRequest.refererInfo.page || '';
@@ -202,7 +199,7 @@ function buildRequest(validBidRequests, bidderRequest) {
     auctionId: bid.auctionId,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
-    bidQid: storage.getDataFromLocalStorage('qid') || null,
+    bidQid: userId,
     bidId: bid.bidId,
     bidder: bid.bidder,
     bidPageUrl: pageUrl,

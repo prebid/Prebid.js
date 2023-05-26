@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
+import {isFn, isStr, isPlainObject, logError, logInfo} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
@@ -51,11 +51,8 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    let qid = storage.getDataFromLocalStorage('qid');
-    if (isStr(qid)) {
-      return {qid: qid};
-    }
-    return (value && typeof value['qid'] === 'string') ? { 'qid': value['qid'] } : undefined;
+    debugger;
+    return { qid: value }
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -64,6 +61,8 @@ export const adqueryIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
+    debugger;
+    logInfo('adqueryIdSubmodule getId');
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
@@ -72,13 +71,17 @@ export const adqueryIdSubmodule = {
       config.params.urlArg);
 
     const resp = function (callback) {
+      debugger;
       let qid = storage.getDataFromLocalStorage('qid');
+      logInfo('adqueryIdSubmodule ID QID:', qid);
       if (isStr(qid)) {
-        const responseObj = {qid: qid};
+        const responseObj = qid;
         callback(responseObj);
       } else {
         const callbacks = {
           success: response => {
+            logError(`${MODULE_NAME}: ID fetch data`, response);
+            debugger;
             let responseObj;
             if (response) {
               try {
