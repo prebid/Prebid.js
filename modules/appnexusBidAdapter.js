@@ -111,6 +111,7 @@ export const spec = {
     { code: 'adasta', gvlid: 32 },
     { code: 'beintoo', gvlid: 618 },
     { code: 'projectagora', gvlid: 1032 },
+    { code: 'uol', gvlid: 32 },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
