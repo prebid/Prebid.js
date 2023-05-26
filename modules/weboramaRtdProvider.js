@@ -756,6 +756,7 @@ class WeboramaRtdProvider {
    * @param {Profile} profile
    * @returns {void}
    */
+  // eslint-disable-next-line no-dupe-class-members
   #setBidderOrtb2(bidderOrtb2Fragments, bidder, path, profile) {
     const base = `${bidder}.${path}`;
     this.#assignProfileToObject(bidderOrtb2Fragments, base, profile)
