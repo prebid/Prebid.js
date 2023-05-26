@@ -195,7 +195,7 @@ describe(`UID2 module`, function () {
     it('and a token is provided in config, it should provide the config token',
       createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
 
-    it.only('multiple runs do not change the value', async function() {
+    it('multiple runs do not change the value', async function() {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
       config.setConfig(makePrebidConfig(legacyConfigParams));
 
