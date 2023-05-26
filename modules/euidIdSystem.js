@@ -9,6 +9,9 @@ import { logInfo, logWarn } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+// RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
+// eslint-disable-next-line prebid/validate-imports
 import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
 
 const MODULE_NAME = 'euid';
