@@ -71,7 +71,6 @@ export const uid2IdSubmodule = {
    * @returns {uid2Id}
    */
   getId(config, consentData) {
-    // TODO: handle old uid2ApiBase
     const mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,

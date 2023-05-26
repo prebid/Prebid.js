@@ -121,7 +121,6 @@ export class Uid2StorageManager {
     }
   }
 
-  // TODO: Tests
   getStoredValueWithFallback() {
     const preferredStorageLabel = this._preferLocalStorage ? 'local storage' : 'cookie';
     const preferredStorageGet = (this._preferLocalStorage ? this.readModuleStorage : this.readModuleCookie).bind(this);
