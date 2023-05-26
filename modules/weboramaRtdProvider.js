@@ -152,6 +152,8 @@ const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
 const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
+/** @type {string} */
+const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -689,8 +691,8 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    if (bidder == 'appnexus') {
-      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile, metadata);
+    if (LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder)) {
+      this.#handleSiteLegacyKeywordsBidders(reqBidsConfigObj, bid, profile, metadata);
     }
   }
 
@@ -705,7 +707,7 @@ class WeboramaRtdProvider {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
-  /** handle appnexus/xandr bid
+  /** handle site legacy keywords bidders like appnexus/xandr
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -718,7 +720,7 @@ class WeboramaRtdProvider {
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleAppnexusBid(reqBidsConfigObj, bid, profile, metadata) {
+  #handleSiteLegacyKeywordsBidders(reqBidsConfigObj, bid, profile, metadata) {
     if (metadata.user) {
       this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', profile);
     } else {
