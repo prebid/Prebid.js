@@ -719,9 +719,10 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #handleAppnexusBid(reqBidsConfigObj, bid, profile, metadata) {
-    this.#assignProfileToObject(bid, 'params.keywords', profile);
     if (metadata.user) {
       this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', profile);
+    } else {
+      this.#assignProfileToObject(bid, 'params.keywords', profile);
     }
   }
 
