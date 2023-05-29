@@ -191,7 +191,13 @@ export const spec = {
 };
 function buildRequest(validBidRequests, bidderRequest) {
   let bid = validBidRequests;
+  let pageUrl = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    pageUrl = bidderRequest.refererInfo.page || '';
+  }
+
   return {
+    v: '$prebid.version$',
     placementCode: bid.params.placementId,
     auctionId: bid.auctionId,
     type: bid.params.type,
@@ -199,11 +205,11 @@ function buildRequest(validBidRequests, bidderRequest) {
     bidQid: storage.getDataFromLocalStorage('qid') || null,
     bidId: bid.bidId,
     bidder: bid.bidder,
+    bidPageUrl: pageUrl,
     bidderRequestId: bid.bidderRequestId,
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
-
   };
 }
 

@@ -1,3 +1,4 @@
+import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
@@ -68,10 +69,8 @@ describe('clean.io RTD module', function () {
     it('pageInitStepProtectPage() should insert script element', function() {
       pageInitStepProtectPage(fakeScriptURL);
 
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'SCRIPT'));
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.type === 'text/javascript'));
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.src === fakeScriptURL));
+      sinon.assert.calledOnce(loadExternalScriptStub);
+      sinon.assert.calledWith(loadExternalScriptStub, fakeScriptURL, 'clean.io');
     });
   });
 
@@ -133,14 +132,14 @@ describe('clean.io RTD module', function () {
     it('should refuse initialization with incorrect parameters', function () {
       const { init } = getModule();
       expect(init({ params: { cdnUrl: 'abc', protectionMode: 'full' } }, {})).to.equal(false); // too short distribution name
-      sinon.assert.notCalled(insertElementStub);
+      sinon.assert.notCalled(loadExternalScriptStub);
     });
 
-    it('should iniitalize in full (page) protection mode', function () {
+    it('should initialize in full (page) protection mode', function () {
       const { init, onBidResponseEvent } = getModule();
       expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
-      sinon.assert.calledOnce(insertElementStub);
-      sinon.assert.calledWith(insertElementStub, sinon.match(elem => elem.tagName === 'SCRIPT'));
+      sinon.assert.calledOnce(loadExternalScriptStub);
+      sinon.assert.calledWith(loadExternalScriptStub, 'https://abc1234567890.cloudfront.net/script.js', 'clean.io');
 
       const fakeBidResponse = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse, {}, {});
