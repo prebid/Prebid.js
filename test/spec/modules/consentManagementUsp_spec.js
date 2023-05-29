@@ -8,7 +8,7 @@ import {
 } from 'modules/consentManagementUsp.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
-import adapterManager, {uspDataHandler} from 'src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler} from 'src/adapterManager.js';
 import 'src/prebid.js';
 import {defer} from '../../../src/utils/promise.js';
 
@@ -508,7 +508,20 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(adapterManager.callDataDeletionRequest);
         listener();
         sinon.assert.calledOnce(adapterManager.callDataDeletionRequest);
-      })
+      });
+
+      it('does not fail if CMP does not support registerDeletion', () => {
+        sandbox.stub(window, '__uspapi').callsFake((cmd, _, cb) => {
+          if (cmd === 'registerDeletion') {
+            throw new Error('CMP not compliant');
+          } else if (cmd === 'getUSPData') {
+            // eslint-disable-next-line standard/no-callback-literal
+            cb({uspString: 'string'}, true);
+          }
+        });
+        setConsentConfig(goodConfig);
+        expect(uspDataHandler.getConsentData()).to.eql('string');
+      });
     });
   });
 });

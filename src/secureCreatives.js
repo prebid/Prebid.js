@@ -73,7 +73,7 @@ function handleRenderRequest(reply, data, adObject) {
   if (adObject == null) {
     emitAdRenderFail({
       reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
-      message: `Cannot find ad '${data.adId}' for cross-origin render request`,
+      message: `Cannot find ad for cross-origin render request: '${data.adId}'`,
       id: data.adId
     });
     return;
@@ -111,7 +111,7 @@ function handleNativeRequest(reply, data, adObject) {
   //   adId: '%%PATTERN:hb_adid%%'
   // }), '*');
   if (adObject == null) {
-    logError(`Cannot find ad '${data.adId}' for x-origin event request`);
+    logError(`Cannot find ad for x-origin event request: '${data.adId}'`);
     return;
   }
 

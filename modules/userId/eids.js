@@ -45,6 +45,12 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
+  },
+
   // justId
   'justId': {
     source: 'justtag.com',
@@ -143,6 +149,24 @@ export const USER_IDS_CONFIG = {
           segments: data.segments
         };
       }
+    }
+  },
+
+  // bidswitchId
+  'bidswitch': {
+    source: 'bidswitch.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
+  // medianetId
+  'medianet': {
+    source: 'media.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
     }
   },
 
@@ -250,10 +274,13 @@ export const USER_IDS_CONFIG = {
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
-      return data.snowflake
+      if (data.snowflake.id === undefined) {
+        return data.snowflake;
+      }
+
+      return data.snowflake.id;
     },
     source: 'novatiq.com',
-    atype: 1
   },
 
   'uid2': {
@@ -282,7 +309,7 @@ export const USER_IDS_CONFIG = {
   },
 
   amxId: {
-    source: 'amxrtb.com',
+    source: 'amxdt.net',
     atype: 1,
   },
 
@@ -345,8 +372,8 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // cpexId
-  'cpexId': {
+  // czechAdId
+  'czechAdId': {
     source: 'czechadid.cz',
     atype: 1
   },
