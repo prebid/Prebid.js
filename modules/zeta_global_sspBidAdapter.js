@@ -3,9 +3,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
+const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
@@ -75,6 +77,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
+      if (params.tagid) {
+        impData.tagid = params.tagid;
+      }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
           switch (mediaType) {
@@ -90,6 +95,21 @@ export const spec = {
       if (!impData.banner && !impData.video) {
         impData.banner = buildBanner(request);
       }
+
+      if (typeof request.getFloor === 'function') {
+        const floorInfo = request.getFloor({
+          currency: 'USD',
+          mediaType: impData.video ? 'video' : 'banner',
+          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+        });
+        if (floorInfo && floorInfo.floor) {
+          impData.bidfloor = floorInfo.floor;
+        }
+      }
+      if (!impData.bidfloor && params.bidfloor) {
+        impData.bidfloor = params.bidfloor;
+      }
+
       return impData;
     });
 
@@ -127,6 +147,15 @@ export const spec = {
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // schain
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      }
     }
 
     if (bidderRequest?.timeout) {
@@ -211,6 +240,18 @@ export const spec = {
         type: 'image',
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
+    }
+  },
+
+  onTimeout: function(timeoutData) {
+    if (timeoutData) {
+      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
+        method: 'POST',
+        options: {
+          withCredentials: false,
+          contentType: 'application/json'
+        }
+      });
     }
   }
 }

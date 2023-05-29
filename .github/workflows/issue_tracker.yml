@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@f717b5ecd4534d3c4df4ce9b5c1c2214f0f7cd06
+        uses: tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92
         with:
           app_id: ${{ secrets.ISSUE_APP_ID }}
           private_key: ${{ secrets.ISSUE_APP_PEM }}
@@ -29,21 +29,30 @@ jobs:
           gh api graphql -f query='
             query($org: String!, $number: Int!) {
               organization(login: $org){
-                projectNext(number: $number) {
+                projectV2(number: $number) {
                   id
                   fields(first:100) {
                     nodes {
-                      id
-                      name
-                      settings
+                      ... on ProjectV2Field {
+                        id
+                        name
+                      }
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        name
+                        options {
+                          id
+                          name
+                        }
+                      }
                     }
                   }
                 }
               }
             }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data.json
 
-          echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
-          echo 'DATE_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== "'"$DATE_FIELD"'") | .id' project_data.json) >> $GITHUB_ENV
+          echo 'PROJECT_ID='$(jq '.data.organization.projectV2.id' project_data.json) >> $GITHUB_ENV
+          echo 'DATE_FIELD_ID='$(jq '.data.organization.projectV2.fields.nodes[] | select(.name=="'"$DATE_FIELD"'") | .id' project_data.json) >> $GITHUB_ENV
 
       - name: Add issue to project
         env:
@@ -52,9 +61,9 @@ jobs:
         run: |
           gh api graphql -f query='
             mutation($project:ID!, $issue:ID!) {
-              addProjectNextItem(input: {projectId: $project, contentId: $issue}) {
-                projectNextItem {
-                  id,
+              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
+                item {
+                  id
                   content {
                      ... on Issue {
                         createdAt
@@ -67,8 +76,8 @@ jobs:
               }
             }' -f project=$PROJECT_ID -f issue=$ISSUE_ID > issue_data.json
           
-          echo 'ITEM_ID='$(jq '.data.addProjectNextItem.projectNextItem.id' issue_data.json) >> $GITHUB_ENV
-          echo 'ITEM_CREATION_DATE='$(jq '.data.addProjectNextItem.projectNextItem.content.createdAt' issue_data.json) >> $GITHUB_ENV
+          echo 'ITEM_ID='$(jq '.data.addProjectV2ItemById.item.id' issue_data.json) >> $GITHUB_ENV
+          echo 'ITEM_CREATION_DATE='$(jq '.data.addProjectV2ItemById.item.content.createdAt' issue_data.json | cut -c 2-11) >> $GITHUB_ENV
 
       - name: Set fields
         env:
@@ -79,15 +88,17 @@ jobs:
               $project: ID!
               $item: ID!
               $date_field: ID!
-              $date_value: String!
+              $date_value: Date!
             ) {
-              set_creation_date: updateProjectNextItemField(input: {
+              set_creation_date: updateProjectV2ItemFieldValue(input: {
                 projectId: $project
                 itemId: $item
                 fieldId: $date_field
-                value: $date_value
+                value: {
+                  date: $date_value
+                }
               }) {
-                projectNextItem {
+                projectV2Item {
                   id
                 }
               }

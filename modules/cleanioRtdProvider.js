@@ -7,6 +7,7 @@
  */
 
 import { submodule } from '../src/hook.js';
+import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
@@ -52,10 +53,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * @param {string} scriptURL The script URL to add to the page for protection
  */
 function pageInitStepProtectPage(scriptURL) {
-  const scriptElement = document.createElement('script');
-  scriptElement.type = 'text/javascript';
-  scriptElement.src = scriptURL;
-  insertElement(scriptElement);
+  loadExternalScript(scriptURL, 'clean.io');
 }
 
 /**

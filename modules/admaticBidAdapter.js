@@ -1,7 +1,8 @@
-import { getValue, logError, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
+import { getValue, logError, isEmpty, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-const SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
 export const spec = {
   code: BIDDER_CODE,
@@ -33,9 +34,10 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(buildRequestObject);
+    const blacklist = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
-    const currency = getValue(validBidRequests[0].params, 'currency') || 'TRY';
+    const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
@@ -58,8 +60,21 @@ export const spec = {
       }
     };
 
+    if (!isEmpty(blacklist.badv)) {
+      payload.blacklist = blacklist.badv;
+    };
+
     if (payload) {
-      return { method: 'POST', url: `https://${host}/pb?bidder=${bidderName}`, data: payload, options: { contentType: 'application/json' } };
+      switch (bidderName) {
+        case 'pixad':
+          SYNC_URL = 'https://static.pixad.com.tr/sync.html';
+          break;
+        default:
+          SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+          break;
+      }
+
+      return { method: 'POST', url: `https://${host}/pb`, data: payload, options: { contentType: 'application/json' } };
     }
   },
 
@@ -78,7 +93,7 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    const body = response.body || response;
+    const body = response.body;
     const bidResponses = [];
     if (body && body?.data && isArray(body.data)) {
       body.data.forEach(bid => {
@@ -89,19 +104,38 @@ export const spec = {
           height: bid.height,
           currency: body.cur || 'TRY',
           netRevenue: true,
-          ad: bid.party_tag,
           creativeId: bid.creative_id,
           meta: {
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
-          ttl: 360,
-          bidder: bid.bidder
+          bidder: bid.bidder,
+          mediaType: bid.type,
+          ttl: 60
+        };
+
+        if (resbid.mediaType === 'video' && isUrl(bid.party_tag)) {
+          resbid.vastUrl = bid.party_tag;
+          resbid.vastImpUrl = bid.iurl;
+        } else if (resbid.mediaType === 'video') {
+          resbid.vastXml = bid.party_tag;
+          resbid.vastImpUrl = bid.iurl;
+        } else if (resbid.mediaType === 'banner') {
+          resbid.ad = bid.party_tag;
         };
 
         bidResponses.push(resbid);
       });
     }
     return bidResponses;
+  }
+};
+
+function isUrl(str) {
+  try {
+    URL(str);
+    return true;
+  } catch (error) {
+    return false;
   }
 };
 
@@ -153,6 +187,14 @@ function parseSize(size) {
 function buildRequestObject(bid) {
   const reqObj = {};
   reqObj.size = getSizes(bid);
+  if (bid.mediaTypes?.banner) {
+    reqObj.type = 'banner';
+    reqObj.mediatype = {};
+  }
+  if (bid.mediaTypes?.video) {
+    reqObj.type = 'video';
+    reqObj.mediatype = bid.mediaTypes.video;
+  }
   reqObj.id = getBidIdParameter('bidId', bid);
 
   enrichSlotWithFloors(reqObj, bid);

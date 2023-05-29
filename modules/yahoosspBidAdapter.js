@@ -24,7 +24,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
@@ -279,6 +279,11 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+    };
+
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
@@ -375,6 +380,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
+  const sitePublisherObject = deepAccess(siteObject, 'publisher') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
   const appContentObject = deepAccess(ortb2Object, 'app.content') || undefined;
   const appContentDataArray = deepAccess(ortb2Object, 'app.content.data') || undefined;
@@ -388,6 +394,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
   };
+
+  if (sitePublisherObject && isPlainObject(sitePublisherObject)) {
+    const allowedPublisherObjectKeys = ['ext'];
+    outBoundBidRequest.site.publisher = validateAppendObject('object', allowedPublisherObjectKeys, sitePublisherObject, outBoundBidRequest.site.publisher);
+  }
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
     const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
