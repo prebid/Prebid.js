@@ -51,9 +51,15 @@ export const spec = {
         ref: referrer,
         bid_id: bidId,
         pbver: '$prebid.version$',
+        schain: '',
       };
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
+      }
+      if (bidRequest.schain) {
+        payload.schain = serializeSChain(bidRequest.schain);
+      } else {
+        delete payload.schain;
       }
 
       payload.pfilter = { ...params };
@@ -200,6 +206,33 @@ function objectToQueryString(obj, prefix) {
     }
   }
   return str.join('&');
+}
+
+function serializeSChain(schain) {
+  let ret = '';
+
+  ret += schain.ver;
+  ret += ',';
+  ret += schain.complete;
+
+  for (let node of schain.nodes) {
+    ret += '!';
+    ret += node.asi;
+    ret += ',';
+    ret += node.sid;
+    ret += ',';
+    ret += node.hp;
+    ret += ',';
+    ret += node.rid ?? '';
+    ret += ',';
+    ret += node.name ?? '';
+    ret += ',';
+    ret += node.domain ?? '';
+    ret += ',';
+    ret += node.ext ?? '';
+  }
+
+  return ret;
 }
 
 /**
