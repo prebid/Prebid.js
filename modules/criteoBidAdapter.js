@@ -542,6 +542,15 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     request.user.ext = request.user.ext || {};
     request.user.ext.eids = [...userIdAsEids];
   }
+  if (bidderRequest && bidderRequest.ortb2?.bcat) {
+    request.bcat = bidderRequest.ortb2.bcat;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.badv) {
+    request.badv = bidderRequest.ortb2.badv;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.bapp) {
+    request.bapp = bidderRequest.ortb2.bapp;
+  }
   return request;
 }
 

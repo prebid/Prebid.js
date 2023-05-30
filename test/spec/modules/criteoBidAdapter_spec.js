@@ -1082,6 +1082,90 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.source.ext.schain).to.equal(expectedSchain);
     });
 
+    it('should properly build a request with bcat field', function () {
+      const bcat = [ 'IAB1', 'IAB2' ];
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        ortb2: {
+          bcat
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bcat).to.not.be.null;
+      expect(request.data.bcat).to.equal(bcat);
+    });
+
+    it('should properly build a request with badv field', function () {
+      const badv = [ 'ford.com' ];
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        ortb2: {
+          badv
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.badv).to.not.be.null;
+      expect(request.data.badv).to.equal(badv);
+    });
+
+    it('should properly build a request with bapp field', function () {
+      const bapp = [ 'com.foo.mygame' ];
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      const bidderRequest = {
+        ortb2: {
+          bapp
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bapp).to.not.be.null;
+      expect(request.data.bapp).to.equal(bapp);
+    });
+
     it('should properly build a request with if ccpa consent field is not provided', function () {
       const bidRequests = [
         {

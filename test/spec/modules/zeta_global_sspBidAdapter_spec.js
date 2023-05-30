@@ -137,6 +137,8 @@ describe('Zeta Ssp Bid Adapter', function () {
         mimes: ['video/mp4'],
         minduration: 5,
         maxduration: 30,
+        placement: 2,
+        plcmt: 1,
         protocols: [2, 3]
       }
     },
@@ -326,6 +328,8 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
     expect(payload.imp[0].video.w).to.eql(720);
     expect(payload.imp[0].video.h).to.eql(340);
+    expect(payload.imp[0].video.placement).to.eql(videoRequest[0].mediaTypes.video.placement);
+    expect(payload.imp[0].video.plcmt).to.eql(videoRequest[0].mediaTypes.video.plcmt);
 
     expect(payload.imp[0].banner).to.be.undefined;
   });

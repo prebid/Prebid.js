@@ -320,6 +320,16 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.api = api;
   }
 
+  const sua = deepAccess(bid, `ortb2.device.sua`);
+  if (sua) {
+    bidObject.sua = sua;
+  }
+
+  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
+  if (coppa) {
+    bidObject.coppa = 1;
+  }
+
   if (mediaType === VIDEO) {
     const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
     let playbackMethodValue;
@@ -366,9 +376,9 @@ function generateBidParameters(bid, bidderRequest) {
       bidObject.protocols = protocols;
     }
 
-    const coppa = deepAccess(bid, 'ortb2.regs.coppa')
-    if (coppa) {
-      bidObject.coppa = 1;
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
     }
   }
 
