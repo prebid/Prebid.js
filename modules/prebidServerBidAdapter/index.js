@@ -260,9 +260,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
 
   if (gppConsent) {
-    // proposing the following formatting, can adjust if needed...
-    // update - leaving this param as an array, since it's part of a POST payload where the [] characters shouldn't matter too much
-    payload.gpp_sid = gppConsent.applicableSections
+    payload.gpp_sid = gppConsent.applicableSections.join();
     // should we add check if applicableSections was not equal to -1 (where user was out of scope)?
     //   this would be similar to what was done above for TCF
     payload.gpp = gppConsent.gppString;
@@ -474,7 +472,13 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            emitNonBids(response.ext.seatnonbid, bidRequests[0].auctionId);
+            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+              seatnonbid: response.ext.seatnonbid,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            });
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -578,13 +582,6 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
-}
-
-function emitNonBids(seatnonbid, auctionId) {
-  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
-    seatnonbid,
-    auctionId
-  });
 }
 
 /**
