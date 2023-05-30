@@ -56,5 +56,6 @@
     "sizeMappingV2",
     "videojsVideoProvider",
     "dfpAdServerVideo",
-    "pairIdSystem"
+    "pairIdSystem",
+    "connectIdSystem"
 ]
