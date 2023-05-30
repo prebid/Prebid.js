@@ -202,7 +202,7 @@ function objectToQueryString(obj, prefix) {
       let v = obj[p];
       str.push((v !== null && typeof v === 'object')
         ? objectToQueryString(v, k)
-        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        : (k == 'schain' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
     }
   }
   return str.join('&');
@@ -211,25 +211,25 @@ function objectToQueryString(obj, prefix) {
 function serializeSChain(schain) {
   let ret = '';
 
-  ret += schain.ver;
+  ret += encodeURIComponent(schain.ver);
   ret += ',';
-  ret += schain.complete;
+  ret += encodeURIComponent(schain.complete);
 
   for (let node of schain.nodes) {
     ret += '!';
-    ret += node.asi;
+    ret += encodeURIComponent(node.asi);
     ret += ',';
-    ret += node.sid;
+    ret += encodeURIComponent(node.sid);
     ret += ',';
-    ret += node.hp;
+    ret += encodeURIComponent(node.hp);
     ret += ',';
-    ret += node.rid ?? '';
+    ret += encodeURIComponent(node.rid ?? '');
     ret += ',';
-    ret += node.name ?? '';
+    ret += encodeURIComponent(node.name ?? '');
     ret += ',';
-    ret += node.domain ?? '';
+    ret += encodeURIComponent(node.domain ?? '');
     ret += ',';
-    ret += node.ext ?? '';
+    ret += encodeURIComponent(node.ext ?? '');
   }
 
   return ret;
