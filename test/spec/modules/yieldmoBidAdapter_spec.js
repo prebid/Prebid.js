@@ -212,7 +212,7 @@ describe('YieldmoAdapter', function () {
         expect(data.hasOwnProperty('h')).to.be.true;
         expect(data.hasOwnProperty('w')).to.be.true;
         expect(data.hasOwnProperty('pubcid')).to.be.true;
-        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":""}');
+        expect(data.userConsent).to.equal('{"gdprApplies":"","cmp":"","gpp":"","gpp_sid":[]}');
         expect(data.us_privacy).to.equal('');
       });
 
@@ -262,6 +262,24 @@ describe('YieldmoAdapter', function () {
           JSON.stringify({
             gdprApplies: true,
             cmp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+            gpp: '',
+            gpp_sid: [],
+          })
+        );
+      });
+
+      it('should add gpp information to request if available', () => {
+        const gppConsent = {
+          'gppString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+          'applicableSections': [8]
+        };
+        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({gppConsent}));
+        expect(data.userConsent).equal(
+          JSON.stringify({
+            gdprApplies: '',
+            cmp: '',
+            gpp: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+            gpp_sid: [8],
           })
         );
       });
@@ -371,7 +389,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the banner bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
@@ -532,7 +558,15 @@ describe('YieldmoAdapter', function () {
 
       it('should add eids to the video bid request', function () {
         const params = {
-          userId: {pubcid: 'fake_pubcid'},
+          userIdAsEids: [{
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: 'fake_pubcid',
+                atype: 1,
+              }
+            ]
+          }],
           fakeUserIdAsEids: [{
             source: 'pubcid.org',
             uids: [{
@@ -542,6 +576,76 @@ describe('YieldmoAdapter', function () {
           }]
         };
         expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
+      });
+      it('should add device info to payload if available', function () {
+        let videoBidder = mockBidderRequest({ ortb2: {
+          device: {
+            sua: {
+              platform: {
+                brand: 'macOS',
+                version: [ '12', '4', '0' ]
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [ '106', '0', '5249', '119' ]
+                },
+                {
+                  brand: 'Not;A=Brand',
+                  version: [ '99', '0', '0', '0' ]
+                }
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'x86'
+            }
+          }
+        }}, [mockVideoBid()]);
+        let payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.device.sua).to.exist;
+        expect(payload.device.sua).to.deep.equal({
+          platform: {
+            brand: 'macOS',
+            version: [ '12', '4', '0' ]
+          },
+          browsers: [
+            {
+              brand: 'Chromium',
+              version: [ '106', '0', '5249', '119' ]
+            },
+            {
+              brand: 'Google Chrome',
+              version: [ '106', '0', '5249', '119' ]
+            },
+            {
+              brand: 'Not;A=Brand',
+              version: [ '99', '0', '0', '0' ]
+            }
+          ],
+          mobile: 0,
+          model: '',
+          bitness: '64',
+          architecture: 'x86'
+        }
+        );
+        expect(payload.device.ua).to.not.exist;
+        expect(payload.device.language).to.not.exist;
+        // remove sua info and check device object
+        videoBidder = mockBidderRequest({ ortb2: {
+          device: {
+            ua: navigator.userAgent,
+            language: (navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage),
+          }
+        }}, [mockVideoBid()]);
+        payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.device.sua).to.not.exist;
+        expect(payload.device.ua).to.exist;
+        expect(payload.device.language).to.exist;
       });
     });
   });

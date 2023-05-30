@@ -186,7 +186,8 @@ describe('auctionmanager.js', function () {
       source: 'client',
       mediaType: 'banner',
       meta: {
-        advertiserDomains: ['adomain']
+        advertiserDomains: ['adomain'],
+        primaryCatId: 'IAB-test'
       }
     };
 
@@ -200,6 +201,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.SOURCE ] = bid.source;
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
+      expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -230,21 +232,32 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    it('No bidder level configuration defined - default for video', function () {
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
-        }
-      });
-      $$PREBID_GLOBAL$$.bidderSettings = {};
-      let videoBid = utils.deepClone(bid);
-      videoBid.mediaType = 'video';
-      videoBid.videoCacheKey = 'abc123def';
-
-      let expected = getDefaultExpected(videoBid);
-      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+    it('should suppress acat if undefined', function () {
+      const noAcatBid = deepClone(DEFAULT_BID);
+      noAcatBid.meta.primaryCatId = ''
+      let expected = getDefaultExpected(noAcatBid);
+      delete expected.hb_acat;
+      let response = getKeyValueTargetingPairs(noAcatBid.bidderCode, noAcatBid);
       assert.deepEqual(response, expected);
     });
+
+    if (FEATURES.VIDEO) {
+      it('No bidder level configuration defined - default for video', function () {
+        config.setConfig({
+          cache: {
+            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          }
+        });
+        $$PREBID_GLOBAL$$.bidderSettings = {};
+        let videoBid = utils.deepClone(bid);
+        videoBid.mediaType = 'video';
+        videoBid.videoCacheKey = 'abc123def';
+
+        let expected = getDefaultExpected(videoBid);
+        let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+        assert.deepEqual(response, expected);
+      });
+    }
 
     it('Custom configuration for all bidders', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
@@ -290,6 +303,12 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
               }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
+              }
             }
           ]
 
@@ -303,17 +322,18 @@ describe('auctionmanager.js', function () {
       assert.deepEqual(response, expected);
     });
 
-    it('Custom configuration for all bidders with video bid', function () {
-      config.setConfig({
-        cache: {
-          url: 'https://prebid.adnxs.com/pbc/v1/cache'
-        }
-      });
-      let videoBid = utils.deepClone(bid);
-      videoBid.mediaType = 'video';
-      videoBid.videoCacheKey = 'abc123def';
+    if (FEATURES.VIDEO) {
+      it('Custom configuration for all bidders with video bid', function () {
+        config.setConfig({
+          cache: {
+            url: 'https://prebid.adnxs.com/pbc/v1/cache'
+          }
+        });
+        let videoBid = utils.deepClone(bid);
+        videoBid.mediaType = 'video';
+        videoBid.videoCacheKey = 'abc123def';
 
-      $$PREBID_GLOBAL$$.bidderSettings =
+        $$PREBID_GLOBAL$$.bidderSettings =
       {
         standard: {
           adserverTargeting: [
@@ -367,17 +387,24 @@ describe('auctionmanager.js', function () {
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
               }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.ACAT,
+              val: function (bidResponse) {
+                return bidResponse.meta.primaryCatId;
+              }
             }
           ]
 
         }
       };
 
-      let expected = getDefaultExpected(videoBid);
+        let expected = getDefaultExpected(videoBid);
 
-      let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
-      assert.deepEqual(response, expected);
-    });
+        let response = getKeyValueTargetingPairs(videoBid.bidderCode, videoBid);
+        assert.deepEqual(response, expected);
+      });
+    }
 
     it('Custom configuration for one bidder', function () {
       $$PREBID_GLOBAL$$.bidderSettings =
@@ -452,6 +479,24 @@ describe('auctionmanager.js', function () {
       var expected = getDefaultExpected(bid);
 
       var response = getKeyValueTargetingPairs(bid.bidderCode, bid);
+      assert.deepEqual(response, expected);
+    });
+
+    it('Should set targeting as expecting when pbs is enabled', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1',
+          enabled: true,
+          defaultVendor: 'appnexus',
+          bidders: ['appnexus'],
+          timeout: 1000,
+          adapter: 'prebidServer'
+        }
+      });
+
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+      let expected = getDefaultExpected(bid);
+      let response = getKeyValueTargetingPairs(bid.bidderCode, bid);
       assert.deepEqual(response, expected);
     });
 
@@ -726,6 +771,20 @@ describe('auctionmanager.js', function () {
       const anyArgs = [...Array(7).keys()].map(() => sinon.match.any);
       sinon.assert.calledWith(stubMakeBidRequests, ...anyArgs.slice(0, 5).concat([sinon.match.same(ortb2Fragments)]));
       sinon.assert.calledWith(stubCallAdapters, ...anyArgs.slice(0, 7).concat([sinon.match.same(ortb2Fragments)]));
+    });
+
+    it('correctly adds nonbids when they are emitted', () => {
+      const ortb2Fragments = {
+        global: {},
+        bidder: {}
+      }
+      const auction = auctionManager.createAuction({adUnits, ortb2Fragments});
+      expect(auction.getNonBids()[0]).to.equal(undefined);
+      events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+        auctionId: auction.getAuctionId(),
+        seatnonbid: ['test']
+      });
+      expect(auction.getNonBids()[0]).to.equal('test');
     });
   });
 
@@ -1344,8 +1403,8 @@ describe('auctionmanager.js', function () {
         assert.equal(addedBid.native.title, 'Sample title')
         assert.equal(addedBid.native.sponsoredBy, 'Sample sponsoredBy')
         assert.equal(addedBid.native.clickUrl, 'http://www.click.com')
-        assert.equal(addedBid.native.image, 'https://www.example.com/image.png')
-        assert.equal(addedBid.native.icon, 'https://www.example.com/icon.png')
+        assert.equal(addedBid.native.image.url, 'https://www.example.com/image.png')
+        assert.equal(addedBid.native.icon.url, 'https://www.example.com/icon.png')
         assert.equal(addedBid.native.impressionTrackers[0], 'http://www.imptracker.com')
         assert.equal(addedBid.native.javascriptTrackers, '<script async src="http://www.jstracker.com/file.js"></script>')
       });
@@ -1353,63 +1412,65 @@ describe('auctionmanager.js', function () {
   }
 
   describe('getMediaTypeGranularity', function () {
-    it('video', function () {
-      let mediaTypes = { video: {id: '1'} };
+    if (FEATURES.VIDEO) {
+      it('video', function () {
+        let mediaTypes = { video: {id: '1'} };
 
-      // mediaType is video and video.context is undefined
-      expect(getMediaTypeGranularity('video', mediaTypes, {
-        banner: 'low',
-        video: 'medium'
-      })).to.equal('medium');
+        // mediaType is video and video.context is undefined
+        expect(getMediaTypeGranularity('video', mediaTypes, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
 
-      expect(getMediaTypeGranularity('video', {}, {
-        banner: 'low',
-        video: 'medium'
-      })).to.equal('medium');
-      ``
-      expect(getMediaTypeGranularity('video', undefined, {
-        banner: 'low',
-        video: 'medium'
-      })).to.equal('medium');
+        expect(getMediaTypeGranularity('video', {}, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+        ``
+        expect(getMediaTypeGranularity('video', undefined, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
 
-      // also when mediaTypes.video is undefined
-      mediaTypes = { banner: {} };
-      expect(getMediaTypeGranularity('video', mediaTypes, {
-        banner: 'low',
-        video: 'medium'
-      })).to.equal('medium');
+        // also when mediaTypes.video is undefined
+        mediaTypes = { banner: {} };
+        expect(getMediaTypeGranularity('video', mediaTypes, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
 
-      // also when mediaTypes is undefined
-      expect(getMediaTypeGranularity('video', {}, {
-        banner: 'low',
-        video: 'medium'
-      })).to.equal('medium');
-    });
+        // also when mediaTypes is undefined
+        expect(getMediaTypeGranularity('video', {}, {
+          banner: 'low',
+          video: 'medium'
+        })).to.equal('medium');
+      });
 
-    it('video-outstream', function () {
-      let mediaTypes = { video: { context: 'outstream' } };
+      it('video-outstream', function () {
+        let mediaTypes = { video: { context: 'outstream' } };
 
-      expect(getMediaTypeGranularity('video', mediaTypes, {
-        'banner': 'low', 'video': 'medium', 'video-outstream': 'high'
-      })).to.equal('high');
-    });
+        expect(getMediaTypeGranularity('video', mediaTypes, {
+          'banner': 'low', 'video': 'medium', 'video-outstream': 'high'
+        })).to.equal('high');
+      });
 
-    it('video-instream', function () {
-      let mediaTypes = { video: { context: 'instream' } };
+      it('video-instream', function () {
+        let mediaTypes = { video: { context: 'instream' } };
 
-      expect(getMediaTypeGranularity('video', mediaTypes, {
-        banner: 'low', video: 'medium', 'video-instream': 'high'
-      })).to.equal('high');
+        expect(getMediaTypeGranularity('video', mediaTypes, {
+          banner: 'low', video: 'medium', 'video-instream': 'high'
+        })).to.equal('high');
 
-      // fall back to video if video-instream not found
-      expect(getMediaTypeGranularity('video', mediaTypes, {
-        banner: 'low', video: 'medium'
-      })).to.equal('medium');
+        // fall back to video if video-instream not found
+        expect(getMediaTypeGranularity('video', mediaTypes, {
+          banner: 'low', video: 'medium'
+        })).to.equal('medium');
 
-      expect(getMediaTypeGranularity('video', {mediaTypes: {banner: {}}}, {
-        banner: 'low', video: 'medium'
-      })).to.equal('medium');
-    });
+        expect(getMediaTypeGranularity('video', {mediaTypes: {banner: {}}}, {
+          banner: 'low', video: 'medium'
+        })).to.equal('medium');
+      });
+    }
 
     it('native', function () {
       expect(getMediaTypeGranularity('native', {native: {}}, {
@@ -1511,34 +1572,36 @@ describe('auctionmanager.js', function () {
       });
     })
 
-    it('should call auction done after prebid cache is complete for mediaType video', function() {
-      bids[0].mediaType = 'video';
-      let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
+    if (FEATURES.VIDEO) {
+      it('should call auction done after prebid cache is complete for mediaType video', function() {
+        bids[0].mediaType = 'video';
+        let bids1 = [mockBid({ bidderCode: BIDDER_CODE1 })];
 
-      let opts = {
-        mediaType: {
-          video: {
-            context: 'instream',
-            playerSize: [640, 480],
-          },
-        }
-      };
-      bidRequests = [
-        mockBidRequest(bids[0], opts),
-        mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
-      ];
+        let opts = {
+          mediaType: {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480],
+            },
+          }
+        };
+        bidRequests = [
+          mockBidRequest(bids[0], opts),
+          mockBidRequest(bids1[0], { adUnitCode: ADUNIT_CODE1 }),
+        ];
 
-      let cbs = auctionCallbacks(doneSpy, auction);
-      cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
-      cbs.adapterDone.call(bidRequests[0]);
-      cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
-      cbs.adapterDone.call(bidRequests[1]);
-      assert.equal(doneSpy.callCount, 0);
-      const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
-      const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
-      server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
-      assert.equal(doneSpy.callCount, 1);
-    });
+        let cbs = auctionCallbacks(doneSpy, auction);
+        cbs.addBidResponse.call(bidRequests[0], ADUNIT_CODE, bids[0]);
+        cbs.adapterDone.call(bidRequests[0]);
+        cbs.addBidResponse.call(bidRequests[1], ADUNIT_CODE1, bids1[0]);
+        cbs.adapterDone.call(bidRequests[1]);
+        assert.equal(doneSpy.callCount, 0);
+        const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
+        const responseBody = `{"responses":[{"uuid":"${uuid}"}]}`;
+        server.requests[0].respond(200, { 'Content-Type': 'application/json' }, responseBody);
+        assert.equal(doneSpy.callCount, 1);
+      });
+    }
 
     it('should convert cpm to number', () => {
       auction.addBidReceived = sinon.spy();

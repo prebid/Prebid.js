@@ -15,41 +15,9 @@ const ENDPOINT_URL =
   'https://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
-
-/**
- * 获取随机id
- * @param  {number} a random number from 0 to 15
- * @return {string}   random number or random string
- */
-// function getRandomId(
-//   a // placeholder
-// ) {
-//   // if the placeholder was passed, return
-//   // a random number from 0 to 15
-//   return a
-//     ? (
-//       a ^ // unless b is 8,
-//         ((Math.random() * // in which case
-//           16) >> // a random number from
-//           (a / 4))
-//     ) // 8 to 11
-//       .toString(16) // in hexadecimal
-//     : ( // or otherwise a concatenated string:
-//       [1e7] + // 10000000 +
-//         1e3 + // -1000 +
-//         4e3 + // -4000 +
-//         8e3 + // -80000000 +
-//         1e11
-//     ) // -100000000000,
-//       .replace(
-//         // replacing
-//         /[018]/g, // zeroes, ones, and eights with
-//         getRandomId // random hex digits
-//       );
-// }
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
@@ -148,12 +116,12 @@ function isMobileAndTablet() {
  */
 // function getBidFloor(bid, mediaType, sizes) {
 //   var floor;
-//   var size = sizes.length === 1 ? sizes[0] : "*";
-//   if (typeof bid.getFloor === "function") {
-//     const floorInfo = bid.getFloor({ currency: "USD", mediaType, size });
+//   var size = sizes.length === 1 ? sizes[0] : '*';
+//   if (typeof bid.getFloor === 'function') {
+//     const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
 //     if (
-//       typeof floorInfo === "object" &&
-//       floorInfo.currency === "USD" &&
+//       typeof floorInfo === 'object' &&
+//       floorInfo.currency === 'USD' &&
 //       !isNaN(parseFloat(floorInfo.floor))
 //     ) {
 //       floor = parseFloat(floorInfo.floor);
@@ -247,7 +215,9 @@ function getItems(validBidRequests, bidderRequest) {
       }
     }
     if (!matchSize) {
-      return {};
+      matchSize = sizes[0]
+        ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
+        : { h: 0, w: 0 };
     }
 
     const bidFloor = getBidFloor(req);
@@ -255,7 +225,6 @@ function getItems(validBidRequests, bidderRequest) {
     //   utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
     //   utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
     //   utils.deepAccess(req, 'params.placementId', 0);
-    // console.log("wjh getItems:", req, bidFloor, gpid);
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -268,9 +237,10 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes,
         },
         ext: {
-        //   gpid: gpid, // 加入后无法返回广告
+          //   gpid: gpid, // 加入后无法返回广告
         },
       };
       itemMaps[id] = {
@@ -296,6 +266,8 @@ function getParam(validBidRequests, bidderRequest) {
   const sharedid =
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
     utils.deepAccess(validBidRequests[0], 'userId.pubcid');
+  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+
   let isMobile = isMobileAndTablet() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
   let isTest = validBidRequests[0].params.test || 0;
@@ -309,6 +281,7 @@ function getParam(validBidRequests, bidderRequest) {
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
 
   const timeout = bidderRequest.timeout || 2000;
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
@@ -318,19 +291,24 @@ function getParam(validBidRequests, bidderRequest) {
       cur: ['USD'],
       device: {
         connectiontype: 0,
-        // ip: '64.188.178.115',
+        // ip: '98.61.5.0',
         js: 1,
-        // language: "en",
-        // os: "Microsoft Windows",
-        // ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19043",
+        // language: 'en',
+        // os: 'Microsoft Windows',
+        // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
         os: navigator.platform || '',
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
-      ext: {},
-      user: {
-        id: sharedid || pubcid || getUserID(),
+      ext: {
+        eids,
+        firstPartyData,
       },
+      user: {
+        buyeruid: getUserID(),
+        id: sharedid || pubcid,
+      },
+      eids,
       site: {
         name: domain,
         domain: domain,
@@ -420,12 +398,12 @@ export const spec = {
           nurl: getProperty(bid, 'nurl'),
           //   adserverTargeting: {
           //     granularityMultiplier: 0.1,
-          //     priceGranularity: "pbHg",
-          //     pbMg: "0.01",
+          //     priceGranularity: 'pbHg',
+          //     pbMg: '0.01',
           //   },
-          //   pbMg: "0.01",
+          //   pbMg: '0.01',
           //   granularityMultiplier: 0.1,
-          //   priceGranularity: "pbHg",
+          //   priceGranularity: 'pbHg',
         };
         bidResponses.push(bidResponse);
       }

@@ -27,8 +27,9 @@ The below parameters apply only to the Yahoo ConnectID user ID Module.
 
 | Param under usersync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| name | Required | String | ID value for the Yahoo ConnectID module - `"connectId"` | `"connectId"` |
-| params | Required | Object | Data for Yahoo ConnectID initialization. | |
-| params.pixelId | Required | Number | The Yahoo supplied publisher specific pixel Id.  | `8976` |
-| params.he | Optional | String | The SHA-256 hashed user email address. One of either the `he` parameter or the `puid` parameter must be supplied. | `"529cb86de31e9547a712d9f380146e98bbd39beec"` |
-| params.puid | Optional | String | The publisher-supplied user identifier. One of either the `he` parameter or the `puid` parameter must be supplied. | `"P-975484817"` |
+| name | Required | String | The name of this module. | `"connectId"` |
+| params | Required | Object | Container of all module params. ||
+| params.pixelId | Required | Number |
+The Yahoo-supplied publisher-specific pixel ID. | `"0000"` |
+| params.he | Optional | String | The SHA-256 hashed user email address which has been lowercased prior to hashing. Pass both `he` and `puid` params if present, otherwise pass either of the two that is available. |`"ed8ddbf5a171981db8ef938596ca297d5e3f84bcc280041c5880dba3baf9c1d4"`|
+| params.puid | Optional | String | The publisher supplied user identifier such as a first-party cookie. Pass both `he` and `puid` params if present, otherwise pass either of the two that is available. | `"ab9iibf5a231ii1db8ef911596ca297d5e3f84biii00041c5880dba3baf9c1da"` |

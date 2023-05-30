@@ -5,13 +5,22 @@ import {
   masSizeOrdering,
   resetUserSync,
   classifiedAsVideo,
-  resetRubiConf
+  resetRubiConf,
+  converter
 } from 'modules/rubiconBidAdapter.js';
 import {parse as parseQuery} from 'querystring';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
+import 'modules/schain.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/userId/index.js';
+import 'modules/priceFloors.js';
+import 'modules/multibid/index.js';
+import adapterManager from 'src/adapterManager.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -102,6 +111,9 @@ describe('the rubicon adapter', function () {
             referrer: 'localhost',
             latLong: [40.7607823, '111.8910325']
           },
+          mediaTypes: {
+            banner: [[300, 250]]
+          },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',
           sizes: [[300, 250], [320, 50]],
@@ -180,6 +192,7 @@ describe('the rubicon adapter', function () {
    * @param {boolean} [gdprApplies]
    */
   function createGdprBidderRequest(gdprApplies) {
+    const bidderRequest = getBidderRequest();
     if (typeof gdprApplies === 'boolean') {
       bidderRequest.gdprConsent = {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -190,15 +203,16 @@ describe('the rubicon adapter', function () {
         'consentString': 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
       };
     }
+    return bidderRequest;
   }
 
-  function createUspBidderRequest() {
+  function addUspToBidderRequest(bidderRequest) {
     bidderRequest.uspConsent = '1NYN';
   }
 
   function createVideoBidderRequest() {
-    createGdprBidderRequest(true);
-    createUspBidderRequest();
+    const bidderRequest = createGdprBidderRequest(true);
+    addUspToBidderRequest(bidderRequest);
 
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
@@ -248,9 +262,10 @@ describe('the rubicon adapter', function () {
       criteoId: '1111',
     };
     bid.userIdAsEids = createEidsArray(bid.userId);
+    return bidderRequest;
   }
 
-  function createVideoBidderRequestNoVideo() {
+  function removeVideoParamFromBidderRequest(bidderRequest) {
     let bid = bidderRequest.bids[0];
     bid.mediaTypes = {
       video: {
@@ -261,7 +276,9 @@ describe('the rubicon adapter', function () {
   }
 
   function createVideoBidderRequestOutstream() {
+    const bidderRequest = createGdprBidderRequest(false);
     let bid = bidderRequest.bids[0];
+    delete bid.sizes;
     bid.mediaTypes = {
       video: {
         context: 'outstream',
@@ -279,17 +296,20 @@ describe('the rubicon adapter', function () {
         protocols: [1, 2, 3, 4, 5, 6]
       },
     };
-    bid.params.accountId = 14062;
-    bid.params.siteId = 70608;
-    bid.params.zoneId = 335918;
-    bid.params.video = {
-      'language': 'en',
-      'skip': 1,
-      'skipafter': 15,
-      'playerHeight': 320,
-      'playerWidth': 640,
-      'size_id': 203
-    };
+    bid.params = {
+      accountId: 14062,
+      siteId: 70608,
+      zoneId: 335918,
+      video: {
+        'language': 'en',
+        'skip': 1,
+        'skipafter': 15,
+        'playerHeight': 320,
+        'playerWidth': 640,
+        'size_id': 203
+      }
+    }
+    return bidderRequest;
   }
 
   beforeEach(function () {
@@ -307,7 +327,6 @@ describe('the rubicon adapter', function () {
             accountId: '14062',
             siteId: '70608',
             zoneId: '335918',
-            pchain: 'GAM:11111-reseller1:22222',
             userId: '12346',
             keywords: ['a', 'b', 'c'],
             inventory: {
@@ -322,6 +341,9 @@ describe('the rubicon adapter', function () {
             position: 'atf',
             referrer: 'localhost',
             latLong: [40.7607823, '111.8910325']
+          },
+          mediaTypes: {
+            banner: [[300, 250]]
           },
           adUnitCode: '/19968336/header-bid-tag-0',
           code: 'div-1',
@@ -415,7 +437,6 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
-            'x_source.pchain': 'GAM:11111-reseller1:22222',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -583,20 +604,11 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal('atf;;btf;;');
         });
 
-        it('should not send x_source.pchain to AE if params.pchain is not specified', function () {
-          var noPchainRequest = utils.deepClone(bidderRequest);
-          delete noPchainRequest.bids[0].params.pchain;
-
-          let [request] = spec.buildRequests(noPchainRequest.bids, noPchainRequest);
-          expect(request.data).to.contain('&site_id=70608&');
-          expect(request.data).to.not.contain('x_source.pchain');
-        });
-
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'x_source.pchain', 'p_screen_res', 'rp_secure', 'tk_user_key', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
+          const referenceOrdering = ['account_id', 'site_id', 'zone_id', 'size_id', 'alt_size_ids', 'p_pos', 'rf', 'p_geo.latitude', 'p_geo.longitude', 'kw', 'tg_v.ucat', 'tg_v.lastsearch', 'tg_v.likes', 'tg_i.rating', 'tg_i.prodtype', 'tk_flint', 'x_source.tid', 'l_pb_bid_id', 'p_screen_res', 'rp_secure', 'tk_user_key', 'x_imp.ext.tid', 'tg_fl.eid', 'rp_maxbids', 'slots', 'rand'];
 
           request.data.split('&').forEach((item, i) => {
             expect(item.split('=')[0]).to.equal(referenceOrdering[i]);
@@ -615,6 +627,7 @@ describe('the rubicon adapter', function () {
             'rand': '0.1',
             'tk_flint': INTEGRATION,
             'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -739,7 +752,7 @@ describe('the rubicon adapter', function () {
 
         describe('GDPR consent config', function () {
           it('should send "gdpr" and "gdpr_consent", when gdprConsent defines consentString and gdprApplies', function () {
-            createGdprBidderRequest(true);
+            const bidderRequest = createGdprBidderRequest(true);
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             let data = parseQuery(request.data);
 
@@ -748,7 +761,7 @@ describe('the rubicon adapter', function () {
           });
 
           it('should send only "gdpr_consent", when gdprConsent defines only consentString', function () {
-            createGdprBidderRequest();
+            const bidderRequest = createGdprBidderRequest();
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             let data = parseQuery(request.data);
 
@@ -765,12 +778,12 @@ describe('the rubicon adapter', function () {
           });
 
           it('should set "gdpr" value as 1 or 0, using "gdprApplies" value of either true/false', function () {
-            createGdprBidderRequest(true);
+            let bidderRequest = createGdprBidderRequest(true);
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             let data = parseQuery(request.data);
             expect(data['gdpr']).to.equal('1');
 
-            createGdprBidderRequest(false);
+            bidderRequest = createGdprBidderRequest(false);
             [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             data = parseQuery(request.data);
             expect(data['gdpr']).to.equal('0');
@@ -779,7 +792,7 @@ describe('the rubicon adapter', function () {
 
         describe('USP Consent', function () {
           it('should send us_privacy if bidderRequest has a value for uspConsent', function () {
-            createUspBidderRequest();
+            addUspToBidderRequest(bidderRequest);
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
             let data = parseQuery(request.data);
 
@@ -1534,717 +1547,711 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      describe('for video requests', function () {
-        it('should make a well-formed video request', function () {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-
-          expect(post).to.have.property('imp');
-          // .with.length.of(1);
-          let imp = post.imp[0];
-          expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(undefined); // now undefined
-          expect(imp.video.w).to.equal(640);
-          expect(imp.video.h).to.equal(480);
-          expect(imp.video.pos).to.equal(1);
-          expect(imp.video.context).to.equal('instream');
-          expect(imp.video.minduration).to.equal(15);
-          expect(imp.video.maxduration).to.equal(30);
-          expect(imp.video.startdelay).to.equal(0);
-          expect(imp.video.skip).to.equal(1);
-          expect(imp.video.skipafter).to.equal(15);
-          expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
-          expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
-          expect(imp.ext.rubicon.video.size_id).to.equal(201);
-          expect(imp.ext.rubicon.video.language).to.equal('en');
-          // Also want it to be in post.site.content.language
-          expect(post.site.content.language).to.equal('en');
-          expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
-          expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
-          // should contain version
-          expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: 'v$prebid.version$'});
-          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-          // EIDs should exist
-          expect(post.user.ext).to.have.property('eids').that.is.an('array');
-          // LiveIntent should exist
-          expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
-          expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
-          expect(post.user.ext.eids[0].uids[0].atype).to.equal(3);
-          expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
-          expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
-          expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
-          expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
-          // LiveRamp should exist
-          expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
-          expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
-          expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
-          // UnifiedId should exist
-          expect(post.user.ext.eids[2].source).to.equal('adserver.org');
-          expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[2].uids[0].id).to.equal('3000');
-          // PubCommonId should exist
-          expect(post.user.ext.eids[3].source).to.equal('pubcid.org');
-          expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
-          expect(post.user.ext.eids[3].uids[0].id).to.equal('4000');
-          // example should exist
-          expect(post.user.ext.eids[4].source).to.equal('example.com');
-          expect(post.user.ext.eids[4].uids[0].id).to.equal('333333');
-          // id-partner.com
-          expect(post.user.ext.eids[5].source).to.equal('id-partner.com');
-          expect(post.user.ext.eids[5].uids[0].id).to.equal('4444444');
-          // CriteoId should exist
-          expect(post.user.ext.eids[6].source).to.equal('criteo.com');
-          expect(post.user.ext.eids[6].uids[0].id).to.equal('1111');
-          expect(post.user.ext.eids[6].uids[0].atype).to.equal(1);
-
-          expect(post.regs.ext.gdpr).to.equal(1);
-          expect(post.regs.ext.us_privacy).to.equal('1NYN');
-          expect(post).to.have.property('ext').that.is.an('object');
-          expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
-          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
-        });
-
-        describe('ortb2imp sent to video bids', function () {
-          beforeEach(function () {
-            // initialize
-            if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
-              delete bidderRequest.bids[0].ortb2Imp;
-            }
-          });
-
-          it('should add ortb values to video requests', function () {
-            createVideoBidderRequest();
+      if (FEATURES.VIDEO) {
+        describe('for video requests', function () {
+          it('should make a well-formed video request', function () {
+            const bidderRequest = createVideoBidderRequest();
 
             sandbox.stub(Date, 'now').callsFake(() =>
               bidderRequest.auctionStart + 100
             );
 
-            bidderRequest.bids[0].ortb2Imp = {
-              ext: {
-                gpid: '/test/gpid',
-                data: {
-                  pbadslot: '/test/pbadslot'
-                },
-                prebid: {
-                  storedauctionresponse: {
-                    id: 'sample_video_response'
-                  }
-                }
-              }
-            }
-
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
             let post = request.data;
 
             expect(post).to.have.property('imp');
             // .with.length.of(1);
             let imp = post.imp[0];
-            expect(imp.ext.gpid).to.equal('/test/gpid');
-            expect(imp.ext.data.pbadslot).to.equal('/test/pbadslot');
-            expect(imp.ext.prebid.storedauctionresponse.id).to.equal('sample_video_response');
+            expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+            expect(imp.exp).to.equal(undefined); // now undefined
+            expect(imp.video.w).to.equal(640);
+            expect(imp.video.h).to.equal(480);
+            expect(imp.video.pos).to.equal(1);
+            expect(imp.video.minduration).to.equal(15);
+            expect(imp.video.maxduration).to.equal(30);
+            expect(imp.video.startdelay).to.equal(0);
+            expect(imp.video.skip).to.equal(1);
+            expect(imp.video.skipafter).to.equal(15);
+            expect(imp.ext.prebid.bidder.rubicon.video.playerWidth).to.equal(640);
+            expect(imp.ext.prebid.bidder.rubicon.video.playerHeight).to.equal(480);
+            expect(imp.ext.prebid.bidder.rubicon.video.size_id).to.equal(201);
+            expect(imp.ext.prebid.bidder.rubicon.video.language).to.equal('en');
+            // Also want it to be in post.site.content.language
+            expect(imp.ext.prebid.bidder.rubicon.video.skip).to.equal(1);
+            expect(imp.ext.prebid.bidder.rubicon.video.skipafter).to.equal(15);
+            expect(post.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+            // should contain version
+            expect(post.ext.prebid.channel).to.deep.equal({name: 'pbjs', version: $$PREBID_GLOBAL$$.version});
+            expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+            // EIDs should exist
+            expect(post.user.ext).to.have.property('eids').that.is.an('array');
+            // LiveIntent should exist
+            expect(post.user.ext.eids[0].source).to.equal('liveintent.com');
+            expect(post.user.ext.eids[0].uids[0].id).to.equal('0000-1111-2222-3333');
+            expect(post.user.ext.eids[0].uids[0].atype).to.equal(3);
+            expect(post.user.ext.eids[0]).to.have.property('ext').that.is.an('object');
+            expect(post.user.ext.eids[0].ext).to.have.property('segments').that.is.an('array');
+            expect(post.user.ext.eids[0].ext.segments[0]).to.equal('segA');
+            expect(post.user.ext.eids[0].ext.segments[1]).to.equal('segB');
+            // LiveRamp should exist
+            expect(post.user.ext.eids[1].source).to.equal('liveramp.com');
+            expect(post.user.ext.eids[1].uids[0].id).to.equal('1111-2222-3333-4444');
+            expect(post.user.ext.eids[1].uids[0].atype).to.equal(3);
+            // UnifiedId should exist
+            expect(post.user.ext.eids[2].source).to.equal('adserver.org');
+            expect(post.user.ext.eids[2].uids[0].atype).to.equal(1);
+            expect(post.user.ext.eids[2].uids[0].id).to.equal('3000');
+            // PubCommonId should exist
+            expect(post.user.ext.eids[3].source).to.equal('pubcid.org');
+            expect(post.user.ext.eids[3].uids[0].atype).to.equal(1);
+            expect(post.user.ext.eids[3].uids[0].id).to.equal('4000');
+            // example should exist
+            expect(post.user.ext.eids[4].source).to.equal('example.com');
+            expect(post.user.ext.eids[4].uids[0].id).to.equal('333333');
+            // id-partner.com
+            expect(post.user.ext.eids[5].source).to.equal('id-partner.com');
+            expect(post.user.ext.eids[5].uids[0].id).to.equal('4444444');
+            // CriteoId should exist
+            expect(post.user.ext.eids[6].source).to.equal('criteo.com');
+            expect(post.user.ext.eids[6].uids[0].id).to.equal('1111');
+            expect(post.user.ext.eids[6].uids[0].atype).to.equal(1);
+
+            expect(post.regs.ext.gdpr).to.equal(1);
+            expect(post.regs.ext.us_privacy).to.equal('1NYN');
+            expect(post).to.have.property('ext').that.is.an('object');
+            expect(post.ext.prebid.targeting.includewinners).to.equal(true);
+            expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+            expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+            expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+            expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+            expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
           });
-        });
-
-        it('should correctly set bidfloor on imp when getfloor in scope', function () {
-          createVideoBidderRequest();
-          // default getFloor response is empty object so should not break and not send hard_floor
-          bidderRequest.bids[0].getFloor = () => getFloorResponse;
-          sinon.spy(bidderRequest.bids[0], 'getFloor');
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          // make sure banner bid called with right stuff
-          expect(
-            bidderRequest.bids[0].getFloor.calledWith({
-              currency: 'USD',
-              mediaType: 'video',
-              size: [640, 480]
-            })
-          ).to.be.true;
-
-          // not an object should work and not send
-          expect(request.data.imp[0].bidfloor).to.be.undefined;
-
-          // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR', floor: 1.0};
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.be.undefined;
-
-          // make it respond with a non USD floor should not send it
-          getFloorResponse = {currency: 'EUR'};
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.be.undefined;
-
-          // make it respond with USD floor and string floor
-          getFloorResponse = {currency: 'USD', floor: '1.23'};
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(1.23);
-
-          // make it respond with USD floor and num floor
-          getFloorResponse = {currency: 'USD', floor: 1.23};
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(1.23);
-        });
-
-        it('should continue with auction and log error if getFloor throws one', function () {
-          createVideoBidderRequest();
-          // default getFloor response is empty object so should not break and not send hard_floor
-          bidderRequest.bids[0].getFloor = () => {
-            throw new Error('An exception!');
-          };
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          // log error called
-          expect(logErrorSpy.calledOnce).to.equal(true);
-
-          // should have an imp
-          expect(request.data.imp).to.exist.and.to.be.a('array');
-          expect(request.data.imp).to.have.lengthOf(1);
-
-          // should be NO bidFloor
-          expect(request.data.imp[0].bidfloor).to.be.undefined;
-        });
-
-        it('should add alias name to PBS Request', function () {
-          createVideoBidderRequest();
-
-          bidderRequest.bidderCode = 'superRubicon';
-          bidderRequest.bids[0].bidder = 'superRubicon';
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          // should have the aliases object sent to PBS
-          expect(request.data.ext.prebid).to.haveOwnProperty('aliases');
-          expect(request.data.ext.prebid.aliases).to.deep.equal({superRubicon: 'rubicon'});
-
-          // should have the imp ext bidder params be under the alias name not rubicon superRubicon
-          expect(request.data.imp[0].ext).to.have.property('superRubicon').that.is.an('object');
-          expect(request.data.imp[0].ext).to.not.haveOwnProperty('rubicon');
-        });
-
-        it('should add floors flag correctly to PBS Request', function () {
-          createVideoBidderRequest();
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          // should not pass if undefined
-          expect(request.data.ext.prebid.floors).to.be.undefined;
-
-          // should pass it as false
-          bidderRequest.bids[0].floorData = {
-            skipped: false,
-            location: 'fetch',
-          }
-          let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
-        });
-
-        it('should add multibid configuration to PBS Request', function () {
-          createVideoBidderRequest();
-
-          const multibid = [{
-            bidder: 'bidderA',
-            maxBids: 2
-          }, {
-            bidder: 'bidderB',
-            maxBids: 2
-          }];
-          const expected = [{
-            bidder: 'bidderA',
-            maxbids: 2
-          }, {
-            bidder: 'bidderB',
-            maxbids: 2
-          }];
-
-          config.setConfig({multibid: multibid});
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          // should have the aliases object sent to PBS
-          expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
-          expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
-        });
-
-        it('should pass client analytics to PBS endpoint if all modules included', function () {
-          createVideoBidderRequest();
-          $$PREBID_GLOBAL$$.installedModules = [];
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let payload = request.data;
-
-          expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
-        });
-
-        it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
-          createVideoBidderRequest();
-          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let payload = request.data;
-
-          expect(payload.ext.prebid.analytics).to.not.be.undefined;
-          expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
-        });
-
-        it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
-          createVideoBidderRequest();
-          $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let payload = request.data;
-
-          expect(payload.ext.prebid.analytics).to.be.undefined;
-        });
-
-        it('should send video exp param correctly when set', function () {
-          createVideoBidderRequest();
-          config.setConfig({s2sConfig: {defaultTtl: 600}});
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-
-          // should exp set to the right value according to config
-          let imp = post.imp[0];
-          expect(imp.exp).to.equal(600);
-        });
-
-        it('should not send video exp at all if not set in s2sConfig config', function () {
-          createVideoBidderRequest();
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-
-          // should exp set to the right value according to config
-          let imp = post.imp[0];
-          // bidderFactory stringifies request body before sending so removes undefined attributes:
-          expect(imp.exp).to.equal(undefined);
-        });
-
-        it('should send tmax as the bidderRequest timeout value', function () {
-          createVideoBidderRequest();
-          bidderRequest.timeout = 3333;
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-          expect(post.tmax).to.equal(3333);
-        });
-
-        it('should send correct bidfloor to PBS', function () {
-          createVideoBidderRequest();
-
-          bidderRequest.bids[0].params.floor = 0.1;
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(0.1);
-
-          bidderRequest.bids[0].params.floor = 5.5;
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(5.5);
-
-          bidderRequest.bids[0].params.floor = '1.7';
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(1.7);
-
-          bidderRequest.bids[0].params.floor = 0;
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].bidfloor).to.equal(0);
-
-          bidderRequest.bids[0].params.floor = undefined;
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
-
-          bidderRequest.bids[0].params.floor = null;
-          [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
-        });
-
-        it('should send request with proper ad position', function () {
-          createVideoBidderRequest();
-          let positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
-          let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(1);
-
-          positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].params.position = undefined;
-          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(undefined);
-
-          positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].params.position = 'atf'
-          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(1);
-
-          positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].params.position = 'btf';
-          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(3);
-
-          positionBidderRequest = utils.deepClone(bidderRequest);
-          positionBidderRequest.bids[0].params.position = 'foobar';
-          positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
-          [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
-          expect(request.data.imp[0].video.pos).to.equal(undefined);
-        });
-
-        it('should properly enforce video.context to be either instream or outstream', function () {
-          let bid = bidderRequest.bids[0];
-          bid.mediaTypes = {
-            video: {
-              context: 'instream',
-              mimes: ['video/mp4', 'video/x-ms-wmv'],
-              protocols: [2, 5],
-              maxduration: 30,
-              linearity: 1,
-              api: [2]
-            }
-          }
-          bid.params.video = {};
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const bidRequestCopy = utils.deepClone(bidderRequest.bids[0]);
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
-
-          // change context to outstream, still true
-          bidRequestCopy.mediaTypes.video.context = 'outstream';
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
-
-          // change context to random, false now
-          bidRequestCopy.mediaTypes.video.context = 'random';
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          // change context to undefined, still false
-          bidRequestCopy.mediaTypes.video.context = undefined;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-
-          // remove context, still false
-          delete bidRequestCopy.mediaTypes.video.context;
-          expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
-        });
-
-        it('should enforce the new required mediaTypes.video params', function () {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
-
-          // change mimes to a non array, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.mimes = 'video/mp4';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete mimes, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.mimes;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // change protocols to an int not array of ints, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.protocols = 1;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete protocols, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.protocols;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // change linearity to an string, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.linearity = 'string';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete linearity, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.linearity;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // change api to an string, no good
-          createVideoBidderRequest();
-          bidderRequest.bids[0].mediaTypes.video.api = 'string';
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-          // delete api, no good
-          createVideoBidderRequest();
-          delete bidderRequest.bids[0].mediaTypes.video.api;
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-        });
-
-        it('bid request is valid when video context is outstream', function () {
-          createVideoBidderRequestOutstream();
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const bidRequestCopy = utils.deepClone(bidderRequest);
-
-          let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
-          expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
-          expect(request.data.imp[0].ext.rubicon.video.size_id).to.equal(203);
-        });
-
-        it('should send banner request when outstream or instream video included but no rubicon video obect is present', function () {
-          // add banner and video mediaTypes
-          bidderRequest.mediaTypes = {
-            banner: {
-              sizes: [[300, 250]]
-            },
-            video: {
-              context: 'outstream'
-            }
-          };
-          // no video object in rubicon params, so we should see one call made for banner
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
-
-          bidderRequest.mediaTypes.video.context = 'instream';
-
-          requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
-
-          expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
-        });
-
-        it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
-          createVideoBidderRequestNoVideo();
-
-          let bid = bidderRequest.bids[0];
-          bid.mediaTypes.banner = {
-            sizes: [[300, 250]]
-          };
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const bidRequestCopy = utils.deepClone(bidderRequest);
-
-          let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
-          expect(requests.length).to.equal(1);
-          expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
-        });
-
-        it('should include coppa flag in video bid request', () => {
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          sandbox.stub(config, 'getConfig').callsFake(key => {
-            const config = {
-              'coppa': true
+
+          describe('ortb2imp sent to video bids', function () {
+            beforeEach(function () {
+            // initialize
+              if (bidderRequest.bids[0].hasOwnProperty('ortb2Imp')) {
+                delete bidderRequest.bids[0].ortb2Imp;
+              }
+            });
+
+            it('should add ortb values to video requests', function () {
+              const bidderRequest = createVideoBidderRequest();
+
+              sandbox.stub(Date, 'now').callsFake(() =>
+                bidderRequest.auctionStart + 100
+              );
+
+              bidderRequest.bids[0].ortb2Imp = {
+                ext: {
+                  gpid: '/test/gpid',
+                  data: {
+                    pbadslot: '/test/pbadslot'
+                  },
+                  prebid: {
+                    storedauctionresponse: {
+                      id: 'sample_video_response'
+                    }
+                  }
+                }
+              }
+
+              let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+              let post = request.data;
+
+              expect(post).to.have.property('imp');
+              // .with.length.of(1);
+              let imp = post.imp[0];
+              expect(imp.ext.gpid).to.equal('/test/gpid');
+              expect(imp.ext.data.pbadslot).to.equal('/test/pbadslot');
+              expect(imp.ext.prebid.storedauctionresponse.id).to.equal('sample_video_response');
+            });
+          });
+
+          it('should correctly set bidfloor on imp when getfloor in scope', function () {
+            const bidderRequest = createVideoBidderRequest();
+            // default getFloor response is empty object so should not break and not send hard_floor
+            bidderRequest.bids[0].getFloor = () => getFloorResponse;
+            sinon.spy(bidderRequest.bids[0], 'getFloor');
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // make sure banner bid called with right stuff
+            expect(
+              bidderRequest.bids[0].getFloor.calledWith({
+                currency: 'USD',
+                mediaType: '*',
+                size: '*'
+              })
+            ).to.be.true;
+
+            // not an object should work and not send
+            expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+            // make it respond with a non USD floor should not send it
+            getFloorResponse = {currency: 'EUR', floor: 1.0};
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+            // make it respond with a non USD floor should not send it
+            getFloorResponse = {currency: 'EUR'};
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.be.undefined;
+
+            // make it respond with USD floor and string floor
+            getFloorResponse = {currency: 'USD', floor: '1.23'};
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(1.23);
+
+            // make it respond with USD floor and num floor
+            getFloorResponse = {currency: 'USD', floor: 1.23};
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(1.23);
+          });
+
+          it('should continue with auction if getFloor throws error', function () {
+            const bidderRequest = createVideoBidderRequest();
+            // default getFloor response is empty object so should not break and not send hard_floor
+            bidderRequest.bids[0].getFloor = () => {
+              throw new Error('An exception!');
             };
-            return config[key];
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should have an imp
+            expect(request.data.imp).to.exist.and.to.be.a('array');
+            expect(request.data.imp).to.have.lengthOf(1);
+
+            // should be NO bidFloor
+            expect(request.data.imp[0].bidfloor).to.be.undefined;
+            expect(request.data.imp[0].bidfloorcur).to.be.undefined;
           });
 
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.regs.coppa).to.equal(1);
-        });
+          it('should add alias name to PBS Request', function () {
+            const bidderRequest = createVideoBidderRequest();
+            adapterManager.aliasRegistry['superRubicon'] = 'rubicon';
+            bidderRequest.bidderCode = 'superRubicon';
+            bidderRequest.bids[0].bidder = 'superRubicon';
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-        it('should include first party data', () => {
-          createVideoBidderRequest();
+            // should have the aliases object sent to PBS
+            expect(request.data.ext.prebid).to.haveOwnProperty('aliases');
+            expect(request.data.ext.prebid.aliases).to.deep.equal({superRubicon: 'rubicon'});
 
-          const site = {
-            ext: {
-              data: {
-                page: 'home'
+            // should have the imp ext bidder params be under the alias name not rubicon superRubicon
+            expect(request.data.imp[0].ext.prebid.bidder).to.have.property('superRubicon').that.is.an('object');
+            expect(request.data.imp[0].ext.prebid.bidder).to.not.haveOwnProperty('rubicon');
+          });
+
+          it('should add floors flag correctly to PBS Request', function () {
+            const bidderRequest = createVideoBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should not pass if undefined
+            expect(request.data.ext.prebid.floors).to.be.undefined;
+
+            // should pass it as false
+            bidderRequest.bids[0].floorData = {
+              skipped: false,
+              location: 'fetch',
+            }
+            let [newRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(newRequest.data.ext.prebid.floors).to.deep.equal({ enabled: false });
+          });
+
+          it('should add multibid configuration to PBS Request', function () {
+            const bidderRequest = createVideoBidderRequest();
+
+            const multibid = [{
+              bidder: 'bidderA',
+              maxBids: 2
+            }, {
+              bidder: 'bidderB',
+              maxBids: 2
+            }];
+            const expected = [{
+              bidder: 'bidderA',
+              maxbids: 2
+            }, {
+              bidder: 'bidderB',
+              maxbids: 2
+            }];
+
+            config.setConfig({multibid: multibid});
+
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should have the aliases object sent to PBS
+            expect(request.data.ext.prebid).to.haveOwnProperty('multibid');
+            expect(request.data.ext.prebid.multibid).to.deep.equal(expected);
+          });
+
+          it('should pass client analytics to PBS endpoint if all modules included', function () {
+            const bidderRequest = createVideoBidderRequest();
+            $$PREBID_GLOBAL$$.installedModules = [];
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let payload = request.data;
+
+            expect(payload.ext.prebid.analytics).to.not.be.undefined;
+            expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+          });
+
+          it('should pass client analytics to PBS endpoint if rubicon analytics adapter is included', function () {
+            const bidderRequest = createVideoBidderRequest();
+            $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter', 'rubiconAnalyticsAdapter'];
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let payload = request.data;
+
+            expect(payload.ext.prebid.analytics).to.not.be.undefined;
+            expect(payload.ext.prebid.analytics).to.deep.equal({'rubicon': {'client-analytics': true}});
+          });
+
+          it('should not pass client analytics to PBS endpoint if rubicon analytics adapter is not included', function () {
+            const bidderRequest = createVideoBidderRequest();
+            $$PREBID_GLOBAL$$.installedModules = ['rubiconBidAdapter'];
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let payload = request.data;
+
+            expect(payload.ext.prebid.analytics).to.be.undefined;
+          });
+
+          it('should send video exp param correctly when set', function () {
+            const bidderRequest = createVideoBidderRequest();
+            config.setConfig({s2sConfig: {defaultTtl: 600}});
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+
+            // should exp set to the right value according to config
+            let imp = post.imp[0];
+            expect(imp.exp).to.equal(600);
+          });
+
+          it('should not send video exp at all if not set in s2sConfig config', function () {
+            const bidderRequest = createVideoBidderRequest();
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+
+            // should exp set to the right value according to config
+            let imp = post.imp[0];
+            // bidderFactory stringifies request body before sending so removes undefined attributes:
+            expect(imp.exp).to.equal(undefined);
+          });
+
+          it('should send tmax as the bidderRequest timeout value', function () {
+            const bidderRequest = createVideoBidderRequest();
+            bidderRequest.timeout = 3333;
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let post = request.data;
+            expect(post.tmax).to.equal(3333);
+          });
+
+          it('should send correct bidfloor to PBS', function () {
+            const bidderRequest = createVideoBidderRequest();
+
+            bidderRequest.bids[0].params.floor = 0.1;
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(0.1);
+
+            bidderRequest.bids[0].params.floor = 5.5;
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(5.5);
+
+            bidderRequest.bids[0].params.floor = '1.7';
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(1.7);
+
+            bidderRequest.bids[0].params.floor = 0;
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].bidfloor).to.equal(0);
+
+            bidderRequest.bids[0].params.floor = undefined;
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
+
+            bidderRequest.bids[0].params.floor = null;
+            [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0]).to.not.haveOwnProperty('bidfloor');
+          });
+
+          it('should send request with proper ad position', function () {
+            const bidderRequest = createVideoBidderRequest();
+            let positionBidderRequest = utils.deepClone(bidderRequest);
+            positionBidderRequest.bids[0].mediaTypes.video.pos = 1;
+            let [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+            expect(request.data.imp[0].video.pos).to.equal(1);
+
+            positionBidderRequest = utils.deepClone(bidderRequest);
+            positionBidderRequest.bids[0].params.position = undefined;
+            positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+            [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+            expect(request.data.imp[0].video.pos).to.equal(undefined);
+
+            positionBidderRequest = utils.deepClone(bidderRequest);
+            positionBidderRequest.bids[0].params.position = 'atf'
+            positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+            [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+            expect(request.data.imp[0].video.pos).to.equal(1);
+
+            positionBidderRequest = utils.deepClone(bidderRequest);
+            positionBidderRequest.bids[0].params.position = 'btf';
+            positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+            [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+            expect(request.data.imp[0].video.pos).to.equal(3);
+
+            positionBidderRequest = utils.deepClone(bidderRequest);
+            positionBidderRequest.bids[0].params.position = 'foobar';
+            positionBidderRequest.bids[0].mediaTypes.video.pos = undefined;
+            [request] = spec.buildRequests(positionBidderRequest.bids, positionBidderRequest);
+            expect(request.data.imp[0].video.pos).to.equal(undefined);
+          });
+
+          it('should properly enforce video.context to be either instream or outstream', function () {
+            let bid = bidderRequest.bids[0];
+            bid.mediaTypes = {
+              video: {
+                context: 'instream',
+                mimes: ['video/mp4', 'video/x-ms-wmv'],
+                protocols: [2, 5],
+                maxduration: 30,
+                linearity: 1,
+                api: [2]
               }
-            },
-            content: {
+            }
+            bid.params.video = {};
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            const bidRequestCopy = utils.deepClone(bidderRequest.bids[0]);
+            expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+
+            // change context to outstream, still true
+            bidRequestCopy.mediaTypes.video.context = 'outstream';
+            expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(true);
+
+            // change context to random, false now
+            bidRequestCopy.mediaTypes.video.context = 'random';
+            expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+            // change context to undefined, still false
+            bidRequestCopy.mediaTypes.video.context = undefined;
+            expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+
+            // remove context, still false
+            delete bidRequestCopy.mediaTypes.video.context;
+            expect(spec.isBidRequestValid(bidRequestCopy)).to.equal(false);
+          });
+
+          it('should enforce the new required mediaTypes.video params', function () {
+            let bidderRequest = createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
+
+            // change mimes to a non array, no good
+            bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].mediaTypes.video.mimes = 'video/mp4';
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // delete mimes, no good
+            bidderRequest = createVideoBidderRequest();
+            delete bidderRequest.bids[0].mediaTypes.video.mimes;
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // change protocols to an int not array of ints, no good
+            bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].mediaTypes.video.protocols = 1;
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // delete protocols, no good
+            bidderRequest = createVideoBidderRequest();
+            delete bidderRequest.bids[0].mediaTypes.video.protocols;
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // change linearity to an string, no good
+            bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].mediaTypes.video.linearity = 'string';
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // delete linearity, no good
+            bidderRequest = createVideoBidderRequest();
+            delete bidderRequest.bids[0].mediaTypes.video.linearity;
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // change api to an string, no good
+            bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].mediaTypes.video.api = 'string';
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+
+            // delete api, no good
+            bidderRequest = createVideoBidderRequest();
+            delete bidderRequest.bids[0].mediaTypes.video.api;
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
+          });
+
+          it('bid request is valid when video context is outstream', function () {
+            const bidderRequest = createVideoBidderRequestOutstream();
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            const bidRequestCopy = utils.deepClone(bidderRequest);
+
+            let [request] = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(true);
+            expect(request.data.imp[0].ext.prebid.bidder.rubicon.video.size_id).to.equal(203);
+          });
+
+          it('should send banner request when outstream or instream video included but no rubicon video obect is present', function () {
+          // add banner and video mediaTypes
+            bidderRequest.mediaTypes = {
+              banner: {
+                sizes: [[300, 250]]
+              },
+              video: {
+                context: 'outstream'
+              }
+            };
+            // no video object in rubicon params, so we should see one call made for banner
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            let requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            expect(requests.length).to.equal(1);
+            expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+
+            bidderRequest.mediaTypes.video.context = 'instream';
+
+            requests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            expect(requests.length).to.equal(1);
+            expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+          });
+
+          it('should send request as banner when invalid video bid in multiple mediaType bidRequest', function () {
+            removeVideoParamFromBidderRequest(bidderRequest);
+
+            let bid = bidderRequest.bids[0];
+            bid.mediaTypes.banner = {
+              sizes: [[300, 250]]
+            };
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            const bidRequestCopy = utils.deepClone(bidderRequest);
+
+            let requests = spec.buildRequests(bidRequestCopy.bids, bidRequestCopy);
+            expect(requests.length).to.equal(1);
+            expect(requests[0].url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+          });
+
+          it('should include coppa flag in video bid request', () => {
+            const bidderRequest = createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            sandbox.stub(config, 'getConfig').callsFake(key => {
+              const config = {
+                'coppa': true
+              };
+              return config[key];
+            });
+            const [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
+            expect(request.data.regs.coppa).to.equal(1);
+          });
+
+          it('should include first party data', () => {
+            const bidderRequest = createVideoBidderRequest();
+
+            const site = {
+              ext: {
+                data: {
+                  page: 'home'
+                }
+              },
+              content: {
+                data: [{foo: 'bar'}]
+              },
+              keywords: 'e,f',
+              rating: '4-star',
               data: [{foo: 'bar'}]
-            },
-            keywords: 'e,f',
-            rating: '4-star',
-            data: [{foo: 'bar'}]
-          };
-          const user = {
-            ext: {
-              data: {
-                age: 31
-              }
-            },
-            keywords: 'd',
-            gender: 'M',
-            yob: '1984',
-            geo: {country: 'ca'},
-            data: [{foo: 'bar'}]
-          };
+            };
+            const user = {
+              ext: {
+                data: {
+                  age: 31
+                }
+              },
+              keywords: 'd',
+              gender: 'M',
+              yob: '1984',
+              geo: {country: 'ca'},
+              data: [{foo: 'bar'}]
+            };
 
-          const ortb2 = {
-            site,
-            user
-          };
+            const ortb2 = {
+              site,
+              user
+            };
 
-          const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
+            const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest);
 
-          const expected = {
-            site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
-            user: Object.assign({}, user),
-            siteData: Object.assign({}, site.ext.data, bidderRequest.bids[0].params.inventory),
-            userData: Object.assign({}, user.ext.data, bidderRequest.bids[0].params.visitor),
-          };
+            const expected = {
+              site: Object.assign({}, site, {keywords: bidderRequest.bids[0].params.keywords.join(',')}),
+              user: Object.assign({}, user),
+              siteData: Object.assign({}, site.ext.data, bidderRequest.bids[0].params.inventory),
+              userData: Object.assign({}, user.ext.data, bidderRequest.bids[0].params.visitor),
+            };
 
-          delete request.data.site.page;
-          delete request.data.site.content.language;
+            delete request.data.site.page;
+            delete request.data.site.content.language;
 
-          expect(request.data.site.keywords).to.deep.equal('a,b,c');
-          expect(request.data.user.keywords).to.deep.equal('d');
-          expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
-          expect(request.data.user.ext.data).to.deep.equal(expected.userData);
-        });
+            expect(request.data.site.keywords).to.deep.equal('a,b,c');
+            expect(request.data.user.keywords).to.deep.equal('d');
+            expect(request.data.site.ext.data).to.deep.equal(expected.siteData);
+            expect(request.data.user.ext.data).to.deep.equal(expected.userData);
+          });
 
-        it('should include pbadslot in bid request', function () {
-          createVideoBidderRequest();
-          bidderRequest.bids[0].ortb2Imp = {
-            ext: {
-              data: {
-                pbadslot: '1234567890'
-              }
-            }
-          }
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
-        });
-
-        it('should NOT include storedrequests in pbs payload', function () {
-          createVideoBidderRequest();
-          bidderRequest.bids[0].ortb2 = {
-            ext: {
-              prebid: {
-                storedrequest: 'no-send-top-level-sr'
-              }
-            }
-          }
-
-          bidderRequest.bids[0].ortb2Imp = {
-            ext: {
-              prebid: {
-                storedrequest: 'no-send-imp-sr'
-              }
-            }
-          }
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.ext.prebid.storedrequest).to.be.undefined;
-          expect(request.data.imp[0].ext.prebid.storedrequest).to.be.undefined;
-        });
-
-        it('should include GAM ad unit in bid request', function () {
-          createVideoBidderRequest();
-          bidderRequest.bids[0].ortb2Imp = {
-            ext: {
-              data: {
-                adserver: {
-                  adslot: '1234567890',
-                  name: 'adServerName1'
+          it('should include pbadslot in bid request', function () {
+            const bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  pbadslot: '1234567890'
                 }
               }
             }
-          };
 
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
 
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.imp[0].ext.data.adserver.adslot).to.equal('1234567890');
-          expect(request.data.imp[0].ext.data.adserver.name).to.equal('adServerName1');
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].ext.data.pbadslot).to.equal('1234567890');
+          });
+
+          it('should NOT include storedrequests in pbs payload', function () {
+            const bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].ortb2 = {
+              ext: {
+                prebid: {
+                  storedrequest: 'no-send-top-level-sr'
+                }
+              }
+            }
+
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                prebid: {
+                  storedrequest: 'no-send-imp-sr'
+                }
+              }
+            }
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.ext.prebid.storedrequest).to.be.undefined;
+            expect(request.data.imp[0].ext.prebid.storedrequest).to.be.undefined;
+          });
+
+          it('should include GAM ad unit in bid request', function () {
+            const bidderRequest = createVideoBidderRequest();
+            bidderRequest.bids[0].ortb2Imp = {
+              ext: {
+                data: {
+                  adserver: {
+                    adslot: '1234567890',
+                    name: 'adServerName1'
+                  }
+                }
+              }
+            };
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.imp[0].ext.data.adserver.adslot).to.equal('1234567890');
+            expect(request.data.imp[0].ext.data.adserver.name).to.equal('adServerName1');
+          });
+
+          it('should use the integration type provided in the config instead of the default', () => {
+            const bidderRequest = createVideoBidderRequest();
+            config.setConfig({rubicon: {int_type: 'testType'}});
+            const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
+          });
+
+          it('should pass the user.id provided in the config', function () {
+            config.setConfig({user: {id: '123'}});
+            const bidderRequest = createVideoBidderRequest();
+
+            sandbox.stub(Date, 'now').callsFake(() =>
+              bidderRequest.auctionStart + 100
+            );
+
+            let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
+            let post = request.data;
+
+            expect(post).to.have.property('imp')
+            // .with.length.of(1);
+            let imp = post.imp[0];
+            expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
+            expect(imp.exp).to.equal(undefined);
+            expect(imp.video.w).to.equal(640);
+            expect(imp.video.h).to.equal(480);
+            expect(imp.video.pos).to.equal(1);
+            expect(imp.video.minduration).to.equal(15);
+            expect(imp.video.maxduration).to.equal(30);
+            expect(imp.video.startdelay).to.equal(0);
+            expect(imp.video.skip).to.equal(1);
+            expect(imp.video.skipafter).to.equal(15);
+            expect(imp.ext.prebid.bidder.rubicon.video.playerWidth).to.equal(640);
+            expect(imp.ext.prebid.bidder.rubicon.video.playerHeight).to.equal(480);
+            expect(imp.ext.prebid.bidder.rubicon.video.language).to.equal('en');
+
+            // Also want it to be in post.site.content.language
+            expect(post.site.content.language).to.equal('en');
+            expect(post.ext.prebid.auctiontimestamp).to.equal(1472239426000);
+            expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+
+            // Config user.id
+            expect(post.user.id).to.equal('123');
+
+            expect(post.regs.ext.gdpr).to.equal(1);
+            expect(post.regs.ext.us_privacy).to.equal('1NYN');
+            expect(post).to.have.property('ext').that.is.an('object');
+            expect(post.ext.prebid.targeting.includewinners).to.equal(true);
+            expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
+            expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
+            expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
+            expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
+            expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
+          })
         });
-
-        it('should use the integration type provided in the config instead of the default', () => {
-          createVideoBidderRequest();
-          config.setConfig({rubicon: {int_type: 'testType'}});
-          const [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          expect(request.data.ext.prebid.bidders.rubicon.integration).to.equal('testType');
-        });
-
-        it('should pass the user.id provided in the config', function () {
-          config.setConfig({user: {id: '123'}});
-          createVideoBidderRequest();
-
-          sandbox.stub(Date, 'now').callsFake(() =>
-            bidderRequest.auctionStart + 100
-          );
-
-          let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-          let post = request.data;
-
-          expect(post).to.have.property('imp')
-          // .with.length.of(1);
-          let imp = post.imp[0];
-          expect(imp.id).to.equal(bidderRequest.bids[0].adUnitCode);
-          expect(imp.exp).to.equal(undefined);
-          expect(imp.video.w).to.equal(640);
-          expect(imp.video.h).to.equal(480);
-          expect(imp.video.pos).to.equal(1);
-          expect(imp.video.context).to.equal('instream');
-          expect(imp.video.minduration).to.equal(15);
-          expect(imp.video.maxduration).to.equal(30);
-          expect(imp.video.startdelay).to.equal(0);
-          expect(imp.video.skip).to.equal(1);
-          expect(imp.video.skipafter).to.equal(15);
-          expect(imp.ext.rubicon.video.playerWidth).to.equal(640);
-          expect(imp.ext.rubicon.video.playerHeight).to.equal(480);
-          expect(imp.ext.rubicon.video.size_id).to.equal(201);
-          expect(imp.ext.rubicon.video.language).to.equal('en');
-          // Also want it to be in post.site.content.language
-          expect(post.site.content.language).to.equal('en');
-          expect(imp.ext.rubicon.video.skip).to.equal(1);
-          expect(imp.ext.rubicon.video.skipafter).to.equal(15);
-          expect(imp.ext.prebid.auctiontimestamp).to.equal(1472239426000);
-          expect(post.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-
-          // Config user.id
-          expect(post.user.id).to.equal('123');
-
-          expect(post.regs.ext.gdpr).to.equal(1);
-          expect(post.regs.ext.us_privacy).to.equal('1NYN');
-          expect(post).to.have.property('ext').that.is.an('object');
-          expect(post.ext.prebid.targeting.includewinners).to.equal(true);
-          expect(post.ext.prebid).to.have.property('cache').that.is.an('object');
-          expect(post.ext.prebid.cache).to.have.property('vastxml').that.is.an('object');
-          expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
-          expect(post.ext.prebid.cache.vastxml.returnCreative).to.equal(false);
-          expect(post.ext.prebid.bidders.rubicon.integration).to.equal(PBS_INTEGRATION);
-        })
-      });
+      }
 
       describe('combineSlotUrlParams', function () {
         it('should combine an array of slot url params', function () {
@@ -2322,13 +2329,13 @@ describe('the rubicon adapter', function () {
 
       describe('classifiedAsVideo', function () {
         it('should return true if mediaTypes is video', function () {
-          createVideoBidderRequest();
+          const bidderRequest = createVideoBidderRequest();
           const bidClassifiedAsVideo = classifiedAsVideo(bidderRequest.bids[0]);
           expect(bidClassifiedAsVideo).is.equal(true);
         });
 
         it('should return false if trying to use legacy mediaType with video', function () {
-          createVideoBidderRequest();
+          const bidderRequest = createVideoBidderRequest();
           delete bidderRequest.bids[0].mediaTypes;
           bidderRequest.bids[0].mediaType = 'video';
           const legacyVideoTypeBidRequest = classifiedAsVideo(bidderRequest.bids[0]);
@@ -2346,13 +2353,13 @@ describe('the rubicon adapter', function () {
         });
 
         it('Should return false if both banner and video mediaTypes are set and params.video is not an object', function () {
-          createVideoBidderRequestNoVideo();
+          removeVideoParamFromBidderRequest(bidderRequest);
           let bid = bidderRequest.bids[0];
           bid.mediaTypes.banner = {flag: true};
           expect(classifiedAsVideo(bid)).to.equal(false);
         });
         it('Should return true if both banner and video mediaTypes are set and params.video is an object', function () {
-          createVideoBidderRequestNoVideo();
+          removeVideoParamFromBidderRequest(bidderRequest);
           let bid = bidderRequest.bids[0];
           bid.mediaTypes.banner = {flag: true};
           bid.params.video = {};
@@ -2360,12 +2367,116 @@ describe('the rubicon adapter', function () {
         });
 
         it('Should return true and create a params.video object if one is not already present', function () {
-          createVideoBidderRequestNoVideo();
+          removeVideoParamFromBidderRequest(bidderRequest);
           let bid = bidderRequest.bids[0]
           expect(classifiedAsVideo(bid)).to.equal(true);
           expect(bid.params.video).to.not.be.undefined;
         });
       });
+
+      if (FEATURES.NATIVE) {
+        describe('when there is a native request', function () {
+          describe('and bidonmultiformat = undefined (false)', () => {
+            it('should send only one native bid to PBS endpoint', function () {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              bidReq.bids[0].params = {
+                video: {}
+              }
+              let [request] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(request.method).to.equal('POST');
+              expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+              expect(request.data.imp).to.have.nested.property('[0].native');
+            });
+
+            describe('that contains also a banner mediaType', function () {
+              it('should send the banner to fastlane BUT NOT the native bid because missing params.video', function() {
+                const bidReq = addNativeToBidRequest(bidderRequest);
+                bidReq.bids[0].mediaTypes.banner = {
+                  sizes: [[300, 250]]
+                }
+                let [request] = spec.buildRequests(bidReq.bids, bidReq);
+                expect(request.method).to.equal('GET');
+                expect(request.url).to.include('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+              });
+            });
+            describe('with another banner request', () => {
+              it('should send the native bid to PBS and the banner to fastlane', function() {
+                const bidReq = addNativeToBidRequest(bidderRequest);
+                bidReq.bids[0].params = { video: {} };
+                // add second bidRqeuest
+                bidReq.bids.push({
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[300, 250]]
+                    }
+                  },
+                  params: bidReq.bids[0].params
+                })
+                let [request1, request2] = spec.buildRequests(bidReq.bids, bidReq);
+                expect(request1.method).to.equal('POST');
+                expect(request1.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+                expect(request1.data.imp).to.have.nested.property('[0].native');
+                expect(request2.method).to.equal('GET');
+                expect(request2.url).to.include('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+              });
+            });
+          });
+
+          describe('with bidonmultiformat === true', () => {
+            it('should send two requests,  to PBS with 2 imps', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              bidReq.bids[0].params.bidonmultiformat = true;
+              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(pbsRequest.method).to.equal('POST');
+              expect(pbsRequest.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+              expect(pbsRequest.data.imp).to.have.nested.property('[0].native');
+              expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+            });
+          });
+          describe('with bidonmultiformat === false', () => {
+            it('should send only banner request because there\'s no params.video', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+
+              let [fastlanteRequest, ...others] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(others).to.be.empty;
+            });
+
+            it('should not send native to PBS even if there\'s param.video', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              // by adding this, when bidonmultiformat is false, the native request will be sent to pbs
+              bidReq.bids[0].params = {
+                video: {}
+              }
+              let [fastlaneRequest, ...other] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(fastlaneRequest.method).to.equal('GET');
+              expect(fastlaneRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+              expect(other).to.be.empty;
+            });
+          });
+        });
+      }
     });
 
     describe('interpretResponse', function () {
@@ -3108,211 +3219,294 @@ describe('the rubicon adapter', function () {
         });
       });
 
-      describe('for video', function () {
-        beforeEach(function () {
-          createVideoBidderRequest();
-        });
-
-        it('should register a successful bid', function () {
-          let response = {
-            cur: 'USD',
-            seatbid: [{
-              bid: [{
-                id: '0',
-                impid: 'instream_video1',
-                adomain: ['test.com'],
-                price: 2,
-                crid: '4259970',
-                ext: {
-                  bidder: {
-                    rp: {
-                      mime: 'application/javascript',
-                      size_id: 201,
-                      advid: 12345
-                    }
-                  },
-                  prebid: {
-                    targeting: {
-                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+      if (FEATURES.VIDEO) {
+        describe('for video', function () {
+          it('should register a successful bid', function () {
+            const bidderRequest = createVideoBidderRequest();
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
                     },
-                    type: 'video'
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
+                    }
                   }
-                }
+                }],
+                group: 0,
+                seat: 'rubicon'
               }],
-              group: 0,
-              seat: 'rubicon'
-            }],
-          };
+            };
 
-          let bids = spec.interpretResponse({body: response}, {
-            bidRequest: bidderRequest.bids[0]
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+
+            expect(bids).to.be.lengthOf(1);
+
+            expect(bids[0].seatBidId).to.equal('0');
+            expect(bids[0].creativeId).to.equal('4259970');
+            expect(bids[0].cpm).to.equal(2);
+            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].netRevenue).to.equal(true);
+            expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+            expect(bids[0].mediaType).to.equal('video');
+            expect(bids[0].meta.mediaType).to.equal('video');
+            expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+            expect(bids[0].meta.advertiserId).to.equal(12345);
+            expect(bids[0].bidderCode).to.equal('rubicon');
+            expect(bids[0].currency).to.equal('USD');
+            expect(bids[0].width).to.equal(640);
+            expect(bids[0].height).to.equal(480);
+          });
+        });
+      }
+
+      if (FEATURES.NATIVE) {
+        describe('for native', () => {
+          it('should get a native bid', () => {
+            const nativeBidderRequest = addNativeToBidRequest(bidderRequest);
+            const request = converter.toORTB({bidderRequest: nativeBidderRequest, bidRequests: nativeBidderRequest.bids});
+            let response = getNativeResponse({impid: request.imp[0].id});
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            expect(bids).to.have.nested.property('[0].native');
+          });
+        });
+      }
+
+      if (FEATURES.VIDEO) {
+        describe('for outstream video', function () {
+          const sandbox = sinon.createSandbox();
+          beforeEach(function () {
+            config.setConfig({rubicon: {
+              rendererConfig: {
+                align: 'left',
+                closeButton: true
+              },
+              rendererUrl: 'https://example.test/renderer.js'
+            }});
+            window.MagniteApex = {
+              renderAd: function() {
+                return null;
+              }
+            }
           });
 
-          expect(bids).to.be.lengthOf(1);
+          afterEach(function () {
+            sandbox.restore();
+            delete window.MagniteApex;
+          });
 
-          expect(bids[0].seatBidId).to.equal('0');
-          expect(bids[0].creativeId).to.equal('4259970');
-          expect(bids[0].cpm).to.equal(2);
-          expect(bids[0].ttl).to.equal(300);
-          expect(bids[0].netRevenue).to.equal(true);
-          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
-          expect(bids[0].mediaType).to.equal('video');
-          expect(bids[0].meta.mediaType).to.equal('video');
-          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
-          expect(bids[0].meta.advertiserId).to.equal(12345);
-          expect(bids[0].bidderCode).to.equal('rubicon');
-          expect(bids[0].currency).to.equal('USD');
-          expect(bids[0].width).to.equal(640);
-          expect(bids[0].height).to.equal(480);
-        });
-      });
+          it('should register a successful bid', function () {
+            const bidderRequest = createVideoBidderRequestOutstream();
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
+                    }
+                  }
+                }],
+                group: 0,
+                seat: 'rubicon'
+              }],
+            };
 
-      describe('for outstream video', function () {
-        const sandbox = sinon.createSandbox();
-        beforeEach(function () {
-          createVideoBidderRequestOutstream();
-          config.setConfig({rubicon: {
-            rendererConfig: {
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            let bids = spec.interpretResponse({body: response}, { data: request });
+
+            expect(bids).to.be.lengthOf(1);
+
+            expect(bids[0].seatBidId).to.equal('0');
+            expect(bids[0].creativeId).to.equal('4259970');
+            expect(bids[0].cpm).to.equal(2);
+            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].netRevenue).to.equal(true);
+            expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
+            expect(bids[0].mediaType).to.equal('video');
+            expect(bids[0].meta.mediaType).to.equal('video');
+            expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
+            expect(bids[0].meta.advertiserId).to.equal(12345);
+            expect(bids[0].bidderCode).to.equal('rubicon');
+            expect(bids[0].currency).to.equal('USD');
+            expect(bids[0].width).to.equal(640);
+            expect(bids[0].height).to.equal(320);
+            // check custom renderer
+            expect(typeof bids[0].renderer).to.equal('object');
+            expect(bids[0].renderer.getConfig()).to.deep.equal({
               align: 'left',
               closeButton: true
-            },
-            rendererUrl: 'https://example.test/renderer.js'
-          }});
-          window.MagniteApex = {
-            renderAd: function() {
-              return null;
-            }
-          }
-        });
+            });
+            expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
+          });
 
-        afterEach(function () {
-          sandbox.restore();
-          delete window.MagniteApex;
-        });
-
-        it('should register a successful bid', function () {
-          let response = {
-            cur: 'USD',
-            seatbid: [{
-              bid: [{
-                id: '0',
-                impid: 'outstream_video1',
-                adomain: ['test.com'],
-                price: 2,
-                crid: '4259970',
-                ext: {
-                  bidder: {
-                    rp: {
-                      mime: 'application/javascript',
-                      size_id: 201,
-                      advid: 12345
+          it('should render ad with Magnite renderer', function () {
+            const bidderRequest = createVideoBidderRequestOutstream();
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
                     }
                   },
-                  prebid: {
-                    targeting: {
-                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
-                    },
-                    type: 'video'
-                  }
-                }
+                  nurl: 'https://test.com/vast.xml'
+                }],
+                group: 0,
+                seat: 'rubicon'
               }],
-              group: 0,
-              seat: 'rubicon'
-            }],
-          };
+            };
 
-          let bids = spec.interpretResponse({body: response}, {
-            bidRequest: bidderRequest.bids[0]
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
+
+            sinon.spy(window.MagniteApex, 'renderAd');
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            const bid = bids[0];
+            bid.adUnitCode = 'outstream_video1_placement';
+            const adUnit = document.createElement('div');
+            adUnit.id = bid.adUnitCode;
+            document.body.appendChild(adUnit);
+
+            bid.renderer.render(bid);
+
+            const renderCall = window.MagniteApex.renderAd.getCall(0);
+            expect(renderCall.args[0]).to.deep.equal({
+              closeButton: true,
+              collapse: true,
+              height: 320,
+              label: undefined,
+              placement: {
+                align: 'left',
+                attachTo: adUnit,
+                position: 'append',
+              },
+              vastUrl: 'https://test.com/vast.xml',
+              width: 640
+            });
+            // cleanup
+            adUnit.parentNode.removeChild(adUnit);
           });
 
-          expect(bids).to.be.lengthOf(1);
+          it('should render ad with Magnite renderer without video object', function () {
+            const bidderRequest = createVideoBidderRequestOutstream();
+            delete bidderRequest.bids[0].params.video;
+            bidderRequest.bids[0].params.bidonmultiformat = true;
+            bidderRequest.bids[0].mediaTypes.video.placement = 3;
+            bidderRequest.bids[0].mediaTypes.video.playerSize = [640, 480];
 
-          expect(bids[0].seatBidId).to.equal('0');
-          expect(bids[0].creativeId).to.equal('4259970');
-          expect(bids[0].cpm).to.equal(2);
-          expect(bids[0].ttl).to.equal(300);
-          expect(bids[0].netRevenue).to.equal(true);
-          expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
-          expect(bids[0].mediaType).to.equal('video');
-          expect(bids[0].meta.mediaType).to.equal('video');
-          expect(String(bids[0].meta.advertiserDomains)).to.equal('test.com');
-          expect(bids[0].meta.advertiserId).to.equal(12345);
-          expect(bids[0].bidderCode).to.equal('rubicon');
-          expect(bids[0].currency).to.equal('USD');
-          expect(bids[0].width).to.equal(640);
-          expect(bids[0].height).to.equal(320);
-          // check custom renderer
-          expect(typeof bids[0].renderer).to.equal('object');
-          expect(bids[0].renderer.getConfig()).to.deep.equal({
-            align: 'left',
-            closeButton: true
-          });
-          expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
-        });
-
-        it('should render ad with Magnite renderer', function () {
-          let response = {
-            cur: 'USD',
-            seatbid: [{
-              bid: [{
-                id: '0',
-                impid: 'outstream_video1',
-                adomain: ['test.com'],
-                price: 2,
-                crid: '4259970',
-                ext: {
-                  bidder: {
-                    rp: {
-                      mime: 'application/javascript',
-                      size_id: 201,
-                      advid: 12345
+            let response = {
+              cur: 'USD',
+              seatbid: [{
+                bid: [{
+                  id: '0',
+                  impid: '/19968336/header-bid-tag-0',
+                  adomain: ['test.com'],
+                  price: 2,
+                  crid: '4259970',
+                  ext: {
+                    bidder: {
+                      rp: {
+                        mime: 'application/javascript',
+                        size_id: 201,
+                        advid: 12345
+                      }
+                    },
+                    prebid: {
+                      targeting: {
+                        hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
+                      },
+                      type: 'video'
                     }
                   },
-                  prebid: {
-                    targeting: {
-                      hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'
-                    },
-                    type: 'video'
-                  }
-                },
-                nurl: 'https://test.com/vast.xml'
+                  nurl: 'https://test.com/vast.xml'
+                }],
+                group: 0,
+                seat: 'rubicon'
               }],
-              group: 0,
-              seat: 'rubicon'
-            }],
-          };
+            };
 
-          sinon.spy(window.MagniteApex, 'renderAd');
+            const request = converter.toORTB({bidderRequest, bidRequests: bidderRequest.bids});
 
-          let bids = spec.interpretResponse({body: response}, {
-            bidRequest: bidderRequest.bids[0]
+            sinon.spy(window.MagniteApex, 'renderAd');
+
+            let bids = spec.interpretResponse({body: response}, {data: request});
+            const bid = bids[0];
+            bid.adUnitCode = 'outstream_video1_placement';
+            const adUnit = document.createElement('div');
+            adUnit.id = bid.adUnitCode;
+            document.body.appendChild(adUnit);
+
+            bid.renderer.render(bid);
+
+            const renderCall = window.MagniteApex.renderAd.getCall(0);
+            expect(renderCall.args[0]).to.deep.equal({
+              closeButton: true,
+              collapse: true,
+              height: 480,
+              label: undefined,
+              placement: {
+                align: 'left',
+                attachTo: adUnit,
+                position: 'append',
+              },
+              vastUrl: 'https://test.com/vast.xml',
+              width: 640
+            });
+            // cleanup
+            adUnit.parentNode.removeChild(adUnit);
           });
-          const bid = bids[0];
-          bid.adUnitCode = 'outstream_video1_placement';
-          const adUnit = document.createElement('div');
-          adUnit.id = bid.adUnitCode;
-          document.body.appendChild(adUnit);
-
-          bid.renderer.render(bid);
-
-          const renderCall = window.MagniteApex.renderAd.getCall(0);
-          expect(renderCall.args[0]).to.deep.equal({
-            closeButton: true,
-            collapse: true,
-            height: 320,
-            label: undefined,
-            placement: {
-              align: 'left',
-              attachTo: adUnit,
-              position: 'append',
-            },
-            vastUrl: 'https://test.com/vast.xml',
-            width: 640
-          });
-          // cleanup
-          adUnit.parentNode.removeChild(adUnit);
         });
-      });
+      }
 
       describe('config with integration type', () => {
         it('should use the integration type provided in the config instead of the default', () => {
@@ -3562,7 +3756,7 @@ describe('the rubicon adapter', function () {
     });
 
     it('should copy the schain JSON to to bid.source.ext.schain', () => {
-      createVideoBidderRequest();
+      const bidderRequest = createVideoBidderRequest();
       const schain = getSupplyChainConfig();
       bidderRequest.bids[0].schain = schain;
       const request = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -3598,12 +3792,13 @@ describe('the rubicon adapter', function () {
       });
 
       // banner
-      let [bannerRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const bannerBidderRequest = createGdprBidderRequest(false);
+      let [bannerRequest] = spec.buildRequests(bannerBidderRequest.bids, bannerBidderRequest);
       expect(bannerRequest.url).to.equal('https://fastlane-qa.rubiconproject.com/a/api/fastlane.json');
 
       // video and returnVast
-      createVideoBidderRequest();
-      let [videoRequest] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      const videoBidderRequest = createVideoBidderRequest();
+      let [videoRequest] = spec.buildRequests(videoBidderRequest.bids, videoBidderRequest);
       let post = videoRequest.data;
       expect(videoRequest.url).to.equal('https://prebid-server-qa.rubiconproject.com/openrtb2/auction');
       expect(post.ext.prebid.cache.vastxml).to.have.property('returnCreative').that.is.an('boolean');
@@ -3617,3 +3812,164 @@ describe('the rubicon adapter', function () {
     });
   });
 });
+
+function addNativeToBidRequest(bidderRequest) {
+  const nativeOrtbRequest = {
+    assets: [{
+      id: 0,
+      required: 1,
+      title: {
+        len: 140
+      }
+    },
+    {
+      id: 1,
+      required: 1,
+      img: {
+        type: 3,
+        w: 300,
+        h: 600
+      }
+    },
+    {
+      id: 2,
+      required: 1,
+      data: {
+        type: 1
+      }
+    }]
+  };
+  bidderRequest.refererInfo = {
+    page: 'localhost'
+  }
+  bidderRequest.bids[0] = {
+    bidder: 'rubicon',
+    params: {
+      accountId: '14062',
+      siteId: '70608',
+      zoneId: '335918',
+    },
+    adUnitCode: '/19968336/header-bid-tag-0',
+    code: 'div-1',
+    bidId: '2ffb201a808da7',
+    bidderRequestId: '178e34bad3658f',
+    auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+    transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+    mediaTypes: {
+      native: {
+        ortb: {
+          ...nativeOrtbRequest
+        }
+      }
+    },
+    nativeOrtbRequest
+  }
+  return bidderRequest;
+}
+
+function getNativeResponse(options = {impid: 1234}) {
+  return {
+    'id': 'd7786a80-bfb4-4541-859f-225a934e81d4',
+    'seatbid': [
+      {
+        'bid': [
+          {
+            'id': '971650',
+            'impid': options.impid,
+            'price': 20,
+            'adm': {
+              'ver': '1.2',
+              'assets': [
+                {
+                  'id': 0,
+                  'title': {
+                    'text': 'This is a title'
+                  },
+                  'link': {
+                    'clicktrackers': [
+                      'http://localhost:5500/event?type=click1&component=card&asset=0'
+                    ]
+                  }
+                },
+                {
+                  'id': 1,
+                  'img': {
+                    'url': 'https:\\\\/\\\\/vcdn.adnxs.com\\\\/p\\\\/creative-image\\\\/94\\\\/22\\\\/cd\\\\/0f\\\\/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
+                    'h': 2250,
+                    'w': 3000
+                  },
+                  'link': {
+                    'clicktrackers': [
+                      'http://localhost:5500/event?type=click1&component=card&asset=1'
+                    ]
+                  }
+                },
+                {
+                  'id': 2,
+                  'data': {
+                    'value': 'this is asset data 1 that corresponds to sponsoredBy'
+                  }
+                }
+              ],
+              'link': {
+                'url': 'https://magnite.com',
+                'clicktrackers': [
+                  'http://localhost:5500/event?type=click1&component=card',
+                  'http://localhost:5500/event?type=click2&component=card'
+                ]
+              },
+              'jstracker': '<script>console.log(\\"this is from a jstracker\\")</script>',
+              'eventtrackers': [
+                {
+                  'event': 1,
+                  'method': 2,
+                  'url': 'http://localhost:5500/event?type=1&method=2'
+                },
+                {
+                  'event': 2,
+                  'method': 1,
+                  'url': 'http://localhost:5500/event?type=v50&component=card'
+                }
+              ]
+            },
+            'adid': '392180',
+            'adomain': [
+              'http://prebid.org'
+            ],
+            'iurl': 'https://lax1-ib.adnxs.com/cr?id=97494403',
+            'cid': '9325',
+            'crid': '97494403',
+            'cat': [
+              'IAB3-1'
+            ],
+            'w': 300,
+            'h': 600,
+            'ext': {
+              'prebid': {
+                'targeting': {
+                  'hb_bidder': 'rubicon',
+                  'hb_cache_host': 'prebid.lax1.adnxs-simple.com',
+                  'hb_cache_path': '/pbc/v1/cache',
+                  'hb_pb': '20.00'
+                },
+                'type': 'native',
+                'video': {
+                  'duration': 0,
+                  'primary_category': ''
+                }
+              },
+              'rubicon': {
+                'auction_id': 642778043863823100,
+                'bid_ad_type': 3,
+                'bidder_id': 2,
+                'brand_id': 555545
+              }
+            }
+          }
+        ],
+        'seat': 'rubicon'
+      }
+    ],
+    'cur': 'USD'
+  };
+}
