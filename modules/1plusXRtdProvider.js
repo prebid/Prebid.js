@@ -3,8 +3,8 @@ import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import {
   logMessage, logError,
-  deepAccess, mergeDeep,
-  isNumber, isArray, deepSetValue
+  deepAccess, deepSetValue,
+  isNumber, isArray
 } from '../src/utils.js';
 
 // Constants
@@ -150,7 +150,7 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @param {string[]} topics Represents the topics of the page
  * @returns {Object} Object describing the updates to make on bidder configs
  */
-export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
+export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
   const userData = {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
@@ -163,52 +163,46 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
   // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
   // Therefore, writing them in `site.keywords` until it's supported
   // Other bidAdapters do fine with `site.content.data.segment`
-  const site = {
-    keywords: topics.join(',')
-  };
+  const siteKeywords = topics.map(topic => `1plusX=${topic}`).join(',');
 
-  return { userData, siteContentData, site };
+  return { userData, siteContentData, siteKeywords };
 }
 
 /**
  * Merges the targeting data with the existing config for bidder and updates
  * @param {string} bidder Bidder for which to set config
  * @param {Object} ortb2Updates Updates to be applied to bidder config
- * @param {Object} bidderConfigs All current bidder configs
- * @returns {Object} Updated bidder config
+ * @param {Object} biddersOrtb2 All current bidder configs
  */
-export const updateBidderConfig = (bidder, ortb2Updates, bidderConfigs) => {
-  const { site, siteContentData, userData } = ortb2Updates;
-  const bidderConfigCopy = mergeDeep({}, bidderConfigs[bidder]);
+export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
+  const { siteKeywords, siteContentData, userData } = ortb2Updates;
+  const bidderConfig = deepAccess(biddersOrtb2, bidder);
 
-  if (siteContentData) {
-    const siteDataPath = 'ortb2.site.content.data';
-    const currentSiteContentData = deepAccess(bidderConfigCopy, siteDataPath) || [];
+  {
+    // Legacy : cf. comment on buildOrtb2Updates
+    const siteKeywordsPath = 'site.keywords';
+    deepSetValue(bidderConfig, siteKeywordsPath, siteKeywords);
+  }
+
+  {
+    const siteDataPath = 'site.content.data';
+    const currentSiteContentData = deepAccess(bidderConfig, siteDataPath) || [];
     const updatedSiteContentData = [
       ...currentSiteContentData.filter(({ name }) => name != siteContentData.name),
       siteContentData
     ];
-    deepSetValue(bidderConfigCopy, siteDataPath, updatedSiteContentData);
+    deepSetValue(bidderConfig, siteDataPath, updatedSiteContentData);
   }
 
-  if (userData) {
-    const userDataPath = 'ortb2.user.data';
-    const currentUserData = deepAccess(bidderConfigCopy, userDataPath) || [];
+  {
+    const userDataPath = 'user.data';
+    const currentUserData = deepAccess(bidderConfig, userDataPath) || [];
     const updatedUserData = [
       ...currentUserData.filter(({ name }) => name != userData.name),
       userData
     ];
-    deepSetValue(bidderConfigCopy, userDataPath, updatedUserData);
+    deepSetValue(bidderConfig, userDataPath, updatedUserData);
   }
-
-  if (site) {
-    // Legacy : cf. comment on buildOrtb2Updates
-    const currentSite = deepAccess(bidderConfigCopy, 'ortb2.site');
-    const updatedSite = mergeDeep(currentSite, site);
-    deepSetValue(bidderConfigCopy, 'ortb2.site', updatedSite);
-  }
-
-  return bidderConfigCopy;
 };
 
 const setAppnexusAudiences = (audiences) => {
@@ -225,20 +219,13 @@ const setAppnexusAudiences = (audiences) => {
  * @param {Object} config Module configuration
  * @param {string[]} config.bidders Bidders specified in module's configuration
  */
-export const setTargetingDataToConfig = (papiResponse, { bidders }) => {
-  const bidderConfigs = config.getBidderConfig();
+export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }) => {
   const { s: segments, t: topics } = papiResponse;
 
+  const ortb2Updates = buildOrtb2Updates({ segments, topics });
   for (const bidder of bidders) {
-    const ortb2Updates = buildOrtb2Updates({ segments, topics }, bidder);
-    const updatedBidderConfig = updateBidderConfig(bidder, ortb2Updates, bidderConfigs);
-    if (updatedBidderConfig) {
-      setAppnexusAudiences(segments);
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: updatedBidderConfig
-      });
-    }
+    updateBidderConfig(bidder, ortb2Updates, biddersOrtb2);
+    setAppnexusAudiences(segments);
   }
 }
 
@@ -264,13 +251,14 @@ const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, userConsent
   try {
     // Get the required config
     const { customerId, bidders } = extractConfig(moduleConfig, reqBidsConfigObj);
+    const { ortb2Fragments: { bidder: biddersOrtb2 } } = reqBidsConfigObj;
     // Get PAPI URL
     const papiUrl = getPapiUrl(customerId, extractConsent(userConsent) || {}, extractFpid())
     // Call PAPI
     getTargetingDataFromPapi(papiUrl)
       .then((papiResponse) => {
         logMessage(LOG_PREFIX, 'Get targeting data request successful');
-        setTargetingDataToConfig(papiResponse, { bidders });
+        setTargetingDataToConfig(papiResponse, { bidders, biddersOrtb2 });
         callback();
       })
   } catch (error) {

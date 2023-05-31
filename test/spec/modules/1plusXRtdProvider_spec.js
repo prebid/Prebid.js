@@ -1,16 +1,16 @@
+import assert from 'assert';
 import { config } from 'src/config';
 import {
   onePlusXSubmodule,
-  segtaxes,
-  extractConfig,
   buildOrtb2Updates,
-  updateBidderConfig,
-  setTargetingDataToConfig,
+  extractConfig,
   extractConsent,
-  getPapiUrl
+  extractFpid,
+  getPapiUrl,
+  segtaxes,
+  setTargetingDataToConfig,
+  updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
-import assert from 'assert';
-import { extractFpid } from '../../../modules/1plusXRtdProvider';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
@@ -35,47 +35,37 @@ describe('1plusXRtdProvider', () => {
 
   // Bidder configs
   const bidderConfigInitial = {
-    ortb2: {
-      user: { keywords: '' },
-      site: { ext: {} }
-    }
+    user: { keywords: '' },
+    site: { ext: {} }
   }
   const bidderConfigInitialWith1plusXUserData = {
-    ortb2: {
-      user: {
-        data: [{ name: '1plusX.com', segment: [{ id: 'initial' }] }]
-      },
-      site: { content: { data: [] } }
-    }
+    user: {
+      data: [{ name: '1plusX.com', segment: [{ id: 'initial' }] }]
+    },
+    site: { content: { data: [] } }
   }
   const bidderConfigInitialWithUserData = {
-    ortb2: {
-      user: {
-        data: [{ name: 'hello.world', segment: [{ id: 'initial' }] }]
-      },
-      site: { content: { data: [] } }
-    }
+    user: {
+      data: [{ name: 'hello.world', segment: [{ id: 'initial' }] }]
+    },
+    site: { content: { data: [] } }
   }
   const bidderConfigInitialWith1plusXSiteContent = {
-    ortb2: {
-      user: { data: [] },
-      site: {
-        content: {
-          data: [{
-            name: '1plusX.com', segment: [{ id: 'initial' }], ext: { segtax: 525 }
-          }]
-        }
-      },
+    user: { data: [] },
+    site: {
+      content: {
+        data: [{
+          name: '1plusX.com', segment: [{ id: 'initial' }], ext: { segtax: 525 }
+        }]
+      }
     }
   }
   const bidderConfigInitialWithSiteContent = {
-    ortb2: {
-      user: { data: [] },
-      site: {
-        content: {
-          data: [{ name: 'hello.world', segment: [{ id: 'initial' }] }]
-        }
-      },
+    user: { data: [] },
+    site: {
+      content: {
+        data: [{ name: 'hello.world', segment: [{ id: 'initial' }] }]
+      }
     }
   }
   // Util functions
@@ -192,9 +182,7 @@ describe('1plusXRtdProvider', () => {
           name: '1plusX.com',
           segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
         },
-        site: {
-          keywords: rtdData.topics.join(','),
-        }
+        siteKeywords: rtdData.topics.map(topic => `1plusX=${topic}`).join(','),
       }
       expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
     });
@@ -213,9 +201,7 @@ describe('1plusXRtdProvider', () => {
           name: '1plusX.com',
           segment: []
         },
-        site: {
-          keywords: rtdData.topics.join(','),
-        }
+        siteKeywords: rtdData.topics.map(topic => `1plusX=${topic}`).join(','),
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
     })
@@ -234,11 +220,9 @@ describe('1plusXRtdProvider', () => {
           name: '1plusX.com',
           segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
         },
-        site: {
-          keywords: '',
-        }
+        siteKeywords: '',
       }
-      expect(ortb2Updates).to.deep.include(expectedOutput);
+      expect(ortb2Updates, `${JSON.stringify(ortb2Updates, null, 2)}`).to.deep.include(expectedOutput);
     })
   })
 
@@ -343,94 +327,92 @@ describe('1plusXRtdProvider', () => {
         name: '1plusX.com',
         segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
       },
-      site: {
-        keywords: fakeResponse.t.join(','),
-      },
+      siteKeywords: fakeResponse.t.map(topic => `1plusX=${topic}`).join(','),
     }
 
     it('merges fetched data in bidderConfig for configured bidders', () => {
-      const bidder = randomBidder();
       // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitial
-      });
+      const bidder = randomBidder();
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitial } }
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
+      const newBidderConfig = ortb2Fragments[bidder];
       // Check that the targeting data has been set in the config
-      expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
-      expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
-      expect(newBidderConfig.ortb2.site).to.deep.include(ortb2Updates.site);
+      expect(newBidderConfig).not.to.be.null.and.not.to.be.undefined;
+      expect(newBidderConfig.user).not.to.be.null.and.not.to.be.undefined;
+      expect(newBidderConfig.site).not.to.be.null.and.not.to.be.undefined;
+      expect(newBidderConfig.user.data).to.deep.include(ortb2Updates.userData);
+      expect(newBidderConfig.site.keywords).to.deep.include(ortb2Updates.siteKeywords);
+      expect(newBidderConfig.site.content.data).to.deep.include(ortb2Updates.siteContentData);
       // Check that existing config didn't get erased
-      expect(newBidderConfig.ortb2.site).to.deep.include(bidderConfigInitial.ortb2.site);
-      expect(newBidderConfig.ortb2.user).to.deep.include(bidderConfigInitial.ortb2.user);
+      expect(newBidderConfig.site).to.deep.include(bidderConfigInitial.site);
+      expect(newBidderConfig.user).to.deep.include(bidderConfigInitial.user);
     })
 
     it('overwrites an existing 1plus.com entry in ortb2.user.data', () => {
-      const bidder = randomBidder();
       // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitialWith1plusXUserData
-      });
+      const bidder = randomBidder();
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXUserData } }
       // Save previous user.data entry
-      const previousUserData = bidderConfigInitialWith1plusXUserData.ortb2.user.data[0];
+      const previousUserData = bidderConfigInitialWith1plusXUserData.user.data[0];
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
+      const newBidderConfig = ortb2Fragments[bidder];
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
-      expect(newBidderConfig.ortb2.user.data).not.to.include(previousUserData);
+      expect(newBidderConfig.site).not.to.be.null;
+      expect(newBidderConfig.user).not.to.be.null;
+      expect(newBidderConfig.user.data).to.deep.include(ortb2Updates.userData);
+      expect(newBidderConfig.user.data).not.to.include(previousUserData);
     })
     it("doesn't overwrite entries in ortb2.user.data that aren't 1plusx.com", () => {
-      const bidder = randomBidder();
       // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitialWithUserData
-      });
+      const bidder = randomBidder();
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithUserData } }
       // Save previous user.data entry
-      const previousUserData = bidderConfigInitialWithUserData.ortb2.user.data[0];
+      const previousUserData = bidderConfigInitialWithUserData.user.data[0];
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
+      const newBidderConfig = ortb2Fragments[bidder];
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.user.data).to.deep.include(ortb2Updates.userData);
-      expect(newBidderConfig.ortb2.user.data).to.deep.include(previousUserData);
+      expect(newBidderConfig.site).not.to.be.null;
+      expect(newBidderConfig.user).not.to.be.null;
+      expect(newBidderConfig.user.data).to.deep.include(ortb2Updates.userData);
+      expect(newBidderConfig.user.data).to.deep.include(previousUserData);
     })
 
     it('overwrites an existing 1plus.com entry in ortb2.site.content.data', () => {
-      const bidder = randomBidder();
       // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitialWith1plusXSiteContent
-      });
+      const bidder = randomBidder();
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWith1plusXSiteContent } }
       // Save previous user.data entry
-      const previousSiteContent = bidderConfigInitialWith1plusXSiteContent.ortb2.site.content.data[0];
+      const previousSiteContent = bidderConfigInitialWith1plusXSiteContent.site.content.data[0];
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
+      const newBidderConfig = ortb2Fragments[bidder];
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
-      expect(newBidderConfig.ortb2.site.content.data).not.to.include(previousSiteContent);
+      expect(newBidderConfig.site).not.to.be.null;
+      expect(newBidderConfig.user).not.to.be.null;
+      expect(newBidderConfig.site.content.data).to.deep.include(ortb2Updates.siteContentData);
+      expect(newBidderConfig.site.content.data).not.to.include(previousSiteContent);
     })
     it("doesn't overwrite entries in ortb2.site.content.data that aren't 1plusx.com", () => {
-      const bidder = randomBidder();
       // Set initial config
-      config.setBidderConfig({
-        bidders: [bidder],
-        config: bidderConfigInitialWithSiteContent
-      });
+      const bidder = randomBidder();
+      const ortb2Fragments = { [bidder]: { ...bidderConfigInitialWithSiteContent } }
       // Save previous user.data entry
-      const previousSiteContent = bidderConfigInitialWithSiteContent.ortb2.site.content.data[0];
+      const previousSiteContent = bidderConfigInitialWithSiteContent.site.content.data[0];
       // Call submodule's setBidderConfig
-      const newBidderConfig = updateBidderConfig(bidder, ortb2Updates, config.getBidderConfig());
+      updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
+      const newBidderConfig = ortb2Fragments[bidder];
       // Check that the targeting data has been set in the config
       expect(newBidderConfig).not.to.be.null;
-      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(ortb2Updates.siteContentData);
-      expect(newBidderConfig.ortb2.site.content.data).to.deep.include(previousSiteContent);
+      expect(newBidderConfig.site).not.to.be.null;
+      expect(newBidderConfig.user).not.to.be.null;
+      expect(newBidderConfig.site.content.data).to.deep.include(ortb2Updates.siteContentData);
+      expect(newBidderConfig.site.content.data).to.deep.include(previousSiteContent);
     })
   })
 
@@ -467,8 +449,9 @@ describe('1plusXRtdProvider', () => {
         bidders,
         config: bidderConfigInitial
       })
+      const biddersOrtb2 = config.getBidderConfig();
       // call setTargetingDataToConfig
-      setTargetingDataToConfig(fakeResponse, { bidders });
+      setTargetingDataToConfig(fakeResponse, { bidders, biddersOrtb2 });
 
       // Check that the targeting data has been set in both configs
       for (const bidder of bidders) {
