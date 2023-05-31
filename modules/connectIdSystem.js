@@ -11,7 +11,7 @@ import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
-import {uspDataHandler} from '../src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'connectId';
@@ -147,6 +147,14 @@ export const connectIdSubmodule = {
       gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.consentString : '',
       us_privacy: uspString
     };
+
+    const gppConsent = gppDataHandler.getConsentData();
+    if (gppConsent) {
+      data.gpp = `${gppConsent.gppString ? gppConsent.gppString : ''}`;
+      if (Array.isArray(gppConsent.applicableSections)) {
+        data.gpp_sid = gppConsent.applicableSections.join(',');
+      }
+    }
 
     let topmostLocation = getRefererInfo().topmostLocation;
     if (typeof topmostLocation === 'string') {

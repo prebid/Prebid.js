@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
 import {server} from '../../mocks/xhr';
 import {parseQS, parseUrl} from 'src/utils.js';
-import {uspDataHandler} from 'src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from 'src/adapterManager.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 
@@ -14,6 +14,10 @@ describe('Yahoo ConnectID Submodule', () => {
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
   const STORAGE_KEY = 'connectId';
   const USP_DATA = '1YYY';
+  const GPP_DATA = {
+    gppString: 'gppconsent',
+    applicableSections: [6, 7]
+  };
 
   it('should have the correct module name declared', () => {
     expect(connectIdSubmodule.name).to.equal('connectId');
@@ -34,6 +38,7 @@ describe('Yahoo ConnectID Submodule', () => {
     let localStorageEnabledStub;
     let removeLocalStorageDataStub;
     let uspConsentDataStub;
+    let gppConsentDataStub;
 
     let consentData;
     beforeEach(() => {
@@ -48,10 +53,12 @@ describe('Yahoo ConnectID Submodule', () => {
       localStorageEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       removeLocalStorageDataStub = sinon.stub(storage, 'removeDataFromLocalStorage');
       uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
+      gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
 
       cookiesEnabledStub.returns(true);
       localStorageEnabledStub.returns(true);
       uspConsentDataStub.returns(USP_DATA);
+      gppConsentDataStub.returns(GPP_DATA);
 
       consentData = {
         gdprApplies: 1,
@@ -69,6 +76,7 @@ describe('Yahoo ConnectID Submodule', () => {
       localStorageEnabledStub.restore();
       removeLocalStorageDataStub.restore();
       uspConsentDataStub.restore();
+      gppConsentDataStub.restore();
     });
 
     function invokeGetIdAPI(configParams, consentData) {
@@ -284,7 +292,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr_consent: consentData.consentString,
             v: '1',
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -307,7 +317,9 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             gdpr_consent: consentData.consentString,
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -332,7 +344,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr_consent: consentData.consentString,
             v: '1',
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -342,6 +356,31 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('Makes an ajax GET request to the specified override API endpoint with query params', () => {
+          invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            endpoint: OVERRIDE_ENDPOINT
+          }, consentData);
+
+          const expectedParams = {
+            he: HASHED_EMAIL,
+            '1p': '0',
+            gdpr: '1',
+            gdpr_consent: consentData.consentString,
+            v: '1',
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
+          };
+          const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+          expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
+          expect(requestQueryParams).to.deep.equal(expectedParams);
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+        });
+
+        it('Makes an ajax GET request to the specified override API endpoint without GPP', () => {
+          gppConsentDataStub.returns(undefined);
           invokeGetIdAPI({
             he: HASHED_EMAIL,
             endpoint: OVERRIDE_ENDPOINT
