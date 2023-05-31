@@ -2,12 +2,11 @@
  * This module adds GrowthCode HEM and other Data to Bid Requests
  * @module modules/growthCodeRtdProvider
  */
-import { submodule } from '../src/hook.js'
-import { getStorageManager } from '../src/storageManager.js';
-import {
-  logMessage, logError, tryAppendQueryString, mergeDeep
-} from '../src/utils.js';
+import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {logError, logMessage, mergeDeep, tryAppendQueryString} from '../src/utils.js';
 import * as ajax from '../src/ajax.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'growthCodeRtd';
 const LOG_PREFIX = 'GrowthCodeRtd: ';
@@ -15,7 +14,7 @@ const ENDPOINT_URL = 'https://p2.gcprivacy.com/v2/rtd?'
 const RTD_EXPIRE_KEY = 'gc_rtd_expires_at'
 const RTD_CACHE_KEY = 'gc_rtd_items'
 
-export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME });
 let items
 
 export const growthCodeRtdProvider = {
