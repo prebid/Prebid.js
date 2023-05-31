@@ -9,7 +9,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 9,
+  PREBID_VERSION: 10,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -372,7 +372,7 @@ function generateRandomId() {
 }
 
 function getDocumentLocation(topWin) {
-  return topWin.location.href.substring(0, 300).split(/[?#]/)[0];
+  return topWin.location.href.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
