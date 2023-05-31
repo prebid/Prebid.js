@@ -417,7 +417,7 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('setTargetingDataToConfig', () => {
-    const expectedKeywords = fakeResponse.t.join(',');
+    const expectedKeywords = fakeResponse.t.map(topic => `1plusX=${topic}`).join(',');
     const expectedSiteContentObj = {
       data: [{
         name: '1plusX.com',
@@ -458,14 +458,14 @@ describe('1plusXRtdProvider', () => {
         const newConfig = config.getBidderConfig()[bidder];
         // Check that we got what we expect
         const expectedConfErr = (prop) => `New config for ${bidder} doesn't comply with expected at ${prop}`;
-        expect(newConfig.ortb2.site, expectedConfErr('site')).to.deep.include(expectedOrtb2[bidder].site);
+        expect(newConfig.site, expectedConfErr('site')).to.deep.include(expectedOrtb2[bidder].site);
         if (expectedOrtb2[bidder].user) {
-          expect(newConfig.ortb2.user, expectedConfErr('user')).to.deep.include(expectedOrtb2[bidder].user);
+          expect(newConfig.user, expectedConfErr('user')).to.deep.include(expectedOrtb2[bidder].user);
         }
         // Check that existing config didn't get erased
         const existingConfErr = (prop) => `Existing config for ${bidder} got unlawfully overwritten at ${prop}`;
-        expect(newConfig.ortb2.site, existingConfErr('site')).to.deep.include(bidderConfigInitial.ortb2.site);
-        expect(newConfig.ortb2.user, existingConfErr('user')).to.deep.include(bidderConfigInitial.ortb2.user);
+        expect(newConfig.site, existingConfErr('site')).to.deep.include(bidderConfigInitial.site);
+        expect(newConfig.user, existingConfErr('user')).to.deep.include(bidderConfigInitial.user);
       }
     })
   })
