@@ -230,7 +230,7 @@ describe('sharethrough adapter spec', function () {
               api: [3],
               mimes: ['video/3gpp'],
               protocols: [2, 3],
-              playerSize: [640, 480],
+              playerSize: [[640, 480]],
               startdelay: 42,
               skipmin: 10,
               skipafter: 20,
