@@ -94,6 +94,10 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
       vendorData: {},
       gdprApplies: true
     },
+    gppConsent: {
+      gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+      applicableSections: [1, 2, 3]
+    },
     start: new Date().getTime(),
     timeout: 1000,
     ortb2
@@ -749,7 +753,15 @@ describe('YahooSSP Bid Adapter:', () => {
       expect(options.withCredentials).to.be.false;
     });
 
-    it('adds the ortb2 gpp consent info to the request', function () {
+    it('set the GPP consent data from the data within the bid request', function () {
+      const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
+      let clonedBidderRequest = {...bidderRequest};
+      const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
+      expect(data.regs.ext.gpp).to.equal(bidderRequest.gppConsent.gppString);
+      expect(data.regs.ext.gpp_sid).to.eql(bidderRequest.gppConsent.applicableSections);
+    });
+
+    it('overrides the GPP consent data using data from the ortb2 config object', function () {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
       const ortb2 = {
         regs: {
@@ -759,8 +771,8 @@ describe('YahooSSP Bid Adapter:', () => {
       };
       let clonedBidderRequest = {...bidderRequest, ortb2};
       const data = spec.buildRequests(validBidRequests, clonedBidderRequest)[0].data;
-      expect(data.regs.ext.gpp).to.equal('somegppstring');
-      expect(data.regs.ext.gpp_sid).to.eql([6, 7]);
+      expect(data.regs.ext.gpp).to.equal(ortb2.regs.gpp);
+      expect(data.regs.ext.gpp_sid).to.eql(ortb2.regs.gpp_sid);
     });
   });
 
