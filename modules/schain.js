@@ -10,7 +10,7 @@ import {
   isInteger,
   _each,
   logWarn,
-  deepAccess, deepSetValue
+  deepAccess, deepSetValue, deepClone
 } from '../src/utils.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
@@ -180,7 +180,7 @@ export function makeBidRequestsHook(fn, bidderRequests) {
     bidderRequest.bids.forEach(bid => {
       let result = resolveSchainConfig(schainConfig, bidder);
       if (result) {
-        bid.schain = result;
+        bid.schain = deepClone(result);
       }
     });
   });
