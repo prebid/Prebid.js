@@ -108,17 +108,17 @@ function extractUserSyncUrls(syncOptions, pixels) {
  * @param {string} consentData.gpp.gppConsent
  * @param {array} consentData.gpp.applicableSections
  * @param {object} consentData.gdpr
- * @param {object} consentData.gdpr.gdprConsent
+ * @param {object} consentData.gdpr.consentString
  * @param {object} consentData.gdpr.gdprApplies
  * @param {string} consentData.uspConsent
  */
 function updateConsentQueryParams(url, consentData) {
   const parameterMap = {
-    'gdpr_consent': consentData.gdpr.gdprConsent,
-    'gdpr': consentData.gdpr.gdprApplies,
+    'gdpr_consent': consentData.gdpr.consentString,
+    'gdpr': consentData.gdpr.gdprApplies ? '1' : '0',
     'us_privacy': consentData.uspConsent,
-    'gpp': consentData.gpp.gppConsent,
-    'gpp_sid': consentData.gpp.applicableSections? consentData.gpp.applicableSections.join(',') : ''
+    'gpp': consentData.gpp.gppString,
+    'gpp_sid': consentData.gpp.applicableSections ? consentData.gpp.applicableSections.join(',') : ''
   }
 
   const existingUrl = new URL(url);
@@ -128,7 +128,7 @@ function updateConsentQueryParams(url, consentData) {
     params.set(key, value);
   }
 
-  existingUrl.search = search_params.toString();
+  existingUrl.search = params.toString();
   return existingUrl.toString();
 };
 
@@ -276,8 +276,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
         ext: {
           'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
           gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          gpp: bidderRequest.gpp.gppConsent,
-          gpp_sid: bidderRequest.gpp.applicableSections
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections
         }
       },
       source: {
