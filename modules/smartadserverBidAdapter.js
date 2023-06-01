@@ -159,6 +159,11 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+      if (gpid) {
+        payload.gpid = gpid;
+      }
+
       if (bidderRequest) {
         if (bidderRequest.gdprConsent) {
           payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
