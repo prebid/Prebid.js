@@ -17,7 +17,6 @@ const HOST_GETTERS = {
   }()),
   navelix: () => 'ghb.hb.navelix.com',
   appaloosa: () => 'ghb.hb.appaloosa.media',
-  onefiftytwomedia: () => 'ghb.ads.152media.com',
   bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
@@ -42,7 +41,6 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: [
-    'onefiftytwomedia',
     'appaloosa',
     'bidsxchange',
     'streamkey',
