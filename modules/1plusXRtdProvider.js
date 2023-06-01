@@ -205,14 +205,6 @@ export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
   }
 };
 
-const setAppnexusAudiences = (audiences) => {
-  config.setConfig({
-    appnexusAuctionKeywords: {
-      '1plusX': audiences,
-    },
-  });
-}
-
 /**
  * Updates bidder configs with the targeting data retreived from Profile API
  * @param {Object} papiResponse Response from Profile API
@@ -225,7 +217,6 @@ export const setTargetingDataToConfig = (papiResponse, { bidders, biddersOrtb2 }
   const ortb2Updates = buildOrtb2Updates({ segments, topics });
   for (const bidder of bidders) {
     updateBidderConfig(bidder, ortb2Updates, biddersOrtb2);
-    setAppnexusAudiences(segments);
   }
 }
 
