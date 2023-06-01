@@ -34,7 +34,7 @@ describe('Richaudience adapter tests', function () {
     bidId: '2c7c8e9c900244',
     ortb2Imp: {
       ext: {
-        gpid: '/19968336/header-bid-tag-1#example-2',
+        gpid: '/19968336/header-bid-tag-1#example-2 ',
         data: {
           pbadslot: '/19968336/header-bid-tag-1#example-2'
         }
