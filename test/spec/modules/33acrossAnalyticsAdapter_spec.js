@@ -388,7 +388,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and the incomplete report has been sent successfully', function () {
-        it('it sends a report string', function () {
+        it('it sends a report string with any bids with targetingSet status set to hasWon: 1', function () {
           navigator.sendBeacon.returns(true);
 
           this.enableAnalytics();
@@ -397,7 +397,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           const incompleteSentBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[1].bids[0];
-          assert.strictEqual(incompleteSentBid.hasWon, 0);
+          assert.strictEqual(incompleteSentBid.hasWon, 1);
         });
 
         it('it logs an info message', function () {
