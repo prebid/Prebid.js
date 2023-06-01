@@ -12,6 +12,10 @@ import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
+import * as activityRules from 'src/activities/rules.js';
+import {sandbox} from 'sinon';
+import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {ACTIVITY_TRANSMIT_TID} from '../../../../src/activities/activities.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -66,24 +70,25 @@ describe('bidders created by newBidder', function () {
   });
 
   describe('when the ajax response is irrelevant', function () {
+    let sandbox;
     let ajaxStub;
     let getConfigSpy;
     let aliasRegistryStub, aliasRegistry;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
+      ajaxStub = sandbox.stub(ajax, 'ajax');
       addBidResponseStub.reset();
-      getConfigSpy = sinon.spy(config, 'getConfig');
+      getConfigSpy = sandbox.spy(config, 'getConfig');
       doneStub.reset();
       aliasRegistry = {};
-      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
-      ajaxStub.restore();
-      getConfigSpy.restore();
-      aliasRegistryStub.restore();
+      sandbox.restore();
     });
 
     it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
@@ -133,6 +138,74 @@ describe('bidders created by newBidder', function () {
       aliasRegistry = {[spec.code]: CODE};
       bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
+    });
+
+    describe('transaction IDs', () => {
+      Object.entries({
+        'be hidden': false,
+        'not be hidden': true,
+      }).forEach(([t, allowed]) => {
+        const expectation = allowed ? (val) => expect(val).to.exist : (val) => expect(val).to.not.exist;
+
+        function checkBidRequest(br) {
+          ['auctionId', 'transactionId'].forEach((prop) => expectation(br[prop]));
+        }
+
+        function checkBidderRequest(br) {
+          expectation(br.auctionId);
+          br.bids.forEach(checkBidRequest);
+        }
+
+        it(`should ${t} from the spec logic when the transmitTid activity is${allowed ? '' : ' not'} allowed`, () => {
+          spec.isBidRequestValid.callsFake(br => {
+            checkBidRequest(br);
+            return true;
+          });
+          spec.buildRequests.callsFake((bidReqs, bidderReq) => {
+            checkBidderRequest(bidderReq);
+            bidReqs.forEach(checkBidRequest);
+            return {method: 'POST'};
+          });
+          spec.interpretResponse.callsFake(() => [
+            {
+              requestId: 'bid',
+              cpm: 123,
+              ttl: 300,
+              creativeId: 'crid',
+              netRevenue: true,
+              currency: 'USD'
+            }
+          ])
+          activityRules.isActivityAllowed.reset();
+          activityRules.isActivityAllowed.callsFake(() => allowed);
+
+          ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
+
+          const bidder = newBidder(spec);
+
+          bidder.callBids({
+            bidderCode: 'mockBidder',
+            auctionId: 'aid',
+            bids: [
+              {
+                adUnitCode: 'mockAU',
+                bidId: 'bid',
+                transactionId: 'tid',
+                auctionId: 'aid'
+              }
+            ]
+          }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+          sinon.assert.calledWithMatch(activityRules.isActivityAllowed, ACTIVITY_TRANSMIT_TID, {
+            componentType: MODULE_TYPE_BIDDER,
+            componentName: 'mockBidder'
+          });
+          sinon.assert.calledWithMatch(addBidResponseStub, sinon.match.any, {
+            transactionId: 'tid',
+            auctionId: 'aid'
+          })
+        });
+      });
     });
 
     it('should handle bad bid requests gracefully', function () {

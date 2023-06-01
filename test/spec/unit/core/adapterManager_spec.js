@@ -1862,10 +1862,22 @@ describe('adapterManager tests', function () {
       requests.appnexus.bids.forEach((bid) => expect(bid.ortb2).to.eql(requests.appnexus.ortb2));
     });
 
-    it('should populate ortb2.source.tid with auctionId', () => {
-      const reqs = adapterManager.makeBidRequests(adUnits, 0, 'mockAuctionId', 1000, [], {global: {}});
-      expect(reqs[0].ortb2.source.tid).to.equal('mockAuctionId');
-    })
+    describe('source.tid', () => {
+      beforeEach(() => {
+        sinon.stub(dep, 'redact').returns({
+          ortb2: (o) => o,
+          bidRequest: (b) => b,
+        });
+      });
+      afterEach(() => {
+        dep.redact.restore();
+      });
+
+      it('should be populated with auctionId', () => {
+        const reqs = adapterManager.makeBidRequests(adUnits, 0, 'mockAuctionId', 1000, [], {global: {}});
+        expect(reqs[0].ortb2.source.tid).to.equal('mockAuctionId');
+      })
+    });
 
     it('should merge in bid-level ortb2Imp with adUnit-level ortb2Imp', () => {
       const adUnit = {

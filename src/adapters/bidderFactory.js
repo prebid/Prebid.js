@@ -13,7 +13,7 @@ import {
   isArray,
   isPlainObject,
   logError,
-  logWarn,
+  logWarn, memoize,
   parseQueryStringParameters,
   parseSizesInput,
   uniques
@@ -22,6 +22,10 @@ import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
+import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -180,6 +184,38 @@ export function registerBidder(spec) {
   }
 }
 
+function guardTids(bidderCode) {
+  if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
+    return {
+      bidRequest: (br) => br,
+      bidderRequest: (br) => br
+    };
+  }
+  function get(target, prop, receiver) {
+    if (['transactionId', 'auctionId'].includes(prop)) {
+      return null;
+    }
+    return Reflect.get(target, prop, receiver);
+  }
+  const bidRequest = memoize((br) => new Proxy(br, {get}), (arg) => arg.bidId)
+  /**
+   * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
+   *
+   * Because both auctionId and transactionId are used for Prebid's own internal bookkeeping, we cannot simply erase them
+   * from request objects; and because request objects are quite complex and not easily cloneable, we hide the IDs
+   * with a proxy instead. This should be used only around the adapter logic.
+   */
+  return {
+    bidRequest,
+    bidderRequest: (br) => new Proxy(br, {
+      get(target, prop, receiver) {
+        if (prop === 'bids') return br.bids.map(bidRequest);
+        return get(target, prop, receiver);
+      }
+    })
+  }
+}
+
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
  * Adapters will probably find it more convenient to use registerBidder instead.
@@ -196,6 +232,7 @@ export function newBidder(spec) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
+      const tidGuard = guardTids(bidderRequest.bidderCode);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
@@ -221,7 +258,7 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter(filterAndWarn));
+        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -236,7 +273,7 @@ export function newBidder(spec) {
         }
       });
 
-      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);

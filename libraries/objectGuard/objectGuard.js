@@ -1,4 +1,4 @@
-import {isData, objectTransformer} from '../../src/activities/redactor.js';
+import {isData, objectTransformer, sessionedApplies} from '../../src/activities/redactor.js';
 import {deepAccess, deepClone, deepEqual, deepSetValue} from '../../src/utils.js';
 
 /**
@@ -41,15 +41,6 @@ export function objectGuard(rules) {
 
   const wpTransformer = objectTransformer(writeRules);
 
-  function mkApplies(session, args) {
-    return function applies(rule) {
-      if (!session.hasOwnProperty(rule.name)) {
-        session[rule.name] = rule.applies(...args);
-      }
-      return session[rule.name];
-    }
-  }
-
   function mkGuard(obj, tree, applies) {
     return new Proxy(obj, {
       get(target, prop, receiver) {
@@ -76,7 +67,7 @@ export function objectGuard(rules) {
   return function guard(obj, ...args) {
     const session = {};
     return {
-      obj: mkGuard(obj, root.children || {}, mkApplies(session, args)),
+      obj: mkGuard(obj, root.children || {}, sessionedApplies(session, ...args)),
       verify: mkVerify(wpTransformer(session, obj, ...args))
     }
   };
