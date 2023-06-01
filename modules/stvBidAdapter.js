@@ -50,15 +50,9 @@ export const spec = {
         ref: referrer,
         bid_id: bidId,
         pbver: '$prebid.version$',
-        schain: '',
       };
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
-      }
-      if (bidRequest.schain) {
-        payload.schain = serializeSChain(bidRequest.schain);
-      } else {
-        delete payload.schain;
       }
 
       payload.pfilter = { ...params };
@@ -201,37 +195,10 @@ function objectToQueryString(obj, prefix) {
       let v = obj[p];
       str.push((v !== null && typeof v === 'object')
         ? objectToQueryString(v, k)
-        : (k == 'schain' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
+        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
     }
   }
   return str.join('&');
-}
-
-function serializeSChain(schain) {
-  let ret = '';
-
-  ret += encodeURIComponent(schain.ver);
-  ret += ',';
-  ret += encodeURIComponent(schain.complete);
-
-  for (let node of schain.nodes) {
-    ret += '!';
-    ret += encodeURIComponent(node.asi);
-    ret += ',';
-    ret += encodeURIComponent(node.sid);
-    ret += ',';
-    ret += encodeURIComponent(node.hp);
-    ret += ',';
-    ret += encodeURIComponent(node.rid ?? '');
-    ret += ',';
-    ret += encodeURIComponent(node.name ?? '');
-    ret += ',';
-    ret += encodeURIComponent(node.domain ?? '');
-    ret += ',';
-    ret += encodeURIComponent(node.ext ?? '');
-  }
-
-  return ret;
 }
 
 /**
