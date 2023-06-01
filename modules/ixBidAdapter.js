@@ -145,7 +145,6 @@ export const FEATURE_TOGGLES = {
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';
-let defaultVideoPlacement = false;
 
 // Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
 const MEDIA_TYPES = {
@@ -224,8 +223,7 @@ function bidToVideoImp(bid) {
       if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
         imp.video.placement = 5;
       } else {
-        imp.video.placement = 3;
-        defaultVideoPlacement = true;
+        imp.video.placement = 4;
       }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
@@ -1114,8 +1112,7 @@ function buildIXDiag(validBidRequests) {
     ren: false,
     version: '$prebid.version$',
     userIds: _getUserIds(validBidRequests[0]),
-    url: window.location.href.split('?')[0],
-    vpd: defaultVideoPlacement
+    url: window.location.href.split('?')[0]
   };
 
   // create ad unit map and collect the required diag properties

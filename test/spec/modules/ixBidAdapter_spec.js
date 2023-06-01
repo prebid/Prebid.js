@@ -2599,8 +2599,7 @@ describe('IndexexchangeAdapter', function () {
       const impression = extractPayload(request).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video.placement).to.equal(3);
-      expect(extractPayload(request).ext.ixdiag.vpd).to.equal(true);
+      expect(impression.video.placement).to.equal(4);
     });
 
     it('should handle unexpected context', function () {
