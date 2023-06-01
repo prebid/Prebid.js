@@ -313,7 +313,9 @@ describe('Yahoo ConnectID Submodule', () => {
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
-            puid: '981'
+            puid: '981',
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -345,7 +347,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr_consent: consentData.consentString,
             v: '1',
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -379,6 +383,8 @@ describe('Yahoo ConnectID Submodule', () => {
             v: '1',
             url: TEST_SERVER_URL,
             us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
