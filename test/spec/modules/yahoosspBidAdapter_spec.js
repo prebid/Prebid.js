@@ -89,6 +89,7 @@ let generateBidderRequest = (bidRequestArray, adUnitCode, ortb2 = {}) => {
       numIframes: 0,
       stack: ['https://publisher-test.com'],
     },
+    uspConsent: '1-Y-',
     gdprConsent: {
       consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA',
       vendorData: {},
@@ -181,11 +182,6 @@ const generateResponseMock = (admPayloadType, vastVersion, videoContext) => {
 
 // Unit tests
 describe('YahooSSP Bid Adapter:', () => {
-  it('PLACEHOLDER TO PASS GULP', () => {
-    const obj = {};
-    expect(obj).to.be.an('object');
-  });
-
   describe('Validate basic properties', () => {
     it('should define the correct bidder code', () => {
       expect(spec.code).to.equal('yahoossp')
@@ -197,40 +193,38 @@ describe('YahooSSP Bid Adapter:', () => {
   });
 
   describe('getUserSyncs()', () => {
-    const IMAGE_PIXEL_URL = 'http://image-pixel.com/foo/bar?1234&baz=true';
-    const IFRAME_ONE_URL = 'http://image-iframe.com/foo/bar?1234&baz=true';
+    const IMAGE_PIXEL_URL = 'http://image-pixel.com/foo/bar?1234&baz=true&gdpr=foo&gdpr_consent=bar';
+    const IFRAME_ONE_URL = 'http://image-iframe.com/foo/bar?1234&baz=true&us_privacy=hello&gpp=goodbye';
     const IFRAME_TWO_URL = 'http://image-iframe-two.com/foo/bar?1234&baz=true';
-
-    let serverResponses = [];
-    beforeEach(() => {
-      serverResponses[0] = {
-        body: {
-          ext: {
-            pixels: `<script>document.write('<iframe src="${IFRAME_ONE_URL}"></iframe>` +
-                    `<img src="${IMAGE_PIXEL_URL}"></iframe>` +
-                    `<iframe src="${IFRAME_TWO_URL}"></iframe>');</script>`
-          }
+    const SERVER_RESPONSES = [{
+      body: {
+        ext: {
+          pixels: `<script>document.write('<iframe src="${IFRAME_ONE_URL}"></iframe>` +
+                  `<img src="${IMAGE_PIXEL_URL}"></iframe>` +
+                  `<iframe src="${IFRAME_TWO_URL}"></iframe>');</script>`
         }
       }
-    });
-
-    after(() => {
-      serverResponses = undefined;
-    });
+    }];
+    const bidderRequest = generateBuildRequestMock({}).bidderRequest;
 
     it('for only iframe enabled syncs', () => {
       let syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(2);
-      expect(pixelsObjects).to.deep.equal(
-        [
-          {type: 'iframe', 'url': IFRAME_ONE_URL},
-          {type: 'iframe', 'url': IFRAME_TWO_URL}
-        ]
-      )
+      let pixelObjects = spec.getUserSyncs(
+        syncOptions,
+        SERVER_RESPONSES,
+        bidderRequest.gdprConsent,
+        bidderRequest.uspConsent,
+        bidderRequest.gppConsent
+      );
+      expect(pixelObjects.length).to.equal(2);
+
+      pixelObjects.forEach(pixelObject => {
+        expect(pixelObject).to.have.all.keys('type', 'url');
+        expect(pixelObject.type).to.equal('iframe');
+      });
     });
 
     it('for only pixel enabled syncs', () => {
@@ -238,13 +232,16 @@ describe('YahooSSP Bid Adapter:', () => {
         iframeEnabled: false,
         pixelEnabled: true
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(1);
-      expect(pixelsObjects).to.deep.equal(
-        [
-          {type: 'image', 'url': IMAGE_PIXEL_URL}
-        ]
-      )
+      let pixelObjects = spec.getUserSyncs(
+        syncOptions,
+        SERVER_RESPONSES,
+        bidderRequest.gdprConsent,
+        bidderRequest.uspConsent,
+        bidderRequest.gppConsent
+      );
+      expect(pixelObjects.length).to.equal(1);
+      expect(pixelObjects[0]).to.have.all.keys('type', 'url');
+      expect(pixelObjects[0].type).to.equal('image');
     });
 
     it('for both pixel and iframe enabled syncs', () => {
@@ -252,15 +249,56 @@ describe('YahooSSP Bid Adapter:', () => {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      let pixelsObjects = spec.getUserSyncs(syncOptions, serverResponses);
-      expect(pixelsObjects.length).to.equal(3);
-      expect(pixelsObjects).to.deep.equal(
-        [
-          {type: 'iframe', 'url': IFRAME_ONE_URL},
-          {type: 'image', 'url': IMAGE_PIXEL_URL},
-          {type: 'iframe', 'url': IFRAME_TWO_URL}
-        ]
-      )
+      let pixelObjects = spec.getUserSyncs(
+        syncOptions,
+        SERVER_RESPONSES,
+        bidderRequest.gdprConsent,
+        bidderRequest.uspConsent,
+        bidderRequest.gppConsent
+      );
+      expect(pixelObjects.length).to.equal(3);
+      let iframeCount = 0;
+      let imageCount = 0;
+      pixelObjects.forEach(pixelObject => {
+        if (pixelObject.type == 'iframe') {
+          iframeCount++;
+        } else if (pixelObject.type == 'image') {
+          imageCount++;
+        }
+      });
+      expect(iframeCount).to.equal(2);
+      expect(imageCount).to.equal(1);
+    });
+
+    describe('user consent parameters are updated', () => {
+      let syncOptions = {
+        iframeEnabled: true,
+        pixelEnabled: true
+      };
+      let pixelObjects = spec.getUserSyncs(
+        syncOptions,
+        SERVER_RESPONSES,
+        bidderRequest.gdprConsent,
+        bidderRequest.uspConsent,
+        bidderRequest.gppConsent
+      );
+      pixelObjects.forEach(pixelObject => {
+        let url = pixelObject.url;
+        let urlParams = new URL(url).searchParams;
+        const expectedParams = {
+          'baz': 'true',
+          'gdpr_consent': bidderRequest.gdprConsent.consentString,
+          'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
+          'us_privacy': bidderRequest.uspConsent,
+          'gpp': bidderRequest.gppConsent.gppString,
+          'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+        }
+        for (const [key, value] of Object.entries(expectedParams)) {
+          it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
+            expect(urlParams.get(key)).to.equal(value);
+          });
+        };
+      });
     });
   });
 
@@ -942,8 +980,10 @@ describe('YahooSSP Bid Adapter:', () => {
 
       expect(data.regs).to.deep.equal({
         ext: {
-          'us_privacy': '',
-          gdpr: 1
+          'us_privacy': bidderRequest.uspConsent,
+          gdpr: 1,
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections
         }
       });
 
