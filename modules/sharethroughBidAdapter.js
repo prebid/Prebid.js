@@ -93,8 +93,8 @@ export const sharethroughAdapterSpec = {
       if (videoRequest) {
         // default playerSize, only change this if we know width and height are properly defined in the request
         let [w, h] = [640, 360];
-        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
-          [w, h] = videoRequest.playerSize;
+        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[0][0] && videoRequest.playerSize[0][1]) {
+          [w, h] = videoRequest.playerSize[0];
         }
 
         impression.video = {
