@@ -300,16 +300,14 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
     report.usPrivacy = uspDataHandler.getConsentData();
   }
 
-  const gdprConsentData = gdprDataHandler.getConsentData();
-  const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
-  report.gdpr = Number(gdprApplies);
-  if (gdprApplies) {
-    report.gdprConsent = gdprConsentData.consentString || '';
+  if (gdprDataHandler.getConsentData()) {
+    report.gdpr = Number(Boolean(gdprDataHandler.getConsentData().gdprApplies));
+    report.gdprConsent = gdprDataHandler.getConsentData().consentString || '';
   }
 
   if (gppDataHandler.getConsentData()) {
-    report.gpp = gppDataHandler.getConsentData().gpp;
-    report.gppSid = gppDataHandler.getConsentData().applicableSections.join(',');
+    report.gpp = gppDataHandler.getConsentData().gppString;
+    report.gppSid = gppDataHandler.getConsentData().applicableSections;
   }
 
   if (coppaDataHandler.getCoppa()) {
