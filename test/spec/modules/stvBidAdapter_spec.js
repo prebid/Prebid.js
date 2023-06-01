@@ -60,6 +60,18 @@ describe('stvAdapter', function() {
         'bidderRequestId': '22edbae2733bf61',
         'auctionId': '1d1a030790a475',
         'adUnitCode': 'testDiv1',
+        'schain': {
+          'ver': '1.0',
+          'complete': 0,
+          'nodes': [
+            {
+              'asi': 'reseller.com',
+              'sid': 'aaaaa',
+              'rid': 'BidRequest4',
+              'hp': 1
+            }
+          ]
+        }
       },
       {
         'bidder': 'stv',
@@ -169,7 +181,7 @@ describe('stvAdapter', function() {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
       let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
-      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
+      expect(data).to.equal('_f=html&alternative=prebid_js&_ps=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&schain=1.0,0!reseller.com,aaaaa,1,BidRequest4,,,&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bgeo%5D%5Bcountry%5D=DE&gdpr_consent=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&gdpr=true&bcat=IAB2%2CIAB4&dvt=desktop&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
