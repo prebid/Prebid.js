@@ -7,7 +7,12 @@ import CONSTANTS from '../src/constants.json';
  * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
  */
 const { EVENTS } = CONSTANTS;
-export const BidStatus = {
+
+/** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
+/**
+ * @type {Object<string, BidStatus>}
+ */
+const BidStatus = {
   PENDING: 'pending',
   AVAILABLE: 'available',
   TARGETING_SET: 'targetingSet',
@@ -253,16 +258,6 @@ function enableAnalyticsWrapper(config) {
   analyticsAdapter.originEnableAnalytics(config);
 }
 
-function subscribeToGamSlots() {
-  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
-    setTimeout(() => {
-      const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
-      locals.transactionManagers[auctionId] &&
-        locals.transactionManagers[auctionId].complete(transactionId);
-    }, POST_GAM_TIMEOUT);
-  });
-}
-
 /**
  * @param {string} [endpoint]
  * @returns {string}
@@ -288,6 +283,23 @@ function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT
   log.info(`Invalid timeout provided for "options.timeout". Using default timeout of ${DEFAULT_TRANSACTION_TIMEOUT}ms.`);
 
   return DEFAULT_TRANSACTION_TIMEOUT;
+}
+
+function subscribeToGamSlots() {
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    setTimeout(() => {
+      const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
+      locals.transactionManagers[auctionId] &&
+        locals.transactionManagers[auctionId].complete(transactionId);
+    }, POST_GAM_TIMEOUT);
+  });
+}
+
+function getAdUnitMetadata(adUnitCode) {
+  const adUnitMeta = locals.adUnitMap[adUnitCode];
+  if (adUnitMeta && adUnitMeta.length > 0) {
+    return adUnitMeta[adUnitMeta.length - 1];
+  }
 }
 
 /** necessary for testing */
@@ -337,6 +349,7 @@ function getCachedBid(auctionId, bidId) {
       }
     }
   }
+  log.error(`Cannot find bid "${bidId}" in auction "${auctionId}".`);
 };
 
 /**
@@ -358,7 +371,9 @@ function analyticEventHandler({ eventType, args }) {
       onBidRequested(args);
       break;
     case EVENTS.BID_TIMEOUT:
-      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.TIMEOUT);
+      for (let bid of args) {
+        setCachedBidStatus(bid.auctionId, bid.bidId, BidStatus.TIMEOUT);
+      }
       break;
     case EVENTS.BID_RESPONSE:
       onBidResponse(args);
@@ -373,7 +388,7 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.BIDDER_ERROR:
       if (args.bidderRequest && args.bidderRequest.bids) {
         for (let bid of args.bidderRequest.bids) {
-          setCachedBidStatus(args.auctionId, bid.bidId, BidStatus.ERROR);
+          setCachedBidStatus(args.bidderRequest.auctionId, bid.bidId, BidStatus.ERROR);
         }
       }
       break;
@@ -388,33 +403,9 @@ function analyticEventHandler({ eventType, args }) {
   }
 }
 
-function onAuctionEnd({ bidsReceived, auctionId }) {
-  for (let bid of bidsReceived) {
-    setCachedBidStatus(auctionId, bid.bidId, bid.status);
-  }
-}
-
-function setAdUnitMap(adUnitCode, auctionId, transactionId) {
-  if (locals.adUnitMap[adUnitCode]) {
-    locals.adUnitMap[adUnitCode].push({
-      auctionId,
-      transactionId,
-    });
-  } else {
-    locals.adUnitMap[adUnitCode] = [{
-      auctionId,
-      transactionId,
-    }];
-  }
-}
-
-function getAdUnitMetadata(adUnitCode) {
-  const adUnitMeta = locals.adUnitMap[adUnitCode];
-  if (adUnitMeta && adUnitMeta.length > 0) {
-    return adUnitMeta[adUnitMeta.length - 1];
-  }
-}
-
+/****************
+ * AUCTION_INIT *
+ ***************/
 function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
@@ -454,6 +445,17 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
     });
 }
 
+function setAdUnitMap(adUnitCode, auctionId, transactionId) {
+  if (!locals.adUnitMap[adUnitCode]) {
+    locals.adUnitMap[adUnitCode] = [];
+  }
+
+  locals.adUnitMap[adUnitCode].push({ auctionId, transactionId });
+}
+
+/*****************
+ * BID_REQUESTED *
+ ****************/
 function onBidRequested({ auctionId, bids }) {
   for (let { bidder, bidId, transactionId, src } of bids) {
     const auction = locals.cache.auctions[auctionId];
@@ -473,6 +475,9 @@ function onBidRequested({ auctionId, bids }) {
   }
 }
 
+/****************
+ * BID_RESPONSE *
+ ***************/
 function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, status, source }) {
   const bid = getCachedBid(auctionId, requestId);
   if (!bid) return;
@@ -493,11 +498,28 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
   );
 }
 
+/***************
+ * AUCTION_END *
+ **************/
+/**
+ * @param {Object} args
+ * @param {{requestId: string, status: string}[]} args.bidsReceived
+ * @param {string} args.auctionId
+ * @returns {void}
+ */
+function onAuctionEnd({ bidsReceived, auctionId }) {
+  for (let bid of bidsReceived) {
+    setCachedBidStatus(auctionId, bid.requestId, bid.status);
+  }
+}
+
+/***********
+ * BID_WON *
+ **********/
 function onBidWon(bidWon) {
   const { auctionId, requestId, transactionId } = bidWon;
   const bid = getCachedBid(auctionId, requestId);
   if (!bid) {
-    log.error(`Cannot find bid "${requestId}". Auction ID: "${auctionId}". Transaction ID: "${transactionId}".`);
     return;
   }
 
@@ -507,6 +529,11 @@ function onBidWon(bidWon) {
     locals.transactionManagers[auctionId].complete(transactionId);
 }
 
+/**
+ * @param {Bid} bid
+ * @param {BidStatus} [status]
+ * @returns {void}
+ */
 function setBidStatus(bid, status = BidStatus.AVAILABLE) {
   const statusStates = {
     pending: {
@@ -547,7 +574,9 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
 }
 
 function setCachedBidStatus(auctionId, bidId, status) {
-  setBidStatus(getCachedBid(auctionId, bidId), status);
+  const bid = getCachedBid(auctionId, bidId);
+  if (!bid) return;
+  setBidStatus(bid, status);
 }
 
 /**
@@ -575,8 +604,8 @@ function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
-    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, deepClone(...args)),
-    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, deepClone(...args)),
-    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, deepClone(...args)),
+    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...deepClone(args)),
+    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...deepClone(args)),
+    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...deepClone(args)),
   }
 }

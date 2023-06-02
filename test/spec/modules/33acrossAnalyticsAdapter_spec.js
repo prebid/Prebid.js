@@ -331,8 +331,8 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           events.emit(EVENTS.BID_WON, fakeBidWonEvent);
 
-          const { auctionId, requestId, transactionId } = fakeBidWonEvent;
-          assert.calledWithExactly(log.error, `Cannot find bid "${requestId}". Auction ID: "${auctionId}". Transaction ID: "${transactionId}".`);
+          const { auctionId, requestId } = fakeBidWonEvent;
+          assert.calledWithExactly(log.error, `Cannot find bid "${requestId}" in auction "${auctionId}".`);
         });
       });
     });
@@ -359,17 +359,17 @@ describe('33acrossAnalyticsAdapter:', function () {
 
             performStandardAuction({exclude: ['bidWon', 'slotRenderEnded', 'auctionEnd']});
             sandbox.clock.tick(1);
-            events.emit(EVENTS.BID_TIMEOUT, {
+            events.emit(EVENTS.BID_TIMEOUT, [{
               auctionId: request.auctionId,
               bidId: bidToTimeout.bidId,
               transactionId: bidToTimeout.transactionId,
-            });
+            }]);
             sandbox.clock.tick(timeout + 1000);
 
             const timeoutBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0];
             assert.strictEqual(timeoutBid.status, 'timeout');
           });
-        })
+        });
       });
 
       context('when a timeout config value has not been given', function () {
