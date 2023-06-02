@@ -57,7 +57,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('but the endpoint is invalid', function () {
-        it('it logs an info message', function () {
+        it('logs an info message', function () {
           analyticsAdapter.enableAnalytics({
             options: {
               pid: 'test-pid',
@@ -72,7 +72,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
     context('When endpoint is given', function () {
       context('but pid is not', function () {
-        it('it logs an error message', function () {
+        it('logs an error message', function () {
           analyticsAdapter.enableAnalytics({
             options: {
               endpoint: faker.internet.url()
@@ -86,7 +86,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
     context('When pid and endpoint are given', function () {
       context('and an invalid timeout config value is given', function () {
-        it('it logs an info message', function () {
+        it('logs an info message', function () {
           [null, 'foo', -1].forEach(timeout => {
             analyticsAdapter.enableAnalytics({
               options: {
@@ -129,7 +129,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
     context('when an auction is complete', function () {
       context('and the AnalyticsReport is sent successfully to the given endpoint', function () {
-        it('it calls "sendBeacon" with all won bids', function () {
+        it('calls "sendBeacon" with all won bids', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -145,7 +145,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           assert.lengthOf(mapToBids(auctions).filter(bid => bid.hasWon), 3);
         });
 
-        it('it calls "sendBeacon" with the correct report string', function () {
+        it('calls "sendBeacon" with the correct report string', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -158,7 +158,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
         });
 
-        it('it logs an info message containing the report', function () {
+        it('logs an info message containing the report', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -172,7 +172,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           assert.calledWithExactly(log.info, `Analytics report sent to ${endpoint}`, createReportWithThreeBidWonEvents());
         });
 
-        it('it calls "sendBeacon" as soon as all values are available (before timeout)', function () {
+        it('calls "sendBeacon" as soon as all values are available (before timeout)', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -188,7 +188,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
       context('and a valid US Privacy configuration is present', function () {
         ['1YNY', '1---', '1NY-', '1Y--', '1--Y', '1N--', '1--N', '1NNN'].forEach(consent => {
-          it(`it calls "sendBeacon" with a report containing the "${consent}" privacy string`, function () {
+          it(`calls "sendBeacon" with a report containing the "${consent}" privacy string`, function () {
             sandbox.stub(uspDataHandler, 'getConsentData').returns(consent);
             this.enableAnalytics();
 
@@ -222,7 +222,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
     context('when an auction report was already sent', function () {
       context('and a new bid won event is returned after the report completes', function () {
-        it('it finishes the auction without error', function () {
+        it('finishes the auction without error', function () {
           const incompleteAnalyticsReport = createReportWithThreeBidWonEvents();
           incompleteAnalyticsReport.auctions.forEach(auction => {
             auction.adUnits.forEach(adUnit => {
@@ -260,7 +260,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and another auction completes after that', function () {
-        it('it sends the new report', function () {
+        it('sends the new report', function () {
           const endpoint = faker.internet.url();
           this.enableAnalytics({ endpoint });
 
@@ -279,7 +279,7 @@ describe('33acrossAnalyticsAdapter:', function () {
     });
 
     context('when two auctions overlap', function() {
-      it('it sends a report for each auction', function () {
+      it('sends a report for each auction', function () {
         const endpoint = faker.internet.url();
         this.enableAnalytics({ endpoint });
 
@@ -295,7 +295,7 @@ describe('33acrossAnalyticsAdapter:', function () {
     });
 
     context('when an AUCTION_END event is received before BID_WON events', function () {
-      it('it sends a report with the bids that have won after timeout', function () {
+      it('sends a report with the bids that have won after timeout', function () {
         const endpoint = faker.internet.url();
         this.enableAnalytics({ endpoint });
 
@@ -388,7 +388,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and the incomplete report has been sent successfully', function () {
-        it('it sends a report string with any bids with targetingSet status set to hasWon: 1', function () {
+        it('sends a report string with any bids with targetingSet status set to hasWon: 1', function () {
           navigator.sendBeacon.returns(true);
 
           this.enableAnalytics();
@@ -400,7 +400,7 @@ describe('33acrossAnalyticsAdapter:', function () {
           assert.strictEqual(incompleteSentBid.hasWon, 1);
         });
 
-        it('it logs an info message', function () {
+        it('logs an info message', function () {
           navigator.sendBeacon.returns(true);
 
           const endpoint = faker.internet.url();
