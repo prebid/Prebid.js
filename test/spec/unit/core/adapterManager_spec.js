@@ -4,7 +4,7 @@ import adapterManager, {
   coppaDataHandler,
   _partitionBidders,
   PARTITIONS,
-  getS2SBidderSet, _filterBidsForAdUnit
+  getS2SBidderSet, _filterBidsForAdUnit, dep
 } from 'src/adapterManager.js';
 import {
   getAdUnits,
@@ -23,6 +23,7 @@ import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1721,6 +1722,129 @@ describe('adapterManager tests', function () {
       expect(sizes1).not.to.deep.equal(sizes2);
     });
 
+    describe('and activity controls', () => {
+      let redactOrtb2;
+      let redactBidRequest;
+      const MOCK_BIDDERS = ['1', '2', '3', '4', '5'].map((n) => `mockBidder${n}`);
+
+      beforeEach(() => {
+        sinon.stub(dep, 'isAllowed');
+        redactOrtb2 = sinon.stub().callsFake(ob => ob);
+        redactBidRequest = sinon.stub().callsFake(ob => ob);
+        sinon.stub(dep, 'redact').callsFake(() => ({
+          ortb2: redactOrtb2,
+          bidRequest: redactBidRequest
+        }))
+        MOCK_BIDDERS.forEach((bidder) => adapterManager.bidderRegistry[bidder] = {});
+      });
+      afterEach(() => {
+        dep.isAllowed.restore();
+        dep.redact.restore();
+        MOCK_BIDDERS.forEach(bidder => { delete adapterManager.bidderRegistry[bidder] });
+        config.resetConfig();
+      })
+      it('should not generate requests for bidders that cannot fetchBids', () => {
+        adUnits = [
+          {code: 'one', bids: ['mockBidder1', 'mockBidder2', 'mockBidder3'].map((bidder) => ({bidder}))},
+          {code: 'two', bids: ['mockBidder4', 'mockBidder5', 'mockBidder4'].map((bidder) => ({bidder}))}
+        ];
+        const allowed = ['mockBidder2', 'mockBidder5'];
+        dep.isAllowed.callsFake((activity, {componentType, componentName}) => {
+          return activity === ACTIVITY_FETCH_BIDS &&
+            componentType === MODULE_TYPE_BIDDER &&
+            allowed.includes(componentName);
+        });
+        let reqs = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        const bidders = Array.from(new Set(reqs.flatMap(br => br.bids).map(bid => bid.bidder)).keys());
+        expect(bidders).to.have.members(allowed);
+      });
+
+      it('should redact ortb2 and bid request objects', () => {
+        dep.isAllowed.callsFake(() => true);
+        adUnits = [
+          {code: 'one', bids: [{bidder: 'mockBidder1'}]}
+        ];
+        let reqs = adapterManager.makeBidRequests(
+          adUnits,
+          Date.now(),
+          utils.getUniqueIdentifierStr(),
+          function callback() {},
+          []
+        );
+        sinon.assert.calledWith(redactBidRequest, reqs[0].bids[0]);
+        sinon.assert.calledWith(redactOrtb2, reqs[0].ortb2);
+      })
+
+      describe('with multiple s2s configs', () => {
+        beforeEach(() => {
+          config.setConfig({
+            s2sConfig: [
+              {
+                enabled: true,
+                adapter: 'mockS2SDefault',
+                bidders: ['mockBidder1']
+              },
+              {
+                enabled: true,
+                adapter: 'mockS2S1',
+                configName: 'mock1',
+              },
+              {
+                enabled: true,
+                adapter: 'mockS2S2',
+                configName: 'mock2',
+              }
+            ]
+          });
+        });
+        it('should keep stored impressions, even if everything else is denied', () => {
+          adUnits = [
+            {code: 'one', bids: [{bidder: null}]},
+            {code: 'two', bids: [{module: 'pbsBidAdapter', params: {configName: 'mock1'}}, {module: 'pbsBidAdapter', params: {configName: 'mock2'}}]}
+          ]
+          dep.isAllowed.callsFake(({componentType}) => componentType !== 'bidder');
+          let bidRequests = adapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {},
+            []
+          );
+          expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.equal(3);
+        });
+
+        it('should check if the s2s adapter itself is allowed to fetch bids', () => {
+          adUnits = [
+            {
+              code: 'au',
+              bids: [
+                {bidder: null},
+                {module: 'pbsBidAdapter', params: {configName: 'mock1'}},
+                {module: 'pbsBidAdapter', params: {configName: 'mock2'}},
+                {bidder: 'mockBidder1'}
+              ]
+            }
+          ];
+          dep.isAllowed.callsFake((_, {configName, componentName}) => !(componentName === 'pbsBidAdapter' && configName === 'mock1'));
+          let bidRequests = adapterManager.makeBidRequests(
+            adUnits,
+            Date.now(),
+            utils.getUniqueIdentifierStr(),
+            function callback() {
+            },
+            []
+          );
+          expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.eql(2)
+        });
+      });
+    });
+
     it('should make FPD available under `ortb2`', () => {
       const global = {
         k1: 'v1',
@@ -2692,10 +2816,27 @@ describe('adapterManager tests', function () {
 
       beforeEach(() => {
         bidderRequests = [];
+        ['mockBidder', 'mockBidder1', 'mockBidder2'].forEach(bidder => {
+          adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({code: bidder})}, bidder);
+        })
         sinon.stub(auctionManager, 'getBidsRequested').callsFake(() => bidderRequests);
       })
       afterEach(() => {
         auctionManager.getBidsRequested.restore();
+      })
+
+      it('can resolve aliases', () => {
+        adapterManager.aliasBidAdapter('mockBidder', 'mockBidderAlias');
+        expect(adapterManager.resolveAlias('mockBidderAlias')).to.eql('mockBidder');
+      });
+      it('does not stuck in alias cycles', () => {
+        adapterManager.aliasRegistry['alias1'] = 'alias2';
+        adapterManager.aliasRegistry['alias2'] = 'alias2';
+        expect(adapterManager.resolveAlias('alias2')).to.eql('alias2');
+      })
+      it('returns self when not an alias', () => {
+        delete adapterManager.aliasRegistry['missing'];
+        expect(adapterManager.resolveAlias('missing')).to.eql('missing');
       })
 
       it('does not invoke onDataDeletionRequest on aliases', () => {
@@ -2738,6 +2879,45 @@ describe('adapterManager tests', function () {
         sinon.assert.calledWith(del2, [bidderRequests[1]]);
       })
     })
+  });
+
+  describe('reportAnalytics check', () => {
+    beforeEach(() => {
+      sinon.stub(dep, 'isAllowed');
+    });
+    afterEach(() => {
+      dep.isAllowed.restore();
+    });
+
+    it('should check for reportAnalytics before registering analytics adapter', () => {
+      const enabled = {};
+      ['mockAnalytics1', 'mockAnalytics2'].forEach((code) => {
+        adapterManager.registerAnalyticsAdapter({
+          code,
+          adapter: {
+            enableAnalytics: sinon.stub().callsFake(() => { enabled[code] = true })
+          }
+        })
+      })
+
+      const anlCfg = [
+        {
+          provider: 'mockAnalytics1',
+          random: 'values'
+        },
+        {
+          provider: 'mockAnalytics2'
+        }
+      ]
+      dep.isAllowed.callsFake((activity, {component, _config}) => {
+        return activity === ACTIVITY_REPORT_ANALYTICS &&
+          component === `${MODULE_TYPE_ANALYTICS}.${anlCfg[0].provider}` &&
+          _config === anlCfg[0]
+      })
+
+      adapterManager.enableAnalytics(anlCfg);
+      expect(enabled).to.eql({mockAnalytics1: true});
+    });
   });
 
   describe('registers GVL IDs', () => {

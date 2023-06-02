@@ -60,11 +60,11 @@ export const id5IdSubmodule = {
    */
   decode(value, config) {
     let universalUid;
-    let linkType = 0;
+    let ext = {};
 
     if (value && typeof value.universal_uid === 'string') {
       universalUid = value.universal_uid;
-      linkType = value.link_type || linkType;
+      ext = value.ext || ext;
     } else {
       return undefined;
     }
@@ -72,9 +72,7 @@ export const id5IdSubmodule = {
     let responseObj = {
       id5id: {
         uid: universalUid,
-        ext: {
-          linkType: linkType
-        }
+        ext: ext
       }
     };
 
