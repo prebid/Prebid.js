@@ -1,4 +1,4 @@
-import {addSegmentData, getSegmentsAndCategories, sirdataSubmodule, setBidderOrtb2} from 'modules/sirdataRtdProvider.js';
+import {addSegmentData, getSegmentsAndCategories, sirdataSubmodule, setOrtb2} from 'modules/sirdataRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 
 const responseHeader = {'Content-Type': 'application/json'};
@@ -271,10 +271,10 @@ describe('sirdataRtdProvider', function () {
       window.googletag = window.googletag || {};
       window.googletag.cmd = window.googletag.cmd || [];
 
-      let test = setBidderOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', []);
+      let test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', []);
       expect(test).to.be.false;
 
-      test = setBidderOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', ['1']);
+      test = setOrtb2(reqBidsConfigObj.ortb2Fragments, 'appnexus', 'user', ['1']);
       expect(test).to.be.true;
     });
   });
