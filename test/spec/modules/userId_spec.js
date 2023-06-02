@@ -2365,7 +2365,6 @@ describe('User ID', function () {
         coreStorage.setCookie('deepintentId', 'testdeepintentId', new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('MOCKID', JSON.stringify({'MOCKID': '123456778'}), new Date(Date.now() + 5000).toUTCString());
         coreStorage.setCookie('__uid2_advertising_token', 'Sample_AD_Token', (new Date(Date.now() + 5000).toUTCString()));
-        coreStorage.setCookie('__euid_advertising_token', 'Sample_EUID_Token', (new Date(Date.now() + 5000).toUTCString()));
         localStorage.setItem('amxId', 'test_amxid_id');
         localStorage.setItem('amxId_exp', new Date(Date.now() + 5000).toUTCString())
         coreStorage.setCookie('kpuid', 'KINESSO_ID', (new Date(Date.now() + 5000).toUTCString()));
@@ -2404,8 +2403,6 @@ describe('User ID', function () {
               name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
             }, {
               name: 'uid2'
-            }, {
-              name: 'euid'
             }, {
               name: 'deepintentId', storage: {name: 'deepintentId', type: 'cookie'}
             }, {
@@ -2471,9 +2468,6 @@ describe('User ID', function () {
               expect(bid.userId.uid2).to.deep.equal({
                 id: 'Sample_AD_Token'
               });
-              expect(bid.userId.euid).to.deep.equal({
-                id: 'Sample_EUID_Token'
-              });
 
               expect(bid).to.have.deep.nested.property('userId.amxId');
               expect(bid.userId.amxId).to.equal('test_amxid_id');
@@ -2491,7 +2485,7 @@ describe('User ID', function () {
 
               expect(bid).to.have.deep.nested.property('userId.qid');
               expect(bid.userId.qid).to.equal('testqid');
-              expect(bid.userIdAsEids.length).to.equal(17);
+              expect(bid.userIdAsEids.length).to.equal(16);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2513,7 +2507,6 @@ describe('User ID', function () {
           localStorage.removeItem('amxId_exp');
           coreStorage.setCookie('kpuid', EXPIRED_COOKIE_DATE);
           coreStorage.setCookie('__uid2_advertising_token', '', EXPIRED_COOKIE_DATE);
-          coreStorage.setCookie('__euid_advertising_token', '', EXPIRED_COOKIE_DATE);
           done();
         }, {adUnits});
       });
