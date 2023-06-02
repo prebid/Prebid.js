@@ -5,10 +5,11 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
+import 'modules/consentManagement.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { server } from 'test/mocks/xhr.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
-import { cookieHelpers, runAuction, apiHelpers } from './uid2IdSystem_helpers.js';
+import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 
@@ -169,14 +170,25 @@ describe(`UID2 module`, function () {
     expectLegacyToken(bid);
   });
 
+  it('When a legacy value is provided directly in configuration but GDPR applies, it is not passed on', async function() {
+    const valueConfig = makePrebidConfig();
+    setGdprApplies();
+    valueConfig.userSync.userIds[0].value = {uid2: {id: legacyToken}}
+    config.setConfig(valueConfig);
+    const bid = await runAuction();
+
+    expectNoIdentity(bid);
+  });
+
   // These tests cover 'legacy' cookies - i.e. cookies set with just the uid2 advertising token, which was how some previous integrations worked.
   // Some users might still have this cookie, and the module should use that token if a newer one isn't provided.
   // This should cover older integrations where the server is setting this legacy cookie and expecting the module to pass it on.
   describe('When a legacy cookie exists', function () {
     // Creates a test which sets the legacy cookie, configures the UID2 module with provided params, runs an
-    const createLegacyTest = function(params, bidAssertions) {
+    const createLegacyTest = function(params, bidAssertions, addConsent = false) {
       return async function() {
         coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
+        if (addConsent) setGdprApplies();
         config.setConfig(makePrebidConfig(params));
 
         const bid = await runAuction();
@@ -194,6 +206,15 @@ describe(`UID2 module`, function () {
       async function() { cookieHelpers.setPublisherCookie(publisherCookieName, apiHelpers.makeTokenResponse(initialToken)); await createLegacyTest(newServerCookieConfigParams, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken])(); });
     it('and a token is provided in config, it should provide the config token',
       createLegacyTest({uid2Token: apiHelpers.makeTokenResponse(initialToken)}, [(bid) => expectToken(bid, initialToken), expectNoLegacyToken]));
+    it('and GDPR applies, no identity should be provided to the auction',
+      createLegacyTest(legacyConfigParams, [expectNoIdentity], true));
+    it('and GDPR applies, when getId is called directly it provides no identity', () => {
+      coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
+      const consentConfig = setGdprApplies();
+      let configObj = makePrebidConfig(legacyConfigParams);
+      const result = uid2IdSubmodule.getId(configObj.userSync.userIds[0], consentConfig.consentData);
+      expect(result?.id).to.not.exist;
+    });
 
     it('multiple runs do not change the value', async function() {
       coreStorage.setCookie(moduleCookieName, legacyToken, cookieHelpers.getFutureCookieExpiry());
@@ -289,14 +310,18 @@ describe(`UID2 module`, function () {
       });
 
       describe(`When a current token is provided`, function() {
-        beforeEach(function() {
-          scenario.setConfig(apiHelpers.makeTokenResponse(initialToken));
-        });
-
         it('it should use the token in the auction', async function() {
+          scenario.setConfig(apiHelpers.makeTokenResponse(initialToken));
           const bid = await runAuction();
           expectToken(bid, initialToken);
         });
+
+        it('and GDPR applies, the token should not be used', async function() {
+          setGdprApplies();
+          scenario.setConfig(apiHelpers.makeTokenResponse(initialToken));
+          const bid = await runAuction();
+          expectNoIdentity(bid);
+        })
       });
 
       describe(`When a current token which should be refreshed is provided, and the auction is set to run immediately`, function() {

@@ -1,3 +1,4 @@
+import { setConsentConfig } from 'modules/consentManagement.js';
 import { server } from 'test/mocks/xhr.js';
 import {coreStorage, init, setSubmoduleRegistry, requestBidsHook} from 'modules/userId/index.js';
 
@@ -37,4 +38,33 @@ export const apiHelpers = {
     server.respond();
     setTimeout(() => resolve());
   }, delay)),
+}
+
+export const setGdprApplies = (consent = false) => {
+  const consentDetails = consent ? {
+    tcString: 'CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA',
+    purpose: {
+      consents: {
+        '1': true,
+      },
+    },
+    vendor: {
+      consents: {
+        '21': true,
+      },
+    }
+
+  } : {
+    tcString: 'CPhJRpMPhJRpMABAMBFRACBoALAAAEJAAIYgAKwAQAKgArABAAqAAA'
+  };
+  const staticConfig = {
+    cmpApi: 'static',
+    timeout: 7500,
+    consentData: {
+      gdprApplies: true,
+      ...consentDetails
+    }
+  }
+  setConsentConfig(staticConfig);
+  return staticConfig;
 }

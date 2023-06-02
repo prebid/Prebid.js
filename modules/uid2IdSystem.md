@@ -4,6 +4,8 @@ UID2 requires initial tokens to be generated server-side. The UID2 module handle
 
 *Server Only* mode was originally referred to as *legacy mode*, but it is a popular mode for new integrations where publishers prefer to handle token refresh server-side.
 
+**Important information:** UID2 is not designed to be used where GDPR applies. The module checks the passed-in consent data and will not operate if the `gdprApplies` flag is true.
+
 ## Client Refresh mode
 
 This is the recommended mode for most scenarios. In this mode, the full response body from the UID2 Token Generate or Token Refresh endpoint must be provided to the module. As long as the refresh token remains valid, the module will refresh the advertising token as needed.

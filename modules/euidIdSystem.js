@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logInfo, logWarn } from '../src/utils.js';
+import { logInfo, logWarn, deepAccess } from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
@@ -18,7 +18,7 @@ const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
 const EUID_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-EUIDModule-${MODULE_REVISION}`;
-const GVLID = 21; // The Trade Desk
+const GVLID_TTD = 21; // The Trade Desk
 const LOG_PRE_FIX = 'EUID: ';
 const ADVERTISING_COOKIE = '__euid_advertising_token';
 
@@ -37,6 +37,16 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
+function hasWriteToDeviceConsent(consentData) {
+  const gdprApplies = consentData?.gdprApplies === true;
+  const localStorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
+  const prebidVendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID_TTD.toString()}`)
+  if (gdprApplies && (!localStorageConsent || !prebidVendorConsent)) {
+    return false;
+  }
+  return true;
+}
+
 /** @type {Submodule} */
 export const euidIdSubmodule = {
   /**
@@ -49,7 +59,7 @@ export const euidIdSubmodule = {
    * Vendor id of The Trade Desk
    * @type {Number}
    */
-  gvlid: GVLID,
+  gvlid: GVLID_TTD,
   /**
    * decode the stored id value for passing to bid requests
    * @function
@@ -70,6 +80,16 @@ export const euidIdSubmodule = {
    * @returns {euidId}
    */
   getId(config, consentData) {
+    if (consentData?.gdprApplies !== true) {
+      logWarn('EUID is intended for use within the EU. The module will not run when GDPR does not apply.');
+      return;
+    }
+    if (!hasWriteToDeviceConsent(consentData)) {
+      // The module cannot operate without this permission.
+      _logWarn(`Unable to use EUID module due to insufficient consent. The EUID module requires storage permission.`)
+      return;
+    }
+
     const mappedConfig = {
       apiBaseUrl: config?.params?.euidApiBase ?? EUID_BASE_URL,
       paramToken: config?.params?.euidToken,
@@ -77,7 +97,8 @@ export const euidIdSubmodule = {
       storage: config?.params?.storage ?? 'localStorage',
       clientId: EUID_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
-    }
+    };
+
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
     _logInfo(`EUID getId returned`, result);
     return result;

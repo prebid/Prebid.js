@@ -2512,6 +2512,8 @@ describe('User ID', function () {
           localStorage.removeItem('amxId');
           localStorage.removeItem('amxId_exp');
           coreStorage.setCookie('kpuid', EXPIRED_COOKIE_DATE);
+          coreStorage.setCookie('__uid2_advertising_token', '', EXPIRED_COOKIE_DATE);
+          coreStorage.setCookie('__euid_advertising_token', '', EXPIRED_COOKIE_DATE);
           done();
         }, {adUnits});
       });

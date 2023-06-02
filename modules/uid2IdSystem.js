@@ -19,7 +19,6 @@ const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
 const UID2_CLIENT_ID = `PrebidJS-${PREBID_VERSION}-UID2Module-${MODULE_REVISION}`;
-const GVLID = 887;
 const LOG_PRE_FIX = 'UID2: ';
 const ADVERTISING_COOKIE = '__uid2_advertising_token';
 
@@ -47,11 +46,6 @@ export const uid2IdSubmodule = {
   name: MODULE_NAME,
 
   /**
-   * Vendor id of Prebid
-   * @type {Number}
-   */
-  gvlid: GVLID,
-  /**
    * decode the stored id value for passing to bid requests
    * @function
    * @param {string} value
@@ -71,6 +65,11 @@ export const uid2IdSubmodule = {
    * @returns {uid2Id}
    */
   getId(config, consentData) {
+    if (consentData?.gdprApplies === true) {
+      _logWarn('UID2 is not intended for use where GDPR applies. The UID2 module will not run.');
+      return;
+    }
+
     const mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,
