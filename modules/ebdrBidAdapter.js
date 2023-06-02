@@ -36,8 +36,8 @@ export const spec = {
         w: whArr[0],
         h: whArr[1]
       };
-      ebdrParams['latitude'] = getBidIdParameter('latitude', bid.params);
-      ebdrParams['longitude'] = getBidIdParameter('longitude', bid.params);
+      ebdrParams['latitude'] = '0';
+      ebdrParams['longitude'] = '0';
       ebdrParams['ifa'] = (getBidIdParameter('IDFA', bid.params).length > getBidIdParameter('ADID', bid.params).length) ? getBidIdParameter('IDFA', bid.params) : getBidIdParameter('ADID', bid.params);
     });
     let ebdrBidReq = {
