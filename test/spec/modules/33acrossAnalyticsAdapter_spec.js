@@ -295,7 +295,7 @@ describe('33acrossAnalyticsAdapter:', function () {
     });
 
     context('when an AUCTION_END event is received before BID_WON events', function () {
-      it('sends a report with the bids that have won after timeout', function () {
+      it('sends a report with the bids that have won after all bids are won', function () {
         const endpoint = faker.internet.url();
         this.enableAnalytics({ endpoint });
 
@@ -306,11 +306,10 @@ describe('33acrossAnalyticsAdapter:', function () {
 
         performStandardAuction({ exclude: [EVENTS.BID_WON] });
 
+        assert.notCalled(navigator.sendBeacon);
         for (let bidWon of auction.BID_WON) {
           events.emit(EVENTS.BID_WON, bidWon);
         }
-
-        sandbox.clock.tick(this.defaultTimeout);
         assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, endpoint, createReportWithThreeBidWonEvents());
       });
     });
