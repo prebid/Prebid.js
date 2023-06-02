@@ -23,6 +23,7 @@ const _approvedLoadExternalJSList = [
   'aaxBlockmeter',
   'confiant',
   'arcspan',
+  'airgrid',
   'clean.io'
 ]
 
