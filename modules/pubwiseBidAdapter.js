@@ -224,8 +224,9 @@ export const spec = {
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
-    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    // TODO: fix lat and long to only come from ortb2 object so publishers can control precise location
+    payload.user.geo.lat = _parseSlotParam('lat', 0);
+    payload.user.geo.lon = _parseSlotParam('lon', 0);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
     payload.device.geo = payload.user.geo;
     payload.site.page = payload.site?.page?.trim();
