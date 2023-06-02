@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logWarn, logError, isGptPubadsDefined } from '../src/utils.js';
+import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -237,13 +237,8 @@ function enableAnalyticsWrapper(config) {
     auctions: {},
   };
 
-  if (isGptPubadsDefined()) {
-    subscribeToGamSlots();
-  } else {
-    window.googletag = window.googletag || {};
-    window.googletag.cmd = window.googletag.cmd || [];
-    window.googletag.cmd.push(subscribeToGamSlots);
-  }
+  window.googletag = window.googletag || { cmd: [] };
+  window.googletag.cmd.push(subscribeToGamSlots);
 
   analyticsAdapter.originEnableAnalytics(config);
 
