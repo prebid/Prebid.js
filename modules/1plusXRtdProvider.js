@@ -1,5 +1,4 @@
 import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import {
   logMessage, logError,
