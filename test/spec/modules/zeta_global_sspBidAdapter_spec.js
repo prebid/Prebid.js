@@ -132,7 +132,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     auctionId: 67890,
     mediaTypes: {
       banner: {
-        sizes: [[300, 250],[200, 240],[100, 150]],
+        sizes: [[300, 250], [200, 240], [100, 150]],
       }
     },
     refererInfo: {
