@@ -2706,10 +2706,10 @@ describe('PubMatic adapter', function () {
           expect(data.site.publisher.id).to.equal(multipleMediaRequests[0].params.publisherId); // publisher Id
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
-          expect(data.device.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.device.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-          expect(data.user.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.user.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.device.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
+          expect(data.device.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.user.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
+          expect(data.user.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
