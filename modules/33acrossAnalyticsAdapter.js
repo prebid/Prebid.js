@@ -381,8 +381,6 @@ function analyticEventHandler({ eventType, args }) {
     default:
       break;
   }
-
-  log.info('::AE::', eventType, locals.cache.auctions);
 }
 
 function onAuctionEnd({ bidsReceived, auctionId }) {
