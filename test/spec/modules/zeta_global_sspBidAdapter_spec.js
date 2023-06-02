@@ -127,6 +127,29 @@ describe('Zeta Ssp Bid Adapter', function () {
     timeout: 500
   }];
 
+  const bannerWithFewSizesRequest = [{
+    bidId: 12345,
+    auctionId: 67890,
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250],[200, 240],[100, 150]],
+      }
+    },
+    refererInfo: {
+      page: 'http://www.zetaglobal.com/page?param=value',
+      domain: 'www.zetaglobal.com',
+    },
+    gdprConsent: {
+      gdprApplies: 1,
+      consentString: 'consentString'
+    },
+    schain: schain,
+    uspConsent: 'someCCPAString',
+    params: params,
+    userIdAsEids: eids,
+    timeout: 500
+  }];
+
   const videoRequest = [{
     bidId: 112233,
     auctionId: 667788,
@@ -407,5 +430,39 @@ describe('Zeta Ssp Bid Adapter', function () {
     const payload = JSON.parse(request.data);
 
     expect(payload.imp[0].tagid).to.eql(params.tagid);
+  });
+
+  it('Test if only one size', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    // banner
+    expect(payload.imp[0].banner.w).to.eql(300);
+    expect(payload.imp[0].banner.h).to.eql(250);
+
+    expect(payload.imp[0].banner.format).to.be.undefined;
+  });
+
+  it('Test few sizes provided in format', function () {
+    const request = spec.buildRequests(bannerWithFewSizesRequest, bannerWithFewSizesRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    // banner
+    expect(payload.imp[0].banner.w).to.eql(300);
+    expect(payload.imp[0].banner.h).to.eql(250);
+
+    expect(payload.imp[0].banner.format.length).to.eql(3);
+
+    // format[0]
+    expect(payload.imp[0].banner.format[0].w).to.eql(300);
+    expect(payload.imp[0].banner.format[0].h).to.eql(250);
+
+    // format[1]
+    expect(payload.imp[0].banner.format[1].w).to.eql(200);
+    expect(payload.imp[0].banner.format[1].h).to.eql(240);
+
+    // format[2]
+    expect(payload.imp[0].banner.format[2].w).to.eql(100);
+    expect(payload.imp[0].banner.format[2].h).to.eql(150);
   });
 });
