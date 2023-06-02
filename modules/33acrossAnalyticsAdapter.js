@@ -241,16 +241,16 @@ function enableAnalyticsWrapper(config) {
   window.googletag.cmd.push(subscribeToGamSlots);
 
   analyticsAdapter.originEnableAnalytics(config);
+}
 
-  function subscribeToGamSlots() {
-    window.googletag.pubads().addEventListener('slotRenderEnded', event => {
-      setTimeout(() => {
-        const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
-        locals.transactionManagers[auctionId] &&
-          locals.transactionManagers[auctionId].complete(transactionId);
-      }, POST_GAM_TIMEOUT);
-    });
-  }
+function subscribeToGamSlots() {
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    setTimeout(() => {
+      const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
+      locals.transactionManagers[auctionId] &&
+        locals.transactionManagers[auctionId].complete(transactionId);
+    }, POST_GAM_TIMEOUT);
+  });
 }
 
 /**
