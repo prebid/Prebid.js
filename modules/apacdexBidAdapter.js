@@ -134,7 +134,7 @@ export const spec = {
 
     // Apply geo
     if (geo) {
-      payload.geo = geo;
+      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters');
     }
 
     payload.bids = bids.map(function (bid) {
