@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
+import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { uspDataHandler } from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -457,9 +457,9 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
 function onBidRequested({ auctionId, bids }) {
   for (let { bidder, bidId, transactionId, src } of bids) {
     const auction = locals.cache.auctions[auctionId];
-    const adUnits = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
-    if (!adUnits) return;
-    adUnits.bids.push({
+    const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
+    if (!adUnit) return;
+    adUnit.bids.push({
       bidder,
       bidId,
       status: BidStatus.PENDING,
@@ -547,7 +547,7 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
 }
 
 function setCachedBidStatus(auctionId, bidId, status) {
-  setCachedBidStatus(auctionId, bidId, status);
+  setBidStatus(getCachedBid(auctionId, bidId), status);
 }
 
 /**
@@ -575,8 +575,8 @@ function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
-    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
-    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
-    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...JSON.parse(JSON.stringify(args))),
+    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, deepClone(...args)),
+    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, deepClone(...args)),
+    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, deepClone(...args)),
   }
 }
