@@ -7,6 +7,16 @@ import CONSTANTS from '../src/constants.json';
  * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
  */
 const { EVENTS } = CONSTANTS;
+export const BidStatus = {
+  PENDING: 'pending',
+  AVAILABLE: 'available',
+  TARGETING_SET: 'targetingSet',
+  RENDERED: 'rendered',
+  TIMEOUT: 'timeout',
+  REJECTED: 'rejected',
+  NOBID: 'noBid',
+  ERROR: 'error',
+}
 
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
@@ -344,33 +354,33 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.AUCTION_INIT:
       onAuctionInit(args);
       break;
-    case EVENTS.BID_REQUESTED: // set bid.status: 'pending'
+    case EVENTS.BID_REQUESTED: // BidStatus.PENDING
       onBidRequested(args);
       break;
     case EVENTS.BID_TIMEOUT:
-      setBidStatus(getCachedBid(args.auctionId, args.bidId), 'timeout');
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.TIMEOUT);
       break;
     case EVENTS.BID_RESPONSE:
       onBidResponse(args);
       break;
     case EVENTS.BID_REJECTED:
-      setBidStatus(getCachedBid(args.auctionId, args.bidId), 'rejected');
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.REJECTED);
       break;
     case EVENTS.NO_BID:
     case EVENTS.SEAT_NON_BID:
-      setBidStatus(getCachedBid(args.auctionId, args.bidId), 'noBid');
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
       break;
     case EVENTS.BIDDER_ERROR:
       if (args.bidderRequest && args.bidderRequest.bids) {
         for (let bid of args.bidderRequest.bids) {
-          setBidStatus(getCachedBid(args.auctionId, bid.bidId), 'error');
+          setCachedBidStatus(args.auctionId, bid.bidId, BidStatus.ERROR);
         }
       }
       break;
     case EVENTS.AUCTION_END:
       onAuctionEnd(args);
       break;
-    case EVENTS.BID_WON: // bid.status: 'targetingSet' | 'rendered' | 'error'
+    case EVENTS.BID_WON: // BidStatus.TARGETING_SET | BidStatus.RENDERED | BidStatus.ERROR
       onBidWon(args);
       break;
     default:
@@ -380,7 +390,7 @@ function analyticEventHandler({ eventType, args }) {
 
 function onAuctionEnd({ bidsReceived, auctionId }) {
   for (let bid of bidsReceived) {
-    setBidStatus(getCachedBid(auctionId, bid.bidId), bid.status);
+    setCachedBidStatus(auctionId, bid.bidId, bid.status);
   }
 }
 
@@ -452,7 +462,7 @@ function onBidRequested({ auctionId, bids }) {
     adUnits.bids.push({
       bidder,
       bidId,
-      status: 'pending',
+      status: BidStatus.PENDING,
       hasWon: 0,
       source: src,
     });
@@ -491,22 +501,22 @@ function onBidWon(bidWon) {
     return;
   }
 
-  setBidStatus(bid, bidWon.status ?? 'error');
+  setBidStatus(bid, bidWon.status ?? BidStatus.ERROR);
 
   locals.transactionManagers[auctionId] &&
     locals.transactionManagers[auctionId].complete(transactionId);
 }
 
-function setBidStatus(bid, status = 'available') {
+function setBidStatus(bid, status = BidStatus.AVAILABLE) {
   const statusStates = {
     pending: {
-      next: ['available', 'targetingSet', 'rendered', 'timeout', 'rejected', 'noBid', 'error'],
+      next: [BidStatus.AVAILABLE, BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
     available: {
-      next: ['targetingSet', 'rendered', 'timeout', 'rejected', 'noBid', 'error'],
+      next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
     targetingSet: {
-      next: ['rendered', 'error', 'timeout'],
+      next: [BidStatus.RENDERED, BidStatus.ERROR, BidStatus.TIMEOUT],
     },
     rendered: {
       next: [],
@@ -521,11 +531,11 @@ function setBidStatus(bid, status = 'available') {
       next: [],
     },
     error: {
-      next: ['targetingSet', 'rendered', 'timeout', 'rejected', 'noBid', 'error'],
+      next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
     },
   }
 
-  const winningStatuses = ['targetingSet', 'rendered'];
+  const winningStatuses = [BidStatus.TARGETING_SET, BidStatus.RENDERED];
 
   if (statusStates[bid.status].next.includes(status)) {
     bid.status = status;
@@ -534,6 +544,10 @@ function setBidStatus(bid, status = 'available') {
       bid.hasWon = 1;
     }
   }
+}
+
+function setCachedBidStatus(auctionId, bidId, status) {
+  setCachedBidStatus(auctionId, bidId, status);
 }
 
 /**
