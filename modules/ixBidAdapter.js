@@ -145,6 +145,7 @@ export const FEATURE_TOGGLES = {
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';
+let defaultVideoPlacement = false;
 
 // Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
 const MEDIA_TYPES = {
@@ -223,7 +224,8 @@ function bidToVideoImp(bid) {
       if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
         imp.video.placement = 5;
       } else {
-        imp.video.placement = 4;
+        imp.video.placement = 3;
+        defaultVideoPlacement = true;
       }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
@@ -635,7 +637,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = applyRegulations(r, bidderRequest);
 
   let payload = {};
-  createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload);
+  siteID = validBidRequests[0].params.siteId;
+  payload.s = siteID;
 
   const transactionIds = Object.keys(impressions);
   let isFpdAdded = false;
@@ -649,15 +652,13 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const fpd = deepAccess(bidderRequest, 'ortb2') || {};
     const site = { ...(fpd.site || fpd.context) };
+
+    // update page URL with IX FPD KVs if they exist
+    site.page = getIxFirstPartyDataPageUrl(bidderRequest);
+
     const user = { ...fpd.user };
     if (!isEmpty(fpd) && !isFpdAdded) {
       r = addFPD(bidderRequest, r, fpd, site, user);
-
-      const clonedRObject = deepClone(r);
-
-      clonedRObject.site = mergeDeep({}, clonedRObject.site, site);
-      clonedRObject.user = mergeDeep({}, clonedRObject.user, user);
-
       r.site = mergeDeep({}, r.site, site);
       r.user = mergeDeep({}, r.user, user);
       isFpdAdded = true;
@@ -857,46 +858,6 @@ function applyRegulations(r, bidderRequest) {
 }
 
 /**
- * createPayload creates the payload to be sent with the request.
- *
- * @param  {array}  validBidRequests    A list of valid bid request config objects.
- * @param  {object} bidderRequest       An object containing other info like gdprConsent.
- * @param  {object} r                   Reuqest object.
- * @param  {string} baseUrl             Base exchagne URL.
- * @param  {array}  requests            List of request obejcts.
- * @param  {object} payload             Request payload object.
- */
-function createPayload(validBidRequests, bidderRequest, r, baseUrl, requests, payload) {
-  // Use the siteId in the first bid request as the main siteId.
-  siteID = validBidRequests[0].params.siteId;
-  payload.s = siteID;
-
-  // Parse additional runtime configs.
-  const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
-  const otherIxConfig = config.getConfig(bidderCode);
-
-  if (otherIxConfig) {
-    // Append firstPartyData to r.site.page if firstPartyData exists.
-    if (typeof otherIxConfig.firstPartyData === 'object') {
-      const firstPartyData = otherIxConfig.firstPartyData;
-      let firstPartyString = '?';
-      for (const key in firstPartyData) {
-        if (firstPartyData.hasOwnProperty(key)) {
-          firstPartyString += `${encodeURIComponent(key)}=${encodeURIComponent(firstPartyData[key])}&`;
-        }
-      }
-      firstPartyString = firstPartyString.slice(0, -1);
-
-      if ('page' in r.site) {
-        r.site.page += firstPartyString;
-      } else {
-        r.site.page = firstPartyString;
-      }
-    }
-  }
-}
-
-/**
  * addImpressions adds impressions to request object
  *
  * @param  {array}  impressions        List of impressions to be added to the request.
@@ -975,6 +936,65 @@ function addImpressions(impressions, transactionIds, r, adUnitIndex) {
   }
 
   return r;
+}
+
+/**
+This function retrieves the page URL and appends first party data query parameters
+to it without adding duplicate query parameters. Returns original referer URL if no IX FPD exists.
+@param {Object} bidderRequest - The bidder request object containing information about the bid and the page.
+@returns {string} - The modified page URL with first party data query parameters appended.
+*/
+function getIxFirstPartyDataPageUrl (bidderRequest) {
+  // Parse additional runtime configs.
+  const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
+  const otherIxConfig = config.getConfig(bidderCode);
+
+  let pageUrl = '';
+  if (deepAccess(bidderRequest, 'ortb2.site.page')) {
+    pageUrl = bidderRequest.ortb2.site.page;
+  } else {
+    pageUrl = deepAccess(bidderRequest, 'refererInfo.page');
+  }
+
+  if (otherIxConfig) {
+    // Append firstPartyData to r.site.page if firstPartyData exists.
+    if (typeof otherIxConfig.firstPartyData === 'object') {
+      const firstPartyData = otherIxConfig.firstPartyData;
+      return appendIXQueryParams(bidderRequest, pageUrl, firstPartyData);
+    }
+  }
+
+  return pageUrl
+}
+
+/**
+This function appends the provided query parameters to the given URL without adding duplicate query parameters.
+@param {Object} bidderRequest - The bidder request object containing information about the bid and the page to be used as fallback in case url is not valid.
+@param {string} url - The base URL to which query parameters will be appended.
+@param {Object} params - An object containing key-value pairs of query parameters to append.
+@returns {string} - The modified URL with the provided query parameters appended.
+*/
+function appendIXQueryParams(bidderRequest, url, params) {
+  let urlObj;
+  try {
+    urlObj = new URL(url);
+  } catch (error) {
+    logWarn(`IX Bid Adapter: Invalid URL set in ortb2.site.page: ${url}. Using referer URL instead.`);
+    urlObj = new URL(deepAccess(bidderRequest, 'refererInfo.page'));
+  }
+
+  const searchParams = new URLSearchParams(urlObj.search);
+
+  // Loop through the provided query parameters and append them
+  for (const [key, value] of Object.entries(params)) {
+    if (!searchParams.has(key)) {
+      searchParams.append(key, value);
+    }
+  }
+
+  // Construct the final URL with the updated query parameters
+  urlObj.search = searchParams.toString();
+  return urlObj.toString();
 }
 
 /**
@@ -1093,7 +1113,8 @@ function buildIXDiag(validBidRequests) {
     ren: false,
     version: '$prebid.version$',
     userIds: _getUserIds(validBidRequests[0]),
-    url: window.location.href.split('?')[0]
+    url: window.location.href.split('?')[0],
+    vpd: defaultVideoPlacement
   };
 
   // create ad unit map and collect the required diag properties
