@@ -94,13 +94,6 @@ export const spec = {
         params['appid'] = bidParams.appid.replace(EXT_APPID_STRING, '');
       }
 
-      if (bidParams.geo) {
-        const geo = bidParams.geo.replace(EXT_GEO_STRING, '');
-        if (/^[0-9.\-]+,[0-9.\-]+$/.test(geo)) {
-          params['geo'] = geo;
-        }
-      }
-
       const aidsParams = []
       const userIdAsEids = bid.userIdAsEids;
       AUDIENCE_IDS.forEach((audienceId) => {
