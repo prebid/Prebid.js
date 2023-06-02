@@ -2,8 +2,8 @@ import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import {
   logMessage, logError,
-  deepAccess, deepSetValue,
-  isNumber, isArray
+  deepAccess, deepSetValue, mergeDeep,
+  isNumber, isArray,
 } from '../src/utils.js';
 
 // Constants
@@ -175,6 +175,7 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
  */
 export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
   const { siteKeywords, siteContentData, userData } = ortb2Updates;
+  mergeDeep(biddersOrtb2, { [bidder]: {} });
   const bidderConfig = deepAccess(biddersOrtb2, bidder);
 
   {
