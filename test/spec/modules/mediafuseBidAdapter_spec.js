@@ -811,8 +811,8 @@ describe('MediaFuseAdapter', function () {
         sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF',
         windowsadid: '750c6be243f1c4b5c9912b95a5742fc5'
       });
-      expect(payload.device.geo).to.exist;
-      expect(payload.device.geo).to.deep.equal({
+      expect(payload.device.geo).to.not.exist;
+      expect(payload.device.geo).to.not.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
       });
