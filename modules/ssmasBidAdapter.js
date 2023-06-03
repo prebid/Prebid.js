@@ -2,6 +2,7 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { triggerPixel, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import {config} from '../src/config.js';
 
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'localhost:8080';
@@ -45,13 +46,24 @@ export const spec = {
       withCredentials: false,
     };
 
+    data.user = data.user || {};
+    data.user.ext = data.user.ext || {};
+    data.regs = data.regs || {};
+    data.regs.ext = data.regs.ext || {};
+
+    // GDPR
     if (bidderRequest.gdprConsent) {
-      data.user = data.user || {};
-      data.user.ext = data.user.ext || {};
-      data.regs = data.regs || {};
-      data.regs.ext = data.regs.ext || {};
       data.user.ext.consent = bidderRequest.gdprConsent.consentString;
       data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+
+    // CCPA
+    if (bidderRequest && bidderRequest.uspConsent) {
+      data.regs.ext.us_privacy = 1;
+    }
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      data.regs.coppa = 1;
     }
 
     return [
