@@ -1,12 +1,12 @@
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { triggerPixel } from '../src/utils.js';
+import { triggerPixel, deepSetValue } from '../src/utils.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'localhost:8080';
 export const SSMAS_ENDPOINT = `http://${SSMAS_SERVER}/ortb`;
-const SYNC_URL = `http://${SSMAS_SERVER}/prebid/user_sync`;
+// const SYNC_URL = `http://${SSMAS_SERVER}/prebid/user_sync`;
 export const SSMAS_REQUEST_METHOD = 'POST';
 // const SSMAS_CURRENCY = 'EUR';
 
@@ -19,6 +19,12 @@ export const ssmasOrtbConverter = ortbConverter({
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
     ttl: 300, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
     mediaType: BANNER,
+  },
+  imp(buildImp, bidRequest, context) {
+    // console.log(bidRequest, context);
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'ext.placementId', bidRequest.params.placementId);
+    return imp;
   },
 });
 
@@ -38,11 +44,6 @@ export const spec = {
       contentType: 'application/json',
       withCredentials: false,
     };
-
-    let bid = bidRequests.find((b) => b.params.placementId);
-    if (!data.site) data.site = {};
-    data.site.id = bid.params.siteId;
-    data.site.ext = { placementId: bid.params.placementId };
 
     if (bidderRequest.gdprConsent) {
       data.user = data.user || {};
@@ -80,31 +81,31 @@ export const spec = {
     }
   },
 
-  getUserSyncs: (
-    syncOptions,
-    serverResponses,
-    gdprConsent,
-    uspConsent
-  ) => {
-    const syncs = [];
+  // getUserSyncs: (
+  //   syncOptions,
+  //   serverResponses,
+  //   gdprConsent,
+  //   uspConsent
+  // ) => {
+  //   const syncs = [];
 
-    let gdprParams;
-    if (typeof gdprConsent.gdprApplies === 'boolean') {
-      gdprParams = `gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
-        gdprConsent.consentString
-      }`;
-    } else {
-      gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
-    }
+  //   let gdprParams;
+  //   if (typeof gdprConsent.gdprApplies === 'boolean') {
+  //     gdprParams = `gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
+  //       gdprConsent.consentString
+  //     }`;
+  //   } else {
+  //     gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+  //   }
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-      syncs.push({
-        type: 'image',
-        url: `${SYNC_URL}?${gdprParams}`
-      });
-    }
-    return syncs;
-  },
+  //   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+  //     syncs.push({
+  //       type: 'image',
+  //       url: `${SYNC_URL}?${gdprParams}`
+  //     });
+  //   }
+  //   return syncs;
+  // },
 };
 
 registerBidder(spec);
