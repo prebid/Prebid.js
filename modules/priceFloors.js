@@ -633,7 +633,7 @@ export function handleSetFloorsConfig(config) {
       'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true
     ]),
     'additionalSchemaFields', additionalSchemaFields => typeof additionalSchemaFields === 'object' && Object.keys(additionalSchemaFields).length > 0 ? addFieldOverrides(additionalSchemaFields) : undefined,
-    'data', data => (data && parseFloorData(data, 'setConfig')) || _floorsConfig.data // do not overwrite if passed in data not valid
+    'data', data => (data && parseFloorData(data, 'setConfig')) || undefined
   ]);
 
   // if enabled then do some stuff
