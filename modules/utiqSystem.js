@@ -11,7 +11,6 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = 'utiq';
 const LOG_PREFIX = 'Utiq module';
-let mnoDomain = '';
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
@@ -19,81 +18,39 @@ export const storage = getStorageManager({
 });
 
 /**
- * Handle an event for an iframe.
- * Takes the body.url parameter from event and returns the string domain.
- * i.e.: "fc.vodafone.de"
- * @param event
- */
-function messageHandler(event) {
-  try {
-    if (event && event.data && typeof event.data === 'string') {
-      const msg = JSON.parse(event.data);
-      if (msg.msgType === 'MNOSELECTOR' && msg.body && msg.body.url) {
-        let URL = msg.body.url.split('//');
-        let domainURL = URL[1].split('/');
-        mnoDomain = domainURL[0];
-        logInfo(`${LOG_PREFIX}: Message handler set domain to ${mnoDomain}`);
-      }
-    }
-  } catch (e) {
-    logInfo(
-      `${LOG_PREFIX}: Unsupported message caught. Origin: ${event.origin}, data: ${event.data}.`
-    );
-  }
-}
-
-// Set a listener to handle the iframe response message.
-window.addEventListener('message', messageHandler, false);
-
-/**
  * Get the "atid" from html5 local storage to make it available to the UserId module.
  * @param config
  * @returns {{utiq: (*|string)}}
  */
 function getUtiqFromStorage() {
-  // Get the domain either from localStorage or global
-  let domain =
-    JSON.parse(storage.getDataFromLocalStorage('fcIdConnectDomain')) ||
-    mnoDomain;
-  logInfo(`${LOG_PREFIX}: Local storage domain: ${domain}`);
-
-  if (!domain) {
-    logInfo(`${LOG_PREFIX}: Local storage domain not found, returning null`);
-    return {
-      utiq: null,
-    };
-  }
-
-  let fcIdConnectObject;
-  let fcIdConnectData = JSON.parse(
-    storage.getDataFromLocalStorage('fcIdConnectData')
+  let utiqPass;
+  let utiqPassStorage = JSON.parse(
+    storage.getDataFromLocalStorage('utiqPass')
   );
   logInfo(
-    `${LOG_PREFIX}: Local storage fcIdConnectData: ${JSON.stringify(
-      fcIdConnectData
+    `${LOG_PREFIX}: Local storage utiqPass: ${JSON.stringify(
+      utiqPassStorage
     )}`
   );
 
   if (
-    fcIdConnectData &&
-    fcIdConnectData.connectId &&
-    Array.isArray(fcIdConnectData.connectId.idGraph) &&
-    fcIdConnectData.connectId.idGraph.length > 0
+    utiqPassStorage &&
+    utiqPassStorage.connectId &&
+    Array.isArray(utiqPassStorage.connectId.idGraph) &&
+    utiqPassStorage.connectId.idGraph.length > 0
   ) {
-    fcIdConnectObject = fcIdConnectData.connectId.idGraph.find((item) => {
-      return item.domain === domain;
-    });
+    utiqPass = utiqPassStorage.connectId.idGraph[0];
   }
   logInfo(
-    `${LOG_PREFIX}: Local storage fcIdConnectObject for domain: ${JSON.stringify(
-      fcIdConnectObject
+    `${LOG_PREFIX}: Graph of utiqPass: ${JSON.stringify(
+      utiqPass
     )}`
   );
 
   return {
     utiq:
-      fcIdConnectObject && fcIdConnectObject.atid
-        ? fcIdConnectObject.atid
+      utiqPass && utiqPass.atid
+        ? utiqPass.atid
         : null,
   };
 }
