@@ -2,6 +2,7 @@ import { config } from 'src/config.js';
 import { deepAccess } from 'src/utils.js';
 import { getAdUnits } from '../../fixtures/fixtures.js';
 import * as agRTD from 'modules/airgridRtdProvider.js';
+import { loadExternalScript } from '../../../src/adloader.js';
 
 const MATCHED_AUDIENCES = ['travel', 'sport'];
 const RTD_CONFIG = {
@@ -40,6 +41,7 @@ describe('airgrid RTD Submodule', function () {
       expect(agRTD.airgridSubmodule.init(RTD_CONFIG.dataProviders[0])).to.equal(
         true
       );
+      expect(loadExternalScript.called).to.be.true
     });
 
     it('should attach script to DOM with correct config', function () {

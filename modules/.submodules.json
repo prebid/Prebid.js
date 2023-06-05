@@ -40,6 +40,7 @@
       "tncIdSystem",
       "utiqSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",

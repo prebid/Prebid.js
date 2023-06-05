@@ -264,10 +264,24 @@ function buildBanner(request) {
     request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
   }
-  return {
-    w: sizes[0][0],
-    h: sizes[0][1]
-  };
+  if (sizes.length > 1) {
+    const format = sizes.map(s => {
+      return {
+        w: s[0],
+        h: s[1]
+      }
+    });
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: format
+    }
+  } else {
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1]
+    }
+  }
 }
 
 function buildVideo(request) {
