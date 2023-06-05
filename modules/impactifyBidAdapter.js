@@ -91,7 +91,6 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
   if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
