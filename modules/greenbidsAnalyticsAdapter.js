@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
 
-const ANALYTICS_SERVER = 'https://europe-west2-greenbids-357713.cloudfunctions.net/publisher-analytics-endpoint';
+const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
 const {
   EVENTS: {
