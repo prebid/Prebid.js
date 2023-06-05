@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepClone, deepAccess} from '../src/utils.js';
+import {deepAccess, deepClone} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -41,6 +41,7 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       requestId: bidderRequest.auctionId,
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,

@@ -437,7 +437,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
-        transactionid: bidRequest.transactionId,
+        transactionid: bidRequest.ortb2Imp?.ext?.tid,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidRequest.auctionId,
       };
       if (bidRequest.params.zoneId) {

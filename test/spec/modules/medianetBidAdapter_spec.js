@@ -16,7 +16,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1'
+      }
+    },
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 250]],
@@ -38,7 +42,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 251]],
@@ -64,6 +72,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      }
+    },
     'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
     'mediaTypes': {
       'banner': {
@@ -87,7 +100,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 251]],
@@ -112,7 +129,6 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 250]],
@@ -121,7 +137,12 @@ let VALID_BID_REQUEST = [{
     'bidId': '28f8f8130a583e',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'ortb2Imp': { 'ext': { 'data': { 'pbadslot': '/12345/my-gpt-tag-0' } } },
+    'ortb2Imp': {
+      'ext': {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+        'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      }
+    },
     'bidRequestsCount': 1
   }, {
     'bidder': 'medianet',
@@ -136,7 +157,6 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 251]],
@@ -146,7 +166,12 @@ let VALID_BID_REQUEST = [{
     'bidId': '3f97ca71b1e5c2',
     'bidderRequestId': '1e9b1f07797c1c',
     'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
-    'ortb2Imp': { 'ext': { 'data': { 'pbadslot': '/12345/my-gpt-tag-0' } } },
+    'ortb2Imp': {
+      'ext': {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+        'data': {'pbadslot': '/12345/my-gpt-tag-0'}
+      }
+    },
     'bidRequestsCount': 1
   }],
   VALID_BID_REQUEST_WITH_USERID = [{
@@ -165,7 +190,11 @@ let VALID_BID_REQUEST = [{
       britepoolid: '82efd5e1-816b-4f87-97f8-044f407e2911'
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      }
+    },
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 250]],
@@ -188,7 +217,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'mediaTypes': {
       'banner': {
         'sizes': [[300, 251]],
@@ -214,7 +247,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      }
+    },
     'sizes': [[300, 250]],
     'mediaTypes': {
       'banner': {
@@ -237,7 +274,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'sizes': [[300, 251]],
     'mediaTypes': {
       'banner': {
@@ -261,7 +302,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      }
+    },
     'sizes': [[300, 250]],
     'mediaTypes': {
       'banner': {
@@ -314,7 +359,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'sizes': [[300, 251]],
     'mediaTypes': {
       'banner': {
@@ -389,6 +438,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      ortb2Imp: VALID_BID_REQUEST_INVALID_BIDFLOOR[0].ortb2Imp,
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
@@ -422,6 +472,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      ortb2Imp: VALID_BID_REQUEST_INVALID_BIDFLOOR[1].ortb2Imp,
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
@@ -477,6 +528,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      ortb2Imp: VALID_NATIVE_BID_REQUEST[0].ortb2Imp,
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
@@ -510,6 +562,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      ortb2Imp: VALID_NATIVE_BID_REQUEST[1].ortb2Imp,
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
@@ -567,6 +620,7 @@ let VALID_BID_REQUEST = [{
     'imp': [{
       'id': '28f8f8130a583e',
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      ortb2Imp: VALID_BID_REQUEST[0].ortb2Imp,
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
         'visibility': 1,
@@ -599,6 +653,7 @@ let VALID_BID_REQUEST = [{
     }, {
       'id': '3f97ca71b1e5c2',
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      ortb2Imp: VALID_BID_REQUEST[1].ortb2Imp,
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
         'visibility': 1,
@@ -656,6 +711,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      ortb2Imp: VALID_BID_REQUEST_WITH_USERID[0].ortb2Imp,
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'tagid': 'crid',
       'ext': {
@@ -690,6 +746,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      ortb2Imp: VALID_BID_REQUEST_WITH_USERID[1].ortb2Imp,
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'tagid': 'crid',
       'ext': {
@@ -747,6 +804,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      ortb2Imp: VALID_BID_REQUEST_WITH_CRID[0].ortb2Imp,
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'tagid': 'crid',
       'ext': {
@@ -781,6 +839,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      ortb2Imp: VALID_BID_REQUEST_WITH_CRID[1].ortb2Imp,
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'tagid': 'crid',
       'ext': {
@@ -1103,7 +1162,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-0',
-    'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+    ortb2Imp: {
+      ext: {
+        tid: '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      }
+    },
     'sizes': [300, 250],
     'mediaTypes': {
       'banner': {
@@ -1126,7 +1189,11 @@ let VALID_BID_REQUEST = [{
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-123',
-    'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+    ortb2Imp: {
+      ext: {
+        tid: 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      }
+    },
     'sizes': [300, 251],
     'mediaTypes': {
       'banner': {
@@ -1178,6 +1245,7 @@ let VALID_BID_REQUEST = [{
     'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
     'imp': [{
       'id': '28f8f8130a583e',
+      ortb2Imp: VALID_BID_REQUEST[0].ortb2Imp,
       'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-0',
@@ -1210,6 +1278,7 @@ let VALID_BID_REQUEST = [{
       }
     }, {
       'id': '3f97ca71b1e5c2',
+      ortb2Imp: VALID_BID_REQUEST[1].ortb2Imp,
       'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
       'ext': {
         'dfp_id': 'div-gpt-ad-1460505748561-123',
@@ -1306,7 +1375,7 @@ describe('Media.net bid adapter', function () {
 
     it('should build valid payload on bid', function () {
       let requestObj = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
-      expect(JSON.parse(requestObj.data)).to.deep.equal(VALID_PAYLOAD);
+      expect(JSON.parse(requestObj.data)).to.deep.include(VALID_PAYLOAD);
     });
 
     it('should accept size as a one dimensional array', function () {
@@ -1353,7 +1422,7 @@ describe('Media.net bid adapter', function () {
 
       bidreq = spec.buildRequests(VALID_BID_REQUEST, VALID_AUCTIONDATA);
       actual = JSON.parse(bidreq.data).imp[0].ortb2Imp;
-      assert.equal(actual, undefined)
+      expect(actual).to.deep.equal(VALID_BID_REQUEST[0].ortb2Imp);
     });
 
     it('should have userid in bid request', function () {

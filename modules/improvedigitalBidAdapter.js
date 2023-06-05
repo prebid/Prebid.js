@@ -150,8 +150,7 @@ export const CONVERTER = ortbConverter({
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
-        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
-        tid: context.bidRequests[0].transactionId,
+
       },
       ext: {
         improvedigital: {

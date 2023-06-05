@@ -115,7 +115,7 @@ export const spec = {
     });
 
     let payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
       site: params.site ? params.site : {},

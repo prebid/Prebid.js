@@ -12,7 +12,7 @@ import {
   getUniqueIdentifierStr,
   getUserConfiguredParams,
   groupBy,
-  isArray,
+  isArray, isPlainObject,
   isValidMediaTypes,
   logError,
   logInfo,
@@ -22,7 +22,6 @@ import {
   shuffle,
   timestamp,
 } from './utils.js';
-import {processAdUnitsForLabels} from './sizeMapping.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
@@ -205,7 +204,7 @@ export let coppaDataHandler = {
  * they should be exposed under `adUnit.bids[].mediaTypes`.
  */
 export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
-  return processAdUnitsForLabels(adUnits, labels);
+  return adUnits;
 }, 'setupAdUnitMediaTypes')
 
 /**
@@ -250,8 +249,13 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     decorateAdUnitsWithNativeParams(adUnits);
   }
 
-  // filter out bidders that cannot participate in the auction
-  adUnits.forEach(au => au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder))))
+  adUnits.forEach(au => {
+    if (!isPlainObject(au.mediaTypes)) {
+      au.mediaTypes = {};
+    }
+    // filter out bidders that cannot participate in the auction
+    au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+  });
 
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
@@ -269,7 +273,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
 
   function addOrtb2(bidderRequest) {
     const redact = dep.redact(activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode));
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;
@@ -622,9 +626,11 @@ function invokeBidderMethod(bidder, method, spec, fn, ...params) {
 }
 
 function tryCallBidderMethod(bidder, method, param) {
-  const target = getBidderMethod(bidder, method);
-  if (target != null) {
-    invokeBidderMethod(bidder, method, ...target, param);
+  if (param?.src !== CONSTANTS.S2S.SRC) {
+    const target = getBidderMethod(bidder, method);
+    if (target != null) {
+      invokeBidderMethod(bidder, method, ...target, param);
+    }
   }
 }
 

@@ -288,7 +288,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0
   };
 

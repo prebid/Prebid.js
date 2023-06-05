@@ -293,7 +293,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       mediaTypes = {},
       params = {},
       schain,
-      transactionId,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
@@ -404,7 +403,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       id: bidId,
       tmax: timeout,
-      tId: transactionId,
+      tId: ortb2Imp?.ext?.tid,
       pi: data.pi,
       selector: params.selector,
       sizes,

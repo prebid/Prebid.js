@@ -75,7 +75,7 @@ const SOURCE_RTI_MAPPING = {
   'epsilon.com': '', // Publisher Link, publinkId
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
-  'trustpid.com': '', // Trustpid
+  'utiq.com': '', // Utiq
   'intimatemerger.com': ''
 };
 const PROVIDERS = [
@@ -640,6 +640,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   siteID = validBidRequests[0].params.siteId;
   payload.s = siteID;
 
+  // TODO: this logic should stop relying on `transactionId` always being available; see: https://github.com/prebid/Prebid.js/issues/9781
   const transactionIds = Object.keys(impressions);
   let isFpdAdded = false;
 
@@ -778,7 +779,7 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 
   // set source.tid to auctionId for outgoing request to Exchange.
   r.source = {
-    tid: validBidRequests[0].auctionId,
+    tid: bidderRequest?.ortb2?.source?.tid
   }
 
   // if an schain is provided, send it along

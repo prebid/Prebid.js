@@ -119,6 +119,11 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const bidderRequest = {
+    ortb2: {
+      source: {
+        tid: 'mock-tid'
+      }
+    },
     bids: [simpleBidRequest],
   };
 
@@ -236,7 +241,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.tmax).not.to.exist;
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
+      sinon.assert.match(payload.source, {tid: 'mock-tid'})
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
       sinon.assert.match(payload.imp, [

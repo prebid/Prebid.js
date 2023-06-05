@@ -286,7 +286,7 @@ describe('the price floors module', function () {
       let myBidRequest = { ...basicBidRequest };
 
       // should take adunit floormin first even if lower
-      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 2.2);
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floors.floorMin', 2.2);
       expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 2.2,
         floorRuleValue: 1.0,
@@ -297,7 +297,7 @@ describe('the price floors module', function () {
       delete inputFloorData.matchingInputs;
 
       // should take adunit floormin if higher
-      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 3.0);
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floors.floorMin', 3.0);
       expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 3.0,
         floorRuleValue: 1.0,

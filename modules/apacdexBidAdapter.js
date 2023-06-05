@@ -141,7 +141,7 @@ export const spec = {
       return {
         params: bid.params,
         mediaTypes: bid.mediaTypes,
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         sizes: bid.sizes,
         bidId: bid.bidId,
         adUnitCode: bid.adUnitCode,
