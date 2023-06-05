@@ -153,7 +153,7 @@ const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
 /** @type {string} */
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
+const APPNEXUS_BIDDER = 'appnexus';
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -683,6 +683,12 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #handleBid(reqBidsConfigObj, bid, profile, metadata) {
+    if (!isBoolean(metadata.user)) {
+      logMessage(`SKIP unsupported bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+
+      return
+    }
+
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
     /** @type {Object.<string,string>} */
@@ -691,8 +697,8 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    if (LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder)) {
-      this.#handleSiteLegacyKeywordsBidders(reqBidsConfigObj, bid, profile, metadata);
+    if (bidder === APPNEXUS_BIDDER) {
+      this.#handleAppnexusBidder(reqBidsConfigObj, bid, profile, metadata);
     }
   }
 
@@ -707,25 +713,26 @@ class WeboramaRtdProvider {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
-  /** handle site legacy keywords bidders like appnexus/xandr
+  /** handle data to appnexus/xandr bidder.
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
    * @param {Object} reqBidsConfigObj.ortb2Fragments
    * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
    * @param {Object} bid
+   * @param {string} bid.bidder
    * @param {Object} bid.parameters
    * @param {Profile} profile
    * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleSiteLegacyKeywordsBidders(reqBidsConfigObj, bid, profile, metadata) {
-    if (metadata.user) {
-      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', profile);
-    } else {
-      this.#assignProfileToObject(bid, 'params.keywords', profile);
-    }
+  #handleAppnexusBidder(reqBidsConfigObj, bid, profile, metadata) {
+    const bidder = bid.bidder;
+    const section = metadata.user ? 'user' : 'site';
+    const path = `${section}.keywords`;
+
+    this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile);
   }
 
   /** handle generic bid via ortb2 arbitrary data
@@ -741,15 +748,11 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
-    if (isBoolean(metadata.user)) {
-      logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
-      const section = metadata.user ? 'user' : 'site';
-      const path = `${section}.ext.data`;
+    logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
+    const section = metadata.user ? 'user' : 'site';
+    const path = `${section}.ext.data`;
 
-      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile)
-    } else {
-      logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-    }
+    this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile);
   }
   /**
    * set bidder ortb2 data
