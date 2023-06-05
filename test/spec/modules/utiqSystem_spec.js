@@ -3,8 +3,7 @@ import { utiqSubmodule } from 'modules/utiqSystem.js';
 import { storage } from 'modules/utiqSystem.js';
 
 describe('utiqSystem', () => {
-  const connectDataKey = 'fcIdConnectData';
-  const connectDomainKey = 'fcIdConnectDomain';
+  const utiqPassKey = 'utiqPass';
 
   const getStorageData = (idGraph) => {
     if (!idGraph) {
@@ -23,20 +22,15 @@ describe('utiqSystem', () => {
 
   describe('utiq getId()', () => {
     afterEach(() => {
-      storage.removeDataFromLocalStorage(connectDataKey);
-      storage.removeDataFromLocalStorage(connectDomainKey);
+      storage.removeDataFromLocalStorage(utiqPassKey);
     });
-
-    after(() => {
-      window.FC_CONF = {};
-    })
 
     it('it should return object with key callback', () => {
       expect(utiqSubmodule.getId()).to.have.property('callback');
     });
 
     it('should return object with key callback with value type - function', () => {
-      storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData()));
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData()));
       expect(utiqSubmodule.getId()).to.have.property('callback');
       expect(typeof utiqSubmodule.getId().callback).to.be.equal('function');
     });
@@ -46,18 +40,8 @@ describe('utiqSystem', () => {
         'domain': 'domainValue',
         'atid': 'atidValue',
       };
-      storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
-      expect(JSON.parse(storage.getDataFromLocalStorage(connectDataKey))).to.have.property('connectId');
-    });
-
-    it('returns {callback: func} if domains don\'t match', () => {
-      const idGraph = {
-        'domain': 'domainValue',
-        'atid': 'atidValue',
-      };
-      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
-      storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
-      expect(utiqSubmodule.getId()).to.have.property('callback');
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
+      expect(JSON.parse(storage.getDataFromLocalStorage(utiqPassKey))).to.have.property('connectId');
     });
 
     it('returns {id: {utiq: data.utiq}} if we have the right data stored in the localstorage ', () => {
@@ -65,8 +49,7 @@ describe('utiqSystem', () => {
         'domain': 'test.domain',
         'atid': 'atidValue',
       };
-      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
-      storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+      storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
       const response = utiqSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiq');
@@ -83,35 +66,11 @@ describe('utiqSystem', () => {
       expect(response.callback.toString()).contain('result(callback)');
 
       if (typeof response.callback === 'function') {
-        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
-        storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+        storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         response.callback(function (result) {
           expect(result).to.not.be.null;
           expect(result).to.have.property('utiq');
           expect(result.utiq).to.be.equal('atidValue');
-          done()
-        })
-      }
-    });
-
-    it('returns null if domains don\'t match', (done) => {
-      const idGraph = {
-        'domain': 'test.domain',
-        'atid': 'atidValue',
-      };
-      storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('differentDomainValue'));
-      storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
-
-      const response = utiqSubmodule.getId();
-      expect(response).to.have.property('callback');
-      expect(response.callback.toString()).contain('result(callback)');
-
-      if (typeof response.callback === 'function') {
-        setTimeout(() => {
-          expect(JSON.parse(storage.getDataFromLocalStorage(connectDomainKey))).to.be.equal('differentDomainValue');
-        }, 100)
-        response.callback(function (result) {
-          expect(result).to.be.null;
           done()
         })
       }
@@ -129,8 +88,7 @@ describe('utiqSystem', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
-          storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+          storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.not.be.null;
@@ -153,8 +111,7 @@ describe('utiqSystem', () => {
 
       if (typeof response.callback === 'function') {
         setTimeout(() => {
-          storage.setDataInLocalStorage(connectDomainKey, JSON.stringify('test.domain'));
-          storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+          storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
         }, 500);
         response.callback(function (result) {
           expect(result).to.be.null;
@@ -196,13 +153,8 @@ describe('utiqSystem', () => {
 
   describe('utiq messageHandler', () => {
     afterEach(() => {
-      storage.removeDataFromLocalStorage(connectDataKey);
-      storage.removeDataFromLocalStorage(connectDomainKey);
+      storage.removeDataFromLocalStorage(utiqPassKey);
     });
-
-    after(() => {
-      window.FC_CONF = {};
-    })
 
     const domains = [
       'domain1',
@@ -217,8 +169,7 @@ describe('utiqSystem', () => {
           'atid': 'atidValue',
         };
 
-        storage.setDataInLocalStorage(connectDomainKey, JSON.stringify(domain));
-        storage.setDataInLocalStorage(connectDataKey, JSON.stringify(getStorageData(idGraph)));
+        storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
 
         const eventData = {
           data: `{\"msgType\":\"MNOSELECTOR\",\"body\":{\"url\":\"https://${domain}/some/path\"}}`
