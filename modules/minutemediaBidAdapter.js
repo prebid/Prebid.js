@@ -398,7 +398,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    session_id: getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   }
 
