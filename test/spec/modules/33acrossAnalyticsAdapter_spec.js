@@ -1,10 +1,11 @@
+// @ts-nocheck
 import analyticsAdapter from 'modules/33acrossAnalyticsAdapter.js';
 import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
-import { uspDataHandler } from '../../../src/adapterManager';
+import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager';
 import { DEFAULT_ENDPOINT } from '../../../modules/33acrossAnalyticsAdapter';
 const { EVENTS, BID_STATUS } = CONSTANTS;
 
@@ -106,7 +107,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
   // check that upcoming tests are derived from a valid report
   describe('Report Mocks', function () {
-    it('the standard report should have the correct format', function () {
+    it('the report should have the correct format', function () {
       assert.isValidAnalyticsReport(createReportWithThreeBidWonEvents());
     });
   });
@@ -204,6 +205,52 @@ describe('33acrossAnalyticsAdapter:', function () {
             assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
           });
         });
+      });
+
+      context('and a GDPR Privacy configuration is present', function () {
+        it('it calls "sendBeacon" with a report containing the GDPR consent string', function () {
+          sandbox.stub(gdprDataHandler, 'getConsentData').returns({
+            consentString: 'foo',
+            gdprApplies: true
+          });
+          this.enableAnalytics();
+
+          const reportWithConsent = {
+            ...createReportWithThreeBidWonEvents(),
+            gdpr: 1,
+            gdprConsent: 'foo'
+          };
+          navigator.sendBeacon
+            .withArgs('http://test-endpoint', reportWithConsent);
+
+          performStandardAuction();
+          sandbox.clock.tick(this.defaultTimeout + 1);
+
+          assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
+        });
+      });
+    });
+
+    context('when an auction is complete and a GPP configuration is present', function () {
+      it('it calls "sendBeacon" with a report containing the GPP consent string', function () {
+        sandbox.stub(gppDataHandler, 'getConsentData').returns({
+          gppString: 'gppString',
+          applicableSections: [7]
+        });
+        this.enableAnalytics();
+
+        const reportWithConsent = {
+          ...createReportWithThreeBidWonEvents(),
+          gpp: 'gppString',
+          gppSid: [7]
+        };
+        navigator.sendBeacon
+          .withArgs('http://test-endpoint', reportWithConsent);
+
+        performStandardAuction();
+        sandbox.clock.tick(this.defaultTimeout + 1);
+
+        assert.calledOnceWithStringJsonEquivalent(navigator.sendBeacon, 'http://test-endpoint', reportWithConsent);
       });
     });
 
@@ -442,6 +489,20 @@ function getLocalAssert() {
     if ('usPrivacy' in report) {
       assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
     }
+    if ('gdpr' in report) {
+      assert.oneOf(report.gdpr, [0, 1]);
+    }
+    if (report.gdpr === 1) {
+      assert.isString(report.gdprConsent);
+    }
+    if ('gpp' in report) {
+      assert.isString(report.gpp);
+      assert.isArray(report.gppSid);
+    }
+    if ('coppa' in report) {
+      assert.oneOf(report.coppa, [0, 1]);
+    }
+
     assert.equal(report.analyticsVersion, '1.0.0');
     assert.isString(report.pid);
     assert.isString(report.src);
