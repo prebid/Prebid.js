@@ -102,9 +102,8 @@ const PBS_CONVERTER = ortbConverter({
 
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
-    const status = bid.price !== 0 ? CONSTANTS.STATUS.GOOD : CONSTANTS.STATUS.NO_BID;
     return {
-      bid: Object.assign(createBid(status, {
+      bid: Object.assign(createBid(CONSTANTS.STATUS.GOOD, {
         src: CONSTANTS.S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,

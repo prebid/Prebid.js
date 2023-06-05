@@ -745,10 +745,9 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   // now do the compare!
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
-    // continue with a "NO_BID" bid, TODO: remove this in v8
-    const flooredBid = reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
-    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
-    return fn.call(this, adUnitCode, flooredBid, reject);
+    reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
+    logWarn(`${MODULE_NAME}: ${bid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
+    return;
   }
   return fn.call(this, adUnitCode, bid, reject);
 });
