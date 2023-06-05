@@ -57,8 +57,8 @@ function calculateQueryStringParams(pid, gdprConsentData) {
     params.gpp_sid = encodeURIComponent(applicableSections.join(','))
   }
 
-  if (gdprApplies) {
-    params.gdpr_consent = gdprConsentData.consentString || '';
+  if (gdprConsentData?.consentString) {
+    params.gdpr_consent = gdprConsentData.consentString;
   }
 
   return params;
