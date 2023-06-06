@@ -138,14 +138,14 @@ describe('Eskimi bid adapter', function () {
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-  });
 
-  describe('buildRequests()', function () {
     it('should return true when required params found', () => {
       expect(spec.isBidRequestValid(BANNER_BID)).to.equal(true);
       expect(spec.isBidRequestValid(VIDEO_BID)).to.equal(true);
     });
+  });
 
+  describe('buildRequests()', function () {
     it('should have gdpr data if applicable', function () {
       const bid = utils.deepClone(BANNER_BID);
 
@@ -160,6 +160,23 @@ describe('Eskimi bid adapter', function () {
       const payload = request.data;
       expect(payload.user.ext).to.have.property('consent', req.gdprConsent.consentString);
       expect(payload.regs.ext).to.have.property('gdpr', 1);
+    });
+
+    it('should properly forward ORTB blocking params', function () {
+      let bid = utils.deepClone(BANNER_BID);
+      bid = utils.mergeDeep(bid, {
+        params: { bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example'] },
+        mediaTypes: { banner: { battr: [1] } }
+      });
+
+      let [request] = spec.buildRequests([bid], BIDDER_REQUEST);
+
+      expect(request).to.exist.and.to.be.an('object');
+      const payload = request.data;
+      expect(payload).to.have.deep.property('bcat', ['IAB1-1']);
+      expect(payload).to.have.deep.property('badv', ['example.com']);
+      expect(payload).to.have.deep.property('bapp', ['com.example']);
+      expect(payload.imp[0].banner).to.have.deep.property('battr', [1]);
     });
 
     context('when mediaType is banner', function () {

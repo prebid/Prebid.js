@@ -168,7 +168,7 @@ function buildBannerImp(bidRequest, imp) {
 function createRequest(bidRequests, bidderRequest, mediaType) {
   const data = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
-  let bid = bidRequests.find((b) => b.params.placementId)
+  const bid = bidRequests.find((b) => b.params.placementId)
   if (!data.site) data.site = {}
   data.site.ext = { placementId: bid.params.placementId }
 
@@ -181,9 +181,9 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
   }
 
-  if (bid.bcat) data.bcat = bid.bcat;
-  if (bid.badv) data.badv = bid.badv;
-  if (bid.bapp) data.bapp = bid.bapp;
+  if (bid.params.bcat) data.bcat = bid.params.bcat;
+  if (bid.params.badv) data.badv = bid.params.badv;
+  if (bid.params.bapp) data.bapp = bid.params.bapp;
 
   return {
     method: 'POST',
