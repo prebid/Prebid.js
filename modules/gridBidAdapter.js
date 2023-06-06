@@ -11,6 +11,7 @@ import {
   isNumber,
   isStr
 } from '../src/utils.js';
+import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
@@ -20,6 +21,7 @@ import { find } from '../src/polyfill.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
+const USP_DELETE_DATA_HANDLER = 'https://grid.bidswitch.net/uspapi_delete'
 
 const ADAPTER_VERSION_FOR_CRITEO_MODE = 34;
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
@@ -495,6 +497,19 @@ export const spec = {
         type: 'image',
         url: syncUrl + params
       };
+    }
+  },
+
+  onDataDeletionRequest: function(data) {
+    const uids = [];
+    const aliases = [spec.code , ...spec.aliases.map((alias) => alias.code || alias)];
+    data.forEach(({ bids }) => bids && bids.forEach(({ bidder, params }) => {
+      if (aliases.includes(bidder) && params && params.uid) {
+        uids.push(params.uid);
+      }
+    }));
+    if (uids.length) {
+      ajax(USP_DELETE_DATA_HANDLER, () => {}, JSON.stringify({ uids }), {contentType: 'application/json', method: 'POST'});
     }
   }
 };
