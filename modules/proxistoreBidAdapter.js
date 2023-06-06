@@ -88,23 +88,20 @@ function _createServerRequest(bidRequests, bidderRequest) {
 }
 
 function _assignSegments(bid) {
-  if (
-    bid.ortb2 &&
-    bid.ortb2.user &&
-    bid.ortb2.user.ext &&
-    bid.ortb2.user.ext.data
-  ) {
-    return (
-      bid.ortb2.user.ext.data || {
-        segments: [],
-        contextual_categories: {},
-      }
-    );
+  var segs = (bid.ortb2 && bid.ortb2.user && bid.ortb2.user.ext && bid.ortb2.user.ext.data && bid.ortb2.user.ext.data.sd_rtd && bid.ortb2.user.ext.data.sd_rtd.segments ? bid.ortb2.user.ext.data.sd_rtd.segments : []);
+  var cats = {};
+  if (bid.ortb2 && bid.ortb2.site && bid.ortb2.site.ext && bid.ortb2.site.ext.data && bid.ortb2.site.ext.data.sd_rtd) {
+    if (bid.ortb2.site.ext.data.sd_rtd.categories) {
+      segs = segs.concat(bid.ortb2.site.ext.data.sd_rtd.categories);
+    }
+    if (bid.ortb2.site.ext.data.sd_rtd.categories_score) {
+      cats = bid.ortb2.site.ext.data.sd_rtd.categories_score;
+    }
   }
 
   return {
-    segments: [],
-    contextual_categories: {},
+    segments: segs,
+    contextual_categories: cats
   };
 }
 
