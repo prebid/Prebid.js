@@ -23,6 +23,7 @@ const ALIASES = [
   { code: 'adwebone' },
   { code: 'league-m', gvlid: 965 },
   { code: 'prjads' },
+  { code: 'pubtech' },
 ];
 
 export const storage = getStorageManager({
