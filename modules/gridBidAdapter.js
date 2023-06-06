@@ -21,7 +21,7 @@ import { find } from '../src/polyfill.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://grid.bidswitch.net/uspapi_delete'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete'
 
 const ADAPTER_VERSION_FOR_CRITEO_MODE = 34;
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
