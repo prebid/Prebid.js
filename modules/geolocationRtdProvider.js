@@ -1,45 +1,40 @@
 import {submodule} from '../src/hook.js';
-import {isFn, logError, pick, cleanObj} from '../src/utils.js';
-import {config} from '../src/config.js';
+import {isFn, logError, pick, cleanObj, deepAccess, deepSetValue} from '../src/utils.js';
+// import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import '../src/adapterManager.js';
+// import '../src/adapterManager.js';
+import {gppDataHandler} from '../src/adapterManager.js';
 
 let permissionsAvailable = true;
 let geolocation;
 function getGeolocationData(requestBidsObject, onDone, providerConfig, userConsent) {
   let done = false;
   if (!permissionsAvailable) return complete();
-  const requestPermission = providerConfig.requestPermission === true;
+  const requestPermission = deepAccess(providerConfig, 'params.requestPermission') === true;
+  logError('RBO', requestBidsObject, gppDataHandler.getConsentData());
   const waitForIt = providerConfig.waitForIt;
-  const auctionDelay = config.getConfig('realTimeData.auctionDelay') || 0;
   const adUnits = requestBidsObject.adUnits || getGlobal().adUnits || [];
   navigator.permissions.query({
     name: 'geolocation',
   }).then(permission => {
     if (permission.state !== 'granted' && !requestPermission) return complete();
     navigator.geolocation.getCurrentPosition(geo => {
-      geolocation = pick(geo.coords, [
-        'accuracy',
-        'altitude',
-        'altitudeAccuracy',
-        'heading',
-        'latitude',
-        'longitude',
-        'speed'
-      ]);
+      geolocation = geo;
       complete();
     });
   });
-  if (auctionDelay > 0) {
-    setTimeout(complete, auctionDelay);
-  }
   if (!waitForIt) complete();
   function complete() {
     if (done) return;
     done = true;
-    geolocation && adUnits && adUnits.forEach((unit) => {
-      unit.bids && unit.bids.forEach(bid => bid.geolocation = cleanObj(geolocation));
-    });
+    if (geolocation) {
+      deepSetValue(requestBidsObject, 'ortb2Fragments.global.device.geo', {
+        lat: geolocation.coords.latitude,
+        lon: geolocation.coords.longitude,
+        lastfix: geolocation.timestamp,
+        type: 1
+      });
+    }
     onDone();
   }
 }
