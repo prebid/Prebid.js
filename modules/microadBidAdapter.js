@@ -17,7 +17,6 @@ const EXT_URL_STRING = '${COMPASS_EXT_URL}';
 const EXT_REF_STRING = '${COMPASS_EXT_REF}';
 const EXT_IFA_STRING = '${COMPASS_EXT_IFA}';
 const EXT_APPID_STRING = '${COMPASS_EXT_APPID}';
-const EXT_GEO_STRING = '${COMPASS_EXT_GEO}';
 /* eslint-enable no-template-curly-in-string */
 
 const BANNER_CODE = 1;
@@ -92,13 +91,6 @@ export const spec = {
 
       if (bidParams.appid) {
         params['appid'] = bidParams.appid.replace(EXT_APPID_STRING, '');
-      }
-
-      if (bidParams.geo) {
-        const geo = bidParams.geo.replace(EXT_GEO_STRING, '');
-        if (/^[0-9.\-]+,[0-9.\-]+$/.test(geo)) {
-          params['geo'] = geo;
-        }
       }
 
       const aidsParams = []

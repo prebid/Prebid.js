@@ -228,7 +228,7 @@ describe('microadBidAdapter', () => {
       });
     });
 
-    it('should add geo parameter to response if request parameters contain geo', () => {
+    it('should not add geo parameter to response even if request parameters contain geo', () => {
       const bidRequestWithGeo = Object.assign({}, bidRequestTemplate, {
         params: {
           spot: 'spot-code',
@@ -237,7 +237,7 @@ describe('microadBidAdapter', () => {
       });
       const requests = spec.buildRequests([bidRequestWithGeo], bidderRequest);
       requests.forEach(request => {
-        expect(request.data).to.deep.equal(
+        expect(request.data).to.not.deep.equal(
           Object.assign({}, expectedResultTemplate, {
             cbt: request.data.cbt,
             geo: '35.655275,139.693771'

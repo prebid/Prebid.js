@@ -41,12 +41,6 @@ export const spec = {
       return false;
     }
 
-    if (!(bid.params.device.geo &&
-          bid.params.device.geo.country)) {
-      logWarn('Invalid bid request - missing required geo data');
-      return false;
-    }
-
     if (!bid.params.definerId) {
       logWarn('Invalid bid request - missing required definer data');
       return false;
