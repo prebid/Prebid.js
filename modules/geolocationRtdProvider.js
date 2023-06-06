@@ -1,8 +1,5 @@
 import {submodule} from '../src/hook.js';
-import {isFn, logError, pick, cleanObj, deepAccess, deepSetValue} from '../src/utils.js';
-// import {config} from '../src/config.js';
-import {getGlobal} from '../src/prebidGlobal.js';
-// import '../src/adapterManager.js';
+import {isFn, logError, deepAccess, deepSetValue} from '../src/utils.js';
 import {gppDataHandler} from '../src/adapterManager.js';
 
 let permissionsAvailable = true;
@@ -13,7 +10,6 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
   const requestPermission = deepAccess(providerConfig, 'params.requestPermission') === true;
   logError('RBO', requestBidsObject, gppDataHandler.getConsentData());
   const waitForIt = providerConfig.waitForIt;
-  const adUnits = requestBidsObject.adUnits || getGlobal().adUnits || [];
   navigator.permissions.query({
     name: 'geolocation',
   }).then(permission => {
