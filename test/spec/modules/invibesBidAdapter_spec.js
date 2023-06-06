@@ -323,6 +323,13 @@ describe('invibesBidAdapter:', function () {
       expect(parsedData.height).to.exist;
     });
 
+    it('has location not cut off', function () {
+      const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
+      const parsedData = request.data;
+      expect(parsedData.location).to.exist;
+      expect(parsedData.location).to.contain('?');
+    });
+
     it('has capped ids if local storage variable is correctly formatted', function () {
       top.window.invibes.optIn = 1;
       top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
