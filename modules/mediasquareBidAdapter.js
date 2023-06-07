@@ -174,8 +174,9 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video')
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
       return;
+    }
     let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
     let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context'];
