@@ -702,6 +702,47 @@ describe('sharethrough adapter spec', function () {
           expect(bannerBid.vastXml).to.equal('vastTag');
         });
       });
+
+      describe('meta object', () => {
+        beforeEach(() => {
+          request = spec.buildRequests(bidRequests, bidderRequest)[0];
+          response = {
+            body: {
+              seatbid: [{
+                bid: [{
+                  id: '123',
+                  impid: 'bidId1',
+                  w: 300,
+                  h: 250,
+                  price: 42,
+                  crid: 'creative',
+                  dealid: 'deal',
+                  adomain: ['domain.com'],
+                  adm: 'markup',
+                }],
+              }],
+            },
+          };
+        });
+
+        it('should have null optional fields when the response\'s optional seatbid[].bid[].ext field is empty', () => {
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.be.null;
+          expect(bid.meta.networkName).to.be.null;
+          expect(bid.meta.agencyId).to.be.null;
+          expect(bid.meta.agencyName).to.be.null;
+          expect(bid.meta.advertiserId).to.be.null;
+          expect(bid.meta.advertiserName).to.be.null;
+          expect(bid.meta.brandId).to.be.null;
+          expect(bid.meta.brandName).to.be.null;
+          expect(bid.meta.demandSource).to.be.null;
+          expect(bid.meta.dchain).to.be.null;
+          expect(bid.meta.primaryCatId).to.be.null;
+          expect(bid.meta.secondaryCatIds).to.be.null;
+          expect(bid.meta.mediaType).to.be.null;
+        });
+      });
     });
 
     describe('getUserSyncs', function () {

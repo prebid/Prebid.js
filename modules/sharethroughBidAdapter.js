@@ -169,6 +169,19 @@ export const sharethroughAdapterSpec = {
         nurl: bid.nurl,
         meta: {
           advertiserDomains: bid.adomain || [],
+          networkId: null,
+          networkName: null,
+          agencyId: null,
+          agencyName: null,
+          advertiserId: null,
+          advertiserName: null,
+          brandId: null,
+          brandName: null,
+          demandSource: null,
+          dchain: null,
+          primaryCatId: null,
+          secondaryCatIds: null,
+          mediaType: null
         },
       };
 
