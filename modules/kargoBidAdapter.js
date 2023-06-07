@@ -82,7 +82,6 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   const krakenParams = Object.assign({}, {
     pbv: PREBID_VERSION,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     aid: firstBidRequest.auctionId,
     sid: _getSessionId(),
     url: metadata.pageURL,
