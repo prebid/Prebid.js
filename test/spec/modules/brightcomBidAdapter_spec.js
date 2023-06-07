@@ -12,6 +12,14 @@ describe('brightcomBidAdapter', function() {
   let bidRequests;
   let sandbox;
 
+  before(function() {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      bcmssp: {
+        storageAllowed: true
+      }
+    };
+  });
+
   beforeEach(function() {
     element = {
       x: 0,
@@ -324,6 +332,10 @@ describe('brightcomBidAdapter', function() {
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(0);
       });
+    });
+
+    it('should have storageAllowed set to true', function () {
+      expect($$PREBID_GLOBAL$$.bidderSettings.bcmssp.storageAllowed).to.be.true;
     });
   });
 

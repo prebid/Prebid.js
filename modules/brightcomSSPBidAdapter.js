@@ -15,6 +15,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
+import {bidderSettings} from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'bcmssp';
 const URL = 'https://rt.marphezis.com/hb';
@@ -110,6 +111,10 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidReqs?.[0].userId) {
       deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
+    }
+
+    if (bidderSettings.get(BIDDER_CODE, 'storageAllowed')) {
+      deepSetValue(payload, 'user.ext.iiq', JSON.stringify(_getFirstPartyData()));
     }
 
     return {
@@ -317,6 +322,74 @@ function _getBidFloor(bid) {
     return floor.floor;
   }
   return null;
+}
+
+function _getFirstPartyData() {
+  const generateGUID = function () {
+    let d = new Date().getTime()
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (d + Math.random() * 16) % 16 | 0
+      d = Math.floor(d / 16)
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+    })
+  };
+
+  const tryParse = function (data) {
+    try {
+      return JSON.parse(data)
+    } catch (err) {
+      return null;
+    }
+  };
+  const readData = function (key) {
+    try {
+      if (hasLocalStorage()) {
+        return window.localStorage.getItem(key)
+      }
+    } catch (error) {
+      return null;
+    }
+    return null
+  };
+
+  const storeData = function (key, value) {
+    try {
+      if (isDefined(value)) {
+        if (hasLocalStorage()) {
+          window.localStorage.setItem(key, value)
+        }
+      }
+    } catch (error) {
+      return null;
+    }
+  };
+  const hasLocalStorage = function () {
+    try {
+      return !!window.localStorage
+    } catch (e) {
+      return null;
+    }
+  }
+  const isDefined = function (val) {
+    return typeof val !== 'undefined' && val != null
+  };
+
+  const loadOrCreateFirstPartyData = function () {
+    var FIRST_PARTY_KEY = '_iiq_fdata';
+    var firstPartyData = tryParse(readData(FIRST_PARTY_KEY))
+    if (!firstPartyData || !firstPartyData.pcid) {
+      var firstPartyId = generateGUID()
+      firstPartyData = {pcid: firstPartyId, pcidDate: Date.now()}
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData))
+    } else if (firstPartyData && !firstPartyData.pcidDate) {
+      firstPartyData.pcidDate = Date.now()
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData))
+    }
+
+    return firstPartyData
+  };
+
+  return loadOrCreateFirstPartyData();
 }
 
 registerBidder(spec);
