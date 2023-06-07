@@ -2,7 +2,7 @@ import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { bidderSettings } from "../src/bidderSettings.js";
+import { bidderSettings } from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'brightcom';
 const URL = 'https://brightcombid.marphezis.com/hb';
