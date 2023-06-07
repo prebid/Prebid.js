@@ -417,8 +417,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   };
 

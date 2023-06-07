@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'logicad';
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
@@ -52,7 +53,7 @@ export const spec = {
 };
 
 function newBidRequest(bid, bidderRequest) {
-  return {
+  const data = {
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     bidderRequestId: bid.bidderRequestId,
@@ -70,6 +71,18 @@ function newBidRequest(bid, bidderRequest) {
     auctionStartTime: bidderRequest.auctionStart,
     eids: bid.userIdAsEids,
   };
+
+  const sua = deepAccess(bid, 'ortb2.device.sua');
+  if (sua) {
+    data.sua = sua;
+  }
+
+  const userData = deepAccess(bid, 'ortb2.user.data');
+  if (userData) {
+    data.userData = userData;
+  }
+
+  return data;
 }
 
 registerBidder(spec);

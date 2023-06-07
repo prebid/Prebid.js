@@ -35,7 +35,52 @@ describe('LogicadAdapter', function () {
           third: 'fakesharedid'
         }
       }]
-    }]
+    }],
+    ortb2: {
+      device: {
+        sua: {
+          source: 2,
+          platform: {
+            brand: 'Windows',
+            version: ['10', '0', '0']
+          },
+          browsers: [
+            {
+              brand: 'Chromium',
+              version: ['112', '0', '5615', '20']
+            },
+            {
+              brand: 'Google Chrome',
+              version: ['112', '0', '5615', '20']
+            },
+            {
+              brand: 'Not:A-Brand',
+              version: ['99', '0', '0', '0']
+            }
+          ],
+          mobile: 0,
+          model: '',
+          bitness: '64',
+          architecture: 'x86'
+        }
+      },
+      user: {
+        data: [
+          {
+            ext: {
+              segtax: 600,
+              segclass: '2206021246'
+            },
+            segment: [
+              {
+                id: '1'
+              }
+            ],
+            name: 'cd.ladsp.com'
+          }
+        ]
+      }
+    }
   }];
   const nativeBidRequests = [{
     bidder: 'logicad',
@@ -77,7 +122,52 @@ describe('LogicadAdapter', function () {
           third: 'fakesharedid'
         }
       }]
-    }]
+    }],
+    ortb2: {
+      device: {
+        sua: {
+          source: 2,
+          platform: {
+            brand: 'Windows',
+            version: ['10', '0', '0']
+          },
+          browsers: [
+            {
+              brand: 'Chromium',
+              version: ['112', '0', '5615', '20']
+            },
+            {
+              brand: 'Google Chrome',
+              version: ['112', '0', '5615', '20']
+            },
+            {
+              brand: 'Not:A-Brand',
+              version: ['99', '0', '0', '0']
+            }
+          ],
+          mobile: 0,
+          model: '',
+          bitness: '64',
+          architecture: 'x86'
+        }
+      },
+      user: {
+        data: [
+          {
+            ext: {
+              segtax: 600,
+              segclass: '2206021246'
+            },
+            segment: [
+              {
+                id: '1'
+              }
+            ],
+            name: 'cd.ladsp.com'
+          }
+        ]
+      }
+    }
   }];
   const bidderRequest = {
     refererInfo: {
@@ -184,6 +274,36 @@ describe('LogicadAdapter', function () {
       expect(data.auctionId).to.equal('18fd8b8b0bd757');
       expect(data.eids[0].source).to.equal('sharedid.org');
       expect(data.eids[0].uids[0].id).to.equal('fakesharedid');
+
+      expect(data.sua.source).to.equal(2);
+      expect(data.sua.platform.brand).to.equal('Windows');
+      expect(data.sua.platform.version[0]).to.equal('10');
+      expect(data.sua.platform.version[1]).to.equal('0');
+      expect(data.sua.platform.version[2]).to.equal('0');
+      expect(data.sua.browsers[0].brand).to.equal('Chromium');
+      expect(data.sua.browsers[0].version[0]).to.equal('112');
+      expect(data.sua.browsers[0].version[1]).to.equal('0');
+      expect(data.sua.browsers[0].version[2]).to.equal('5615');
+      expect(data.sua.browsers[0].version[3]).to.equal('20');
+      expect(data.sua.browsers[1].brand).to.equal('Google Chrome');
+      expect(data.sua.browsers[1].version[0]).to.equal('112');
+      expect(data.sua.browsers[1].version[1]).to.equal('0');
+      expect(data.sua.browsers[1].version[2]).to.equal('5615');
+      expect(data.sua.browsers[1].version[3]).to.equal('20');
+      expect(data.sua.browsers[2].brand).to.equal('Not:A-Brand');
+      expect(data.sua.browsers[2].version[0]).to.equal('99');
+      expect(data.sua.browsers[2].version[1]).to.equal('0');
+      expect(data.sua.browsers[2].version[2]).to.equal('0');
+      expect(data.sua.browsers[2].version[3]).to.equal('0');
+      expect(data.sua.mobile).to.equal(0);
+      expect(data.sua.model).to.equal('');
+      expect(data.sua.bitness).to.equal('64');
+      expect(data.sua.architecture).to.equal('x86');
+
+      expect(data.userData[0].name).to.equal('cd.ladsp.com');
+      expect(data.userData[0].segment[0].id).to.equal('1');
+      expect(data.userData[0].ext.segtax).to.equal(600);
+      expect(data.userData[0].ext.segclass).to.equal('2206021246');
     });
   });
 
