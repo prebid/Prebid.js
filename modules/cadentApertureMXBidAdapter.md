@@ -1,18 +1,18 @@
 # Overview
 
 ```
-Module Name:  EMX Digital Adapter
+Module Name:  Cadent Aperture MX Adapter
 Module Type:  Bidder Adapter
 Maintainer: git@emxdigital.com
 ```
 
 # Description
 
-The EMX Digital adapter provides publishers with access to the EMX Marketplace. The adapter is GDPR compliant. Please note that the adapter supports Banner and Video (Instream & Outstream) media types.
+The Cadent Aperture MX adapter provides publishers with access to the Cadent Aperture MX SSP. The adapter is GDPR compliant. Please note that the adapter supports Banner and Video (Instream & Outstream) media types.
 
-Note: The EMX Digital adapter requires approval and implementation guidelines from the EMX team, including existing publishers that work with EMX Digital. Please reach out to your account manager or prebid@emxdigital.com for more information.
+Note: The Cadent Aperture MX adapter requires approval and implementation guidelines from the Cadent team, including existing publishers that work with Cadent. Please reach out to your account manager or prebid@emxdigital.com for more information.
 
-The bidder code should be ```emx_digital```
+The bidder code should be ```cadent_aperture_mx```
 The params used by the bidder are :
 ```tagid``` - string (mandatory)
 ```bidfloor``` - string (optional)
@@ -29,7 +29,7 @@ var adUnits = [{
     },
     bids: [
     {
-        bidder: 'emx_digital',
+        bidder: 'cadent_aperture_mx',
         params: {
            tagid: '25251',
         }
@@ -49,7 +49,7 @@ var adUnits = [{
     },
     bids: [
     {
-        bidder: 'emx_digital',
+        bidder: 'cadent_aperture_mx',
         params: {
            tagid: '25251',
            video: {

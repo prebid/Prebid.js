@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { spec } from 'modules/emx_digitalBidAdapter.js';
+import { spec } from 'modules/cadentApertureMXBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
-describe('emx_digital Adapter', function () {
+describe('cadent_aperture_mx Adapter', function () {
   describe('callBids', function () {
     const adapter = newBidder(spec);
     it('exists and is a function', function () {
@@ -14,7 +14,7 @@ describe('emx_digital Adapter', function () {
   describe('isBidRequestValid', function () {
     describe('banner request validity', function () {
       let bid = {
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251'
         },
@@ -33,7 +33,7 @@ describe('emx_digital Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
       let badBid = {
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251'
         },
@@ -95,7 +95,7 @@ describe('emx_digital Adapter', function () {
 
     describe('video request validity', function () {
       let bid = {
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
           'video': {}
@@ -116,7 +116,7 @@ describe('emx_digital Adapter', function () {
         'auctionId': '1d1a01234a475'
       };
       let noInstreamBid = {
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
           'video': {
@@ -139,7 +139,7 @@ describe('emx_digital Adapter', function () {
       };
 
       let outstreamBid = {
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251',
           'video': {}
@@ -168,7 +168,7 @@ describe('emx_digital Adapter', function () {
 
       it('should contain tagid param', function () {
         expect(spec.isBidRequestValid({
-          bidder: 'emx_digital',
+          bidder: 'cadent_aperture_mx',
           params: {},
           mediaTypes: {
             banner: {
@@ -177,7 +177,7 @@ describe('emx_digital Adapter', function () {
           }
         })).to.equal(false);
         expect(spec.isBidRequestValid({
-          bidder: 'emx_digital',
+          bidder: 'cadent_aperture_mx',
           params: {
             tagid: ''
           },
@@ -188,7 +188,7 @@ describe('emx_digital Adapter', function () {
           }
         })).to.equal(false);
         expect(spec.isBidRequestValid({
-          bidder: 'emx_digital',
+          bidder: 'cadent_aperture_mx',
           params: {
             tagid: '123'
           },
@@ -204,7 +204,7 @@ describe('emx_digital Adapter', function () {
 
   describe('buildRequests', function () {
     let bidderRequest = {
-      'bidderCode': 'emx_digital',
+      'bidderCode': 'cadent_aperture_mx',
       'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
       'bidderRequestId': '22edbae3120bf6',
       'timeout': 1500,
@@ -216,7 +216,7 @@ describe('emx_digital Adapter', function () {
         'ref': 'https://referrer.com'
       },
       'bids': [{
-        'bidder': 'emx_digital',
+        'bidder': 'cadent_aperture_mx',
         'params': {
           'tagid': '25251'
         },
@@ -464,7 +464,7 @@ describe('emx_digital Adapter', function () {
 
   describe('interpretResponse', function () {
     let bid = {
-      'bidder': 'emx_digital',
+      'bidder': 'cadent_aperture_mx',
       'params': {
         'tagid': '25251',
         'video': {}
@@ -488,7 +488,7 @@ describe('emx_digital Adapter', function () {
     const bid_outstream = {
       'bidderRequest': {
         'bids': [{
-          'bidder': 'emx_digital',
+          'bidder': 'cadent_aperture_mx',
           'params': {
             'tagid': '25251',
             'video': {}
@@ -508,7 +508,7 @@ describe('emx_digital Adapter', function () {
           'bidderRequestId': '22edbae3120bf6',
           'auctionId': '1d1a01234a475'
         }, {
-          'bidder': 'emx_digital',
+          'bidder': 'cadent_aperture_mx',
           'params': {
             'tagid': '25252',
             'video': {}
@@ -700,7 +700,7 @@ describe('emx_digital Adapter', function () {
     it('should not throw an error when decoding an improperly encoded adm', function () {
       const badAdmServerResponse = utils.deepClone(serverResponse);
       badAdmServerResponse.seatbid[0].bid[0].adm = '<script\\ src\\=\\\"https\\:\\/\\/nym1\\-ib\\.adnxs\\.com\\/ab\\?an_audit\\=0\\&referrer=https%3A%2F%2Fwww.emxdigital.com%3Ftest%3DhAiE3%VVl%26prebid%3D%25123%25\\&e\\=wqT_3QLPCfBDzwQAAAMA1gAFAQj2iaPtBRCdw\\-qeto72gkEYlNWN2smGoJhTKjYJzGJi83G9KkARzGJi83G9KkAZAAAAgD0KEkAhzGIJGwApESTIMQAAAGBmZu4_MMvWgAc4zApAzApIAlDo\\-YEUWNbsR2AAaIrFCnjOpQWAAQGKAQNVU0SSBQbwQJgB2AWgAVqoAQGwAQC4AQLAAQTIAQLQAQnYAQDgAQDwAQCKAjp1ZignYScsIDI4OTEwMSwgMTU3MTM0MTU1OCk7ARwscicsIDQxOTc1MDE2Nh4A9DQBkgLhAiE3VVlCWndpQmpwOEpFT2o1Z1JRWUFDRFc3RWN3QURnQVFBUkl6QXBReTlhQUIxZ0FZTHdFYUFCd0NuZ0FnQUZFaUFFQWtBRUFtQUVBb0FFQnFBRURzQUVBdVFGS1I2cF9jYjBxUU1FQlNrZXFmM0c5S2tESkFaR1JfRy1UVnRNXzJRRUFBQUFBQUFEd1AtQUJBUFVCQUFBQUFJQUNBSWdDcVlMWEJaQUNBWmdDQUtBQ0FLZ0NBTFVDQUFBQUFMMENBQUFBQU9BQ0FPZ0NBUGdDQUlBREFaZ0RBYWdEZ1k2ZkNib0RDVTVaVFRJNk5ESTRNdUFEOHhQNEE0NnV2Z3lJQkFDUUJBQ1lCQUd5QkFvSXFZTFhCUkNPcnI0TXdRUUFBQUFBQUFBQUFNa0VBQUFBBXgMQURSQgkJLEF3Q0ZBMkFRQThRUQ0SYEFBQVBnRUFJZ0Z1aUUumgKJASE2eElrelE2ZQGgMXV4SElBUW9BREU5Q3RlamNMMHFRRG9KVGxsTk1qbzBNamd5UVBNVFMRWAxQQV9VEQwMQUFBVx0MAFkdDABhHQwAYw0MAaXwi2VBQS7YAqwD4AK30UbqAlxodHRwczovL3d3dy5jZWxlYnV6ei5jb20vZy90YXlsb3Itc3dpZnQtZGVidXRzLXJlZC1oYWlyLWluLXN1Z2FybGFuZC12aWRlby8_YmlkZHJfZGVidWc9dHJ1ZfICEwoPQ1VTVE9NX01PREVMX0lEEgDyAhoKFkNVU1RPERY8TEVBRl9OQU1FEgDyAh4KGjYdAPQqAUFTVF9NT0RJRklFRBIAgAMAiAMBkAMAmAMUoAMBqgMAwAOsAsgDANgDlCHgAwDoAwD4AwOABACSBAkvb3BlbnJ0YjKYBACiBA8xNDQuMTIxLjIzMy4yMzeoBIkWsgQMCAAQABgAIAAwADgAuAQAwAQAyASxgoIB0gQOMTM1NiNOWU0yOjQyODLaBAIIAeAEAPAE6PmBFPoEEgkAAAAAZqdHQBEAAAAgWpRewIgFAZgFAKAF____________AaoFFjQ5MTgxNTcxMzQxNTU2NTI2OTQ5ZTHABQDJBQAAAAAAAPA_0gUJCQAAAAAAAAAA2AUB4AUB8AXW7gr6BQQIABAAkAYAmAYAuAYAwQYAAAAAAADwP8gGANAGwgTaBhYKEAAAAAAAAAAAAAAABQpQEAAYAOAGAfIGAggAgAcBiAcAoAcB\\&s\\=630dbbd55f593c7bfd9e7bccc4dbaa28203daaed\\&pp\\=\\$\\{EMX_MACRO\\}\\\"\\>\\<\\/script\\>';
-      badAdmServerResponse.seatbid[1].bid[0].adm = '%3F%%3Demx%3C3prebid';
+      badAdmServerResponse.seatbid[1].bid[0].adm = '%3F%%3Dcadent%3C3prebid';
 
       assert.doesNotThrow(() => spec.interpretResponse({
         body: badAdmServerResponse
