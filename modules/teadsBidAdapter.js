@@ -227,7 +227,6 @@ function buildRequestObject(bid) {
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
   reqObj.transactionId = getBidIdParameter('transactionId', bid);
   if (gpid) { reqObj.gpid = gpid; }
   return reqObj;
