@@ -742,6 +742,40 @@ describe('sharethrough adapter spec', function () {
           expect(bid.meta.secondaryCatIds).to.be.null;
           expect(bid.meta.mediaType).to.be.null;
         });
+
+        it('should have populated fields when the response\'s optional seatbid[].bid[].ext fields are filled', () => {
+          response.body.seatbid[0].bid[0].ext = {
+            networkId: 'my network id',
+            networkName: 'my network name',
+            agencyId: 'my agency id',
+            agencyName: 'my agency name',
+            advertiserId: 'my advertiser id',
+            advertiserName: 'my advertiser name',
+            brandId: 'my brand id',
+            brandName: 'my brand name',
+            demandSource: 'my demand source',
+            dchain: { 'my key': 'my value' },
+            primaryCatId: 'my primary cat id',
+            secondaryCatIds: ['my', 'secondary', 'cat', 'ids'],
+            mediaType: 'my media type',
+          };
+
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.equal('my network id');
+          expect(bid.meta.networkName).to.equal('my network name');
+          expect(bid.meta.agencyId).to.equal('my agency id');
+          expect(bid.meta.agencyName).to.equal('my agency name');
+          expect(bid.meta.advertiserId).to.equal('my advertiser id');
+          expect(bid.meta.advertiserName).to.equal('my advertiser name');
+          expect(bid.meta.brandId).to.equal('my brand id');
+          expect(bid.meta.brandName).to.equal('my brand name');
+          expect(bid.meta.demandSource).to.equal('my demand source');
+          expect(bid.meta.dchain).to.deep.equal({ 'my key': 'my value' });
+          expect(bid.meta.primaryCatId).to.equal('my primary cat id');
+          expect(bid.meta.secondaryCatIds).to.deep.equal(['my', 'secondary', 'cat', 'ids']);
+          expect(bid.meta.mediaType).to.equal('my media type');
+        });
       });
     });
 
