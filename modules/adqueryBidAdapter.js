@@ -55,10 +55,6 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    logInfo(request);
-    logInfo(response);
-
-    let qid = null;
     const res = response && response.body && response.body.data;
     let bidResponses = [];
 
@@ -186,6 +182,12 @@ function buildRequest(validBidRequests, bidderRequest) {
   let userId = null;
   if (bid.userId && bid.userId.qid) {
     userId = bid.userId.qid
+  }
+
+  if (!userId) {
+    userId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    storage.setDataInLocalStorage('qid', userId);
+    window.qid = userId;
   }
 
   let pageUrl = '';
