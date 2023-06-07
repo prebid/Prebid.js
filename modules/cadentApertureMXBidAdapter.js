@@ -22,6 +22,7 @@ const ADAPTER_VERSION = '1.5.1';
 const DEFAULT_CUR = 'USD';
 const ALIASES = [
   { code: 'emx_digital', gvlid: 183 },
+  { code: 'cadent', gvlid: 183 },
 ];
 
 const EIDS_SUPPORTED = [
