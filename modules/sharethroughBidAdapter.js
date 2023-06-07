@@ -154,6 +154,7 @@ export const sharethroughAdapterSpec = {
     }
 
     return body.seatbid[0].bid.map(bid => {
+      // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
         requestId: bid.impid,
         width: +bid.w,
