@@ -597,7 +597,7 @@ function getEidInfo(allEids) {
  *
  * @param  {array}  validBidRequests A list of valid bid request config objects.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
- * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transactionId
+ * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transaction
  * @param  {array}  version          Endpoint version denoting banner, video or native.
  * @return {array}                   List of objects describing the request to the server.
  *
@@ -776,10 +776,8 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
   // Add number of available imps to ixDiag.
   r.ext.ixdiag.imps = Object.keys(impressions).length;
 
-  // set source.tid to auctionId for outgoing request to Exchange.
-  r.source = {
-    tid: bidderRequest?.ortb2?.source?.tid
-  }
+  // set source.tid for outgoing request to Exchange.
+  deepSetValue(r, 'source.tid', validBidRequests[0].ortb2?.source?.tid || validBidRequests[0].auctionId);
 
   // if an schain is provided, send it along
   if (validBidRequests[0].schain) {
