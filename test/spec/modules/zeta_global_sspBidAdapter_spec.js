@@ -171,6 +171,31 @@ describe('Zeta Ssp Bid Adapter', function () {
     params: params
   }];
 
+  const response = {
+    body: {
+      id: '12345',
+      seatbid: [
+        {
+          bid: [
+            {
+              id: 'auctionId',
+              impid: 'impId',
+              price: 0.0,
+              adm: 'adMarkup',
+              crid: 'creativeId',
+              adomain: [
+                'https://example.com'
+              ],
+              h: 250,
+              w: 300
+            }
+          ]
+        }
+      ],
+      cur: 'USD'
+    }
+  };
+
   it('Test the bid validation function', function () {
     const validBid = spec.isBidRequestValid(bannerRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
@@ -464,5 +489,50 @@ describe('Zeta Ssp Bid Adapter', function () {
     // format[2]
     expect(payload.imp[0].banner.format[2].w).to.eql(100);
     expect(payload.imp[0].banner.format[2].h).to.eql(150);
+  });
+
+  it('Test the response default mediaType:banner', function () {
+    const bidRequest = {
+      data: bannerRequest
+    }
+
+    const bidResponse = spec.interpretResponse(response, bidRequest);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(BANNER);
+    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.be.undefined;
+  });
+
+  it('Test the response default mediaType:video', function () {
+    const bidRequest = {
+      data: videoRequest
+    }
+
+    const bidResponse = spec.interpretResponse(response, bidRequest);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(VIDEO);
+    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+  });
+
+  it('Test the response mediaType:video from response bid ext', function () {
+    const bidRequest = {
+      data: bannerRequest
+    }
+
+    response.body.seatbid[0].bid[0].ext = {
+      prebid: {
+        type: 'video'
+      }
+    }
+
+    const bidResponse = spec.interpretResponse(response, bidRequest);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(VIDEO);
+    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
   });
 });
