@@ -690,7 +690,7 @@ class WeboramaRtdProvider {
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
     if (bidder == 'appnexus') {
-      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile, metadata);
+      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
 
@@ -714,15 +714,13 @@ class WeboramaRtdProvider {
    * @param {Object} bid
    * @param {Object} bid.parameters
    * @param {Profile} profile
-   * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleAppnexusBid(reqBidsConfigObj, bid, profile, metadata) {
-    this.#assignProfileToObject(bid, 'params.keywords', profile);
-    if (metadata.user) {
-      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', profile);
-    }
+  #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
+    const base = 'params.keywords';
+    this.#assignProfileToObject(bid, base, profile);
+    // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
   }
 
   /** handle generic bid via ortb2 arbitrary data

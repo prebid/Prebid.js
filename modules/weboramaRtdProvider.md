@@ -575,11 +575,11 @@ pbjs.que.push(function () {
 
 ### Supported Bidders
 
-We set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data).
+We currently support the following bidder adapters with dedicated code:
 
-For `Appnexus SSP` we also set the user data into `users.keywords` fragment.
+* AppNexus SSP
 
-The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders).
+We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders).
 
 * Adagio
 * AdformOpenRTB
