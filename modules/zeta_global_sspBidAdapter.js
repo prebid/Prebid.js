@@ -36,6 +36,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -263,10 +264,24 @@ function buildBanner(request) {
     request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
   }
-  return {
-    w: sizes[0][0],
-    h: sizes[0][1]
-  };
+  if (sizes.length > 1) {
+    const format = sizes.map(s => {
+      return {
+        w: s[0],
+        h: s[1]
+      }
+    });
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: format
+    }
+  } else {
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1]
+    }
+  }
 }
 
 function buildVideo(request) {

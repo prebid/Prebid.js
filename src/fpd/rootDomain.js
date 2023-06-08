@@ -1,7 +1,7 @@
 import {memoize, timestamp} from '../utils.js';
 import {getCoreStorageManager} from '../storageManager.js';
 
-export const coreStorage = getCoreStorageManager();
+export const coreStorage = getCoreStorageManager('fpdEnrichment');
 
 /**
  * Find the root domain by testing for the topmost domain that will allow setting cookies.
