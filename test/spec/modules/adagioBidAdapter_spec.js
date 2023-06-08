@@ -1293,17 +1293,6 @@ describe('Adagio bid adapter', () => {
 
   describe('transformBidParams', function() {
     it('Compute additional params in s2s mode', function() {
-      GlobalExchange.prepareExchangeData('{}');
-
-      sandbox.stub(window.top.document, 'getElementById').returns(
-        fixtures.getElementById()
-      );
-      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
-      sandbox.stub(utils, 'inIframe').returns(false);
-
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
-      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
-
       const adUnit = {
         code: 'adunit-code',
         params: {
@@ -1324,24 +1313,8 @@ describe('Adagio bid adapter', () => {
         }
       }).withParams().build();
 
-      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
-
-      expect(params.organizationId).to.exist;
-      expect(params.auctionId).to.exist;
-      expect(params.playerName).to.exist;
-      expect(params.playerName).to.equal('other');
-      expect(params.features).to.exist;
-      expect(params.features.page_dimensions).to.exist;
-      expect(params.features.adunit_position).to.exist;
-      expect(params.features.dom_loading).to.exist;
-      expect(params.features.print_number).to.exist;
-      expect(params.features.user_timestamp).to.exist;
-      expect(params.placement).to.exist;
-      expect(params.adUnitElementId).to.exist;
-      expect(params.site).to.exist;
-      expect(params.data.session).to.exist;
-
-      expect(params.auctionId).eq(expectedAuctionId);
+      const params = spec.transformBidParams({ param01: 'test' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
+      expect(params.param01).eq('test');
     });
   });
 

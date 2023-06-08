@@ -1245,33 +1245,8 @@ export const spec = {
    * @returns {object} updated params
    */
   transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    const adagioBidderRequest = find(bidRequests, bidRequest => bidRequest.bidderCode === 'adagio');
-    const adagioBid = find(adagioBidderRequest.bids, bid => bid.adUnitCode === adUnit.code);
-
-    if (isOrtb) {
-      autoFillParams(adagioBid);
-
-      adagioBid.params.auctionId = generateUUID();
-
-      const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
-      adagioBid.params.features = {
-        ...globalFeatures,
-        print_number: getPrintNumber(adagioBid.adUnitCode, adagioBidderRequest).toString(),
-        adunit_position: getSlotPosition(adagioBid.params.adUnitElementId) // adUnitElementId à déplacer ???
-      };
-
-      adagioBid.params.pageviewId = internal.getPageviewId();
-      adagioBid.params.prebidVersion = '$prebid.version$';
-      adagioBid.params.data = GlobalExchange.getExchangeData();
-
-      if (deepAccess(adagioBid, 'mediaTypes.video.context') === OUTSTREAM) {
-        adagioBid.params.playerName = setPlayerName(adagioBid);
-      }
-
-      storeRequestInAdagioNS(adagioBid);
-    }
-
-    return adagioBid.params;
+    // We do not have a prebid server adapter. So let's return unchanged params.
+    return params;
   }
 };
 
