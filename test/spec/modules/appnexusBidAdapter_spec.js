@@ -784,6 +784,69 @@ describe('AppNexusAdapter', function () {
       config.getConfig.restore();
     });
 
+    it('adds ortb2 segments to auction request as keywords', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidderRequest = {
+        ortb2: {
+          site: {
+            keywords: 'drill',
+            content: {
+              data: [{
+                name: 'siteseg1',
+                ext: {
+                  segtax: 540
+                },
+                segment: [{
+                  id: 's123',
+                }, {
+                  id: 's234'
+                }]
+              }, {
+                name: 'sitseg2',
+                ext: {
+                  segtax: 1
+                },
+                segment: [{
+                  id: 'unknown'
+                }]
+              }, {
+                name: 'siteseg3',
+                ext: {
+                  segtax: 526
+                },
+                segment: [{
+                  id: 'dog'
+                }]
+              }]
+            }
+          },
+          user: {
+            data: [{
+              name: 'userseg1',
+              ext: {
+                segtax: 526
+              },
+              segment: [{
+                id: 'cat'
+              }]
+            }]
+          }
+        }
+      };
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expectKeywords(payload.keywords, [{
+        'key': 'drill'
+      }, {
+        'key': '1plusx',
+        'value': ['cat', 'dog']
+      }, {
+        'key': 'perid',
+        'value': ['s123', 's234']
+      }]);
+    });
+
     if (FEATURES.NATIVE) {
       it('should attach native params to the request', function () {
         let bidRequest = Object.assign({},
