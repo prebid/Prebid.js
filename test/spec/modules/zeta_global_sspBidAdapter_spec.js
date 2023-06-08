@@ -305,7 +305,10 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example.com'
                 ],
                 h: 250,
-                w: 300
+                w: 300,
+                ext: {
+                  bidtype: 'banner'
+                }
               },
               {
                 id: 'auctionId2',
@@ -332,7 +335,10 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example3.com'
                 ],
                 h: 400,
-                w: 300
+                w: 300,
+                ext: {
+                  bidtype: 'video'
+                }
               }
             ]
           }
