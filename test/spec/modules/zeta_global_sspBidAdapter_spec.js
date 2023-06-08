@@ -592,5 +592,4 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
   });
-
 });
