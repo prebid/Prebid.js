@@ -291,6 +291,14 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  'euid': {
+    source: 'euid.eu',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
   'deepintentId': {
     source: 'deepintent.com',
     atype: 3
