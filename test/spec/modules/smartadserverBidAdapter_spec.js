@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 import { spec } from 'modules/smartadserverBidAdapter.js';
 
 // Default params with optional ones
@@ -1337,6 +1338,47 @@ describe('Smart bid adapter tests', function () {
       expect(bannerRequest).to.have.property('siteid').and.to.equal('1234');
       expect(bannerRequest).to.have.property('pageid').and.to.equal('5678');
       expect(bannerRequest).to.have.property('formatid').and.to.equal('90');
+    });
+  });
+
+  describe('Global Placement ID (GPID)', function () {
+    it('should not include gpid by default', () => {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.not.have.property('gdid');
+    });
+
+    it('should include gpid if pbadslot in ortb2Imp', () => {
+      const gpid = '/19968336/header-bid-tag-1';
+      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
+
+      bidRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            pbadslot: gpid
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
+    });
+
+    it('should include gpid if imp[].ext.gpid exists', () => {
+      const gpid = '/1111/homepage#div-leftnav';
+      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
+
+      bidRequests[0].ortb2Imp = {
+        ext: { gpid }
+      };
+
+      const request = spec.buildRequests(bidRequests);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
     });
   });
 });
