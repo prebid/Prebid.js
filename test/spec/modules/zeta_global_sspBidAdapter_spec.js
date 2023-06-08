@@ -341,7 +341,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       }
     };
 
-    const bidResponse = spec.interpretResponse(response, {data: responseBannerPayload});
+    const bidResponse = spec.interpretResponse(response, responseBannerPayload);
     expect(bidResponse).to.not.be.empty;
 
     const bid1 = bidResponse[0];
