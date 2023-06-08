@@ -189,7 +189,6 @@ export const spec = {
             currency: response.cur,
             width: zetaBid.w,
             height: zetaBid.h,
-            mediaType: bidRequest.data.imp[0].video ? VIDEO : BANNER,
             ad: zetaBid.adm,
             ttl: TTL,
             creativeId: zetaBid.crid,
@@ -200,7 +199,7 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
-          provideMediaType(zetaBid, bid);
+          provideMediaType(zetaBid, bid, bidRequest.data);
           if (bid.mediaType === VIDEO) {
             bid.vastXml = bid.ad;
           }
@@ -335,13 +334,15 @@ function provideEids(request, payload) {
   }
 }
 
-function provideMediaType(zetaBid, bid) {
+function provideMediaType(zetaBid, bid, bidRequest) {
   if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
     if (zetaBid.ext.prebid.type === VIDEO) {
       bid.mediaType = VIDEO;
     } else {
       bid.mediaType = BANNER;
     }
+  } else {
+    bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
 }
 

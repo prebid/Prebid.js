@@ -171,7 +171,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     params: params
   }];
 
-  const response = {
+  const responseData = {
     body: {
       id: '12345',
       seatbid: [
@@ -496,11 +496,11 @@ describe('Zeta Ssp Bid Adapter', function () {
       data: bannerRequest
     }
 
-    const bidResponse = spec.interpretResponse(response, bidRequest);
+    const bidResponse = spec.interpretResponse(responseData, bidRequest);
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
     expect(bidResponse[0].mediaType).to.eql(BANNER);
-    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].ad).to.eql(responseData.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
   });
 
@@ -509,12 +509,12 @@ describe('Zeta Ssp Bid Adapter', function () {
       data: videoRequest
     }
 
-    const bidResponse = spec.interpretResponse(response, bidRequest);
+    const bidResponse = spec.interpretResponse(responseData, bidRequest);
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
-    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
-    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].ad).to.eql(responseData.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(responseData.body.seatbid[0].bid[0].adm);
   });
 
   it('Test the response mediaType:video from response bid ext', function () {
@@ -528,11 +528,11 @@ describe('Zeta Ssp Bid Adapter', function () {
       }
     }
 
-    const bidResponse = spec.interpretResponse(response, bidRequest);
+    const bidResponse = spec.interpretResponse(responseData, bidRequest);
     expect(bidResponse).to.not.be.empty;
     expect(bidResponse.length).to.eql(1);
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
-    expect(bidResponse[0].ad).to.eql(response.body.seatbid[0].bid[0].adm);
-    expect(bidResponse[0].vastXml).to.eql(response.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].ad).to.eql(responseData.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(responseData.body.seatbid[0].bid[0].adm);
   });
 });
