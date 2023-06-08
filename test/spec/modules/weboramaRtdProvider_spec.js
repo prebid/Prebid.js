@@ -1446,7 +1446,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
           if (v == 'appnexus') {
@@ -1585,7 +1585,7 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids.length).to.equal(5);
               expect(adUnit.bids[0].params).to.be.undefined;
               expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[2].params).to.be.undefined;
+              expect(adUnit.bids[2].params.keywords).to.deep.equal(data);
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
@@ -1712,7 +1712,6 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids.length).to.equal(5);
               expect(adUnit.bids[0].params).to.be.undefined;
               expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[2].params).to.be.undefined;
               expect(adUnit.bids[3].params).to.be.undefined;
             });
             ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
@@ -1731,6 +1730,9 @@ describe('weboramaRtdProvider', function() {
 
               expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
             })
+
+            expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
+            expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -2187,6 +2189,8 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
           foo: ['bar'],
+          webo_cs: ['foo', 'bar'],
+          webo_audiences: ['baz'],
         });
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
           inventory: {
@@ -2274,7 +2278,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
           if (v == 'appnexus') {
@@ -2361,7 +2365,7 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
         expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params).to.be.undefined;
+        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
         ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
           if (v == 'appnexus') {
@@ -2649,7 +2653,7 @@ describe('weboramaRtdProvider', function() {
 
         Object.keys(testcases).forEach(label => {
           const sendToBidders = testcases[label];
-          it(`check sendToBidders as '${label}'`, function() {
+          it(`check sendToBidders as ${label}`, function() {
             let onDataResponse = {};
             const moduleConfig = {
               params: {
