@@ -151,10 +151,11 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
+      coppa: bidderRequest.coppa === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      gpp: bidderRequest.gppConsent || undefined,
+      tmax: bidderRequest.bidderTimeout
     };
 
     const len = validBidRequests.length;

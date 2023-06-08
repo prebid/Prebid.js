@@ -78,7 +78,8 @@ describe('KiviAdsBidAdapter', function () {
     gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
       referer: 'https://test.com'
-    }
+    },
+    bidderTimeout: 300
   };
 
   describe('isBidRequestValid', function () {
@@ -121,6 +122,7 @@ describe('KiviAdsBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
+        'gpp',
         'tmax'
       );
       expect(data.deviceWidth).to.be.a('number');
@@ -128,7 +130,9 @@ describe('KiviAdsBidAdapter', function () {
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
+      expect(data.host).to.equal('localhost:9877');
       expect(data.page).to.be.a('string');
+      expect(data.page).to.equal('/');
       expect(data.coppa).to.be.a('number');
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
