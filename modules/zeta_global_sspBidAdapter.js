@@ -11,10 +11,8 @@ const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
-const TTL = 200;
+const TTL = 300;
 const NET_REV = true;
-
-const VIDEO_REGEX = new RegExp(/VAST\s+version/);
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -201,7 +199,10 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
-          provideMediaType(zetaBid, bid);
+          provideMediaType(zetaBid, bid, bidRequest.data);
+          if (bid.mediaType === VIDEO) {
+            bid.vastXml = bid.ad;
+          }
           bidResponses.push(bid);
         })
       })
@@ -333,21 +334,11 @@ function provideEids(request, payload) {
   }
 }
 
-function provideMediaType(zetaBid, bid) {
-  if (zetaBid.ext && zetaBid.ext.bidtype) {
-    if (zetaBid.ext.bidtype === VIDEO) {
-      bid.mediaType = VIDEO;
-      bid.vastXml = bid.ad;
-    } else {
-      bid.mediaType = BANNER;
-    }
+function provideMediaType(zetaBid, bid, bidRequest) {
+  if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
+    bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
   } else {
-    if (VIDEO_REGEX.test(bid.ad)) {
-      bid.mediaType = VIDEO;
-      bid.vastXml = bid.ad;
-    } else {
-      bid.mediaType = BANNER;
-    }
+    bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
 }
 
