@@ -336,11 +336,7 @@ function provideEids(request, payload) {
 
 function provideMediaType(zetaBid, bid, bidRequest) {
   if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
-    if (zetaBid.ext.prebid.type === VIDEO) {
-      bid.mediaType = VIDEO;
-    } else {
-      bid.mediaType = BANNER;
-    }
+    bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
