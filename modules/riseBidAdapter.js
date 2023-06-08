@@ -417,7 +417,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
-    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   };
 
