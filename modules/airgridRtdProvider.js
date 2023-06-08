@@ -64,22 +64,6 @@ export function getMatchedAudiencesFromStorage() {
 }
 
 /**
- * Mutates the adUnits object
- * @param {Object} adUnits
- * @param {Array} audiences
- * @return {void}
- */
-function setAudiencesToAppNexusAdUnits(adUnits, audiences) {
-  adUnits.forEach((adUnit) => {
-    adUnit.bids.forEach((bid) => {
-      if (bid.bidder && bid.bidder === 'appnexus') {
-        deepSetValue(bid, 'params.keywords.perid', audiences || []);
-      }
-    });
-  });
-}
-
-/**
  * Pass audience data to configured bidders, using ORTB2
  * @param {Object} bidConfig
  * @param {Object} rtdConfig
@@ -97,7 +81,6 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
   ).join(',');
   deepSetValue(agOrtb2, 'user.keywords', agKeywords);
 
-  // Is this correct?
   const agUserData = [
     {
       id: String(AG_TCF_ID),
@@ -111,20 +94,12 @@ export function setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences) {
       })
     }
   ]
-  deepSetValue(agOrtb2, 'user.data', agUserData);
+  deepSetValue(agOrtb2, 'user.ext.data', agUserData);
 
   const bidderConfig = Object.fromEntries(
     bidders.map((bidder) => [bidder, agOrtb2])
   )
   mergeDeep(bidConfig?.ortb2Fragments?.bidder, bidderConfig)
-}
-
-export function setAudiencesUsingAppNexusAuctionKeywords(audiences) {
-  config.setConfig({
-    appnexusAuctionKeywords: {
-      perid: audiences,
-    },
-  });
 }
 
 /**
@@ -152,14 +127,9 @@ export function passAudiencesToBidders(
   rtdConfig,
   userConsent
 ) {
-  const adUnits = bidConfig.adUnits || getGlobal().adUnits;
   const audiences = getMatchedAudiencesFromStorage();
   if (audiences.length > 0) {
-    setAudiencesUsingAppNexusAuctionKeywords(audiences);
     setAudiencesAsBidderOrtb2(bidConfig, rtdConfig, audiences)
-    if (adUnits) {
-      setAudiencesToAppNexusAdUnits(adUnits, audiences);
-    }
   }
   onDone();
 }
