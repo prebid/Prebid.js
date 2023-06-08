@@ -307,7 +307,9 @@ describe('Zeta Ssp Bid Adapter', function () {
                 h: 250,
                 w: 300,
                 ext: {
-                  bidtype: 'banner'
+                  prebid: {
+                    type: 'banner'
+                  }
                 }
               },
               {
@@ -322,7 +324,9 @@ describe('Zeta Ssp Bid Adapter', function () {
                 h: 150,
                 w: 200,
                 ext: {
-                  bidtype: 'video'
+                  prebid: {
+                    type: 'video'
+                  }
                 }
               },
               {
@@ -337,7 +341,9 @@ describe('Zeta Ssp Bid Adapter', function () {
                 h: 400,
                 w: 300,
                 ext: {
-                  bidtype: 'video'
+                  prebid: {
+                    type: 'video'
+                  }
                 }
               }
             ]
