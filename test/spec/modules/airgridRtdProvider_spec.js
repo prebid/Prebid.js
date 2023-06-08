@@ -1,8 +1,7 @@
-import { config } from 'src/config.js';
-import { deepAccess } from 'src/utils.js';
-import { getAdUnits } from '../../fixtures/fixtures.js';
+import {config} from 'src/config.js';
+import {deepAccess} from 'src/utils.js';
 import * as agRTD from 'modules/airgridRtdProvider.js';
-import { loadExternalScript } from '../../../src/adloader.js';
+import {loadExternalScript} from '../../../src/adloader.js';
 
 const MATCHED_AUDIENCES = ['travel', 'sport'];
 const RTD_CONFIG = {
