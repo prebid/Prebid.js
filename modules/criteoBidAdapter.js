@@ -8,8 +8,11 @@ import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+
 const GVLID = 91;
-export const ADAPTER_VERSION = 35;
+export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -25,10 +28,11 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 135;
+export const FAST_BID_VERSION_CURRENT = 136;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
+const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
@@ -173,7 +177,14 @@ export const spec = {
 
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const adapter = new Criteo.PubTag.Adapters.Prebid(
+        PROFILE_ID_PUBLISHERTAG,
+        ADAPTER_VERSION,
+        bidRequests,
+        bidderRequest,
+        '$prebid.version$',
+        { createOutstreamVideoRenderer: createOutstreamVideoRenderer }
+      );
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -243,6 +254,11 @@ export const spec = {
         } else if (slot.video) {
           bid.vastUrl = slot.displayurl;
           bid.mediaType = VIDEO;
+          const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+          // if outstream video, add a default render for it.
+          if (context === OUTSTREAM) {
+            bid.renderer = createOutstreamVideoRenderer(slot);
+          }
         } else {
           bid.ad = slot.creative;
         }
@@ -252,7 +268,6 @@ export const spec = {
 
     return bids;
   },
-
   /**
    * @param {TimedOutBid} timeoutData
    */
@@ -477,7 +492,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           placement: bidRequest.mediaTypes.video.placement,
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
-          startdelay: bidRequest.mediaTypes.video.startdelay
+          startdelay: bidRequest.mediaTypes.video.startdelay,
+          plcmt: bidRequest.mediaTypes.video.plcmt
         };
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
@@ -531,6 +547,15 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (userIdAsEids) {
     request.user.ext = request.user.ext || {};
     request.user.ext.eids = [...userIdAsEids];
+  }
+  if (bidderRequest && bidderRequest.ortb2?.bcat) {
+    request.bcat = bidderRequest.ortb2.bcat;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.badv) {
+    request.badv = bidderRequest.ortb2.badv;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.bapp) {
+    request.bapp = bidderRequest.ortb2.bapp;
   }
   return request;
 }
@@ -709,6 +734,35 @@ export function getFastBidUrl(fastBidVersion) {
   }
 
   return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
+}
+
+function createOutstreamVideoRenderer(slot) {
+  if (slot.ext.videoPlayerConfig === undefined || slot.ext.videoPlayerType === undefined) {
+    return undefined;
+  }
+
+  const config = {
+    documentResolver: (bid, sourceDocument, renderDocument) => {
+      return renderDocument ?? sourceDocument;
+    }
+  }
+
+  const render = (bid, renderDocument) => {
+    let payload = {
+      slotid: slot.impid,
+      vastUrl: slot.displayurl,
+      vastXml: slot.creative,
+      documentContext: renderDocument,
+    };
+
+    let outstreamConfig = slot.ext.videoPlayerConfig;
+
+    window.CriteoOutStream[slot.ext.videoPlayerType].play(payload, outstreamConfig)
+  };
+
+  const renderer = Renderer.install({url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config});
+  renderer.setRender(render);
+  return renderer;
 }
 
 export function tryGetCriteoFastBid() {

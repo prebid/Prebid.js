@@ -1004,7 +1004,7 @@ if (FEATURES.VIDEO) {
     const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
 
     if (bids.length > 0) {
-      bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+      auctionManager.addWinningBid(bids[0]);
     }
   }
 }

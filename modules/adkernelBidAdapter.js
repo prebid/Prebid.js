@@ -90,7 +90,6 @@ export const spec = {
     {code: 'denakop'},
     {code: 'rtbanalytica'},
     {code: 'unibots'},
-    {code: 'catapultx'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
     {code: 'felixads'},
@@ -99,7 +98,9 @@ export const spec = {
     {code: 'displayioads'},
     {code: 'rtbdemand_com'},
     {code: 'bidbuddy'},
-    {code: 'adliveconnect'}
+    {code: 'adliveconnect'},
+    {code: 'didnadisplay'},
+    {code: 'qortex'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
