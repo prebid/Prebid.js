@@ -127,6 +127,9 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('context' in value) {
+          bidResponse['mediasquare']['context'] = value['context'];
+        }
         if ('match' in value) {
           bidResponse['mediasquare']['match'] = value['match'];
         }
@@ -171,15 +174,20 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+      return;
+    }
     let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context'];
     if (bid.hasOwnProperty('mediasquare')) {
-      if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
-      if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }
-      if (bid['mediasquare'].hasOwnProperty('match')) { params['match'] = bid['mediasquare']['match']; }
-      if (bid['mediasquare'].hasOwnProperty('hasConsent')) { params['hasConsent'] = bid['mediasquare']['hasConsent']; }
+      for (let i = 0; i < paramsToSearchFor.length; i++) {
+        if (bid['mediasquare'].hasOwnProperty(paramsToSearchFor[i])) {
+          params[paramsToSearchFor[i]] = bid['mediasquare'][paramsToSearchFor[i]];
+        }
+      }
     };
+    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
     for (let i = 0; i < paramsToSearchFor.length; i++) {
       if (bid.hasOwnProperty(paramsToSearchFor[i])) {
         params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
