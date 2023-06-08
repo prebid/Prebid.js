@@ -1,4 +1,5 @@
 import bidwatchAnalytics from 'modules/bidwatchAnalyticsAdapter.js';
+import {dereferenceWithoutRenderer} from 'modules/bidwatchAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
@@ -269,7 +270,7 @@ describe('BidWatch Analytics', function () {
       bidwatchAnalytics.disableAnalytics();
       bidwatchAnalytics.track.restore();
     });
-    if('test dereferenceWithoutRenderer', function () {
+    it('test dereferenceWithoutRenderer', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'bidwatch',
         adapter: bidwatchAnalytics
@@ -282,10 +283,10 @@ describe('BidWatch Analytics', function () {
         }
       });
       let resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon));
-      except(resultBidWon).not.to.have.property('renderer');
+      expect(resultBidWon).not.to.have.property('renderer');
       let resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd));
       expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1);
-      expect(resultBid[0].bidsReceived[0]).not.to.have.property('renderer');
+      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer');
     });
     it('test auctionEnd', function () {
       adapterManager.registerAnalyticsAdapter({

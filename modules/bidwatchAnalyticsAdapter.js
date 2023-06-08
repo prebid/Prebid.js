@@ -121,7 +121,7 @@ function addTimeout(args) {
   auctionEnd[eventType].push(argsCleaned);
 }
 
-function dereferenceWithoutRenderer(args) {
+export const dereferenceWithoutRenderer = function(args) {
   if (args.renderer) {
     let tmp = args.renderer;
     delete args.renderer;
@@ -143,7 +143,7 @@ function dereferenceWithoutRenderer(args) {
     }
     return stringified;
   }
-  return JSON.stringify(args);  
+  return JSON.stringify(args);
 }
 
 function addAuctionEnd(args) {
