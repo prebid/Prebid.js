@@ -37,6 +37,8 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const firstPartyData = bidderRequest.ortb2;
+    const psegs = (firstPartyData && firstPartyData.user && firstPartyData.user.ext && firstPartyData.user.ext.data) ? firstPartyData.user.ext.data.permutive : undefined;
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
@@ -67,6 +69,10 @@ export const spec = {
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
+    if (psegs) {
+      Object.assign(payloadObject, {psegs: psegs});
+    }
 
     const payloadString = JSON.stringify(payloadObject);
     return {
