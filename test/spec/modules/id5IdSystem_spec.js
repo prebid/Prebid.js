@@ -52,6 +52,22 @@ describe('ID5 ID System', function () {
     'signature': ID5_RESPONSE_SIGNATURE,
     'link_type': ID5_RESPONSE_LINK_TYPE
   };
+  const ALLOWED_ID5_VENDOR_DATA = {
+    purpose: {
+      consents: {
+        1: true
+      }
+    },
+    vendor: {
+      consents: {
+        131: true
+      }
+    }
+  }
+
+  const HEADERS_CONTENT_TYPE_JSON = {
+    'Content-Type': 'application/json'
+  }
 
   function getId5FetchConfig(storageName = ID5_STORAGE_NAME, storageType = 'html5') {
     return {
@@ -136,7 +152,7 @@ describe('ID5 ID System', function () {
     }
 
     respondWithConfigAndExpectNext(configRequest, config = ID5_API_CONFIG) {
-      configRequest.respond(200, {'Content-Type': 'application/json'}, JSON.stringify(config));
+      configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(config));
       return this.expectNextRequest()
     }
 
@@ -205,8 +221,39 @@ describe('ID5 ID System', function () {
     });
   });
 
+  describe('Check for valid consent', function() {
+    const dataConsentVals = [
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: true}}}, ' no purpose consent'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {131: false}}}, ' no vendor consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: {131: false}}}, ' no purpose and vendor consent'],
+      [{purpose: {consents: undefined}}, {vendor: {consents: {131: true}}}, ' undefined purpose consent'],
+      [{purpose: {consents: {1: false}}}, {vendor: {consents: undefined}}], ' undefined vendor consent',
+      [undefined, {vendor: {consents: {131: true}}}, ' undefined purpose'],
+      [{purpose: {consents: {1: true}}}, {vendor: undefined}, ' undefined vendor'],
+      [{purpose: {consents: {1: true}}}, {vendor: {consents: {31: true}}}, ' incorrect vendor consent']
+    ];
+
+    dataConsentVals.forEach(function([purposeConsent, vendorConsent, caseName]) {
+      it('should fail with invalid consent because of ' + caseName, function() {
+        let dataConsent = {
+          gdprApplies: true,
+          consentString: 'consentString',
+          vendorData: {
+            purposeConsent, vendorConsent
+          }
+        }
+        expect(id5IdSubmodule.getId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.getId(config, dataConsent)).is.eq(undefined);
+
+        let cacheIdObject = 'cacheIdObject';
+        expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
+        expect(id5IdSubmodule.extendId(config, dataConsent, cacheIdObject)).is.eq(cacheIdObject);
+      });
+    });
+  });
+
   describe('Xhr Requests from getId()', function () {
-    const responseHeader = {'Content-Type': 'application/json'};
+    const responseHeader = HEADERS_CONTENT_TYPE_JSON
 
     beforeEach(function () {
     });
@@ -248,7 +295,8 @@ describe('ID5 ID System', function () {
       let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
       let consentData = {
         gdprApplies: true,
-        consentString: 'consentString'
+        consentString: 'consentString',
+        vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
@@ -297,7 +345,8 @@ describe('ID5 ID System', function () {
       let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
       let consentData = {
         gdprApplies: true,
-        consentString: 'consentString'
+        consentString: 'consentString',
+        vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
@@ -674,6 +723,40 @@ describe('ID5 ID System', function () {
     })
   });
 
+  describe('Local storage', () => {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(storage, 'localStorageIsEnabled');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    [
+      [true, 1],
+      [false, 0]
+    ].forEach(function ([isEnabled, expectedValue]) {
+      it(`should check localStorage availability and log in request. Available=${isEnabled}`, () => {
+        let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+        let config = getId5FetchConfig();
+        let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
+        storage.localStorageIsEnabled.callsFake(() => isEnabled)
+
+        return xhrServerMock.expectFetchRequest()
+          .then(fetchRequest => {
+            let requestBody = JSON.parse(fetchRequest.requestBody);
+            expect(requestBody.localStorage).is.eq(expectedValue);
+
+            fetchRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
+            return submoduleResponse
+          })
+          .then(submoduleResponse => {
+            expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
+          });
+      })
+    })
+  });
+
   describe('Request Bids Hook', function () {
     let adUnits;
     let sandbox;
@@ -797,8 +880,7 @@ describe('ID5 ID System', function () {
         expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
         expect(requestBody.nbPage).is.eq(2);
         expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(2);
-        const responseHeader = {'Content-Type': 'application/json'};
-        request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+        request.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
 
         return new Promise(function (resolve) {
           (function waitForCondition() {

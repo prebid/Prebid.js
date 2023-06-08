@@ -24,12 +24,14 @@ import { getRefererInfo } from '../src/refererDetection.js';
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
   'playbackmethod', 'protocols', 'startdelay'
 ];
+const GVLID = 1060;
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -43,6 +45,7 @@ events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     return !!(
@@ -87,6 +90,7 @@ export const spec = {
       };
 
       const imp = {
+        id: bid.adUnitCode,
         ext: {
           prebid: {
             storedrequest: {id}
@@ -182,7 +186,7 @@ export const spec = {
           height: bid.h,
           creativeId: bid.adid,
           currency: response.cur,
-          netRevenue: false,
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
             advertiserDomains: bid.adomain || []
@@ -231,6 +235,13 @@ export const spec = {
       })
     }
 
+    if (!pixels.length) {
+      let syncUrl = SYNC_ENDPOINT;
+      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString + '&';
+      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent + '&';
+      if (syncOptions.iframeEnabled) pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
+      if (syncOptions.pixelEnabled) pixels.push({type: 'image', url: syncUrl + 'type=image'});
+    }
     return pixels;
   },
 
@@ -271,15 +282,25 @@ export const spec = {
 };
 
 function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
-  const { consentString, gdprApplies } = gdprConsent;
+  const { consentString, gdprApplies } = gdprConsent || {};
 
-  return url.replace(
-    '{{.GDPR}}', Number(gdprApplies)
-  ).replace(
-    '{{.GDPRConsent}}', consentString
-  ).replace(
-    '{{.USPrivacy}}', uspConsent
-  );
+  if (gdprApplies) {
+    const gdpr = Number(gdprApplies);
+    url = url.replace('{{.GDPR}}', gdpr);
+
+    if (gdpr == 1 && consentString && consentString.length > 0) {
+      url = url.replace('{{.GDPRConsent}}', consentString);
+    }
+  } else {
+    url = url.replace('{{.GDPR}}', 0);
+    url = url.replace('{{.GDPRConsent}}', '');
+  }
+
+  if (uspConsent) {
+    url = url.replace('{{.USPrivacy}}', uspConsent);
+  }
+
+  return url;
 };
 
 function getAdEl(bid) {

@@ -423,6 +423,7 @@ describe('TheMediaGrid Adapter', function () {
               api: [1, 2],
               skip: 1,
               placement: 1,
+              plcmt: 2,
               minduration: 0,
               playbackmethod: 1,
               startdelay: 0
@@ -480,6 +481,15 @@ describe('TheMediaGrid Adapter', function () {
             'h': 600,
             'protocols': [1, 2, 3],
             'mimes': ['video/mp4', 'video/webm', 'application/javascript', 'video/ogg'],
+            'context': 'instream',
+            'maxduration': 30,
+            'minduration': 0,
+            'api': [1, 2],
+            'skip': 1,
+            'placement': 1,
+            'plcmt': 2,
+            'playbackmethod': 1,
+            'startdelay': 0
           }
         }, {
           'id': bidRequests[3].bidId,
@@ -531,6 +541,7 @@ describe('TheMediaGrid Adapter', function () {
             ],
             'minduration': 0,
             'placement': 1,
+            'plcmt': 2,
             'playbackmethod': 1,
             'playersizes': [
               '400x600'
@@ -573,6 +584,30 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload).to.have.property('regs');
       expect(payload.regs).to.have.property('ext');
       expect(payload.regs.ext).to.have.property('us_privacy', '1YNN');
+    });
+
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({gppConsent: {gppString: consentString, applicableSections: [8]}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.ortb2.regs.gpp', function () {
+      let consentString = 'abc1234';
+      const gppBidderRequest = Object.assign({ortb2: {regs: {gpp: consentString, gpp_sid: [8]}}}, bidderRequest);
+
+      const [request] = spec.buildRequests(bidRequests, gppBidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.regs).to.exist;
+      expect(payload.regs.gpp).to.equal(consentString);
+      expect(payload.regs.gpp_sid).to.deep.equal([8]);
     });
 
     it('if userId is present payload must have user.ext param with right keys', function () {
@@ -667,14 +702,6 @@ describe('TheMediaGrid Adapter', function () {
       const [request] = spec.buildRequests(bidRequestsWithJwTargeting, bidderRequest);
       expect(request.data).to.be.an('string');
       const payload = parseRequest(request.data);
-      expect(payload).to.have.property('user');
-      expect(payload.user.data).to.deep.equal([{
-        name: 'iow_labs_pub_data',
-        segment: [
-          {name: 'jwpseg', value: jsSegments[0]},
-          {name: 'jwpseg', value: jsSegments[1]}
-        ]
-      }]);
       expect(payload).to.have.property('site');
       expect(payload.site.content).to.deep.equal(jsContent);
     });
@@ -793,7 +820,7 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.site.content.data).to.deep.equal(contentData);
     });
 
-    it('should have right value in user.data when jwpsegments are present', function () {
+    it('should have right value in user.data', function () {
       const userData = [
         {
           name: 'someName',
@@ -823,13 +850,7 @@ describe('TheMediaGrid Adapter', function () {
       });
       const [request] = spec.buildRequests([bidRequestsWithJwTargeting], {...bidderRequest, ortb2});
       const payload = parseRequest(request.data);
-      expect(payload.user.data).to.deep.equal([{
-        name: 'iow_labs_pub_data',
-        segment: [
-          {name: 'jwpseg', value: jsSegments[0]},
-          {name: 'jwpseg', value: jsSegments[1]}
-        ]
-      }, ...userData]);
+      expect(payload.user.data).to.deep.equal(userData);
     });
 
     it('should have site.content.id filled from config ortb2.site.content.id', function () {
@@ -863,13 +884,16 @@ describe('TheMediaGrid Adapter', function () {
         }
       }, {
         ext: {
+          gpid: '/222222/slot',
           data: {
             adserver: {
               name: 'ad_server_name',
-              adslot: '/222222/slot'
-            },
-            pbadslot: '/222222/slot'
+            }
           }
+        }
+      }, {
+        ext: {
+          gpid: '/333333/slot'
         }
       }];
       const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
@@ -886,10 +910,11 @@ describe('TheMediaGrid Adapter', function () {
       expect(payload.imp[1].ext).to.deep.equal({
         divid: bidRequests[1].adUnitCode,
         data: ortb2Imp[1].ext.data,
-        gpid: ortb2Imp[1].ext.data.adserver.adslot
+        gpid: ortb2Imp[1].ext.gpid
       });
       expect(payload.imp[2].ext).to.deep.equal({
-        divid: bidRequests[2].adUnitCode
+        divid: bidRequests[2].adUnitCode,
+        gpid: ortb2Imp[2].ext.gpid
       });
     });
 

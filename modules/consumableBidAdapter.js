@@ -180,12 +180,26 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
+
     if (syncOptions.iframeEnabled) {
+      if (gdprConsent && gdprConsent.consentString) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+        } else {
+          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+
+      if (uspConsent && uspConsent.consentString) {
+        syncUrl = appendUrlParam(syncUrl, `us_privacy=${uspConsent.consentString}`);
+      }
+
       if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
         return [{
           type: 'iframe',
-          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+          url: syncUrl
         }];
       }
     }
@@ -292,6 +306,10 @@ function getBidFloor(bid, sizes) {
   }
 
   return floor;
+}
+
+function appendUrlParam(url, queryString) {
+  return `${url}${url.indexOf('?') > -1 ? '&' : '?'}${queryString}`;
 }
 
 registerBidder(spec);
