@@ -95,4 +95,3 @@ function getImpUrl(config, data, maxCpm) {
 }
 
 submodule('realTimeData', oxxionSubmodule);
-
