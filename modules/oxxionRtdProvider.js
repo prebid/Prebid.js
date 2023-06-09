@@ -10,7 +10,7 @@ const allAdUnits = [];
 export const oxxionSubmodule = {
   name: 'oxxionRtd',
   init: init,
-  onAuctionEndEvent: onAuctionEnd,
+  //onAuctionEndEvent: onAuctionEnd,
   getBidRequestData: getAdUnits,
   onBidResponseEvent: getBidResponse,
 };
@@ -34,7 +34,10 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
 }
 
 function getBidResponse(bidResponse, config, userConsent) {
-  logInfo(LOG_PREFIX + ' getBidResponse: '+bidResponse);
+  if (bidResponse.mediaType == "video") {
+    insertVideoTracking(bidResponse, config, bidResponse.Cpm);
+    logInfo(LOG_PREFIX + ' getBidResponse: '+bidResponse);
+  }
 }
 
 function insertVideoTracking(bidResponse, config, maxCpm) {
@@ -95,7 +98,7 @@ function getImpUrl(config, data, maxCpm) {
   const cpmIncrement = Math.round(100000 * (data.cpm - maxCpm)) / 100000;
   return trackingImpUrl + 'cpmIncrement=' + cpmIncrement + '&context=' + context;
 }
-
+/*
 function onAuctionEnd(auctionDetails, config, userConsent) {
   const transactionsToCheck = {}
   auctionDetails.adUnits.forEach(adunit => {
@@ -119,6 +122,6 @@ function onAuctionEnd(auctionDetails, config, userConsent) {
       insertVideoTracking(auctionDetails.bidsReceived[transactionsToCheck[transaction]['bids'][bid].key], config, transactionsToCheck[transaction].secondMaxCpm);
     });
   });
-}
+}*/
 
 submodule('realTimeData', oxxionSubmodule);
