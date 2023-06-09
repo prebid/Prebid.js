@@ -12,6 +12,7 @@ export const oxxionSubmodule = {
   init: init,
   onAuctionEndEvent: onAuctionEnd,
   getBidRequestData: getAdUnits,
+  onBidResponseEvent: getBidResponse,
 };
 
 function init(config, userConsent) {
@@ -30,6 +31,10 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       }
     });
   }
+}
+
+function getBidResponse(bidResponse, config, userConsent) {
+  logInfo(LOG_PREFIX + ' getBidResponse: '+bidResponse);
 }
 
 function insertVideoTracking(bidResponse, config, maxCpm) {
