@@ -196,6 +196,9 @@ let initializedSubmodules;
 /** @type {SubmoduleConfig[]} */
 let configRegistry = [];
 
+/** @type {Object} */
+let idPriority = {};
+
 /** @type {Submodule[]} */
 let submoduleRegistry = [];
 
@@ -448,14 +451,7 @@ function getCombinedSubmoduleIds(submodules) {
   if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }
-  const combinedSubmoduleIds = submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length).reduce((carry, i) => {
-    Object.keys(i.idObj).forEach(key => {
-      carry[key] = i.idObj[key];
-    });
-    return carry;
-  }, {});
-
-  return combinedSubmoduleIds;
+  return getPrioritizedCombinedSubmoduleIds(submodules)
 }
 
 /**
@@ -467,9 +463,14 @@ function getSubmoduleId(submodules, sourceName) {
   if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }
-  const submodule = submodules.filter(sub => isPlainObject(sub.idObj) &&
-    Object.keys(sub.idObj).length && USER_IDS_CONFIG[Object.keys(sub.idObj)[0]]?.source === sourceName);
-  return !isEmpty(submodule) ? submodule[0].idObj : [];
+
+  const prioritisedIds = getPrioritizedCombinedSubmoduleIds(submodules);
+  const eligibleIdName = Object.keys(prioritisedIds).find(idName => {
+    const config = USER_IDS_CONFIG[idName];
+    return config?.source === sourceName || (isFn(config?.getSource) && config.getSource() === sourceName);
+  });
+
+  return eligibleIdName ? {[eligibleIdName]: prioritisedIds[eligibleIdName]} : [];
 }
 
 /**
@@ -481,15 +482,40 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
   if (!Array.isArray(submodules) || !submodules.length || !bidder) {
     return {};
   }
-  return submodules
+  const eligibleSubmodules = submodules
     .filter(i => !i.config.bidders || !isArray(i.config.bidders) || includes(i.config.bidders, bidder))
+
+  return getPrioritizedCombinedSubmoduleIds(eligibleSubmodules);
+}
+
+/**
+ * @param {SubmoduleContainer[]} submodules
+ */
+function getPrioritizedCombinedSubmoduleIds(submodules) {
+  const combinedIdStates = submodules
     .filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {
-        carry[key] = i.idObj[key];
+        const currentIdPriorityByName = idPriority[key]?.reverse().indexOf(i.submodule.name);
+        const currentIdPriorityByAlias = idPriority[key]?.reverse().indexOf(i.submodule.aliasName);
+        // eslint-disable-next-line
+        const currentIdPriority = currentIdPriorityByName ? currentIdPriorityByName : currentIdPriorityByAlias ? currentIdPriorityByAlias : - 1
+        const currentIdState = {priority: currentIdPriority, value: i.idObj[key]};
+        if (carry[key]) {
+          const winnerIdState = currentIdState.priority > carry[key].priority ? currentIdState : carry[key];
+          carry[key] = winnerIdState;
+        } else {
+          carry[key] = currentIdState;
+        }
       });
       return carry;
     }, {});
+
+  const result = {};
+  Object.keys(combinedIdStates).forEach(key => {
+    result[key] = combinedIdStates[key].value
+  });
+  return result;
 }
 
 /**
@@ -1086,13 +1112,16 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
   configListener = config.getConfig('userSync', conf => {
     // Note: support for 'usersync' was dropped as part of Prebid.js 4.0
     const userSync = conf.userSync;
-    ppidSource = userSync.ppid;
-    if (userSync && userSync.userIds) {
-      configRegistry = userSync.userIds;
-      syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
-      auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
-      updateSubmodules();
-      initIdSystem({ready: true});
+    if (userSync) {
+      ppidSource = userSync.ppid;
+      idPriority = userSync.idPriority ? userSync.idPriority : {};
+      if (userSync.userIds) {
+        configRegistry = userSync.userIds;
+        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
+        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
+        updateSubmodules();
+        initIdSystem({ready: true});
+      }
     }
   });
 

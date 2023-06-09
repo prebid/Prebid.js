@@ -397,6 +397,34 @@ describe('User ID', function () {
       })
     });
 
+    it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', function (done) {
+      init(config);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            uid2: ['liveIntentId', 'uid2'],
+            merkleId: ['merkleId', 'liveIntentId']
+          },
+          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+          userIds: [
+            { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
+            { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
+            // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
+            { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
+            { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+          ]
+        }
+      });
+
+      getGlobal().getUserIdsAsync().then((uids) => {
+        expect(uids['uid2']).to.deep.equal({id: 'liveIntentUid2_value'});
+        expect(uids['merkleId']).to.deep.equal({id: 'merkleId_value'});
+        expect(uids['pubcid']).to.deep.equal('pubcid_value');
+        done();
+      });
+    });
+
     it('pbjs.getUserIdsAsEids', function (done) {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
@@ -412,6 +440,40 @@ describe('User ID', function () {
       });
       getGlobal().getUserIdsAsync().then((ids) => {
         expect(getGlobal().getUserIdsAsEids()).to.deep.equal(createEidsArray(ids));
+        done();
+      });
+    });
+
+    it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', function (done) {
+      init(config);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            uid2: ['liveIntentId', 'uid2'],
+            merkleId: ['merkleId', 'liveIntentId']
+          },
+          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+          userIds: [
+            { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
+            { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
+            // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
+            { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
+            { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+          ]
+        }
+      });
+
+      const ids = {
+        'pubcid': 'pubcid_value',
+        'uid2': { id: 'liveIntentUid2_value' },
+        'merkleId': { id: 'merkleId_value' }
+      };
+
+      getGlobal().getUserIdsAsync().then(() => {
+        const eids = getGlobal().getUserIdsAsEids();
+        const expected = createEidsArray(ids);
+        expect(eids).to.deep.equal(expected);
         done();
       });
     });
@@ -3011,6 +3073,39 @@ describe('User ID', function () {
         (getGlobal()).getUserIdsAsync().then(() => {
           expect(getGlobal().getUserIdsAsEidBySource(signalSources[0])).to.deep.equal(users);
           done();
+        });
+      });
+
+      it('pbjs.getUserIdsAsEidBySource with priority config available to core', () => {
+        const ids = {
+          'pubcid.org': {'pubcid': 'pubcid_value'},
+          'uidapi.com': {'uid2': {id: 'liveIntentUid2_value'}},
+          'merkleinc.com': {'merkleId': {id: 'merkleId_value'}}
+        };
+
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+        config.setConfig({
+          userSync: {
+            idPriority: {
+              uid2: ['liveIntentId', 'uid2'],
+              merkleId: ['merkleId', 'liveIntentId']
+            },
+            auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+            userIds: [
+              { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
+              { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
+              // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
+              { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
+              { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+            ]
+          }
+        });
+
+        getGlobal().getUserIdsAsync().then(() => {
+          expect(getGlobal().getUserIdsAsEidBySource('pubcid.org')).to.deep.equal(createEidsArray(ids['pubcid.org'])[0]);
+          expect(getGlobal().getUserIdsAsEidBySource('uidapi.com')).to.deep.equal(createEidsArray(ids['uidapi.com'])[0]);
+          expect(getGlobal().getUserIdsAsEidBySource('merkleinc.com')).to.deep.equal(createEidsArray(ids['merkleinc.com'])[0]);
         });
       });
     })
