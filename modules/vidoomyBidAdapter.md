@@ -27,7 +27,12 @@ var adUnits = [
         params: {
           id: '123123',
           pid: '123123',
-          bidfloor: 0.5 // This is optional
+          bidfloor: 0.5, // This is optional
+          bcat: ['IAB1-1'], // Optional - default is []
+          badv: ['example.com'], // Optional - default is []
+          bapp: ['app.com'], // Optional - default is []
+          btype: [1, 2, 3], // Optional - default is []
+          battr: [1, 2, 3] // Optional - default is []
         }
       }
     ]
@@ -52,7 +57,12 @@ var adUnits = [
         params: {
           id: '123123',
           pid: '123123',
-          bidfloor: 0.5 // This is optional
+          bidfloor: 0.5, // This is optional
+          bcat: ['IAB1-1'], // Optional - default is []
+          badv: ['example.com'],  // Optional - default is []
+          bapp: ['app.com'], // Optional - default is []
+          btype: [1, 2, 3], // Optional - default is []
+          battr: [1, 2, 3] // Optional - default is []
         }
       }
     ]

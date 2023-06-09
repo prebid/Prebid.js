@@ -1,12 +1,16 @@
-import { deepAccess } from '../src/utils.js';
-import {config} from '../src/config.js';
+import {deepAccess, getBidIdParameter, isFn, logError, logMessage, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {includes} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 const GVLID = 602;
+const VIDEO_ORTB_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+  'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad',
+  'api', 'companiontype', 'ext'];
 
 export const spec = {
   code: BIDDER_CODE,
@@ -17,24 +21,34 @@ export const spec = {
     return !!(bid.params.placement);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    let payload = {};
     return validBidRequests.map(bidRequest => {
       const params = bidRequest.params;
 
-      const placementId = params.placement;
       const rnd = Math.floor(Math.random() * 99999999999);
       const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
-      const isDev = params.devMode || false;
       const pbcode = bidRequest.adUnitCode || false; // div id
       const auctionId = bidRequest.auctionId || false;
+      const isDev = params.devMode || false;
 
       let endpoint = isDev ? ENDPOINT_URL_DEV : ENDPOINT_URL;
+      let placementId = params.placement;
+
+      // dev config
+      if (isDev && params.dev) {
+        endpoint = params.dev.endpoint || endpoint;
+        placementId = params.dev.placement || placementId;
+        if (params.dev.pfilter !== undefined) {
+          params.pfilter = params.dev.pfilter;
+        }
+      }
 
       let mediaTypesInfo = getMediaTypesInfo(bidRequest);
       let type = isBannerRequest(bidRequest) ? BANNER : VIDEO;
       let sizes = mediaTypesInfo[type];
 
-      let payload = {
+      payload = {
         _f: 'auto',
         alternative: 'prebid_js',
         inventory_item_id: placementId,
@@ -46,10 +60,6 @@ export const spec = {
         bid_id: bidId,
         pbver: '$prebid.version$'
       };
-
-      if (mediaTypesInfo[VIDEO] !== undefined && params.vastFormat !== undefined) {
-        payload.vf = params.vastFormat;
-      }
 
       if (params.pfilter !== undefined) {
         payload.pfilter = params.pfilter;
@@ -79,11 +89,49 @@ export const spec = {
         payload.prebidDevMode = 1;
       }
 
-      if (bidRequest.userId && bidRequest.userId.netId) {
-        payload.did_netid = bidRequest.userId.netId;
+      // fill userId params
+      if (bidRequest.userId) {
+        if (bidRequest.userId.netId) {
+          payload.did_netid = bidRequest.userId.netId;
+        }
+        if (bidRequest.userId.id5id) {
+          payload.did_id5 = bidRequest.userId.id5id.uid || '0';
+          if (bidRequest.userId.id5id.ext.linkType !== undefined) {
+            payload.did_id5_linktype = bidRequest.userId.id5id.ext.linkType;
+          }
+        }
+        let uId2 = deepAccess(bidRequest, 'userId.uid2.id');
+        if (uId2) {
+          payload.did_uid2 = uId2;
+        }
+        let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+        if (sharedId) {
+          payload.did_sharedid = sharedId;
+        }
+        let pubcId = deepAccess(bidRequest, 'userId.pubcid');
+        if (pubcId) {
+          payload.did_pubcid = pubcId;
+        }
+        let crumbsPubcid = deepAccess(bidRequest, 'crumbs.pubcid');
+        if (crumbsPubcid) {
+          payload.did_cpubcid = crumbsPubcid;
+        }
       }
-      if (bidRequest.userId && bidRequest.userId.uid2) {
-        payload.did_uid2 = bidRequest.userId.uid2;
+
+      if (bidRequest.schain) {
+        payload.schain = bidRequest.schain;
+      }
+
+      if (payload.pfilter === undefined || !payload.pfilter.floorprice) {
+        let bidFloor = getBidFloor(bidRequest);
+        if (bidFloor > 0) {
+          if (payload.pfilter !== undefined) {
+            payload.pfilter.floorprice = bidFloor;
+          } else {
+            payload.pfilter = { 'floorprice': bidFloor };
+          }
+          // payload.bidFloor = bidFloor;
+        }
       }
 
       if (auctionId) {
@@ -94,6 +142,17 @@ export const spec = {
       }
 
       payload.media_types = convertMediaInfoForRequest(mediaTypesInfo);
+      if (mediaTypesInfo[VIDEO] !== undefined) {
+        payload.vctx = getVideoContext(bidRequest);
+        if (params.vastFormat !== undefined) {
+          payload.vf = params.vastFormat;
+        }
+        payload.vpl = {};
+        let videoParams = deepAccess(bidRequest, 'mediaTypes.video');
+        Object.keys(videoParams)
+          .filter(key => includes(VIDEO_ORTB_PARAMS, key))
+          .forEach(key => payload.vpl[key] = videoParams[key]);
+      }
 
       return {
         method: 'GET',
@@ -103,6 +162,8 @@ export const spec = {
     });
   },
   interpretResponse: function(serverResponse, bidRequest) {
+    logMessage('DSPx: serverResponse', serverResponse);
+    logMessage('DSPx: bidRequest', bidRequest);
     const bidResponses = [];
     const response = serverResponse.body;
     const crid = response.crid || 0;
@@ -121,16 +182,36 @@ export const spec = {
         currency: currency,
         netRevenue: netRevenue,
         type: response.type,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         meta: {
           advertiserDomains: response.adomain || []
         }
       };
+
+      if (response.vastUrl) {
+        bidResponse.vastUrl = response.vastUrl;
+        bidResponse.mediaType = 'video';
+      }
       if (response.vastXml) {
         bidResponse.vastXml = response.vastXml;
         bidResponse.mediaType = 'video';
-      } else {
+      }
+      if (response.renderer) {
+        bidResponse.renderer = newRenderer(bidRequest, response);
+      }
+
+      if (response.videoCacheKey) {
+        bidResponse.videoCacheKey = response.videoCacheKey;
+      }
+
+      if (response.adTag) {
         bidResponse.ad = response.adTag;
+      }
+
+      if (response.bid_appendix) {
+        Object.keys(response.bid_appendix).forEach(fieldName => {
+          bidResponse[fieldName] = response.bid_appendix[fieldName];
+        });
       }
 
       bidResponses.push(bidResponse);
@@ -217,10 +298,20 @@ function isVideoRequest(bid) {
  * Get video sizes
  *
  * @param {BidRequest} bid - Bid request generated from ad slots
- * @returns {object} True if it's a video bid
+ * @returns {object}
  */
 function getVideoSizes(bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.video.playerSize') || bid.sizes);
+}
+
+/**
+ * Get video context
+ *
+ * @param {BidRequest} bid - Bid request generated from ad slots
+ * @returns {object}
+ */
+function getVideoContext(bid) {
+  return deepAccess(bid, 'mediaTypes.video.context') || 'unknown';
 }
 
 /**
@@ -294,6 +385,122 @@ function getMediaTypesInfo(bid) {
     mediaTypesInfo[BANNER] = getBannerSizes(bid);
   }
   return mediaTypesInfo;
+}
+
+/**
+ * Get Bid Floor
+ * @param bid
+ * @returns {number|*}
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'EUR',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
+
+/**
+ * Create a new renderer
+ *
+ * @param bidRequest
+ * @param response
+ * @returns {Renderer}
+ */
+function newRenderer(bidRequest, response) {
+  logMessage('DSPx: newRenderer', bidRequest, response);
+  const renderer = Renderer.install({
+    id: response.renderer.id || response.bid_id,
+    url: (bidRequest.params && bidRequest.params.rendererUrl) || response.renderer.url,
+    config: response.renderer.options || deepAccess(bidRequest, 'renderer.options'),
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
+}
+
+/**
+ * Outstream Render Function
+ *
+ * @param bid
+ */
+function outstreamRender(bid) {
+  logMessage('DSPx: outstreamRender bid:', bid);
+  const embedCode = createOutstreamEmbedCode(bid);
+  try {
+    const inIframe = getBidIdParameter('iframe', bid.renderer.config);
+    if (inIframe && window.document.getElementById(inIframe).nodeName === 'IFRAME') {
+      const iframe = window.document.getElementById(inIframe);
+      let framedoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      framedoc.body.appendChild(embedCode);
+      if (typeof window.dspxRender === 'function') {
+        window.dspxRender(bid);
+      } else {
+        logError('[dspx][renderer] Error: dspxRender function is not found');
+      }
+      return;
+    }
+
+    const slot = getBidIdParameter('slot', bid.renderer.config) || bid.adUnitCode;
+    if (slot && window.document.getElementById(slot)) {
+      window.document.getElementById(slot).appendChild(embedCode);
+      if (typeof window.dspxRender === 'function') {
+        window.dspxRender(bid);
+      } else {
+        logError('[dspx][renderer] Error: dspxRender function is not found');
+      }
+    } else if (slot) {
+      logError('[dspx][renderer] Error: slot not found');
+    }
+  } catch (err) {
+    logError('[dspx][renderer] Error:' + err.message)
+  }
+}
+
+/**
+ * create Outstream Embed Code Node
+ *
+ * @param bid
+ * @returns {DocumentFragment}
+ */
+function createOutstreamEmbedCode(bid) {
+  const fragment = window.document.createDocumentFragment();
+  let div = window.document.createElement('div');
+  div.innerHTML = deepAccess(bid, 'renderer.config.code', '');
+  fragment.appendChild(div);
+
+  // run scripts
+  var scripts = div.getElementsByTagName('script');
+  var scriptsClone = [];
+  for (var idx = 0; idx < scripts.length; idx++) {
+    scriptsClone.push(scripts[idx]);
+  }
+  for (var i = 0; i < scriptsClone.length; i++) {
+    var currentScript = scriptsClone[i];
+    var s = document.createElement('script');
+    for (var j = 0; j < currentScript.attributes.length; j++) {
+      var a = currentScript.attributes[j];
+      s.setAttribute(a.name, a.value);
+    }
+    s.appendChild(document.createTextNode(currentScript.innerHTML));
+    currentScript.parentNode.replaceChild(s, currentScript);
+  }
+
+  return fragment;
 }
 
 registerBidder(spec);

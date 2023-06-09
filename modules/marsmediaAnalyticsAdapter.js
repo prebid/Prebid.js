@@ -1,6 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 /****
  * Mars Media Analytics
@@ -33,7 +34,7 @@ var marsmediaAnalyticsAdapter = Object.assign(adapter(
             success: function() {},
             error: function() {}
           },
-          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': $$PREBID_GLOBAL$$.getBidResponses(), ver: MARS_VERSION}),
+          JSON.stringify({act: 'prebid_analytics', params: events, 'pbjs': getGlobal().getBidResponses(), ver: MARS_VERSION}),
           {
             method: 'POST'
           }

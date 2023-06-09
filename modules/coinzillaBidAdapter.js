@@ -1,5 +1,4 @@
 import { parseSizesInput } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'coinzilla';
@@ -78,7 +77,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: bidRequest.timeout,
         referrer: referrer,
         ad: response.ad,
         mediaType: response.mediaType,

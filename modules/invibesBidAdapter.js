@@ -17,7 +17,7 @@ const CONSTANTS = {
   DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
+const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,

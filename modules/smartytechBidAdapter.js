@@ -57,6 +57,7 @@ export const spec = {
     const bidRequests = validBidRequests.map((validBidRequest) => {
       let video = deepAccess(validBidRequest, 'mediaTypes.video', false);
       let banner = deepAccess(validBidRequest, 'mediaTypes.banner', false);
+      let sizes = validBidRequest.params.sizes;
 
       let oneRequest = {
         endpointId: validBidRequest.params.endpointId,
@@ -67,8 +68,16 @@ export const spec = {
 
       if (video) {
         oneRequest.video = video;
+
+        if (sizes) {
+          oneRequest.video.sizes = sizes;
+        }
       } else if (banner) {
         oneRequest.banner = banner;
+
+        if (sizes) {
+          oneRequest.banner.sizes = sizes;
+        }
       }
 
       return oneRequest

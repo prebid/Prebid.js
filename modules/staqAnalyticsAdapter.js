@@ -4,9 +4,11 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storageObj = getStorageManager();
+const MODULE_CODE = 'staq';
+const storageObj = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -117,7 +119,7 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'staq'
+  code: MODULE_CODE,
 });
 
 export default analyticsAdapter;
