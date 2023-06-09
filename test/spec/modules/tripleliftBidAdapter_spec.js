@@ -1039,7 +1039,7 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
-    it('should send Fledge signal when Triplelift is eligible for Fledge', function() {
+    it('should pass fledge signal when Triplelift is eligible for fledge', function() {
       bidderRequest.fledgeEnabled = true;
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
