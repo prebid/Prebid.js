@@ -1039,6 +1039,12 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
+    it('should send Fledge signal when Triplelift is eligible for Fledge', function() {
+      bidderRequest.fledgeEnabled = true;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)fledge=true/);
+    });
     it('should return coppa param when COPPA config is set to true', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
