@@ -2,13 +2,14 @@ import { generateUUID, getParameterByName, logError, parseUrl, logInfo } from '.
 import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import CONSTANTS from '../src/constants.json';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
-export const storage = getStorageManager({gvlid: undefined, moduleName: 'prebidmanager'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'prebidmanager'});
 const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics';

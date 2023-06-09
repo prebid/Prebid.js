@@ -378,7 +378,7 @@ const ID_RAZR = {
       }
     };
 
-    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/g, '\\x3C/script>');
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
     const s = `<script>window.__razr_config = ${cfgStr};</script>`;
     bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
 

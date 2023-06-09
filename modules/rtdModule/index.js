@@ -166,6 +166,12 @@ import CONSTANTS from '../../src/constants.json';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
+import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
+import {activityParamsBuilder} from '../../src/activities/params.js';
+
+const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -188,6 +194,7 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
   return function detach() {
     const idx = registeredSubModules.indexOf(submodule)
     if (idx >= 0) {
@@ -296,6 +303,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
+  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
@@ -304,7 +312,12 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
   waitTimeout = setTimeout(exitHook, shouldDelayAuction ? _moduleConfig.auctionDelay : 0);
 
   relevantSubModules.forEach(sm => {
-    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
+    verifiers.push(fpdGuard.verify);
+    sm.getBidRequestData({
+      ...reqBidsConfigObj,
+      ortb2Fragments: fpdGuard.obj
+    }, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
   });
 
   function onGetBidRequestDataCallback() {
@@ -325,6 +338,7 @@ export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequest
     }
     isDone = true;
     clearTimeout(waitTimeout);
+    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
 });

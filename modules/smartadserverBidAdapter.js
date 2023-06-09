@@ -1,7 +1,6 @@
 import { deepAccess, deepClone, logError, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { createEidsArray } from './userId/eids.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'smartadserver';
@@ -160,6 +159,11 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+      if (gpid) {
+        payload.gpid = gpid;
+      }
+
       if (bidderRequest) {
         if (bidderRequest.gdprConsent) {
           payload.addtl_consent = bidderRequest.gdprConsent.addtlConsent;
@@ -177,8 +181,8 @@ export const spec = {
         }
       }
 
-      if (bid && bid.userId) {
-        payload.eids = createEidsArray(bid.userId);
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
       }
 
       if (bidderRequest && bidderRequest.uspConsent) {

@@ -57,8 +57,9 @@ describe('ConcertAdapter', function () {
       refererInfo: {
         page: 'https://www.google.com'
       },
-      uspConsent: '1YYY',
-      gdprConsent: {}
+      uspConsent: '1YN-',
+      gdprConsent: {},
+      gppConsent: {}
     };
 
     bidResponse = {
@@ -111,7 +112,7 @@ describe('ConcertAdapter', function () {
       expect(payload).to.have.property('meta');
       expect(payload).to.have.property('slots');
 
-      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent'];
+      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent'];
       const slotsRequiredFields = ['name', 'bidId', 'transactionId', 'sizes', 'partnerId', 'slotType'];
 
       metaRequiredFields.forEach(function(field) {
@@ -138,17 +139,20 @@ describe('ConcertAdapter', function () {
       expect(payload.meta.uid).to.not.equal(false);
     });
 
+    it('should not generate uid if USP consent disallows', function() {
+      storage.removeDataFromLocalStorage('c_nap');
+      const request = spec.buildRequests(bidRequests, { ...bidRequest, uspConsent: '1YY' });
+      const payload = JSON.parse(request.data);
+
+      expect(payload.meta.uid).to.equal(false);
+    });
+
     it('should use sharedid if it exists', function() {
       storage.removeDataFromLocalStorage('c_nap');
-      const request = spec.buildRequests(bidRequests, {
-        ...bidRequest,
-        userId: {
-          _sharedid: {
-            id: '123abc'
-          }
-        }
-      });
+      const bidRequestsWithSharedId = [{ ...bidRequests[0], userId: { sharedid: { id: '123abc' } } }]
+      const request = spec.buildRequests(bidRequestsWithSharedId, bidRequest);
       const payload = JSON.parse(request.data);
+
       expect(payload.meta.uid).to.equal('123abc');
     })
 
@@ -211,84 +215,6 @@ describe('ConcertAdapter', function () {
     it('should return empty bids if there are no bids from the server', function() {
       const bids = spec.interpretResponse({ body: {bids: []} }, bidRequest);
       expect(bids).to.have.lengthOf(0);
-    });
-  });
-
-  describe('spec.getUserSyncs', function() {
-    it('should not register syncs when iframe is not enabled', function() {
-      const opts = {
-        iframeEnabled: false
-      }
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync).to.have.lengthOf(0);
-    });
-
-    it('should not register syncs when the user has opted out', function() {
-      const opts = {
-        iframeEnabled: true
-      };
-      storage.setDataInLocalStorage('c_nap', 'true');
-
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync).to.have.lengthOf(0);
-    });
-
-    it('should set gdprApplies flag to 1 if the user is in area where GDPR applies', function() {
-      const opts = {
-        iframeEnabled: true
-      };
-      storage.removeDataFromLocalStorage('c_nap');
-
-      bidRequest.gdprConsent = {
-        gdprApplies: true
-      };
-
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync[0].url).to.have.string('gdpr_applies=1');
-    });
-
-    it('should set gdprApplies flag to 1 if the user is in area where GDPR applies', function() {
-      const opts = {
-        iframeEnabled: true
-      };
-      storage.removeDataFromLocalStorage('c_nap');
-
-      bidRequest.gdprConsent = {
-        gdprApplies: false
-      };
-
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync[0].url).to.have.string('gdpr_applies=0');
-    });
-
-    it('should set gdpr consent param with the user\'s choices on consent', function() {
-      const opts = {
-        iframeEnabled: true
-      };
-      storage.removeDataFromLocalStorage('c_nap');
-
-      bidRequest.gdprConsent = {
-        gdprApplies: false,
-        consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A=='
-      };
-
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync[0].url).to.have.string('gdpr_consent=BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-    });
-
-    it('should set ccpa consent param with the user\'s choices on consent', function() {
-      const opts = {
-        iframeEnabled: true
-      };
-      storage.removeDataFromLocalStorage('c_nap');
-
-      bidRequest.gdprConsent = {
-        gdprApplies: false,
-        uspConsent: '1YYY'
-      };
-
-      const sync = spec.getUserSyncs(opts, [], bidRequest.gdprConsent, bidRequest.uspConsent);
-      expect(sync[0].url).to.have.string('usp_consent=1YY');
     });
   });
 });

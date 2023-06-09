@@ -172,6 +172,36 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('bidswitch', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('medianet', function() {
+    const userId = {
+      medianet: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
@@ -311,6 +341,21 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
+      }]
+    });
+  });
+
+  it('euid', function() {
+    const userId = {
+      euid: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'euid.eu',
       uids: [{
         id: 'Sample_AD_Token',
         atype: 3
