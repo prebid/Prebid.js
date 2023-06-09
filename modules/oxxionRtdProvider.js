@@ -33,6 +33,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
 }
 
 function insertVideoTracking(bidResponse, config, userConsent) {
+  // this should only be do for video bids
   if (bidResponse.mediaType === 'video') {
     let maxCpm = 0;
     const trackingUrl = getImpUrl(config, bidResponse, maxCpm);
