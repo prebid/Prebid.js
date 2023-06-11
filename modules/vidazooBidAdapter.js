@@ -165,6 +165,134 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   return dto;
 }
 
+function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+  const hashUrl = hashCode(topWindowUrl);
+  const dealId = getNextDealId(hashUrl);
+  const uniqueDealId = getUniqueDealId(hashUrl);
+  const sId = getVidazooSessionId();
+  const ptrace = getCacheOpt();
+  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+
+  const subDomain = extractSubDomain(bidRequests[0].params);
+  const cId = extractCID(bidRequests[0].params);
+
+  const bids = bidRequests.map(bid => {
+    const sizes = parseSizesInput(bid.sizes);
+    const {
+      params,
+      bidId,
+      userId,
+      adUnitCode,
+      schain,
+      mediaTypes,
+      auctionId,
+      transactionId,
+      bidderRequestId,
+      bidRequestsCount,
+      bidderRequestsCount,
+      bidderWinsCount
+    } = bid;
+
+    const {ext} = params;
+    let {bidFloor} = params;
+    const pId = extractPID(params);
+    const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+
+    if (isFn(bid.getFloor)) {
+      const floorInfo = bid.getFloor({
+        currency: 'USD',
+        mediaType: '*',
+        size: '*'
+      });
+
+      if (floorInfo.currency === 'USD') {
+        bidFloor = floorInfo.floor;
+      }
+    }
+    let bidData = {
+      adUnitCode: adUnitCode,
+      bidId: bidId,
+      sizes: sizes,
+      bidFloor: bidFloor,
+      publisherId: pId,
+      gpid: gpid,
+      schain: schain,
+      mediaTypes: mediaTypes,
+      auctionId: auctionId,
+      transactionId: transactionId,
+      bidderRequestId: bidderRequestId,
+      bidRequestsCount: bidRequestsCount,
+      bidderRequestsCount: bidderRequestsCount,
+      bidderWinsCount: bidderWinsCount,
+
+    };
+
+    _each(ext, (value, key) => {
+      bidData['ext.' + key] = value;
+    });
+
+    appendUserIdsToRequestPayload(bidData, userId);
+
+    return bidData;
+  });
+
+  const data = {
+    bids: bids,
+    url: encodeURIComponent(topWindowUrl),
+    uqs: getTopWindowQueryParams(),
+    cb: Date.now(),
+    referrer: bidderRequest.refererInfo.ref,
+    dealId: dealId,
+    uniqueDealId: uniqueDealId,
+    sessionId: sId,
+    ptrace: ptrace,
+    isStorageAllowed: isStorageAllowed,
+    cat: cat,
+    pagecat: pagecat,
+    bidderVersion: BIDDER_VERSION,
+    prebidVersion: '$prebid.version$',
+    res: `${screen.width}x${screen.height}`,
+    bidderTimeout: bidderTimeout,
+    webSessionId: webSessionId
+  };
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
+
+  if (bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.consentString) {
+      data.gdprConsent = bidderRequest.gdprConsent.consentString;
+    }
+    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
+      data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+  }
+  if (bidderRequest.uspConsent) {
+    data.usPrivacy = bidderRequest.uspConsent;
+  }
+
+  if (bidderRequest.gppConsent) {
+    data.gppString = bidderRequest.gppConsent.gppString;
+    data.gppSid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    data.gppString = bidderRequest.ortb2.regs.gpp;
+    data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  const dto = {
+    method: 'POST',
+    url: `${createDomain(subDomain)}/prebid/${cId}`,
+    data: data
+  }
+
+  return dto;
+}
+
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
@@ -192,7 +320,28 @@ function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
+
+  const singleRequestMode = config.getConfig('singleRequest') || true; // TODO: single request mode;
+
   const requests = [];
+
+  if (singleRequestMode) {
+    // We need to split the requests into banner and video requests
+    const bannerBidRequests = validBidRequests.filter(bid => bid.mediaTypes[BANNER] !== undefined);
+    const singleRequest = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+    requests.push(singleRequest);
+
+    // Video Logic
+    const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+    videoBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+
+    return requests;
+  }
+
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);
     const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
@@ -205,13 +354,14 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {bidId} = request.data;
+  // const {bidId} = request.data;
+  const bidIds = request.data.bids.map((bid) => bid.bidId);
   const {results} = serverResponse.body;
 
   let output = [];
 
   try {
-    results.forEach(result => {
+    results.forEach((result, i) => {
       const {
         creativeId,
         ad,
@@ -229,7 +379,7 @@ function interpretResponse(serverResponse, request) {
       }
 
       const response = {
-        requestId: bidId,
+        requestId: bidIds[i], // for multi - each bid needs to have is initial bidId
         cpm: price,
         width: width,
         height: height,
@@ -263,6 +413,7 @@ function interpretResponse(serverResponse, request) {
       }
       output.push(response);
     });
+
     return output;
   } catch (e) {
     return [];
