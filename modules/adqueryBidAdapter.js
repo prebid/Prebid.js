@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {buildUrl, isFn, isStr, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 
 const ADQUERY_GVLID = 902;

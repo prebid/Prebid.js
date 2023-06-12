@@ -64,6 +64,7 @@ export const adqueryIdSubmodule = {
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
+    debugger;
     const url = paramOrDefault(config.params.url,
       `https://bidder.adquery.io/prebid/qid`,
       config.params.urlArg);
