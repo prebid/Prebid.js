@@ -177,7 +177,14 @@ export const spec = {
 
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const adapter = new Criteo.PubTag.Adapters.Prebid(
+        PROFILE_ID_PUBLISHERTAG,
+        ADAPTER_VERSION,
+        bidRequests,
+        bidderRequest,
+        '$prebid.version$',
+        { createOutstreamVideoRenderer: createOutstreamVideoRenderer }
+      );
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
