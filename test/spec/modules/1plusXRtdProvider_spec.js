@@ -195,17 +195,6 @@ describe('1plusXRtdProvider', () => {
       }
       expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
     });
-    it('fills site.keywords in the ortb2 config (appnexus specific)', () => {
-      const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
-      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
-
-      const expectedOutput = {
-        site: {
-          keywords: rtdData.topics.join(','),
-        }
-      }
-      expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
-    });
 
     it('defaults to empty array if no segment is given', () => {
       const rtdData = { topics: fakeResponse.t };
@@ -238,17 +227,6 @@ describe('1plusXRtdProvider', () => {
         userData: {
           name: '1plusX.com',
           segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
-        }
-      }
-      expect(ortb2Updates).to.deep.include(expectedOutput);
-    })
-    it('defaults to empty string if no topic is given (appnexus specific)', () => {
-      const rtdData = { segments: fakeResponse.s };
-      const ortb2Updates = buildOrtb2Updates(rtdData, 'appnexus');
-
-      const expectedOutput = {
-        site: {
-          keywords: '',
         }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
@@ -486,7 +464,8 @@ describe('1plusXRtdProvider', () => {
     }
     const expectedOrtb2 = {
       appnexus: {
-        site: { keywords: expectedKeywords }
+        site: { content: expectedSiteContentObj },
+        user: expectedUserObj,
       },
       rubicon: {
         site: { content: expectedSiteContentObj },

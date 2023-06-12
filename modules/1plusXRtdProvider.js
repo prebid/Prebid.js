@@ -1,11 +1,7 @@
-import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
-import {
-  logMessage, logError,
-  deepAccess, mergeDeep,
-  isNumber, isArray, deepSetValue
-} from '../src/utils.js';
+import {submodule} from '../src/hook.js';
+import {config} from '../src/config.js';
+import {ajax} from '../src/ajax.js';
+import {deepAccess, deepSetValue, isArray, isNumber, logError, logMessage, mergeDeep} from '../src/utils.js';
 
 // Constants
 const REAL_TIME_MODULE = 'realTimeData';
@@ -14,7 +10,6 @@ const ORTB2_NAME = '1plusX.com'
 const PAPI_VERSION = 'v1.0';
 const LOG_PREFIX = '[1plusX RTD Module]: ';
 const OPE_FPID = 'ope_fpid'
-const LEGACY_SITE_KEYWORDS_BIDDERS = ['appnexus'];
 export const segtaxes = {
   // cf. https://github.com/InteractiveAdvertisingBureau/openrtb/pull/108
   AUDIENCE: 526,
@@ -152,17 +147,6 @@ const getTargetingDataFromPapi = (papiUrl) => {
  * @returns {Object} Object describing the updates to make on bidder configs
  */
 export const buildOrtb2Updates = ({ segments = [], topics = [] }, bidder) => {
-  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
-  // Therefore, writing them in `site.keywords` until it's supported
-  // Other bidAdapters do fine with `site.content.data.segment`
-  const writeToLegacySiteKeywords = LEGACY_SITE_KEYWORDS_BIDDERS.includes(bidder);
-  if (writeToLegacySiteKeywords) {
-    const site = {
-      keywords: topics.join(',')
-    };
-    return { site };
-  }
-
   const userData = {
     name: ORTB2_NAME,
     segment: segments.map((segmentId) => ({ id: segmentId }))
