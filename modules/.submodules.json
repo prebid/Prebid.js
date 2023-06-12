@@ -40,11 +40,13 @@
       "tncIdSystem",
       "trustpidSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
-      "gravitoIdSystem"
+      "gravitoIdSystem",
+      "freepassIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",

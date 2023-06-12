@@ -42,7 +42,9 @@ describe('ID5 ID System', function () {
   const ID5_STORED_OBJ = {
     'universal_uid': ID5_STORED_ID,
     'signature': ID5_STORED_SIGNATURE,
-    'link_type': ID5_STORED_LINK_TYPE
+    'ext': {
+      'linkType': ID5_STORED_LINK_TYPE
+    }
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -50,7 +52,10 @@ describe('ID5 ID System', function () {
   const ID5_JSON_RESPONSE = {
     'universal_uid': ID5_RESPONSE_ID,
     'signature': ID5_RESPONSE_SIGNATURE,
-    'link_type': ID5_RESPONSE_LINK_TYPE
+    'link_type': ID5_RESPONSE_LINK_TYPE,
+    'ext': {
+      'linkType': ID5_RESPONSE_LINK_TYPE
+    }
   };
   const ALLOWED_ID5_VENDOR_DATA = {
     purpose: {
@@ -958,7 +963,9 @@ describe('ID5 ID System', function () {
         it('should not expose ID when everyone is in control group', function () {
           storedObject.ab_testing = {result: 'control'};
           storedObject.universal_uid = '';
-          storedObject.link_type = 0;
+          storedObject.ext = {
+            'linkType': 0
+          };
           let decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithoutIdAbOn);
         });
