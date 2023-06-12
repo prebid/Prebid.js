@@ -94,34 +94,25 @@
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
-import {
-  getGlobal
-} from '../src/prebidGlobal.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import {
   deepClone,
   deepSetValue,
+  isArray,
+  isBoolean,
   isEmpty,
   isFn,
+  isPlainObject,
+  isStr,
   logError,
   logMessage,
-  isArray,
-  isStr,
-  isBoolean,
-  isPlainObject,
   logWarn,
   mergeDeep,
   tryAppendQueryString
 } from '../src/utils.js';
-import {
-  submodule
-} from '../src/hook.js';
-import {
-  ajax
-} from '../src/ajax.js';
-import {
-  getStorageManager
-} from '../src/storageManager.js';
-import adapterManager from '../src/adapterManager.js';
+import {submodule} from '../src/hook.js';
+import {ajax} from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /** @type {string} */
@@ -682,16 +673,6 @@ class WeboramaRtdProvider {
   // eslint-disable-next-line no-dupe-class-members
   #handleBid(reqBidsConfigObj, bid, profile, metadata) {
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
-
-    /** @type {Object.<string,string>} */
-    const bidderAliasRegistry = adapterManager.aliasRegistry || {};
-
-    /** @type {string} */
-    const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
-
-    if (bidder == 'appnexus') {
-      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
-    }
   }
 
   /** function that handles bid request data
