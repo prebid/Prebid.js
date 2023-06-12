@@ -2527,7 +2527,7 @@ describe('The Criteo bidding adapter', function () {
 
       const adapters = { Prebid: function () { } };
       const adaptersMock = sinon.mock(adapters);
-      adaptersMock.expects('Prebid').withExactArgs(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$').once().returns(prebidAdapter);
+      adaptersMock.expects('Prebid').withExactArgs(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$', sinon.match.any).once().returns(prebidAdapter);
 
       global.Criteo = {
         PubTag: {

@@ -96,7 +96,7 @@ const VIDEO_PARAMS_ALLOW_LIST = [
   'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
   'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
   'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
-  'playerSize', 'w', 'h'
+  'playerSize', 'w', 'h', 'plcmt'
 ];
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
@@ -216,6 +216,8 @@ function bidToVideoImp(bid) {
 
   const context = (videoParamRef && videoParamRef.context) || (videoAdUnitRef && videoAdUnitRef.context);
 
+  verifyVideoPlcmt(imp);
+
   // if placement not already defined, pick one based on `context`
   if (context && !imp.video.hasOwnProperty('placement')) {
     if (context === INSTREAM) {
@@ -247,6 +249,15 @@ function bidToVideoImp(bid) {
   _applyFloor(bid, imp, VIDEO);
 
   return imp;
+}
+
+function verifyVideoPlcmt(imp) {
+  if (imp.video.hasOwnProperty('plcmt') && (!isInteger(imp.video.plcmt) || (imp.video.plcmt < 1 || imp.video.plcmt > 4))) {
+    logWarn(
+      `IX Bid Adapter: video.plcmt [${imp.video.plcmt}] must be an integer between 1-4 inclusive`
+    );
+    delete imp.video.plcmt;
+  }
 }
 
 /**
