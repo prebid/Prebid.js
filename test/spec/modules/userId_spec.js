@@ -86,6 +86,18 @@ describe('User ID', function () {
     }
   }
 
+  function createMockIdSubmodule(name, value) {
+    return {
+      name,
+      getId() {
+        return value;
+      },
+      decode(v) {
+        return v;
+      }
+    }
+  }
+
   function getAdUnitMock(code = 'adUnit-code') {
     return {
       code,
@@ -399,28 +411,35 @@ describe('User ID', function () {
 
     it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core', function (done) {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+
+      setSubmoduleRegistry([
+        createMockIdSubmodule('mockId1Module', {id: {mockId1: 'mockId1_value'}}),
+        createMockIdSubmodule('mockId2Module', {id: {mockId2: 'mockId2_value', mockId3: 'mockId3_from_mockId2Module'}}),
+        createMockIdSubmodule('mockId3Module', {id: {mockId1: 'mockId1_value_from_mockId3Module', mockId2: 'mockId2_value_from_mockId3Module'}, mockId3: {id: 'mockId3'}, mockId4: {id: 'mockId4_from_mockId3Module'}}),
+        createMockIdSubmodule('mockId4Module', {id: {mockId4: 'mockId4_value'}})
+      ]);
+
       config.setConfig({
         userSync: {
           idPriority: {
-            uid2: ['liveIntentId', 'uid2'],
-            merkleId: ['merkleId', 'liveIntentId']
+            mockId1: ['mockId3Module', 'mockId1Module'],
+            mockId4: ['mockId4Module', 'mockId3Module']
           },
           auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
           userIds: [
-            { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
-            { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
-            // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
-            { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
-            { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+            { name: 'mockId1Module' },
+            { name: 'mockId2Module' },
+            { name: 'mockId3Module' },
+            { name: 'mockId4Module' }
           ]
         }
       });
 
       getGlobal().getUserIdsAsync().then((uids) => {
-        expect(uids['uid2']).to.deep.equal({id: 'liveIntentUid2_value'});
-        expect(uids['merkleId']).to.deep.equal({id: 'merkleId_value'});
-        expect(uids['pubcid']).to.deep.equal('pubcid_value');
+        expect(uids['mockId1']).to.deep.equal('mockId1_value_from_mockId3Module');
+        expect(uids['mockId2']).to.deep.equal('mockId2_value');
+        expect(uids['mockId3']).to.deep.equal('mockId3_from_mockId2Module');
+        expect(uids['mockId4']).to.deep.equal('mockId4_value');
         done();
       });
     });
@@ -446,27 +465,32 @@ describe('User ID', function () {
 
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', function (done) {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+      setSubmoduleRegistry([
+        createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
+        createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_from_mockId2Module'}}}),
+        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_from_mockId3Module'}}}),
+        createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+      ]);
       config.setConfig({
         userSync: {
           idPriority: {
-            uid2: ['liveIntentId', 'uid2'],
-            merkleId: ['merkleId', 'liveIntentId']
+            uid2: ['mockId3Module', 'mockId1Module'],
+            merkleId: ['mockId4Module', 'mockId3Module']
           },
           auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
           userIds: [
-            { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
-            { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
-            // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
-            { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
-            { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+            { name: 'mockId1Module' },
+            { name: 'mockId2Module' },
+            { name: 'mockId3Module' },
+            { name: 'mockId4Module' }
           ]
         }
       });
 
       const ids = {
+        'uid2': { id: 'uid2_value_from_mockId3Module' },
         'pubcid': 'pubcid_value',
-        'uid2': { id: 'liveIntentUid2_value' },
+        'lipb': { lipbid: 'lipbid_from_mockId2Module' },
         'merkleId': { id: 'merkleId_value' }
       };
 
@@ -3077,35 +3101,48 @@ describe('User ID', function () {
       });
 
       it('pbjs.getUserIdsAsEidBySource with priority config available to core', () => {
-        const ids = {
-          'pubcid.org': {'pubcid': 'pubcid_value'},
-          'uidapi.com': {'uid2': {id: 'liveIntentUid2_value'}},
-          'merkleinc.com': {'merkleId': {id: 'merkleId_value'}}
-        };
-
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, liveIntentIdSubmodule, uid2IdSubmodule, merkleIdSubmodule]);
+        setSubmoduleRegistry([
+          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
+          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_from_mockId2Module'}}}),
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_from_mockId3Module'}}}),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+        ]);
         config.setConfig({
           userSync: {
             idPriority: {
-              uid2: ['liveIntentId', 'uid2'],
-              merkleId: ['merkleId', 'liveIntentId']
+              uid2: ['mockId3Module', 'mockId1Module'],
+              merkleId: ['mockId4Module', 'mockId3Module']
             },
             auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
             userIds: [
-              { name: 'uid2', value: { uid2: { id: 'uid2_value' } } },
-              { name: 'pubCommonId', value: { pubcid: 'pubcid_value' } },
-              // this is only for testing, LiveIntent user id module does not expose merkle or pubcid ids
-              { name: 'liveIntentId', value: { uid2: { id: 'liveIntentUid2_value' }, 'merkleId': { id: 'liveIntentMerkleId_value' }, 'pubcid': 'liveIntentPubcid_value' } },
-              { name: 'merkleId', value: { merkleId: { id: 'merkleId_value' } } }
+              { name: 'mockId1Module' },
+              { name: 'mockId2Module' },
+              { name: 'mockId3Module' },
+              { name: 'mockId4Module' }
             ]
           }
+        });
+  
+        const ids = {
+          'uid2': { id: 'uid2_value_from_mockId3Module' },
+          'pubcid': 'pubcid_value',
+          'lipb': { lipbid: 'lipbid_from_mockId2Module' },
+          'merkleId': { id: 'merkleId_value' }
+        };
+  
+        getGlobal().getUserIdsAsync().then(() => {
+          const eids = getGlobal().getUserIdsAsEids();
+          const expected = createEidsArray(ids);
+          expect(eids).to.deep.equal(expected);
+          done();
         });
 
         getGlobal().getUserIdsAsync().then(() => {
           expect(getGlobal().getUserIdsAsEidBySource('pubcid.org')).to.deep.equal(createEidsArray(ids['pubcid.org'])[0]);
           expect(getGlobal().getUserIdsAsEidBySource('uidapi.com')).to.deep.equal(createEidsArray(ids['uidapi.com'])[0]);
           expect(getGlobal().getUserIdsAsEidBySource('merkleinc.com')).to.deep.equal(createEidsArray(ids['merkleinc.com'])[0]);
+          expect(getGlobal().getUserIdsAsEidBySource('liveintent.com')).to.deep.equal(createEidsArray(ids['merkleinc.com'])[0]);
         });
       });
     })
