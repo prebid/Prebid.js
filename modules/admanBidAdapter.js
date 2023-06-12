@@ -110,7 +110,8 @@ export const spec = {
       }
 
       if (bid.transactionID) {
-        placement.transactionID = bid.transactionID;
+        placement.ext = placement.ext || {};
+        placement.ext.tid = bid.transactionID;
       }
 
       if (bid.schain) {
