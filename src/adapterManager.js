@@ -41,7 +41,7 @@ import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activ
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
 
-const PBS_ADAPTER_NAME = 'pbsBidAdapter';
+export const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
@@ -67,6 +67,12 @@ config.getConfig('s2sConfig', config => {
 var _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+
+export function s2sActivityParams(s2sConfig) {
+  return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
+    [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+  });
+}
 
 /**
  * @typedef {object} LabelDescriptor
@@ -271,8 +277,12 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
-  function addOrtb2(bidderRequest) {
-    const redact = dep.redact(activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode));
+  function addOrtb2(bidderRequest, s2sActivityParams) {
+    const redact = dep.redact(
+      s2sActivityParams != null
+        ? s2sActivityParams
+        : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
+    );
     const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
@@ -282,14 +292,9 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     return bidderRequest;
   }
 
-  function isS2SAllowed(s2sConfig) {
-    return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
-      [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
-    }));
-  }
-
   _s2sConfigs.forEach(s2sConfig => {
-    if (s2sConfig && s2sConfig.enabled && isS2SAllowed(s2sConfig)) {
+    const s2sParams = s2sActivityParams(s2sConfig);
+    if (s2sConfig && s2sConfig.enabled && dep.isAllowed(ACTIVITY_FETCH_BIDS, s2sParams)) {
       let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function
@@ -309,7 +314,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           src: CONSTANTS.S2S.SRC,
           refererInfo,
           metrics,
-        });
+        }, s2sParams);
         if (bidderRequest.bids.length !== 0) {
           bidRequests.push(bidderRequest);
         }
