@@ -16,7 +16,9 @@ describe('smartxspBidAdapter', function () {
     mediaTypes: {banner: {sizes: [[300, 250]]}},
     params: {
       accountId: '29Md1Mx1x2MpM7Me',
-      widgetId: 'sc.demo.oursblanc.io'
+      widgetId: 'sc.demo.oursblanc.io',
+      language: 'fr',
+      region: 'Paris'
     },
     sizes: [
       [300, 250]

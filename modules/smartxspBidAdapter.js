@@ -42,9 +42,6 @@ export const spec = {
           'banner-format-width': sizes[j][0],
           'banner-format-height': sizes[j][1]
         }
-        if (bid.params.bannerFormat) {
-          bidParam['banner-format'] = bid.params.bannerFormat
-        }
         if (bid.params.language) {
           bidParam.language = bid.params.language
         }
@@ -64,31 +61,25 @@ export const spec = {
       }
     }
 
-    var bid_url = SMARTXSP_CONFIG.bidRequestUrl;
-    if(bid.params.bid_url != undefined) {
-      bid_url = bid.params.bid_url;
+    var bidUrl = SMARTXSP_CONFIG.bidRequestUrl;
+    if(bid.params.bidUrl != undefined) {
+      bidUrl = bid.params.bidUrl;
     }
 
     var ServerRequestObjects = {
       method: SMARTXSP_CONFIG.method,
-      url: bid_url,
+      url: bidUrl,
       bids: validBidRequests,
       data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
     return ServerRequestObjects;
   },
   interpretResponse: function (serverResponse, bidRequest) {
-    console.log("SmartXSP : interpretResponse",serverResponse );
     var i
     var bid
     var bidObject
-    var url
-    var html
     var ad
     var ads
-    var accountId
-    var language
-    var scriptId
     var bidResponses = []
     ads = serverResponse.body
     for (i = 0; i < ads.length; i++) {
