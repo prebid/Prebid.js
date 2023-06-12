@@ -38,7 +38,7 @@ $$PREBID_GLOBAL$$.getDataFromLocalStorage = function(key, expiry) {
 		var storedObject = storage.getDataFromLocalStorage(key);
 		if(storedObject) {
 			var createdDate = JSON.parse(storedObject).createdDate;
-			let currentDate = new Date().getDate();
+			let currentDate = new Date().valueOf();
 			const diff = Math.abs(currentDate - createdDate);
 			if (diff > expiry) {
 			  storage.removeDataFromLocalStorage(key);
@@ -54,7 +54,7 @@ $$PREBID_GLOBAL$$.getDataFromLocalStorage = function(key, expiry) {
 
 $$PREBID_GLOBAL$$.setAndStringifyToLocalStorage = function(key, object) {
 	try {
-	  object.createdDate = new Date().getDate();
+	  object.createdDate = new Date().valueOf();
 	  storage.setDataInLocalStorage(key, JSON.stringify(object));
 	} catch (e) {
 		refThis.logError("Error in setting localstorage ", e);
