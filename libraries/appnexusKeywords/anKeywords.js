@@ -3,7 +3,6 @@ import {getAllOrtbKeywords} from '../keywords/keywords.js';
 import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
 
 const ORTB_SEGTAX_KEY_MAP = {
-  0: null,
   526: '1plusx',
   527: '1plusx',
   541: 'captify_segments',
@@ -124,7 +123,7 @@ export function getANMapFromOrtbSegments(ortb2) {
     let ortbSegsArrObj = deepAccess(ortb2, path) || [];
     ortbSegsArrObj.forEach(segObj => {
       // only read segment data from known sources
-      const segtax = ORTB_SEGTAX_KEY_MAP[deepAccess(segObj, 'ext.segtax') || 0];
+      const segtax = ORTB_SEGTAX_KEY_MAP[deepAccess(segObj, 'ext.segtax')];
       if (segtax) {
         segObj.segment.forEach(seg => {
           // if source was in multiple locations of ortb or had multiple segments in same area, stack them together into an array
