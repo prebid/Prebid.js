@@ -106,11 +106,6 @@ function interpretResponse(serverResponse, bidRequest) {
   return [result];
 }
 
-function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  const syncs = [];
-  return syncs;
-}
-
 export function report(eventType, data, route = REPORTING_ROUTE) {
   if (!route) return;
 
@@ -147,7 +142,6 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
   onTimeout,
   onBidWon,
   onSetTargeting,
