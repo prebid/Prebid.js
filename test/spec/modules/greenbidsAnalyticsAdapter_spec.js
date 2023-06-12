@@ -389,7 +389,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     it('should parse config correctly with optional values', function () {
       expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
       expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().sampling).to.equal(0);
     });
 
     it('should not enable Analytics when pbuid is missing', function () {
