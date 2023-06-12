@@ -1,12 +1,12 @@
 import assert from 'assert';
-import { config } from 'src/config';
+import {config} from 'src/config';
 import {
-  onePlusXSubmodule,
   buildOrtb2Updates,
   extractConfig,
   extractConsent,
   extractFpid,
   getPapiUrl,
+  onePlusXSubmodule,
   segtaxes,
   setTargetingDataToConfig,
   updateBidderConfig,
@@ -427,11 +427,11 @@ describe('1plusXRtdProvider', () => {
     }
     const expectedOrtb2 = {
       appnexus: {
-        site: { content: expectedSiteContentObj},
+        site: { content: expectedSiteContentObj },
         user: expectedUserObj
       },
       rubicon: {
-        site: { content: expectedSiteContentObj},
+        site: { content: expectedSiteContentObj },
         user: expectedUserObj
       }
     }
