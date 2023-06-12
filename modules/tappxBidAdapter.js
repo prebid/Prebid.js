@@ -252,7 +252,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
-  const ORTB2 = config.getConfig()?.ortb2;
+  const ORTB2 = deepAccess(validBidRequests, 'ortb2');
 
   // let requests = [];
   let payload = {};
