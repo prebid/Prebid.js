@@ -126,7 +126,8 @@ pbjs.setConfig({
             }
         },{
             name: 'uid2'
-        }
+        }, {
+            name: 'euid'
         }, {
               name: 'admixerId',
               params: {

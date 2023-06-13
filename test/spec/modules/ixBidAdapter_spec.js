@@ -2570,6 +2570,36 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.placement).to.equal(2);
     });
 
+    it('should use plcmt value when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = 2;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.equal(2);
+    });
+
+    it('invalid plcmt value when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = 5;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.be.undefined;
+    });
+
+    it('invalid plcmt value string when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = '4';
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.be.undefined;
+    });
+
     it('should set imp.ext.sid for video imps if params.id exists', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.params.id = 50;
@@ -2596,7 +2626,8 @@ describe('IndexexchangeAdapter', function () {
       const impression = extractPayload(request).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video.placement).to.equal(4);
+      expect(impression.video.placement).to.equal(3);
+      expect(extractPayload(request).ext.ixdiag.vpd).to.equal(true);
     });
 
     it('should handle unexpected context', function () {

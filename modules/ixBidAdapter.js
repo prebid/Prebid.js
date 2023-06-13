@@ -96,7 +96,7 @@ const VIDEO_PARAMS_ALLOW_LIST = [
   'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate',
   'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend',
   'delivery', 'pos', 'companionad', 'api', 'companiontype', 'ext',
-  'playerSize', 'w', 'h'
+  'playerSize', 'w', 'h', 'plcmt'
 ];
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
@@ -145,6 +145,7 @@ export const FEATURE_TOGGLES = {
 let siteID = 0;
 let gdprConsent = '';
 let usPrivacy = '';
+let defaultVideoPlacement = false;
 
 // Possible values for bidResponse.seatBid[].bid[].mtype which indicates the type of the creative markup so that it can properly be associated with the right sub-object of the BidRequest.Imp.
 const MEDIA_TYPES = {
@@ -215,6 +216,8 @@ function bidToVideoImp(bid) {
 
   const context = (videoParamRef && videoParamRef.context) || (videoAdUnitRef && videoAdUnitRef.context);
 
+  verifyVideoPlcmt(imp);
+
   // if placement not already defined, pick one based on `context`
   if (context && !imp.video.hasOwnProperty('placement')) {
     if (context === INSTREAM) {
@@ -223,7 +226,8 @@ function bidToVideoImp(bid) {
       if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
         imp.video.placement = 5;
       } else {
-        imp.video.placement = 4;
+        imp.video.placement = 3;
+        defaultVideoPlacement = true;
       }
     } else {
       logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
@@ -245,6 +249,15 @@ function bidToVideoImp(bid) {
   _applyFloor(bid, imp, VIDEO);
 
   return imp;
+}
+
+function verifyVideoPlcmt(imp) {
+  if (imp.video.hasOwnProperty('plcmt') && (!isInteger(imp.video.plcmt) || (imp.video.plcmt < 1 || imp.video.plcmt > 4))) {
+    logWarn(
+      `IX Bid Adapter: video.plcmt [${imp.video.plcmt}] must be an integer between 1-4 inclusive`
+    );
+    delete imp.video.plcmt;
+  }
 }
 
 /**
@@ -1111,7 +1124,8 @@ function buildIXDiag(validBidRequests) {
     ren: false,
     version: '$prebid.version$',
     userIds: _getUserIds(validBidRequests[0]),
-    url: window.location.href.split('?')[0]
+    url: window.location.href.split('?')[0],
+    vpd: defaultVideoPlacement
   };
 
   // create ad unit map and collect the required diag properties

@@ -5,7 +5,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import find from 'core-js-pure/features/array/find.js'; // eslint-disable-line prebid/validate-imports
 
 const BIDDER_CODE = 'viously';
-// const GVLID = 1028;
+const GVLID = 1028;
 const CURRENCY = 'EUR';
 const TTL = 60;
 const HTTP_METHOD = 'POST';
@@ -15,7 +15,7 @@ const REQUIRED_VIOUSLY_PARAMS = ['pid'];
 
 export const spec = {
   code: BIDDER_CODE,
-  // gvlid: GVLID,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
