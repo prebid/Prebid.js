@@ -116,6 +116,15 @@ export const spec = {
         request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
         request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
