@@ -3030,6 +3030,50 @@ describe('User ID', function () {
         }).catch(done);
       });
 
+      it('pbjs.getEncryptedEidsForSource should return prioritized id as non-encrypted string', (done) => {
+        init(config);
+        setSubmoduleRegistry([
+          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
+          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_from_mockId2Module'}}}),
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_from_mockId3Module'}}}),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+        ]);
+        config.setConfig({
+          userSync: {
+            idPriority: {
+              uid2: ['mockId3Module', 'mockId1Module'],
+              merkleId: ['mockId4Module', 'mockId3Module']
+            },
+            auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+            userIds: [
+              { name: 'mockId1Module' },
+              { name: 'mockId2Module' },
+              { name: 'mockId3Module' },
+              { name: 'mockId4Module' }
+            ]
+          }
+        });
+
+        const expctedIds = [
+          'pubcid_value',
+          'uid2_value_from_mockId3Module',
+          'merkleId_value',
+          'lipbid_from_mockId2Module'
+        ];
+
+        const encrypt = false;
+
+        Promise.all([
+          getGlobal().getEncryptedEidsForSource('pubcid.org', encrypt),
+          getGlobal().getEncryptedEidsForSource('uidapi.com', encrypt),
+          getGlobal().getEncryptedEidsForSource('merkleinc.com', encrypt),
+          getGlobal().getEncryptedEidsForSource('liveintent.com', encrypt)
+        ]).then((result) => {
+          expect(result).to.deep.equal(expctedIds);
+          done();
+        })
+      });
+
       describe('pbjs.getEncryptedEidsForSource', () => {
         beforeEach(() => {
           init(config);
@@ -3094,7 +3138,7 @@ describe('User ID', function () {
         });
       });
 
-      it('pbjs.getUserIdsAsEidBySource with priority config available to core', () => {
+      it('pbjs.getUserIdsAsEidBySource with priority config available to core', (done) => {
         init(config);
         setSubmoduleRegistry([
           createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
@@ -3119,24 +3163,18 @@ describe('User ID', function () {
         });
 
         const ids = {
-          'uid2': { id: 'uid2_value_from_mockId3Module' },
-          'pubcid': 'pubcid_value',
-          'lipb': { lipbid: 'lipbid_from_mockId2Module' },
-          'merkleId': { id: 'merkleId_value' }
+          'uidapi.com': {'uid2': {id: 'uid2_value_from_mockId3Module'}},
+          'pubcid.org': {'pubcid': 'pubcid_value'},
+          'liveintent.com': {'lipb': {lipbid: 'lipbid_from_mockId2Module'}},
+          'merkleinc.com': {'merkleId': {id: 'merkleId_value'}}
         };
-
-        getGlobal().getUserIdsAsync().then(() => {
-          const eids = getGlobal().getUserIdsAsEids();
-          const expected = createEidsArray(ids);
-          expect(eids).to.deep.equal(expected);
-          done();
-        });
 
         getGlobal().getUserIdsAsync().then(() => {
           expect(getGlobal().getUserIdsAsEidBySource('pubcid.org')).to.deep.equal(createEidsArray(ids['pubcid.org'])[0]);
           expect(getGlobal().getUserIdsAsEidBySource('uidapi.com')).to.deep.equal(createEidsArray(ids['uidapi.com'])[0]);
           expect(getGlobal().getUserIdsAsEidBySource('merkleinc.com')).to.deep.equal(createEidsArray(ids['merkleinc.com'])[0]);
-          expect(getGlobal().getUserIdsAsEidBySource('liveintent.com')).to.deep.equal(createEidsArray(ids['merkleinc.com'])[0]);
+          expect(getGlobal().getUserIdsAsEidBySource('liveintent.com')).to.deep.equal(createEidsArray(ids['liveintent.com'])[0]);
+          done();
         });
       });
     })
