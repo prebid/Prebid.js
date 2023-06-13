@@ -185,7 +185,9 @@ function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTime
     return {
       method: 'POST',
       url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
-      data: chunk
+      data: {
+        bids: chunk
+      }
     };
   });
 }
