@@ -3,13 +3,15 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {getWindowSelf} from '../src/utils.js'
+import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
 import {getStorageManager} from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
 const CURRENCY = 'USD';
 export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
+export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -22,7 +24,7 @@ const COOKIE_KEY = 'trc_cookie_storage';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
   getUserId: () => {
     const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
 
@@ -81,7 +83,7 @@ export const spec = {
     const [bidRequest] = validBidRequests;
     const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const {publisherId} = bidRequest.params;
-    const site = getSiteProperties(bidRequest.params, refererInfo);
+    const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
     const device = {ua: navigator.userAgent};
     const imps = getImps(validBidRequests);
     const user = {
@@ -102,13 +104,19 @@ export const spec = {
       regs.ext.us_privacy = uspConsent;
     }
 
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
+
     if (config.getConfig('coppa')) {
       regs.coppa = 1;
     }
 
     const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
       badv: [],
-      bcat: []
+      wlang: []
     };
 
     const request = {
@@ -118,10 +126,14 @@ export const spec = {
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
-      bcat: ortb2.bcat,
-      badv: ortb2.badv,
+      bcat: ortb2.bcat || bidRequest.params.bcat || [],
+      badv: ortb2.badv || bidRequest.params.badv || [],
+      wlang: ortb2.wlang || bidRequest.params.wlang || [],
       user,
-      regs
+      regs,
+      ext: {
+        pageType: ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType
+      }
     };
 
     const url = [END_POINT_URL, publisherId].join('/');
@@ -149,16 +161,45 @@ export const spec = {
 
     return bidResponses.map((bidResponse) => getBid(bids, currency, bidResponse)).filter(Boolean);
   },
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.originalCpm);
+      ajax(resolvedNurl);
+    }
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    const syncs = []
+    const queryParams = [];
+    if (gdprConsent) {
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+    }
+
+    if (uspConsent) {
+      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+
+    if (gppConsent) {
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent));
+    }
+
+    if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: USER_SYNC_IMG_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+      });
+    }
+    return syncs;
+  },
 };
 
-function getSiteProperties({publisherId, bcat = []}, refererInfo) {
+function getSiteProperties({publisherId}, refererInfo, ortb2) {
   const {getPageUrl, getReferrer} = internal;
   return {
     id: publisherId,
     name: publisherId,
-    domain: refererInfo?.domain || window.location?.host,
-    page: getPageUrl(refererInfo),
-    ref: getReferrer(refererInfo),
+    domain: ortb2?.site?.domain || refererInfo?.domain || window.location?.host,
+    page: ortb2?.site?.page || getPageUrl(refererInfo),
+    ref: ortb2?.site?.ref || getReferrer(refererInfo),
     publisher: {
       id: publisherId
     },
@@ -170,10 +211,10 @@ function getSiteProperties({publisherId, bcat = []}, refererInfo) {
 
 function getImps(validBidRequests) {
   return validBidRequests.map((bid, id) => {
-    const {tagId} = bid.params;
+    const {tagId, position} = bid.params;
     const imp = {
       id: id + 1,
-      banner: getBanners(bid),
+      banner: getBanners(bid, position),
       tagid: tagId
     }
     if (typeof bid.getFloor === 'function') {
@@ -191,12 +232,18 @@ function getImps(validBidRequests) {
       imp.bidfloor = bidfloor;
       imp.bidfloorcur = bidfloorcur;
     }
+    imp['ext'] = {
+      gpid: deepAccess(bid, 'ortb2Imp.ext.gpid')
+    }
     return imp;
   });
 }
 
-function getBanners(bid) {
-  return getSizes(bid.sizes);
+function getBanners(bid, pos) {
+  return {
+    ...getSizes(bid.sizes),
+    pos: pos
+  }
 }
 
 function getSizes(sizes) {
@@ -231,13 +278,15 @@ function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  const {
-    price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
+  let {
+    price: cpm, nurl, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
   let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
+
+  ad = replaceAuctionPrice(ad, cpm);
 
   return {
     requestId,
@@ -250,6 +299,7 @@ function getBid(bids, currency, bidResponse) {
     width,
     height,
     meta,
+    nurl,
     netRevenue: true
   };
 }

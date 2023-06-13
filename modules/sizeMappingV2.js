@@ -182,7 +182,7 @@ export function checkAdUnitSetupHook(adUnits) {
       }
     }
 
-    if (mediaTypes.video) {
+    if (FEATURES.VIDEO && mediaTypes.video) {
       if (mediaTypes.video.playerSize) {
         // Ad unit is using 'mediaTypes.video.playerSize' instead of the new property 'sizeConfig'. Apply the old checks!
         validatedVideo = validatedBanner ? adUnitSetupChecks.validateVideoMediaType(validatedBanner) : adUnitSetupChecks.validateVideoMediaType(adUnit);

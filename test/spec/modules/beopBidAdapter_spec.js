@@ -99,6 +99,8 @@ describe('BeOp Bid Adapter tests', () => {
       expect(url).to.equal(ENDPOINT);
       expect(payload.pid).to.exist;
       expect(payload.pid).to.equal('5a8af500c9e77c00017e4cad');
+      expect(payload.gdpr_applies).to.exist;
+      expect(payload.gdpr_applies).to.equals(false);
       expect(payload.slts[0].name).to.exist;
       expect(payload.slts[0].name).to.equal('bellow-article');
       expect(payload.slts[0].flr).to.equal(10);
@@ -121,11 +123,37 @@ describe('BeOp Bid Adapter tests', () => {
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
+      expect(payload.gdpr_applies).to.exist;
+      expect(payload.gdpr_applies).to.equals(true);
       expect(payload.tc_string).to.exist;
       expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
       expect(payload.url).to.exist;
       // check that the protocol is added correctly
       expect(payload.url).to.equal('http://test.te');
+      expect(payload.psegs).to.not.exist;
+    });
+
+    it('should call the endpoint with psegs data if any', function () {
+      let bidderRequest =
+      {
+        'ortb2': {
+          'user': {
+            'ext': {
+              'data': {
+                'permutive': [1234, 5678, 910]
+              }
+            }
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.psegs).to.exist;
+      expect(payload.psegs).to.include(1234);
+      expect(payload.psegs).to.include(5678);
+      expect(payload.psegs).to.include(910);
+      expect(payload.psegs).to.not.include(1);
     });
 
     it('should not prepend the protocol in page url if already present', function () {

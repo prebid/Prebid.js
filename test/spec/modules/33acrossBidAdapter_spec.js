@@ -53,7 +53,8 @@ describe('33acrossBidAdapter:', function () {
             brand: 'macOS',
             version: ['11', '6', '8']
           },
-          model: ''
+          model: '',
+          mobile: 0
         }
       },
       id: 'r1',
@@ -218,6 +219,14 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withReferer = referer => {
+      Object.assign(ttxRequest.site, {
+        ref: referer
+      });
+
+      return this;
+    };
+
     this.withSchain = schain => {
       Object.assign(ttxRequest, {
         source: {
@@ -329,7 +338,7 @@ describe('33acrossBidAdapter:', function () {
                 version: ['11', '6', '8']
               },
               model: '',
-              mobile: false
+              mobile: 0
             }
           }
         }
@@ -361,7 +370,7 @@ describe('33acrossBidAdapter:', function () {
                 version: ['11', '6', '8']
               },
               model: '',
-              mobile: false
+              mobile: 0
             }
           }
         },
@@ -1187,26 +1196,51 @@ describe('33acrossBidAdapter:', function () {
       });
     });
 
-    context('when referer value is available', function() {
-      it('returns corresponding server requests with site.page set', function() {
-        const bidderRequest = {
-          refererInfo: {
-            page: 'http://foo.com/bar'
-          }
-        };
+    context('when refererInfo values are available', function() {
+      context('when refererInfo.page is defined', function() {
+        it('returns corresponding server requests with site.page set', function() {
+          const bidderRequest = {
+            refererInfo: {
+              page: 'http://foo.com/bar'
+            }
+          };
 
-        const ttxRequest = new TtxRequestBuilder()
-          .withBanner()
-          .withProduct()
-          .withPageUrl('http://foo.com/bar')
-          .build();
-        const serverRequest = new ServerRequestBuilder()
-          .withData(ttxRequest)
-          .build();
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withProduct()
+            .withPageUrl('http://foo.com/bar')
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
 
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
-        validateBuiltServerRequest(builtServerRequest, serverRequest);
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
+      });
+
+      context('when refererInfo.ref is defined', function() {
+        it('returns corresponding server requests with site.ref set', function() {
+          const bidderRequest = {
+            refererInfo: {
+              ref: 'google.com'
+            }
+          };
+
+          const ttxRequest = new TtxRequestBuilder()
+            .withBanner()
+            .withProduct()
+            .withReferer('google.com')
+            .build();
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+          validateBuiltServerRequest(builtServerRequest, serverRequest);
+        });
       });
     });
 
@@ -1246,7 +1280,7 @@ describe('33acrossBidAdapter:', function () {
     });
 
     context('when referer value is not available', function() {
-      it('returns corresponding server requests without site.page set', function() {
+      it('returns corresponding server requests without site.page and site.ref set', function() {
         const bidderRequest = {
           refererInfo: {}
         };

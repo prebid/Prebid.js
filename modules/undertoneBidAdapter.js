@@ -76,6 +76,7 @@ function getBannerCoords(id) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 677,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function(bid) {
     if (bid && bid.params && bid.params.publisherId) {
@@ -123,6 +124,12 @@ export const spec = {
       reqUrl += `&ccpa=${bidderRequest.uspConsent}`;
     }
 
+    if (bidderRequest.gppConsent) {
+      const gppString = bidderRequest.gppConsent.gppString ?? '';
+      const ggpSid = bidderRequest.gppConsent.applicableSections ?? '';
+      reqUrl += `&gpp=${gppString}&gpp_sid=${ggpSid}`;
+    }
+
     validBidRequests.map(bidReq => {
       const bid = {
         bidRequestId: bidReq.bidId,
@@ -145,7 +152,9 @@ export const spec = {
           streamType: deepAccess(bidReq, 'mediaTypes.video.context') || null,
           playbackMethod: deepAccess(bidReq, 'params.video.playbackMethod') || null,
           maxDuration: deepAccess(bidReq, 'params.video.maxDuration') || null,
-          skippable: deepAccess(bidReq, 'params.video.skippable') || null
+          skippable: deepAccess(bidReq, 'params.video.skippable') || null,
+          placement: deepAccess(bidReq, 'mediaTypes.video.placement') || null,
+          plcmt: deepAccess(bidReq, 'mediaTypes.video.plcmt') || null
         };
       }
       payload['x-ut-hb-params'].push(bid);

@@ -13,7 +13,7 @@ const VALID_BIDS = [
     params: {
       siteId: '301491',
       publisherId: '3021491',
-      placementId: 13144370,
+      placementId: '13144370',
     },
     mediaTypes: {
       banner: {
@@ -26,7 +26,7 @@ const VALID_BIDS = [
     params: {
       siteId: '301491',
       publisherId: '3021491',
-      placementId: 13144370,
+      placementId: '13144370',
     },
     mediaTypes: {
       video: {
@@ -110,7 +110,7 @@ const INVALID_BIDS = [
     },
     params: {
       siteId: '301491',
-      placementId: 13144370,
+      placementId: '13144370',
     },
   },
   {
@@ -126,7 +126,7 @@ const INVALID_BIDS = [
     },
     params: {
       siteId: '301491',
-      placementId: 13144370,
+      placementId: '13144370',
     },
   },
   {
@@ -143,7 +143,7 @@ const INVALID_BIDS = [
     },
     params: {
       siteId: '301491',
-      placementId: 13144370,
+      placementId: '13144370',
       video: {
         size: [480, 40]
       }
@@ -167,8 +167,8 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
       }
     },
     params: {
-      siteId: 1,
-      placementId: 13144370
+      siteId: '1',
+      placementId: '13144370'
     },
     src: 'client',
     transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
@@ -192,8 +192,8 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
       }
     },
     params: {
-      siteId: 1,
-      placementId: 13144370
+      siteId: '1',
+      placementId: '13144370'
     },
     src: 'client',
     transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
@@ -276,7 +276,7 @@ const SERVER_RESPONSE_VIDEO = {
   },
 }
 
-const WIN_NOTICE = {
+const WIN_NOTICE_WEB = {
   'adId': '3a20ee5dc78c1e',
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
   'creativeId': '24277955',
@@ -289,14 +289,90 @@ const WIN_NOTICE = {
     'hb_size': '300x250',
     'hb_source': 'client',
     'hb_format': 'banner',
-    'hb_adomain': 'tenutabene.it'
+    'hb_adomain': 'example.com'
   },
+
   'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',
   'currency': [
     'USD'
   ],
   'mediaType': 'banner',
+  'meta': {
+    'advertiserDomains': [
+      'cloudflare.com'
+    ],
+    'ext': {}
+  },
   'size': '300x250',
+  'params': [
+    {
+      'placementId': '13144370',
+      'siteId': '23434',
+      'publisherId': '7689670753'
+    }
+  ],
+  'width': 300,
+  'height': 250,
+  'status': 'rendered',
+  'transactionId': 'ce089116-4251-45c3-bdbb-3a03cb13816b',
+  'ttl': 300,
+  'requestTimestamp': 1666796241007,
+  'responseTimestamp': 1666796241021,
+  metrics: {
+    getMetrics() {
+      return {
+
+      }
+    }
+  }
+}
+
+const WIN_NOTICE_APP = {
+  'adId': '3a20ee5dc78c1e',
+  'adUnitCode': 'div-gpt-ad-1460505748561-0',
+  'creativeId': '24277955',
+  'cpm': 1,
+  'netRevenue': false,
+  'adserverTargeting': {
+    'hb_bidder': 'aidem',
+    'hb_adid': '3a20ee5dc78c1e',
+    'hb_pb': '1.00',
+    'hb_size': '300x250',
+    'hb_source': 'client',
+    'hb_format': 'banner',
+    'hb_adomain': 'example.com'
+  },
+
+  'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',
+  'currency': [
+    'USD'
+  ],
+  'mediaType': 'banner',
+  'meta': {
+    'advertiserDomains': [
+      'cloudflare.com'
+    ],
+    'ext': {
+      'app': {
+        'app_bundle': '{{APP_BUNDLE}}',
+        'app_id': '{{APP_ID}}',
+        'app_name': '{{APP_NAME}}',
+        'app_store_url': '{{APP_STORE_URL}}',
+        'inventory_source': '{{INVENTORY_SOURCE}}'
+      },
+      'win_notice_ext': {
+        'seatid': '{{SEAT_ID}}'
+      }
+    }
+  },
+  'size': '300x250',
+  'params': [
+    {
+      'placementId': '13144370',
+      'siteId': '23434',
+      'publisherId': '7689670753'
+    }
+  ],
   'width': 300,
   'height': 250,
   'status': 'rendered',
@@ -365,6 +441,62 @@ describe('Aidem adapter', () => {
       deepSetValue(validVideoRequest.params, 'video.size', [640, 480])
       expect(spec.isBidRequestValid(validVideoRequest)).to.be.true
     });
+
+    it('BANNER: should return true if rateLimit is 1', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[0])
+      deepSetValue(validBannerRequest.params, 'rateLimit', 1)
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.true
+    });
+
+    it('BANNER: should return false if rateLimit is 0', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[0])
+      deepSetValue(validBannerRequest.params, 'rateLimit', 0)
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
+    });
+
+    it('BANNER: should return false if rateLimit is not between 0 and 1', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[0])
+      deepSetValue(validBannerRequest.params, 'rateLimit', 1.2)
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
+    });
+
+    it('BANNER: should return false if rateLimit is not a number', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[0])
+      deepSetValue(validBannerRequest.params, 'rateLimit', '0.5')
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
+    });
+
+    it('VIDEO: should return true if rateLimit is 1', function () {
+      // spec.isBidRequestValid()
+      const validVideoRequest = utils.deepClone(VALID_BIDS[1])
+      deepSetValue(validVideoRequest.params, 'rateLimit', 1)
+      expect(spec.isBidRequestValid(validVideoRequest)).to.be.true
+    });
+
+    it('VIDEO: should return false if rateLimit is 0', function () {
+      // spec.isBidRequestValid()
+      const validVideoRequest = utils.deepClone(VALID_BIDS[1])
+      deepSetValue(validVideoRequest.params, 'rateLimit', 0)
+      expect(spec.isBidRequestValid(validVideoRequest)).to.be.false
+    });
+
+    it('VIDEO: should return false if rateLimit is not between 0 and 1', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[1])
+      deepSetValue(validBannerRequest.params, 'rateLimit', 1.2)
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
+    });
+
+    it('VIDEO: should return false if rateLimit is not a number', function () {
+      // spec.isBidRequestValid()
+      const validBannerRequest = utils.deepClone(VALID_BIDS[1])
+      deepSetValue(validBannerRequest.params, 'rateLimit', '0.5')
+      expect(spec.isBidRequestValid(validBannerRequest)).to.be.false
+    });
   });
 
   describe('buildRequests', () => {
@@ -385,7 +517,7 @@ describe('Aidem adapter', () => {
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'banner', 'id', 'mediatype', 'imp_ext', 'tid'
+        'banner', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
       )
       expect(payload.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
@@ -401,7 +533,7 @@ describe('Aidem adapter', () => {
       expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
       expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'video', 'id', 'mediatype', 'imp_ext', 'tid'
+        'video', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
       )
       expect(payload.imp[0].video).to.be.a('object').that.has.all.keys(
         'format', 'mimes', 'minDuration', 'maxDuration', 'protocols'
@@ -420,6 +552,14 @@ describe('Aidem adapter', () => {
       expect(floor).to.be.a('object').that.has.all.keys(
         'value', 'currency'
       )
+    });
+
+    it('should hav wpar keys in environment object', function () {
+      const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      const payload = JSON.parse(requests.data)
+      expect(payload).to.have.property('environment')
+      expect(payload.environment).to.be.a('object').that.have.property('wpar')
+      expect(payload.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
     });
   })
 
@@ -474,11 +614,13 @@ describe('Aidem adapter', () => {
       expect(spec.onBidWon).to.exist.and.to.be.a('function')
     });
 
-    it(`should send a valid bid won notice`, function () {
-      spec.onBidWon(WIN_NOTICE);
-      // server.respondWith('POST', WIN_EVENT_URL, [
-      //   400, {'Content-Type': 'application/json'}, )
-      // ]);
+    it(`should send a valid bid won notice from web environment`, function () {
+      spec.onBidWon(WIN_NOTICE_WEB);
+      expect(server.requests.length).to.equal(1);
+    });
+
+    it(`should send a valid bid won notice from app environment`, function () {
+      spec.onBidWon(WIN_NOTICE_APP);
       expect(server.requests.length).to.equal(1);
     });
   });

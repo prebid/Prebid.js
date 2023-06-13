@@ -119,6 +119,15 @@ describe('adqueryBidAdapter', function () {
     it('should include sizes', function () {
       expect(rdata.sizes).not.be.null
     })
+
+    it('should include version', function () {
+      expect(rdata.v).not.be.null
+      expect(rdata.v).equal('$prebid.version$')
+    })
+
+    it('should include referrer', function () {
+      expect(rdata.bidPageUrl).not.be.null
+    })
   })
 
   describe('interpretResponse', function () {
