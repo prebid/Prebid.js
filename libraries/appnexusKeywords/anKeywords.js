@@ -1,5 +1,16 @@
-import {_each, getValueString, isArray, isStr, mergeDeep, isNumber} from '../../src/utils.js';
+import {_each, deepAccess, getValueString, isArray, isStr, mergeDeep, isNumber} from '../../src/utils.js';
 import {getAllOrtbKeywords} from '../keywords/keywords.js';
+import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
+
+const ORTB_SEGTAX_KEY_MAP = {
+  526: '1plusx',
+  527: '1plusx',
+  541: 'captify_segments',
+  540: 'perid'
+};
+const ORTB_SEG_PATHS = ['user.data'].concat(
+  CLIENT_SECTIONS.map((prefix) => `${prefix}.content.data`)
+);
 
 /**
  * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
@@ -71,7 +82,7 @@ function convertKeywordsToANMap(kwarray) {
  * @param ortb2
  * @return {{}} appnexus-style keyword map using all keywords contained in ortb2
  */
-export function getANMapFromOrtb(ortb2) {
+export function getANMapFromOrtbKeywords(ortb2) {
   return convertKeywordsToANMap(getAllOrtbKeywords(ortb2));
 }
 
@@ -86,7 +97,30 @@ export function getANKewyordParamFromMaps(...anKeywordMaps) {
 
 export function getANKeywordParam(ortb2, ...anKeywordsMaps) {
   return getANKewyordParamFromMaps(
-    getANMapFromOrtb(ortb2),
+    getANMapFromOrtbKeywords(ortb2),
+    getANMapFromOrtbSegments(ortb2),
     ...anKeywordsMaps
   )
+}
+
+export function getANMapFromOrtbSegments(ortb2) {
+  let ortbSegData = {};
+  ORTB_SEG_PATHS.forEach(path => {
+    let ortbSegsArrObj = deepAccess(ortb2, path) || [];
+    ortbSegsArrObj.forEach(segObj => {
+      // only read segment data from known sources
+      const segtax = ORTB_SEGTAX_KEY_MAP[deepAccess(segObj, 'ext.segtax')];
+      if (segtax) {
+        segObj.segment.forEach(seg => {
+          // if source was in multiple locations of ortb or had multiple segments in same area, stack them together into an array
+          if (ortbSegData[segtax]) {
+            ortbSegData[segtax].push(seg.id);
+          } else {
+            ortbSegData[segtax] = [seg.id]
+          }
+        });
+      }
+    });
+  });
+  return ortbSegData;
 }
