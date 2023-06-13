@@ -189,15 +189,15 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2 }
+        result.uid2 = { 'id': value.uid2, ext: { provider: 'liveintent.com' } }
       }
 
       if (value.bidswitch) {
-        result.bidswitch = { 'id': value.bidswitch }
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: 'liveintent.com' } }
       }
 
       if (value.medianet) {
-        result.medianet = { 'id': value.medianet }
+        result.medianet = { 'id': value.medianet, ext: { provider: 'liveintent.com' } }
       }
 
       return result

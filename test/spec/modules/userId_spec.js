@@ -3123,14 +3123,14 @@ describe('User ID', function () {
             ]
           }
         });
-  
+
         const ids = {
           'uid2': { id: 'uid2_value_from_mockId3Module' },
           'pubcid': 'pubcid_value',
           'lipb': { lipbid: 'lipbid_from_mockId2Module' },
           'merkleId': { id: 'merkleId_value' }
         };
-  
+
         getGlobal().getUserIdsAsync().then(() => {
           const eids = getGlobal().getUserIdsAsEids();
           const expected = createEidsArray(ids);
