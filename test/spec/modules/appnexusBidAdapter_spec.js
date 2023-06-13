@@ -840,7 +840,7 @@ describe('AppNexusAdapter', function () {
       expectKeywords(payload.keywords, [{
         'key': 'drill'
       }, {
-        'key': '1plusx',
+        'key': '1plusX',
         'value': ['cat', 'dog']
       }, {
         'key': 'perid',
