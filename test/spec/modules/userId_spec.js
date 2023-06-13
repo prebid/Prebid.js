@@ -121,12 +121,6 @@ describe('User ID', function () {
     return cfg;
   }
 
-  function findEid(eids, source) {
-    return find(eids, (eid) => {
-      if (eid.source === source) { return true; }
-    });
-  }
-
   let sandbox, consentData, startDelay, callbackDelay;
 
   function clearStack() {
