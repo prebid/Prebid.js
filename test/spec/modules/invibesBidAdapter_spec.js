@@ -326,8 +326,8 @@ describe('invibesBidAdapter:', function () {
     it('has location not cut off', function () {
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
       const parsedData = request.data;
-      expect(parsedData.location).to.exist;
       expect(parsedData.location).to.contain('?');
+      expect(parsedData.location).to.equal(top.window.location.href);
     });
 
     it('has capped ids if local storage variable is correctly formatted', function () {
