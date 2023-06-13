@@ -200,6 +200,10 @@ export const liveIntentIdSubmodule = {
         result.medianet = { 'id': value.medianet, ext: { provider: 'liveintent.com' } }
       }
 
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: 'liveintent.com' } }
+      }
+
       return result
     }
 

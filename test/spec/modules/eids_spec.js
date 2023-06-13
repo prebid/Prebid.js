@@ -238,6 +238,39 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('magnite', function() {
+    const userId = {
+      magnite: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('magnite with ext', function() {
+    const userId = {
+      magnite: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
