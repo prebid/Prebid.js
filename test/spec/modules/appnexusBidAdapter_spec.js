@@ -758,12 +758,8 @@ describe('AppNexusAdapter', function () {
       }, {
         'key': 'test'
       }, {
-        key: 'tools=industrial',
-      }, {
-        key: 'tools=home',
-      }, {
         'key': 'tools',
-        'value': ['power']
+        'value': ['power', 'industrial', 'home']
       }, {
         'key': 'power tools'
       }, {
@@ -771,13 +767,16 @@ describe('AppNexusAdapter', function () {
       }, {
         'key': 'video'
       }, {
-        'key': 'source=streaming',
+        'key': 'source',
+        'value': ['streaming']
       }, {
         'key': 'renting'
       }, {
-        'key': 'app=iphone 11',
+        'key': 'app',
+        'value': ['iphone 11']
       }, {
-        'key': 'appcontent=home repair',
+        'key': 'appcontent',
+        'value': ['home repair']
       }, {
         'key': 'dyi'
       }]);
@@ -970,6 +969,94 @@ describe('AppNexusAdapter', function () {
           'key': 'emptyArr'
         }
       ])
+    });
+
+    it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          ortb2Imp: {
+            ext: {
+              data: {
+                keywords: 'ortb2=yes,ortb2test, multiValMixed=4, singleValNum=456'
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expectKeywords(payload.tags[0].keywords, [{
+        'key': 'ortb2',
+        'value': ['yes']
+      }, {
+        'key': 'ortb2test'
+      }, {
+        'key': 'multiValMixed',
+        'value': ['4']
+      }, {
+        'key': 'singleValNum',
+        'value': ['456']
+      }]);
+    });
+
+    it('should convert keyword params and adUnit ortb2 keywords to proper form and attaches to request', function () {
+      let bidRequest = Object.assign({},
+        bidRequests[0],
+        {
+          params: {
+            placementId: '10433394',
+            keywords: {
+              single: 'val',
+              singleArr: ['val'],
+              singleArrNum: [5],
+              multiValMixed: ['value1', 2, 'value3'],
+              singleValNum: 123,
+              emptyStr: '',
+              emptyArr: [''],
+              badValue: { 'foo': 'bar' } // should be dropped
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              data: {
+                keywords: 'ortb2=yes,ortb2test, multiValMixed=4, singleValNum=456'
+              }
+            }
+          }
+        }
+      );
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expectKeywords(payload.tags[0].keywords, [{
+        'key': 'single',
+        'value': ['val']
+      }, {
+        'key': 'singleArr',
+        'value': ['val']
+      }, {
+        'key': 'singleArrNum',
+        'value': ['5']
+      }, {
+        'key': 'multiValMixed',
+        'value': ['value1', '2', 'value3', '4']
+      }, {
+        'key': 'singleValNum',
+        'value': ['123', '456']
+      }, {
+        'key': 'emptyStr'
+      }, {
+        'key': 'emptyArr'
+      }, {
+        'key': 'ortb2',
+        'value': ['yes']
+      }, {
+        'key': 'ortb2test'
+      }]);
     });
 
     it('should add payment rules to the request', function () {

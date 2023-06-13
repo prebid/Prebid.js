@@ -36,6 +36,7 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {
+  convertKeywordStringToANMap,
   getANKewyordParamFromMaps,
   getANKeywordParam,
   transformBidderParamKeywords
@@ -782,7 +783,7 @@ function bidToTag(bid) {
     tag.external_imp_id = bid.params.external_imp_id;
   }
 
-  const auKeywords = getANKewyordParamFromMaps(bid.params?.keywords);
+  const auKeywords = getANKewyordParamFromMaps(convertKeywordStringToANMap(deepAccess(bid, 'ortb2Imp.ext.data.keywords')), bid.params?.keywords);
   if (auKeywords.length > 0) {
     tag.keywords = auKeywords;
   }

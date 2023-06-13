@@ -71,10 +71,24 @@ export function convertKeywordStringToANMap(keyStr) {
 function convertKeywordsToANMap(kwarray) {
   const result = {};
   kwarray.forEach(kw => {
-    if (!result.hasOwnProperty(kw)) {
-      result[kw] = [];
+    // if = exists, then split
+    if (kw.indexOf('=') !== -1) {
+      let kwPair = kw.split('=');
+      let key = kwPair[0];
+      let val = kwPair[1];
+
+      // then check for existing key in result > if so add value to the array > if not, add new key and create value array
+      if (result.hasOwnProperty(key)) {
+        result[key].push(val);
+      } else {
+        result[key] = [val];
+      }
+    } else {
+      if (!result.hasOwnProperty(kw)) {
+        result[kw] = [];
+      }
     }
-  });
+  })
   return result;
 }
 
