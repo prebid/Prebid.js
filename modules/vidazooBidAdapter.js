@@ -1,4 +1,4 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {_each, chunk, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -48,7 +48,7 @@ function isBidRequestValid(bid) {
   return !!(extractCID(params) && extractPID(params));
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const {
     params,
     bidId,
@@ -69,9 +69,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const sId = getVidazooSessionId();
-  const cId = extractCID(params);
   const pId = extractPID(params);
-  const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
@@ -152,145 +150,44 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
+  _each(ext, (value, key) => {
+    data['ext.' + key] = value;
+  });
+
+  return data;
+}
+
+function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+  const {params} = bid;
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout);
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
-
-  _each(ext, (value, key) => {
-    dto.data['ext.' + key] = value;
-  });
-
   return dto;
 }
 
 function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
-  const hashUrl = hashCode(topWindowUrl);
-  const dealId = getNextDealId(hashUrl);
-  const uniqueDealId = getUniqueDealId(hashUrl);
-  const sId = getVidazooSessionId();
-  const ptrace = getCacheOpt();
-  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
-  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
-  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
-
-  const subDomain = extractSubDomain(bidRequests[0].params);
-  const cId = extractCID(bidRequests[0].params);
-
-  const bids = bidRequests.map(bid => {
+  const {params} = bidRequests[0];
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = bidRequests.map(bid => {
     const sizes = parseSizesInput(bid.sizes);
-    const {
-      params,
-      bidId,
-      userId,
-      adUnitCode,
-      schain,
-      mediaTypes,
-      auctionId,
-      transactionId,
-      bidderRequestId,
-      bidRequestsCount,
-      bidderRequestsCount,
-      bidderWinsCount
-    } = bid;
-
-    const {ext} = params;
-    let {bidFloor} = params;
-    const pId = extractPID(params);
-    const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
-
-    if (isFn(bid.getFloor)) {
-      const floorInfo = bid.getFloor({
-        currency: 'USD',
-        mediaType: '*',
-        size: '*'
-      });
-
-      if (floorInfo.currency === 'USD') {
-        bidFloor = floorInfo.floor;
-      }
-    }
-    let bidData = {
-      adUnitCode: adUnitCode,
-      bidId: bidId,
-      sizes: sizes,
-      bidFloor: bidFloor,
-      publisherId: pId,
-      gpid: gpid,
-      schain: schain,
-      mediaTypes: mediaTypes,
-      auctionId: auctionId,
-      transactionId: transactionId,
-      bidderRequestId: bidderRequestId,
-      bidRequestsCount: bidRequestsCount,
-      bidderRequestsCount: bidderRequestsCount,
-      bidderWinsCount: bidderWinsCount,
-
-    };
-
-    _each(ext, (value, key) => {
-      bidData['ext.' + key] = value;
-    });
-
-    appendUserIdsToRequestPayload(bidData, userId);
-
-    return bidData;
+    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
   });
+  const CHUNK_SIZE = Math.min(10, config.getConfig('vidazoo.chunkSize') || 10);
 
-  const data = {
-    bids: bids,
-    url: encodeURIComponent(topWindowUrl),
-    uqs: getTopWindowQueryParams(),
-    cb: Date.now(),
-    referrer: bidderRequest.refererInfo.ref,
-    dealId: dealId,
-    uniqueDealId: uniqueDealId,
-    sessionId: sId,
-    ptrace: ptrace,
-    isStorageAllowed: isStorageAllowed,
-    cat: cat,
-    pagecat: pagecat,
-    bidderVersion: BIDDER_VERSION,
-    prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`,
-    bidderTimeout: bidderTimeout,
-    webSessionId: webSessionId
-  };
-
-  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
-
-  if (sua) {
-    data.sua = sua;
-  }
-
-  if (bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.consentString) {
-      data.gdprConsent = bidderRequest.gdprConsent.consentString;
-    }
-    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
-      data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    }
-  }
-  if (bidderRequest.uspConsent) {
-    data.usPrivacy = bidderRequest.uspConsent;
-  }
-
-  if (bidderRequest.gppConsent) {
-    data.gppString = bidderRequest.gppConsent.gppString;
-    data.gppSid = bidderRequest.gppConsent.applicableSections;
-  } else if (bidderRequest.ortb2?.regs?.gpp) {
-    data.gppString = bidderRequest.ortb2.regs.gpp;
-    data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
-  }
-
-  const dto = {
-    method: 'POST',
-    url: `${createDomain(subDomain)}/prebid/${cId}`,
-    data: data
-  }
-
-  return dto;
+  const chunkedData = chunk(data, CHUNK_SIZE);
+  return chunkedData.map(chunk => {
+    return {
+      method: 'POST',
+      url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
+      data: chunk
+    };
+  });
 }
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
@@ -321,15 +218,17 @@ function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
 
-  const singleRequestMode = config.getConfig('singleRequest') || true; // TODO: single request mode;
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
 
   const requests = [];
 
   if (singleRequestMode) {
     // We need to split the requests into banner and video requests
-    const bannerBidRequests = validBidRequests.filter(bid => bid.mediaTypes[BANNER] !== undefined);
-    const singleRequest = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
-    requests.push(singleRequest);
+    const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
+    if (bannerBidRequests.length > 0) {
+      const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+      requests.push(...singleRequests);
+    }
 
     // Video Logic
     const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
@@ -354,8 +253,9 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  // const {bidId} = request.data;
-  const bidIds = request.data.bids.map((bid) => bid.bidId);
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+  const reqBidId = deepAccess(request, 'data.bidId');
   const {results} = serverResponse.body;
 
   let output = [];
@@ -370,6 +270,7 @@ function interpretResponse(serverResponse, request) {
         width,
         height,
         currency,
+        bidId,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -379,7 +280,7 @@ function interpretResponse(serverResponse, request) {
       }
 
       const response = {
-        requestId: bidIds[i], // for multi - each bid needs to have is initial bidId
+        requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
         cpm: price,
         width: width,
         height: height,
