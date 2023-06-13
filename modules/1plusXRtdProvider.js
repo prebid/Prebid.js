@@ -152,7 +152,8 @@ const getTargetingDataFromPapi = (papiUrl) => {
 export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
   const userData = {
     name: ORTB2_NAME,
-    segment: segments.map((segmentId) => ({ id: segmentId }))
+    segment: segments.map((segmentId) => ({ id: segmentId })),
+    ext: { segtax: segtaxes.AUDIENCE }
   };
   const siteContentData = {
     name: ORTB2_NAME,

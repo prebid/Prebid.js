@@ -11,6 +11,7 @@ import {
   setTargetingDataToConfig,
   updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
+import {deepClone} from '../../../src/utils.js';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
@@ -180,7 +181,8 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId })),
+          ext: { segtax: segtaxes.AUDIENCE }
         }
       }
       expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
@@ -198,7 +200,8 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: []
+          segment: [],
+          ext: { segtax: segtaxes.AUDIENCE }
         }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
@@ -216,7 +219,8 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId })),
+          ext: { segtax: segtaxes.AUDIENCE }
         },
       }
       expect(ortb2Updates, `${JSON.stringify(ortb2Updates, null, 2)}`).to.deep.include(expectedOutput);
@@ -329,7 +333,7 @@ describe('1plusXRtdProvider', () => {
     it('merges fetched data in bidderConfig for configured bidders', () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitial } }
+      const ortb2Fragments = { [bidder]: deepClone(bidderConfigInitial) }
       // Call submodule's setBidderConfig
       updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
       const newBidderConfig = ortb2Fragments[bidder];
@@ -422,7 +426,8 @@ describe('1plusXRtdProvider', () => {
     const expectedUserObj = {
       data: [{
         name: '1plusX.com',
-        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
+        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId })),
+        ext: { segtax: segtaxes.AUDIENCE }
       }]
     }
     const expectedOrtb2 = {
