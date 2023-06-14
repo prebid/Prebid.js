@@ -729,7 +729,6 @@ function _addFledgeflag(impObj, bid, isFledgeEnabled) {
   }
 }
 
-
 function _addImpressionFPD(imp, bid) {
   const ortb2 = {...deepAccess(bid, 'ortb2Imp.ext.data')};
   Object.keys(ortb2).forEach(prop => {
