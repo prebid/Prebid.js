@@ -55,14 +55,21 @@ describe('vrtcalBidAdapter', function () {
       expect(request[0].data).to.match(/"bidfloor":0.55/);
     });
 
-    it('pass GDPR,CCPA, and COPPA indicators/consent strings with the request when present', function () {
+    it('pass GDPR,CCPA,COPPA, and GPP indicators/consent strings with the request when present', function () {
       bidRequests[0].gdprConsent = {consentString: 'gdpr-consent-string', gdprApplies: true};
       bidRequests[0].uspConsent = 'ccpa-consent-string';
       config.setConfig({ coppa: false });
 
+      bidRequests[0].ortb2 = {
+        regs: {
+          gpp: 'testGpp',
+          gpp_sid: [1, 2, 3]
+        }
+      }
+
       request = spec.buildRequests(bidRequests);
       expect(request[0].data).to.match(/"user":{"ext":{"consent":"gdpr-consent-string"/);
-      expect(request[0].data).to.match(/"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"ccpa-consent-string"}}/);
+      expect(request[0].data).to.match(/"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"ccpa-consent-string","gpp":"testGpp","gpp_sid":\[1,2,3\]}}/);
     });
 
     it('pass bidder timeout/tmax with the request', function () {
