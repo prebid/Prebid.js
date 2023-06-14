@@ -3,8 +3,8 @@ import {getAllOrtbKeywords} from '../keywords/keywords.js';
 import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
 
 const ORTB_SEGTAX_KEY_MAP = {
-  526: '1plusx',
-  527: '1plusx',
+  526: '1plusX',
+  527: '1plusX',
   541: 'captify_segments',
   540: 'perid'
 };
