@@ -111,8 +111,9 @@ describe('FreePass adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    const bidRequest = spec.buildRequests(
-      [{
+    let bidRequests, bidderRequest;
+    beforeEach(function () {
+      bidRequests = [{
         'bidId': '28ffdf2a952532',
         'bidder': 'freepass',
         'userId': {
@@ -122,9 +123,10 @@ describe('FreePass adapter', function () {
             'commonId': 'commonIdValue'
           }
         }
-      }],
-      {}
-    );
+      }];
+      bidderRequest = {};
+    });
+
     const ad = '<iframe src=\'http://127.0.0.1:8081/banner.html?w=300&h=250&cr=0\' width=\'300\' height=\'250\' style=\'border:none;\'></iframe>';
     const serverResponse = {
       body: {
@@ -142,6 +144,7 @@ describe('FreePass adapter', function () {
       }
     };
     it('should interpret server response', function () {
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
       const bids = spec.interpretResponse(serverResponse, bidRequest);
       expect(bids).to.be.an('array');
 
