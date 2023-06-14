@@ -410,7 +410,7 @@ function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
  * @param {SubmoduleContainer[]} submodules
  * @param {function} cb - callback for after processing is done.
  */
-function processSubmoduleCallbacks(submodules, cb) {
+function processSubmoduleCallbacks(submodules, cb, allModules) {
   cb = uidMetrics().fork().startTiming('userId.callbacks.total').stopBefore(cb);
   const done = delayExecution(() => {
     clearTimeout(timeoutID);
@@ -426,7 +426,7 @@ function processSubmoduleCallbacks(submodules, cb) {
         }
         // cache decoded value (this is copied to every adUnit bid)
         submodule.idObj = submodule.submodule.decode(idObj, submodule.config);
-        updatePPID(submodule.idObj);
+        updatePPID(getCombinedSubmoduleIds(allModules));
       } else {
         logInfo(`${MODULE_NAME}: ${submodule.submodule.name} - request id responded with an empty value`);
       }
@@ -588,7 +588,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       .then(checkRefs(() => {
         const modWithCb = initModules.filter(item => isFn(item.callback));
         if (modWithCb.length) {
-          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve));
+          return new GreedyPromise((resolve) => processSubmoduleCallbacks(modWithCb, resolve, initModules));
         }
       }))
   );
@@ -627,7 +627,7 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
               return sm.callback != null;
             });
             if (cbModules.length) {
-              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve));
+              return new GreedyPromise((resolve) => processSubmoduleCallbacks(cbModules, resolve, initModules));
             }
           }))
       );
@@ -819,7 +819,7 @@ export const validateGdprEnforcement = hook('sync', function (submodules, consen
   return { userIdModules: submodules, hasValidated: consentData && consentData.hasValidated };
 }, 'validateGdprEnforcement');
 
-function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh) {
+function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, allSubmodules) {
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
@@ -868,7 +868,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
     }
   }
-  updatePPID(submodule.idObj);
+  updatePPID(getCombinedSubmoduleIds(allSubmodules));
 }
 
 function updatePPID(userIds = getUserIds()) {
@@ -922,7 +922,7 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
     const initialized = userIdModules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
-          populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh);
+          populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, userIdModules);
           carry.push(submodule);
         } catch (e) {
           logError(`Error in userID module '${submodule.submodule.name}':`, e);

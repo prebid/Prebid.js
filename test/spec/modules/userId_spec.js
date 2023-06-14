@@ -521,6 +521,41 @@ describe('User ID', function () {
       });
     });
 
+    it('should set googletag ppid correctly when prioritized according to config available to core', function () {
+      let adUnits = [getAdUnitMock()];
+      init(config);
+      setSubmoduleRegistry([
+        // some of the ids are padded to have length >= 32 characters
+        createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_from_mockId2Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}, pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'}, merkleId: {id: 'merkleId_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
+      ]);
+
+      // before ppid should not be set
+      expect(window.googletag._ppid).to.equal(undefined);
+
+      config.setConfig({
+        userSync: {
+          ppid: 'uidapi.com',
+          idPriority: {
+            uid2: ['mockId3Module', 'mockId1Module'],
+            merkleId: ['mockId4Module', 'mockId3Module']
+          },
+          userIds: [
+            { name: 'mockId1Module' },
+            { name: 'mockId2Module' },
+            { name: 'mockId3Module' },
+            { name: 'mockId4Module' }
+          ]
+        }
+      });
+
+      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
+        expect(window.googletag._ppid).to.equal('uid2valuefrommockId3Module7ac66c0f148de9519b8bd264312c4d64');
+      });
+    });
+
     describe('submodule callback', () => {
       const TEST_KEY = 'testKey';
 
