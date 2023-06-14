@@ -7,7 +7,7 @@ Maintainer: tech@oxxion.io
 # Oxxion Real-Time-Data submodule
 
 Oxxion helps you to understand how your prebid stack performs.
-This Rtd module is to use in order to improve video events tracking.
+This Rtd module is to use in order to improve video events tracking and/or to filter bidder requested.
 
 # Integration
 
