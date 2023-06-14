@@ -3980,8 +3980,8 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -3990,18 +3990,16 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].video.ext.bidfloor).to.equal(2.05);
-        expect(extractPayload(request[0]).imp[0].video.ext.bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].banner.format[0].ext.bidfloor).to.equal(2.35);
-        expect(extractPayload(request[0]).imp[0].banner.format[0].ext.bidfloorcur).to.equal('USD');
-        bids[1].transactionId = tid;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('multiformat banner / native - bid floors', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -4010,7 +4008,7 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.05);
-        bids[1].transactionId = tid;
+        bids[1].transactionId = adunitcode;
       });
 
       it('multiformat banner / native - bid floors, banner imp less', function () {

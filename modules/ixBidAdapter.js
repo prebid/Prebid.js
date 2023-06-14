@@ -945,9 +945,6 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         if ('bidfloor' in bannerImps[i]) {
           _bannerImpression.banner.format[i].ext.bidfloor = bannerImps[i].bidfloor;
         }
-        if ('bidfloorcur' in bannerImps[i]) {
-          _bannerImpression.banner.format[i].ext.bidfloorcur = bannerImps[i].bidfloorcur;
-        }
       }
 
       const position = impressions[impKeys[adUnitIndex]].pos;
@@ -1731,6 +1728,7 @@ export const spec = {
     if (Object.keys(nativeImps).length > 0) {
       allImps.push(nativeImps);
     }
+
     if (FEATURE_TOGGLES.isFeatureEnabled('pbjs_enable_multiformat')) {
       reqs.push(...buildRequest(validBidRequests, bidderRequest, combineImps(allImps)));
     } else {
