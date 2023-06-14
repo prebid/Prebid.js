@@ -248,7 +248,11 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
-        auctionId: 'auction-id',
+        ortb2: {
+          source: {
+            tid: 'auction-id'
+          }
+        },
         timeout: 242
       };
     });
@@ -311,7 +315,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
-            expect(openRtbReq.source.tid).to.equal(bidderRequest.auctionId);
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.ortb2.source.tid);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);

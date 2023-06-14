@@ -604,13 +604,67 @@ describe('The Criteo bidding adapter', function () {
       config.resetConfig();
     });
 
+    it('should properly build a request using random uuid as auction id', function () {
+      const generateUUIDStub = sinon.stub(utils, 'generateUUID');
+      generateUUIDStub.returns('def');
+      const bidderRequest = {
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.id).to.equal('def');
+      generateUUIDStub.restore();
+    });
+
+    it('should properly transmit source.tid if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'abc'
+          }
+        }
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.source.tid).to.equal('abc');
+    });
+
     it('should properly build a request if refererInfo is not provided', function () {
       const bidderRequest = {};
       const bidRequests = [
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -629,7 +683,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -842,7 +900,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [728, 90]]
@@ -881,7 +943,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-123',
-          transactionId: 'transaction-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[728, 90]]
@@ -894,7 +960,11 @@ describe('The Criteo bidding adapter', function () {
         {
           bidder: 'criteo',
           adUnitCode: 'bid-234',
-          transactionId: 'transaction-234',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-234',
+            },
+          },
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [728, 90]]
@@ -1063,7 +1133,7 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly build a request with bcat field', function () {
-      const bcat = [ 'IAB1', 'IAB2' ];
+      const bcat = ['IAB1', 'IAB2'];
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -1091,7 +1161,7 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly build a request with badv field', function () {
-      const badv = [ 'ford.com' ];
+      const badv = ['ford.com'];
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -1119,7 +1189,7 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly build a request with bapp field', function () {
-      const bapp = [ 'com.foo.mygame' ];
+      const bapp = ['com.foo.mygame'];
       const bidRequests = [
         {
           bidder: 'criteo',

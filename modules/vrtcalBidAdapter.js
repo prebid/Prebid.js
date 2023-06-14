@@ -8,7 +8,7 @@ export const spec = {
   code: 'vrtcal',
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    if (bid.bidId == '' || bid.auctionId == '') { return false; } else { return true; }// No extras params required
+    return true;
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {

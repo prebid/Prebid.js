@@ -11,7 +11,11 @@ const defaultRequest = {
   bidId: '1',
   requestId: 'qwerty',
   auctionId: 'auctionId',
-  transactionId: 'tr1',
+  ortb2Imp: {
+    ext: {
+      tid: 'tr1',
+    }
+  },
   mediaTypes: {
     banner: {
       sizes: [
@@ -85,7 +89,7 @@ describe('buildRequests', function () {
     const request = JSON.parse(spec.buildRequests([defaultRequest], {}).data)[0];
     expect(request).to.have.property('bidId').and.to.equal(defaultRequest.bidId);
     expect(request).to.have.property('auctionId').and.to.equal(defaultRequest.auctionId);
-    expect(request).to.have.property('transactionId').and.to.equal(defaultRequest.transactionId);
+    expect(request).to.have.property('transactionId').and.to.equal(defaultRequest.ortb2Imp.ext.tid);
     expect(request).to.have.property('tz').and.to.equal(new Date().getTimezoneOffset());
     expect(request).to.have.property('bc').and.to.equal(1);
     expect(request).to.have.property('floor').and.to.equal(null);

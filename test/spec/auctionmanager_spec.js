@@ -874,6 +874,17 @@ describe('auctionmanager.js', function () {
         assert.equal(registeredBid.adserverTargeting[CONSTANTS.TARGETING_KEYS.BIDDER], BIDDER_CODE);
         assert.equal(registeredBid.adserverTargeting.extra, 'stuff');
       });
+      it('should add the bidResponse to the collection before calling BID_RESPONSE', function () {
+        let hasBid = false;
+        const eventHandler = function(bid) {
+          const storedBid = auction.getBidsReceived().pop();
+          hasBid = storedBid === bid;
+        }
+        events.on(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler);
+        auction.callBids();
+        events.off(CONSTANTS.EVENTS.BID_RESPONSE, eventHandler);
+        assert.ok(hasBid, 'Bid not available');
+      });
 
       describe('install publisher-defined renderers', () => {
         Object.entries({
@@ -1776,28 +1787,6 @@ describe('auctionmanager.js', function () {
           });
         })
       });
-
-      it('should return a NO_BID replacement', () => {
-        const noBid = cbs.addBidResponse.reject(AU_CODE, {...bid, statusMessage: 'Bid available', status: CONSTANTS.BID_STATUS.RENDERED}, 'Rejected');
-        sinon.assert.match(noBid, {
-          status: CONSTANTS.BID_STATUS.BID_REJECTED,
-          statusMessage: 'Bid returned empty or error response',
-          cpm: 0,
-          requestId: bid.requestId,
-          auctionId: bid.auctionId,
-          adUnitCode: AU_CODE,
-          rejectionReason: undefined,
-        });
-      });
-
-      it('should return NO_BID replacement when rejected bid is not a "proper" bid', () => {
-        const noBid = cbs.addBidResponse.reject(AU_CODE, {});
-        sinon.assert.match(noBid, {
-          status: CONSTANTS.BID_STATUS.BID_REJECTED,
-          statusMessage: 'Bid returned empty or error response',
-          cpm: 0,
-        });
-      })
 
       it('addBidResponse hooks should not be able to reject the same bid twice', () => {
         cbs.addBidResponse(AU_CODE, bid);

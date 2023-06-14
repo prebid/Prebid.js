@@ -14,7 +14,11 @@ const DISPLAY_REQUEST = [{
     zoneId: 1
   },
   requestId: 'request_abcd1234',
-  transactionId: 'trans_abcd1234'
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  },
 }];
 
 const DISPLAY_REQUEST_WITH_EIDS = [{
@@ -29,7 +33,11 @@ const DISPLAY_REQUEST_WITH_EIDS = [{
     zoneId: 1
   },
   requestId: 'request_abcd1234',
-  transactionId: 'trans_abcd1234',
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  },
   userIdAsEids: [{
     source: 'pubcid.org',
     uids: [{
@@ -61,7 +69,11 @@ const DISPLAY_REQUEST_WITH_POSITION_TYPE = [{
     positionType: 'infeed'
   },
   requestId: 'request_abcd1234',
-  transactionId: 'trans_abcd1234'
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  },
 }];
 
 const BID_RESPONSE_DISPLAY = {
@@ -92,7 +104,11 @@ const VIDEO_INSTREAM_REQUEST = [{
     bidfloor: 2.50
   },
   requestId: 'request_abcd1234',
-  transactionId: 'trans_abcd1234'
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  }
 }];
 
 const BID_RESPONSE_VIDEO_INSTREAM = {
@@ -124,7 +140,11 @@ const VIDEO_OUTSTREAM_REQUEST = [{
     bidfloor: 2.50
   },
   requestId: 'request_abcd1234',
-  transactionId: 'trans_abcd1234'
+  ortb2Imp: {
+    ext: {
+      tid: 'trans_abcd1234',
+    }
+  }
 }];
 
 const BID_RESPONSE_VIDEO_OUTSTREAM = {
@@ -224,7 +244,6 @@ describe('smilewantedBidAdapterTests', function () {
   describe('gdpr tests', function () {
     afterEach(function () {
       config.resetConfig();
-      $$PREBID_GLOBAL$$.requestBids.removeAll();
     });
 
     it('SmileWanted - Verify build request with GDPR', function () {

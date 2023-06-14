@@ -57,7 +57,7 @@ const RemoveDuplicateSizes = (validBid) => {
 };
 
 const getRequests = (conf, validBidRequests, bidderRequest) => {
-  const {bids, bidderRequestId, auctionId, bidderCode, ...bidderRequestData} = bidderRequest;
+  const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
   let requestBySiteId = {};
 

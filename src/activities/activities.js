@@ -45,3 +45,8 @@ export const ACTIVITY_TRANSMIT_UFPD = 'transmitUfpd';
  * transmitPreciseGeo: some component wants access to (and send along) geolocation info
  */
 export const ACTIVITY_TRANSMIT_PRECISE_GEO = 'transmitPreciseGeo';
+
+/**
+ * transmit TID: some component wants access ot (and send along) transaction IDs
+ */
+export const ACTIVITY_TRANSMIT_TID = 'transmitTid';

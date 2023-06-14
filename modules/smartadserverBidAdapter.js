@@ -150,7 +150,7 @@ export const spec = {
         tagId: bid.adUnitCode,
         // TODO: is 'page' the right value here?
         pageDomain: bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : undefined,
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: config.getConfig('bidderTimeout'),
         bidId: bid.bidId,
         prebidVersion: '$prebid.version$',

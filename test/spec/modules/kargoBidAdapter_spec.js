@@ -76,7 +76,6 @@ describe('kargo adapter tests', function () {
           auctionId: '1234098',
           bidId: '1',
           adUnitCode: '101',
-          transactionId: '10101',
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             banner: {
@@ -135,6 +134,7 @@ describe('kargo adapter tests', function () {
           },
           ortb2Imp: {
             ext: {
+              tid: '10101',
               data: {
                 adServer: {
                   name: 'gam',
@@ -152,7 +152,6 @@ describe('kargo adapter tests', function () {
           },
           bidId: '2',
           adUnitCode: '202',
-          transactionId: '20202',
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             video: {
@@ -164,6 +163,7 @@ describe('kargo adapter tests', function () {
           bidderWinsCount: 0,
           ortb2Imp: {
             ext: {
+              tid: '20202',
               data: {
                 adServer: {
                   name: 'gam',
@@ -180,7 +180,6 @@ describe('kargo adapter tests', function () {
           },
           bidId: '3',
           adUnitCode: '303',
-          transactionId: '30303',
           sizes: [[320, 50], [300, 250], [300, 600]],
           mediaTypes: {
             native: {
@@ -189,6 +188,7 @@ describe('kargo adapter tests', function () {
           },
           ortb2Imp: {
             ext: {
+              tid: '30303',
               data: {
                 adServer: {
                   name: 'gam',

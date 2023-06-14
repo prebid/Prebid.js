@@ -13,8 +13,7 @@ import {
   isStr,
   logError,
   logMessage,
-  logWarn,
-  transformBidderParamKeywords
+  logWarn
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -22,6 +21,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';
@@ -194,10 +194,6 @@ export const spec = {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
 
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
-
       Object.keys(params).forEach(paramKey => {
         let convertedKey = convertCamelToUnderscore(paramKey);
         if (convertedKey !== paramKey) {
@@ -210,16 +206,6 @@ export const spec = {
     return params;
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
 
 function formatRequest(payload, bidderRequest) {
   let request = [];
@@ -475,14 +461,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
   if (bid.params.category) {
     tag.category = bid.params.category;
   }
