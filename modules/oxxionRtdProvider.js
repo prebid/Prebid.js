@@ -63,7 +63,7 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
         }
       });
     }
-    if (!(config.params.threshold && config.params.samplingRate) && typeof callback == 'function') {
+    if (!(typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') && typeof callback == 'function') {
       callback();
     }
   }
