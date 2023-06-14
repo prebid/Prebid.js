@@ -12,6 +12,7 @@ import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {cmpClient} from '../libraries/cmp/cmpClient.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -48,36 +49,6 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
  */
 function lookupIabConsent({onSuccess, onError, onEvent}) {
-  function findCMP() {
-    let f = window;
-    let cmpFrame;
-    let cmpFunction;
-    while (true) {
-      try {
-        if (typeof f.__tcfapi === 'function') {
-          cmpFunction = f.__tcfapi;
-          cmpFrame = f;
-          break;
-        }
-      } catch (e) { }
-
-      // need separate try/catch blocks due to the exception errors thrown when trying to check for a frame that doesn't exist in 3rd party env
-      try {
-        if (f.frames['__tcfapiLocator']) {
-          cmpFrame = f;
-          break;
-        }
-      } catch (e) { }
-
-      if (f === window.top) break;
-      f = f.parent;
-    }
-    return {
-      cmpFrame,
-      cmpFunction
-    };
-  }
-
   function cmpResponseCallback(tcfData, success) {
     logInfo('Received a response from CMP', tcfData);
     if (success) {
@@ -90,70 +61,25 @@ function lookupIabConsent({onSuccess, onError, onEvent}) {
     }
   }
 
-  const cmpCallbacks = {};
-  const { cmpFrame, cmpFunction } = findCMP();
+  const cmp = cmpClient({
+    apiName: '__tcfapi',
+    apiVersion: CMP_VERSION,
+    apiArgs: ['command', 'version', 'callback', 'parameter'],
+  });
 
-  if (!cmpFrame) {
+  if (!cmp) {
     return onError('TCF2 CMP not found.');
   }
-  // to collect the consent information from the user, we perform two calls to the CMP in parallel:
-  // first to collect the user's consent choices represented in an encoded string (via getConsentData)
-  // second to collect the user's full unparsed consent information (via getVendorConsents)
-
-  // the following code also determines where the CMP is located and uses the proper workflow to communicate with it:
-  // check to see if CMP is found on the same window level as prebid and call it directly if so
-  // check to see if prebid is in a safeframe (with CMP support)
-  // else assume prebid may be inside an iframe and use the IAB CMP locator code to see if CMP's located in a higher parent window. this works in cross domain iframes
-  // if the CMP is not found, the iframe function will call the cmpError exit callback to abort the rest of the CMP workflow
-
-  if (typeof cmpFunction === 'function') {
+  if (cmp.isDirect) {
     logInfo('Detected CMP API is directly accessible, calling it now...');
-    cmpFunction('addEventListener', CMP_VERSION, cmpResponseCallback);
   } else {
     logInfo('Detected CMP is outside the current iframe where Prebid.js is located, calling it now...');
-    callCmpWhileInIframe('addEventListener', cmpFrame, cmpResponseCallback);
   }
 
-  function callCmpWhileInIframe(commandName, cmpFrame, moduleCallback) {
-    const apiName = '__tcfapi';
-
-    const callName = `${apiName}Call`;
-
-    /* Setup up a __cmp function to do the postMessage and stash the callback.
-    This function behaves (from the caller's perspective identicially to the in-frame __cmp call */
-    window[apiName] = function (cmd, cmpVersion, callback, arg) {
-      const callId = Math.random() + '';
-      const msg = {
-        [callName]: {
-          command: cmd,
-          version: cmpVersion,
-          parameter: arg,
-          callId: callId
-        }
-      };
-
-      cmpCallbacks[callId] = callback;
-      cmpFrame.postMessage(msg, '*');
-    }
-
-    /** when we get the return message, call the stashed callback */
-    window.addEventListener('message', readPostMessageResponse, false);
-
-    // call CMP
-    window[apiName](commandName, CMP_VERSION, moduleCallback);
-
-    function readPostMessageResponse(event) {
-      const cmpDataPkgName = `${apiName}Return`;
-      const json = (typeof event.data === 'string' && includes(event.data, cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
-      if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
-        const payload = json[cmpDataPkgName];
-        // TODO - clean up this logic (move listeners?); we have duplicate messages responses because 2 eventlisteners are active from the 2 cmp requests running in parallel
-        if (cmpCallbacks.hasOwnProperty(payload.callId)) {
-          cmpCallbacks[payload.callId](payload.returnValue, payload.success);
-        }
-      }
-    }
-  }
+  cmp({
+    command: 'addEventListener',
+    callback: cmpResponseCallback
+  })
 }
 
 /**

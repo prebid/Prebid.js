@@ -11,6 +11,7 @@ import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {cmpClient} from '../libraries/cmp/cmpClient.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -69,105 +70,26 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
  */
 function lookupIabConsent({onSuccess, onError}) {
-  const cmpApiName = '__gpp';
-  const cmpCallbacks = {};
-  let registeredPostMessageResponseListener = false;
-
-  function findCMP() {
-    let f = window;
-    let cmpFrame;
-    let cmpDirectAccess = false;
-    while (true) {
-      try {
-        if (typeof f[cmpApiName] === 'function') {
-          cmpFrame = f;
-          cmpDirectAccess = true;
-          break;
-        }
-      } catch (e) {}
-
-      // need separate try/catch blocks due to the exception errors thrown when trying to check for a frame that doesn't exist in 3rd party env
-      try {
-        if (f.frames['__gppLocator']) {
-          cmpFrame = f;
-          break;
-        }
-      } catch (e) {}
-
-      if (f === window.top) break;
-      f = f.parent;
-    }
-
-    return {
-      cmpFrame,
-      cmpDirectAccess
-    };
-  }
-
-  const {cmpFrame, cmpDirectAccess} = findCMP();
-
-  if (!cmpFrame) {
+  const cmp = cmpClient({
+    apiName: '__gpp',
+    apiVersion: CMP_VERSION,
+  });
+  if (!cmp) {
     return onError('GPP CMP not found.');
   }
 
-  const invokeCMP = (cmpDirectAccess) ? invokeCMPDirect : invokeCMPFrame;
-
-  function invokeCMPDirect({command, callback, parameter, version = CMP_VERSION}, resultCb) {
-    if (typeof resultCb === 'function') {
-      resultCb(cmpFrame[cmpApiName](command, callback, parameter, version));
-    } else {
-      cmpFrame[cmpApiName](command, callback, parameter, version);
-    }
-  }
-
-  function invokeCMPFrame({command, callback, parameter, version = CMP_VERSION}, resultCb) {
-    const callName = `${cmpApiName}Call`;
-    if (!registeredPostMessageResponseListener) {
-      // when we get the return message, call the stashed callback;
-      window.addEventListener('message', readPostMessageResponse, false);
-      registeredPostMessageResponseListener = true;
-    }
-
-    // call CMP via postMessage
-    const callId = Math.random().toString();
-    const msg = {
-      [callName]: {
-        command: command,
-        parameter,
-        version,
-        callId: callId
-      }
-    };
-
-    // TODO? - add logic to check if random was already used in the same session, and roll another if so?
-    cmpCallbacks[callId] = (typeof callback === 'function') ? callback : resultCb;
-    cmpFrame.postMessage(msg, '*');
-
-    function readPostMessageResponse(event) {
-      const cmpDataPkgName = `${cmpApiName}Return`;
-      const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
-      if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
-        const payload = json[cmpDataPkgName];
-
-        if (cmpCallbacks.hasOwnProperty(payload.callId)) {
-          cmpCallbacks[payload.callId](payload.returnValue);
-        }
-      }
-    }
-  }
-
-  const startupMsg = (cmpDirectAccess) ? 'Detected GPP CMP API is directly accessible, calling it now...'
+  const startupMsg = (cmp.isDirect) ? 'Detected GPP CMP API is directly accessible, calling it now...'
     : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
   logInfo(startupMsg);
 
-  invokeCMP({
+  cmp({
     command: 'addEventListener',
     callback: function (evt) {
       if (evt) {
-        logInfo(`Received a ${(cmpDirectAccess ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
+        logInfo(`Received a ${(cmp.isDirect ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
         if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
-          invokeCMP({command: 'getGPPData'}, function (gppData) {
-            logInfo(`Received a ${cmpDirectAccess ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
+          cmp({command: 'getGPPData'}).then((gppData) => {
+            logInfo(`Received a ${cmp.isDirect ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
             processCmpData(gppData, {onSuccess, onError});
           });
         } else if (evt.pingData.cmpStatus === 'error') {
