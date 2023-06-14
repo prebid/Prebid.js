@@ -21,10 +21,10 @@ export const oxxionSubmodule = {
 };
 
 function init(config, userConsent) {
-  if (!config.params || !config.params.domain || !config.params.contexts || !Array.isArray(config.params.contexts) || config.params.contexts.length == 0) {
-    return false
-  }
-  return true;
+  if (!config.params || !config.params.domain) { return false }
+  if (config.params.contexts && Array.isArray(config.params.contexts) && config.params.contexts.length > 0) { return true; }
+  if (typeof config.params.threshold != 'undefined' && typeof config.params.samplingRate == 'number') { return true }
+  return false;
 }
 
 function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
