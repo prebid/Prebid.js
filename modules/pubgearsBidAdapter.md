@@ -24,7 +24,7 @@ Module that connects to Pubgears's demand sources
                 {
                     bidder: "pubgears",
                     params: {
-                        siteId: 11111,
+                        serverId: 11111,
                         tagId: '4a2g4',
                         publisherId: 'rtb1',
                     }
