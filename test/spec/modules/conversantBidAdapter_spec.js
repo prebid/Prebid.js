@@ -221,8 +221,9 @@ describe('Conversant adapter tests', function() {
 
   it('Verify basic properties', function() {
     expect(spec.code).to.equal('conversant');
-    expect(spec.aliases).to.be.an('array').with.lengthOf(1);
+    expect(spec.aliases).to.be.an('array').with.lengthOf(2);
     expect(spec.aliases[0]).to.equal('cnvr');
+    expect(spec.aliases[1]).to.equal('epsilon');
     expect(spec.supportedMediaTypes).to.be.an('array').with.lengthOf(2);
     expect(spec.supportedMediaTypes[1]).to.equal('video');
   });
@@ -255,6 +256,11 @@ describe('Conversant adapter tests', function() {
     const bidderRequest = {
       refererInfo: {
         page: page
+      },
+      ortb2: {
+        source: {
+          tid: 'tid000'
+        }
       }
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -262,8 +268,8 @@ describe('Conversant adapter tests', function() {
     expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
     const payload = request.data;
 
-    expect(payload).to.have.property('id', 'req000');
-    expect(payload.source).to.have.property('tid', 'req000');
+    expect(payload).to.have.property('id');
+    expect(payload.source).to.have.property('tid', 'tid000');
     expect(payload).to.have.property('at', 1);
     expect(payload).to.have.property('imp');
     expect(payload.imp).to.be.an('array').with.lengthOf(8);

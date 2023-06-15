@@ -1,8 +1,8 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
-import { expect } from 'chai';
+import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
+import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {memoize, deepEqual, waitForElementToLoad} from 'src/utils.js';
+import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -894,93 +894,24 @@ describe('Utils', function () {
     });
   });
 
-  describe('transformBidderParamKeywords', function () {
-    it('returns an array of objects when keyvalue is an array', function () {
-      let keywords = {
-        genre: ['rock', 'pop']
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['rock', 'pop']
-      }]);
+  describe('insertElement', function () {
+    it('returns a node at the top of the target by default', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('body')[0];
+      const inserted = utils.insertElement(toInsert, document, 'body');
+      expect(inserted).to.equal(target.firstChild);
     });
-
-    it('returns an array of objects when keyvalue is a string', function () {
-      let keywords = {
-        genre: 'opera'
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['opera']
-      }]);
+    it('returns a node at bottom of target if 4th argument is true', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('html')[0];
+      const inserted = utils.insertElement(toInsert, document, 'html', true);
+      expect(inserted).to.equal(target.lastChild);
     });
-
-    it('returns an array of objects when keyvalue is a number', function () {
-      let keywords = {
-        age: 15
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'age',
-        value: ['15']
-      }]);
-    });
-
-    it('returns an array of objects when using multiple keys with values of differing types', function () {
-      let keywords = {
-        genre: 'classical',
-        mix: ['1', 2, '3', 4],
-        age: 10
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['classical']
-      }, {
-        key: 'mix',
-        value: ['1', '2', '3', '4']
-      }, {
-        key: 'age',
-        value: ['10']
-      }]);
-    });
-
-    it('returns an array of objects when the keyvalue uses an empty string', function() {
-      let keywords = {
-        test: [''],
-        test2: ''
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'test',
-        value: ['']
-      }, {
-        key: 'test2',
-        value: ['']
-      }]);
-    });
-
-    describe('insertElement', function () {
-      it('returns a node at the top of the target by default', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('body')[0];
-        const inserted = utils.insertElement(toInsert, document, 'body');
-        expect(inserted).to.equal(target.firstChild);
-      });
-      it('returns a node at bottom of target if 4th argument is true', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('html')[0];
-        const inserted = utils.insertElement(toInsert, document, 'html', true);
-        expect(inserted).to.equal(target.lastChild);
-      });
-      it('returns a node at top of the head if no target is given', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('head')[0];
-        const inserted = utils.insertElement(toInsert);
-        expect(inserted).to.equal(target.firstChild);
-      });
+    it('returns a node at top of the head if no target is given', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('head')[0];
+      const inserted = utils.insertElement(toInsert);
+      expect(inserted).to.equal(target.firstChild);
     });
   });
 

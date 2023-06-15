@@ -81,6 +81,7 @@ describe('adrinoBidAdapter', function () {
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code-2');
       expect(result[0].data[0].bidId).to.equal('12345678901234');
       expect(result[0].data[0].placementHash).to.equal('abcdef123456');
       expect(result[0].data[0].referer).to.equal('http://example.com/');
@@ -135,6 +136,7 @@ describe('adrinoBidAdapter', function () {
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://stg-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
       expect(result[0].data[0].bidId).to.equal('12345678901234');
       expect(result[0].data[0].placementHash).to.equal('abcdef123456');
       expect(result[0].data[0].referer).to.equal('http://example.com/');
@@ -154,6 +156,7 @@ describe('adrinoBidAdapter', function () {
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
       expect(result[0].data[0].bidId).to.equal('12345678901234');
       expect(result[0].data[0].placementHash).to.equal('abcdef123456');
       expect(result[0].data[0].referer).to.equal('http://example.com/');
@@ -173,6 +176,7 @@ describe('adrinoBidAdapter', function () {
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
       expect(result[0].url).to.equal('https://prd-prebid-bidder.adrino.io/bidder/bids/');
+      expect(result[0].data[0].adUnitCode).to.equal('adunit-code');
       expect(result[0].data[0].bidId).to.equal('12345678901234');
       expect(result[0].data[0].placementHash).to.equal('abcdef123456');
       expect(result[0].data[0].referer).to.equal('http://example.com/');

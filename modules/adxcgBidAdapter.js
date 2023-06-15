@@ -98,7 +98,7 @@ export const spec = {
     device.dnt = getDNT() ? 1 : 0;
     device.language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
 
-    const tid = bidderRequest.auctionId;
+    const tid = bidderRequest.ortb2?.source?.tid;
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];

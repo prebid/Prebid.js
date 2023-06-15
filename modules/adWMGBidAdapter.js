@@ -59,11 +59,12 @@ export const spec = {
       }
 
       const request = {
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidRequest.auctionId,
         requestId: bidRequest.bidId,
         bidRequestsCount: bidRequest.bidRequestsCount,
         bidderRequestId: bidRequest.bidderRequestId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         referrer: referrer,
         timeout: timeout,
         adUnit: adUnit,

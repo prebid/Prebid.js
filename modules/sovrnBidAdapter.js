@@ -151,11 +151,14 @@ export const spec = {
       site.page = bidderRequest.refererInfo.page
       site.domain = bidderRequest.refererInfo.domain
 
+      const tmax = deepAccess(bidderRequest, 'timeout');
+
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {
@@ -172,6 +175,10 @@ export const spec = {
       }
       if (bidderRequest.uspConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+      if (bidderRequest.gppConsent) {
+        deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
+        deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
       }
 
       if (eids) {

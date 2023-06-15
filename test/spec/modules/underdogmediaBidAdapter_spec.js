@@ -735,7 +735,7 @@ describe('UnderdogMedia adapter', function () {
             },
           },
           refererInfo: {
-            ref: 'www.example.com'
+            page: 'www.example.com'
           }
         }
 
@@ -967,7 +967,6 @@ describe('UnderdogMedia adapter', function () {
         expect(bids).to.be.lengthOf(2);
 
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['domain1'])
-        expect(bids[0].bidderCode).to.equal('underdogmedia');
         expect(bids[0].cpm).to.equal(2.5);
         expect(bids[0].width).to.equal('160');
         expect(bids[0].height).to.equal('600');

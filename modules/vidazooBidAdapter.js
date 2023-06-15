@@ -15,18 +15,6 @@ const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
 const OPT_CACHE_KEY = 'vdzwopt';
-export const SUPPORTED_ID_SYSTEMS = {
-  'britepoolid': 1,
-  'criteoId': 1,
-  'id5id': 1,
-  'idl_env': 1,
-  'lipb': 1,
-  'netId': 1,
-  'parrableId': 1,
-  'pubcid': 1,
-  'tdid': 1,
-  'pubProvidedId': 1
-};
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -69,7 +57,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     schain,
     mediaTypes,
     auctionId,
-    transactionId,
+    ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
     bidderRequestsCount,
@@ -126,8 +114,9 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     gpid: gpid,
     cat: cat,
     pagecat: pagecat,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: auctionId,
-    transactionId: transactionId,
+    transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
     bidderRequestsCount: bidderRequestsCount,
@@ -180,25 +169,22 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
-    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
-      key = `uid.${idSystemProviderName}`;
-
-      switch (idSystemProviderName) {
-        case 'digitrustid':
-          payloadRef[key] = deepAccess(userId, 'data.id');
-          break;
-        case 'lipb':
-          payloadRef[key] = userId.lipbid;
-          break;
-        case 'parrableId':
-          payloadRef[key] = userId.eid;
-          break;
-        case 'id5id':
-          payloadRef[key] = userId.uid;
-          break;
-        default:
-          payloadRef[key] = userId;
-      }
+    key = `uid.${idSystemProviderName}`;
+    switch (idSystemProviderName) {
+      case 'digitrustid':
+        payloadRef[key] = deepAccess(userId, 'data.id');
+        break;
+      case 'lipb':
+        payloadRef[key] = userId.lipbid;
+        break;
+      case 'parrableId':
+        payloadRef[key] = userId.eid;
+        break;
+      case 'id5id':
+        payloadRef[key] = userId.uid;
+        break;
+      default:
+        payloadRef[key] = userId;
     }
   });
 }
@@ -227,7 +213,18 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, metaData, mediaType = BANNER} = result;
+      const {
+        creativeId,
+        ad,
+        price,
+        exp,
+        width,
+        height,
+        currency,
+        advertiserDomains,
+        metaData,
+        mediaType = BANNER
+      } = result;
       if (!ad || !price) {
         return;
       }

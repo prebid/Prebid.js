@@ -191,19 +191,26 @@ export const spec = {
 };
 function buildRequest(validBidRequests, bidderRequest) {
   let bid = validBidRequests;
+  let pageUrl = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    pageUrl = bidderRequest.refererInfo.page || '';
+  }
+
   return {
+    v: '$prebid.version$',
     placementCode: bid.params.placementId,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
     bidQid: storage.getDataFromLocalStorage('qid') || null,
     bidId: bid.bidId,
     bidder: bid.bidder,
+    bidPageUrl: pageUrl,
     bidderRequestId: bid.bidderRequestId,
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
-
   };
 }
 

@@ -171,7 +171,11 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    ortb2Imp: {
+      ext: {
+        tid: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
+      },
+    },
   }
 ];
 
@@ -196,7 +200,11 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    ortb2Imp: {
+      ext: {
+        tid: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
+      }
+    },
   }
 ];
 
@@ -359,6 +367,9 @@ const WIN_NOTICE_APP = {
         'app_name': '{{APP_NAME}}',
         'app_store_url': '{{APP_STORE_URL}}',
         'inventory_source': '{{INVENTORY_SOURCE}}'
+      },
+      'win_notice_ext': {
+        'seatid': '{{SEAT_ID}}'
       }
     }
   },
