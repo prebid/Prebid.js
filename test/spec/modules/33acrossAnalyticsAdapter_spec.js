@@ -6,7 +6,7 @@ import * as events from 'src/events.js';
 import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager';
-import { DEFAULT_ENDPOINT } from '../../../modules/33acrossAnalyticsAdapter';
+import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT } from '../../../modules/33acrossAnalyticsAdapter';
 const { EVENTS, BID_STATUS } = CONSTANTS;
 
 describe('33acrossAnalyticsAdapter:', function () {
@@ -124,6 +124,7 @@ describe('33acrossAnalyticsAdapter:', function () {
             ...options
           },
         });
+        window.googletag.cmd.forEach(cmd => cmd());
       }
     });
 
@@ -418,7 +419,7 @@ describe('33acrossAnalyticsAdapter:', function () {
         });
       });
 
-      context('when a timeout config value has not been given', function () {
+      context('and a timeout config value has not been given', function () {
         context('and the default timeout has elapsed', function () {
           it('logs an error', function () {
             this.enableAnalytics();
@@ -430,6 +431,18 @@ describe('33acrossAnalyticsAdapter:', function () {
             assert.calledWithExactly(log.warn, 'Timed out waiting for ad transactions to complete. Sending report.');
           });
         })
+      });
+
+      context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
+        it.only('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
+          const timeout = POST_GAM_TIMEOUT + 2000;
+          this.enableAnalytics({ timeout });
+
+          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+
+          assert.strictEqual(navigator.sendBeacon.callCount, 1);
+        });
       });
 
       context('and the incomplete report has been sent successfully', function () {
