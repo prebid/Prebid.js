@@ -6,7 +6,7 @@ import * as events from 'src/events.js';
 import * as faker from 'faker';
 import CONSTANTS from 'src/constants.json';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager';
-import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT } from '../../../modules/33acrossAnalyticsAdapter';
+import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter';
 const { EVENTS, BID_STATUS } = CONSTANTS;
 
 describe('33acrossAnalyticsAdapter:', function () {
@@ -443,6 +443,16 @@ describe('33acrossAnalyticsAdapter:', function () {
 
           assert.strictEqual(navigator.sendBeacon.callCount, 1);
         });
+
+        it('does NOT sent a report if not all `slotRenderEnded` events have timed out', function () {
+          const timeout = POST_GAM_TIMEOUT + 2000;
+          this.enableAnalytics({ timeout });
+
+          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+          sandbox.clock.tick(POST_GAM_TIMEOUT - 1);
+
+          assert.strictEqual(navigator.sendBeacon.callCount, 0);
+        });
       });
 
       context('and the incomplete report has been sent successfully', function () {
@@ -468,6 +478,81 @@ describe('33acrossAnalyticsAdapter:', function () {
           sandbox.clock.tick(this.defaultTimeout + 1000);
 
           assert.calledWith(log.info, `Analytics report sent to ${endpoint}`);
+        });
+      });
+    });
+
+    context('when the transaction manager has open transactions', function () {
+      it('reports those transactions as pending', function () {
+        this.enableAnalytics();
+
+        const { prebid: [auction] } = getMockEvents();
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+
+        const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+        assert.equal(manager.status().pending.length, auction.BID_REQUESTED[0].bids.length);
+      });
+
+      context('and a single bidWon event has triggered', function () {
+        it('completes the transaction', function () {
+          this.enableAnalytics();
+
+          const { prebid: [auction] } = getMockEvents();
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          events.emit(EVENTS.BID_WON, auction.BID_WON[0]);
+
+          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+          assert.deepEqual({
+            completed: manager.status().completed.length,
+            pending: manager.status().pending.length
+          }, {
+            completed: 1,
+            pending: auction.BID_REQUESTED[0].bids.length - 1
+          });
+        });
+      });
+
+      context('and a single slotRenderEnded event has triggered', function () {
+        it('does NOT complete the transaction if the GAM timeout has not elapsed', function () {
+          this.enableAnalytics();
+
+          const { prebid: [auction], gam } = getMockEvents();
+          const slotRenderEnded = gam.slotRenderEnded[0];
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
+
+          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+          assert.deepEqual({
+            completed: manager.status().completed.length,
+            pending: manager.status().pending.length
+          }, {
+            completed: 0,
+            pending: auction.BID_REQUESTED[0].bids.length
+          });
+        });
+
+        it('completes the transaction if the GAM timeout has elapsed', function () {
+          const timeout = POST_GAM_TIMEOUT + 2000;
+          this.enableAnalytics({timeout});
+
+          const { prebid: [auction], gam } = getMockEvents();
+          const slotRenderEnded = gam.slotRenderEnded[0];
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
+
+          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+          assert.deepEqual({
+            completed: manager.status().completed.length,
+            pending: manager.status().pending.length
+          }, {
+            completed: 1,
+            pending: auction.BID_REQUESTED[0].bids.length - 1
+          });
         });
       });
     });

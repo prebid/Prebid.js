@@ -176,9 +176,9 @@ class TransactionManager {
 }
 
 /**
- * initialized during `enableAnalytics`
+ * Initialized during `enableAnalytics`. Exported for testing purposes.
  */
-const locals = {
+export const locals = {
   /** @type {Object<string, TransactionManager>} - one manager per auction */
   transactionManagers: {},
   /** @type {AnalyticsCache} */
