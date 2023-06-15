@@ -111,7 +111,7 @@ export const spec = {
 
       if (bid.transactionID) {
         placement.ext = placement.ext || {};
-        placement.ext.tid = bid.transactionID;
+        placement.ext.tid = bid.transactionId;
       }
 
       if (bid.schain) {
