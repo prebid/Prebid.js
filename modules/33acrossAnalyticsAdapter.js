@@ -1,4 +1,4 @@
-import { deepAccess, logInfo, logWarn, logError } from '../src/utils.js';
+import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -8,19 +8,37 @@ import CONSTANTS from '../src/constants.json';
  */
 const { EVENTS } = CONSTANTS;
 
+/** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
+/**
+ * @type {Object<string, BidStatus>}
+ */
+const BidStatus = {
+  PENDING: 'pending',
+  AVAILABLE: 'available',
+  TARGETING_SET: 'targetingSet',
+  RENDERED: 'rendered',
+  TIMEOUT: 'timeout',
+  REJECTED: 'rejected',
+  NOBID: 'noBid',
+  ERROR: 'error',
+}
+
 const ANALYTICS_VERSION = '1.0.0';
 const PROVIDER_NAME = '33across';
 const GVLID = 58;
+/** Time to wait for all transactions in an auction to complete before sending the report */
 const DEFAULT_TRANSACTION_TIMEOUT = 10000;
+/** Time to wait after all GAM slots have registered before sending the report */
+export const POST_GAM_TIMEOUT = 500;
 export const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
 
 export const log = getLogger();
 
 /**
- * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` event)
+ * @typedef {Object} AnalyticsReport - Sent when all bids are complete (as determined by `bidWon` and `slotRenderEnded` events)
  * @property {string} analyticsVersion - Version of the Prebid.js 33Across Analytics Adapter
  * @property {string} pid - Partner ID
- * @property {'pbjs'} src - Source of the report
+ * @property {string} src - Source of the report ('pbjs')
  * @property {string} pbjsVersion - Version of Prebid.js
  * @property {Auction[]} auctions
  */
@@ -29,7 +47,6 @@ export const log = getLogger();
  * @typedef {Object} AnalyticsCache
  * @property {string} pid Partner ID
  * @property {Object<string, Auction>} auctions
- * @property {Object<string, Bid[]>} bidsWon
  * @property {string} [usPrivacy]
  */
 
@@ -132,14 +149,6 @@ class TransactionManager {
     }
   }
 
-  completeAll(reason) {
-    for (let transactionId of this.#transactionsPending) {
-      this.complete(transactionId);
-    };
-
-    log.info('All remaining transactions flushed.' + (reason ? ` Reason: ${reason}` : ''));
-  }
-
   #flushTransactions() {
     this.#clearSendTimeout();
     this.#transactionsPending = new Set();
@@ -167,17 +176,25 @@ class TransactionManager {
 }
 
 /**
- * initialized during `enableAnalytics`
+ * Initialized during `enableAnalytics`. Exported for testing purposes.
  */
-const locals = {
+export const locals = {
   /** @type {Object<string, TransactionManager>} - one manager per auction */
   transactionManagers: {},
-  /** @type {AnalyticsCache=} */
-  cache: undefined,
-  /** sets all locals to undefined */
+  /** @type {AnalyticsCache} */
+  cache: {
+    auctions: {},
+    pid: '',
+  },
+  /** @type {Object<string, Object>} */
+  adUnitMap: {},
   reset() {
     this.transactionManagers = {};
-    this.cache = undefined;
+    this.cache = {
+      auctions: {},
+      pid: '',
+    };
+    this.adUnitMap = {};
   }
 }
 
@@ -235,6 +252,9 @@ function enableAnalyticsWrapper(config) {
     auctions: {},
   };
 
+  window.googletag = window.googletag || { cmd: [] };
+  window.googletag.cmd.push(subscribeToGamSlots);
+
   analyticsAdapter.originEnableAnalytics(config);
 }
 
@@ -263,6 +283,23 @@ function calculateTransactionTimeout(configTimeout = DEFAULT_TRANSACTION_TIMEOUT
   log.info(`Invalid timeout provided for "options.timeout". Using default timeout of ${DEFAULT_TRANSACTION_TIMEOUT}ms.`);
 
   return DEFAULT_TRANSACTION_TIMEOUT;
+}
+
+function subscribeToGamSlots() {
+  window.googletag.pubads().addEventListener('slotRenderEnded', event => {
+    setTimeout(() => {
+      const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
+      locals.transactionManagers[auctionId] &&
+        locals.transactionManagers[auctionId].complete(transactionId);
+    }, POST_GAM_TIMEOUT);
+  });
+}
+
+function getAdUnitMetadata(adUnitCode) {
+  const adUnitMeta = locals.adUnitMap[adUnitCode];
+  if (adUnitMeta && adUnitMeta.length > 0) {
+    return adUnitMeta[adUnitMeta.length - 1];
+  }
 }
 
 /** necessary for testing */
@@ -317,12 +354,7 @@ function createReportFromCache(analyticsCache, completedAuctionId) {
   return report;
 }
 
-function getBidsForTransaction(auctionId, transactionId) {
-  const auction = locals.cache.auctions[auctionId];
-  return auction.adUnits.find(adUnit => adUnit.transactionId === transactionId).bids;
-}
-
-function getBid(auctionId, bidId) {
+function getCachedBid(auctionId, bidId) {
   const auction = locals.cache.auctions[auctionId];
   for (let adUnit of auction.adUnits) {
     for (let bid of adUnit.bids) {
@@ -331,7 +363,8 @@ function getBid(auctionId, bidId) {
       }
     }
   }
-}
+  log.error(`Cannot find bid "${bidId}" in auction "${auctionId}".`);
+};
 
 /**
  * @param {Object} args
@@ -348,23 +381,45 @@ function analyticEventHandler({ eventType, args }) {
     case EVENTS.AUCTION_INIT:
       onAuctionInit(args);
       break;
-    case EVENTS.BID_REQUESTED:
+    case EVENTS.BID_REQUESTED: // BidStatus.PENDING
       onBidRequested(args);
+      break;
+    case EVENTS.BID_TIMEOUT:
+      for (let bid of args) {
+        setCachedBidStatus(bid.auctionId, bid.bidId, BidStatus.TIMEOUT);
+      }
       break;
     case EVENTS.BID_RESPONSE:
       onBidResponse(args);
       break;
-    case EVENTS.BID_WON:
-      onBidWon(args);
+    case EVENTS.BID_REJECTED:
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.REJECTED);
+      break;
+    case EVENTS.NO_BID:
+    case EVENTS.SEAT_NON_BID:
+      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.NOBID);
+      break;
+    case EVENTS.BIDDER_ERROR:
+      if (args.bidderRequest && args.bidderRequest.bids) {
+        for (let bid of args.bidderRequest.bids) {
+          setCachedBidStatus(args.bidderRequest.auctionId, bid.bidId, BidStatus.ERROR);
+        }
+      }
       break;
     case EVENTS.AUCTION_END:
       onAuctionEnd(args);
+      break;
+    case EVENTS.BID_WON: // BidStatus.TARGETING_SET | BidStatus.RENDERED | BidStatus.ERROR
+      onBidWon(args);
       break;
     default:
       break;
   }
 }
 
+/****************
+ * AUCTION_INIT *
+ ***************/
 function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   if (typeof auctionId !== 'string' || !Array.isArray(bidderRequests)) {
     log.error('Analytics adapter failed to parse auction.');
@@ -374,6 +429,8 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
   locals.cache.auctions[auctionId] = {
     auctionId,
     adUnits: adUnits.map(au => {
+      setAdUnitMap(au.code, auctionId, au.transactionId);
+
       return {
         transactionId: au.transactionId,
         adUnitCode: au.code,
@@ -402,12 +459,26 @@ function onAuctionInit({ adUnits, auctionId, bidderRequests }) {
     });
 }
 
+function setAdUnitMap(adUnitCode, auctionId, transactionId) {
+  if (!locals.adUnitMap[adUnitCode]) {
+    locals.adUnitMap[adUnitCode] = [];
+  }
+
+  locals.adUnitMap[adUnitCode].push({ auctionId, transactionId });
+}
+
+/*****************
+ * BID_REQUESTED *
+ ****************/
 function onBidRequested({ auctionId, bids }) {
   for (let { bidder, bidId, transactionId, src } of bids) {
-    getBidsForTransaction(auctionId, transactionId).push({
+    const auction = locals.cache.auctions[auctionId];
+    const adUnit = auction.adUnits.find(adUnit => adUnit.transactionId === transactionId);
+    if (!adUnit) return;
+    adUnit.bids.push({
       bidder,
       bidId,
-      status: 'pending',
+      status: BidStatus.PENDING,
       hasWon: 0,
       source: src,
     });
@@ -418,8 +489,15 @@ function onBidRequested({ auctionId, bids }) {
   }
 }
 
-function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, source, status }) {
-  Object.assign(getBid(auctionId, requestId),
+/****************
+ * BID_RESPONSE *
+ ***************/
+function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, size, status, source }) {
+  const bid = getCachedBid(auctionId, requestId);
+  if (!bid) return;
+
+  setBidStatus(bid, status);
+  Object.assign(bid,
     {
       bidResponse: {
         cpm,
@@ -429,38 +507,90 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
         mediaType,
         size
       },
-      status,
       source
     }
   );
 }
 
+/***************
+ * AUCTION_END *
+ **************/
+/**
+ * @param {Object} args
+ * @param {{requestId: string, status: string}[]} args.bidsReceived
+ * @param {string} args.auctionId
+ * @returns {void}
+ */
+function onAuctionEnd({ bidsReceived, auctionId }) {
+  for (let bid of bidsReceived) {
+    setCachedBidStatus(auctionId, bid.requestId, bid.status);
+  }
+}
+
+/***********
+ * BID_WON *
+ **********/
 function onBidWon(bidWon) {
   const { auctionId, requestId, transactionId } = bidWon;
-  const bid = getBid(auctionId, requestId);
+  const bid = getCachedBid(auctionId, requestId);
   if (!bid) {
-    log.error(`Cannot find bid "${requestId}". Auction ID: "${auctionId}". Transaction ID: "${transactionId}".`);
     return;
   }
 
-  for (let key in bid) {
-    if (key in bidWon) {
-      bid[key] = bidWon[key];
-    }
-  }
-  bid.hasWon = 1;
+  setBidStatus(bid, bidWon.status ?? BidStatus.ERROR);
 
   locals.transactionManagers[auctionId] &&
     locals.transactionManagers[auctionId].complete(transactionId);
 }
 
-function onAuctionEnd({ auctionId }) {
-  // auctionEnd event *sometimes* fires before bidWon events,
-  // even when auction is ending because all bids have been won.
-  setTimeout(() => {
-    locals.transactionManagers[auctionId] &&
-      locals.transactionManagers[auctionId].completeAll('auctionEnd');
-  }, 0);
+/**
+ * @param {Bid} bid
+ * @param {BidStatus} [status]
+ * @returns {void}
+ */
+function setBidStatus(bid, status = BidStatus.AVAILABLE) {
+  const statusStates = {
+    pending: {
+      next: [BidStatus.AVAILABLE, BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
+    },
+    available: {
+      next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
+    },
+    targetingSet: {
+      next: [BidStatus.RENDERED, BidStatus.ERROR, BidStatus.TIMEOUT],
+    },
+    rendered: {
+      next: [],
+    },
+    timeout: {
+      next: [],
+    },
+    rejected: {
+      next: [],
+    },
+    noBid: {
+      next: [],
+    },
+    error: {
+      next: [BidStatus.TARGETING_SET, BidStatus.RENDERED, BidStatus.TIMEOUT, BidStatus.REJECTED, BidStatus.NOBID, BidStatus.ERROR],
+    },
+  }
+
+  const winningStatuses = [BidStatus.TARGETING_SET, BidStatus.RENDERED];
+
+  if (statusStates[bid.status].next.includes(status)) {
+    bid.status = status;
+    if (winningStatuses.includes(status)) {
+      // occassionally we can detect a bidWon before prebid reports it as such
+      bid.hasWon = 1;
+    }
+  }
+}
+
+function setCachedBidStatus(auctionId, bidId, status) {
+  const bid = getCachedBid(auctionId, bidId);
+  if (!bid) return;
+  setBidStatus(bid, status);
 }
 
 /**
@@ -488,8 +618,8 @@ function getLogger() {
   const LPREFIX = `${PROVIDER_NAME} Analytics: `;
 
   return {
-    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...args),
-    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...args),
-    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...args),
+    info: (msg, ...args) => logInfo(`${LPREFIX}${msg}`, ...deepClone(args)),
+    warn: (msg, ...args) => logWarn(`${LPREFIX}${msg}`, ...deepClone(args)),
+    error: (msg, ...args) => logError(`${LPREFIX}${msg}`, ...deepClone(args)),
   }
 }
