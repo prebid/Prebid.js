@@ -712,8 +712,8 @@ describe('Adyoulike Adapter', function () {
       bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
         'uids': [{
-            'atype': 1,
-            'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+          'atype': 1,
+          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
         }]
       }]
 
