@@ -20,17 +20,18 @@ import {
   isStr,
   logError,
   logInfo,
-  logMessage,
-  transformBidderParamKeywords
+  logMessage
 } from '../src/utils.js';
 import {config} from '../src/config.js';
-import {getIabSubCategory, registerBidder} from '../src/adapters/bidderFactory.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { APPNEXUS_CATEGORY_MAPPING } from '../libraries/categoryTranslationMapping/index.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -86,7 +87,6 @@ const NATIVE_MAPPING = {
 };
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
-const mappingFileUrl = 'https://acdn.adnxs-simple.com/prebid/appnexus-mapping/mappings.json';
 const SCRIPT_TAG_START = '<script';
 const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.com\/v/;
 const VIEWABILITY_FILE_NAME = 'trk.js';
@@ -376,24 +376,6 @@ export const spec = {
     return bids;
   },
 
-  /**
-   * @typedef {Object} mappingFileInfo
-   * @property {string} url  mapping file json url
-   * @property {number} refreshInDays prebid stores mapping data in localstorage so you can return in how many days you want to update value stored in localstorage.
-   * @property {string} localStorageKey unique key to store your mapping json in localstorage
-   */
-
-  /**
-   * Returns mapping file info. This info will be used by bidderFactory to preload mapping file and store data in local storage
-   * @returns {mappingFileInfo}
-   */
-  getMappingFileInfo: function () {
-    return {
-      url: mappingFileUrl,
-      refreshInDays: 2
-    }
-  },
-
   getUserSyncs: function (syncOptions, responses, gdprConsent) {
     if (syncOptions.iframeEnabled && hasPurpose1Consent({gdprConsent})) {
       return [{
@@ -415,10 +397,6 @@ export const spec = {
     if (isOpenRtb) {
       params.use_pmt_rule = (typeof params.usePaymentRule === 'boolean') ? params.usePaymentRule : false;
       if (params.usePaymentRule) { delete params.usePaymentRule; }
-
-      if (isPopulatedArray(params.keywords)) {
-        params.keywords.forEach(deleteValues);
-      }
 
       Object.keys(params).forEach(paramKey => {
         let convertedKey = convertCamelToUnderscore(paramKey);
@@ -442,16 +420,6 @@ export const spec = {
     }
   }
 };
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
 
 function reloadViewabilityScriptWithCorrectParameters(bid) {
   let viewJsPayload = getAppnexusViewabilityScriptFromJsTrackers(bid.native.javascriptTrackers);
@@ -656,7 +624,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     const videoContext = deepAccess(bidRequest, 'mediaTypes.video.context');
     switch (videoContext) {
       case ADPOD:
-        const primaryCatId = getIabSubCategory(bidRequest.bidder, rtbBid.brand_category_id);
+        const primaryCatId = (APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id]) ? APPNEXUS_CATEGORY_MAPPING[rtbBid.brand_category_id] : null;
         bid.meta = Object.assign({}, bid.meta, { primaryCatId });
         const dealTier = rtbBid.deal_priority;
         bid.video = {
@@ -797,14 +765,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
@@ -919,6 +880,7 @@ function bidToTag(bid) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
 
+  // TODO: why does this need to iterate through every ad unit?
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);

@@ -628,6 +628,8 @@ export const utils = {
         return 'adserror';
       case CONTENT_LOADED:
         return 'loadstart';
+      case ERROR:
+        return ['error', 'aderror', 'contenterror'];
       case PLAY:
         return PLAY + 'ing';
       case PLAYBACK_REQUEST:

@@ -6,6 +6,7 @@ import {
   deepAccess,
   deepSetValue,
   getAdUnitSizes,
+  getDefinedParams,
   getDNT,
   isArray,
   isArrayOfNums,
@@ -14,14 +15,13 @@ import {
   isPlainObject,
   isStr,
   mergeDeep,
-  parseGPTSingleSizeArrayToRtbSize,
-  getDefinedParams
+  parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -90,7 +90,6 @@ export const spec = {
     {code: 'denakop'},
     {code: 'rtbanalytica'},
     {code: 'unibots'},
-    {code: 'catapultx'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
     {code: 'felixads'},
@@ -100,7 +99,8 @@ export const spec = {
     {code: 'rtbdemand_com'},
     {code: 'bidbuddy'},
     {code: 'adliveconnect'},
-    {code: 'didnadisplay'}
+    {code: 'didnadisplay'},
+    {code: 'qortex'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -491,9 +491,9 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let {auctionId, timeout} = bidderRequest;
+  let {timeout} = bidderRequest;
   let request = {
-    'id': auctionId,
+    'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
     'tmax': parseInt(timeout)

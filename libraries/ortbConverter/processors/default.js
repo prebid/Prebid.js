@@ -1,4 +1,4 @@
-import {deepSetValue, mergeDeep} from '../../../src/utils.js';
+import {generateUUID, mergeDeep} from '../../../src/utils.js';
 import {bannerResponseProcessor, fillBannerImp} from './banner.js';
 import {fillVideoImp, fillVideoResponse} from './video.js';
 import {setResponseMediaType} from './mediaType.js';
@@ -21,17 +21,16 @@ export const DEFAULT_PROCESSORS = {
       fn: clientSectionChecker('ORTB request')
     },
     props: {
-      // sets request properties id, tmax, test, source.tid
+      // sets request properties id, tmax, test
       fn(ortbRequest, bidderRequest) {
         Object.assign(ortbRequest, {
-          id: ortbRequest.id || bidderRequest.auctionId,
+          id: ortbRequest.id || generateUUID(),
           test: ortbRequest.test || 0
         });
         const timeout = parseInt(bidderRequest.timeout, 10);
         if (!isNaN(timeout)) {
           ortbRequest.tmax = timeout;
         }
-        deepSetValue(ortbRequest, 'source.tid', ortbRequest.source?.tid || bidderRequest.auctionId);
       }
     }
   },
