@@ -708,31 +708,20 @@ describe('Adyoulike Adapter', function () {
     });
 
     it('should add userid eids information to the request', function () {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'userIdAsEids':
-        [
-          {
-            'source': 'pubcid.org',
-            'uids': [
-              {
-                'atype': 1,
-                'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
-              }
-            ]
-          }
-        ]
-      };
+      let bidRequest = bidRequestWithSinglePlacement;
+      bidRequest[0].userIdAsEids = [{
+        'source': 'pubcid.org',
+        'uids': [{
+            'atype': 1,
+            'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+        }]
+      }]
 
-      bidderRequest.bids = bidRequestWithSinglePlacement;
-
-      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const request = spec.buildRequests(bidRequest, bidderRequest);
       const payload = JSON.parse(request.data);
 
       expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal(bidderRequest.userIdAsEids);
+      expect(payload.userId).to.deep.equal(bidRequest[0].userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {

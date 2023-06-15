@@ -121,8 +121,8 @@ export const spec = {
       payload.ortb2 = bidderRequest.ortb2;
     }
 
-    if (deepAccess(bidderRequest, 'userIdAsEids')) {
-      payload.userId = bidderRequest.userIdAsEids;
+    if (deepAccess(bidRequests, '0.userIdAsEids')) {
+      payload.userId = bidRequests[0].userIdAsEids;
     }
 
     payload.pbjs_version = '$prebid.version$';
