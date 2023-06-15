@@ -12,7 +12,7 @@ This Rtd module is to use in order to improve video events tracking and/or to fi
 # Integration
 
 Make sure to have the following modules listed while building prebid : `rtdModule,oxxionRtdProvider`
-`rtbModule` is required to activate real-time-data submodules.
+`rtdModule` is required to activate real-time-data submodules.
 For example :
 ```
 gulp build --modules=schain,priceFloors,currency,consentManagement,appnexusBidAdapter,rubiconBidAdapter,rtdModule,oxxionRtdProvider
