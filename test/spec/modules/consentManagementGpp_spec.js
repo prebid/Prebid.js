@@ -424,12 +424,12 @@ describe('consentManagementGpp', function () {
                     success: true
                   }
                 }
-              } else {
+              } else if (data[`${prefix}Call`].command === 'getSection') {
                 response = {
                   [`${prefix}Return`]: {
                     callId,
-                    returnValue: null,
-                    success: false
+                    returnValue: {},
+                    success: true
                   }
                 }
               }
