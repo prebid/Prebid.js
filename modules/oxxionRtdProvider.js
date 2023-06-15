@@ -1,6 +1,5 @@
 import { submodule } from '../src/hook.js'
 import { deepAccess, logInfo, logError } from '../src/utils.js'
-import MD5 from 'crypto-js/md5.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
@@ -204,7 +203,6 @@ function getRequestsList(reqBidsConfigObj) {
       adUnit: code,
       bidder,
       mediaTypes,
-      params: MD5(JSON.stringify(params)).toString()
     });
   }, []));
 }
