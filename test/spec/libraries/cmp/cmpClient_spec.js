@@ -209,7 +209,7 @@ describe('cmpClient', () => {
           });
         });
 
-        it('should re-use callback for messages with same callId',() => {
+        it('should re-use callback for messages with same callId', () => {
           messenger.reset();
           let callId;
           messenger.callsFake((msg) => { if (msg.mockApiCall) callId = msg.mockApiCall.callId });

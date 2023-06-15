@@ -1,7 +1,8 @@
 import {GreedyPromise} from '../../src/utils/promise.js';
 
 /**
- * @typedef {Function} CMPClient
+ * @typedef {function} CMPClient
+ *
  * @param {{}} params CMP parameters. Currently this is a subset of {command, callback, parameter, version}.
  * @returns {Promise<*>} a promise that:
  *    - if a `callback` param was provided, resolves (with no result) just before the first time it's run;
@@ -34,7 +35,7 @@ export function cmpClient(
 
   function handleMessage(event) {
     const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
-    if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
+    if (json?.[cmpDataPkgName]?.callId) {
       const payload = json[cmpDataPkgName];
 
       if (cmpCallbacks.hasOwnProperty(payload.callId)) {
@@ -119,7 +120,6 @@ export function cmpClient(
 
     client = function invokeCMPFrame(params) {
       return new GreedyPromise((resolve, reject) => {
-
         // call CMP via postMessage
         const callId = Math.random().toString();
         const msg = {
@@ -129,7 +129,7 @@ export function cmpClient(
           }
         };
 
-        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, params?.callback ?? (() => { delete cmpCallbacks[callId] }));
+        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, params?.callback == null && (() => { delete cmpCallbacks[callId] }));
         cmpFrame.postMessage(msg, '*');
       });
     };

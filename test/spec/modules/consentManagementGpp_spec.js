@@ -1,4 +1,11 @@
-import { setConsentConfig, requestBidsHook, resetConsentData, userCMP, consentTimeout, staticConsentData } from 'modules/consentManagementGpp.js';
+import {
+  setConsentConfig,
+  requestBidsHook,
+  resetConsentData,
+  userCMP,
+  consentTimeout,
+  storeConsentData, lookupIabConsent
+} from 'modules/consentManagementGpp.js';
 import { gppDataHandler } from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -94,16 +101,100 @@ describe('consentManagementGpp', function () {
       });
     });
 
+    describe('storeConsentData', () => {
+      it('can set null consent', () => {
+        const cd = storeConsentData();
+        sinon.assert.match(cd, {
+          applicableSections: [],
+          gppData: undefined,
+          sectionData: undefined,
+          gppString: undefined,
+        })
+      })
+
+      it('sets applicableSectionNames', () => {
+        const cd = storeConsentData({gppData: {applicableSections: [6, 7]}});
+        expect(cd.applicableSectionNames).to.eql(['uspv1', 'usnat']);
+      });
+
+      it('filters out unrecognized sections', () => {
+        const cd = storeConsentData({gppData: {applicableSections: [-123]}});
+        expect(cd.applicableSectionNames).to.eql([]);
+      })
+    });
+
+    describe('lookupIABConsent', () => {
+      let mockCmp, mockCmpEvent, gppData, sectionData
+      beforeEach(() => {
+        gppData = {
+          gppString: 'mockString',
+          applicableSections: []
+        };
+        sectionData = {};
+        mockCmp = sinon.stub().callsFake(({command, callback, parameter}) => {
+          let res;
+          switch (command) {
+            case 'addEventListener':
+              mockCmpEvent = callback;
+              break;
+            case 'getGPPData':
+              res = gppData;
+              break;
+            case 'getSection':
+              res = sectionData[parameter];
+              break;
+          }
+          return Promise.resolve(res);
+        });
+      })
+
+      function runLookup() {
+        return new Promise((resolve, reject) => lookupIabConsent({onSuccess: resolve, onError: reject}, () => mockCmp));
+      }
+
+      function oneShotLookup() {
+        const pm = runLookup();
+        mockCmpEvent({eventName: 'sectionChange'});
+        return pm;
+      }
+
+      it('fetches all applicable sections', () => {
+        gppData.applicableSections = [7, 8];
+        sectionData = {
+          usnat: {mock: 'usnat'},
+          usca: {mock: 'usca'}
+        };
+        return oneShotLookup().then((res) => {
+          expect(res.sectionData).to.eql(sectionData);
+        });
+      });
+
+      it('does not choke if some section data is not available', () => {
+        gppData.applicableSections = [7, 8, 999];
+        sectionData = {
+          usca: {mock: 'data'}
+        };
+        return oneShotLookup().then((res) => {
+          expect(res.sectionData).to.eql(sectionData);
+        })
+      });
+    })
+
     describe('static consent string setConsentConfig value', () => {
       afterEach(() => {
         config.resetConfig();
       });
 
-      it('results in user settings overriding system defaults for v2 spec', () => {
+      it('results in user settings overriding system defaults', () => {
         let staticConfig = {
           gpp: {
             cmpApi: 'static',
             timeout: 7500,
+            sectionData: {
+              usnat: {
+                MockUsnatParsedFlag: true
+              }
+            },
             consentData: {
               applicableSections: [7],
               gppString: 'ABCDEFG1234',
@@ -116,11 +207,10 @@ describe('consentManagementGpp', function () {
 
         setConsentConfig(staticConfig);
         expect(userCMP).to.be.equal('static');
-        expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
         const consent = gppDataHandler.getConsentData();
         expect(consent.gppString).to.eql(staticConfig.gpp.consentData.gppString);
-        expect(consent.fullGppData).to.eql(staticConfig.gpp.consentData);
-        expect(staticConsentData).to.be.equal(staticConfig.gpp.consentData);
+        expect(consent.gppData).to.eql(staticConfig.gpp.consentData);
+        expect(consent.sectionData).to.eql(staticConfig.gpp.sectionData);
       });
     });
   });
@@ -334,6 +424,14 @@ describe('consentManagementGpp', function () {
                     success: true
                   }
                 }
+              } else {
+                response = {
+                  [`${prefix}Return`]: {
+                    callId,
+                    returnValue: null,
+                    success: false
+                  }
+                }
               }
               event.source.postMessage(stringifyResponse ? JSON.stringify(response) : response, '*');
             }
@@ -367,7 +465,7 @@ describe('consentManagementGpp', function () {
         resetConsentData();
       });
 
-      describe('v2 CMP workflow for iframe pages:', function () {
+      describe('workflow for iframe pages:', function () {
         stringifyResponse = false;
         let ifr2 = null;
 
@@ -410,7 +508,7 @@ describe('consentManagementGpp', function () {
         resetConsentData();
       });
 
-      describe('v2 CMP workflow for normal pages:', function () {
+      describe('CMP workflow for normal pages:', function () {
         beforeEach(function () {
           window.__gpp = function () {};
         });
