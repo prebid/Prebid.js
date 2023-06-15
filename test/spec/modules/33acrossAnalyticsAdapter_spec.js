@@ -515,43 +515,47 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and a single slotRenderEnded event has triggered', function () {
-        it('does NOT complete the transaction if the GAM timeout has not elapsed', function () {
-          this.enableAnalytics();
+        context('and the Google Ad Manager timeout has not elapsed', function () {
+          it('does NOT complete the transaction', function () {
+            this.enableAnalytics();
 
-          const { prebid: [auction], gam } = getMockEvents();
-          const slotRenderEnded = gam.slotRenderEnded[0];
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
-          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
+            const { prebid: [auction], gam } = getMockEvents();
+            const slotRenderEnded = gam.slotRenderEnded[0];
+            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
 
-          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
-          assert.deepEqual({
-            completed: manager.status().completed.length,
-            pending: manager.status().pending.length
-          }, {
-            completed: 0,
-            pending: auction.BID_REQUESTED[0].bids.length
+            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+            assert.deepEqual({
+              completed: manager.status().completed.length,
+              pending: manager.status().pending.length
+            }, {
+              completed: 0,
+              pending: auction.BID_REQUESTED[0].bids.length
+            });
           });
         });
 
-        it('completes the transaction if the GAM timeout has elapsed', function () {
-          const timeout = POST_GAM_TIMEOUT + 2000;
-          this.enableAnalytics({timeout});
+        context('and the Google Ad Manager timeout has elapsed', function () {
+          it('completes the transaction', function () {
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({timeout});
 
-          const { prebid: [auction], gam } = getMockEvents();
-          const slotRenderEnded = gam.slotRenderEnded[0];
-          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
-          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
-          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
+            const { prebid: [auction], gam } = getMockEvents();
+            const slotRenderEnded = gam.slotRenderEnded[0];
+            events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+            events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+            mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
 
-          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
-          const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
-          assert.deepEqual({
-            completed: manager.status().completed.length,
-            pending: manager.status().pending.length
-          }, {
-            completed: 1,
-            pending: auction.BID_REQUESTED[0].bids.length - 1
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+            const manager = locals.transactionManagers[auction.AUCTION_INIT.auctionId];
+            assert.deepEqual({
+              completed: manager.status().completed.length,
+              pending: manager.status().pending.length
+            }, {
+              completed: 1,
+              pending: auction.BID_REQUESTED[0].bids.length - 1
+            });
           });
         });
       });
