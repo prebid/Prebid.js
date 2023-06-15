@@ -185,6 +185,7 @@ describe('InsticatorBidAdapter', function () {
     let getDataFromLocalStorageStub, localStorageIsEnabledStub;
     let getCookieStub, cookiesAreEnabledStub;
     let sandbox;
+    let serverRequests, serverRequest;
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -210,12 +211,15 @@ describe('InsticatorBidAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+    before(() => {
+      serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+      serverRequest = serverRequests[0];
+    })
+
     it('should create a request', function () {
       expect(serverRequests).to.have.length(1);
     });
 
-    const serverRequest = serverRequests[0];
     it('should create a request object with method, URL, options and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;

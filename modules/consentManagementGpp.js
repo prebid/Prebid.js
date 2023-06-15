@@ -12,6 +12,7 @@ import { enrichFPD } from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
 import {GreedyPromise} from '../src/utils/promise.js';
+import {buildActivityParams} from '../src/activities/params.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -304,6 +305,9 @@ export function setConsentConfig(config) {
 
   if (!addedConsentHook) {
     getGlobal().requestBids.before(requestBidsHook, 50);
+    buildActivityParams.before((next, params) => {
+      return next(Object.assign({gppConsent: gppDataHandler.getConsentData()}, params));
+    });
   }
   addedConsentHook = true;
   gppDataHandler.enable();

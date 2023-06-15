@@ -7,9 +7,6 @@ import {getCoreStorageManager} from '../../../src/storageManager.js';
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
 
-const storage = getCoreStorageManager();
-storage.setCookie(UUID_KEY, relaido_uuid);
-
 describe('RelaidoAdapter', function () {
   let bidRequest;
   let bidderRequest;
@@ -18,6 +15,10 @@ describe('RelaidoAdapter', function () {
   let serverRequest;
   let generateUUIDStub;
   let triggerPixelStub;
+  before(() => {
+    const storage = getCoreStorageManager();
+    storage.setCookie(UUID_KEY, relaido_uuid);
+  });
 
   beforeEach(function () {
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
