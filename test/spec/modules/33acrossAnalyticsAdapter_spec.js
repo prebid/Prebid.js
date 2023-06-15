@@ -434,7 +434,7 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
-        it.only('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
+        it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
           const timeout = POST_GAM_TIMEOUT + 2000;
           this.enableAnalytics({ timeout });
 
