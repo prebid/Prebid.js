@@ -709,7 +709,6 @@ describe('tercept analytics adapter', function () {
         'bidsReceived': [],
         'winningBids': [],
         'timeout': 1000,
-        'config': initOptions
       },
       'initOptions': initOptions
     };

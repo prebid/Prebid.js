@@ -11,7 +11,7 @@ function buildBidRequests(validBidRequests) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
+      transactionId: validBidRequest.ortb2Imp?.ext?.tid,
       sizes: validBidRequest.sizes,
       placement: params.placement,
       placeId: params.placeId,

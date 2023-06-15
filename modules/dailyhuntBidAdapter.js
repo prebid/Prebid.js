@@ -4,7 +4,7 @@ import {_map, deepAccess, isEmpty} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {find} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'dailyhunt';
 const BIDDER_ALIAS = 'dh';
@@ -99,7 +99,7 @@ const createOrtbRequest = (validBidRequests, bidderRequest) => {
   let user = createOrtbUserObj(validBidRequests)
   let site = createOrtbSiteObj(validBidRequests, bidderRequest.refererInfo.page)
   return {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     imp: [],
     site,
     device,

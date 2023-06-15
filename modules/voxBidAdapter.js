@@ -15,6 +15,7 @@ function buildBidRequests(validBidRequests) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
+      // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       transactionId: validBidRequest.transactionId,
       sizes: validBidRequest.sizes,
       placement: params.placement,
@@ -80,6 +81,7 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
+    // TODO: why does this need to iterate through every ad unit?
     let adUnit = find(auctionManager.getAdUnits(), function (unit) {
       return unit.transactionId === bidData.transactionId;
     });

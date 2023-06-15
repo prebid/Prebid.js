@@ -3,6 +3,7 @@ import { spec } from 'modules/outbrainBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr';
 import { createEidsArray } from 'modules/userId/eids.js';
+import * as utils from 'src/utils.js';
 
 describe('Outbrain Adapter', function () {
   describe('Bid request and response', function () {
@@ -227,6 +228,7 @@ describe('Outbrain Adapter', function () {
       })
 
       const commonBidderRequest = {
+        bidderRequestId: 'mock-uuid',
         refererInfo: {
           page: 'https://example.com/'
         }
@@ -263,6 +265,7 @@ describe('Outbrain Adapter', function () {
           ]
         }
         const expectedData = {
+          id: 'mock-uuid',
           site: {
             page: 'https://example.com/',
             publisher: {
@@ -305,6 +308,7 @@ describe('Outbrain Adapter', function () {
           ...displayBidRequestParams,
         }
         const expectedData = {
+          id: 'mock-uuid',
           site: {
             page: 'https://example.com/',
             publisher: {
@@ -352,6 +356,7 @@ describe('Outbrain Adapter', function () {
           ...videoBidRequestParams,
         }
         const expectedData = {
+          id: 'mock-uuid',
           site: {
             page: 'https://example.com/',
             publisher: {

@@ -354,7 +354,6 @@ describe('Nexx360 bid adapter tests', function () {
         const request = spec.buildRequests(displayBids, bidderRequest);
         const requestContent = request.data;
         expect(request).to.have.property('method').and.to.equal('POST');
-        expect(requestContent.id).to.be.eql('2e684815-b44e-4e04-b812-56da54adbe74');
         expect(requestContent.cur[0]).to.be.eql('USD');
         expect(requestContent.imp.length).to.be.eql(2);
         expect(requestContent.imp[0].id).to.be.eql('44a2706ac3574');

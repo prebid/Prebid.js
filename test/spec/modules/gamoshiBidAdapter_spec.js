@@ -46,7 +46,11 @@ describe('GamoshiAdapter', () => {
         'supplyPartnerId': supplyPartnerId
       },
       'sizes': [[300, 250], [300, 600]],
-      'transactionId': 'a123456789',
+      ortb2Imp: {
+        ext: {
+          tid: 'a123456789',
+        }
+      },
       refererInfo: {referer: 'http://examplereferer.com'},
       gdprConsent: {
         consentString: 'some string',
@@ -310,7 +314,6 @@ describe('GamoshiAdapter', () => {
       response = spec.buildRequests([bidRequest], bidRequest)[0];
       expect(response.method).to.equal('POST');
       expect(response.url).to.match(new RegExp(`^https://rtb\\.gamoshi\\.io/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
-      expect(response.data.id).to.equal(bidRequest.auctionId);
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://rtb2.gamoshi.io/a12';
       response = spec.buildRequests([bidRequestWithEndpoint], bidRequest)[0];
