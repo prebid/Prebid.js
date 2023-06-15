@@ -382,15 +382,12 @@ function _applyFloor(bid, imp, mediaType) {
   if (setFloor) {
     if (mediaType == BANNER) {
       deepSetValue(imp, 'banner.ext.bidfloor', imp.bidfloor);
-      deepSetValue(imp, 'banner.ext.bidfloorcur', imp.bidfloorcur);
       deepSetValue(imp, 'banner.ext.fl', imp.ext.fl);
     } else if (mediaType == VIDEO) {
       deepSetValue(imp, 'video.ext.bidfloor', imp.bidfloor);
-      deepSetValue(imp, 'video.ext.bidfloorcur', imp.bidfloorcur);
       deepSetValue(imp, 'video.ext.fl', imp.ext.fl);
     } else {
       deepSetValue(imp, 'native.ext.bidfloor', imp.bidfloor);
-      deepSetValue(imp, 'native.ext.bidfloorcur', imp.bidfloorcur);
       deepSetValue(imp, 'native.ext.fl', imp.ext.fl);
     }
   }
@@ -970,7 +967,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
 
       const adUnitFPD = impressions[impKeys[adUnitIndex]].adUnitFPD
       if (adUnitFPD) {
-        _bannerImpression.ext.data = adUnitFPD;
+        deepSetValue(_bannerImpression, 'ext.data', adUnitFPD);
       }
       r.imp.push(_bannerImpression);
     }

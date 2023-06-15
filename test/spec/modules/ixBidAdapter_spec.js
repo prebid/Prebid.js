@@ -4008,7 +4008,7 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.05);
-        bids[1].transactionId = adunitcode;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('multiformat banner / native - bid floors, banner imp less', function () {
@@ -4444,7 +4444,8 @@ describe('IndexexchangeAdapter', function () {
       bid.params.bidFloorCur = 'USD';
       const imp = bidToVideoImp(bid);
       expect(imp.video.ext.bidfloor).to.equal(50);
-      expect(imp.video.ext.bidfloorcur).to.equal('USD');
+      expect(imp.bidfloor).to.equal(50);
+      expect(imp.bidfloorcur).to.equal('USD');
       expect(imp.video.ext.fl).to.equal('x');
     });
     it('native test', function() {
@@ -4453,7 +4454,8 @@ describe('IndexexchangeAdapter', function () {
       bid.params.bidFloorCur = 'USD';
       const imp = bidToNativeImp(bid);
       expect(imp.native.ext.bidfloor).to.equal(50);
-      expect(imp.native.ext.bidfloorcur).to.equal('USD');
+      expect(imp.bidfloor).to.equal(50);
+      expect(imp.bidfloorcur).to.equal('USD');
       expect(imp.native.ext.fl).to.equal('x');
     });
   });
