@@ -152,19 +152,15 @@ const getTargetingDataFromPapi = (papiUrl) => {
 export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
   const userData = {
     name: ORTB2_NAME,
-    segment: segments.map((segmentId) => ({ id: segmentId }))
+    segment: segments.map((segmentId) => ({ id: segmentId })),
+    ext: { segtax: segtaxes.AUDIENCE }
   };
   const siteContentData = {
     name: ORTB2_NAME,
     segment: topics.map((topicId) => ({ id: topicId })),
     ext: { segtax: segtaxes.CONTENT }
   }
-  // Currently appnexus bidAdapter doesn't support topics in `site.content.data.segment`
-  // Therefore, writing them in `site.keywords` until it's supported
-  // Other bidAdapters do fine with `site.content.data.segment`
-  const siteKeywords = topics.map(topic => `1plusX=${topic}`).join(',');
-
-  return { userData, siteContentData, siteKeywords };
+  return { userData, siteContentData };
 }
 
 /**
@@ -174,15 +170,9 @@ export const buildOrtb2Updates = ({ segments = [], topics = [] }) => {
  * @param {Object} biddersOrtb2 All current bidder configs
  */
 export const updateBidderConfig = (bidder, ortb2Updates, biddersOrtb2) => {
-  const { siteKeywords, siteContentData, userData } = ortb2Updates;
+  const { siteContentData, userData } = ortb2Updates;
   mergeDeep(biddersOrtb2, { [bidder]: {} });
   const bidderConfig = deepAccess(biddersOrtb2, bidder);
-
-  {
-    // Legacy : cf. comment on buildOrtb2Updates
-    const siteKeywordsPath = 'site.keywords';
-    deepSetValue(bidderConfig, siteKeywordsPath, siteKeywords);
-  }
 
   {
     const siteDataPath = 'site.content.data';

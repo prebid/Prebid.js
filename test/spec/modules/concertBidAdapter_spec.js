@@ -48,7 +48,11 @@ describe('ConcertAdapter', function () {
         },
         adUnitCode: 'desktop_leaderboard_variable',
         bidId: 'foo',
-        transactionId: '',
+        ortb2Imp: {
+          ext: {
+            tid: ''
+          }
+        },
         sizes: [[1030, 590]]
       }
     ];

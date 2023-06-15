@@ -71,7 +71,7 @@ const BID3 = {
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
   getStatusCode() {
-    return CONSTANTS.STATUS.NO_BID;
+    return CONSTANTS.STATUS.GOOD;
   }
 };
 

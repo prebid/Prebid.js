@@ -199,6 +199,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   return {
     v: '$prebid.version$',
     placementCode: bid.params.placementId,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,

@@ -15,7 +15,11 @@ describe('onetag', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-      'transactionId': 'qwerty123',
+      ortb2Imp: {
+        ext: {
+          tid: 'qwerty123'
+        }
+      },
       'schain': {
         'validation': 'off',
         'config': {

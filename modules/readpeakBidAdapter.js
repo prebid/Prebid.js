@@ -41,7 +41,7 @@ export const spec = {
       cur: [currency],
       source: {
         fd: 1,
-        tid: bidderRequest.auctionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           prebid: '$prebid.version$'
         }

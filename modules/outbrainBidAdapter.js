@@ -1,16 +1,14 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { Renderer } from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {OUTSTREAM} from '../src/video.js';
+import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -107,7 +105,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: { page, publisher },
       device: { ua },
       source: { fd: 1 },

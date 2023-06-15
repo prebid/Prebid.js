@@ -9,7 +9,11 @@ describe('orbidderBidAdapter', () => {
   const defaultBidRequestBanner = {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bb',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d8',
-    transactionId: 'd58851660c0c4461e4aa06344fc9c0c6',
+    ortb2Imp: {
+      ext: {
+        tid: 'd58851660c0c4461e4aa06344fc9c0c6',
+      }
+    },
     bidRequestCount: 1,
     adUnitCode: 'adunit-code',
     sizes: [[300, 250], [300, 600]],
@@ -27,7 +31,11 @@ describe('orbidderBidAdapter', () => {
   const defaultBidRequestNative = {
     bidId: 'd66fa86787e0b0ca900a96eacfd5f0bc',
     auctionId: 'ccc4c7cdfe11cfbd74065e6dd28413d9',
-    transactionId: 'd58851660c0c4461e4aa06344fc9c0c7',
+    ortb2Imp: {
+      ext: {
+        tid: 'd58851660c0c4461e4aa06344fc9c0c7',
+      }
+    },
     bidRequestCount: 1,
     adUnitCode: 'adunit-code-native',
     sizes: [],
@@ -170,7 +178,7 @@ describe('orbidderBidAdapter', () => {
 
       expect(request.data.bidId).to.equal(defaultBidRequestBanner.bidId);
       expect(request.data.auctionId).to.equal(defaultBidRequestBanner.auctionId);
-      expect(request.data.transactionId).to.equal(defaultBidRequestBanner.transactionId);
+      expect(request.data.transactionId).to.equal(defaultBidRequestBanner.ortb2Imp.ext.tid);
       expect(request.data.bidRequestCount).to.equal(defaultBidRequestBanner.bidRequestCount);
       expect(request.data.adUnitCode).to.equal(defaultBidRequestBanner.adUnitCode);
       expect(request.data.pageUrl).to.equal('https://localhost:9876/');
@@ -187,7 +195,7 @@ describe('orbidderBidAdapter', () => {
 
       expect(nativeRequest.data.bidId).to.equal(defaultBidRequestNative.bidId);
       expect(nativeRequest.data.auctionId).to.equal(defaultBidRequestNative.auctionId);
-      expect(nativeRequest.data.transactionId).to.equal(defaultBidRequestNative.transactionId);
+      expect(nativeRequest.data.transactionId).to.equal(defaultBidRequestNative.ortb2Imp.ext.tid);
       expect(nativeRequest.data.bidRequestCount).to.equal(defaultBidRequestNative.bidRequestCount);
       expect(nativeRequest.data.adUnitCode).to.equal(defaultBidRequestNative.adUnitCode);
       expect(nativeRequest.data.pageUrl).to.equal('https://localhost:9876/');

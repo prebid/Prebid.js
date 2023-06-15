@@ -103,7 +103,6 @@ export const spec = {
       let responseMeta = Object.assign({ mediaType: VIDEO, advertiserDomains: [] }, response.meta);
       let bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: spec.code,
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
