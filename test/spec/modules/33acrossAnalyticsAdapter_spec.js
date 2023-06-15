@@ -509,37 +509,31 @@ function mapToBids(auctions) {
 
 function getLocalAssert() {
   function isValidAnalyticsReport(report) {
-    try {
-      assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
-      if ('usPrivacy' in report) {
-        assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
-      }
-      if ('gdpr' in report) {
-        assert.oneOf(report.gdpr, [0, 1]);
-      }
-      if (report.gdpr === 1) {
-        assert.isString(report.gdprConsent);
-      }
-      if ('gpp' in report) {
-        assert.isString(report.gpp);
-        assert.isArray(report.gppSid);
-      }
-      if ('coppa' in report) {
-        assert.oneOf(report.coppa, [0, 1]);
-      }
-
-      assert.equal(report.analyticsVersion, '1.0.0');
-      assert.isString(report.pid);
-      assert.isString(report.src);
-      assert.equal(report.pbjsVersion, '$prebid.version$');
-      assert.isArray(report.auctions);
-      assert.isAbove(report.auctions.length, 0);
-      report.auctions.forEach(isValidAuction);
-    } catch (e) {
-      e.name = 'ValidationError';
-      e.message = `Malformed AnalyticsReport: ${e.message}`;
-      throw e;
+    assert.containsAllKeys(report, ['analyticsVersion', 'pid', 'src', 'pbjsVersion', 'auctions']);
+    if ('usPrivacy' in report) {
+      assert.match(report.usPrivacy, /[0|1][Y|N|-]{3}/);
     }
+    if ('gdpr' in report) {
+      assert.oneOf(report.gdpr, [0, 1]);
+    }
+    if (report.gdpr === 1) {
+      assert.isString(report.gdprConsent);
+    }
+    if ('gpp' in report) {
+      assert.isString(report.gpp);
+      assert.isArray(report.gppSid);
+    }
+    if ('coppa' in report) {
+      assert.oneOf(report.coppa, [0, 1]);
+    }
+
+    assert.equal(report.analyticsVersion, '1.0.0');
+    assert.isString(report.pid);
+    assert.isString(report.src);
+    assert.equal(report.pbjsVersion, '$prebid.version$');
+    assert.isArray(report.auctions);
+    assert.isAbove(report.auctions.length, 0);
+    report.auctions.forEach(isValidAuction);
   }
   function isValidAuction(auction) {
     assert.hasAllKeys(auction, ['adUnits', 'auctionId', 'userIds']);
