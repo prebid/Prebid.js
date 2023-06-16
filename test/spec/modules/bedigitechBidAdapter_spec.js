@@ -25,7 +25,7 @@ describe('BedigitechAdapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       params: {
-        placementId: 1234,
+        placementId: 309,
       },
     };
 
@@ -57,19 +57,19 @@ describe('BedigitechAdapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       params: {
-        placementId: 1234,
+        placementId: 309,
       },
     }];
 
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.equal('https://bedigitalhb.s3.amazonaws.com/hb.js');
+      expect(request.url).to.equal('https://bid.bedigitech.com/bid/pub_bid.php');
     });
 
     it('should attach pid to url', function () {
       const request = spec.buildRequests(bidRequests)[0];
-      expect(request.data.pid).to.equal(1234);
+      expect(request.data.pid).to.equal(309);
     });
   });
 
@@ -77,15 +77,17 @@ describe('BedigitechAdapter', function () {
     const response = {
       'body': [
         {
-          'id': 'bedigitechMyidfdfdf',
-          'requestId': 'gshgfshdfgdfsd',
-          'cpm': '5.0',
           'ad': '%3C!--%20Creative%20--%3E',
-          'width': 300,
-          'height': 250,
+          'cpm': '5.0',
+          'crid': '0af345b42983cc4bc0',
           'currency': 'USD',
+          'height': 250,
+          'id': 'bedigitechMyidfdfdf',
+          'netRevenue':	true,
+          'requestTime':	1686306237,
+          'timeToRespond':	300,
           'ttl': 300,
-          'creativeId': '0af345b42983cc4bc0'
+          'width': 300
         }
       ],
       'headers': {
@@ -93,41 +95,28 @@ describe('BedigitechAdapter', function () {
       }
     };
 
-    const bidRequest = {
-      bidder: 'bedigitech',
-      adUnitCode: 'adunit-code',
-      mediaTypes: {
-        banner: {
-          sizes: [[300, 250], [300, 600]]
-        }
-      },
-      bidId: '30b31c1838de1e',
-      bidderRequestId: '22edbae2733bf6',
-      auctionId: '1d1a030790a475',
-      params: {
-        placementId: 1234,
-      },
-    };
-
-    it('should get correct bid response', function () {
+    it('should get correct bid responseiiiiii', function () {
       const expectedResponse = [
         {
-          'id': 'bedigitechMyidfdfdf',
-          'requestId': 'gshgfshdfgdfsd',
-          'cpm': '5.0',
           'ad': '%3C!--%20Creative%20--%3E',
-          'width': 300,
-          'height': 250,
-          'currency': 'USD',
-          'ttl': 300,
+          'cpm': '5.0',
           'creativeId': '0af345b42983cc4bc0',
+          'currency': 'USD',
+          'height': 250,
+          'id': 'bedigitechMyidfdfdf',
           'meta': {
             'mediaType': BANNER,
           },
+          'netRevenue':	true,
+          'requestId': 'bedigitechMyidfdfdf',
+          'requestTimestamp':	1686306237,
+          'timeToRespond':	300,
+          'ttl': 300,
+          'width': 300,
+          'bidderCode': 'bedigitech',
         }
       ];
-
-      const result = spec.interpretResponse(response, bidRequest);
+      const result = spec.interpretResponse(response);
       expect(result).to.have.lengthOf(1);
       let resultKeys = Object.keys(result[0]);
       expect(resultKeys.sort()).to.deep.equal(Object.keys(expectedResponse[0]).sort());

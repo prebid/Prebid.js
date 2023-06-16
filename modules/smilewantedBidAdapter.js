@@ -34,8 +34,8 @@ export const spec = {
           w: size[0],
           h: size[1]
         })),
-        transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
+        transactionId: bid.ortb2Imp?.ext?.tid,
+        timeout: bidderRequest?.timeout,
         bidId: bid.bidId,
         /** positionType is undocumented
         It is unclear what this parameter means.

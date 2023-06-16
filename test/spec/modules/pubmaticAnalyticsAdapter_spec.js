@@ -443,6 +443,13 @@ describe('pubmatic analytics adapter', function () {
       expect(data.eg).to.equal('1.23');
       expect(data.en).to.equal('1.23');
       expect(data.piid).to.equal('partnerImpressionID-1');
+      expect(data.plt).to.equal('1');
+      expect(data.psz).to.equal('640x480');
+      expect(data.tgid).to.equal('15');
+      expect(data.orig).to.equal('www.test.com');
+      expect(data.ss).to.equal('1');
+      expect(data.fskp).to.equal('0');
+      expect(data.af).to.equal('video');
     });
 
     it('bidCpmAdjustment: USD: Logger: best case + win tracker', function() {

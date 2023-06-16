@@ -142,7 +142,12 @@ describe('luponmediaBidAdapter', function () {
           'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'
         ]
       },
-      'start': 1587413920835
+      'start': 1587413920835,
+      ortb2: {
+        source: {
+          tid: 'mock-tid'
+        }
+      },
     };
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -150,7 +155,23 @@ describe('luponmediaBidAdapter', function () {
       let dynRes = JSON.parse(requests.data);
       expect(requests.url).to.equal(ENDPOINT_URL);
       expect(requests.method).to.equal('POST');
-      expect(requests.data).to.equal('{"id":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","test":0,"source":{"tid":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"novi.ba","sid":"199424","hp":1}]}}},"tmax":1500,"imp":[{"id":"268a30af10dd6f","secure":1,"ext":{"luponmedia":{"siteId":303522,"keyId":"4o2c4"}},"banner":{"format":[{"w":300,"h":250}]}}],"ext":{"prebid":{"targeting":{"includewinners":true,"includebidderkeys":false}}},"user":{"id":"' + dynRes.user.id + '","buyeruid":"8d8b16cb-1383-4a0f-b4bb-0be28464d974"},"site":{"page":"https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines"}}');
+      expect(JSON.parse(requests.data)).to.deep.include({
+        'test': 0,
+        'source': {
+          tid: 'mock-tid',
+          'ext': {'schain': {'ver': '1.0', 'complete': 1, 'nodes': [{'asi': 'novi.ba', 'sid': '199424', 'hp': 1}]}}
+        },
+        'tmax': 1500,
+        'imp': [{
+          'id': '268a30af10dd6f',
+          'secure': 1,
+          'ext': {'luponmedia': {'siteId': 303522, 'keyId': '4o2c4'}},
+          'banner': {'format': [{'w': 300, 'h': 250}]}
+        }],
+        'ext': {'prebid': {'targeting': {'includewinners': true, 'includebidderkeys': false}}},
+        'user': {'id': dynRes.user.id, 'buyeruid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'},
+        'site': {'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines'}
+      });
     });
   });
 

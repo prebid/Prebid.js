@@ -39,7 +39,11 @@ describe('RelaidoAdapter', function () {
       bidId: '2ed93003f7bb99',
       bidderRequestId: '1c50443387a1f2',
       auctionId: '413ed000-8c7a-4ba1-a1fa-9732e006f8c3',
-      transactionId: '5c2d064c-7b76-42e8-a383-983603afdc45',
+      ortb2Imp: {
+        ext: {
+          tid: '5c2d064c-7b76-42e8-a383-983603afdc45',
+        }
+      },
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
@@ -243,7 +247,7 @@ describe('RelaidoAdapter', function () {
       expect(request.bidder_request_id).to.equal(bidRequest.bidderRequestId);
       expect(data.bid_requests_count).to.equal(bidRequest.bidRequestsCount);
       expect(request.bid_id).to.equal(bidRequest.bidId);
-      expect(request.transaction_id).to.equal(bidRequest.transactionId);
+      expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');

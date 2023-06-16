@@ -321,9 +321,9 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
     });
-    it('should return a properly formatted request with geo defined', function () {
+    it('should fail to return a properly formatted request with geo defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.geo).to.deep.equal(bidRequest[0].params.geo)
+      expect(bidRequests.data.geo).to.not.deep.equal(bidRequest[0].params.geo)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);

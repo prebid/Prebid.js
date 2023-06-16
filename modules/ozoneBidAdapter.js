@@ -262,6 +262,7 @@ export const spec = {
       obj.placementId = placementId;
       deepSetValue(obj, 'ext.prebid', {'storedrequest': {'id': placementId}});
       obj.ext[whitelabelBidder] = {};
+      // TODO: fix auctionId/transactionID leak: https://github.com/prebid/Prebid.js/issues/9781
       obj.ext[whitelabelBidder].adUnitCode = ozoneBidRequest.adUnitCode; // eg. 'mpu'
       obj.ext[whitelabelBidder].transactionId = ozoneBidRequest.transactionId; // this is the transactionId PER adUnit, common across bidders for this unit
       if (ozoneBidRequest.params.hasOwnProperty('customData')) {
@@ -381,7 +382,7 @@ export const spec = {
       ozoneRequestSingle.auctionId = imp.ext[whitelabelBidder].transactionId; // not sure if this should be here?
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
-      deepSetValue(ozoneRequestSingle, 'source.tid', imp.ext[whitelabelBidder].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(ozoneRequestSingle, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(ozoneRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', ozoneRequestSingle);
       return {

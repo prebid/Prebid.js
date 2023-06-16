@@ -101,7 +101,8 @@ export const spec = {
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           bidRequestCount: bidRequest.bidRequestCount,
           params: bidRequest.params,

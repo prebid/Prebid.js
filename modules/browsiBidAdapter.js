@@ -38,7 +38,7 @@ export const spec = {
     const requests = [];
     const {refererInfo, bidderRequestId, gdprConsent, uspConsent} = bidderRequest;
     validBidRequests.forEach(bidRequest => {
-      const {bidId, adUnitCode, auctionId, transactionId, schain, params} = bidRequest;
+      const {bidId, adUnitCode, auctionId, ortb2Imp, schain, params} = bidRequest;
       const video = getVideoMediaType(bidRequest);
 
       const request = {
@@ -55,8 +55,9 @@ export const spec = {
           sizes: video.playerSize,
           video: video,
           aUCode: adUnitCode,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           aID: auctionId,
-          tID: transactionId,
+          tID: ortb2Imp?.ext?.tid,
           schain: schain,
           params: params
         }
@@ -98,7 +99,6 @@ export const spec = {
       width: w,
       height: h,
       currency: cur,
-      bidderCode: BIDDER_CODE,
       ...extraParams
     };
     bidResponses.push(bidResponse);

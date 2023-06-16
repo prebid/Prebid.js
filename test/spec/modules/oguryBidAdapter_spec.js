@@ -62,6 +62,7 @@ describe('OguryBidAdapter', function () {
   ];
 
   bidderRequest = {
+    bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
   };
@@ -262,7 +263,7 @@ describe('OguryBidAdapter', function () {
 
     const defaultTimeout = 1000;
     const expectedRequestObject = {
-      id: bidRequests[0].auctionId,
+      id: 'mock-uuid',
       at: 1,
       tmax: defaultTimeout,
       imp: [{
