@@ -170,8 +170,6 @@ export const sharethroughAdapterSpec = {
         nurl: bid.nurl,
         meta: {
           advertiserDomains: bid.adomain || [],
-          // TODO: ext._____ field names are subject to change depending on what works for team Marketplace
-          // https://sharethrough.atlassian.net/browse/PB-295
           networkId: bid.ext?.networkId || null,
           networkName: bid.ext?.networkName || null,
           agencyId: bid.ext?.agencyId || null,
