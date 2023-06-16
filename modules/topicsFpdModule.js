@@ -19,7 +19,7 @@ const bidderIframeList = {
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
-  },{
+  }, {
     bidder: 'rtbhouse',
     iframeURL: 'https://topics.creativecdn.com/tapi.html'
   }]
