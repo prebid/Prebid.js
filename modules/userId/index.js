@@ -496,10 +496,8 @@ function getPrioritizedCombinedSubmoduleIds(submodules) {
     .filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .reduce((carry, i) => {
       Object.keys(i.idObj).forEach(key => {
-        const currentIdPriorityByName = idPriority[key]?.reverse().indexOf(i.submodule.name);
-        const currentIdPriorityByAlias = idPriority[key]?.reverse().indexOf(i.submodule.aliasName);
-        // eslint-disable-next-line
-        const currentIdPriority = currentIdPriorityByName ? currentIdPriorityByName : currentIdPriorityByAlias ? currentIdPriorityByAlias : - 1
+        const maybeCurrentIdPriority = idPriority[key]?.indexOf(i.submodule.name);
+        const currentIdPriority = isNumber(maybeCurrentIdPriority) ? maybeCurrentIdPriority : -1;
         const currentIdState = {priority: currentIdPriority, value: i.idObj[key]};
         if (carry[key]) {
           const winnerIdState = currentIdState.priority > carry[key].priority ? currentIdState : carry[key];
@@ -1053,6 +1051,25 @@ function updateSubmodules() {
   }
 }
 
+/**
+ * This function will update the idPriority according to the provided configuration
+ * @param {Object} idPriorityConfig
+ * @param {SubmoduleContainer[]} submodules
+ */
+function updateIdPriority(idPriorityConfig, submodules) {
+  if (idPriorityConfig) {
+    const result = {};
+    const aliasToName = new Map(submodules.map(s => s.submodule.aliasName ? [s.submodule.aliasName, s.submodule.name] : []));
+    Object.keys(idPriorityConfig).forEach(key => {
+      const priority = isArray(idPriorityConfig[key]) ? [...idPriorityConfig[key]].reverse() : []
+      result[key] = priority.map(s => aliasToName.get(s) ? aliasToName.get(s) : s);
+    });
+    idPriority = result;
+  } else {
+    idPriority = {};
+  }
+}
+
 export function requestDataDeletion(next, ...args) {
   logInfo('UserID: received data deletion request; deleting all stored IDs...')
   submodules.forEach(submodule => {
@@ -1114,12 +1131,12 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
     const userSync = conf.userSync;
     if (userSync) {
       ppidSource = userSync.ppid;
-      idPriority = userSync.idPriority ? userSync.idPriority : {};
       if (userSync.userIds) {
         configRegistry = userSync.userIds;
         syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
         auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
         updateSubmodules();
+        updateIdPriority(userSync.idPriority, submodules);
         initIdSystem({ready: true});
       }
     }
