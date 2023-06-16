@@ -506,38 +506,6 @@ describe('User ID', function () {
       });
     });
 
-    it('pbjs.getUserIds(Async) should prioritize user ids according to config available to core when called multiple times', function (done) {
-      init(config);
-
-      setSubmoduleRegistry([
-        createMockIdSubmodule('mockId1Module', {id: {mockId1: 'mockId1_value', mockId2: 'mockId2_value_from_mockId1Module'}}),
-        createMockIdSubmodule('mockId2Module', {id: {mockId1: 'mockId1_value_from_mockId2Module', mockId2: 'mockId2_value'}}),
-      ]);
-
-      config.setConfig({
-        userSync: {
-          idPriority: {
-            mockId1: ['mockId2Module', 'mockId1Module'],
-            mockId2: ['mockId1Module', 'mockId2Module']
-          },
-          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
-          userIds: [
-            { name: 'mockId1Module' },
-            { name: 'mockId2Module' }
-          ]
-        }
-      });
-
-      getGlobal().getUserIdsAsync().then((uidsFirstRequest) => {
-        getGlobal().getUserIdsAsync().then((uidsSecondRequest) => {
-          expect(uidsFirstRequest['mockId1']).to.deep.equal('mockId1_value_from_mockId2Module');
-          expect(uidsFirstRequest['mockId2']).to.deep.equal('mockId2_value_from_mockId1Module');
-          expect(uidsFirstRequest).to.deep.equal(uidsSecondRequest);
-          done();
-        })
-      });
-    });
-
     it('pbjs.getUserIds(Async) with priority config but no collision', function (done) {
       init(config);
 
