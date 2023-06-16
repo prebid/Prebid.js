@@ -51,7 +51,7 @@ export const sharethroughAdapterSpec = {
         ext: {},
       },
       source: {
-        tid: bidderRequest.auctionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           version: '$prebid.version$',
           str: VERSION,

@@ -203,7 +203,7 @@ function buildRegs(bidderRequest) {
 function buildSource(bidRequests, bidderRequest) {
   const source = {
     fd: 1,
-    tid: bidderRequest.auctionId,
+    tid: bidderRequest.ortb2.source.tid,
   };
   const schain = deepAccess(bidRequests, '0.schain');
 

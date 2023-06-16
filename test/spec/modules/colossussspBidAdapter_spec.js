@@ -19,12 +19,12 @@ describe('ColossussspAdapter', function () {
     },
     ortb2Imp: {
       ext: {
+        tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
         data: {
           pbadslot: '/19968336/prebid_cache_video_adunit'
         }
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
     schain: {
       ver: '1.0',
       complete: 1,
@@ -281,6 +281,35 @@ describe('ColossussspAdapter', function () {
         }
       }
     });
+  });
+
+  describe('gpp consent', function () {
+    it('bidderRequest.gppConsent', () => {
+      bidderRequest.gppConsent = {
+        gppString: 'abc123',
+        applicableSections: [8]
+      };
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+
+      delete bidderRequest.gppConsent;
+    })
+
+    it('bidderRequest.ortb2.regs.gpp', () => {
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+      bidderRequest.ortb2.regs.gpp = 'abc123';
+      bidderRequest.ortb2.regs.gpp_sid = [8];
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+    })
   });
 
   describe('interpretResponse', function () {

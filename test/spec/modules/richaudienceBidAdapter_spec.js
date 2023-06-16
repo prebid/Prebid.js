@@ -25,6 +25,41 @@ describe('Richaudience adapter tests', function () {
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
+    ortb2Imp: {
+      ext: {
+        tid: '29df2112-348b-4961-8863-1b33684d95e6',
+      }
+    },
+    user: {}
+  }];
+
+  var DEFAULT_PARAMS_NEW_SIZES_GPID = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    ortb2Imp: {
+      ext: {
+        gpid: '/19968336/header-bid-tag-1#example-2',
+        data: {
+          pbadslot: '/19968336/header-bid-tag-1#example-2'
+        }
+      }
+    },
+    mediaTypes: {
+      banner: {
+        sizes: [
+          [300, 250], [300, 600], [728, 90], [970, 250]]
+      }
+    },
+    bidder: 'richaudience',
+    params: {
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site',
+      keywords: 'key1=value1;key2=value2'
+    },
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
     user: {}
   }];
@@ -236,6 +271,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
     expect(typeof requestContent.cpuc === 'number')
+    expect(typeof requestContent.gpid === 'string')
     expect(requestContent).to.have.property('kws').and.to.equal('key1=value1;key2=value2');
   })
 
@@ -829,6 +865,18 @@ describe('Richaudience adapter tests', function () {
     })
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('schain').to.deep.equal(schain);
+  })
+
+  it('should pass gpid', function() {
+    const request = spec.buildRequests(DEFAULT_PARAMS_NEW_SIZES_GPID, {
+      gdprConsent: {
+        consentString: 'BOZcQl_ObPFjWAeABAESCD-AAAAjx7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__59__3z3_NohBgA',
+        gdprApplies: true
+      },
+      refererInfo: {}
+    })
+    const requestContent = JSON.parse(request[0].data);
+    expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
   })
 
   describe('userSync', function () {

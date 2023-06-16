@@ -38,6 +38,7 @@ export const spec = {
         bidId: bidRequest.bidId,
         // TODO: is 'page' the right value here?
         referer: bidderRequest.refererInfo.page,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bidRequest.auctionId,
         mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };

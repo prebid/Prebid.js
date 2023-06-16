@@ -119,7 +119,6 @@ export const spec = {
     const bidObject = {
       requestId: request.bidId,
       adUnitCode: request.adUnitCode,
-      bidderCode: BIDDER_CODE,
       ad: response.ad,
       cpm: response.cpm,
       width: response.width,

@@ -24,7 +24,11 @@ describe('limelightDigitalAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    ortb2Imp: {
+      ext: {
+        tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test1.org',
@@ -64,7 +68,11 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
     sizes: [[350, 200]],
-    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+    ortb2Imp: {
+      ext: {
+        tid: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test2.org',
@@ -110,7 +118,11 @@ describe('limelightDigitalAdapter', function () {
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     sizes: [[800, 600]],
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test3.org',
@@ -155,7 +167,11 @@ describe('limelightDigitalAdapter', function () {
     video: {
       playerSize: [800, 600]
     },
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test.org',
@@ -647,7 +663,7 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.id).to.equal(bid.params.adUnitId);
   expect(adUnit.bidId).to.equal(bid.bidId);
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
-  expect(adUnit.transactionId).to.equal(bid.transactionId);
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
