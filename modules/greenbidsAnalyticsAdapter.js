@@ -44,10 +44,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       logError('"options.pbuid" is required.');
       return false;
     }
-    analyticsOptions.sampled = true;
-    if (typeof config.options.sampling === 'number') {
-      analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
-    }
 
     analyticsOptions.pbuid = config.options.pbuid
     analyticsOptions.server = ANALYTICS_SERVER;
@@ -149,15 +145,13 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     });
   },
   track({eventType, args}) {
-    if (analyticsOptions.sampled) {
-      switch (eventType) {
-        case BID_TIMEOUT:
-          this.handleBidTimeout(args);
-          break;
-        case AUCTION_END:
-          this.handleAuctionEnd(args);
-          break;
-      }
+    switch (eventType) {
+      case BID_TIMEOUT:
+        this.handleBidTimeout(args);
+        break;
+      case AUCTION_END:
+        this.handleAuctionEnd(args);
+        break;
     }
   },
   getAnalyticsOptions() {
