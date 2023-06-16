@@ -464,7 +464,7 @@ describe('User ID', function () {
         }
       });
 
-     return getGlobal().getUserIdsAsync().then((uids) => {
+      return getGlobal().getUserIdsAsync().then((uids) => {
         expect(uids['mockId1']).to.deep.equal('mockId1_value_from_mockId3Module');
         expect(uids['mockId2']).to.deep.equal('mockId2_value');
         expect(uids['mockId3']).to.deep.equal('mockId3_value_from_mockId2Module');
