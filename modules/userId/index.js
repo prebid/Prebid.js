@@ -1045,7 +1045,7 @@ function updateIdPriority(idPriorityConfig, submodules) {
     const aliasToName = new Map(submodules.map(s => s.submodule.aliasName ? [s.submodule.aliasName, s.submodule.name] : []));
     Object.keys(idPriorityConfig).forEach(key => {
       const priority = isArray(idPriorityConfig[key]) ? [...idPriorityConfig[key]].reverse() : []
-      result[key] = priority.map(s => aliasToName.get(s) ? aliasToName.get(s) : s);
+      result[key] = priority.map(s => aliasToName.has(s) ? aliasToName.get(s) : s);
     });
     idPriority = result;
   } else {
