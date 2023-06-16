@@ -30,6 +30,7 @@ export const spec = {
           vph: window.screen.height,
           callback: 'json',
           callback_uid: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auction: bidRequest.auctionId,
         },
       };

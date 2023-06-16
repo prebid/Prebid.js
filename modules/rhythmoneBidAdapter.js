@@ -16,7 +16,6 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_DELIVERY = [1];
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
-  let that = this;
   let version = '2.1';
 
   this.isBidRequestValid = function (bid) {
@@ -237,7 +236,6 @@ function RhythmOneBidAdapter() {
       let bidRequest = slotsToBids[bid.impid];
       let bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: that.code,
         cpm: parseFloat(bid.price),
         width: bid.w,
         height: bid.h,

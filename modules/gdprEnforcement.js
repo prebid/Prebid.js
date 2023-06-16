@@ -6,7 +6,6 @@ import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
-import {getHook} from '../src/hook.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
@@ -219,15 +218,6 @@ export const accessDeviceRule = ((rule) => {
 export const syncUserRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 
-export function userIdHook(fn, submodules, consentData) {
-  // TODO: remove this in v8 (https://github.com/prebid/Prebid.js/issues/9766)
-  if (shouldEnforce(consentData, 1, 'User ID')) {
-    fn.call(this, submodules, {...consentData, hasValidated: true});
-  } else {
-    fn.call(this, submodules, consentData);
-  }
-}
-
 export const fetchBidsRule = ((rule) => {
   return function (params) {
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
@@ -307,8 +297,6 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
-      // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
-      getHook('validateGdprEnforcement').before(userIdHook, 47);
     }
     if (purpose2Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
@@ -321,9 +309,6 @@ export function setEnforcementConfig(config) {
 
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
-  [
-    getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
-  ].forEach(hook => hook.remove());
   hooksAdded = false;
 }
 

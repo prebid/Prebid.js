@@ -10,7 +10,7 @@ userIdAsEids = [
         }]
     },
     {
-        source: 'trustpid.com',
+        source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1

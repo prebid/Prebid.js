@@ -148,7 +148,7 @@ function buildPlacement(bidRequest) {
     adUnit: {
       id: bidRequest.params.adUnitId,
       bidId: bidRequest.bidId,
-      transactionId: bidRequest.transactionId,
+      transactionId: bidRequest.ortb2Imp?.ext?.tid,
       sizes: sizes.map(size => {
         return {
           width: size[0],

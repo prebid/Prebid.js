@@ -132,7 +132,7 @@ import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
-import {hook, module, ready as hooksReady} from '../../src/hook.js';
+import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {
   getCoreStorageManager,
@@ -159,7 +159,6 @@ import {
 } from '../../src/utils.js';
 import {getPPID as coreGetPPID} from '../../src/adserver.js';
 import {defer, GreedyPromise} from '../../src/utils/promise.js';
-import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
@@ -808,16 +807,7 @@ function getUserIdsAsync() {
   );
 }
 
-/**
- * This hook returns updated list of submodules which are allowed to do get user id based on TCF 2 enforcement rules configured
- */
-export const validateGdprEnforcement = hook('sync', function (submodules, consentData) {
-  // TODO: remove the `hasValidated` check in v8. Enforcement should be OFF by default.
-  // https://github.com/prebid/Prebid.js/issues/9766
-  return { userIdModules: submodules, hasValidated: consentData && consentData.hasValidated };
-}, 'validateGdprEnforcement');
-
-function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, allSubmodules) {
+function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh) {
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
@@ -906,18 +896,11 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
       return [];
     }
 
-    // TODO: remove this check in v8 (https://github.com/prebid/Prebid.js/issues/9766)
-    let { userIdModules, hasValidated } = validateGdprEnforcement(submodules, consentData);
-    if (!hasValidated && !hasPurpose1Consent(consentData)) {
-      logWarn(`${MODULE_NAME} - gdpr permission not valid for local storage or cookies, exit module`);
-      return [];
-    }
-
     // we always want the latest consentData stored, even if we don't execute any submodules
     const storedConsentData = getStoredConsentData();
     setStoredConsentData(consentData);
 
-    const initialized = userIdModules.reduce((carry, submodule) => {
+    const initialized = submodules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
           populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, userIdModules);

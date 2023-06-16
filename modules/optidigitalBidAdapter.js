@@ -46,6 +46,7 @@ export const spec = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
       deviceWidth: document.documentElement.clientWidth,
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: deepAccess(validBidRequests[0], 'auctionId'),
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
@@ -107,7 +108,6 @@ export const spec = {
       serverResponse.bids.forEach((bid) => {
         const bidResponse = {
           placementId: bid.placementId,
-          transactionId: bid.transactionId,
           requestId: bid.bidId,
           ttl: bid.ttl,
           creativeId: bid.creativeId,
@@ -161,7 +161,7 @@ function buildImp(bidRequest, ortb2) {
     sizes: parseSizesInput(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
     bidId: deepAccess(bidRequest, 'bidId'),
     adUnitCode: deepAccess(bidRequest, 'adUnitCode'),
-    transactionId: deepAccess(bidRequest, 'transactionId'),
+    transactionId: deepAccess(bidRequest, 'ortb2Imp.ext.tid'),
     placementId: deepAccess(bidRequest, 'params.placementId')
   };
 

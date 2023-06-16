@@ -414,8 +414,6 @@ function buildBannerResponse(bidRequest, bidResponse) {
       }
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
       bidResponse.size = bidSizes;
@@ -456,8 +454,6 @@ function buildNativeResponse(bidRequest, response) {
         return;
       }
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -509,8 +505,6 @@ function buildVideoResponse(bidRequest, response) {
       let context = bidRequest.mediaTypes.video.context;
 
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 

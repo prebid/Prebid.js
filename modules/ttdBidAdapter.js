@@ -66,9 +66,9 @@ function getBidFloor(bid) {
   return null;
 }
 
-function getSource(validBidRequests) {
+function getSource(validBidRequests, bidderRequest) {
   let source = {
-    tid: validBidRequests[0].auctionId
+    tid: bidderRequest?.ortb2?.source?.tid,
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -414,7 +414,7 @@ export const spec = {
       at: 1,
       cur: ['USD'],
       regs: getRegs(bidderRequest),
-      source: getSource(validBidRequests),
+      source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
     }
 

@@ -179,6 +179,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bid.auctionId,
       bidder: bid.bidder,
       bidderRequestId: bid.bidderRequestId,

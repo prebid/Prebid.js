@@ -61,7 +61,10 @@
 		googletag.cmd = googletag.cmd || [];
 
 		pbjs.que.push(function () {
-			pbjs.setConfig({ debug: true });
+			pbjs.setConfig({
+				enableTIDs: true,
+				debug: true
+			});
       pbjs.addAdUnits(outstreamVideoAdUnit);
       pbjs.bidderSettings = {
         appnexus: {
