@@ -4,6 +4,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js'
+
+const { getConfig } = config;
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
