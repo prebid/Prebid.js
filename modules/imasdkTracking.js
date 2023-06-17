@@ -39,19 +39,47 @@ export function trackIMASDKDeliveredImpressions({adUnits, bidsReceived, bidderRe
   const start = Date.now();
   const {maxWindow, pollingFreq} = imasdkTracking;
 
+  function matchBid(bid, ad) {
+    if (!bid || !ad) {
+      return false;
+    }
+
+    if (bid.creativeId && bid.creativeId.includes(ad.adId)) {
+      return true;
+    }
+
+    if (ad.adWrapperIds && ad.adWrapperIds.length) {
+      for (var i = 0; i < ad.adWrapperIds.length; i++) {
+        if (bid.creativeId.includes(ad.adWrapperIds[i])) {
+          return true;
+        }
+      }
+    }
+
+    if (bid.vastXml && (
+      bid.vastXml.includes(`<Ad id='${ad.adId}'>`) ||
+      bid.vastXml.includes(`<Ad id="${ad.adId}">`) ||
+      bid.vastXml.includes(`=${ad.adId}`)
+    )) {
+      return true;
+    }
+
+    return false;
+  }
+
   function poll() {
-    const adIds = window.google.ima.__lads;
-    if (adIds && adIds.length) {
-      for (var i = 0; i < adIds.length; i++) {
-        var adId = adIds[i];
-        var bid = instreamBids.filter(e => e.creativeId === adId && e.status !== RENDERED);
+    const ads = window.google.ima.__lads;
+    if (ads && ads.length) {
+      for (var i = 0; i < ads.length; i++) {
+        var ad = ads[i];
+        var bid = instreamBids.filter(e => matchBid(e, ad) && e.status !== RENDERED);
 
         if (bid && bid.length) {
           bid[0].status = RENDERED;
           auctionManager.addWinningBid(bid[0]);
           events.emit(BID_WON, bid[0]);
           getGlobal().markWinningBidAsUsed(bid[0]);
-          adIds.splice(i, 1);
+          ads.splice(i, 1);
         }
       }
     }
