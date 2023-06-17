@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
-import {config} from '../src/config.js'
+import {config} from 'src/config.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
