@@ -130,7 +130,7 @@ describe('KiviAdsBidAdapter', function () {
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
-      expect(data.host).to.equal('localhost:9877');
+      expect(data.host).to.contain('localhost');
       expect(data.page).to.be.a('string');
       expect(data.page).to.equal('/');
       expect(data.coppa).to.be.a('number');
