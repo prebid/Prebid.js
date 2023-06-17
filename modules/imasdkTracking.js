@@ -56,12 +56,18 @@ export function trackIMASDKDeliveredImpressions({adUnits, bidsReceived, bidderRe
       }
     }
 
-    if (bid.vastXml && (
-      bid.vastXml.includes(`<Ad id='${ad.adId}'>`) ||
-      bid.vastXml.includes(`<Ad id="${ad.adId}">`) ||
-      bid.vastXml.includes(`=${ad.adId}`)
-    )) {
-      return true;
+    if (bid.vastXml) {
+      var ids = [].concat([ad.adId], ad.adWrapperIds || []);
+      for (i = 0; i < ids.length; i++) {
+        if (
+          bid.vastXml.includes(`<Ad id='${ids[i]}'>`) ||
+          bid.vastXml.includes(`<Ad id="${ids[i]}">`) ||
+          bid.vastXml.includes(`<Ad id=\"${ids[i]}\">`) ||
+          bid.vastXml.includes(`=${ids[i]}`)
+        ) {
+          return true;
+        }
+      }
     }
 
     return false;
