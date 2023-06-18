@@ -239,15 +239,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
       requests.push(request);
     });
-
-    return requests;
+  } else {
+    validBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
   }
-
-  validBidRequests.forEach(validBidRequest => {
-    const sizes = parseSizesInput(validBidRequest.sizes);
-    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-    requests.push(request);
-  });
   return requests;
 }
 
