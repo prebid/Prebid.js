@@ -494,7 +494,7 @@ describe('VidazooBidAdapter', function () {
       expect(requests[0]).to.deep.equal({
         method: 'POST',
         url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
-        data: [REQUEST_DATA, REQUEST_DATA2]
+        data: {bids: [REQUEST_DATA, REQUEST_DATA2]}
       });
     });
 
