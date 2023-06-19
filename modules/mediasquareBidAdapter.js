@@ -119,10 +119,7 @@ export const spec = {
           netRevenue: value['net_revenue'],
           ttl: value['ttl'],
           ad: value['ad'],
-          mediasquare: {
-            /*'bidder': value['bidder'],
-            'code': value['code']*/
-          },
+          mediasquare: {},
           meta: {
             'advertiserDomains': value['adomain']
           }
