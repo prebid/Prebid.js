@@ -687,10 +687,10 @@ class WeboramaRtdProvider {
     const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
     /** @type {string} */
-    const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
+    const BIDDER_APPNEXUS = 'appnexus'
 
-    if (bidder == 'appnexus') {
-      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
+    if (bid.bidder === BIDDER_APPNEXUS || bidderAliasRegistry[bid.bidder] === BIDDER_APPNEXUS) {
+      this.#handleORTB2KeywordsData(reqBidsConfigObj, bid, profile, metadata);
     }
   }
 
@@ -705,7 +705,7 @@ class WeboramaRtdProvider {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
-  /** handle appnexus/xandr bid
+  /** handle ortb2 keyword based data on bidders such appnexus.
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -713,14 +713,53 @@ class WeboramaRtdProvider {
    * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
    * @param {Object} bid
    * @param {Object} bid.parameters
+   * @param {string} bid.bidder
    * @param {Profile} profile
+   * @param {dataCallbackMetadata} metadata
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
-    const base = 'params.keywords';
-    this.#assignProfileToObject(bid, base, profile);
-    // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
+  #handleORTB2KeywordsData(reqBidsConfigObj, bid, profile, metadata) {
+    this.#assignProfileToObject(bid, 'params.keywords', profile);
+
+    const target = new Set();
+
+    Object.entries(profile).forEach(([key, values]) => {
+      values.forEach(value => {
+        const keyword = `${key}=${value}`;
+        target.add(keyword);
+      })
+    });
+
+    const sep = ',';
+    const keywords = Array.from(target).join(sep);
+
+    if (keywords.length > 0) {
+      const path = metadata.user ? 'user.keywords' : 'site.content.keywords';
+      this.#setOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, path, keywords);
+    }
+  }
+
+  /** set ortb2 data using path
+   * @method
+   * @private
+   * @param {Object} ortb2Fragments
+   * @param {Object} ortb2Fragments.bidder
+   * @param {string} bidder
+   * @param {string} path
+   * @param {any} data
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #setOrtb2(ortb2Fragments, bidder, path, data) {
+    let ortb2Conf = {};
+    deepSetValue(ortb2Conf, path, data);
+
+    if (bidder) {
+      ortb2Conf = {[bidder]: ortb2Conf};
+    }
+
+    mergeDeep(ortb2Fragments, ortb2Conf);
   }
 
   /** handle generic bid via ortb2 arbitrary data
