@@ -151,10 +151,6 @@ describe('weboramaRtdProvider', function() {
           return frag
         }, {});
 
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'webo_ctx=foo,webo_ctx=bar,webo_ds=baz',
-        };
-
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
           bidder: expectedORTB2BidderFragments,
@@ -251,10 +247,6 @@ describe('weboramaRtdProvider', function() {
           return frag
         }, {});
 
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'webo_vctx=foo,webo_vctx=bar',
-        };
-
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
           bidder: expectedORTB2BidderFragments,
@@ -350,10 +342,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'webo_vctx=foo,webo_vctx=bar',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -581,9 +569,6 @@ describe('weboramaRtdProvider', function() {
                 site: {
                   ext: {
                     data: data
-                  },
-                  content: {
-                    keywords: 'webo_ctx=foo,webo_ctx=bar,webo_ds=baz',
                   },
                 },
               },
@@ -1078,10 +1063,6 @@ describe('weboramaRtdProvider', function() {
           return frag
         }, {});
 
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'webo_ctx=foo,webo_ctx=bar,webo_ds=baz',
-        };
-
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
           bidder: expectedORTB2BidderFragments,
@@ -1169,10 +1150,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'webo_ctx=baz',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -1293,9 +1270,6 @@ describe('weboramaRtdProvider', function() {
         }, {});
 
         expectedORTB2BidderFragments[APPNEXUS].site = {
-          content: {
-            keywords: 'webo_ctx=foo,webo_ctx=bar,webo_ds=baz',
-          },
           ext: {
             data: {
               webo_ctx: ['foo', 'bar'],
@@ -1403,8 +1377,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_cs=foo,webo_cs=bar,webo_audiences=baz';
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -1523,7 +1495,6 @@ describe('weboramaRtdProvider', function() {
                   ext: {
                     data: data,
                   },
-                  keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
                 },
               },
             };
@@ -1638,7 +1609,6 @@ describe('weboramaRtdProvider', function() {
                   ext: {
                     data: data,
                   },
-                  keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
                 },
               },
             };
@@ -2038,8 +2008,6 @@ describe('weboramaRtdProvider', function() {
           return frag
         }, {});
 
-        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_cs=foo,webo_cs=bar,webo_audiences=baz';
-
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
           bidder: expectedORTB2BidderFragments,
@@ -2114,8 +2082,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_audiences=baz';
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -2198,8 +2164,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_audiences=baz';
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -2332,7 +2296,6 @@ describe('weboramaRtdProvider', function() {
               webo_bar: ['baz'],
             }
           },
-          keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
         };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
@@ -2432,10 +2395,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'lite_occupation=gérant,lite_occupation=bénévole,lite_hobbies=sport,lite_hobbies=cinéma',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -2560,10 +2519,6 @@ describe('weboramaRtdProvider', function() {
               return frag
             }, {});
 
-            expectedORTB2BidderFragments[APPNEXUS].site.content = {
-              keywords: 'lite_occupation=gérant,lite_occupation=bénévole,lite_hobbies=sport,lite_hobbies=cinéma',
-            };
-
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -2674,10 +2629,6 @@ describe('weboramaRtdProvider', function() {
 
               return frag
             }, {});
-
-            expectedORTB2BidderFragments[APPNEXUS].site.content = {
-              keywords: 'lite_occupation=gérant,lite_occupation=bénévole,lite_hobbies=sport,lite_hobbies=cinéma',
-            };
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -3069,10 +3020,6 @@ describe('weboramaRtdProvider', function() {
           return frag
         }, {});
 
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'lite_occupation=gérant,lite_occupation=bénévole,lite_hobbies=sport,lite_hobbies=cinéma',
-        };
-
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
           bidder: expectedORTB2BidderFragments,
@@ -3146,10 +3093,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'lite_hobbies=sport,lite_hobbies=cinéma',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -3231,10 +3174,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'lite_hobbies=sport,lite_hobbies=cinéma',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -3324,10 +3263,6 @@ describe('weboramaRtdProvider', function() {
 
           return frag
         }, {});
-
-        expectedORTB2BidderFragments[APPNEXUS].site.content = {
-          keywords: 'lite_hobbies=sport,lite_hobbies=cinéma',
-        };
 
         expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
           global: {},
@@ -3455,9 +3390,6 @@ describe('weboramaRtdProvider', function() {
               lite_hobbies: ['sport', 'cinéma'],
               lito_bar: ['baz'],
             },
-          },
-          content: {
-            keywords: 'lite_occupation=gérant,lite_occupation=bénévole,lite_hobbies=sport,lite_hobbies=cinéma',
           },
         };
 

@@ -98,8 +98,6 @@ This is the main configuration section
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
 | params.sfbxLiteDataConf | Object | Sfbx LiTE Site-Centric Configuration | Optional |
 | params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections |
-| params.setProfileAsBidderKeywords | Object | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections  |
-| params.checkBidderAliasForKeywords | Boolean | Modify `params.setProfileAsBidderKeywords` to search in the bidder alias registry| Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections  |
 
 #### Contextual Site-Centric Configuration
 
@@ -118,8 +116,6 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 | baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
-| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
-| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 #### WAM User-Centric Configuration
 
@@ -137,8 +133,6 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
-| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
-| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 #### Sfbx LiTE Site-Centric Configuration
 
@@ -154,8 +148,6 @@ On this section we will explain the `params.sfbxLiteDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
-| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
-| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 ##### Property setPrebidTargeting supported types
 
@@ -564,12 +556,9 @@ pbjs.que.push(function () {
 
 ### Supported Bidders
 
-We currently support the following bidder adapters using `First Party Data Support` but using ortb2 keywords `site.content.keywords` and`user.keywords`:
+We set the bidder ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders). We may set the ortb2 global if no specific bidders are set on `sendToBidders` configuration.
 
 * AppNexus SSP
-
-We also set the bidder (and global, if no specific bidders are set on `sendToBidders`) ortb2 `site.ext.data` and `user.ext.data` sections (as arbitrary data). The following bidders may support it, to be sure, check the `First Party Data Support` on the feature list for the particular bidder from [here](https://docs.prebid.org/dev-docs/bidders).
-
 * Adagio
 * AdformOpenRTB
 * AdKernel
