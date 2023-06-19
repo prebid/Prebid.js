@@ -720,8 +720,6 @@ class WeboramaRtdProvider {
    */
   // eslint-disable-next-line no-dupe-class-members
   #handleORTB2KeywordsData(reqBidsConfigObj, bid, profile, metadata) {
-    this.#assignProfileToObject(bid, 'params.keywords', profile);
-
     const target = new Set();
 
     Object.entries(profile).forEach(([key, values]) => {

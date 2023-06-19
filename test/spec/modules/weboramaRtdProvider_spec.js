@@ -135,8 +135,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -238,8 +236,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -341,8 +337,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -582,8 +576,6 @@ describe('weboramaRtdProvider', function() {
             });
 
             const expectedAdunitsBid = deepClone(adUnitsBids);
-            expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
             reqBidsConfigObj.adUnits.forEach(adUnit => {
               expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
@@ -653,6 +645,17 @@ describe('weboramaRtdProvider', function() {
             };
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
+            const adUnitsBids = [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }];
 
             const reqBidsConfigObj = {
               ortb2Fragments: {
@@ -661,30 +664,10 @@ describe('weboramaRtdProvider', function() {
               },
               adUnits: [{
                 code: adUnitCode1,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }, {
                 code: adUnitCode2,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }]
             };
 
@@ -710,16 +693,10 @@ describe('weboramaRtdProvider', function() {
               'adunit2': data,
             });
 
+            const expectedAdunitsBid = deepClone(adUnitsBids);
             reqBidsConfigObj.adUnits.forEach(adUnit => {
-              expect(adUnit.bids.length).to.equal(5);
-              expect(adUnit.bids[0].params).to.be.undefined;
-              expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[3].params).to.be.undefined;
-              expect(adUnit.bids[4].ortb2).to.be.undefined;
+              expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
-
-            expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
-            expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -1167,24 +1144,7 @@ describe('weboramaRtdProvider', function() {
           'adunit1': {},
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          inventory: {
-            foo: 'bar',
-          },
-          visitor: {
-            baz: 'bam',
-          }
-        });
-
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = { // appnexus case
-          keywords: {
-            foo: ['bar'],
-            webo_ctx: ['foo', 'bar'],
-            webo_ds: ['baz'],
-          },
-        };
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -1278,7 +1238,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = { keywords: defaultProfile }; // appnexus case
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -1401,11 +1360,9 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
+        const expectedAdunitsBid = deepClone(adUnitsBids);
         reqBidsConfigObj.adUnits.forEach(adUnit => {
-          expect(adUnit.bids.length).to.equal(5);
-          expect(adUnit.bids[0].params).to.be.undefined;
-          expect(adUnit.bids[1].params).to.be.undefined;
-          expect(adUnit.bids[3].params).to.be.undefined;
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
@@ -1438,13 +1395,6 @@ describe('weboramaRtdProvider', function() {
           global: {},
           bidder: expectedORTB2BidderFragments,
         });
-
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
-          webo_ctx: ['foo', 'bar'],
-          webo_ds: ['baz'],
-          webo_bar: ['baz'],
-        });
-        expect(reqBidsConfigObj.adUnits[1].bids[2].params.keywords).to.deep.equal(data);
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -1524,8 +1474,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -1653,8 +1601,6 @@ describe('weboramaRtdProvider', function() {
             });
 
             const expectedAdunitsBid = deepClone(adUnitsBids);
-            expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
             reqBidsConfigObj.adUnits.forEach(adUnit => {
               expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
@@ -1732,6 +1678,17 @@ describe('weboramaRtdProvider', function() {
 
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
+            const adUnitsBids = [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }];
             const reqBidsConfigObj = {
               ortb2Fragments: {
                 global: {},
@@ -1739,30 +1696,10 @@ describe('weboramaRtdProvider', function() {
               },
               adUnits: [{
                 code: adUnitCode1,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }, {
                 code: adUnitCode2,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }]
             };
             const onDoneSpy = sinon.spy();
@@ -1779,11 +1716,9 @@ describe('weboramaRtdProvider', function() {
               'adunit2': data,
             });
 
+            const expectedAdunitsBid = deepClone(adUnitsBids);
             reqBidsConfigObj.adUnits.forEach(adUnit => {
-              expect(adUnit.bids.length).to.equal(5);
-              expect(adUnit.bids[0].params).to.be.undefined;
-              expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[3].params).to.be.undefined;
+              expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
 
             const expectedORTB2BidderFragments = {
@@ -1801,9 +1736,6 @@ describe('weboramaRtdProvider', function() {
               global: {},
               bidder: expectedORTB2BidderFragments,
             });
-
-            expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
-            expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             expect(onDataResponse).to.deep.equal({
               data: data,
@@ -2256,21 +2188,9 @@ describe('weboramaRtdProvider', function() {
           'adunit1': {},
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
-          foo: ['bar'],
-          webo_cs: ['foo', 'bar'],
-          webo_audiences: ['baz'],
-        });
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          inventory: {
-            foo: 'bar',
-          },
-          visitor: {
-            baz: 'bam',
-          }
+        const expectedAdunitsBid = deepClone(adUnitsBids);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
@@ -2347,8 +2267,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: defaultProfile}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -2433,11 +2351,10 @@ describe('weboramaRtdProvider', function() {
           'adunit1': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
+        const expectedAdunitsBid = deepClone(adUnitsBids);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -2670,8 +2587,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -2800,8 +2715,6 @@ describe('weboramaRtdProvider', function() {
             });
 
             const expectedAdunitsBid = deepClone(adUnitsBids);
-            expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
-
             reqBidsConfigObj.adUnits.forEach(adUnit => {
               expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
@@ -2917,15 +2830,10 @@ describe('weboramaRtdProvider', function() {
               'adunit2': data,
             });
 
+            const expectedAdunitsBid = deepClone(adUnitsBids);
             reqBidsConfigObj.adUnits.forEach(adUnit => {
-              expect(adUnit.bids.length).to.equal(5);
-              expect(adUnit.bids[0].params).to.be.undefined;
-              expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[3].params).to.be.undefined;
+              expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
-
-            expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
-            expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
 
             const bidders = Object.values(adUnitsBids).map(v => v.bidder);
             const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -3395,22 +3303,11 @@ describe('weboramaRtdProvider', function() {
           'adunit1': {},
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params.target).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params.dctr).to.equal('foo=bar');
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
-          foo: ['bar'],
-          lite_occupation: ['gérant', 'bénévole'],
-          lite_hobbies: ['sport', 'cinéma'],
+        const expectedAdunitsBid = deepClone(adUnitsBids);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.deep.equal({
-          inventory: {
-            foo: 'bar',
-          },
-          visitor: {
-            baz: 'bam',
-          }
-        });
+
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
           frag[bidder] = {
@@ -3486,8 +3383,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: defaultProfile}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -3574,8 +3469,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: defaultProfile}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -3670,8 +3563,6 @@ describe('weboramaRtdProvider', function() {
         });
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
-        expectedAdunitsBid[2].params = {keywords: defaultProfile}; // appnexus case
-
         reqBidsConfigObj.adUnits.forEach(adUnit => {
           expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
@@ -3795,11 +3686,9 @@ describe('weboramaRtdProvider', function() {
           'adunit2': data,
         });
 
+        const expectedAdunitsBid = deepClone(adUnitsBids);
         reqBidsConfigObj.adUnits.forEach(adUnit => {
-          expect(adUnit.bids.length).to.equal(5);
-          expect(adUnit.bids[0].params).to.be.undefined;
-          expect(adUnit.bids[1].params).to.be.undefined;
-          expect(adUnit.bids[3].params).to.be.undefined;
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
         });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
@@ -3832,13 +3721,6 @@ describe('weboramaRtdProvider', function() {
           global: {},
           bidder: expectedORTB2BidderFragments,
         });
-
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal({
-          lite_occupation: ['gérant', 'bénévole'],
-          lite_hobbies: ['sport', 'cinéma'],
-          lito_bar: ['baz'],
-        });
-        expect(reqBidsConfigObj.adUnits[1].bids[2].params.keywords).to.deep.equal(data);
 
         expect(onDataResponse).to.deep.equal({
           data: data,
