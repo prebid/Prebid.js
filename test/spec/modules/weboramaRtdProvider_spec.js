@@ -137,7 +137,9 @@ describe('weboramaRtdProvider', function() {
         const expectedAdunitsBid = deepClone(adUnitsBids);
         expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
 
-        expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -238,7 +240,9 @@ describe('weboramaRtdProvider', function() {
         const expectedAdunitsBid = deepClone(adUnitsBids);
         expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
 
-        expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -339,7 +343,9 @@ describe('weboramaRtdProvider', function() {
         const expectedAdunitsBid = deepClone(adUnitsBids);
         expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
 
-        expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -578,7 +584,9 @@ describe('weboramaRtdProvider', function() {
             const expectedAdunitsBid = deepClone(adUnitsBids);
             expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
 
-            expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+            reqBidsConfigObj.adUnits.forEach(adUnit => {
+              expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+            });
 
             const expectedORTB2BidderFragments = {
               [APPNEXUS]: {
@@ -1177,7 +1185,9 @@ describe('weboramaRtdProvider', function() {
           },
         };
 
-        expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -1269,8 +1279,9 @@ describe('weboramaRtdProvider', function() {
 
         const expectedAdunitsBid = deepClone(adUnitsBids);
         expectedAdunitsBid[2].params = { keywords: defaultProfile }; // appnexus case
-
-        expect(reqBidsConfigObj.adUnits[0].bids).to.deep.equal(expectedAdunitsBid);
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
 
         const bidders = Object.values(adUnitsBids).map(v => v.bidder);
         const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
@@ -1447,7 +1458,6 @@ describe('weboramaRtdProvider', function() {
     });
 
     describe('Add user-centric data (wam)', function() {
-      /*
       it('should set gam targeting from local storage and send to bidders by default', function() {
         let onDataResponse = {};
         const moduleConfig = {
@@ -1479,6 +1489,17 @@ describe('weboramaRtdProvider', function() {
           .returns(JSON.stringify(entry));
 
         const adUnitCode = 'adunit1';
+        const adUnitsBids = [{
+          bidder: 'smartadserver'
+        }, {
+          bidder: 'pubmatic'
+        }, {
+          bidder: 'appnexus'
+        }, {
+          bidder: 'rubicon'
+        }, {
+          bidder: 'other'
+        }];
         const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
@@ -1486,17 +1507,7 @@ describe('weboramaRtdProvider', function() {
           },
           adUnits: [{
             code: adUnitCode,
-            bids: [{
-              bidder: 'smartadserver'
-            }, {
-              bidder: 'pubmatic'
-            }, {
-              bidder: 'appnexus'
-            }, {
-              bidder: 'rubicon'
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }]
         };
         const onDoneSpy = sinon.spy();
@@ -1512,20 +1523,33 @@ describe('weboramaRtdProvider', function() {
           'adunit1': data,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+        const expectedAdunitsBid = deepClone(adUnitsBids);
+        expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
+
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
+
+        const bidders = Object.values(adUnitsBids).map(v => v.bidder);
+        const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
+          frag[bidder] = {
             user: {
               ext: {
                 data: data
               },
             }
-          });
-        })
+          };
+
+          return frag
+        }, {});
+
+        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_cs=foo,webo_cs=bar,webo_audiences=baz';
+
+        expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+          global: {},
+          bidder: expectedORTB2BidderFragments,
+        });
+
         expect(onDataResponse).to.deep.equal({
           data: data,
           meta: {
@@ -1590,6 +1614,17 @@ describe('weboramaRtdProvider', function() {
 
             const adUnitCode1 = 'adunit1';
             const adUnitCode2 = 'adunit2';
+            const adUnitsBids = [{
+              bidder: 'smartadserver'
+            }, {
+              bidder: 'pubmatic'
+            }, {
+              bidder: 'appnexus'
+            }, {
+              bidder: 'rubicon'
+            }, {
+              bidder: 'other'
+            }];
             const reqBidsConfigObj = {
               ortb2Fragments: {
                 global: {},
@@ -1597,30 +1632,10 @@ describe('weboramaRtdProvider', function() {
               },
               adUnits: [{
                 code: adUnitCode1,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }, {
                 code: adUnitCode2,
-                bids: [{
-                  bidder: 'smartadserver'
-                }, {
-                  bidder: 'pubmatic'
-                }, {
-                  bidder: 'appnexus'
-                }, {
-                  bidder: 'rubicon'
-                }, {
-                  bidder: 'other'
-                }]
+                bids: deepClone(adUnitsBids),
               }]
             };
             const onDoneSpy = sinon.spy();
@@ -1637,28 +1652,29 @@ describe('weboramaRtdProvider', function() {
               'adunit2': data,
             });
 
+            const expectedAdunitsBid = deepClone(adUnitsBids);
+            expectedAdunitsBid[2].params = {keywords: data}; // appnexus case
+
             reqBidsConfigObj.adUnits.forEach(adUnit => {
-              expect(adUnit.bids.length).to.equal(5);
-              expect(adUnit.bids[0].params).to.be.undefined;
-              expect(adUnit.bids[1].params).to.be.undefined;
-              expect(adUnit.bids[2].params.keywords).to.deep.equal(data);
-              expect(adUnit.bids[3].params).to.be.undefined;
+              expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
             });
-            ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
-                expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
-                  user: {
-                    ext: {
-                      data: data
-                    },
-                  }
-                });
 
-                return
-              }
+            const expectedORTB2BidderFragments = {
+              [APPNEXUS]: {
+                user: {
+                  ext: {
+                    data: data,
+                  },
+                  keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
+                },
+              },
+            };
 
-              expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+              global: {},
+              bidder: expectedORTB2BidderFragments,
+            });
+
             expect(onDataResponse).to.deep.equal({
               data: data,
               meta: {
@@ -1769,21 +1785,22 @@ describe('weboramaRtdProvider', function() {
               expect(adUnit.bids[1].params).to.be.undefined;
               expect(adUnit.bids[3].params).to.be.undefined;
             });
-            ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-              if (v == 'appnexus') {
-                expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
-                  user: {
-                    ext: {
-                      data: data
-                    },
-                  }
-                });
 
-                return
-              }
+            const expectedORTB2BidderFragments = {
+              [APPNEXUS]: {
+                user: {
+                  ext: {
+                    data: data,
+                  },
+                  keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
+                },
+              },
+            };
 
-              expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.be.undefined;
-            })
+            expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+              global: {},
+              bidder: expectedORTB2BidderFragments,
+            });
 
             expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(data);
             expect(reqBidsConfigObj.adUnits[1].bids[2].params).to.be.undefined;
@@ -2186,6 +2203,36 @@ describe('weboramaRtdProvider', function() {
           .returns(JSON.stringify(entry));
 
         const adUnitCode = 'adunit1';
+        const adUnitsBids = [{
+          bidder: 'smartadserver',
+          params: {
+            target: 'foo=bar'
+          }
+        }, {
+          bidder: 'pubmatic',
+          params: {
+            dctr: 'foo=bar'
+          }
+        }, {
+          bidder: 'appnexus',
+          params: {
+            keywords: {
+              foo: ['bar']
+            }
+          }
+        }, {
+          bidder: 'rubicon',
+          params: {
+            inventory: {
+              foo: 'bar',
+            },
+            visitor: {
+              baz: 'bam',
+            }
+          }
+        }, {
+          bidder: 'other'
+        }];
         const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
@@ -2193,36 +2240,7 @@ describe('weboramaRtdProvider', function() {
           },
           adUnits: [{
             code: adUnitCode,
-            bids: [{
-              bidder: 'smartadserver',
-              params: {
-                target: 'foo=bar'
-              }
-            }, {
-              bidder: 'pubmatic',
-              params: {
-                dctr: 'foo=bar'
-              }
-            }, {
-              bidder: 'appnexus',
-              params: {
-                keywords: {
-                  foo: ['bar']
-                }
-              }
-            }, {
-              bidder: 'rubicon',
-              params: {
-                inventory: {
-                  foo: 'bar',
-                },
-                visitor: {
-                  baz: 'bam',
-                }
-              }
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }]
         };
         const onDoneSpy = sinon.spy();
@@ -2254,15 +2272,26 @@ describe('weboramaRtdProvider', function() {
             baz: 'bam',
           }
         });
-        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+
+        const bidders = Object.values(adUnitsBids).map(v => v.bidder);
+        const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
+          frag[bidder] = {
             user: {
               ext: {
                 data: data
               },
             }
-          });
-        })
+          };
+
+          return frag
+        }, {});
+
+        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_cs=foo,webo_cs=bar,webo_audiences=baz';
+
+        expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+          global: {},
+          bidder: expectedORTB2BidderFragments,
+        });
       });
 
       it('should use default profile in case of nothing on local storage', function() {
@@ -2283,6 +2312,17 @@ describe('weboramaRtdProvider', function() {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(true);
 
         const adUnitCode = 'adunit1';
+        const adUnitsBids = [{
+          bidder: 'smartadserver'
+        }, {
+          bidder: 'pubmatic'
+        }, {
+          bidder: 'appnexus'
+        }, {
+          bidder: 'rubicon'
+        }, {
+          bidder: 'other'
+        }];
         const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
@@ -2290,17 +2330,7 @@ describe('weboramaRtdProvider', function() {
           },
           adUnits: [{
             code: adUnitCode,
-            bids: [{
-              bidder: 'smartadserver'
-            }, {
-              bidder: 'pubmatic'
-            }, {
-              bidder: 'appnexus'
-            }, {
-              bidder: 'rubicon'
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }]
         };
         const onDoneSpy = sinon.spy();
@@ -2316,20 +2346,32 @@ describe('weboramaRtdProvider', function() {
           'adunit1': defaultProfile,
         });
 
-        expect(reqBidsConfigObj.adUnits[0].bids.length).to.equal(5);
-        expect(reqBidsConfigObj.adUnits[0].bids[0].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
-        expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
-        expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+        const expectedAdunitsBid = deepClone(adUnitsBids);
+        expectedAdunitsBid[2].params = {keywords: defaultProfile}; // appnexus case
+
+        reqBidsConfigObj.adUnits.forEach(adUnit => {
+          expect(adUnit.bids).to.deep.equal(expectedAdunitsBid);
+        });
+
+        const bidders = Object.values(adUnitsBids).map(v => v.bidder);
+        const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
+          frag[bidder] = {
             user: {
               ext: {
-                data: defaultProfile
+                data: defaultProfile,
               },
             }
-          });
-        })
+          };
+
+          return frag
+        }, {});
+
+        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_audiences=baz';
+
+        expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+          global: {},
+          bidder: expectedORTB2BidderFragments,
+        });
       });
 
       it('should use default profile if cant read from local storage', function() {
@@ -2357,6 +2399,17 @@ describe('weboramaRtdProvider', function() {
         sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
 
         const adUnitCode = 'adunit1';
+        const adUnitsBids = [{
+          bidder: 'smartadserver'
+        }, {
+          bidder: 'pubmatic'
+        }, {
+          bidder: 'appnexus'
+        }, {
+          bidder: 'rubicon'
+        }, {
+          bidder: 'other'
+        }];
         const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
@@ -2364,17 +2417,7 @@ describe('weboramaRtdProvider', function() {
           },
           adUnits: [{
             code: adUnitCode,
-            bids: [{
-              bidder: 'smartadserver'
-            }, {
-              bidder: 'pubmatic'
-            }, {
-              bidder: 'appnexus'
-            }, {
-              bidder: 'rubicon'
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }]
         };
         const onDoneSpy = sinon.spy();
@@ -2395,15 +2438,27 @@ describe('weboramaRtdProvider', function() {
         expect(reqBidsConfigObj.adUnits[0].bids[1].params).to.be.undefined;
         expect(reqBidsConfigObj.adUnits[0].bids[2].params.keywords).to.deep.equal(defaultProfile);
         expect(reqBidsConfigObj.adUnits[0].bids[3].params).to.be.undefined;
-        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+
+        const bidders = Object.values(adUnitsBids).map(v => v.bidder);
+        const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
+          frag[bidder] = {
             user: {
               ext: {
-                data: defaultProfile
+                data: defaultProfile,
               },
             }
-          });
-        })
+          };
+
+          return frag
+        }, {});
+
+        expectedORTB2BidderFragments[APPNEXUS].user.keywords = 'webo_audiences=baz';
+
+        expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+          global: {},
+          bidder: expectedORTB2BidderFragments,
+        });
+
         expect(onDataResponse).to.deep.equal({
           data: defaultProfile,
           meta: {
@@ -2459,6 +2514,17 @@ describe('weboramaRtdProvider', function() {
 
         const adUnitCode1 = 'adunit1';
         const adUnitCode2 = 'adunit2';
+        const adUnitsBids = [{
+          bidder: 'smartadserver'
+        }, {
+          bidder: 'pubmatic'
+        }, {
+          bidder: 'appnexus'
+        }, {
+          bidder: 'rubicon'
+        }, {
+          bidder: 'other'
+        }];
         const reqBidsConfigObj = {
           ortb2Fragments: {
             global: {},
@@ -2466,30 +2532,10 @@ describe('weboramaRtdProvider', function() {
           },
           adUnits: [{
             code: adUnitCode1,
-            bids: [{
-              bidder: 'smartadserver'
-            }, {
-              bidder: 'pubmatic'
-            }, {
-              bidder: 'appnexus'
-            }, {
-              bidder: 'rubicon'
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }, {
             code: adUnitCode2,
-            bids: [{
-              bidder: 'smartadserver'
-            }, {
-              bidder: 'pubmatic'
-            }, {
-              bidder: 'appnexus'
-            }, {
-              bidder: 'rubicon'
-            }, {
-              bidder: 'other'
-            }]
+            bids: deepClone(adUnitsBids),
           }]
         };
 
@@ -2517,31 +2563,35 @@ describe('weboramaRtdProvider', function() {
           expect(adUnit.bids[1].params).to.be.undefined;
           expect(adUnit.bids[3].params).to.be.undefined;
         });
-        ['smartadserver', 'pubmatic', 'appnexus', 'rubicon', 'other'].forEach((v) => {
-          if (v == 'appnexus') {
-            expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
-              user: {
-                ext: {
-                  data: {
-                    webo_cs: ['foo', 'bar'],
-                    webo_audiences: ['baz'],
-                    webo_bar: ['baz'],
-                  }
-                },
-              }
-            });
 
-            return
-          }
-
-          expect(reqBidsConfigObj.ortb2Fragments.bidder[v]).to.deep.equal({
+        const bidders = Object.values(adUnitsBids).map(v => v.bidder);
+        const expectedORTB2BidderFragments = bidders.reduce((frag, bidder) => {
+          frag[bidder] = {
             user: {
               ext: {
-                data: data
+                data: data,
               },
             }
-          });
-        })
+          };
+
+          return frag
+        }, {});
+
+        expectedORTB2BidderFragments[APPNEXUS].user = {
+          ext: {
+            data: {
+              webo_cs: ['foo', 'bar'],
+              webo_audiences: ['baz'],
+              webo_bar: ['baz'],
+            }
+          },
+          keywords: 'webo_cs=foo,webo_cs=bar,webo_audiences=baz',
+        };
+
+        expect(reqBidsConfigObj.ortb2Fragments).to.deep.equal({
+          global: {},
+          bidder: expectedORTB2BidderFragments,
+        });
 
         expect(onDataResponse).to.deep.equal({
           data: data,
@@ -2552,7 +2602,6 @@ describe('weboramaRtdProvider', function() {
           },
         });
       });
-      */
     });
   /*
     describe('Add support to sfbx lite', function() {
