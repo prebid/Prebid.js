@@ -47,6 +47,8 @@
  * @property {?setPrebidTargetingCallback|?boolean|?Object} setPrebidTargeting if true, will set the GAM targeting (default undefined)
  * @property {?sendToBiddersCallback|?boolean|?Object} sendToBidders if true, will send the contextual profile to all bidders, else expects a list of allowed bidders (default undefined)
  * @property {?dataCallback} onData callback
+ * @property {?string|?string[]|?Object.<string,boolean>} setProfileAsBidderKeywords specifies one or more bidders to send data as keywords ('site.content.keywords' or 'user.keywords'). Default is 'appnexus'.
+ * @property {?boolean} checkBidderAliasForKeywords if true, will check for exact bidder name or using the alias registry. Default is 'true'.
  * @property {?WeboCtxConf} weboCtxConf site-centric contextual configuration
  * @property {?WeboUserDataConf} weboUserDataConf user-centric wam configuration
  * @property {?SfbxLiteDataConf} sfbxLiteDataConf site-centric lite configuration
@@ -67,6 +69,8 @@
  * @property {?Profile} defaultProfile to be used if the profile is not found
  * @property {?boolean} enabled if false, will ignore this configuration
  * @property {?string} baseURLProfileAPI to be used to point to a different domain than ctx.weborama.com
+ * @property {?string|?string[]|?Object.<string,boolean>} setProfileAsBidderKeywords specifies one or more bidders to send data as keywords ('site.content.keywords' or 'user.keywords'). Default is 'appnexus'.
+ * @property {?boolean} checkBidderAliasForKeywords if true, will check for exact bidder name or using the alias registry. Default is 'true'.
  */
 
 /**
@@ -78,6 +82,8 @@
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is 'webo_wam2gam_entry')
  * @property {?boolean} enabled if false, will ignore this configuration
+ * @property {?string|?string[]|?Object.<string,boolean>} setProfileAsBidderKeywords specifies one or more bidders to send data as keywords ('site.content.keywords' or 'user.keywords'). Default is 'appnexus'.
+ * @property {?boolean} checkBidderAliasForKeywords if true, will check for exact bidder name or using the alias registry. Default is 'true'.
  */
 
 /**
@@ -88,6 +94,8 @@
  * @property {?dataCallback} onData callback
  * @property {?string} localStorageProfileKey can be used to customize the local storage key (default is '_lite')
  * @property {?boolean} enabled if false, will ignore this configuration
+ * @property {?string|?string[]|?Object.<string,boolean>} setProfileAsBidderKeywords specifies one or more bidders to send data as keywords ('site.content.keywords' or 'user.keywords'). Default is 'appnexus'.
+ * @property {?boolean} checkBidderAliasForKeywords if true, will check for exact bidder name or using the alias registry. Default is 'true'.
  */
 
 /** common configuration between contextual, wam and sfbx
@@ -152,6 +160,8 @@ const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
 const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
+/** @type {string} */
+const BIDDER_APPNEXUS = 'appnexus'
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -199,6 +209,8 @@ class WeboramaRtdProvider {
     const globalDefaults = {
       setPrebidTargeting: true,
       sendToBidders: true,
+      setProfileAsBidderKeywords: [BIDDER_APPNEXUS],
+      checkBidderAliasForKeywords: true,
       onData: () => {
         /* do nothing */
       }
@@ -304,24 +316,25 @@ class WeboramaRtdProvider {
    */
   #initSubSection(moduleParams, subSection, ...requiredFields) {
     /** @type {CommonConf} */
-    const weboSectionConf = moduleParams[subSection] || { enabled: false };
+    const subSectionConf = moduleParams[subSection] || { enabled: false };
 
-    if (weboSectionConf.enabled === false) {
+    if (subSectionConf.enabled === false) {
       delete moduleParams[subSection];
 
       return false;
     }
 
     try {
-      this.#normalizeConf(moduleParams, weboSectionConf);
+      this.#normalizeConf(moduleParams, subSectionConf);
 
       requiredFields.forEach(field => {
-        if (!(field in weboSectionConf)) {
+        if (!(field in subSectionConf)) {
           throw `missing required field '${field}''`;
         }
       });
     } catch (e) {
       logError(`unable to initialize: error on ${subSection} configuration:`, e);
+
       return false;
     }
 
@@ -342,10 +355,16 @@ class WeboramaRtdProvider {
   #normalizeConf(moduleParams, submoduleParams) {
     submoduleParams.defaultProfile = submoduleParams.defaultProfile || {};
 
-    const { setPrebidTargeting, sendToBidders, onData } = moduleParams;
+    const { setPrebidTargeting,
+      sendToBidders,
+      setProfileAsBidderKeywords,
+      checkBidderAliasForKeywords,
+      onData } = moduleParams;
 
     submoduleParams.setPrebidTargeting ??= setPrebidTargeting;
     submoduleParams.sendToBidders ??= sendToBidders;
+    submoduleParams.setProfileAsBidderKeywords ??= setProfileAsBidderKeywords;
+    submoduleParams.checkBidderAliasForKeywords ??= !!checkBidderAliasForKeywords;
     submoduleParams.onData ??= onData;
 
     // handle setPrebidTargeting
@@ -354,12 +373,19 @@ class WeboramaRtdProvider {
     // handle sendToBidders
     this.#coerceSendToBidders(submoduleParams);
 
+    // handle setProfileAsBidderKeywords
+    this.#coerceSetProfileAsBidderKeywords(submoduleParams)
+
     if (!isFn(submoduleParams.onData)) {
       throw 'onData parameter should be a callback';
     }
 
     if (!isValidProfile(submoduleParams.defaultProfile)) {
       throw 'defaultProfile is not valid';
+    }
+
+    if (!isBoolean(submoduleParams.checkBidderAliasForKeywords)) {
+      throw 'checkBidderAliasForKeywords parameter should be a boolean';
     }
   }
 
@@ -422,6 +448,31 @@ class WeboramaRtdProvider {
     }
   }
 
+  /** coerce setProfileAsBidderKeywords to a map
+   * @method
+   * @private
+   * @param {CommonConf} submoduleParams
+   * @return {void}
+   * @throws will throw an error in case of invalid configuration
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #coerceSetProfileAsBidderKeywords(submoduleParams) {
+    let setProfileAsBidderKeywords = submoduleParams.setProfileAsBidderKeywords;
+
+    if (isStr(setProfileAsBidderKeywords)) {
+      setProfileAsBidderKeywords = {[setProfileAsBidderKeywords]: true};
+    } else if (isArray(setProfileAsBidderKeywords)) {
+      setProfileAsBidderKeywords = setProfileAsBidderKeywords.reduce((m, bidder) => {
+        m[bidder] = true
+        return m;
+      }, {});
+    } else if (!isPlainObject(setProfileAsBidderKeywords)) {
+      throw `invalid setProfileAsBidderKeywords: expect an object, array of strings or a single string`;
+    }
+
+    submoduleParams.setProfileAsBidderKeywords = setProfileAsBidderKeywords;
+  }
+
   /**
    * @typedef {Object} AdUnit
    * @property {Object[]} bids
@@ -457,7 +508,10 @@ class WeboramaRtdProvider {
             if (ph.sendToBidders(bid, adUnit.code, data, metadata)) {
               // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
-              this.#handleBid(reqBidsConfigObj, bid, data, ph.metadata);
+              this.#handleBid(reqBidsConfigObj, bid, data, ph.metadata, {
+                setBidderKeywords: ph.setProfileAsBidderKeywords,
+                checkBidderAlias: !!ph.checkBidderAliasForKeywords,
+              });
             }
           })
         )
@@ -620,6 +674,8 @@ class WeboramaRtdProvider {
    * @property {setPrebidTargetingCallback} setTargeting
    * @property {sendToBiddersCallback} sendToBidders
    * @property {dataCallback} onData
+   * @property {?Object.<string,boolean>} setProfileAsBidderKeywords
+   * @property {boolean} checkBidderAliasForKeywords
    */
 
   /**
@@ -664,9 +720,12 @@ class WeboramaRtdProvider {
       },
       setTargeting: dataConf.setPrebidTargeting,
       sendToBidders: dataConf.sendToBidders,
+      setProfileAsBidderKeywords: dataConf.setProfileAsBidderKeywords,
+      checkBidderAliasForKeywords: !!dataConf.checkBidderAliasForKeywords,
       onData: dataConf.onData,
     };
   }
+
   /** handle individual bid
    * @method
    * @private
@@ -677,19 +736,28 @@ class WeboramaRtdProvider {
    * @param {string} bid.bidder
    * @param {Profile} profile
    * @param {dataCallbackMetadata} metadata
+   * @param {Object} extraConf
+   * @param {Object.<string,boolean>} extraConf.setBidderKeywords
+   * @param {boolean} extraConf.checkBidderAlias
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleBid(reqBidsConfigObj, bid, profile, metadata) {
+  #handleBid(reqBidsConfigObj, bid, profile, metadata, extraConf) {
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
     /** @type {Object.<string,string>} */
     const bidderAliasRegistry = adapterManager.aliasRegistry || {};
 
-    /** @type {string} */
-    const BIDDER_APPNEXUS = 'appnexus'
+    /** @type {boolean} */
+    let shouldSetProfileAsKeywords = !!extraConf.setBidderKeywords[bid.bidder];
 
-    if (bid.bidder === BIDDER_APPNEXUS || bidderAliasRegistry[bid.bidder] === BIDDER_APPNEXUS) {
+    if (!shouldSetProfileAsKeywords && extraConf.checkBidderAlias) {
+      const originalBidder = bidderAliasRegistry[bid.bidder];
+
+      shouldSetProfileAsKeywords = !!extraConf.setBidderKeywords[originalBidder];
+    }
+
+    if (shouldSetProfileAsKeywords) {
       this.#handleORTB2KeywordsData(reqBidsConfigObj, bid, profile, metadata);
     }
   }

@@ -98,6 +98,8 @@ This is the main configuration section
 | params.weboUserDataConf | Object | Weborama WAM User-Centric Configuration | Optional |
 | params.sfbxLiteDataConf | Object | Sfbx LiTE Site-Centric Configuration | Optional |
 | params.onData | Callback | If set, will receive the profile and metadata | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections |
+| params.setProfileAsBidderKeywords | Object | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections  |
+| params.checkBidderAliasForKeywords | Boolean | Modify `params.setProfileAsBidderKeywords` to search in the bidder alias registry| Optional. Affects the `weboCtxConf`, `weboUserDataConf` and `sfbxLiteDataConf` sections  |
 
 #### Contextual Site-Centric Configuration
 
@@ -116,6 +118,8 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | onData | Callback | If set, will receive the profile and metadata | Optional. Default is `params.onData` (if any) or log via prebid debug |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 | baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
+| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
+| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 #### WAM User-Centric Configuration
 
@@ -133,6 +137,8 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
+| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
+| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 #### Sfbx LiTE Site-Centric Configuration
 
@@ -148,6 +154,8 @@ On this section we will explain the `params.sfbxLiteDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
+| setProfileAsBidderKeywords | String or Array | If present, specify one or more bidders to send data also as keywords (`site.content.keywords` or `user.keywords`) | Optional. Default is `appnexus`. |
+| checkBidderAliasForKeywords | Boolean | Modify `setProfileAsBidderKeywords` to search in the bidder alias registry. | Optional. Default is `true` |
 
 ##### Property setPrebidTargeting supported types
 
@@ -156,9 +164,9 @@ This property support the following types
 | Type  | Description | Example   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
 | Boolean|If true, set prebid targeting for all adunits, or not in case of false| `true` | default value |
-| String|Will set prebid targeting only for one adunit | `'adUnitCode1'` |  |
-| Array of Strings|Will set prebid targeting only for some adunits| `['adUnitCode1','adUnitCode2']` |  |
-| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(adUnitCode){return adUnitCode == 'adUnitCode';}` |  |
+| String|Will set prebid targeting only for one adunit | `'adUnitCode1'` | **DEPRECATED** |
+| Array of Strings|Will set prebid targeting only for some adunits| `['adUnitCode1','adUnitCode2']` | **DEPRECATED** |
+| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(adUnitCode){return adUnitCode == 'adUnitCode';}` | **DEPRECATED** |
 
 The complete callback function signature is:
 
@@ -168,26 +176,7 @@ setPrebidTargeting: function(adUnitCode, data, metadata){
 }
 ```
 
-This callback will be executed with the adUnitCode, profile and a metadata with the following fields
-
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| user | Boolean | If true, it contains user-centric data |  |
-| source | String | Represent the source of data | can be `contextual`, `wam` or `lite`  |
-| isDefault | Boolean | If true, it contains the default profile defined in the configuration |  |
-
-It is possible customize the targeting based on the parameters:
-
-```javascript
-setPrebidTargeting: function(adUnitCode, data, metadata){
-    // check metadata.source can be omitted if defined in params.weboUserDataConf
-    if (adUnitCode == 'adUnitCode1' && metadata.source == 'wam'){
-        data['foo']=['bar'];  // add this section only for adUnitCode1
-        delete data['other']; // remove this section
-    }
-    return true;
-}
-```
+Since `Prebid.js` version 8, we use First Party Data Support to propagate data to differente SSPs. We will deprecate the support to other formats than Boolean.
 
 ##### Property sendToBidders supported types
 
@@ -198,8 +187,8 @@ This property support the following types
 | Boolean|If true, send data to all bidders, or not in case of false| `true` | default value |
 | String|Will send data to only one bidder | `'appnexus'` |  |
 | Array of Strings|Will send data to only some bidders | `['appnexus','pubmatic']` |  |
-| Object |Will send data to only some bidders and some ad units | `{appnexus: true, pubmatic:['adUnitCode1']}` |  |
-| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(bid, adUnitCode){return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode';}` |  |
+| Object |Will send data to only some bidders and some ad units | `{appnexus: true, pubmatic:['adUnitCode1']}` | **DEPRECATED** |
+| Callback |Will be executed for each adunit, expects return a true value to set prebid targeting or not| `function(bid, adUnitCode){return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode';}` | the parameter `adUnitCode` can be consider **DEPRECATED** |
 
 A better look on the `Object` type
 
@@ -218,7 +207,7 @@ sendToBidders: function(bid, adUnitCode, data, metadata){
 }
 ```
 
-This callback will be executed with the bid object (contains a field `bidder` with name), adUnitCode, profile and a metadata with the following fields
+This callback will be executed with the bid object (contains a field `bidder` with name), adUnitCode (**deprecated**), profile and a metadata with the following fields
 
 | Name  |Type | Description   | Notes  |
 | :------------ | :------------ | :------------ |:------------ |
@@ -230,13 +219,15 @@ It is possible customize the targeting based on the parameters:
 
 ```javascript
 sendToBidders: function(bid, adUnitCode, data, metadata){
-    if (bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1'){
+    if (bid.bidder == 'appnexus'){
         data['foo']=['bar']; // add this section only for appnexus + adUnitCode1
         delete data['other']; // remove this section
     }
     return true;
 }
 ```
+
+Since `Prebid.js` version 8, we use First Party Data Support to propagate data to differente SSPs. We will deprecate the support to formats that thandle with `adUnitCode` at some point.
 
 To be possible customize the way we send data to bidders via this callback:
 
@@ -537,10 +528,10 @@ pbjs.que.push(function () {
                     },
                     weboUserDataConf: {
                         accountId: 12345,           // recommended
-                        setPrebidTargeting: ['adUnitCode1',...], // set target only on certain adunits 
+                        setPrebidTargeting: true 
                         sendToBidders: { // send to only some bidders and adunits
-                            'appnexus': true,               // all adunits for appnexus 
-                            'pubmatic': ['adUnitCode1',...] // some adunits for pubmatic
+                            'appnexus': true,               // enable appnexus 
+                            'pubmatic': false               // explicit disable pubmatic
                             // other bidders will be ignored
                         },
                         defaultProfile: {           // optional
@@ -552,11 +543,9 @@ pbjs.que.push(function () {
                         //, onData: function (data, ...) { ...}
                     },
                     sfbxLiteDataConf: {
-                        setPrebidTargeting: function(adUnitCode){ // specify set target via callback
-                            return adUnitCode == 'adUnitCode1';
-                        },
+                        setPrebidTargeting: true,
                         sendToBidders: function(bid, adUnitCode){ // specify sendToBidders via callback
-                            return bid.bidder == 'appnexus' && adUnitCode == 'adUnitCode1';
+                            return bid.bidder == 'appnexus';
                         }
                         defaultProfile: {           // optional
                             lite_occupation: ['gérant', 'bénévole'],
@@ -575,7 +564,7 @@ pbjs.que.push(function () {
 
 ### Supported Bidders
 
-We currently support the following bidder adapters with dedicated code:
+We currently support the following bidder adapters using `First Party Data Support` but using ortb2 keywords `site.content.keywords` and`user.keywords`:
 
 * AppNexus SSP
 
