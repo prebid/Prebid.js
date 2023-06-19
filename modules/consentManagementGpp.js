@@ -31,20 +31,6 @@ const cmpCallMap = {
   'static': lookupStaticConsentData
 };
 
-const GPP_SECTIONS = {
-  // https://github.com/InteractiveAdvertisingBureau/Global-Privacy-Platform/blob/main/Sections/Section%20Information.md
-  1: 'tcfeuv1',
-  2: 'tcfeuv2',
-  5: 'tcfca',
-  6: 'uspv1',
-  7: 'usnat',
-  8: 'usca',
-  9: 'usva',
-  10: 'usco',
-  11: 'usut',
-  12: 'usct'
-}
-
 /**
  * This function checks the state of the IAB gppData's applicableSections field (to ensure it's populated and has a valid value).
  * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
@@ -94,9 +80,7 @@ export function lookupIabConsent({onSuccess, onError}, mkClient = cmpClient) {
           cmp({command: 'getGPPData'}).then((gppData) => {
             logInfo(`Received a ${cmp.isDirect ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
             return GreedyPromise.all(
-              (gppData?.applicableSections || [])
-                .map(section => GPP_SECTIONS[section])
-                .filter(name => name != null)
+              (gppData?.pingData?.supportedAPIs || [])
                 .map((name) => cmp({command: 'getSection', parameter: name})
                   .catch(() => { logError(`Could not retrieve section data for GPP section '${name}'`) })
                   .then((res) => [name, res]))
@@ -245,13 +229,6 @@ export function storeConsentData({gppData, sectionData} = {}) {
     gppData: (gppData) || undefined,
   };
   consentData.applicableSections = applicableSections(gppData);
-  consentData.applicableSectionNames = consentData.applicableSections.map((no) => {
-    const name = GPP_SECTIONS[no];
-    if (!name) {
-      logWarn(`Unrecognized GPP section: ${no}`)
-    }
-    return name;
-  }).filter(v => v != null);
   consentData.apiVersion = CMP_VERSION;
   consentData.sectionData = sectionData;
   return consentData;

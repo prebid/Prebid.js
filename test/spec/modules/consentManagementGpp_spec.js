@@ -101,34 +101,13 @@ describe('consentManagementGpp', function () {
       });
     });
 
-    describe('storeConsentData', () => {
-      it('can set null consent', () => {
-        const cd = storeConsentData();
-        sinon.assert.match(cd, {
-          applicableSections: [],
-          gppData: undefined,
-          sectionData: undefined,
-          gppString: undefined,
-        })
-      })
-
-      it('sets applicableSectionNames', () => {
-        const cd = storeConsentData({gppData: {applicableSections: [6, 7]}});
-        expect(cd.applicableSectionNames).to.eql(['uspv1', 'usnat']);
-      });
-
-      it('filters out unrecognized sections', () => {
-        const cd = storeConsentData({gppData: {applicableSections: [-123]}});
-        expect(cd.applicableSectionNames).to.eql([]);
-      })
-    });
-
     describe('lookupIABConsent', () => {
       let mockCmp, mockCmpEvent, gppData, sectionData
       beforeEach(() => {
         gppData = {
           gppString: 'mockString',
-          applicableSections: []
+          applicableSections: [],
+          pingData: {}
         };
         sectionData = {};
         mockCmp = sinon.stub().callsFake(({command, callback, parameter}) => {
@@ -158,8 +137,8 @@ describe('consentManagementGpp', function () {
         return pm;
       }
 
-      it('fetches all applicable sections', () => {
-        gppData.applicableSections = [7, 8];
+      it('fetches all sections', () => {
+        gppData.pingData.supportedAPIs = ['usnat', 'usca']
         sectionData = {
           usnat: {mock: 'usnat'},
           usca: {mock: 'usca'}
@@ -170,7 +149,7 @@ describe('consentManagementGpp', function () {
       });
 
       it('does not choke if some section data is not available', () => {
-        gppData.applicableSections = [7, 8, 999];
+        gppData.pingData.supportedAPIs = ['usnat', 'usca']
         sectionData = {
           usca: {mock: 'data'}
         };
