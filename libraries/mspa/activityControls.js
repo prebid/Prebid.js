@@ -13,7 +13,7 @@ import {gppDataHandler} from '../../src/adapterManager.js';
 function isBasicConsentDenied(cd) {
   return ['MspaServiceProviderMode', 'Gpc'].some(prop => cd[prop] === 1) ||
     cd.PersonalDataConsents === 2 ||
-    cd.KnownChildSensitiveDataConsents[1] === 1 || cd.KnownChildSensitiveDataConsents[2] !== 0;
+    cd.KnownChildSensitiveDataConsents[0] === 1 || cd.KnownChildSensitiveDataConsents[1] !== 0;
 }
 
 function isSensitiveConsentDenied(cd) {
@@ -29,14 +29,14 @@ function isConsentDenied(cd) {
 function isTransmitUfpdConsentDenied(cd) {
   return isConsentDenied(cd) ||
     isSensitiveConsentDenied(cd) ||
-    cd.SensitveDataProcessing.some((val) => val === 1) ||
-    cd.SensitveDataProcessing[7] !== 0;
+    cd.SensitiveDataProcessing.some((val, i) => (i < 6 || i > 7) && val === 1) ||
+    cd.SensitiveDataProcessing[6] !== 0;
 }
 
 function isTransmitGeoConsentDenied(cd) {
   return isBasicConsentDenied(cd) ||
     isSensitiveConsentDenied(cd) ||
-    cd.SensitiveDataProcessing[8] === 1
+    cd.SensitiveDataProcessing[7] === 1
 }
 
 const CONSENT_RULES = {
