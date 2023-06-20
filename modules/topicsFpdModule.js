@@ -12,6 +12,7 @@ import {MODULE_TYPE_BIDDER} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
+const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
 
 export function reset() {
@@ -96,6 +97,7 @@ function isTopicsSupported(doc = document) {
 
 export function getTopics(doc = document) {
   let topics = null;
+
   try {
     if (isTopicsSupported(doc)) {
       topics = GreedyPromise.resolve(doc.browsingTopics());
@@ -106,6 +108,7 @@ export function getTopics(doc = document) {
   if (topics == null) {
     topics = GreedyPromise.resolve([]);
   }
+
   return topics;
 }
 
@@ -215,10 +218,11 @@ function listenMessagesFromTopicIframe() {
 export function loadTopicsForBidders(doc = document) {
   if (!isTopicsSupported(doc)) return;
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
+
   if (topics) {
     listenMessagesFromTopicIframe();
     const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL }) => {
+    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         let ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
@@ -226,6 +230,25 @@ export function loadTopicsForBidders(doc = document) {
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
         iframeURL && doc.documentElement.appendChild(ifrm);
+      }
+
+      if (bidder && fetchUrl) {
+        let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
+        const bidderLsEntry = storedSegments.get(bidder);
+
+        if (!bidderLsEntry || (bidderLsEntry && isCachedDataExpired(bidderLsEntry[lastUpdated], fetchRate || DEFAULT_FETCH_RATE_IN_DAYS))) {
+          fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              if (data && data.segment && !isEmpty(data.segment.topics)) {
+                const {domain, topics, bidder} = data.segment;
+                const fetchTopicsData = getTopicsData(domain, topics)[0];
+                fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
+              }
+            });
+        }
       }
     })
   } else {
