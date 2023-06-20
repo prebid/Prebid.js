@@ -54,7 +54,7 @@ export const spec = {
       const device = getDeviceObj();
 
       const payload = {
-        id: bid.auctionId,
+        id: bid?.bidderRequestId,
         ext: {
           prebid: {
             storedrequest: {

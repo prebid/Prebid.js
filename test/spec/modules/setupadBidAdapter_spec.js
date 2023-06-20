@@ -122,9 +122,7 @@ describe('SetupadAdapter', function () {
     it('validate generated params', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request[0].bidId).to.equal('22c4871113f461');
-      expect(JSON.parse(request[0].data).id).to.equal(
-        'b06c5141-fe8f-4cdf-9d7d-54415490a917'
-      );
+      expect(JSON.parse(request[0].data).id).to.equal('15246a574e859f');
     });
 
     it('check if domain was added', function () {
