@@ -1,14 +1,24 @@
 import {submodule} from '../src/hook.js';
-import {isFn, logError, deepAccess, deepSetValue} from '../src/utils.js';
+import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn} from '../src/utils.js';
 import {gppDataHandler} from '../src/adapterManager.js';
+import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
+import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import { isActivityAllowed } from '../src/activities/rules.js';
+import { activityParams } from '../src/activities/activityParams.js';
 
 let permissionsAvailable = true;
 let geolocation;
 function getGeolocationData(requestBidsObject, onDone, providerConfig, userConsent) {
   let done = false;
-  if (!permissionsAvailable) return complete();
+  if (!permissionsAvailable){
+    logWarn("permission for geolocation receiving was denied");
+    return complete()
+  };
+  if (!isActivityAllowed(ACTIVITY_TRANSMIT_PRECISE_GEO, activityParams(MODULE_TYPE_RTD, 'geolocation'))) {
+    logWarn("permission for geolocation receiving was denied by CMP");
+    return complete()
+  };
   const requestPermission = deepAccess(providerConfig, 'params.requestPermission') === true;
-  logError('RBO', requestBidsObject, gppDataHandler.getConsentData());
   const waitForIt = providerConfig.waitForIt;
   navigator.permissions.query({
     name: 'geolocation',
@@ -31,6 +41,7 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
         type: 1
       });
     }
+    logInfo("geolocation was successfully received ", requestBidsObject.ortb2Fragments.global.device.geo)
     onDone();
   }
 }
