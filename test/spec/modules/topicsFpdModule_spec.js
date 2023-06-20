@@ -11,7 +11,6 @@ import {
 import {config} from 'src/config.js';
 import {deepClone, safeJSONParse} from '../../../src/utils.js';
 import {getCoreStorageManager} from 'src/storageManager.js';
-import {config} from 'src/config.js';
 import * as activities from '../../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
 
