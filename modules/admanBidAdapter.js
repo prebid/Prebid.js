@@ -109,7 +109,7 @@ export const spec = {
         bidFloor: getBidFloor(bid)
       }
 
-      if (bid.transactionID) {
+      if (bid.transactionId) {
         placement.ext = placement.ext || {};
         placement.ext.tid = bid.transactionId;
       }
