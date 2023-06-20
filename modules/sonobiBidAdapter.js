@@ -5,6 +5,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -140,7 +141,7 @@ export const spec = {
       payload.eids = JSON.stringify(eids);
     }
 
-    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
 
     if (keywords) {
       payload.kw = keywords;

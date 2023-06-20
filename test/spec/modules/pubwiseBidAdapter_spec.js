@@ -101,6 +101,7 @@ const sampleValidBannerBidRequest = {
   },
   ortb2Imp: {
     ext: {
+      tid: '2001a8b2-3bcf-417d-b64f-92641dae21e0',
       data: {
         adserver: {
           name: 'gam',
@@ -125,7 +126,6 @@ const sampleValidBannerBidRequest = {
     }
   },
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
   'sizes': [
     [
       300,
@@ -179,6 +179,7 @@ const sampleValidBidRequests = [
     },
     ortb2Imp: {
       ext: {
+        tid: '2c8cd034-f068-4419-8c30-f07292c0d17b',
         data: {
           adserver: {
             name: 'gam',
@@ -213,7 +214,6 @@ const sampleValidBidRequests = [
       }
     },
     'adUnitCode': 'div-gpt-ad-1460505748561-1',
-    'transactionId': '2c8cd034-f068-4419-8c30-f07292c0d17b',
     'sizes': [],
     'bidId': '30ab7516a51a7c',
     'bidderRequestId': '18a45bff5ff705',
@@ -252,6 +252,7 @@ const sampleBidderBannerRequest = {
   },
   ortb2Imp: {
     ext: {
+      tid: '2001a8b2-3bcf-417d-b64f-92641dae21e0',
       data: {
         adserver: {
           name: 'gam',
@@ -272,7 +273,6 @@ const sampleBidderBannerRequest = {
     }
   },
   'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': '2001a8b2-3bcf-417d-b64f-92641dae21e0',
   'sizes': [
     [
       300,
@@ -299,7 +299,11 @@ const sampleBidderBannerRequest = {
 
 const sampleBidderRequest = {
   'bidderCode': 'pubwise',
-  'auctionId': '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+  ortb2: {
+    source: {
+      tid: '9f20663c-4629-4b5c-bff6-ff3aa8319358',
+    }
+  },
   'bidderRequestId': '18a45bff5ff705',
   'bids': [
     sampleBidderBannerRequest,
@@ -564,8 +568,8 @@ describe('PubWiseAdapter', function () {
     it('should handle complex bidRequest', function() {
       let request = spec.buildRequests(sampleValidBidRequests, sampleBidderRequest);
       expect(request.bidderRequest).to.equal(sampleBidderRequest, "Bid Request Doesn't Match Sample");
-      expect(request.data.source.tid).to.equal(sampleBidderRequest.auctionId, 'AuctionId -> source.tid Mismatch');
-      expect(request.data.imp[0].ext.tid).to.equal(sampleBidderRequest.bids[0].transactionId, 'TransactionId -> ext.tid Mismatch');
+      expect(request.data.source.tid).to.equal(sampleBidderRequest.ortb2.source.tid, 'source.tid -> source.tid Mismatch');
+      expect(request.data.imp[0].ext.tid).to.equal(sampleBidderRequest.bids[0].ortb2Imp.ext.tid, 'ext.tid -> ext.tid Mismatch');
     });
     it('must conform to API for buildRequests', function() {
       let request = spec.buildRequests(sampleValidBidRequests);

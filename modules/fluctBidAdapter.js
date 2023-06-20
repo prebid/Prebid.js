@@ -48,7 +48,7 @@ export const spec = {
       data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.transactionId;
+      data.transactionId = request.ortb2Imp?.ext?.tid;
       data.user = {
         eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };
@@ -125,7 +125,6 @@ export const spec = {
         `(function() { var img = new Image(); img.src = "${beaconUrl}"})()` +
         `</script>`;
       let data = {
-        bidderCode: BIDDER_CODE,
         requestId: res.id,
         currency: res.cur,
         cpm: parseFloat(bid.price) || 0,

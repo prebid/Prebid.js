@@ -24,9 +24,9 @@ export const USER_IDS_CONFIG = {
     }
   },
 
-  // trustpid
-  'trustpid': {
-    source: 'trustpid.com',
+  // utiq
+  'utiq': {
+    source: 'utiq.com',
     atype: 1,
     getValue: function (data) {
       return data;

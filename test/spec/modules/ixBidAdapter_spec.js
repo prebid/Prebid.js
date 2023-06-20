@@ -389,11 +389,11 @@ describe('IndexexchangeAdapter', function () {
         ext: {
           tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
           data: {
-            pbadslot: 'div-gpt-ad-1460505748562-0'
+            pbadslot: 'div-gpt-ad-1460505748562-1'
           }
         }
       },
-      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      adUnitCode: 'div-gpt-ad-1460505748562-1',
       transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
@@ -729,6 +729,9 @@ describe('IndexexchangeAdapter', function () {
     ortb2: {
       site: {
         page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
       }
     }
   };
@@ -1894,7 +1897,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
-      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
+      expect(payload.source.tid).to.equal(DEFAULT_OPTION.ortb2.source.tid);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -2432,9 +2435,11 @@ describe('IndexexchangeAdapter', function () {
       bid1.bidId = '2f6g5s5e';
 
       const bid2 = utils.deepClone(bid1);
+      bid2.adUnitCode = 'div-gpt-2'
       bid2.transactionId = 'tr2';
       bid2.mediaTypes.banner.sizes = [[220, 221], [222, 223], [300, 250]];
       const bid3 = utils.deepClone(bid1);
+      bid3.adUnitCode = 'div-gpt-3'
       bid3.transactionId = 'tr3';
       bid3.mediaTypes.banner.sizes = [[330, 331], [332, 333], [300, 250]];
 

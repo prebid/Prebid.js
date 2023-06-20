@@ -508,7 +508,11 @@ describe('FeedAdAdapter', function () {
         }
       },
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
-      'transactionId': transactionId,
+      ortb2Imp: {
+        ext: {
+          tid: transactionId
+        }
+      },
       'sizes': [
         [
           300,
