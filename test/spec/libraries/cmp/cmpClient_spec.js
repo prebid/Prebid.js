@@ -18,6 +18,12 @@ describe('cmpClient', () => {
 
   it('should return undefined when there is no CMP', () => {
     expect(cmpClient({apiName: 'missing'}, mockWindow())).to.not.exist;
+  });
+
+  it('should return undefined when parent is inaccessible', () => {
+    const win = mockWindow();
+    win.top = mockWindow();
+    expect(cmpClient({apiName: 'missing'}, win)).to.not.exist;
   })
 
   describe('direct access', () => {

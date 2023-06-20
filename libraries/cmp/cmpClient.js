@@ -48,7 +48,7 @@ export function cmpClient(
     let f = win;
     let cmpFrame;
     let isDirect = false;
-    while (true) {
+    while (f != null) {
       try {
         if (typeof f[apiName] === 'function') {
           cmpFrame = f;
