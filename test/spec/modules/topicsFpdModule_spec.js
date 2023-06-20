@@ -8,6 +8,7 @@ import {
   reset,
   topicStorageName
 } from '../../../modules/topicsFpdModule.js';
+import {config} from 'src/config.js';
 import {deepClone, safeJSONParse} from '../../../src/utils.js';
 import {getCoreStorageManager} from 'src/storageManager.js';
 import {config} from 'src/config.js';
@@ -412,5 +413,91 @@ describe('topics', () => {
         expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
       });
     });
+  });
+});
+
+describe('handles fetch request for topics api headers', () => {
+  let stubbedFetch;
+  const storage = getCoreStorageManager('topicsFpd');
+
+  beforeEach(() => {
+    stubbedFetch = sinon.stub(window, 'fetch');
+  });
+
+  afterEach(() => {
+    stubbedFetch.restore();
+    storage.removeDataFromLocalStorage(topicStorageName);
+  });
+
+  it('should make a fetch call when a fetchUrl is present for a selected bidder', () => {
+    config.setConfig({
+      userSync: {
+        topics: {
+          maxTopicCaller: 3,
+          bidders: [
+            {
+              bidder: 'pubmatic',
+              fetchUrl: 'http://localhost:3000/topics-server.js'
+            }
+          ],
+        },
+      }
+    });
+
+    stubbedFetch.returns(Promise.resolve(true));
+    loadTopicsForBidders();
+    sinon.assert.calledOnce(stubbedFetch);
+    stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
+  });
+
+  it('should not make a fetch call when a fetchUrl is not present for a selected bidder', () => {
+    config.setConfig({
+      userSync: {
+        topics: {
+          maxTopicCaller: 3,
+          bidders: [
+            {
+              bidder: 'pubmatic'
+            }
+          ],
+        },
+      }
+    });
+
+    loadTopicsForBidders();
+    sinon.assert.notCalled(stubbedFetch);
+  });
+
+  it('a fetch request should not be made if the configured fetch rate duration has not yet passed', () => {
+    const storedSegments = JSON.stringify(
+      [['pubmatic', {
+        '2206021246': {
+          'ext': {'segtax': 600, 'segclass': '2206021246'},
+          'segment': [{'id': '243'}, {'id': '265'}],
+          'name': 'ads.pubmatic.com'
+        },
+        'lastUpdated': new Date().getTime()
+      }]]
+    );
+
+    storage.setDataInLocalStorage(topicStorageName, storedSegments);
+
+    config.setConfig({
+      userSync: {
+        topics: {
+          maxTopicCaller: 3,
+          bidders: [
+            {
+              bidder: 'pubmatic',
+              fetchUrl: 'http://localhost:3000/topics-server.js',
+              fetchRate: 1 // in days.  1 fetch per day
+            }
+          ],
+        },
+      }
+    });
+
+    loadTopicsForBidders();
+    sinon.assert.notCalled(stubbedFetch);
   });
 });

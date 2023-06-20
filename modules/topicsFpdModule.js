@@ -86,6 +86,7 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
           if (name != null) {
             datum.name = name;
           }
+
           return datum;
         })
     );
@@ -237,7 +238,7 @@ export function loadTopicsForBidders(doc = document) {
         const bidderLsEntry = storedSegments.get(bidder);
 
         if (!bidderLsEntry || (bidderLsEntry && isCachedDataExpired(bidderLsEntry[lastUpdated], fetchRate || DEFAULT_FETCH_RATE_IN_DAYS))) {
-          fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
+          window.fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
             .then(response => {
               return response.json();
             })
