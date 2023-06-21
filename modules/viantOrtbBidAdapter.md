@@ -2,7 +2,7 @@
 
 Module Name: VIANT Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: tkrishna@viantinc.com
+Maintainer: dist-runtime@viantinc.com
 
 # Description
 
