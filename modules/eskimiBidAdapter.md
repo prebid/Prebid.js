@@ -6,29 +6,48 @@ Maintainer: tech@eskimi.com
 
 # Description
 
-An adapter to get a bid from Eskimi DSP.
+Module that connects to Eskimi demand sources to fetch bids using OpenRTB standard.
+Banner and video formats are supported.
 
 # Test Parameters
 ```javascript
     var adUnits = [{
-       code: 'div-gpt-ad-1460505748561-0',
-       mediaTypes: {
-           banner: {
-               sizes: [[300, 250], [300, 600]]
-           }
-       },
-       
-       bids: [{
-           bidder: 'eskimi',
-           params: {
-               placementId: 612
-           }
-       }]
-
-   }];
+        code: '/19968336/prebid_banner_example_1',
+        mediaTypes: {
+            banner: {
+                sizes: [[ 300, 250 ]],
+                ... // battr
+            }
+        },
+        bids: [{
+            bidder: 'eskimi',
+            params: {
+                placementId: 612,
+                ... // bcat, badv, bapp
+            }
+        }]
+    }, {
+        code: '/19968336/prebid_video_example_1',
+        mediaTypes: {
+            video: {
+                context: 'outstream',
+                mimes: ['video/mp4'],
+                api: [1, 2, 4, 6],
+                ... // Aditional ORTB video params (including battr)
+            }
+        },
+        bids: [{
+            bidder: 'eskimi',
+            params: {
+                placementId: 612,
+                ... // bcat, badv, bapp
+            }
+        }]
+    }];
 ```
 
 Where:
 
 * placementId - Placement ID of the ad unit (required)
+* bcat, badv, bapp, battr - ORTB blocking parameters as specified by OpenRTB 2.5
 

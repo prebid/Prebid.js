@@ -389,11 +389,11 @@ describe('IndexexchangeAdapter', function () {
         ext: {
           tid: '173f49a8-7549-4218-a23c-e7ba59b47230',
           data: {
-            pbadslot: 'div-gpt-ad-1460505748562-0'
+            pbadslot: 'div-gpt-ad-1460505748562-1'
           }
         }
       },
-      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      adUnitCode: 'div-gpt-ad-1460505748562-1',
       transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
@@ -725,6 +725,14 @@ describe('IndexexchangeAdapter', function () {
     refererInfo: {
       page: 'https://www.prebid.org',
       canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
+      }
     }
   };
 
@@ -1889,7 +1897,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
-      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
+      expect(payload.source.tid).to.equal(DEFAULT_OPTION.ortb2.source.tid);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -2135,7 +2143,7 @@ describe('IndexexchangeAdapter', function () {
 
         const requestWithFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
         const pageUrl = extractPayload(requestWithFirstPartyData).site.page;
-        const expectedPageUrl = DEFAULT_OPTION.refererInfo.page + '?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
+        const expectedPageUrl = DEFAULT_OPTION.ortb2.site.page + '/?ab=123&cd=123%23ab&e%2Ff=456&h%3Fg=456%23cd';
         expect(pageUrl).to.equal(expectedPageUrl);
       });
 
@@ -2230,6 +2238,66 @@ describe('IndexexchangeAdapter', function () {
         const requestStringTimeout = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
 
         expect(requestStringTimeout.data.t).to.be.undefined;
+      });
+    });
+
+    describe('getIxFirstPartyDataPageUrl', () => {
+      beforeEach(() => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+      });
+
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('should return the modified URL with first party data query parameters appended', () => {
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
+      });
+
+      it('should return the modified URL with first party data query parameters appended but not duplicated', () => {
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'https://www.prebid.org/?key1=value1'
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
+      });
+
+      it('should not overwrite existing query parameters with first party data', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'https://www.prebid.org/?key1=existingValue1'
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=existingValue1&key2=value2');
+      });
+
+      it('should return the original URL if no first party data is available', () => {
+        config.setConfig({ ix: {} });
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org');
+      });
+
+      it('should return the original URL referer page url if ortb2 does not exist', () => {
+        config.setConfig({ ix: {} });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        delete bidderRequest.ortb2;
+        bidderRequest.refererInfo.page = 'https://example.com';
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://example.com');
+      });
+
+      it('should use referer URL if the provided ortb2.site.page URL is not valid', () => {
+        config.setConfig({ ix: { firstPartyData: { key1: 'value1', key2: 'value2' } } });
+        const bidderRequest = deepClone(DEFAULT_OPTION);
+        bidderRequest.ortb2.site.page = 'www.invalid-url*&?.com';
+        bidderRequest.refererInfo.page = 'https://www.prebid.org';
+        const requestWithIXFirstPartyData = spec.buildRequests(DEFAULT_BANNER_VALID_BID, bidderRequest)[0];
+        const pageUrl = extractPayload(requestWithIXFirstPartyData).site.page;
+        expect(pageUrl).to.equal('https://www.prebid.org/?key1=value1&key2=value2');
       });
     });
 
@@ -2367,9 +2435,11 @@ describe('IndexexchangeAdapter', function () {
       bid1.bidId = '2f6g5s5e';
 
       const bid2 = utils.deepClone(bid1);
+      bid2.adUnitCode = 'div-gpt-2'
       bid2.transactionId = 'tr2';
       bid2.mediaTypes.banner.sizes = [[220, 221], [222, 223], [300, 250]];
       const bid3 = utils.deepClone(bid1);
+      bid3.adUnitCode = 'div-gpt-3'
       bid3.transactionId = 'tr3';
       bid3.mediaTypes.banner.sizes = [[330, 331], [332, 333], [300, 250]];
 
@@ -2505,6 +2575,36 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.video.placement).to.equal(2);
     });
 
+    it('should use plcmt value when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = 2;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.equal(2);
+    });
+
+    it('invalid plcmt value when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = 5;
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.be.undefined;
+    });
+
+    it('invalid plcmt value string when set in video.params', function () {
+      const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
+      bid.params.video.plcmt = '4';
+      const request = spec.buildRequests([bid], {})[0];
+      const impression = extractPayload(request).imp[0];
+
+      expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
+      expect(impression.video.plcmt).to.be.undefined;
+    });
+
     it('should set imp.ext.sid for video imps if params.id exists', function () {
       const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID[0]);
       bid.params.id = 50;
@@ -2531,7 +2631,8 @@ describe('IndexexchangeAdapter', function () {
       const impression = extractPayload(request).imp[0];
 
       expect(impression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
-      expect(impression.video.placement).to.equal(4);
+      expect(impression.video.placement).to.equal(3);
+      expect(extractPayload(request).ext.ixdiag.vpd).to.equal(true);
     });
 
     it('should handle unexpected context', function () {

@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxOrtbBidAdapter.js';
+import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';

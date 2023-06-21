@@ -170,6 +170,19 @@ describe('sovrnBidAdapter', function() {
         expect(payload.site.domain).to.equal('example.com')
       })
 
+      it('sets correct timeout', function() {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          bidderCode: 'sovrn',
+          auctionId: '1d1a030790a475',
+          bidderRequestId: '22edbae2733bf6',
+          timeout: 3000,
+          bids: [baseBidRequest]
+        }
+        const payload = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+        expect(payload.tmax).to.equal(3000)
+      })
+
       it('includes the ad unit code in the request', function() {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')
@@ -246,6 +259,71 @@ describe('sovrnBidAdapter', function() {
       const data = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
 
       expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent)
+    })
+
+    it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        gppConsent: {
+          gppString: 'gppstring',
+          applicableSections: [8]
+        },
+        bids: [baseBidRequest]
+      }
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.gpp).to.equal('gppstring')
+      expect(regs.gpp_sid).to.be.an('array')
+      expect(regs.gpp_sid).to.include(8)
+    })
+
+    it('should not send gpp info when gppConsent is not defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.gpp).to.be.undefined
+    })
+
+    it('should send gdpr info even when gppConsent defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+        gppConsent: {
+          gppString: 'gppstring',
+          applicableSections: [8]
+        },
+        bids: [baseBidRequest]
+      }
+
+      const { regs, user } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+
+      expect(regs.ext.gdpr).to.exist.and.to.be.a('number')
+      expect(regs.ext.gdpr).to.equal(1)
+      expect(user.ext.consent).to.exist.and.to.be.a('string')
+      expect(user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
+      expect(regs.gpp).to.equal('gppstring')
+      expect(regs.gpp_sid).to.be.an('array')
+      expect(regs.gpp_sid).to.include(8)
     })
 
     it('should add schain if present', function() {

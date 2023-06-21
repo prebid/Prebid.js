@@ -303,6 +303,7 @@ export const spec = {
         };
 
     const payload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       a: bidderRequest.auctionId,
       B: 0,
       b: loc.host,

@@ -53,7 +53,7 @@ describe('Invisibly Analytics Adapter test suite', function () {
       hb_source: 'server',
     },
     getStatusCode() {
-      return CONSTANTS.STATUS.NO_BID;
+      return CONSTANTS.STATUS.GOOD;
     },
   };
 

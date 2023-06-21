@@ -134,13 +134,24 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     });
 }
 
-export function setGlobalOrtb2Sda(ortb2Fragments, data, segtaxid, cattaxid) {
+export function pushToOrtb2(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
   try {
     if (!isEmpty(data.segments)) {
-      applyGlobalOrtb2Sda(ortb2Fragments, 'user', data.segments, segtaxid);
+      if (segtaxid) {
+        setOrtb2Sda(ortb2Fragments, bidder, 'user', data.segments, segtaxid);
+      } else {
+        setOrtb2(ortb2Fragments, bidder, 'user.ext.data', {sd_rtd: {segments: data.segments}});
+      }
     }
     if (!isEmpty(data.categories)) {
-      applyGlobalOrtb2Sda(ortb2Fragments, 'site', data.categories, cattaxid);
+      if (cattaxid) {
+        setOrtb2Sda(ortb2Fragments, bidder, 'site', data.categories, cattaxid);
+      } else {
+        setOrtb2(ortb2Fragments, bidder, 'site.ext.data', {sd_rtd: {categories: data.categories}});
+      }
+    }
+    if (!isEmpty(data.categories_score) && !cattaxid) {
+      setOrtb2(ortb2Fragments, bidder, 'site.ext.data', {sd_rtd: {categories_score: data.categories_score}});
     }
   } catch (e) {
     logError(e)
@@ -148,7 +159,7 @@ export function setGlobalOrtb2Sda(ortb2Fragments, data, segtaxid, cattaxid) {
   return true;
 }
 
-export function applyGlobalOrtb2Sda(ortb2Fragments, type, segments, segtaxValue) {
+export function setOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue) {
   try {
     let ortb2Data = [{
       name: ORTB2_NAME,
@@ -158,6 +169,9 @@ export function applyGlobalOrtb2Sda(ortb2Fragments, type, segments, segtaxValue)
       ortb2Data[0].ext = { segtax: segtaxValue };
     }
     let ortb2Conf = (type == 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
+    if (bidder) {
+      ortb2Conf = {[bidder]: ortb2Conf};
+    }
     mergeDeep(ortb2Fragments, ortb2Conf);
   } catch (e) {
     logError(e)
@@ -165,43 +179,15 @@ export function applyGlobalOrtb2Sda(ortb2Fragments, type, segments, segtaxValue)
   return true;
 }
 
-export function setBidderOrtb2Sda(ortb2Fragments, bidder, data, segtaxid, cattaxid) {
+export function setOrtb2(ortb2Fragments, bidder, path, segments) {
   try {
-    if (!isEmpty(data.segments)) {
-      applyBidderOrtb2Sda(ortb2Fragments, bidder, 'user', data.segments, segtaxid);
-    }
-    if (!isEmpty(data.categories)) {
-      applyBidderOrtb2Sda(ortb2Fragments, bidder, 'site', data.categories, cattaxid);
-    }
-  } catch (e) {
-    logError(e)
-  }
-  return true;
-}
-
-export function applyBidderOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue) {
-  try {
-    let ortb2Data = [{
-      name: ORTB2_NAME,
-      segment: segments.map((segmentId) => ({ id: segmentId })),
-    }];
-    if (segtaxValue) {
-      ortb2Data[0].ext = { segtax: segtaxValue };
-    }
-    let ortb2Conf = (type == 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
-    mergeDeep(ortb2Fragments, {[bidder]: ortb2Conf});
-  } catch (e) {
-    logError(e)
-  }
-  return true;
-}
-
-export function setBidderOrtb2(bidderOrtb2Fragments, bidder, path, segments) {
-  try {
-    if (isEmpty(segments)) { return; }
+    if (isEmpty(segments)) { return false; }
     let ortb2Conf = {};
     deepSetValue(ortb2Conf, path, segments || {});
-    mergeDeep(bidderOrtb2Fragments, {[bidder]: ortb2Conf});
+    if (bidder) {
+      ortb2Conf = {[bidder]: ortb2Conf};
+    }
+    mergeDeep(ortb2Fragments, ortb2Conf);
   } catch (e) {
     logError(e)
   }
@@ -221,15 +207,22 @@ export function loadCustomFunction(todo, adUnit, list, data, bid) {
 }
 
 export function getSegAndCatsArray(data, minScore, pid) {
-  let sirdataData = {'segments': [], 'categories': []};
+  let sirdataData = {'segments': [], 'categories': [], 'categories_score': {}};
   minScore = minScore && typeof minScore == 'number' ? minScore : 30;
+  let cattaxid = data.cattaxid || null;
+  let segtaxid = data.segtaxid || null;
   try {
     if (data && data.contextual_categories) {
       for (let catId in data.contextual_categories) {
         if (data.contextual_categories.hasOwnProperty(catId) && data.contextual_categories[catId]) {
           let value = data.contextual_categories[catId];
           if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
-            sirdataData.categories.push((pid ? pid.toString() + 'cc' : '') + catId.toString());
+            if (pid && cattaxid) {
+              sirdataData.categories.push(pid.toString() + 'cc' + catId.toString());
+            } else {
+              sirdataData.categories.push(catId.toString());
+              sirdataData.categories_score[catId] = value;
+            }
           }
         }
       }
@@ -241,9 +234,16 @@ export function getSegAndCatsArray(data, minScore, pid) {
     if (data && data.segments) {
       for (let segId in data.segments) {
         if (data.segments.hasOwnProperty(segId) && data.segments[segId]) {
-          sirdataData.segments.push((pid ? pid.toString() + 'us' : '') + data.segments[segId].toString());
+          let id = data.segments[segId].toString();
           if (pid && CONTEXT_ONLY) {
-            sirdataData.categories.push(pid.toString() + 'uc' + data.segments[segId].toString());
+            if (segtaxid) {
+              sirdataData.categories.push(pid.toString() + 'uc' + id);
+            } else {
+              sirdataData.categories.push(id);
+              sirdataData.categories_score[id] = 100;
+            }
+          } else {
+            sirdataData.segments.push((pid && segtaxid) ? pid.toString() + 'us' + id : id);
           }
         }
       }
@@ -254,12 +254,12 @@ export function getSegAndCatsArray(data, minScore, pid) {
   return sirdataData;
 }
 
-export function applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
+export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
   // only share SDA data if whitelisted
   if (!biddersParamsExist || indexFound) {
     // SDA Publisher
     let sirdataDataForSDA = getSegAndCatsArray(data, minScore, moduleConfig.params.partnerId);
-    setBidderOrtb2Sda(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
+    pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
   }
 
   // always share SDA for curation
@@ -268,30 +268,31 @@ export function applySdaGetSpecificData(data, sirdataList, biddersParamsExist, m
     // seller defined audience & bidder specific data
     if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
       // Get Bidder Specific Data
-      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, null);
-      sirdataList = sirdataList.concat(curationData.segments).concat(curationData.categories);
-
-      // SDA Partners
-      let curationDataForSDA = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, curationId);
-      setBidderOrtb2Sda(reqBids.ortb2Fragments?.bidder, bid.bidder, curationDataForSDA, data.shared_taxonomy[curationId].segtaxid, data.shared_taxonomy[curationId].cattaxid);
+      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, curationId);
+      pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, curationData, data.shared_taxonomy[curationId].segtaxid, data.shared_taxonomy[curationId].cattaxid);
     }
   }
 
   // Apply custom function or return Bidder Specific Data if publisher is ok
-  if (sirdataList && sirdataList.length > 0 && (!biddersParamsExist || indexFound)) {
+  if (!biddersParamsExist || indexFound) {
     if (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('customFunction')) {
-      return loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataList, data, bid);
+      return loadCustomFunction(moduleConfig.params.bidders[bidderIndex].customFunction, adUnit, sirdataData, data, bid);
     } else {
-      return sirdataList;
+      return sirdataData;
     }
   }
 }
 
-export function applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
-  let specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-  if (specificData && specificData.length > 0) {
-    setBidderOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {sd_rtd: specificData});
+export function applySdaAndDefaultSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
+  sirdataData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+  /*
+  if (sirdataData.segments && sirdataData.segments.length > 0) {
+    setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {sd_rtd: sirdataData.segments});
   }
+  if (sirdataData.categories && sirdataData.categories.length > 0) {
+    setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'site.ext.data', {sd_rtd: sirdataData.categories});
+  }
+  */
 }
 
 export function addSegmentData(reqBids, data, moduleConfig, onDone) {
@@ -301,17 +302,15 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
   var sirdataData = getSegAndCatsArray(data, globalMinScore, null);
 
-  const sirdataList = sirdataData.segments.concat(sirdataData.categories);
-
   const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
 
   // Global ortb2 SDA
   if (data.global_taxonomy && !isEmpty(data.global_taxonomy)) {
-    let globalData = {'segments': [], 'categories': []};
+    let globalData = {'segments': [], 'categories': [], 'categories_score': []};
     for (let i in data.global_taxonomy) {
       if (!isEmpty(data.global_taxonomy[i])) {
         globalData = getSegAndCatsArray(data.global_taxonomy[i], globalMinScore, null);
-        setGlobalOrtb2Sda(reqBids.ortb2Fragments?.global, globalData, data.global_taxonomy[i].segtaxid, data.global_taxonomy[i].cattaxid);
+        pushToOrtb2(reqBids.ortb2Fragments?.global, null, globalData, data.global_taxonomy[i].segtaxid, data.global_taxonomy[i].cattaxid);
       }
     }
   }
@@ -320,15 +319,17 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
     try {
       let gptCurationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : (partnerIds['sdRtdForGpt'] ? partnerIds['sdRtdForGpt'] : null));
-      let sirdataMergedList = sirdataList;
+      let sirdataMergedList = sirdataData.segments.concat(sirdataData.categories);
       if (gptCurationId && data.shared_taxonomy && data.shared_taxonomy[gptCurationId]) {
         let gamCurationData = getSegAndCatsArray(data.shared_taxonomy[gptCurationId], globalMinScore, null);
         sirdataMergedList = sirdataMergedList.concat(gamCurationData.segments).concat(gamCurationData.categories);
       }
-      window.googletag.pubads().getSlots().forEach(function (n) {
-        if (typeof n.setTargeting !== 'undefined' && sirdataMergedList && sirdataMergedList.length > 0) {
-          n.setTargeting('sd_rtd', sirdataMergedList);
-        }
+      window.googletag.cmd.push(function() {
+        window.googletag.pubads().getSlots().forEach(function (n) {
+          if (typeof n.setTargeting !== 'undefined' && sirdataMergedList && sirdataMergedList.length > 0) {
+            n.setTargeting('sd_rtd', sirdataMergedList);
+          }
+        });
       });
     } catch (e) {
       logError(e);
@@ -340,10 +341,6 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   var indexFound = false;
 
   adUnits.forEach(adUnit => {
-    if (!biddersParamsExist && !deepAccess(adUnit, 'ortb2Imp.ext.data.sd_rtd')) {
-      deepSetValue(adUnit, 'ortb2Imp.ext.data.sd_rtd', sirdataList);
-    }
-
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
       bidderIndex = (moduleConfig.params.hasOwnProperty('bidders') ? findIndex(moduleConfig.params.bidders, function (i) {
         return i.bidder === bid.bidder;
@@ -351,7 +348,6 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore);
-        let specificData = null;
 
         switch (bid.bidder) {
           case 'appnexus':
@@ -370,87 +366,18 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
           case 'msq_classic':
           case 'msq_max':
           case '366_apx':
-            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-            if (specificData && specificData.length > 0) {
-              deepSetValue(bid, 'params.keywords.sd_rtd', specificData);
+            sirdataData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+            if (sirdataData.segments && sirdataData.segments.length > 0) {
+              setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', 'sd_rtd=' + sirdataData.segments.join(',sd_rtd='));
             }
-            break;
-
-          case 'smartadserver':
-          case 'smart':
-            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-            if (specificData && specificData.length > 0) {
-              var target = [];
-              if (bid.hasOwnProperty('params') && bid.params.hasOwnProperty('target')) {
-                target.push(bid.params.target);
-              }
-              specificData.forEach(function (entry) {
-                if (target.indexOf('sd_rtd=' + entry) === -1) {
-                  target.push('sd_rtd=' + entry);
-                }
-              });
-              deepSetValue(bid, 'params.target', target.join(';'));
+            if (sirdataData.categories && sirdataData.categories.length > 0) {
+              setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'site.content.keywords', 'sd_rtd=' + sirdataData.categories.join(',sd_rtd='));
             }
-            break;
-
-          case 'ix':
-            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-            let ixConfig = config.getConfig('ix.firstPartyData.sd_rtd');
-            if (!ixConfig && specificData && specificData.length > 0) {
-              let cappIxCategories = [];
-              let ixLength = 0;
-              let ixLimit = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('sizeLimit') ? moduleConfig.params.bidders[bidderIndex].sizeLimit : 1000);
-              // Push ids For publisher use and for curation if exists but limit size because the bidder uses GET parameters
-              specificData.forEach(function (entry) {
-                if (ixLength < ixLimit) {
-                  cappIxCategories.push(entry);
-                  ixLength += entry.toString().length;
-                }
-              });
-              config.setConfig({ix: {firstPartyData: {sd_rtd: cappIxCategories}}});
-            }
-            break;
-
-          case 'proxistore':
-            specificData = applySdaGetSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-            if (specificData && specificData.length > 0) {
-              let psCurationId = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('curationId') ? moduleConfig.params.bidders[bidderIndex].curationId : (partnerIds[bid.bidder] ? partnerIds[bid.bidder] : null));
-              if (!data.shared_taxonomy || !data.shared_taxonomy[psCurationId]) {
-                data.shared_taxonomy[psCurationId] = {segments: [], contextual_categories: {}, segtaxid: null, cattaxid: null};
-              }
-              let psCurationData = getSegAndCatsArray(data.shared_taxonomy[psCurationId], minScore, null);
-              setBidderOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {
-                segments: sirdataData.segments.concat(psCurationData.segments),
-                contextual_categories: {...data.contextual_categories, ...data.shared_taxonomy[psCurationId].contextual_categories}
-              });
-            }
-            break;
-
-          case 'rubicon':
-          case 'criteo':
-          case 'triplelift':
-          case 'smaato':
-          case 'yahoossp':
-          case 'openx':
-          case 'pubmatic':
-          case 'smilewanted':
-          case 'taboola':
-          case 'ttd':
-          case 'zeta_global':
-          case 'zeta_global_ssp':
-          case 'teads':
-          case 'conversant':
-          case 'improvedigital':
-          case 'invibes':
-          case 'sublime':
-          case 'rtbhouse':
-          case 'mediasquare':
-            applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
             break;
 
           default:
             if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
-              applySdaAndDefaultSpecificData(data, sirdataList, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+              applySdaAndDefaultSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
             }
         }
       } catch (e) {
