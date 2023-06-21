@@ -1,7 +1,8 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, isFn, isStr, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {buildUrl, logError, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
+import * as utils from 'src/utils.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
@@ -180,12 +181,17 @@ function buildRequest(validBidRequests, bidderRequest) {
   logInfo('buildRequest: ', bid);
 
   let userId = null;
+  if (window.qid) {
+    userId = window.qid;
+  }
+
   if (bid.userId && bid.userId.qid) {
     userId = bid.userId.qid
   }
 
   if (!userId) {
-    userId = Math.floor(Math.random() * validBidRequests[0].sizes.length);
+    // onetime User ID
+    userId = (utils.getUniqueIdentifierStr() + utils.getUniqueIdentifierStr()).substring(0, 22);
     window.qid = userId;
   }
 
@@ -197,8 +203,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   return {
     v: '$prebid.version$',
     placementCode: bid.params.placementId,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    auctionId: bid.auctionId,
+    auctionId: null,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
     bidQid: userId,
