@@ -1,4 +1,15 @@
-import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, isNumber, logError, logInfo} from '../src/utils.js';
+import {
+  _each,
+  contains,
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  isBoolean,
+  isNumber,
+  isStr,
+  logError,
+  logInfo
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -164,6 +175,7 @@ function buildWinNotice(bid) {
     impid: deepAccess(bid, 'meta.impid'),
     dsp_id: deepAccess(bid, 'meta.dsp_id'),
     adUnitCode: bid.adUnitCode,
+    // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     transactionId: bid.transactionId,
     ttl: bid.ttl,
@@ -201,7 +213,7 @@ function getMediaType(bidRequest) {
 function getPrebidRequestFields(bidderRequest, bidRequests) {
   const payload = {};
   // Base Payload Data
-  deepSetValue(payload, 'id', bidderRequest.auctionId);
+  deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
   // Impressions
   setPrebidImpressionObject(bidRequests, payload);
   // Device
@@ -231,7 +243,8 @@ function setPrebidImpressionObject(bidRequests, payload) {
     // Placement or ad tag used to initiate the auction
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
-    deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // TODO: `imp.tid` is not ORTB, is this intentional?
+    deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'ortb2Imp.ext.tid'));
     // placement id
     deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
     // Publisher id

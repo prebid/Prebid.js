@@ -10,8 +10,8 @@ const allAdUnits = [];
 export const oxxionSubmodule = {
   name: 'oxxionRtd',
   init: init,
-  onAuctionEndEvent: onAuctionEnd,
   getBidRequestData: getAdUnits,
+  onBidResponseEvent: insertVideoTracking,
 };
 
 function init(config, userConsent) {
@@ -32,8 +32,10 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
   }
 }
 
-function insertVideoTracking(bidResponse, config, maxCpm) {
+function insertVideoTracking(bidResponse, config, userConsent) {
+  // this should only be do for video bids
   if (bidResponse.mediaType === 'video') {
+    let maxCpm = 0;
     const trackingUrl = getImpUrl(config, bidResponse, maxCpm);
     if (!trackingUrl) {
       return;
@@ -42,7 +44,8 @@ function insertVideoTracking(bidResponse, config, maxCpm) {
     if (bidResponse.vastUrl) {
       bidResponse.vastImpUrl = bidResponse.vastImpUrl
         ? trackingUrl + '&url=' + encodeURI(bidResponse.vastImpUrl)
-        : trackingUrl
+        : trackingUrl;
+      logInfo(LOG_PREFIX + 'insert into vastImpUrl for adId ' + bidResponse.adId);
     }
     // Vast XML document
     if (bidResponse.vastXml !== undefined) {
@@ -87,33 +90,8 @@ function getImpUrl(config, data, maxCpm) {
     }
     return acc;
   }, '');
-  const cpmIncrement = Math.round(100000 * (data.cpm - maxCpm)) / 100000;
+  const cpmIncrement = 0.0;
   return trackingImpUrl + 'cpmIncrement=' + cpmIncrement + '&context=' + context;
-}
-
-function onAuctionEnd(auctionDetails, config, userConsent) {
-  const transactionsToCheck = {}
-  auctionDetails.adUnits.forEach(adunit => {
-    if (config.params.contexts.includes(deepAccess(adunit, 'mediaTypes.video.context'))) {
-      transactionsToCheck[adunit.transactionId] = {'bids': {}, 'maxCpm': 0.0, 'secondMaxCpm': 0.0};
-    }
-  });
-  for (const key in auctionDetails.bidsReceived) {
-    if (auctionDetails.bidsReceived[key].transactionId in transactionsToCheck) {
-      transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['bids'][auctionDetails.bidsReceived[key].adId] = {'key': key, 'cpm': auctionDetails.bidsReceived[key].cpm};
-      if (auctionDetails.bidsReceived[key].cpm > transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['maxCpm']) {
-        transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['secondMaxCpm'] = transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['maxCpm'];
-        transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['maxCpm'] = auctionDetails.bidsReceived[key].cpm;
-      } else if (auctionDetails.bidsReceived[key].cpm > transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['secondMaxCpm']) {
-        transactionsToCheck[auctionDetails.bidsReceived[key].transactionId]['secondMaxCpm'] = auctionDetails.bidsReceived[key].cpm;
-      }
-    }
-  };
-  Object.keys(transactionsToCheck).forEach(transaction => {
-    Object.keys(transactionsToCheck[transaction]['bids']).forEach(bid => {
-      insertVideoTracking(auctionDetails.bidsReceived[transactionsToCheck[transaction]['bids'][bid].key], config, transactionsToCheck[transaction].secondMaxCpm);
-    });
-  });
 }
 
 submodule('realTimeData', oxxionSubmodule);

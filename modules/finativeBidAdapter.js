@@ -1,11 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE } from '../src/mediaTypes.js';
-import { _map, deepSetValue, isEmpty, deepAccess } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {NATIVE} from '../src/mediaTypes.js';
+import {_map, deepAccess, deepSetValue, isEmpty} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'finative';
 const DEFAULT_CUR = 'EUR';
@@ -63,7 +63,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = bidderRequest.auctionId;
+    const tid = bidderRequest.ortb2?.source?.tid;
     const cur = [config.getConfig('currency.adServerCurrency') || DEFAULT_CUR];
     let url = bidderRequest.refererInfo.referer;
 
@@ -104,6 +104,7 @@ export const spec = {
       return {
         id: String(id + 1),
         tagid: bid.params.adUnitId,
+        // TODO: `tid` is not under `imp` in ORTB, is this intentional?
         tid: tid,
         pt: pt,
         native: {
@@ -115,7 +116,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         page: url
       },
@@ -174,7 +175,6 @@ export const spec = {
             netRevenue: (!bid.netRevenue || bid.netRevenue === 'net'),
             currency: cur,
             mediaType: NATIVE,
-            bidderCode: BIDDER_CODE,
             native: parseNative(bidResponse),
             meta: {
               advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []

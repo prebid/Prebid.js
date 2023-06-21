@@ -8,7 +8,7 @@ export const spec = {
   code: 'vrtcal',
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    if (bid.bidId == '' || bid.auctionId == '') { return false; } else { return true; }// No extras params required
+    return true;
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
@@ -91,6 +91,11 @@ export const spec = {
       } else {
         params.imp[0].banner.w = bid.sizes[0][0];
         params.imp[0].banner.h = bid.sizes[0][1];
+      }
+
+      if (bid.ortb2?.regs?.gpp) {
+        params.regs.ext.gpp = bid.ortb2.regs.gpp;
+        params.regs.ext.gpp_sid = bid.ortb2.regs.gpp_sid;
       }
 
       return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};

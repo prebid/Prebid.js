@@ -37,9 +37,10 @@ export const spec = {
         url: encodeURIComponent(window.location.href),
         bidderRequestId: bidRequest.bidderRequestId,
         adUnitCode: bidRequest.adUnitCode,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidRequest.auctionId,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         device: encodeURIComponent(JSON.stringify(getDeviceData())),
         sizes,
         aimXR,
