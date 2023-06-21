@@ -2332,6 +2332,78 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    describe('video request should set displaymanager', () => {
+      it('ix renderer preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('ix renderer not preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
+      });
+      it('ix renderer not preferrered - bad url', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('renderer url provided and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://js-sec.indexww.rendererplayer.com',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('renderer url undefined and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('schain', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = SAMPLE_SCHAIN;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
+      });
+    });
+
     describe('request should contain both banner and native requests', function () {
       const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
 
