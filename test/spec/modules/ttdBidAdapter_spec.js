@@ -223,7 +223,11 @@ describe('ttdBidAdapter', function () {
     const baseBidderRequestReferer = detectReferer(testWindow)();
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -320,10 +324,10 @@ describe('ttdBidAdapter', function () {
       expect(requestBody.imp[0].rwdd).to.equal(1);
     });
 
-    it('sends auction id in source.tid', function () {
+    it('sends source.tid', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
     });
 
     it('includes the ad size in the bid request', function () {
@@ -756,7 +760,11 @@ describe('ttdBidAdapter', function () {
 
     const baseBidderRequest = {
       'bidderCode': 'ttd',
-      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      ortb2: {
+        source: {
+          tid: 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        }
+      },
       'bidderRequestId': '18084284054531',
       'auctionStart': 1540945362095,
       'timeout': 3000,
@@ -776,7 +784,7 @@ describe('ttdBidAdapter', function () {
       const requestBody = testBuildRequests(baseBannerMultipleBidRequests, baseBidderRequest).data;
       expect(requestBody.imp.length).to.equal(2);
       expect(requestBody.source).to.be.not.null;
-      expect(requestBody.source.tid).to.equal(baseBidderRequest.auctionId);
+      expect(requestBody.source.tid).to.equal(baseBidderRequest.ortb2.source.tid);
       expect(requestBody.imp[0].ext).to.be.not.null;
       expect(requestBody.imp[0].ext.tid).to.equal('8651474f-58b1-4368-b812-84f8c937a099');
       expect(requestBody.imp[1].ext).to.be.not.null;

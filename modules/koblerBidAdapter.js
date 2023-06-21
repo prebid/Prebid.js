@@ -90,6 +90,7 @@ export const onTimeout = function (timeoutDataArray) {
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
@@ -126,7 +127,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest)
   const request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     tmax: timeout,
     cur: [SUPPORTED_CURRENCY],

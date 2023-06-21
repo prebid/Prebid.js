@@ -28,7 +28,10 @@ export const lastUpdated = 'lastUpdated';
 const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
-  '1': 600
+  '1': 600,
+  '2': 601,
+  '3': 602,
+  '4': 603
 }
 
 function partitionBy(field, items) {

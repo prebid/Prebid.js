@@ -201,6 +201,7 @@ export const spec = {
     }
 
     let transformedParams = Object.assign({}, {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
       currency: currency,
