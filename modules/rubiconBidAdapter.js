@@ -383,6 +383,8 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'us_privacy',
+      'gpp',
+      'gpp_sid',
       'rp_schain',
     ].concat(Object.keys(params).filter(item => containsUId.test(item)))
       .concat([
