@@ -1,6 +1,5 @@
 import {submodule} from '../src/hook.js';
 import {isFn, logError, deepAccess, deepSetValue, logInfo, logWarn} from '../src/utils.js';
-import {gppDataHandler} from '../src/adapterManager.js';
 import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
@@ -40,14 +39,15 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
         lastfix: geolocation.timestamp,
         type: 1
       });
+      logInfo('geolocation was successfully received ', requestBidsObject.ortb2Fragments.global.device.geo)
     }
-    logInfo('geolocation was successfully received ', requestBidsObject.ortb2Fragments.global.device.geo)
     onDone();
   }
+  onDone();
 }
 function init(moduleConfig) {
   geolocation = void 0;
-  if (!isFn(navigator?.permissions?.query) || !isFn(navigator?.geolocation?.getCurrentPosition)) {
+  if (!isActivityAllowed(ACTIVITY_TRANSMIT_PRECISE_GEO, activityParams(MODULE_TYPE_RTD, 'geolocation')) || !isFn(navigator?.permissions?.query) || !isFn(navigator?.geolocation?.getCurrentPosition)) {
     logError('geolocation is not defined');
     permissionsAvailable = false;
   } else {

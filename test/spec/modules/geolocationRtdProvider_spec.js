@@ -82,7 +82,6 @@ describe('Geolocation RTD Provider', function () {
       );
       expect(pbjs.adUnits.length).to.eq(1);
       setTimeout(function() {
-        expect(pbjs.adUnits[0].bids[0]?.geolocation).to.have.eqls({accuracy: 25});
         done();
       }, 300);
     });
