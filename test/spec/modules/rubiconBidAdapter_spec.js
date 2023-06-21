@@ -3682,7 +3682,16 @@ describe('the rubicon adapter', function () {
         gppString: 'foo',
         applicableSections: [2]
       })).to.deep.equal({
-        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid[]=2`
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2`
+      });
+    });
+
+    it('should pass multiple sid\'s when multiple are present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {
+        gppString: 'foo',
+        applicableSections: [2, 5]
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2,5`
       });
     });
   });

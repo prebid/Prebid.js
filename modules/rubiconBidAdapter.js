@@ -558,7 +558,7 @@ export const spec = {
 
     if (bidderRequest.gppConsent?.gppString) {
       data['gpp'] = bidderRequest.gppConsent.gppString;
-      data['gpp_sid'] = bidderRequest.gppConsent.applicableSections;
+      data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
@@ -723,7 +723,7 @@ export const spec = {
 
       if (gppConsent?.gppString) {
         params['gpp'] = gppConsent.gppString;
-        params['gpp_sid'] = gppConsent.applicableSections;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
       }
 
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
