@@ -185,8 +185,7 @@ function buildRequest(validBidRequests, bidderRequest) {
   }
 
   if (!userId) {
-    userId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    storage.setDataInLocalStorage('qid', userId);
+    userId = Math.floor(Math.random() * validBidRequests[0].sizes.length);
     window.qid = userId;
   }
 
