@@ -100,7 +100,7 @@ describe('Geolocation RTD Provider', function () {
       );
       setTimeout(function() {
         sinon.assert.calledOnce(onDone);
-        expect(requestBidObject.adUnits[0].bids[0]).to.not.have.property('geolocation');
+        expect(requestBidObject).to.not.have.property('ortb2Fragments.global.device.geo');
         done();
       }, 300);
     });

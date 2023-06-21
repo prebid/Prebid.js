@@ -43,7 +43,6 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
     }
     onDone();
   }
-  onDone();
 }
 function init(moduleConfig) {
   geolocation = void 0;
