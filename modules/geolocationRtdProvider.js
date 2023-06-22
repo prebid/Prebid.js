@@ -46,7 +46,7 @@ function getGeolocationData(requestBidsObject, onDone, providerConfig, userConse
 }
 function init(moduleConfig) {
   geolocation = void 0;
-  if (!isFn(navigator?.permissions?.query) || !isFn(navigator?.geolocation?.getCurrentPosition)) {
+  if (!isFn(navigator?.permissions?.query) || !isFn(navigator?.geolocation?.getCurrentPosition || !navigator?.permissions?.query)) {
     logError('geolocation is not defined');
     permissionsAvailable = false;
   } else {

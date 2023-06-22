@@ -60,7 +60,7 @@ describe('Geolocation RTD Provider', function () {
       pbjs.removeAdUnit();
     });
     it('init should return true', function () {
-      expect(geolocationSubmodule.init({})).is.true;
+      navigator && expect(geolocationSubmodule.init({})).is.true;
     });
     it('should set geolocation. (request all)', function(done) {
       navigator.permissions && sandbox.stub(navigator.permissions, 'query').value(() => Promise.resolve({
@@ -68,7 +68,7 @@ describe('Geolocation RTD Provider', function () {
       }));
       navigator.geolocation && sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
         // eslint-disable-next-line standard/no-callback-literal
-        cb({coords: {accuracy: 25}});
+        cb({coords: {lat: 1, lon: 1}});
       });
       pbjs.addAdUnits([utils.deepClone(adUnit)]);
       config.setConfig(rtdConfig);
@@ -82,6 +82,7 @@ describe('Geolocation RTD Provider', function () {
       );
       expect(pbjs.adUnits.length).to.eq(1);
       setTimeout(function() {
+        expect(requestBidObject?.ortb2Fragments?.global.device.geo?.type).to.eq(1);
         done();
       }, 300);
     });
