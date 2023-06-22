@@ -105,15 +105,29 @@ describe('fledgeEnabled', function () {
 
 describe('ortb processors for fledge', () => {
   describe('imp.ext.ae', () => {
-    it('should be removed if fledge is not enabled', () => {
-      const imp = {ext: {ae: 1}};
-      setImpExtAe(imp, {}, {bidderRequest: {}});
-      expect(imp.ext.ae).to.not.exist;
-    })
-    it('should be left intact if fledge is enabled', () => {
-      const imp = {ext: {ae: false}};
-      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
-      expect(imp.ext.ae).to.equal(false);
+    describe('when defaultForSlots is set', () => {
+      it('should be set if fledge is enabled', () => {
+        const imp = {};
+        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
+        expect(imp.ext.ae).to.equal(1);
+      });
+      it('should be left intact if set on adunit and fledge is enabled', () => {
+        const imp = {ext: {ae: false}};
+        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
+        expect(imp.ext.ae).to.equal(false);
+      });
+    });
+    describe('when defaultForSlots is not set', () => {
+      it('should be removed if fledge is not enabled', () => {
+        const imp = {ext: {ae: 1}};
+        setImpExtAe(imp, {}, {bidderRequest: {}});
+        expect(imp.ext.ae).to.not.exist;
+      })
+      it('should be left intact if fledge is enabled', () => {
+        const imp = {ext: {ae: false}};
+        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
+        expect(imp.ext.ae).to.equal(false);
+      });
     });
   });
   describe('parseExtPrebidFledge', () => {
