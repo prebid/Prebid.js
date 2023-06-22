@@ -24,9 +24,9 @@ export const USER_IDS_CONFIG = {
     }
   },
 
-  // trustpid
-  'trustpid': {
-    source: 'trustpid.com',
+  // utiq
+  'utiq': {
+    source: 'utiq.com',
     atype: 1,
     getValue: function (data) {
       return data;
@@ -43,6 +43,12 @@ export const USER_IDS_CONFIG = {
   'naveggId': {
     source: 'navegg.com',
     atype: 1
+  },
+
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
   },
 
   // justId
@@ -279,6 +285,14 @@ export const USER_IDS_CONFIG = {
 
   'uid2': {
     source: 'uidapi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
+  'euid': {
+    source: 'euid.eu',
     atype: 3,
     getValue: function(data) {
       return data.id;

@@ -288,7 +288,8 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid || '',
+    coppa: 0
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -304,6 +305,16 @@ function generateBidParameters(bid, bidderRequest) {
   const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
   if (placementId) {
     bidObject.placementId = placementId;
+  }
+
+  const sua = deepAccess(bid, `ortb2.device.sua`);
+  if (sua) {
+    bidObject.sua = sua;
+  }
+
+  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
+  if (coppa) {
+    bidObject.coppa = 1;
   }
 
   if (mediaType === VIDEO) {
@@ -346,6 +357,11 @@ function generateBidParameters(bid, bidderRequest) {
     if (linearity) {
       bidObject.linearity = linearity;
     }
+
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
   }
 
   return bidObject;
@@ -382,7 +398,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    session_id: getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   }
 

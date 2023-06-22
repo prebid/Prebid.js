@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {
   spec as adapter,
-  SUPPORTED_ID_SYSTEMS,
   createDomain,
   hashCode,
   extractPID,
@@ -17,6 +16,8 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -34,7 +35,6 @@ const BID = {
     }
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'auctionId': 'auction_id',
@@ -43,7 +43,13 @@ const BID = {
   'bidderWinsCount': 1,
   'requestId': 'b0777d85-d061-450e-9bc7-260dd54bbb7a',
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
-  'mediaTypes': [BANNER]
+  'mediaTypes': [BANNER],
+  'ortb2Imp': {
+    'ext': {
+      'gpid': '1234567890',
+      tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+    }
+  }
 };
 
 const VIDEO_BID = {
@@ -54,7 +60,11 @@ const VIDEO_BID = {
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
-  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  ortb2Imp: {
+    ext: {
+      tid: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+    }
+  },
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'params': {
     'subDomain': SUB_DOMAIN,
@@ -315,7 +325,8 @@ describe('MinuteMediaPlus Bid Adapter', function () {
               protocols: [2, 3, 5, 6],
               startdelay: 0
             }
-          }
+          },
+          gpid: ''
         }
       });
     });
@@ -373,6 +384,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
           schain: BID.schain,
           res: `${window.top.screen.width}x${window.top.screen.height}`,
           mediaTypes: [BANNER],
+          gpid: '1234567890',
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
@@ -448,6 +460,19 @@ describe('MinuteMediaPlus Bid Adapter', function () {
       });
     });
 
+    it('should get meta from response metaData', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].metaData = {
+        advertiserDomains: ['minutemedia-prebid.com'],
+        agencyName: 'Agency Name',
+      };
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses[0].meta).to.deep.equal({
+        advertiserDomains: ['minutemedia-prebid.com'],
+        agencyName: 'Agency Name'
+      });
+    });
+
     it('should return an array of interpreted video responses', function () {
       const responses = adapter.interpretResponse(VIDEO_SERVER_RESPONSE, REQUEST);
       expect(responses).to.have.length(1);
@@ -478,7 +503,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
   });
 
   describe('user id system', function () {
-    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
 

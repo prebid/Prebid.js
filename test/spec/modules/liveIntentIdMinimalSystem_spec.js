@@ -73,6 +73,34 @@ describe('LiveIntentMinimalId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
+  it('should call the Identity Exchange endpoint with the privided distributorId', function() {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111' } }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/did-1111/any?did=did-1111&resolve=nonId');
+    request.respond(
+      204,
+      responseHeader
+    );
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
+  });
+
+  it('should call the Identity Exchange endpoint without the privided distributorId when appId is provided', function() {
+    getCookieStub.returns(null);
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://idx.liadm.com/idex/prebid/any?resolve=nonId');
+    request.respond(
+      204,
+      responseHeader
+    );
+    expect(callBackSpy.calledOnceWith({})).to.be.true;
+  });
+
   it('should call the default url of the LiveIntent Identity Exchange endpoint, with a partner', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();

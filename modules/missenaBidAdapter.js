@@ -8,7 +8,7 @@ const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const spec = {
-  aliases: [BIDDER_CODE],
+  aliases: ['msna'],
   code: BIDDER_CODE,
   gvlid: 687,
   supportedMediaTypes: [BANNER],
