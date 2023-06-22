@@ -42,7 +42,6 @@ function isTransmitGeoConsentDenied(cd) {
 const CONSENT_RULES = {
   [ACTIVITY_SYNC_USER]: isConsentDenied,
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
-  [ACTIVITY_ENRICH_UFPD]: isConsentDenied,
   [ACTIVITY_ENRICH_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
 }
