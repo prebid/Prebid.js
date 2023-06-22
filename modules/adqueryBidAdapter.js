@@ -188,7 +188,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    userId = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
+    userId = (getUniqueIdentifierStr() + "_" + getUniqueIdentifierStr()).substring(0, 22);
     window.qid = userId;
   }
 

@@ -1,5 +1,7 @@
-import { adqueryIdSubmodule, storage } from 'modules/adqueryIdSystem.js';
-import { server } from 'test/mocks/xhr.js';
+import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
+import {server} from 'test/mocks/xhr.js';
+import {GlobalExchange, internal as adagio, VERSION} from "../../../modules/adagioBidAdapter";
+import * as utils from "../../../src/utils";
 
 const config = {
   storage: {
@@ -8,6 +10,12 @@ const config = {
 };
 
 describe('AdqueryIdSystem', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
   describe('qid submodule', () => {
     it('should expose a "name" property containing qid', () => {
       expect(adqueryIdSubmodule.name).to.equal('qid');
@@ -18,18 +26,19 @@ describe('AdqueryIdSystem', function () {
     });
   });
 
-  describe('getId', function() {
+  describe('getId', function () {
     let getDataFromLocalStorageStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      sandbox.stub(utils, 'getUniqueIdentifierStr').returns('6dd9eab7df9ca5763001fb');
     });
 
     afterEach(function () {
       getDataFromLocalStorageStub.restore();
     });
 
-    it('gets a adqueryId', function() {
+    it('gets a adqueryId', function () {
       const config = {
         params: {}
       };
@@ -37,12 +46,12 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq(`https://bidder.adquery.io/prebid/qid`);
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'qid' }));
+      expect(request.url).to.eq(`https://bidder.adquery.io/prebid/qid?qid=6dd9eab7df9ca5763001fb`);
+      request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: 'qid'}));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'qid'});
     });
 
-    it('gets a cached adqueryId', function() {
+    it('gets a cached adqueryId', function () {
       const config = {
         params: {}
       };
@@ -54,7 +63,7 @@ describe('AdqueryIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'qid'});
     });
 
-    it('allows configurable id url', function() {
+    it('allows configurable id url', function () {
       const config = {
         params: {
           url: 'https://bidder.adquery.io'
@@ -65,7 +74,7 @@ describe('AdqueryIdSystem', function () {
       callback(callbackSpy);
       const request = server.requests[0];
       expect(request.url).to.eq('https://bidder.adquery.io');
-      request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'testqid' }));
+      request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: 'testqid'}));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'testqid'});
     });
   });
