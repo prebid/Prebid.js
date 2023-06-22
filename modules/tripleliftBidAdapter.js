@@ -56,7 +56,7 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest && bidderRequest.fledgeEnabled && bidderRequest.fledgeEnabled == true) {
+    if (bidderRequest && bidderRequest.fledgeEnabled) {
       tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
     }
 
