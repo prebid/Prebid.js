@@ -101,11 +101,11 @@ export const tripleliftAdapterSpec = {
     }
 
     if (gppConsent) {
-      if (gppConsent.gppString && typeof gppConsent.gppString === 'string') {
+      if (gppConsent.gppString) {
         syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
       }
       if (gppConsent.applicableSections && gppConsent.applicableSections.length !== 0) {
-        syncEndpoint = syncEndpoint + 'gpp_sid=' + _filterSid(gppConsent.applicableSections);
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', _filterSid(gppConsent.applicableSections));
       }
     }
 
