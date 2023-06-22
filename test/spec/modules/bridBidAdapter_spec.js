@@ -70,7 +70,6 @@ describe('Brid Bid Adapter', function() {
     };
     const bidderRequest = {
       bidderCode: 'brid',
-      auctionId: '1d1a030790a475',
       bidderRequestId: '22edbae2733bf6',
       bids: videoRequest
     };
@@ -92,7 +91,6 @@ describe('Brid Bid Adapter', function() {
     let uspConsentString = '1YA-';
     let bidderRequest = {
       'bidderCode': 'brid',
-      'auctionId': '1d1a030790a475',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000,
       'uspConsent': uspConsentString,
@@ -116,7 +114,6 @@ describe('Brid Bid Adapter', function() {
     let uspConsentString = '1YA-';
     let bidderRequest = {
       'bidderCode': 'brid',
-      'auctionId': '1d1a030790a475',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000,
       'uspConsent': uspConsentString

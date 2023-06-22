@@ -41,7 +41,6 @@ export const spec = {
 
     _each(bidRequests, function(bid) {
       const placementId = bid.params.placementId;
-      const auctionId = bid.auctionId;
       const bidId = bid.bidId;
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
@@ -53,7 +52,7 @@ export const spec = {
           source: SOURCE,
           version: '$prebid.version$'
         },
-        id: auctionId,
+        id: bidderRequest.bidderRequestId,
         site,
         imp: []
       };
@@ -118,8 +117,7 @@ export const spec = {
           withCredentials: true
         },
         bidId,
-        params,
-        auctionId,
+        params
       });
     });
 
