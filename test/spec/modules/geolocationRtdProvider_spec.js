@@ -36,7 +36,6 @@ describe('Geolocation RTD Provider', function () {
     });
     it('init should return false', function () {
       if (navigator.permissions) { sandbox.stub(navigator.permissions, 'query').value(undefined); expect(geolocationSubmodule.init({})).is.false; }
-      if (!navigator) { expect(geolocationSubmodule.init({})).is.false; }
     });
   });
   describe('Geolocation supported', function() {
@@ -60,7 +59,7 @@ describe('Geolocation RTD Provider', function () {
       pbjs.removeAdUnit();
     });
     it('init should return true', function () {
-      navigator && expect(geolocationSubmodule.init({})).is.true;
+      navigator.permissions && expect(geolocationSubmodule.init({})).is.true;
     });
     it('should set geolocation. (request all)', function(done) {
       navigator.permissions && sandbox.stub(navigator.permissions, 'query').value(() => Promise.resolve({
@@ -68,7 +67,7 @@ describe('Geolocation RTD Provider', function () {
       }));
       navigator.geolocation && sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
         // eslint-disable-next-line standard/no-callback-literal
-        cb({coords: {lat: 1, lon: 1}});
+        cb({coords: {latitude: 1, longitude: 1}});
       });
       pbjs.addAdUnits([utils.deepClone(adUnit)]);
       config.setConfig(rtdConfig);
