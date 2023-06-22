@@ -62,8 +62,8 @@ export function markForFledge(next, bidderRequests) {
       const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length == 0 || bidders.includes(req.bidderCode));
       Object.assign(req, config.runWithBidder(req.bidderCode, () => {
         return {
-          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig && globalFledgeConfig.enabled),
-          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig && globalFledgeConfig?.defaultForSlots)
+          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined),
+          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined)
         }
       }));
     });
