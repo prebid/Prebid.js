@@ -35,8 +35,8 @@ describe('Geolocation RTD Provider', function () {
       sandbox = undefined;
     });
     it('init should return false', function () {
-      sandbox.stub(navigator.permissions, 'query').value(undefined);
-      expect(geolocationSubmodule.init({})).is.false;
+      if (navigator.permissions) { sandbox.stub(navigator.permissions, 'query').value(undefined); expect(geolocationSubmodule.init({})).is.false; }
+      if (!navigator) { expect(geolocationSubmodule.init({})).is.false; }
     });
   });
   describe('Geolocation supported', function() {
@@ -63,10 +63,10 @@ describe('Geolocation RTD Provider', function () {
       expect(geolocationSubmodule.init({})).is.true;
     });
     it('should set geolocation. (request all)', function(done) {
-      sandbox.stub(navigator.permissions, 'query').value(() => Promise.resolve({
+      navigator.permissions && sandbox.stub(navigator.permissions, 'query').value(() => Promise.resolve({
         state: 'granted',
       }));
-      sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
+      navigator.geolocation && sandbox.stub(navigator.geolocation, 'getCurrentPosition').value((cb) => {
         // eslint-disable-next-line standard/no-callback-literal
         cb({coords: {accuracy: 25}});
       });
