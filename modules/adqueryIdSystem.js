@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isPlainObject, isStr, logError, logInfo} from '../src/utils.js';
+import {isFn, isPlainObject, isStr, logError, logInfo, getUniqueIdentifierStr} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
@@ -73,6 +73,11 @@ export const adqueryIdSubmodule = {
 
     const resp = function (callback) {
       let qid = window.qid;
+
+      if (!qid) {
+        qid = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
+        logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
+      }
       logInfo('adqueryIdSubmodule ID QID:', qid);
 
       const callbacks = {

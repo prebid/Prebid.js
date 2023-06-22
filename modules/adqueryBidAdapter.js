@@ -1,8 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, logError, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
-import {getStorageManager} from '../src/storageManager.js';
-import * as utils from 'src/utils.js';
+import {buildUrl, logInfo, parseSizesInput, triggerPixel, getUniqueIdentifierStr} from '../src/utils.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
@@ -12,7 +10,6 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUER
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
-const storage = getStorageManager({bidderCode: ADQUERY_BIDDER_CODE});
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -191,7 +188,7 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    userId = (utils.getUniqueIdentifierStr() + utils.getUniqueIdentifierStr()).substring(0, 22);
+    userId = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
     window.qid = userId;
   }
 
