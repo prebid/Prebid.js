@@ -4,6 +4,7 @@ import {ruleRegistry} from '../../../../src/activities/rules.js';
 describe('isTransmitUfpdConsentDenied', () => {
   const cd = {
     // not covered, opt in to targeted, sale, and share, all notices given, opt into precise geo
+    Gpc: 0,
     KnownChildSensitiveDataConsents: [0, 0],
     MspaCoveredTransaction: 2,
     MspaOptOutOptionMode: 0,
@@ -66,6 +67,7 @@ describe('isTransmitUfpdConsentDenied', () => {
 describe('isTransmitGeoConsentDenied', () => {
   const cd = {
     // not covered, opt out of geo
+    Gpc: 0,
     KnownChildSensitiveDataConsents: [0, 0],
     MspaCoveredTransaction: 2,
     MspaOptOutOptionMode: 0,
