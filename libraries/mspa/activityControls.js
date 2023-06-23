@@ -28,12 +28,14 @@ function isConsentDenied(cd) {
 
 function isTransmitUfpdConsentDenied(cd) {
   // SensitiveDataProcessing[1-5,11]=1 OR SensitiveDataProcessing[6,7,9,10,12]<>0 OR
-  const mustBeZero = [1,2,3,4,5,11];
-  const cannotBeOne = [6,7,9,10,12];
+  const mustBeZero = [1, 2, 3, 4, 5, 11];
+  const mustBeZeroSubtractedVector = mustBeZero.map((number) => number - 1);
+  const cannotBeOne = [6, 7, 9, 10, 12];
+  const cannotBeOneSubtractedVector = cannotBeOne.map((number) => number - 1);
   return isConsentDenied(cd) ||
     isSensitiveNoticeMissing(cd) ||
-    cd.SensitiveDataProcessing.some((val, i) => cannotBeOne.indexOf(i+1) && val === 1) ||
-    cd.SensitiveDataProcessing.some((val, i) => mustBeZero.indexOf(i+1) && val !== 0);
+    cd.SensitiveDataProcessing.some((val, i) => cannotBeOneSubtractedVector.indexOf(i) && val === 1) ||
+    cd.SensitiveDataProcessing.some((val, i) => mustBeZeroSubtractedVector.indexOf(i) && val !== 0);
 }
 
 function isTransmitGeoConsentDenied(cd) {
