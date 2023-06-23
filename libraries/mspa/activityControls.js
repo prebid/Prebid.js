@@ -11,9 +11,17 @@ import {gppDataHandler} from '../../src/adapterManager.js';
 // https://docs.google.com/document/d/1yPEVx3bBdSkIw-QNkQR5qi1ztmn9zoXk-LaGQB6iw7Q
 
 function isBasicConsentDenied(cd) {
+  // service provider mode is always consent denied
   return ['MspaServiceProviderMode', 'Gpc'].some(prop => cd[prop] === 1) ||
+    // you cannot consent to what you were not notified of
     cd.PersonalDataConsents === 2 ||
-    cd.KnownChildSensitiveDataConsents[0] === 1 || cd.KnownChildSensitiveDataConsents[1] !== 0;
+    // minors 13+ who have not given consent
+    cd.KnownChildSensitiveDataConsents[0] === 1 ||
+    // minors under 13 cannot consent
+    cd.KnownChildSensitiveDataConsents[1] !== 0 ||
+    // sensitive category consent impossible without notice
+    (cd.SensitiveDataProcessing.some(element => element === 2) && (cd.SensitiveDataLimitUseNotice !== 1 || cd.SensitiveDataProcessingOptOutNotice !== 1));
+    ;
 }
 
 function isSensitiveNoticeMissing(cd) {
