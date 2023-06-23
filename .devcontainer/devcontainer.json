@@ -9,7 +9,9 @@
 	},
 
 	"postCreateCommand": "bash .devcontainer/postCreate.sh",
-
+	// Make is-docker work again
+	"postStartCommand": "test -f /.dockerenv || sudo touch /.dockerenv",
+	
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
 
