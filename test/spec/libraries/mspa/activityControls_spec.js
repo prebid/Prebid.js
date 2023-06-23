@@ -1,5 +1,63 @@
-import {mspaRule, setupRules} from '../../../../libraries/mspa/activityControls.js';
+import {mspaRule, setupRules, isTransmitUfpdConsentDenied} from '../../../../libraries/mspa/activityControls.js';
 import {ruleRegistry} from '../../../../src/activities/rules.js';
+
+describe('isTransmitUfpdConsentDenied', () => {
+  const cd = {
+    // not covered, opt into geo
+    KnownChildSensitiveDataConsents: [0, 0],
+    MspaCoveredTransaction: 2,
+    MspaOptOutOptionMode: 0,
+    MspaServiceProviderMode: 0,
+    PersonalDataConsents: 1,
+    SaleOptOut: 2,
+    SaleOptOutNotice: 1,
+    SensitiveDataLimitUseNotice: 1,
+    SensitiveDataProcessing: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    SensitiveDataProcessingOptOutNotice: 1,
+    SharingNotice: 1,
+    SharingOptOut: 2,
+    SharingOptOutNotice: 1,
+    TargetedAdvertisingOptOut: 2,
+    TargetedAdvertisingOptOutNotice: 1,
+    Version: 1
+  };
+  it('should be true (consent denied to add ufpd) if no consent to process health information', () => {
+    cd.SensitiveDataProcessing[2] = 1;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.SensitiveDataProcessing[2] = 0;
+  });
+  it('should be true (consent denied to add ufpd) with consent to process biometric data, as this should not be on openrtb', () => {
+    cd.SensitiveDataProcessing[6] = 1;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.SensitiveDataProcessing[6] = 1;
+  });
+  it('should be true (consent denied to add ufpd) without sharing notice', () => {
+    cd.SharingNotice = 2;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.SharingNotice = 1;
+  });
+  it('should be true (consent denied to add ufpd) with sale opt out', () => {
+    cd.SaleOptOut = 1;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.SaleOptOut = 2;
+  });
+  it('should be true (consent denied to add ufpd) without targeted ads opt out', () => {
+    cd.TargetedAdvertisingOptOut = 1;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.TargetedAdvertisingOptOut = 2;
+  });
+  it('should be true (consent denied to add ufpd) with missing sensitive data limit notice', () => {
+    cd.SensitiveDataLimitUseNotice = 2;
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).toBe(true);
+    cd.SensitiveDataLimitUseNotice = 1;
+  });
+})
 
 describe('mspaRule', () => {
   it('does not apply if SID is not applicable', () => {
@@ -77,7 +135,7 @@ describe('setupRules', () => {
     consent = null;
     runSetup('mockApi', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(true);
-  })
+  });
 
   it('should check applicableSections against given SIDs', () => {
     runSetup('mockApi', [2]);
@@ -96,5 +154,5 @@ describe('setupRules', () => {
     const dereg = runSetup('mockApi', [1]);
     dereg();
     expect(isAllowed('mockActivity', {})).to.equal(true);
-  })
+  });
 })
