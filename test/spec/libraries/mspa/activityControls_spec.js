@@ -3,7 +3,7 @@ import {ruleRegistry} from '../../../../src/activities/rules.js';
 
 describe('isTransmitUfpdConsentDenied', () => {
   const cd = {
-    // not covered, opt out of geo
+    // not covered, opt in to targeted, sale, and share, all notices given, opt into precise geo
     KnownChildSensitiveDataConsents: [0, 0],
     MspaCoveredTransaction: 2,
     MspaOptOutOptionMode: 0,
@@ -12,7 +12,7 @@ describe('isTransmitUfpdConsentDenied', () => {
     SaleOptOut: 2,
     SaleOptOutNotice: 1,
     SensitiveDataLimitUseNotice: 1,
-    SensitiveDataProcessing: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    SensitiveDataProcessing: [0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0],
     SensitiveDataProcessingOptOutNotice: 1,
     SharingNotice: 1,
     SharingOptOut: 2,
@@ -93,7 +93,7 @@ describe('isTransmitGeoConsentDenied', () => {
     expect(result).to.equal(true);
     cd.SensitiveDataLimitUseNotice = 1;
   });
-  it('should be false (consent given to add precise geo) -- sensitive position 8 is tryue', () => {
+  it('should be false (consent given to add precise geo) -- sensitive position 8 is true', () => {
     cd.SensitiveDataProcessing[8] = 2;
     const result = isTransmitGeoConsentDenied(cd);
     expect(result).to.equal(false);
