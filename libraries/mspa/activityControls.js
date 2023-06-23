@@ -10,7 +10,7 @@ import {gppDataHandler} from '../../src/adapterManager.js';
 // default interpretation for MSPA consent(s):
 // https://docs.google.com/document/d/1yPEVx3bBdSkIw-QNkQR5qi1ztmn9zoXk-LaGQB6iw7Q
 
-function isBasicConsentDenied(cd) {
+export function isBasicConsentDenied(cd) {
   // service provider mode is always consent denied
   return ['MspaServiceProviderMode', 'Gpc'].some(prop => cd[prop] === 1) ||
     // you cannot consent to what you were not notified of
@@ -23,11 +23,11 @@ function isBasicConsentDenied(cd) {
     (cd.SensitiveDataProcessing.some(element => element === 2) && (cd.SensitiveDataLimitUseNotice !== 1 || cd.SensitiveDataProcessingOptOutNotice !== 1));
 }
 
-function isSensitiveNoticeMissing(cd) {
+export function isSensitiveNoticeMissing(cd) {
   return ['SensitiveDataProcessingOptOutNotice', 'SensitiveDataLimitUseNotice'].some(prop => cd[prop] === 2)
 }
 
-function isConsentDenied(cd) {
+export function isConsentDenied(cd) {
   // TODO: invalidate any consent that does not include notice, eg, if TargetedAdvertisingOptOutNotice is 0, TargetedAdvertisingOptOut must all be 0
   return isBasicConsentDenied(cd) ||
     ['SaleOptOut', 'SharingOptOut', 'TargetedAdvertisingOptOut'].some(prop => cd[prop] === 1) ||
