@@ -26,7 +26,7 @@ function isConsentDenied(cd) {
     ['SaleOptOutNotice', 'SharingNotice', 'SharingOptOutNotice', 'TargetedAdvertisingOptOutNotice'].some(prop => cd[prop] === 2);
 }
 
-function isTransmitUfpdConsentDenied(cd) {
+export function isTransmitUfpdConsentDenied(cd) {
   // SensitiveDataProcessing[1-5,11]=1 OR SensitiveDataProcessing[6,7,9,10,12]<>0 OR
   const mustBeZero = [6, 7, 9, 10, 12];
   const mustBeZeroSubtractedVector = mustBeZero.map((number) => number - 1);
@@ -38,7 +38,7 @@ function isTransmitUfpdConsentDenied(cd) {
     cd.SensitiveDataProcessing.some((val, i) => mustBeZeroSubtractedVector.indexOf(i) && val !== 0);
 }
 
-function isTransmitGeoConsentDenied(cd) {
+export function isTransmitGeoConsentDenied(cd) {
   return isBasicConsentDenied(cd) ||
     isSensitiveNoticeMissing(cd) ||
     cd.SensitiveDataProcessing[7] === 1
