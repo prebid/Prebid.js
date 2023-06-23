@@ -3,7 +3,7 @@ import {ruleRegistry} from '../../../../src/activities/rules.js';
 
 describe('isTransmitUfpdConsentDenied', () => {
   const cd = {
-    // not covered, opt into geo
+    // not covered, opt out of geo
     KnownChildSensitiveDataConsents: [0, 0],
     MspaCoveredTransaction: 2,
     MspaOptOutOptionMode: 0,
@@ -58,6 +58,37 @@ describe('isTransmitUfpdConsentDenied', () => {
     cd.SensitiveDataLimitUseNotice = 1;
   });
 })
+
+describe('isTransmitGeoConsentDenied', () => {
+  const cd = {
+    // not covered, opt out of geo
+    KnownChildSensitiveDataConsents: [0, 0],
+    MspaCoveredTransaction: 2,
+    MspaOptOutOptionMode: 0,
+    MspaServiceProviderMode: 0,
+    PersonalDataConsents: 1,
+    SaleOptOut: 2,
+    SaleOptOutNotice: 1,
+    SensitiveDataLimitUseNotice: 1,
+    SensitiveDataProcessing: [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    SensitiveDataProcessingOptOutNotice: 1,
+    SharingNotice: 1,
+    SharingOptOut: 2,
+    SharingOptOutNotice: 1,
+    TargetedAdvertisingOptOut: 2,
+    TargetedAdvertisingOptOutNotice: 1,
+    Version: 1
+  };
+  it('should be true (consent denied to add precise geo) -- sensitive flag denied', () => {
+    const result = isTransmitGeoConsentDenied(cd);
+    expect(result).to.be(true);
+  });
+  it('should be true (consent denied to add precise geo) -- sensitive data limit usage not given', () => {
+    cd.SensitiveDataLimitUseNotice = 0;
+    const result = isTransmitGeoConsentDenied(cd);
+    expect(result).to.be(true);
+    cd.SensitiveDataLimitUseNotice = 1;
+  });
 
 describe('mspaRule', () => {
   it('does not apply if SID is not applicable', () => {
