@@ -21,7 +21,7 @@ describe('isBasicConsentDenied', () => {
     TargetedAdvertisingOptOutNotice: 1,
     Version: 1
   };
-  it('should be false (consent given to add ufpd) with variety of notice and opt in', () => {
+  it('should be false (basic consent conditions pass) with variety of notice and opt in', () => {
     const result = isBasicConsentDenied(cd);
     expect(result).to.equal(false);
   });
@@ -47,8 +47,8 @@ describe('isSensitiveNoticeMissing', () => {
     TargetedAdvertisingOptOutNotice: 1,
     Version: 1
   };
-  it('should be false (consent given to add ufpd) with variety of notice and opt in', () => {
-    const result = isTransmitUfpdConsentDenied(cd);
+  it('should be false (senstive notice is given or not needed) with variety of notice and opt in', () => {
+    const result = isSensitiveNoticeMissing(cd);
     expect(result).to.equal(false);
   });
 })
@@ -73,7 +73,7 @@ describe('isConsentDenied', () => {
     TargetedAdvertisingOptOutNotice: 1,
     Version: 1
   };
-  it('should be false (consent given to add ufpd) with variety of notice and opt in', () => {
+  it('should be false (consent given personalized ads / sale / share) with variety of notice and opt in', () => {
     const result = isConsentDenied(cd);
     expect(result).to.equal(false);
   });
