@@ -28,9 +28,9 @@ function isConsentDenied(cd) {
 
 function isTransmitUfpdConsentDenied(cd) {
   // SensitiveDataProcessing[1-5,11]=1 OR SensitiveDataProcessing[6,7,9,10,12]<>0 OR
-  const mustBeZero = [1, 2, 3, 4, 5, 11];
+  const mustBeZero = [6, 7, 9, 10, 12];
   const mustBeZeroSubtractedVector = mustBeZero.map((number) => number - 1);
-  const cannotBeOne = [6, 7, 9, 10, 12];
+  const cannotBeOne = [1, 2, 3, 4, 5, 11];
   const cannotBeOneSubtractedVector = cannotBeOne.map((number) => number - 1);
   return isConsentDenied(cd) ||
     isSensitiveNoticeMissing(cd) ||
