@@ -382,6 +382,8 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'us_privacy',
+      'gpp',
+      'gpp_sid',
       'rp_schain',
     ].concat(Object.keys(params).filter(item => containsUId.test(item)))
       .concat([
@@ -553,6 +555,11 @@ export const spec = {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
     }
 
+    if (bidderRequest.gppConsent?.gppString) {
+      data['gpp'] = bidderRequest.gppConsent.gppString;
+      data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
+    }
+
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
 
     applyFPD(bidRequest, BANNER, data);
@@ -695,7 +702,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = {};
@@ -711,6 +718,11 @@ export const spec = {
 
       if (uspConsent) {
         params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
       }
 
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
