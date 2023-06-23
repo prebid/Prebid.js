@@ -89,6 +89,7 @@ describe('isTransmitGeoConsentDenied', () => {
     expect(result).to.be(true);
     cd.SensitiveDataLimitUseNotice = 1;
   });
+})
 
 describe('mspaRule', () => {
   it('does not apply if SID is not applicable', () => {
