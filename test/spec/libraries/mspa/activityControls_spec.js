@@ -102,10 +102,10 @@ describe('isConsentDenied', () => {
     cd.TargetedAdvertisingOptOut = 2;
   });
   it('should be true (no consent) on opt out of targeted ads via no TargetedAdvertisingOptOutNotice', () => {
-    cd.TargetedAdvertisingOptOut = 2;
+    cd.TargetedAdvertisingOptOutNotice = 2;
     const result = isConsentDenied(cd);
     expect(result).to.equal(true);
-    cd.TargetedAdvertisingOptOut = 1;
+    cd.TargetedAdvertisingOptOutNotice = 1;
   });
   it('should be true (no consent) if TargetedAdvertisingOptOutNotice is 0 and TargetedAdvertisingOptOut is 2', () => {
     cd.TargetedAdvertisingOptOutNotice = 0;
