@@ -28,10 +28,10 @@ function isSensitiveNoticeMissing(cd) {
 }
 
 function isConsentDenied(cd) {
+  // TODO: invalidate any consent that does not include notice, eg, if TargetedAdvertisingOptOutNotice is 0, TargetedAdvertisingOptOut must all be 0
   return isBasicConsentDenied(cd) ||
     ['SaleOptOut', 'SharingOptOut', 'TargetedAdvertisingOptOut'].some(prop => cd[prop] === 1) ||
     ['SaleOptOutNotice', 'SharingNotice', 'SharingOptOutNotice', 'TargetedAdvertisingOptOutNotice'].some(prop => cd[prop] === 2);
-    // TODO: invalidate any consent that does not include notice, eg, if TargetedAdvertisingOptOutNotice is 0, TargetedAdvertisingOptOut must all be 0
 }
 
 export function isTransmitUfpdConsentDenied(cd) {
