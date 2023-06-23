@@ -21,7 +21,6 @@ function isBasicConsentDenied(cd) {
     cd.KnownChildSensitiveDataConsents[1] !== 0 ||
     // sensitive category consent impossible without notice
     (cd.SensitiveDataProcessing.some(element => element === 2) && (cd.SensitiveDataLimitUseNotice !== 1 || cd.SensitiveDataProcessingOptOutNotice !== 1));
-    ;
 }
 
 function isSensitiveNoticeMissing(cd) {
@@ -32,6 +31,7 @@ function isConsentDenied(cd) {
   return isBasicConsentDenied(cd) ||
     ['SaleOptOut', 'SharingOptOut', 'TargetedAdvertisingOptOut'].some(prop => cd[prop] === 1) ||
     ['SaleOptOutNotice', 'SharingNotice', 'SharingOptOutNotice', 'TargetedAdvertisingOptOutNotice'].some(prop => cd[prop] === 2);
+    // TODO: invalidate any consent that does not include notice, eg, if TargetedAdvertisingOptOutNotice is 0, TargetedAdvertisingOptOut must all be 0
 }
 
 export function isTransmitUfpdConsentDenied(cd) {
