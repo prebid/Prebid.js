@@ -25,6 +25,18 @@ describe('isBasicConsentDenied', () => {
     const result = isBasicConsentDenied(cd);
     expect(result).to.equal(false);
   });
+  it('should be true (basic consent conditions do not pass) with personal data consent set to true (invalid state)', () => {
+    cd.PersonalDataConsents = 2;
+    const result = isBasicConsentDenied(cd);
+    expect(result).to.equal(true);
+    cd.PersonalDataConsents = 0;
+  });
+  it('should be true (basic consent conditions do not pass) with sensitive opt in but no notice', () => {
+    cd.SensitiveDataLimitUseNotice = 0;
+    const result = isBasicConsentDenied(cd);
+    expect(result).to.equal(true);
+    cd.SensitiveDataLimitUseNotice = 1;
+  });
 })
 describe('isSensitiveNoticeMissing', () => {
   const cd = {
