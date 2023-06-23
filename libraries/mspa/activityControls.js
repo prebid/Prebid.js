@@ -16,7 +16,7 @@ function isBasicConsentDenied(cd) {
     cd.KnownChildSensitiveDataConsents[0] === 1 || cd.KnownChildSensitiveDataConsents[1] !== 0;
 }
 
-function isSensitiveConsentDenied(cd) {
+function isSensitiveNoticeMissing(cd) {
   return ['SensitiveDataProcessingOptOutNotice', 'SensitiveDataLimitUseNotice'].some(prop => cd[prop] === 2)
 }
 
@@ -27,15 +27,18 @@ function isConsentDenied(cd) {
 }
 
 function isTransmitUfpdConsentDenied(cd) {
+  // SensitiveDataProcessing[1-5,11]=1 OR SensitiveDataProcessing[6,7,9,10,12]<>0 OR
+  const mustBeZero = [1,2,3,4,5,11];
+  const cannotBeOne = [6,7,9,10,12];
   return isConsentDenied(cd) ||
-    isSensitiveConsentDenied(cd) ||
-    cd.SensitiveDataProcessing.some((val, i) => (i < 6 || i > 7) && val === 1) ||
-    cd.SensitiveDataProcessing[6] !== 0;
+    isSensitiveNoticeMissing(cd) ||
+    cd.SensitiveDataProcessing.some((val, i) => cannotBeOne.indexOf(i+1) && val === 1) ||
+    cd.SensitiveDataProcessing.some((val, i) => mustBeZero.indexOf(i+1) && val !== 0);
 }
 
 function isTransmitGeoConsentDenied(cd) {
   return isBasicConsentDenied(cd) ||
-    isSensitiveConsentDenied(cd) ||
+    isSensitiveNoticeMissing(cd) ||
     cd.SensitiveDataProcessing[7] === 1
 }
 
