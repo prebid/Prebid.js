@@ -208,11 +208,11 @@ describe('isTransmitGeoConsentDenied', () => {
     expect(result).to.equal(true);
     cd.SensitiveDataLimitUseNotice = 1;
   });
-  it('should be false (consent given to add precise geo) -- sensitive position 8 is true', () => {
-    cd.SensitiveDataProcessing[8] = 2;
+  it('should be false (consent given to add precise geo) -- sensitive position 8 (index 7) is true', () => {
+    cd.SensitiveDataProcessing[7] = 2;
     const result = isTransmitGeoConsentDenied(cd);
     expect(result).to.equal(false);
-    cd.SensitiveDataProcessing[8] = 1;
+    cd.SensitiveDataProcessing[7] = 1;
   });
 })
 
