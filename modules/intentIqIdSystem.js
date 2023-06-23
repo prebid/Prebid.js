@@ -8,8 +8,8 @@
 import { logError, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const PCID_EXPIRY = 365;
 
@@ -124,9 +124,9 @@ export const intentIqIdSubmodule = {
 
     // Read Intent IQ 1st party id or generate it if none exists
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
-    if (!firstPartyData || !firstPartyData.pcid) {
+    if (!firstPartyData || !firstPartyData.pcid || firstPartyData.pcidDate) {
       const firstPartyId = generateGUID();
-      firstPartyData = { 'pcid': firstPartyId };
+      firstPartyData = { 'pcid': firstPartyId, 'pcidDate': Date.now() };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
     }
 
@@ -141,6 +141,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
     url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
+    url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
 
     const resp = function (callback) {
       const callbacks = {

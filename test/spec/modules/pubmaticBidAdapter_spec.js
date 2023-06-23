@@ -3056,6 +3056,31 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
         });
       }
+
+      describe('Fledge', function() {
+        it('should not send imp.ext.ae when FLEDGE is disabled, ', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          let data = JSON.parse(req.data);
+          if (data.imp[0].ext) {
+            expect(data.imp[0].ext).to.not.have.property('ae');
+          }
+        });
+
+        it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          delete bidRequest[0].params.test;
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          let data = JSON.parse(req.data);
+          expect(data.imp[0].ext.ae).to.equal(1);
+        });
+      });
   	});
 
     it('Request params dctr check', function () {
