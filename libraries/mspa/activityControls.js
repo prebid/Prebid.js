@@ -38,7 +38,7 @@ export function isConsentDenied(cd) {
     // targeted opted in but notice does not apply
     cd.TargetedAdvertisingOptOut === 2 && cd.TargetedAdvertisingOptOutNotice === 0 ||
     // sharing opted in but notices do not apply
-    cd.SharingOptOut === 2 && (cd.SharingNotice === 0 || cd.SharingOptOutNotice === 0);
+    (cd.SharingOptOut === 2 && (cd.SharingNotice === 0 || cd.SharingOptOutNotice === 0));
 }
 
 export function isTransmitUfpdConsentDenied(cd) {
