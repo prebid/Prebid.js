@@ -24,37 +24,37 @@ describe('isTransmitUfpdConsentDenied', () => {
   it('should be true (consent denied to add ufpd) if no consent to process health information', () => {
     cd.SensitiveDataProcessing[2] = 1;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.SensitiveDataProcessing[2] = 0;
   });
   it('should be true (consent denied to add ufpd) with consent to process biometric data, as this should not be on openrtb', () => {
     cd.SensitiveDataProcessing[6] = 1;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.SensitiveDataProcessing[6] = 1;
   });
   it('should be true (consent denied to add ufpd) without sharing notice', () => {
     cd.SharingNotice = 2;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.SharingNotice = 1;
   });
   it('should be true (consent denied to add ufpd) with sale opt out', () => {
     cd.SaleOptOut = 1;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.SaleOptOut = 2;
   });
   it('should be true (consent denied to add ufpd) without targeted ads opt out', () => {
     cd.TargetedAdvertisingOptOut = 1;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.TargetedAdvertisingOptOut = 2;
   });
   it('should be true (consent denied to add ufpd) with missing sensitive data limit notice', () => {
     cd.SensitiveDataLimitUseNotice = 2;
     const result = isTransmitUfpdConsentDenied(cd);
-    expect(result).toBe(true);
+    expect(result).to.be(true);
     cd.SensitiveDataLimitUseNotice = 1;
   });
 })
