@@ -187,6 +187,24 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('bidswitch with ext', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
   it('medianet', function() {
     const userId = {
       medianet: {'id': 'sample_id'}
@@ -198,6 +216,57 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         id: 'sample_id',
         atype: 3
+      }]
+    });
+  });
+
+  it('medianet with ext', function() {
+    const userId = {
+      medianet: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('magnite', function() {
+    const userId = {
+      magnite: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('magnite with ext', function() {
+    const userId = {
+      magnite: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
       }]
     });
   });
@@ -344,6 +413,24 @@ describe('eids array generation for known sub-modules', function() {
       uids: [{
         id: 'Sample_AD_Token',
         atype: 3
+      }]
+    });
+  });
+
+  it('uid2 with ext', function() {
+    const userId = {
+      uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
       }]
     });
   });
