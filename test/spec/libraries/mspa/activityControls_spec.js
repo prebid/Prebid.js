@@ -21,6 +21,10 @@ describe('isTransmitUfpdConsentDenied', () => {
     TargetedAdvertisingOptOutNotice: 1,
     Version: 1
   };
+  it('should be false (consent given to add ufpd) with variety of notice and opt in', () => {
+    const result = isTransmitUfpdConsentDenied(cd);
+    expect(result).to.equal(false);
+  });
   it('should be true (consent denied to add ufpd) if no consent to process health information', () => {
     cd.SensitiveDataProcessing[2] = 1;
     const result = isTransmitUfpdConsentDenied(cd);
