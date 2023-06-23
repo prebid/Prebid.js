@@ -59,9 +59,15 @@ describe('isSensitiveNoticeMissing', () => {
     TargetedAdvertisingOptOutNotice: 1,
     Version: 1
   };
-  it('should be false (senstive notice is given or not needed) with variety of notice and opt in', () => {
+  it('should be false (sensitive notice is given or not needed) with variety of notice and opt in', () => {
     const result = isSensitiveNoticeMissing(cd);
     expect(result).to.equal(false);
+  });
+  it('should be true (sensitive notice is missing) with variety of notice and opt in', () => {
+    cd.SensitiveDataLimitUseNotice = 2;
+    const result = isSensitiveNoticeMissing(cd);
+    expect(result).to.equal(true);
+    cd.SensitiveDataLimitUseNotice = 1;
   });
 })
 describe('isConsentDenied', () => {
@@ -88,6 +94,24 @@ describe('isConsentDenied', () => {
   it('should be false (consent given personalized ads / sale / share) with variety of notice and opt in', () => {
     const result = isConsentDenied(cd);
     expect(result).to.equal(false);
+  });
+  it('should be true (no consent) on opt out of targeted ads via TargetedAdvertisingOptOut', () => {
+    cd.TargetedAdvertisingOptOut = 1;
+    const result = isConsentDenied(cd);
+    expect(result).to.equal(true);
+    cd.TargetedAdvertisingOptOut = 2;
+  });
+  it('should be true (no consent) on opt out of targeted ads via no TargetedAdvertisingOptOutNotice', () => {
+    cd.TargetedAdvertisingOptOut = 2;
+    const result = isConsentDenied(cd);
+    expect(result).to.equal(true);
+    cd.TargetedAdvertisingOptOut = 1;
+  });
+  it('should be true (no consent) if TargetedAdvertisingOptOutNotice is 0 and TargetedAdvertisingOptOut is 2', () => {
+    cd.TargetedAdvertisingOptOutNotice = 0;
+    const result = isConsentDenied(cd);
+    expect(result).to.equal(true);
+    cd.TargetedAdvertisingOptOutNotice = 1;
   });
 })
 describe('isTransmitUfpdConsentDenied', () => {
