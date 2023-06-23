@@ -79,7 +79,7 @@ describe('setupRules', () => {
     expect(isAllowed('mockActivity', {})).to.equal(true);
   })
 
-  it('should check applicableSeciotns against given SIDs', () => {
+  it('should check applicableSections against given SIDs', () => {
     runSetup('mockApi', [2]);
     expect(isAllowed('mockActivity', {})).to.equal(true);
   });
