@@ -124,7 +124,7 @@ function _getSyncType(syncOptions) {
 
 function _filterSid(sid) {
   return sid.filter(element => {
-    return element !== null && element !== undefined;
+    return Number.isInteger(element);
   })
     .join(',');
 }
