@@ -1,4 +1,4 @@
-import {mspaRule, setupRules, isTransmitUfpdConsentDenied} from '../../../../libraries/mspa/activityControls.js';
+import {mspaRule, setupRules, isTransmitUfpdConsentDenied, isTransmitGeoConsentDenied} from '../../../../libraries/mspa/activityControls.js';
 import {ruleRegistry} from '../../../../src/activities/rules.js';
 
 describe('isTransmitUfpdConsentDenied', () => {
