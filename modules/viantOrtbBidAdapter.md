@@ -40,6 +40,7 @@ An adapter to get a bid from VIANT DSP.
                 {
                     bidder: 'viant',
                     params: {
+                        supplySourceId: 'supplier',
                         publisherId: '464' // required
                     }
                 }

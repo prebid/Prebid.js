@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
@@ -10,12 +10,10 @@ const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
-// const GVLID = TBD; // Global Vendor List ID for GDPR. Check if Viant is registered in the IAB GVL
 
 export const spec = {
   code: BIDDER_CODE,
-  // gvlid: GVLID,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {
     if (bid && typeof bid.params !== 'object') {
@@ -26,8 +24,11 @@ export const spec = {
       logError(BIDDER_CODE + ': publisherId is not present in bidder params.');
       return false;
     }
-    if (!deepAccess(bid, 'mediaTypes.banner')) {
-      logError(BIDDER_CODE + ': mediaTypes.banner is not present in the bidder settings.');
+    const mediaTypesBanner = deepAccess(bid, 'mediaTypes.banner');
+    const mediaTypesVideo = deepAccess(bid, 'mediaTypes.video');
+    const mediaTypesNative = deepAccess(bid, 'mediaTypes.native');
+    if (!mediaTypesBanner && !mediaTypesVideo && !mediaTypesNative) {
+      utils.logWarn(BIDDER_CODE + ': one of mediaTypes.banner or mediaTypes.video or mediaTypes.native must be passed');
       return false;
     }
     return true;
@@ -59,9 +60,13 @@ export const spec = {
 function buildRequests(bids, bidderRequest) {
   let videoBids = bids.filter(bid => isVideoBid(bid));
   let bannerBids = bids.filter(bid => isBannerBid(bid));
+  let nativeBids = bids.filter(bid => isNativeBid(bid));
   let requests = bannerBids.length ? [createRequest(bannerBids, bidderRequest, BANNER)] : [];
   videoBids.forEach(bid => {
     requests.push(createRequest([bid], bidderRequest, VIDEO));
+  });
+  nativeBids.forEach(bid => {
+    requests.push(createRequest([bid], bidderRequest, NATIVE));
   });
   return requests;
 }
@@ -75,11 +80,15 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
 }
 
 function isVideoBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.video');
+  return deepAccess(bid, 'mediaTypes.video');
 }
 
 function isBannerBid(bid) {
-  return utils.deepAccess(bid, 'mediaTypes.banner') || !isVideoBid(bid);
+  return deepAccess(bid, 'mediaTypes.banner');
+}
+
+function isNativeBid(bid) {
+  return deepAccess(bid, 'mediaTypes.native');
 }
 
 const converter = ortbConverter({

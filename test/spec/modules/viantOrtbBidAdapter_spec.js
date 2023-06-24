@@ -3,15 +3,13 @@ import {assert, expect} from 'chai';
 import { deepClone } from '../../../src/utils';
 import {buildWindowTree} from '../../helpers/refererDetectionHelper';
 import {detectReferer} from '../../../src/refererDetection';
-import {config} from '../../../src/config';
-
 describe('viantOrtbBidAdapter', function () {
   function testBuildRequests(bidRequests, bidderRequestBase) {
     let clonedBidderRequest = deepClone(bidderRequestBase);
     clonedBidderRequest.bids = bidRequests;
-    return spec.buildRequests(bidRequests, clonedBidderRequest);
+    let requests = spec.buildRequests(bidRequests, clonedBidderRequest);
+    return requests
   }
-
   describe('isBidRequestValid', function() {
     function makeBid() {
       return {
@@ -66,6 +64,49 @@ describe('viantOrtbBidAdapter', function () {
         let bid = makeBid();
         bid.mediaTypes.banner.pos = 1;
         expect(spec.isBidRequestValid(bid)).to.equal(true);
+      });
+    });
+
+    describe('video', function () {
+      describe('and request config uses mediaTypes', () => {
+        function makeBid() {
+          return {
+            'bidder': 'viant',
+            'params': {
+              'unit': '12345678',
+              'delDomain': 'test-del-domain',
+              'publisherId': '464',
+              'placementId': 'some-PlacementId_2'
+            },
+            'mediaTypes': {
+              'video': {
+                'context': 'instream',
+                'playerSize': [[640, 480]],
+                'mimes': ['video/mp4'],
+                'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
+                'api': [1, 3],
+                'skip': 1,
+                'skipafter': 5,
+                'minduration': 10,
+                'maxduration': 30
+              }
+            },
+            'adUnitCode': 'adunit-code',
+            'bidId': '30b31c1838de1e',
+            'bidderRequestId': '22edbae2733bf6',
+            'auctionId': '1d1a030790a475',
+            'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+          }
+        }
+        it('should return true when required params found', function () {
+          expect(spec.isBidRequestValid(makeBid())).to.equal(true);
+        });
+
+        it('should return false when required params are not passed', function () {
+          let videoBidWithMediaTypes = Object.assign({}, makeBid());
+          videoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+        });
       });
     });
   });
@@ -136,7 +177,47 @@ describe('viantOrtbBidAdapter', function () {
     });
   });
 
-  describe('interpretResponse-banner', function () {
+  describe('buildRequests-video', function() {
+    function makeBid() {
+      return {
+        'bidder': 'viant',
+        'params': {
+          'unit': '12345678',
+          'delDomain': 'test-del-domain',
+          'publisherId': '464',
+          'placementId': 'some-PlacementId_2'
+        },
+        'mediaTypes': {
+          'video': {
+            'context': 'instream',
+            'playerSize': [[640, 480]],
+            'mimes': ['video/mp4'],
+            'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
+            'api': [1, 3],
+            'skip': 1,
+            'skipafter': 5,
+            'minduration': 10,
+            'maxduration': 31
+          }
+        },
+        'adUnitCode': 'adunit-code',
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+        'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+      }
+    }
+    it('assert video and its fields is present in imp ', function () {
+      let requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
+      let clonedRequests = deepClone(requests)
+      assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
+      assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
+      assert.equal(clonedRequests[0].data.imp[0].video.placement, 1)
+      assert.equal(clonedRequests[0].method, 'POST')
+    });
+  });
+
+  describe('interpretResponse', function () {
     const baseBannerBidRequests = [{
       'bidder': 'viant',
       'params': {
