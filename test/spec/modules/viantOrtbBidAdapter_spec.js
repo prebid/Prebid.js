@@ -177,45 +177,48 @@ describe('viantOrtbBidAdapter', function () {
     });
   });
 
-  describe('buildRequests-video', function() {
-    function makeBid() {
-      return {
-        'bidder': 'viant',
-        'params': {
-          'unit': '12345678',
-          'delDomain': 'test-del-domain',
-          'publisherId': '464',
-          'placementId': 'some-PlacementId_2'
-        },
-        'mediaTypes': {
-          'video': {
-            'context': 'instream',
-            'playerSize': [[640, 480]],
-            'mimes': ['video/mp4'],
-            'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
-            'api': [1, 3],
-            'skip': 1,
-            'skipafter': 5,
-            'minduration': 10,
-            'maxduration': 31
-          }
-        },
-        'adUnitCode': 'adunit-code',
-        'bidId': '30b31c1838de1e',
-        'bidderRequestId': '22edbae2733bf6',
-        'auctionId': '1d1a030790a475',
-        'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+  if (FEATURES.VIDEO) {
+    describe('buildRequests-video', function () {
+      function makeBid() {
+        return {
+          'bidder': 'viant',
+          'params': {
+            'unit': '12345678',
+            'delDomain': 'test-del-domain',
+            'publisherId': '464',
+            'placementId': 'some-PlacementId_2'
+          },
+          'mediaTypes': {
+            'video': {
+              'context': 'instream',
+              'playerSize': [[640, 480]],
+              'mimes': ['video/mp4'],
+              'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
+              'api': [1, 3],
+              'skip': 1,
+              'skipafter': 5,
+              'minduration': 10,
+              'maxduration': 31
+            }
+          },
+          'adUnitCode': 'adunit-code',
+          'bidId': '30b31c1838de1e',
+          'bidderRequestId': '22edbae2733bf6',
+          'auctionId': '1d1a030790a475',
+          'transactionId': '4008d88a-8137-410b-aa35-fbfdabcb478e'
+        }
       }
-    }
-    it('assert video and its fields is present in imp ', function () {
-      let requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
-      let clonedRequests = deepClone(requests)
-      assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
-      assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
-      assert.equal(clonedRequests[0].data.imp[0].video.placement, 1)
-      assert.equal(clonedRequests[0].method, 'POST')
+
+      it('assert video and its fields is present in imp ', function () {
+        let requests = spec.buildRequests([makeBid()], {referrerInfo: {}});
+        let clonedRequests = deepClone(requests)
+        assert.equal(clonedRequests[0].data.imp[0].video.mimes[0], 'video/mp4')
+        assert.equal(clonedRequests[0].data.imp[0].video.maxduration, 31)
+        assert.equal(clonedRequests[0].data.imp[0].video.placement, 1)
+        assert.equal(clonedRequests[0].method, 'POST')
+      });
     });
-  });
+  }
 
   describe('interpretResponse', function () {
     const baseBannerBidRequests = [{
