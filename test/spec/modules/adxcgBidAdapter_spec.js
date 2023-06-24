@@ -165,7 +165,10 @@ describe('Adxcg adapter', function () {
         bidId: 'bidId',
         params: {siteId: 'siteId'},
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, auctionId: 'tid'}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {
+        refererInfo: {referer: 'page'},
+        ortb2: {source: {tid: 'tid'}}
+      }).data);
 
       assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);

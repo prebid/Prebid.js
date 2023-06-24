@@ -7,7 +7,7 @@ import {
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
 import {
   ACTIVITY_TRANSMIT_EIDS,
-  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_PRECISE_GEO, ACTIVITY_TRANSMIT_TID,
   ACTIVITY_TRANSMIT_UFPD
 } from '../../../src/activities/activities.js';
 import {deepAccess, deepSetValue} from '../../../src/utils.js';
@@ -271,6 +271,10 @@ describe('redactor', () => {
     testAllowDeny(ACTIVITY_TRANSMIT_EIDS, (allowed) => {
       testPropertiesAreRemoved(() => redactor.bidRequest, ['userId', 'userIdAsEids'], allowed);
     });
+
+    testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
+      testPropertiesAreRemoved(() => redactor.bidRequest, ['ortb2Imp.ext.tid'], allowed);
+    })
   });
 
   describe('.ortb2', () => {
@@ -282,6 +286,10 @@ describe('redactor', () => {
       testPropertiesAreRemoved(() => redactor.ortb2, ORTB_UFPD_PATHS, allowed)
     });
 
+    testAllowDeny(ACTIVITY_TRANSMIT_TID, (allowed) => {
+      testPropertiesAreRemoved(() => redactor.ortb2, ['source.tid'], allowed);
+    });
+
     testAllowDeny(ACTIVITY_TRANSMIT_PRECISE_GEO, (allowed) => {
       ORTB_GEO_PATHS.forEach(path => {
         it(`should ${allowed ? 'NOT ' : ''} round down ${path}`, () => {
@@ -291,6 +299,6 @@ describe('redactor', () => {
           expect(deepAccess(ortb2, path)).to.eql(allowed ? 1.2345 : 1.23);
         })
       })
-    })
+    });
   });
 })

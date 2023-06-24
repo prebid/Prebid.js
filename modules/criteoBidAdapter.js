@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, generateUUID, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -177,7 +177,14 @@ export const spec = {
 
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const adapter = new Criteo.PubTag.Adapters.Prebid(
+        PROFILE_ID_PUBLISHERTAG,
+        ADAPTER_VERSION,
+        bidRequests,
+        bidderRequest,
+        '$prebid.version$',
+        { createOutstreamVideoRenderer: createOutstreamVideoRenderer }
+      );
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -235,7 +242,7 @@ export const spec = {
           bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
         }
         if (slot.ext?.meta?.networkName) {
-          bid.meta = Object.assign({}, bid.meta, {networkName: slot.ext.meta.networkName})
+          bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
         }
         if (slot.native) {
           if (bidRequest.params.nativeCallback) {
@@ -420,6 +427,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   let schain;
   let userIdAsEids;
   const request = {
+    id: generateUUID(),
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
@@ -437,8 +445,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       schain = bidRequest.schain || schain;
       const slot = {
         impid: bidRequest.adUnitCode,
-        transactionid: bidRequest.transactionId,
-        auctionId: bidRequest.auctionId,
+        transactionid: bidRequest.ortb2Imp?.ext?.tid
       };
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
@@ -508,11 +515,14 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+
+  request.source = {
+    tid: bidderRequest.ortb2?.source?.tid
+  };
+
   if (schain) {
-    request.source = {
-      ext: {
-        schain: schain
-      }
+    request.source.ext = {
+      schain: schain
     };
   };
   request.user = bidderRequest.ortb2?.user || {};
@@ -753,7 +763,7 @@ function createOutstreamVideoRenderer(slot) {
     window.CriteoOutStream[slot.ext.videoPlayerType].play(payload, outstreamConfig)
   };
 
-  const renderer = Renderer.install({url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config});
+  const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
   renderer.setRender(render);
   return renderer;
 }
