@@ -1,15 +1,18 @@
-import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
+import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { config } from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const FLEDGE_ENDPOINT_URL = 'creativecdn.com/bidder/prebidfledge/bids';
+const FLEDGE_SELLER_URL = 'https://fledge-ssp.creativecdn.com';
+const FLEDGE_DECISION_LOGIC_URL = 'https://fledge-ssp.creativecdn.com/component-seller-prebid.js';
+
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
@@ -51,7 +54,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const request = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
@@ -94,8 +97,12 @@ export const spec = {
 
     let computedEndpointUrl = ENDPOINT_URL;
 
-    const fledgeConfig = config.getConfig('fledgeConfig');
-    if (bidderRequest.fledgeEnabled && fledgeConfig) {
+    if (bidderRequest.fledgeEnabled) {
+      const fledgeConfig = config.getConfig('fledgeConfig') || {
+        seller: FLEDGE_SELLER_URL,
+        decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
+        sellerTimeout: 500
+      };
       mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }

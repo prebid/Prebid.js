@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {connectIdSubmodule, storage} from 'modules/connectIdSystem.js';
 import {server} from '../../mocks/xhr';
 import {parseQS, parseUrl} from 'src/utils.js';
-import {uspDataHandler} from 'src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from 'src/adapterManager.js';
 
 const TEST_SERVER_URL = 'http://localhost:9876/';
 
@@ -14,6 +14,10 @@ describe('Yahoo ConnectID Submodule', () => {
   const OVERRIDE_ENDPOINT = 'https://foo/bar';
   const STORAGE_KEY = 'connectId';
   const USP_DATA = '1YYY';
+  const GPP_DATA = {
+    gppString: 'gppconsent',
+    applicableSections: [6, 7]
+  };
 
   it('should have the correct module name declared', () => {
     expect(connectIdSubmodule.name).to.equal('connectId');
@@ -34,6 +38,7 @@ describe('Yahoo ConnectID Submodule', () => {
     let localStorageEnabledStub;
     let removeLocalStorageDataStub;
     let uspConsentDataStub;
+    let gppConsentDataStub;
 
     let consentData;
     beforeEach(() => {
@@ -48,10 +53,12 @@ describe('Yahoo ConnectID Submodule', () => {
       localStorageEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       removeLocalStorageDataStub = sinon.stub(storage, 'removeDataFromLocalStorage');
       uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
+      gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
 
       cookiesEnabledStub.returns(true);
       localStorageEnabledStub.returns(true);
       uspConsentDataStub.returns(USP_DATA);
+      gppConsentDataStub.returns(GPP_DATA);
 
       consentData = {
         gdprApplies: 1,
@@ -69,6 +76,7 @@ describe('Yahoo ConnectID Submodule', () => {
       localStorageEnabledStub.restore();
       removeLocalStorageDataStub.restore();
       uspConsentDataStub.restore();
+      gppConsentDataStub.restore();
     });
 
     function invokeGetIdAPI(configParams, consentData) {
@@ -135,37 +143,254 @@ describe('Yahoo ConnectID Submodule', () => {
         }, consentData)).to.be.undefined;
         expect(ajaxStub.callCount).to.equal(0);
       });
-
-      it('returns undefined if the pixelId param is passed, but the he and puid param are not passed', () => {
-        expect(invokeGetIdAPI({
-          pixelId: PIXEL_ID
-        }, consentData)).to.be.undefined;
-        expect(ajaxStub.callCount).to.equal(0);
-      });
     });
 
     describe('with valid module configuration', () => {
       describe('when data is in client storage', () => {
-        it('returns an object with the stored ID from cookies for valid module configuration', () => {
+        it('returns an object with the stored ID from cookies for valid module configuration and sync is done', () => {
           const cookieData = {connectId: 'foobar'};
           getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
           let result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
           }, consentData);
+
+          expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
+          expect(result.id).to.deep.equal(cookieData);
+          expect(typeof result.callback).to.equal('function');
+        });
+
+        it('returns an object with the stored ID from cookies for valid module configuration with no user sync', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days};
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          let result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+
           expect(result).to.be.an('object').that.has.all.keys('id');
+          expect(result.id.lastUsed).to.be.a('number');
+          cookieData.lastUsed = result.id.lastUsed;
           expect(result.id).to.deep.equal(cookieData);
         });
 
-        it('returns an object with the stored ID from localStorage for valid module configuration', () => {
+        it('returns an object with the stored ID and refreshes the storages with the new lastUsed', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const cookieData = {connectId: 'foobar', he: HASHED_EMAIL, lastSynced: last13Days, lastUsed: 1};
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(20);
+          const newCookieData = Object.assign({}, cookieData, {lastUsed: 20})
+          let result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+          dateNowStub.restore();
+
+          const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
+          expect(result).to.be.an('object').that.has.all.keys('id');
+          expect(setCookieStub.calledOnce).to.be.true;
+          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
+          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+          expect(setLocalStorageStub.calledOnce).to.be.true;
+          expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setLocalStorageStub.firstCall.args[1]).to.equal(JSON.stringify(newCookieData));
+        });
+
+        it('returns an object with the stored ID from cookies and no sync when puid stays the same', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const cookieData = {connectId: 'foobar', puid: '123', lastSynced: last13Days};
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(20);
+          let result = invokeGetIdAPI({
+            puid: '123',
+            pixelId: PIXEL_ID
+          }, consentData);
+          dateNowStub.restore();
+
+          expect(result).to.be.an('object').that.has.all.keys('id');
+          cookieData.lastUsed = 20;
+          expect(result.id).to.deep.equal(cookieData);
+        });
+
+        it('returns an object with the stored ID from cookies and syncs because of expired auto generated puid', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const last31Days = Date.now() - (60 * 60 * 24 * 1000 * 31);
+          const cookieData = {connectId: 'foo', he: 'email', lastSynced: last13Days, puid: '9', lastUsed: last31Days};
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          let result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+
+          delete cookieData.puid;
+          expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
+          expect(result.id).to.deep.equal(cookieData);
+          expect(typeof result.callback).to.equal('function');
+        });
+
+        it('returns an object with the stored ID from cookies and does not sync for valid auto generated puid', () => {
+          const last13Days = Date.now() - (60 * 60 * 24 * 1000 * 13);
+          const last29Days = Date.now() - (60 * 60 * 24 * 1000 * 29);
+          const cookieData = {
+            connectId: 'foo',
+            he: HASHED_EMAIL,
+            lastSynced: last13Days,
+            puid: '9',
+            lastUsed: last29Days
+          };
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(20);
+          let result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+          dateNowStub.restore();
+
+          expect(result).to.be.an('object').that.has.all.keys('id');
+          cookieData.lastUsed = 20;
+          expect(result.id).to.deep.equal(cookieData);
+        });
+
+        it('returns an object with the stored ID from localStorage for valid module configuration and sync is done', () => {
           const localStorageData = {connectId: 'foobarbaz'};
           getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
           let result = invokeGetIdAPI({
             he: HASHED_EMAIL,
             pixelId: PIXEL_ID
           }, consentData);
-          expect(result).to.be.an('object').that.has.all.keys('id');
+
+          expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
           expect(result.id).to.deep.equal(localStorageData);
+          expect(typeof result.callback).to.equal('function');
+        });
+
+        it('returns an object with the stored ID from localStorage and refreshes the cookie storage', () => {
+          const localStorageData = {connectId: 'foobarbaz'};
+          getLocalStorageStub.withArgs(STORAGE_KEY).returns(localStorageData);
+          const dateNowStub = sinon.stub(Date, 'now');
+          dateNowStub.returns(1);
+          let result = invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+          dateNowStub.restore();
+
+          const expiryDelta = new Date(1 + 60 * 60 * 24 * 365 * 1000);
+          expect(result).to.be.an('object').that.has.all.keys('id', 'callback');
+          expect(setCookieStub.calledOnce).to.be.true;
+          expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(localStorageData));
+          expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
+        });
+
+        it('Makes an ajax GET request to the production API endpoint with stored puid when id is stale', () => {
+          const last15Days = Date.now() - (60 * 60 * 24 * 1000 * 15);
+          const last29Days = Date.now() - (60 * 60 * 24 * 1000 * 29);
+          const cookieData = {
+            connectId: 'foobar',
+            he: HASHED_EMAIL,
+            lastSynced: last15Days,
+            puid: '981',
+            lastUsed: last29Days
+          };
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+
+          const expectedParams = {
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID,
+            '1p': '0',
+            gdpr: '1',
+            gdpr_consent: consentData.consentString,
+            v: '1',
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA,
+            puid: '981',
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
+          };
+          const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+          expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
+          expect(requestQueryParams).to.deep.equal(expectedParams);
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+        });
+
+        it('Makes an ajax GET request to the production API endpoint without the stored puid after 30 days', () => {
+          const last31Days = Date.now() - (60 * 60 * 24 * 1000 * 31);
+          const cookieData = {
+            connectId: 'foobar',
+            he: HASHED_EMAIL,
+            lastSynced: last31Days,
+            puid: '981',
+            lastUsed: last31Days
+          };
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID
+          }, consentData);
+
+          const expectedParams = {
+            he: HASHED_EMAIL,
+            pixelId: PIXEL_ID,
+            '1p': '0',
+            gdpr: '1',
+            gdpr_consent: consentData.consentString,
+            v: '1',
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
+          };
+          const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+          expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
+          expect(requestQueryParams).to.deep.equal(expectedParams);
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+        });
+
+        it('Makes an ajax GET request to the production API endpoint with provided puid', () => {
+          const last3Days = Date.now() - (60 * 60 * 24 * 1000 * 3);
+          const cookieData = {
+            connectId: 'foobar',
+            he: HASHED_EMAIL,
+            lastSynced: last3Days,
+            puid: '981',
+            lastUsed: last3Days
+          };
+          getCookieStub.withArgs(STORAGE_KEY).returns(JSON.stringify(cookieData));
+          invokeGetIdAPI({
+            pixelId: PIXEL_ID,
+            puid: PUBLISHER_USER_ID
+          }, consentData);
+
+          const expectedParams = {
+            pixelId: PIXEL_ID,
+            puid: PUBLISHER_USER_ID,
+            he: HASHED_EMAIL,
+            '1p': '0',
+            gdpr: '1',
+            gdpr_consent: consentData.consentString,
+            v: '1',
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
+          };
+          const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+          expect(ajaxStub.firstCall.args[0].indexOf(`${PROD_ENDPOINT}?`)).to.equal(0);
+          expect(requestQueryParams).to.deep.equal(expectedParams);
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
         });
 
         it('deletes local storage data when expiry has passed', () => {
@@ -284,7 +509,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr_consent: consentData.consentString,
             v: '1',
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -307,7 +534,9 @@ describe('Yahoo ConnectID Submodule', () => {
             pixelId: PIXEL_ID,
             gdpr_consent: consentData.consentString,
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -332,7 +561,9 @@ describe('Yahoo ConnectID Submodule', () => {
             gdpr_consent: consentData.consentString,
             v: '1',
             url: TEST_SERVER_URL,
-            us_privacy: USP_DATA
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
           };
           const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
 
@@ -342,6 +573,31 @@ describe('Yahoo ConnectID Submodule', () => {
         });
 
         it('Makes an ajax GET request to the specified override API endpoint with query params', () => {
+          invokeGetIdAPI({
+            he: HASHED_EMAIL,
+            endpoint: OVERRIDE_ENDPOINT
+          }, consentData);
+
+          const expectedParams = {
+            he: HASHED_EMAIL,
+            '1p': '0',
+            gdpr: '1',
+            gdpr_consent: consentData.consentString,
+            v: '1',
+            url: TEST_SERVER_URL,
+            us_privacy: USP_DATA,
+            gpp: GPP_DATA.gppString,
+            gpp_sid: GPP_DATA.applicableSections.join(',')
+          };
+          const requestQueryParams = parseQS(ajaxStub.firstCall.args[0].split('?')[1]);
+
+          expect(ajaxStub.firstCall.args[0].indexOf(`${OVERRIDE_ENDPOINT}?`)).to.equal(0);
+          expect(requestQueryParams).to.deep.equal(expectedParams);
+          expect(ajaxStub.firstCall.args[3]).to.deep.equal({method: 'GET', withCredentials: true});
+        });
+
+        it('Makes an ajax GET request to the specified override API endpoint without GPP', () => {
+          gppConsentDataStub.returns(undefined);
           invokeGetIdAPI({
             he: HASHED_EMAIL,
             endpoint: OVERRIDE_ENDPOINT
@@ -409,12 +665,12 @@ describe('Yahoo ConnectID Submodule', () => {
           });
         });
 
-        it('stores the result in client cookie storage', () => {
+        it('stores the result in client both storages', () => {
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
           getAjaxFnStub.restore();
           const upsResponse = {connectid: 'foobarbaz'};
-          const expiryDelta = new Date(60 * 60 * 24 * 14 * 1000);
+          const expiryDelta = new Date(60 * 60 * 24 * 365 * 1000);
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
@@ -425,14 +681,23 @@ describe('Yahoo ConnectID Submodule', () => {
             {'Content-Type': 'application/json'},
             JSON.stringify(upsResponse)
           );
+          const storage = Object.assign({}, upsResponse, {
+            puid: PUBLISHER_USER_ID,
+            lastSynced: 0,
+            lastUsed: 0
+          });
+          dateNowStub.restore();
+
           expect(setCookieStub.calledOnce).to.be.true;
           expect(setCookieStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(upsResponse));
+          expect(setCookieStub.firstCall.args[1]).to.equal(JSON.stringify(storage));
           expect(setCookieStub.firstCall.args[2]).to.equal(expiryDelta.toUTCString());
           expect(setCookieStub.firstCall.args[3]).to.equal(null);
           const cookieDomain = parseUrl(TEST_SERVER_URL).hostname;
           expect(setCookieStub.firstCall.args[4]).to.equal(`.${cookieDomain}`);
-          dateNowStub.restore();
+          expect(setLocalStorageStub.calledOnce).to.be.true;
+          expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
+          expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(storage));
         });
 
         it('stores the result in localStorage if cookies are not permitted', () => {
@@ -441,10 +706,12 @@ describe('Yahoo ConnectID Submodule', () => {
           const dateNowStub = sinon.stub(Date, 'now');
           dateNowStub.returns(0);
           const upsResponse = {connectid: 'barfoo'};
-          const expectedStoredData = JSON.stringify({
+          const expectedStoredData = {
             connectid: 'barfoo',
-            __expires: 60 * 60 * 24 * 14 * 1000
-          });
+            puid: PUBLISHER_USER_ID,
+            lastSynced: 0,
+            lastUsed: 0
+          };
           invokeGetIdAPI({
             puid: PUBLISHER_USER_ID,
             pixelId: PIXEL_ID
@@ -455,10 +722,11 @@ describe('Yahoo ConnectID Submodule', () => {
             {'Content-Type': 'application/json'},
             JSON.stringify(upsResponse)
           );
+          dateNowStub.restore();
+
           expect(setLocalStorageStub.calledOnce).to.be.true;
           expect(setLocalStorageStub.firstCall.args[0]).to.equal(STORAGE_KEY);
-          expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(expectedStoredData);
-          dateNowStub.restore();
+          expect(setLocalStorageStub.firstCall.args[1]).to.deep.equal(JSON.stringify(expectedStoredData));
         });
       });
     });

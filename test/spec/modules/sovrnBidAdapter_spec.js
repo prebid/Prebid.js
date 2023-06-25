@@ -170,6 +170,19 @@ describe('sovrnBidAdapter', function() {
         expect(payload.site.domain).to.equal('example.com')
       })
 
+      it('sets correct timeout', function() {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          bidderCode: 'sovrn',
+          auctionId: '1d1a030790a475',
+          bidderRequestId: '22edbae2733bf6',
+          timeout: 3000,
+          bids: [baseBidRequest]
+        }
+        const payload = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+        expect(payload.tmax).to.equal(3000)
+      })
+
       it('includes the ad unit code in the request', function() {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')

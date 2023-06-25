@@ -47,7 +47,7 @@ export const spec = {
       let queryString = '';
 
       const request = validBidRequests[i];
-      const tid = request.transactionId;
+      const tid = request.ortb2Imp?.ext?.tid;
       const bid = request.bidId;
       const imuid = deepAccess(request, 'userId.imuid');
       const sharedId = deepAccess(request, 'userId.pubcid');

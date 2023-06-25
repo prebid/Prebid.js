@@ -24,9 +24,9 @@ export const USER_IDS_CONFIG = {
     }
   },
 
-  // trustpid
-  'trustpid': {
-    source: 'trustpid.com',
+  // utiq
+  'utiq': {
+    source: 'utiq.com',
     atype: 1,
     getValue: function (data) {
       return data;
@@ -158,6 +158,11 @@ export const USER_IDS_CONFIG = {
     atype: 3,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
 
@@ -167,6 +172,25 @@ export const USER_IDS_CONFIG = {
     atype: 3,
     getValue: function(data) {
       return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
+  // magnite
+  'magnite': {
+    source: 'rubiconproject.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
     }
   },
 
@@ -285,6 +309,19 @@ export const USER_IDS_CONFIG = {
 
   'uid2': {
     source: 'uidapi.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
+  'euid': {
+    source: 'euid.eu',
     atype: 3,
     getValue: function(data) {
       return data.id;
