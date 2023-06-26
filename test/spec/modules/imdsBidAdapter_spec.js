@@ -192,12 +192,45 @@ describe('imdsBidAdapter ', function () {
       timeout: 3000
     };
 
-    let bidderRequestWithCCPA = {
+    let bidderRequestWithUSPInExt = {
       bidderRequestId: 'xyz123',
       refererInfo: {
         referer: 'https://test.com/foo/bar'
       },
-      uspConsent: '1YYY'
+      ortb2: {
+        regs: {
+          ext: {
+            us_privacy: '1YYY'
+          }
+        }
+      }
+    };
+
+    let bidderRequestWithUSPInRegs = {
+      bidderRequestId: 'xyz123',
+      refererInfo: {
+        referer: 'https://test.com/foo/bar'
+      },
+      ortb2: {
+        regs: {
+          us_privacy: '1YYY'
+        }
+      }
+    };
+
+    let bidderRequestWithUSPAndOthersInExt = {
+      bidderRequestId: 'xyz123',
+      refererInfo: {
+        referer: 'https://test.com/foo/bar'
+      },
+      ortb2: {
+        regs: {
+          ext: {
+            extra: 'extra item',
+            us_privacy: '1YYY'
+          }
+        }
+      }
     };
 
     let validBidRequestWithUserIds = {
@@ -417,7 +450,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -448,7 +481,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -480,7 +513,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -511,7 +544,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -603,7 +636,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -661,7 +694,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -727,16 +760,42 @@ describe('imdsBidAdapter ', function () {
         }
       ]);
     });
-    it('should contain the CCPA privacy string when UspConsent is in bidder request', function () {
-      // banner test
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithCCPA);
+    it('should have us_privacy string in regs instead of regs.ext bidder request', function () {
+      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInExt);
       expect(req).be.an('object');
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
       expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
       expect(req.data).to.exist.and.to.be.an('object');
       expect(req.data.id).to.equal('xyz123');
-      expect(req.data.regs.ext.us_privacy).to.equal('1YYY');
+      expect(req.data.regs.us_privacy).to.equal('1YYY');
+      expect(req.data.regs.ext).to.not.exist;
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    });
+    it('should accept us_privacy string in regs', function () {
+      // banner test
+      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPInRegs);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.regs.us_privacy).to.equal('1YYY');
+      expect(req.data.regs.ext).to.not.exist;
+      expect(req.data.imp).to.eql([expectedDataImp1]);
+    });
+    it('should not remove regs.ext when moving us_privacy if there are other things in regs.ext', function () {
+      // banner test
+      let req = spec.buildRequests([validBidRequest], bidderRequestWithUSPAndOthersInExt);
+      expect(req).be.an('object');
+      expect(req).to.have.property('method', 'POST');
+      expect(req).to.have.property('url');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?');
+      expect(req.data).to.exist.and.to.be.an('object');
+      expect(req.data.id).to.equal('xyz123');
+      expect(req.data.regs.us_privacy).to.equal('1YYY');
+      expect(req.data.regs.ext.extra).to.equal('extra item');
       expect(req.data.imp).to.eql([expectedDataImp1]);
     });
     it('should contain user object when user ids are present in the bidder request', function () {
@@ -806,14 +865,14 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBannerBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
     });
 
     it('should return valid bid request for video impression', function () {
       let req = spec.buildRequests([validVideoBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
     });
   });
 
@@ -913,7 +972,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=$$REPO_AND_VERSION$$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
       expect(req.data).to.have.property('source');
       expect(req.data.source).to.have.property('ext');
       expect(req.data.source.ext).to.have.property('schain');
@@ -1319,19 +1378,41 @@ describe('imdsBidAdapter ', function () {
     });
   });
   describe('getUserSyncs', function () {
-    it('should return a usersync when iframes is enabled', function () {
+    it('should return an iframe usersync when iframes is enabled', function () {
       let usersyncs = spec.getUserSyncs({
         iframeEnabled: true
       }, null);
-      expect(usersyncs).to.be.an('array').that.is.not.empty;
+      expect(usersyncs).to.be.an('array').with.lengthOf(1);
       expect(usersyncs[0]).to.have.property('type', 'iframe');
       expect(usersyncs[0]).to.have.property('url');
       expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
     });
 
-    it('should not return a usersync when iframes are not enabled', function () {
+    it('should return a pixel usersync when pixels is enabled', function () {
       let usersyncs = spec.getUserSyncs({
         pixelEnabled: true
+      }, null);
+      expect(usersyncs).to.be.an('array').with.lengthOf(1);
+      expect(usersyncs[0]).to.have.property('type', 'pixel');
+      expect(usersyncs[0]).to.have.property('url');
+      expect(usersyncs[0].url).to.contain('https://sync.technoratimedia.com/services');
+    });
+
+    it('should return an iframe usersync when both iframe and pixels is enabled', function () {
+      let usersyncs = spec.getUserSyncs({
+        iframeEnabled: true,
+        pixelEnabled: true
+      }, null);
+      expect(usersyncs).to.be.an('array').with.lengthOf(1);
+      expect(usersyncs[0]).to.have.property('type', 'iframe');
+      expect(usersyncs[0]).to.have.property('url');
+      expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
+    });
+
+    it('should not return a usersync when neither iframes nor pixel are enabled', function () {
+      let usersyncs = spec.getUserSyncs({
+        iframeEnabled: false,
+        pixelEnabled: false
       }, null);
       expect(usersyncs).to.be.an('array').that.is.empty;
     });
