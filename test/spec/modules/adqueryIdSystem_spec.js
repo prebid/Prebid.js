@@ -31,7 +31,7 @@ describe('AdqueryIdSystem', function () {
 
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getUniqueIdentifierStrStub = sandbox.stub(utils, 'getUniqueIdentifierStr').returns('1234');
+      getUniqueIdentifierStrStub = sandbox.stub(utils, 'getUniqueIdentifierStr').returns('9');
     });
 
     afterEach(function () {
@@ -41,7 +41,9 @@ describe('AdqueryIdSystem', function () {
 
     it('gets a adqueryId', function () {
       const config = {
-        params: {}
+        params: {
+          url: 'test_url'
+        }
       };
       const callbackSpy = sinon.spy();
       const callback = adqueryIdSubmodule.getId(config).callback;
