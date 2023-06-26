@@ -1,6 +1,7 @@
 import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from '../../../src/utils';
+import sinon from 'sinon';
 
 const config = {
   storage: {
@@ -9,12 +10,6 @@ const config = {
 };
 
 describe('AdqueryIdSystem', function () {
-  let sandbox;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-  });
-
   describe('qid submodule', () => {
     it('should expose a "name" property containing qid', () => {
       expect(adqueryIdSubmodule.name).to.equal('qid');
@@ -29,15 +24,8 @@ describe('AdqueryIdSystem', function () {
     let getDataFromLocalStorageStub;
     let getUniqueIdentifierStrStub;
 
-    beforeEach(function () {
-      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getUniqueIdentifierStrStub = sandbox.stub(utils, 'getUniqueIdentifierStr').returns('9');
-    });
-
-    afterEach(function () {
-      getDataFromLocalStorageStub.restore();
-      getUniqueIdentifierStrStub.restore();
-    });
+    getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    getUniqueIdentifierStrStub = sinon.stub(utils, 'getUniqueIdentifierStr').returns('9');
 
     it('gets a adqueryId', function () {
       const config = {
