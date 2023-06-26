@@ -827,6 +827,6 @@ const adUnits = [{
 This adapter does not support passing legacy overrides via 'bidder.params.ext' since most of the data should be passed using prebid modules (First Party Data, Schain, Price Floors etc.).
 If you do not know how to pass a custom parameter that you previously used, please contact us using the information provided above.
 
-Thanks you,
+Thank you,
 Yahoo SSP
 

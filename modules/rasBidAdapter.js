@@ -1,6 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';
@@ -39,8 +40,9 @@ function parseParams(params, bidderRequest) {
   if (pageContext.dv) {
     newParams.DV = pageContext.dv;
   }
-  if (pageContext.keyWords && Array.isArray(pageContext.keyWords)) {
-    newParams.kwrd = pageContext.keyWords.join('+');
+  const keywords = getAllOrtbKeywords(bidderRequest?.ortb2, pageContext.keyWords)
+  if (keywords.length > 0) {
+    newParams.kwrd = keywords.join('+')
   }
   if (pageContext.capping) {
     newParams.local_capping = pageContext.capping;

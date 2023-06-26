@@ -130,6 +130,30 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.url).to.exist;
       // check that the protocol is added correctly
       expect(payload.url).to.equal('http://test.te');
+      expect(payload.psegs).to.not.exist;
+    });
+
+    it('should call the endpoint with psegs data if any', function () {
+      let bidderRequest =
+      {
+        'ortb2': {
+          'user': {
+            'ext': {
+              'data': {
+                'permutive': [1234, 5678, 910]
+              }
+            }
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.psegs).to.exist;
+      expect(payload.psegs).to.include(1234);
+      expect(payload.psegs).to.include(5678);
+      expect(payload.psegs).to.include(910);
+      expect(payload.psegs).to.not.include(1);
     });
 
     it('should not prepend the protocol in page url if already present', function () {

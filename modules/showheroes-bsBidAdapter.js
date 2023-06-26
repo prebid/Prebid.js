@@ -85,8 +85,8 @@ export const spec = {
           adUnitCode: bid.adUnitCode,
           bidId: bid.bidId,
           context: context,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidderRequest.auctionId,
-          bidderCode: BIDDER_CODE,
           start: +new Date(),
           timeout: 3000,
           params: bid.params,
