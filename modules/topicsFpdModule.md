@@ -38,7 +38,7 @@ pbjs.setConfig({
                 expiry: 7 // Configurable expiry days
             },{
                 bidder: 'rtbhouse',
-                iframeURL: 'https://topics.creativecdn.com/tapi.html',
+                iframeURL: 'https://topics.authorizedvault.com/topics.html',
                 expiry: 7 // Configurable expiry days
             },{
                 bidder: 'rubicon',
