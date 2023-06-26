@@ -73,12 +73,16 @@ function buildRequests(bids, bidderRequest) {
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
   const data = converter.toORTB({bidRequests, bidderRequest, context: {mediaType}});
-  if (bidderRequest.gdprConsent) {
+  if (bidderRequest.gdprConsent && typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
     if (!data.regs) data.regs = {};
     if (!data.regs.ext) data.regs.ext = {};
     data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
   }
-
+  if (bidderRequest.uspConsent) {
+    if (!data.regs) data.regs = {};
+    if (!data.regs.ext) data.regs.ext = {};
+    data.regs.ext.us_privacy = bidderRequest.uspConsent;
+  }
   return {
     method: 'POST',
     url: ENDPOINT,
