@@ -128,7 +128,7 @@ export const spec = {
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=pbjs_$prebid.version$`,
+        url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=pbjs%2F$prebid.version$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -307,7 +307,7 @@ export const spec = {
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
-    const queryParams = ['pbjs_$prebid.version$'];
+    const queryParams = ['src=pbjs%2F$prebid.version$'];
     if (gdprConsent) {
       queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
     }

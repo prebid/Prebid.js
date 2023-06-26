@@ -450,7 +450,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -481,7 +481,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([badFloorBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -513,7 +513,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -544,7 +544,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([newPosBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -636,7 +636,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -694,7 +694,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidRequestVideo], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('https://prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data.id).to.equal('xyz123');
       expect(req.data.imp).to.eql([
         {
@@ -865,14 +865,14 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBannerBidRequest], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
     });
 
     it('should return valid bid request for video impression', function () {
       let req = spec.buildRequests([validVideoBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
     });
   });
 
@@ -972,7 +972,7 @@ describe('imdsBidAdapter ', function () {
       let req = spec.buildRequests([validBidReq], bidderRequest);
       expect(req).to.have.property('method', 'POST');
       expect(req).to.have.property('url');
-      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs_$prebid.version$');
+      expect(req.url).to.contain('//prebid.technoratimedia.com/openrtb/bids/prebid?src=pbjs%2F$prebid.version$');
       expect(req.data).to.have.property('source');
       expect(req.data.source).to.have.property('ext');
       expect(req.data.source.ext).to.have.property('schain');
