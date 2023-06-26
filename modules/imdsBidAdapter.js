@@ -315,7 +315,7 @@ export const spec = {
       queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
     }
     if (gppConsent) {
-      queryParams.push('gpp=' + encodeURIComponent(gppConsent));
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString) + '&gppsid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
     }
 
     if (syncOptions.iframeEnabled) {
