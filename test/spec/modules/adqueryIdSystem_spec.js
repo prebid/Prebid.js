@@ -31,7 +31,7 @@ describe('AdqueryIdSystem', function () {
 
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-      getUniqueIdentifierStrStub = sandbox.stub(utils, 'getUniqueIdentifierStr').returns('6dd9eab7df9ca5763001fb');
+      getUniqueIdentifierStrStub = sandbox.stub(utils, 'getUniqueIdentifierStr').returns('1234');
     });
 
     afterEach(function () {
@@ -47,7 +47,7 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq(`https://bidder.adquery.io/prebid/qid?qid=6dd9eab7df9ca5763001fb`);
+      expect(request.url).to.eq(`https://bidder.adquery.io/prebid/qid_6dd9eab7df9ca5763001fb`);
       request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: '6dd9eab7df9ca5763001fb'}));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal('6dd9eab7df9ca5763001fb');
     });
