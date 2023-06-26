@@ -123,6 +123,10 @@ describe('viantOrtbBidAdapter', function () {
           'sizes': [[728, 90]]
         }
       },
+      'gdprConsent': {
+        'consentString': 'consentString',
+        'gdprApplies': true,
+      },
       'sizes': [[728, 90]],
       'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
       'adUnitCode': 'div-gpt-ad-1460505748561-0',
@@ -146,6 +150,16 @@ describe('viantOrtbBidAdapter', function () {
       'doneCbCallCount': 0
     };
 
+    it('test gdpr', function () {
+      const gdprBaseBidderRequest = Object.assign({}, baseBidderRequest, {
+        gdprConsent: {
+          consentString: 'consentString',
+          gdprApplies: true,
+        }
+      });
+      const request = testBuildRequests(baseBannerBidRequests, gdprBaseBidderRequest)[0];
+      expect(request.data.regs.ext).to.have.property('gdpr', 1);
+    });
     it('sends bid request to our endpoint that makes sense', function () {
       const request = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0];
       expect(request.method).to.equal('POST');

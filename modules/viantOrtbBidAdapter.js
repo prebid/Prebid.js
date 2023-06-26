@@ -72,10 +72,17 @@ function buildRequests(bids, bidderRequest) {
 }
 
 function createRequest(bidRequests, bidderRequest, mediaType) {
+  const data = converter.toORTB({bidRequests, bidderRequest, context: {mediaType}});
+  if (bidderRequest.gdprConsent) {
+    if (!data.regs) data.regs = {};
+    if (!data.regs.ext) data.regs.ext = {};
+    data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+  }
+
   return {
     method: 'POST',
     url: ENDPOINT,
-    data: converter.toORTB({bidRequests, bidderRequest, context: {mediaType}})
+    data: data
   }
 }
 
