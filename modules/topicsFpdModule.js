@@ -21,7 +21,7 @@ const bidderIframeList = {
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
   }, {
     bidder: 'rtbhouse',
-    iframeURL: 'https://topics.authorizedvault.com/topics.html'
+    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
   }]
 }
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
