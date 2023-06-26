@@ -35,9 +35,7 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      // expect(request.url).to.eq(`https://bidder.adquery.io/prebid/qid?qid=6dd9eab7dfeab7df6dd9ea`);
       expect(request.url).to.contains(`https://bidder.adquery.io/prebid/qid?qid=`);
-      // expect(request.url).to.contains(`https://bidder.adquery.io/prebid/qid?qid=6dd9eab7dfeab7df6dd9ea`);
       request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: '6dd9eab7dfeab7df6dd9ea'}));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal('6dd9eab7dfeab7df6dd9ea');
     });
