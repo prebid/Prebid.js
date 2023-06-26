@@ -52,7 +52,9 @@ export const spec = {
       imp: []
     };
 
-    const tmax = bidderRequest.timeout;
+    const callbackTimeout = bidderRequest.timeout;
+    const globalTimeout = config.getConfig('bidderTimeout');
+    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
     if (tmax) {
       openRtbBidRequest.tmax = tmax;
     }
