@@ -807,6 +807,29 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        describe('GPP Consent', function () {
+          it('should send gpp information if bidderRequest has a value for gppConsent', function () {
+            bidderRequest.gppConsent = {
+              gppString: 'consent',
+              applicableSections: 2
+            };
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+            delete bidderRequest.gppConsent;
+
+            expect(data['gpp']).to.equal('consent');
+            expect(data['gpp_sid']).to.equal('2');
+          });
+
+          it('should not send gpp information if bidderRequest does not have a value for gppConsent', function () {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gpp']).to.equal(undefined);
+            expect(data['gpp_sid']).to.equal(undefined);
+          });
+        });
+
         describe('first party data', function () {
           it('should not have any tg_v or tg_i params if all are undefined', function () {
             let params = {
@@ -3632,6 +3655,24 @@ describe('the rubicon adapter', function () {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass gpp params when gppConsent is present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {
+        gppString: 'foo',
+        applicableSections: [2]
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2`
+      });
+    });
+
+    it('should pass multiple sid\'s when multiple are present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {
+        gppString: 'foo',
+        applicableSections: [2, 5]
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2,5`
       });
     });
   });
