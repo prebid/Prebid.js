@@ -102,7 +102,7 @@ export const adqueryIdSubmodule = {
           callback();
         }
       };
-      ajax(url + qid, callbacks, undefined, {method: 'GET'});
+      ajax(url + '?qid=' + qid, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
   }
