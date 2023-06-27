@@ -194,10 +194,14 @@ describe('sovrnBidAdapter', function() {
         expect(payload.source.tid).to.equal('1d1a030790a475')
       })
 
-      it('forwards transactionId as tid for impressions', function() {
+      it('forwards impression level tid', function() {
         const bidRequest = {
           ...baseBidRequest,
-          transactionId: 'faslk123'
+          ortb2Imp: {
+            ext: {
+              tid: '1a2c032473f4983'
+            }
+          },
         }
 
         const bidderRequest = {
@@ -206,7 +210,7 @@ describe('sovrnBidAdapter', function() {
         }
 
         const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
-        expect(payload.imp[0].ext.tid).to.equal('faslk123')
+        expect(payload.imp[0].ext.tid).to.equal('1a2c032473f4983')
       })
 
       it('includes the ad unit code in the request', function() {

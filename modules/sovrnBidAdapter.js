@@ -137,12 +137,6 @@ export const spec = {
 
         imp.ext = getBidIdParameter('ext', bid.ortb2Imp) || undefined
 
-        const transactionId = getBidIdParameter('transactionId', bid) || undefined
-        if (transactionId) {
-          imp.ext = imp.ext || {}
-          imp.ext.tid = transactionId
-        }
-
         const segmentsString = getBidIdParameter('segments', bid.params)
         if (segmentsString) {
           imp.ext = imp.ext || {}
