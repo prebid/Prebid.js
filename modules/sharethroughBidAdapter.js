@@ -154,6 +154,7 @@ export const sharethroughAdapterSpec = {
     }
 
     return body.seatbid[0].bid.map(bid => {
+      // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
         requestId: bid.impid,
         width: +bid.w,
@@ -169,6 +170,19 @@ export const sharethroughAdapterSpec = {
         nurl: bid.nurl,
         meta: {
           advertiserDomains: bid.adomain || [],
+          networkId: bid.ext?.networkId || null,
+          networkName: bid.ext?.networkName || null,
+          agencyId: bid.ext?.agencyId || null,
+          agencyName: bid.ext?.agencyName || null,
+          advertiserId: bid.ext?.advertiserId || null,
+          advertiserName: bid.ext?.advertiserName || null,
+          brandId: bid.ext?.brandId || null,
+          brandName: bid.ext?.brandName || null,
+          demandSource: bid.ext?.demandSource || null,
+          dchain: bid.ext?.dchain || null,
+          primaryCatId: bid.ext?.primaryCatId || null,
+          secondaryCatIds: bid.ext?.secondaryCatIds || null,
+          mediaType: bid.ext?.mediaType || null,
         },
       };
 
