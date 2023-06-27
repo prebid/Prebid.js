@@ -1,23 +1,31 @@
 import Adapter from '../adapter.js';
 import adapterManager from '../adapterManager.js';
-import { config } from '../config.js';
-import { createBid } from '../bidfactory.js';
-import { userSync } from '../userSync.js';
-import { nativeBidIsValid } from '../native.js';
-import { isValidVideoBid } from '../video.js';
+import {config} from '../config.js';
+import {createBid} from '../bidfactory.js';
+import {userSync} from '../userSync.js';
+import {nativeBidIsValid} from '../native.js';
+import {isValidVideoBid} from '../video.js';
 import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
-import { ajax } from '../ajax.js';
-import { logWarn, logInfo, logError, parseQueryStringParameters, delayExecution, parseSizesInput, flatten, uniques, timestamp, deepAccess, isArray, isPlainObject } from '../utils.js';
-import { ADPOD } from '../mediaTypes.js';
-import { getHook, hook } from '../hook.js';
-import { getCoreStorageManager } from '../storageManager.js';
+import {
+  delayExecution,
+  isArray,
+  isPlainObject,
+  logError,
+  logWarn, memoize,
+  parseQueryStringParameters,
+  parseSizesInput,
+  uniques
+} from '../utils.js';
+import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
-import { bidderSettings } from '../bidderSettings.js';
+import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
-
-export const storage = getCoreStorageManager('bidderFactory');
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
+import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -143,8 +151,6 @@ export const storage = getCoreStorageManager('bidderFactory');
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
 
-const DEFAULT_REFRESHIN_DAYS = 1;
-
 /**
  * Register a bidder with prebid, using the given spec.
  *
@@ -178,6 +184,38 @@ export function registerBidder(spec) {
   }
 }
 
+function guardTids(bidderCode) {
+  if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
+    return {
+      bidRequest: (br) => br,
+      bidderRequest: (br) => br
+    };
+  }
+  function get(target, prop, receiver) {
+    if (['transactionId', 'auctionId'].includes(prop)) {
+      return null;
+    }
+    return Reflect.get(target, prop, receiver);
+  }
+  const bidRequest = memoize((br) => new Proxy(br, {get}), (arg) => arg.bidId)
+  /**
+   * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
+   *
+   * Because both auctionId and transactionId are used for Prebid's own internal bookkeeping, we cannot simply erase them
+   * from request objects; and because request objects are quite complex and not easily cloneable, we hide the IDs
+   * with a proxy instead. This should be used only around the adapter logic.
+   */
+  return {
+    bidRequest,
+    bidderRequest: (br) => new Proxy(br, {
+      get(target, prop, receiver) {
+        if (prop === 'bids') return br.bids.map(bidRequest);
+        return get(target, prop, receiver);
+      }
+    })
+  }
+}
+
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
  * Adapters will probably find it more convenient to use registerBidder instead.
@@ -187,13 +225,14 @@ export function registerBidder(spec) {
 export function newBidder(spec) {
   return Object.assign(new Adapter(spec.code), {
     getSpec: function() {
-      return Object.freeze(spec);
+      return Object.freeze(Object.assign({}, spec));
     },
     registerSyncs,
     callBids: function(bidderRequest, addBidResponse, done, ajax, onTimelyResponse, configEnabledCallback) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
+      const tidGuard = guardTids(bidderRequest.bidderCode);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
@@ -219,7 +258,7 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter(filterAndWarn));
+        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -234,7 +273,7 @@ export function newBidder(spec) {
         }
       });
 
-      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
@@ -247,7 +286,9 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest, fledgeAuctionConfig);
+              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+            } else {
+              logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
           });
         },
@@ -292,6 +333,7 @@ export function newBidder(spec) {
         return true;
       }
     }
+
     return false;
   }
 
@@ -463,85 +505,13 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
       syncs.forEach((sync) => {
         userSync.registerSync(sync.type, spec.code, sync.url)
       });
+      userSync.bidderDone(spec.code);
     }
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (_bidRequest, fledgeAuctionConfig) => {
-  logInfo(`bidderFactory.addComponentAuction`, fledgeAuctionConfig);
-}, 'addComponentAuction')
-
-export function preloadBidderMappingFile(fn, adUnits) {
-  if (!config.getConfig('adpod.brandCategoryExclusion')) {
-    return fn.call(this, adUnits);
-  }
-  let adPodBidders = adUnits
-    .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-    .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
-    .reduce(flatten, [])
-    .filter(uniques);
-
-  adPodBidders.forEach(bidder => {
-    let bidderSpec = adapterManager.getBidAdapter(bidder);
-    if (bidderSpec.getSpec().getMappingFileInfo) {
-      let info = bidderSpec.getSpec().getMappingFileInfo();
-      let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
-      let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-      let mappingData = storage.getDataFromLocalStorage(key);
-      try {
-        mappingData = mappingData ? JSON.parse(mappingData) : undefined;
-        if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-          ajax(info.url,
-            {
-              success: (response) => {
-                try {
-                  response = JSON.parse(response);
-                  let mapping = {
-                    lastUpdated: timestamp(),
-                    mapping: response.mapping
-                  }
-                  storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-                } catch (error) {
-                  logError(`Failed to parse ${bidder} bidder translation mapping file`);
-                }
-              },
-              error: () => {
-                logError(`Failed to load ${bidder} bidder translation file`)
-              }
-            },
-          );
-        }
-      } catch (error) {
-        logError(`Failed to parse ${bidder} bidder translation mapping file`);
-      }
-    }
-  });
-  fn.call(this, adUnits);
-}
-
-getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
-
-/**
- * Reads the data stored in localstorage and returns iab subcategory
- * @param {string} bidderCode bidderCode
- * @param {string} category bidders category
- */
-export function getIabSubCategory(bidderCode, category) {
-  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
-  if (bidderSpec.getSpec().getMappingFileInfo) {
-    let info = bidderSpec.getSpec().getMappingFileInfo();
-    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = storage.getDataFromLocalStorage(key);
-    if (data) {
-      try {
-        data = JSON.parse(data);
-      } catch (error) {
-        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
-      }
-      return (data.mapping[category]) ? data.mapping[category] : null;
-    }
-  }
-}
+export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+}, 'addComponentAuction');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {
@@ -599,7 +569,7 @@ export function isValid(adUnitCode, bid, {index = auctionManager.index} = {}) {
     logError(errorMessage('Native bid missing some required properties.'));
     return false;
   }
-  if (bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
+  if (FEATURES.VIDEO && bid.mediaType === 'video' && !isValidVideoBid(bid, {index})) {
     logError(errorMessage(`Video bid does not have required vastUrl or renderer property`));
     return false;
   }

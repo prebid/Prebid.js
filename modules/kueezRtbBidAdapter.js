@@ -2,7 +2,7 @@ import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../sr
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -11,19 +11,7 @@ const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
-export const SUPPORTED_ID_SYSTEMS = {
-  'britepoolid': 1,
-  'criteoId': 1,
-  'id5id': 1,
-  'idl_env': 1,
-  'lipb': 1,
-  'netId': 1,
-  'parrableId': 1,
-  'pubcid': 1,
-  'tdid': 1,
-  'pubProvidedId': 1
-};
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
@@ -77,6 +65,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
 
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
       currency: 'USD',
@@ -105,6 +95,8 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     res: `${screen.width}x${screen.height}`,
     schain: schain,
     mediaTypes: mediaTypes,
+    gpid: gpid,
+    // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: auctionId,
     transactionId: transactionId,
     bidderRequestId: bidderRequestId,
@@ -115,6 +107,12 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   };
 
   appendUserIdsToRequestPayload(data, userId);
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
 
   if (bidderRequest.gdprConsent) {
     if (bidderRequest.gdprConsent.consentString) {
@@ -152,25 +150,23 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
-    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
-      key = `uid.${idSystemProviderName}`;
+    key = `uid.${idSystemProviderName}`;
 
-      switch (idSystemProviderName) {
-        case 'digitrustid':
-          payloadRef[key] = deepAccess(userId, 'data.id');
-          break;
-        case 'lipb':
-          payloadRef[key] = userId.lipbid;
-          break;
-        case 'parrableId':
-          payloadRef[key] = userId.eid;
-          break;
-        case 'id5id':
-          payloadRef[key] = userId.uid;
-          break;
-        default:
-          payloadRef[key] = userId;
-      }
+    switch (idSystemProviderName) {
+      case 'digitrustid':
+        payloadRef[key] = deepAccess(userId, 'data.id');
+        break;
+      case 'lipb':
+        payloadRef[key] = userId.lipbid;
+        break;
+      case 'parrableId':
+        payloadRef[key] = userId.eid;
+        break;
+      case 'id5id':
+        payloadRef[key] = userId.uid;
+        break;
+      default:
+        payloadRef[key] = userId;
     }
   });
 }
@@ -198,7 +194,18 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, mediaType = BANNER} = result;
+      const {
+        creativeId,
+        ad,
+        price,
+        exp,
+        width,
+        height,
+        currency,
+        metaData,
+        advertiserDomains,
+        mediaType = BANNER
+      } = result;
       if (!ad || !price) {
         return;
       }
@@ -212,10 +219,19 @@ function interpretResponse(serverResponse, request) {
         currency: currency || CURRENCY,
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
-        meta: {
-          advertiserDomains: advertiserDomains || []
-        }
       };
+
+      if (metaData) {
+        Object.assign(response, {
+          meta: metaData
+        })
+      } else {
+        Object.assign(response, {
+          meta: {
+            advertiserDomains: advertiserDomains || []
+          }
+        })
+      }
 
       if (mediaType === BANNER) {
         Object.assign(response, {

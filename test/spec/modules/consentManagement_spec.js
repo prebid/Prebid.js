@@ -146,16 +146,17 @@ describe('consentManagement', function () {
     });
 
     describe('static consent string setConsentConfig value', () => {
-      afterEach(() => {
-        config.resetConfig();
-      });
+      Object.entries({
+        'getTCData': (cfg) => ({getTCData: cfg}),
+        'consent data directly': (cfg) => cfg,
+      }).forEach(([t, packageCfg]) => {
+        describe(`using ${t}`, () => {
+          afterEach(() => {
+            config.resetConfig();
+          });
 
-      it('results in user settings overriding system defaults for v2 spec', () => {
-        let staticConfig = {
-          cmpApi: 'static',
-          timeout: 7500,
-          consentData: {
-            getTCData: {
+          it('results in user settings overriding system defaults for v2 spec', () => {
+            const consentData = {
               'tcString': 'COuqj-POu90rDBcBkBENAZCgAPzAAAPAACiQFwwBAABAA1ADEAbQC4YAYAAgAxAG0A',
               'cmpId': 92,
               'cmpVersion': 100,
@@ -218,18 +219,22 @@ describe('consentManagement', function () {
                   'legitimateInterests': {}
                 }
               }
-            }
-          }
-        };
+            };
 
-        setConsentConfig(staticConfig);
-        expect(userCMP).to.be.equal('static');
-        expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
-        expect(gdprScope).to.be.equal(false);
-        const consent = gdprDataHandler.getConsentData();
-        expect(consent.consentString).to.eql(staticConfig.consentData.getTCData.tcString);
-        expect(consent.vendorData).to.eql(staticConfig.consentData.getTCData);
-        expect(staticConsentData).to.be.equal(staticConfig.consentData);
+            setConsentConfig({
+              cmpApi: 'static',
+              timeout: 7500,
+              consentData: packageCfg(consentData)
+            });
+            expect(userCMP).to.be.equal('static');
+            expect(consentTimeout).to.be.equal(0); // should always return without a timeout when config is used
+            expect(gdprScope).to.be.equal(false);
+            const consent = gdprDataHandler.getConsentData();
+            expect(consent.consentString).to.eql(consentData.tcString);
+            expect(consent.vendorData).to.eql(consentData);
+            expect(staticConsentData).to.be.equal(consentData);
+          });
+        });
       });
     });
   });
@@ -243,9 +248,7 @@ describe('consentManagement', function () {
     const staticConfig = {
       cmpApi: 'static',
       timeout: 7500,
-      consentData: {
-        getTCData: {}
-      }
+      consentData: {}
     }
 
     let didHookReturn;

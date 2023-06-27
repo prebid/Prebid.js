@@ -6,6 +6,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -460,7 +461,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   // < Payload Ext
 
   // > Payload
-  payload.id = validBidRequests.auctionId;
+  payload.id = bidderRequest.bidderRequestId;
   payload.test = deepAccess(validBidRequests, 'params.test') ? 1 : 0;
   payload.at = 1;
   payload.tmax = bidderRequest.timeout ? bidderRequest.timeout : 600;
@@ -473,7 +474,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = ($$PREBID_GLOBAL$$.version !== null) ? encodeURIComponent($$PREBID_GLOBAL$$.version) : -1;
+  let pbjsv = (getGlobal().version !== null) ? encodeURIComponent(getGlobal().version) : -1;
 
   return {
     method: 'POST',

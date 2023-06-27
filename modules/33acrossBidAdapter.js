@@ -1,19 +1,19 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {
   deepAccess,
-  uniques,
-  isArray,
+  getWindowSelf,
   getWindowTop,
+  isArray,
   isGptPubadsDefined,
   isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
-  getWindowSelf,
   mergeDeep,
-  pick
+  pick,
+  uniques
 } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
@@ -183,7 +183,8 @@ function buildRequests(bidRequests, bidderRequest) {
         uspConsent,
         pageUrl,
         referer,
-        ttxSettings
+        ttxSettings,
+        bidderRequest,
       })
     )
   }
@@ -246,7 +247,7 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings, bidderRequest }) {
   const ttxRequest = {};
   const firstBidRequest = bidRequests[0];
   const { siteId, test } = firstBidRequest.params;
@@ -271,7 +272,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.site.ref = referer;
   }
 
-  ttxRequest.id = firstBidRequest.auctionId;
+  ttxRequest.id = bidderRequest?.bidderRequestId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -681,7 +682,6 @@ function _createBidResponse(bid, cur) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: BIDDER_CODE,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
@@ -765,7 +765,7 @@ function _buildDeviceORTB(device = {}) {
   }
 
   if (device.sua) {
-    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
   }
 
   return deviceProps;

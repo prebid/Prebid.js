@@ -1,6 +1,5 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {createEidsArray} from './userId/eids.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -72,7 +71,7 @@ export const spec = {
         let size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
-        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
@@ -122,8 +121,8 @@ export const spec = {
       payload.ortb2 = bidderRequest.ortb2;
     }
 
-    if (deepAccess(bidderRequest, 'userId')) {
-      payload.userId = createEidsArray(bidderRequest.userId);
+    if (deepAccess(bidderRequest, 'userIdAsEids')) {
+      payload.userId = bidderRequest.userIdAsEids;
     }
 
     payload.pbjs_version = '$prebid.version$';

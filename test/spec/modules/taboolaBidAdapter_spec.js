@@ -5,14 +5,15 @@ import * as utils from '../../../src/utils'
 import {server} from '../../mocks/xhr'
 
 describe('Taboola Adapter', function () {
-  let hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
+  let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
 
   beforeEach(() => {
-    hasLocalStorage = sinon.stub(userData.storageManager, 'hasLocalStorage');
-    cookiesAreEnabled = sinon.stub(userData.storageManager, 'cookiesAreEnabled');
-    getCookie = sinon.stub(userData.storageManager, 'getCookie');
-    getDataFromLocalStorage = sinon.stub(userData.storageManager, 'getDataFromLocalStorage');
-    localStorageIsEnabled = sinon.stub(userData.storageManager, 'localStorageIsEnabled');
+    sandbox = sinon.sandbox.create();
+    hasLocalStorage = sandbox.stub(userData.storageManager, 'hasLocalStorage');
+    cookiesAreEnabled = sandbox.stub(userData.storageManager, 'cookiesAreEnabled');
+    getCookie = sandbox.stub(userData.storageManager, 'getCookie');
+    getDataFromLocalStorage = sandbox.stub(userData.storageManager, 'getDataFromLocalStorage');
+    localStorageIsEnabled = sandbox.stub(userData.storageManager, 'localStorageIsEnabled');
     commonBidRequest = createBidRequest();
     $$PREBID_GLOBAL$$.bidderSettings = {
       taboola: {
@@ -22,12 +23,7 @@ describe('Taboola Adapter', function () {
   });
 
   afterEach(() => {
-    hasLocalStorage.restore();
-    cookiesAreEnabled.restore();
-    getCookie.restore();
-    getDataFromLocalStorage.restore();
-    localStorageIsEnabled.restore();
-
+    sandbox.restore();
     $$PREBID_GLOBAL$$.bidderSettings = {};
   })
 
@@ -124,6 +120,7 @@ describe('Taboola Adapter', function () {
     }
 
     const commonBidderRequest = {
+      bidderRequestId: 'mock-uuid',
       refererInfo: {
         page: 'https://example.com/ref',
         ref: 'https://ref',
@@ -133,6 +130,7 @@ describe('Taboola Adapter', function () {
 
     it('should build display request', function () {
       const expectedData = {
+        id: 'mock-uuid',
         'imp': [{
           'id': 1,
           'banner': {
@@ -666,6 +664,107 @@ describe('Taboola Adapter', function () {
         }
       ];
       const res = spec.interpretResponse(serverResponse, request);
+      expect(res).to.deep.equal(expectedRes);
+    });
+
+    it('should replace AUCTION_PRICE macro in adm', function () {
+      const multiRequest = {
+        bids: [
+          {
+            ...createBidRequest(),
+            ...displayBidRequestParams
+          },
+          {
+            ...createBidRequest(),
+            ...displayBidRequestParams
+          }
+        ]
+      }
+      const multiServerResponseWithMacro = {
+        body: {
+          'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
+                  'impid': '2',
+                  'price': 0.34,
+                  'adid': '2785119545551083381',
+                  'adm': 'ADM2,\\nwp:\'${AUCTION_PRICE}\'',
+                  'adomain': [
+                    'example.xyz'
+                  ],
+                  'cid': '15744349',
+                  'crid': '278195503434041083381',
+                  'w': 300,
+                  'h': 250,
+                  'exp': 60,
+                  'lurl': 'http://us-trc.taboola.com/sample',
+                  'nurl': 'http://win.example.com/'
+                },
+                {
+                  'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
+                  'impid': '1',
+                  'price': 0.35,
+                  'adid': '2785119545551083381',
+                  'adm': 'ADM2,\\nwp:\'${AUCTION_PRICE}\'',
+                  'adomain': [
+                    'example.xyz'
+                  ],
+                  'cid': '15744349',
+                  'crid': '278195503434041083381',
+                  'w': 300,
+                  'h': 250,
+                  'exp': 60,
+                  'lurl': 'http://us-trc.taboola.com/sample',
+                  'nurl': 'http://win.example.com/'
+
+                }
+              ],
+              'seat': '14204545260'
+            }
+          ],
+          'bidid': 'da43860a-4644-442a-b5e0-93f268cf8d19',
+          'cur': 'USD'
+        }
+      };
+      const [bid] = multiServerResponseWithMacro.body.seatbid[0].bid;
+      const expectedRes = [
+        {
+          requestId: multiRequest.bids[1].bidId,
+          cpm: multiServerResponseWithMacro.body.seatbid[0].bid[0].price,
+          creativeId: bid.crid,
+          ttl: 60,
+          netRevenue: true,
+          currency: multiServerResponseWithMacro.body.cur,
+          mediaType: 'banner',
+          ad: 'ADM2,\\nwp:\'0.34\'',
+          width: bid.w,
+          height: bid.h,
+          nurl: 'http://win.example.com/',
+          meta: {
+            'advertiserDomains': bid.adomain
+          },
+        },
+        {
+          requestId: multiRequest.bids[0].bidId,
+          cpm: multiServerResponseWithMacro.body.seatbid[0].bid[1].price,
+          creativeId: bid.crid,
+          ttl: 60,
+          netRevenue: true,
+          currency: multiServerResponseWithMacro.body.cur,
+          mediaType: 'banner',
+          ad: 'ADM2,\\nwp:\'0.35\'',
+          width: bid.w,
+          height: bid.h,
+          nurl: 'http://win.example.com/',
+          meta: {
+            'advertiserDomains': bid.adomain
+          },
+        }
+      ];
+      const res = spec.interpretResponse(multiServerResponseWithMacro, multiRequest);
       expect(res).to.deep.equal(expectedRes);
     });
   })

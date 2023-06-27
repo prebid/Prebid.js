@@ -10,6 +10,7 @@ import {gppDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -362,7 +363,7 @@ export function setConsentConfig(config) {
   logInfo('consentManagement.gpp module has been activated...');
 
   if (!addedConsentHook) {
-    $$PREBID_GLOBAL$$.requestBids.before(requestBidsHook, 50);
+    getGlobal().requestBids.before(requestBidsHook, 50);
   }
   addedConsentHook = true;
   gppDataHandler.enable();
