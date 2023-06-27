@@ -44,12 +44,6 @@ const converter = ortbConverter({
       at: 1,
     })
     const bid = context.bidRequests[0];
-    if (bid.params.coppa) {
-      deepSetValue(req, 'regs.coppa', 1);
-    }
-    if (bid.params.doNotTrack) {
-      deepSetValue(req, 'device.dnt', 1);
-    }
     if (bid.params.test) {
       req.test = 1
     }
