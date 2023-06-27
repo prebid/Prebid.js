@@ -366,15 +366,15 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal(1);
     });
 
-    it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
+    it('should reject bid when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
 
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
+        bidAdded = true;
       }, 'elementId', bid, reject);
-      expect(innerBid.status).to.equal('rejected');
+      expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
     });
 
@@ -390,7 +390,7 @@ describe('currency', function () {
       expect(bid).to.equal(innerBid);
     });
 
-    it('should result in NO_BID when fromCurrency is not supported in file', function () {
+    it('should reject bid when fromCurrency is not supported in file', function () {
       // RESET to request currency file
       setConfig({ 'adServerCurrency': undefined });
 
@@ -398,24 +398,24 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
+        bidAdded = true;
       }, 'elementId', bid, reject);
-      expect(innerBid.status).to.equal('rejected');
+      expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
     });
 
-    it('should result in NO_BID when adServerCurrency is not supported in file', function () {
+    it('should reject bid when adServerCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
+        bidAdded = true;
       }, 'elementId', bid, reject);
-      expect(innerBid.status).to.equal('rejected');
+      expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
     });
 

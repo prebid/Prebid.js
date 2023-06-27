@@ -13,6 +13,8 @@ describe('Missena Adapter', function () {
     sizes: [[1, 1]],
     params: {
       apiKey: 'PA-34745704',
+      placement: 'sticky',
+      formats: ['sticky-banner'],
     },
   };
 
@@ -68,6 +70,14 @@ describe('Missena Adapter', function () {
 
     it('should send the bidder id', function () {
       expect(payload.request_id).to.equal(bidId);
+    });
+
+    it('should send placement', function () {
+      expect(payload.placement).to.equal('sticky');
+    });
+
+    it('should send formats', function () {
+      expect(payload.formats).to.eql(['sticky-banner']);
     });
 
     it('should send referer information to the request', function () {

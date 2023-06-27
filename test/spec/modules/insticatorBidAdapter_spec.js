@@ -72,7 +72,11 @@ describe('InsticatorBidAdapter', function () {
 
   let bidderRequest = {
     bidderRequestId,
-    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    ortb2: {
+      source: {
+        tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+      }
+    },
     timeout: 300,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -181,6 +185,7 @@ describe('InsticatorBidAdapter', function () {
     let getDataFromLocalStorageStub, localStorageIsEnabledStub;
     let getCookieStub, cookiesAreEnabledStub;
     let sandbox;
+    let serverRequests, serverRequest;
 
     beforeEach(() => {
       $$PREBID_GLOBAL$$.bidderSettings = {
@@ -206,12 +211,15 @@ describe('InsticatorBidAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+    before(() => {
+      serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+      serverRequest = serverRequests[0];
+    })
+
     it('should create a request', function () {
       expect(serverRequests).to.have.length(1);
     });
 
-    const serverRequest = serverRequests[0];
     it('should create a request object with method, URL, options and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -248,7 +256,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.tmax).to.equal(bidderRequest.timeout);
       expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
       expect(data.source.fd).to.equal(1);
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
       expect(data.source.ext).to.have.property('schain').to.deep.equal({
         ver: '1.0',
         complete: 1,

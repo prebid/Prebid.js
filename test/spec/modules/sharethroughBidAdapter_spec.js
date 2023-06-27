@@ -93,31 +93,107 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
-          userId: {
-            tdid: 'fake-tdid',
-            pubcid: 'fake-pubcid',
-            idl_env: 'fake-identity-link',
-            id5id: {
-              uid: 'fake-id5id',
-              ext: {
-                linkType: 2,
-              },
+          userIdAsEids: [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-pubcid'
+                },
+              ]
             },
-            lipb: {
-              lipbid: 'fake-lipbid',
+            {
+              'source': 'liveramp.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-identity-link'
+                }
+              ]
             },
-            criteoId: 'fake-criteo',
-            britepoolid: 'fake-britepool',
-            intentIqId: 'fake-intentiq',
-            lotamePanoramaId: 'fake-lotame',
-            parrableId: {
-              eid: 'fake-parrable',
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-id5id'
+                }
+              ]
             },
-            netId: 'fake-netid',
-            sharedid: {
-              id: 'fake-sharedid',
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-tdid'
+                }
+              ]
             },
-          },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-criteo'
+                }
+              ]
+            },
+            {
+              'source': 'britepool.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-britepool'
+                }
+              ]
+            },
+            {
+              'source': 'liveintent.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lipbid'
+                }
+              ]
+            },
+            {
+              'source': 'intentiq.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-intentiq'
+                }
+              ]
+            },
+            {
+              'source': 'crwdcntrl.net',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lotame'
+                }
+              ]
+            },
+            {
+              'source': 'parrable.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-parrable'
+                }
+              ]
+            },
+            {
+              'source': 'netid.de',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-netid'
+                }
+              ]
+            }
+          ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
@@ -154,7 +230,7 @@ describe('sharethrough adapter spec', function () {
               api: [3],
               mimes: ['video/3gpp'],
               protocols: [2, 3],
-              playerSize: [640, 480],
+              playerSize: [[640, 480]],
               startdelay: 42,
               skipmin: 10,
               skipafter: 20,
@@ -172,7 +248,12 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
-        auctionId: 'auction-id'
+        ortb2: {
+          source: {
+            tid: 'auction-id'
+          }
+        },
+        timeout: 242
       };
     });
 
@@ -234,7 +315,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
-            expect(openRtbReq.source.tid).to.equal(bidderRequest.auctionId);
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.ortb2.source.tid);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
@@ -623,6 +704,81 @@ describe('sharethrough adapter spec', function () {
           expect(bannerBid.ad).to.equal('vastTag');
           expect(bannerBid.meta.advertiserDomains).to.deep.equal([]);
           expect(bannerBid.vastXml).to.equal('vastTag');
+        });
+      });
+
+      describe('meta object', () => {
+        beforeEach(() => {
+          request = spec.buildRequests(bidRequests, bidderRequest)[0];
+          response = {
+            body: {
+              seatbid: [{
+                bid: [{
+                  id: '123',
+                  impid: 'bidId1',
+                  w: 300,
+                  h: 250,
+                  price: 42,
+                  crid: 'creative',
+                  dealid: 'deal',
+                  adomain: ['domain.com'],
+                  adm: 'markup',
+                }],
+              }],
+            },
+          };
+        });
+
+        it('should have null optional fields when the response\'s optional seatbid[].bid[].ext field is empty', () => {
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.be.null;
+          expect(bid.meta.networkName).to.be.null;
+          expect(bid.meta.agencyId).to.be.null;
+          expect(bid.meta.agencyName).to.be.null;
+          expect(bid.meta.advertiserId).to.be.null;
+          expect(bid.meta.advertiserName).to.be.null;
+          expect(bid.meta.brandId).to.be.null;
+          expect(bid.meta.brandName).to.be.null;
+          expect(bid.meta.demandSource).to.be.null;
+          expect(bid.meta.dchain).to.be.null;
+          expect(bid.meta.primaryCatId).to.be.null;
+          expect(bid.meta.secondaryCatIds).to.be.null;
+          expect(bid.meta.mediaType).to.be.null;
+        });
+
+        it('should have populated fields when the response\'s optional seatbid[].bid[].ext fields are filled', () => {
+          response.body.seatbid[0].bid[0].ext = {
+            networkId: 'my network id',
+            networkName: 'my network name',
+            agencyId: 'my agency id',
+            agencyName: 'my agency name',
+            advertiserId: 'my advertiser id',
+            advertiserName: 'my advertiser name',
+            brandId: 'my brand id',
+            brandName: 'my brand name',
+            demandSource: 'my demand source',
+            dchain: { 'my key': 'my value' },
+            primaryCatId: 'my primary cat id',
+            secondaryCatIds: ['my', 'secondary', 'cat', 'ids'],
+            mediaType: 'my media type',
+          };
+
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.equal('my network id');
+          expect(bid.meta.networkName).to.equal('my network name');
+          expect(bid.meta.agencyId).to.equal('my agency id');
+          expect(bid.meta.agencyName).to.equal('my agency name');
+          expect(bid.meta.advertiserId).to.equal('my advertiser id');
+          expect(bid.meta.advertiserName).to.equal('my advertiser name');
+          expect(bid.meta.brandId).to.equal('my brand id');
+          expect(bid.meta.brandName).to.equal('my brand name');
+          expect(bid.meta.demandSource).to.equal('my demand source');
+          expect(bid.meta.dchain).to.deep.equal({ 'my key': 'my value' });
+          expect(bid.meta.primaryCatId).to.equal('my primary cat id');
+          expect(bid.meta.secondaryCatIds).to.deep.equal(['my', 'secondary', 'cat', 'ids']);
+          expect(bid.meta.mediaType).to.equal('my media type');
         });
       });
     });

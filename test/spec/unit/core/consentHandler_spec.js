@@ -1,4 +1,4 @@
-import {ConsentHandler} from '../../../../src/consentHandler.js';
+import {ConsentHandler, gvlidRegistry} from '../../../../src/consentHandler.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -55,5 +55,33 @@ describe('Consent data handler', () => {
         done();
       })
     })
+  });
+})
+
+describe('gvlidRegistry', () => {
+  let registry;
+  beforeEach(() => {
+    registry = gvlidRegistry();
+  });
+
+  it('returns undef when id cannoot be found', () => {
+    expect(registry.get('name')).to.eql({modules: {}})
+  });
+
+  it('does not register null ids', () => {
+    registry.register('type', 'name', null);
+    expect(registry.get('type', 'name')).to.eql({modules: {}});
+  })
+
+  it('can retrieve registered GVL IDs', () => {
+    registry.register('type', 'name', 123);
+    registry.register('otherType', 'name', 123);
+    expect(registry.get('name')).to.eql({gvlid: 123, modules: {type: 123, otherType: 123}});
+  });
+
+  it('does not return `gvlid` if there is more than one', () => {
+    registry.register('type', 'name', 123);
+    registry.register('otherType', 'name', 321);
+    expect(registry.get('name')).to.eql({modules: {type: 123, otherType: 321}})
   });
 })

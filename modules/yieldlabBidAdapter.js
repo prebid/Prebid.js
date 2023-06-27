@@ -12,6 +12,8 @@ const CURRENCY_CODE = 'EUR';
 const OUTSTREAMPLAYER_URL = 'https://ad.adition.com/dynamic.ad?a=o193092&ma_loadEvent=ma-start-event';
 const GVLID = 70;
 const DIMENSION_SIGN = 'x';
+const IMG_TYPE_ICON = 1;
+const IMG_TYPE_MAIN = 3;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -183,24 +185,33 @@ export const spec = {
         }
 
         if (isNative(bidRequest, adType)) {
-          // there may be publishers still rely on it
-          const url = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
-          bidResponse.adUrl = url;
+          const { native } = matchedBid;
+          const { assets } = native;
+          bidResponse.adUrl = `${ENDPOINT}/d/${matchedBid.id}/${bidRequest.params.supplyId}/?ts=${timestamp}${extId}${gdprApplies}${gdprConsent}${pvId}`;
           bidResponse.mediaType = NATIVE;
-          const nativeImageAssetObj = find(matchedBid.native.assets, e => e.id === 2);
+          const nativeIconAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_ICON));
+          const nativeImageAssetObj = find(assets, isImageAssetOfType(IMG_TYPE_MAIN));
           const nativeImageAsset = nativeImageAssetObj ? nativeImageAssetObj.img : { url: '', w: 0, h: 0 };
-          const nativeTitleAsset = find(matchedBid.native.assets, e => e.id === 1);
-          const nativeBodyAsset = find(matchedBid.native.assets, e => e.id === 3);
+          const nativeTitleAsset = find(assets, asset => hasValidProperty(asset, 'title'));
+          const nativeBodyAsset = find(assets, asset => hasValidProperty(asset, 'data'));
           bidResponse.native = {
             title: nativeTitleAsset ? nativeTitleAsset.title.text : '',
             body: nativeBodyAsset ? nativeBodyAsset.data.value : '',
+            ...nativeIconAssetObj?.img && {
+              icon: {
+                url: nativeIconAssetObj.img.url,
+                width: nativeIconAssetObj.img.w,
+                height: nativeIconAssetObj.img.h,
+              },
+            },
             image: {
               url: nativeImageAsset.url,
               width: nativeImageAsset.w,
               height: nativeImageAsset.h,
             },
-            clickUrl: matchedBid.native.link.url,
-            impressionTrackers: matchedBid.native.imptrackers,
+            clickUrl: native.link.url,
+            impressionTrackers: native.imptrackers,
+            assets: assets,
           };
         }
 
@@ -503,6 +514,26 @@ function getBidFloor(bid, sizes) {
     return (floor.floor * 100).toFixed(0);
   }
   return undefined;
+}
+
+/**
+ * Checks if an object has a property with a given name and the property value is not null or undefined.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {string} propName - The name of the property to check.
+ * @returns {boolean} Returns true if the object has a property with the given name and the property value is not null or undefined, otherwise false.
+ */
+function hasValidProperty(obj, propName) {
+  return obj.hasOwnProperty(propName) && obj[propName] != null;
+}
+
+/**
+ * Returns a filtering function for image assets based on type.
+ * @param {number} type - The desired asset type to filter for i.e. IMG_TYPE_ICON = 1, IMG_TYPE_MAIN = 3
+ * @returns {function} - A filtering function that accepts an asset and checks if its img.type matches the desired type.
+ */
+function isImageAssetOfType(type) {
+  return asset => asset?.img?.type === type;
 }
 
 registerBidder(spec);

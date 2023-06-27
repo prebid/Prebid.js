@@ -4,19 +4,20 @@ import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 
 const BIDDER_CODE = 'cointraffic';
-const ENDPOINT_URL = 'https://apps-pbd.ctengine.io/pb/tmp';
+const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 const DEFAULT_CURRENCY = 'EUR';
 const ALLOWED_CURRENCIES = [
   'EUR', 'USD', 'JPY', 'BGN', 'CZK', 'DKK', 'GBP', 'HUF', 'PLN', 'RON', 'SEK', 'CHF', 'ISK', 'NOK', 'HRK', 'RUB', 'TRY',
   'AUD', 'BRL', 'CAD', 'CNY', 'HKD', 'IDR', 'ILS', 'INR', 'KRW', 'MXN', 'MYR', 'NZD', 'PHP', 'SGD', 'THB', 'ZAR',
 ];
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -50,8 +51,7 @@ export const spec = {
         currency: currency,
         sizes: sizes,
         bidId: bidRequest.bidId,
-        // TODO: is 'page' the right value here?
-        referer: bidderRequest.refererInfo.page,
+        referer: bidderRequest.refererInfo.ref,
       };
 
       return {
