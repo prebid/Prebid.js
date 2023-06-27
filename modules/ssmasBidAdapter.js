@@ -7,18 +7,14 @@ import {config} from '../src/config.js';
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'localhost:8080';
 export const SSMAS_ENDPOINT = `http://${SSMAS_SERVER}/ortb`;
-// const SYNC_URL = `http://${SSMAS_SERVER}/prebid/user_sync`;
+const SYNC_URL = `http://sync.ssmas.com/user_sync`;
 export const SSMAS_REQUEST_METHOD = 'POST';
-// const SSMAS_CURRENCY = 'EUR';
-
-// https://iabeurope.eu/vendor-list-tcf/
 const GDPR_VENDOR_ID = 1183;
 
 export const ssmasOrtbConverter = ortbConverter({
   context: {
-    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
-    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
-    ttl: 300, // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+    netRevenue: true,
+    ttl: 300,
     mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
@@ -92,31 +88,38 @@ export const spec = {
     }
   },
 
-  // getUserSyncs: (
-  //   syncOptions,
-  //   serverResponses,
-  //   gdprConsent,
-  //   uspConsent
-  // ) => {
-  //   const syncs = [];
+  getUserSyncs: (
+    syncOptions,
+    serverResponses,
+    gdprConsent,
+    uspConsent
+  ) => {
+    const syncs = [];
 
-  //   let gdprParams;
-  //   if (typeof gdprConsent.gdprApplies === 'boolean') {
-  //     gdprParams = `gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
-  //       gdprConsent.consentString
-  //     }`;
-  //   } else {
-  //     gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
-  //   }
+    let gdprParams = '';
+    let uspParams = '';
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        gdprParams = `gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
+          gdprConsent.consentString
+        }`;
+      } else {
+        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
 
-  //   if (syncOptions.pixelEnabled && serverResponses.length > 0) {
-  //     syncs.push({
-  //       type: 'image',
-  //       url: `${SYNC_URL}?${gdprParams}`
-  //     });
-  //   }
-  //   return syncs;
-  // },
+    if (uspConsent && uspConsent.consentString) {
+      uspParams += `ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+      syncs.push({
+        type: 'image',
+        url: `${SYNC_URL}?pbjs=1&${gdprParams}${uspParams}`
+      });
+    }
+    return syncs;
+  },
 };
 
 registerBidder(spec);
