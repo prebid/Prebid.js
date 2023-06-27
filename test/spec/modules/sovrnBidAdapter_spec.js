@@ -183,6 +183,40 @@ describe('sovrnBidAdapter', function() {
         expect(payload.tmax).to.equal(3000)
       })
 
+      it('forwards auction level tid', function() {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          ortb2: {
+            source: {
+              tid: '1d1a030790a475'
+            }
+          },
+          bids: [baseBidRequest]
+        }
+
+        const payload = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+        expect(payload.source?.tid).to.equal('1d1a030790a475')
+      })
+
+      it('forwards impression level tid', function() {
+        const bidRequest = {
+          ...baseBidRequest,
+          ortb2Imp: {
+            ext: {
+              tid: '1a2c032473f4983'
+            }
+          },
+        }
+
+        const bidderRequest = {
+          ...baseBidderRequest,
+          bids: [bidRequest]
+        }
+
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
+        expect(payload.imp[0]?.ext?.tid).to.equal('1a2c032473f4983')
+      })
+
       it('includes the ad unit code in the request', function() {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')
