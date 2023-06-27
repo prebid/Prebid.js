@@ -21,10 +21,10 @@ The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all 
 
 
 # Adapter Request mode
-Since the `yahooAdvertising` bid adapter supports both Banner and Video adUnits, a controller was needed to allow you to define when the adapter should generate a bid-requests to the Yahoo bid endpoint.
+Since the Yahoo Advertising bid adapter supports both Banner and Video adUnits, a controller was needed to allow you to define when the adapter should generate a bid-requests to the Yahoo bid endpoint.
 
 **Important!** By default the adapter mode is set to "banner" only.
-This means that you do not need to explicitly declare the `yahooAdvertising.mode` property in the global config to initiate banner adUnit requests.
+This means that you do not need to explicitly declare the `yahooAds.mode` property in the global config to initiate banner adUnit requests.
 
 ## Request modes:
 * **undefined** - (Default) Will generate bid-requests for "Banner" formats only.
@@ -32,20 +32,20 @@ This means that you do not need to explicitly declare the `yahooAdvertising.mode
 * **video** - Will generate bid-requests for "Video" formats only (Explicit declaration).
 * **all** - Will generate bid-requests for both "Banner" & "Video" formats.
 
-**Important!** When setting `yahooAdvertising.mode` to `'all'`, make sure your Yahoo Placement (pos id) supports both Banner & Video placements.
+**Important!** When setting `yahooAds.mode` to `'all'`, make sure your Yahoo Placement (pos id) supports both Banner & Video placements.
 If it does not, the Yahoo bid server will respond only in the format it is set too.
 
 ### Example: explicitly setting the request mode
 ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'banner' // 'all', 'video', 'banner' (default)
     }
 });
 ```
 
 # Integration Options
-The `yahooAdvertising` bid adapter supports 2 types of integration:
+The `yahooAds` bid adapter supports 2 types of integration:
 1. **dcn & pos** DEFAULT (Site/App & Position targeting) - For Display partners/publishers.
 2. **pubId** (Publisher ID) - For legacy "oneVideo" AND new partners/publishers.
 **Important:** pubId integration (option 2) is only possible when your seller account is setup for "Inventory Mapping".
@@ -61,7 +61,7 @@ At this time, only the following partners/publishers are eligble for pubId integ
 
 # Mandatory Bidder Parameters
 ## dcn & pos (DEFAULT)
-The minimal requirements for the `yahooAdvertising` bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
+The minimal requirements for the `yahooAds` bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
 1. At least 1 adUnit including mediaTypes: banner or video
 2. **bidder.params** object must include:
     A. **dcn:** Yahoo Advertising Site/App inventory parameter.
@@ -78,7 +78,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahooAdvertising',
+            bidder: 'yahooAds',
             params: {
                 dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
                 pos: '8a969978017a7aaabab4ab0bc01a0009' // Placement ID provided by Yahoo Advertising
@@ -89,7 +89,7 @@ const adUnits = [{
 ```
 
 ## pubId
-The minimal requirements for the `yahooAdvertising` bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
+The minimal requirements for the `yahooAds` bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
 1. At least 1 adUnit including mediaTypes: banner or video
 2. **bidder.params** object must include:
     A. **pubId:** Yahoo Advertising Publisher ID (AKA oneVideo pubId/Exchange name)
@@ -105,7 +105,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahooAdvertising',
+            bidder: 'yahooAds',
             params: {
                 pubId: 'DemoPublisher', // Publisher defined external ID as configured by Yahoo Advertising.
             }
@@ -127,7 +127,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
             pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided by Yahoo Advertising
@@ -142,7 +142,7 @@ const adUnits = [{
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'.
 ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -160,7 +160,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
@@ -174,7 +174,7 @@ const adUnits = [{
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
 ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -192,7 +192,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
@@ -202,12 +202,12 @@ const adUnits = [{
 
 ```
 ## Multi-Format
-**Important!** If you intend to use the `yahooAdvertising` bidder for both Banner and Video formats please make sure:
+**Important!** If you intend to use the `yahooAds` bidder for both Banner and Video formats please make sure:
 1. Set the adapter as mode: 'all' - to configure the bid adapter to call the bid endpoint for both banner & video formats.
 2. Make sure the Yahoo Advertising placement (pos id) supports both banner & video format requests.
 ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'all'
     }
 });
@@ -228,7 +228,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
             pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
@@ -238,7 +238,7 @@ const adUnits = [{
 ```
 
 # Optional: Schain module support
-The `yahooAdvertising` bid adapter supports the Prebid.org Schain module and will pass it through to our bid endpoint.
+The `yahooAds` bid adapter supports the Prebid.org Schain module and will pass it through to our bid endpoint.
 For further details please see, https://docs.prebid.org/dev-docs/modules/schain.html
 ## Global Schain Example:
 ```javascript
@@ -260,7 +260,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ## Bidder Specific Schain Example:
 ```javascript
         pbjs.setBidderConfig({
-            "bidders": ['yahooAdvertising'], // can list more bidders here if they share the same config
+            "bidders": ['yahooAds'], // can list more bidders here if they share the same config
             "config": {
             "schain": {
                 "validation": "strict",
@@ -279,7 +279,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ```
 
 # Optional: Price floors module & bidfloor
-The `yahooAdvertising` bid adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency, if the relevant floors have been defined in the configuration.
+The `yahooAds` bid adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency, if the relevant floors have been defined in the configuration.
 A cusom method for defining bid floors is also supported, this can be enabled by setting the `params.bidOverride.imp.bidfloor` bidder parameter.
 
 **Note:** All override params apply to all requests generated using this configuration regardless of format type.
@@ -294,7 +294,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
             pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided by Yahoo Advertising
@@ -312,11 +312,11 @@ const adUnits = [{
 For further details please see, https://docs.prebid.org/dev-docs/modules/floors.html
 
 # Optional: Self-served E2E testing mode
-If you want to see how the `yahooAdvertising` bid adapter works and loads you are invited to try it out using our testing mode.
+If you want to see how the `yahooAds` bid adapter works and loads you are invited to try it out using our testing mode.
 This is useful for integration testing and response parsing when checking banner vs video capabilities.
 
 ## How to use E2E test mode:
-1. Set the `yahooAdvertising` global config mode to either `'banner'` or `'video'` - depending on the adUnit you want to test.
+1. Set the `yahooAds` global config mode to either `'banner'` or `'video'` - depending on the adUnit you want to test.
 2. Add params.testing.e2etest: true to your adUnit bidder config - See examples below.
 
 **Note:** When using E2E Test Mode you do not need to pass mandatory bidder params dcn or pos.
@@ -326,7 +326,7 @@ This is useful for integration testing and response parsing when checking banner
 ## Activating E2E Test for "Banner"
  ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'banner' // select 'banner' or 'video' to define what response to load
     }
 });
@@ -340,7 +340,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahooAdvertising',
+            bidder: 'yahooAds',
             params: {
                 testing: {
                     e2etest: true // Activate E2E Test mode
@@ -355,7 +355,7 @@ const adUnits = [{
 **Note:** We recommend using Video Outstream as it would load the video response using our Outstream Renderer feature
  ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -373,7 +373,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             testing: {
                 e2etest: true // Activate E2E Test mode
@@ -384,7 +384,7 @@ const adUnits = [{
 ```
 
 # Optional: First Party Data
-The `yahooAdvertising` bid adapter supports first party data passed via:
+The `yahooAds` bid adapter supports first party data passed via:
 1. Global ortb2 object using `pbjs.setConfig()`
 2. adUnit ortb2Imp object declared within an adUnit.
 For further details please see, https://docs.prebid.org/features/firstPartyData.html
@@ -543,7 +543,7 @@ const adUnits = [{
                     }
                 },
                 bids: [{
-                    bidder: 'yahooAdvertising',
+                    bidder: 'yahooAds',
                     params: {
                         pubdId: 'DemoPublisher'
                     }
@@ -553,7 +553,7 @@ const adUnits = [{
 ```
 
 # Optional: Bidder bidOverride Parameters
-The `yahooAdvertising` bid adapter allows passing override data to the outbound bid-request that overrides First Party Data.
+The `yahooAds` bid adapter allows passing override data to the outbound bid-request that overrides First Party Data.
 **Important!** We highly recommend using prebid modules to pass data instead of bidder speicifc overrides.
 The use of these parameters are a last resort to force a specific feature or use case in your implementation.
 
@@ -591,7 +591,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -645,7 +645,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -661,14 +661,14 @@ const adUnits = [{
 ```
 
 # Optional: Custom Cache Time To Live (ttl):
-The `yahooAdvertising` bid adapter supports passing of "Time To Live" (ttl) to indicate to prebid how long the bid response from Yahoo Advertising should be retained by Prebid for. This configuration value must be a Number in seconds, with the valid range being 1 - 3600 inclusive.
+The `yahooAds` bid adapter supports passing of "Time To Live" (ttl) to indicate to prebid how long the bid response from Yahoo Advertising should be retained by Prebid for. This configuration value must be a Number in seconds, with the valid range being 1 - 3600 inclusive.
 The setting can be defined globally using `setConfig` or within the adUnit.params.
 Global level `setConfig` overrides adUnit.params.
 If no value is being passed default is 300 seconds.
 ## Global TTL
 ```javascript
 pbjs.setConfig({
-    yahooAdvertising: {
+    yahooAds: {
         ttl: 300
     }
 });
@@ -684,7 +684,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -703,7 +703,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -729,7 +729,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -764,7 +764,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             siteId: '1234567';
@@ -793,7 +793,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             siteId: '1234567',
@@ -816,7 +816,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahooAdvertising',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             placementId: 'header-250x300'

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { spec } from 'modules/yahooAdvertisingBidAdapter.js';
+import { spec } from 'modules/yahoosspBidAdapter.js';
 import {createEidsArray} from '../../../modules/userId/eids';
 
 const DEFAULT_BID_ID = '84ab500420319d';
@@ -12,8 +12,9 @@ const DEFAULT_AD_UNIT_CODE = '/19968336/header-bid-tag-1';
 const DEFAULT_AD_UNIT_TYPE = 'banner';
 const DEFAULT_PARAMS_BID_OVERRIDE = {};
 const DEFAULT_VIDEO_CONTEXT = 'instream';
-const DEFAULT_BIDDER_CODE = 'yahooAdvertising';
-const VALID_BIDDER_CODES = [DEFAULT_BIDDER_CODE, 'yahoossp'];
+const ADAPTER_VERSION = '1.1.0';
+const DEFAULT_BIDDER_CODE = 'yahooAds';
+const VALID_BIDDER_CODES = [DEFAULT_BIDDER_CODE, 'yahoossp', 'yahooAdvertising'];
 const PREBID_VERSION = '$prebid.version$';
 const INTEGRATION_METHOD = 'prebid.js';
 
@@ -188,11 +189,11 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
   describe('Validate basic properties', () => {
     it('should define the correct bidder code', () => {
-      expect(spec.code).to.equal('yahooAdvertising');
+      expect(spec.code).to.equal('yahooAds');
     });
 
     it('should define the correct bidder aliases', () => {
-      expect(spec.aliases).to.deep.equal(['yahoossp']);
+      expect(spec.aliases).to.deep.equal(['yahoossp', 'yahooAdvertising']);
     });
 
     it('should define the correct vendor ID', () => {
@@ -828,7 +829,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   describe('Endpoint & Impression Request Mode:', () => {
     afterEach(() => {
       config.setConfig({
-        yahooAdvertising: {
+        yahooAds: {
           singleRequestMode: undefined
         }
       });
@@ -880,7 +881,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       bidderRequest.bids = validBidRequests;
 
       config.setConfig({
-        yahooAdvertising: {
+        yahooAds: {
           singleRequestMode: true
         }
       });
@@ -1011,6 +1012,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       expect(data.source).to.deep.equal({
         ext: {
           hb: 1,
+          adapterver: ADAPTER_VERSION,
           prebidver: PREBID_VERSION,
           integration: {
             name: INTEGRATION_METHOD,
@@ -1448,7 +1450,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
     describe('for mediaTypes: "video"', () => {
       beforeEach(() => {
         config.setConfig({
-          yahooAdvertising: {
+          yahooAds: {
             mode: VIDEO
           }
         });
@@ -1456,7 +1458,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
 
       afterEach(() => {
         config.setConfig({
-          yahooAdvertising: {
+          yahooAds: {
             mode: undefined
           }
         });
@@ -1482,7 +1484,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
       describe('wrapped in video players for display inventory', () => {
         beforeEach(() => {
           config.setConfig({
-            yahooAdvertising: {
+            yahooAds: {
               mode: undefined
             }
           });
@@ -1551,7 +1553,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           it(`should not allow unsupported global ${bidderCode}.ttl formats and default to 300`, () => {
             const { serverResponse, bidderRequest } = generateResponseMock('banner');
             const cfg = {};
-            cfg['yahooAdvertising'] = { ttl: param };
+            cfg['yahooAds'] = { ttl: param };
             config.setConfig(cfg);
             const response = spec.interpretResponse(serverResponse, {bidderRequest});
             expect(response[0].ttl).to.equal(300);
@@ -1570,7 +1572,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           it('should not allow invalid global config ttl values 3600 < ttl < 0 and default to 300', () => {
             const { serverResponse, bidderRequest } = generateResponseMock('banner');
             config.setConfig({
-              yahooAdvertising: { ttl: param }
+              yahooAds: { ttl: param }
             });
             const response = spec.interpretResponse(serverResponse, {bidderRequest});
             expect(response[0].ttl).to.equal(300);
@@ -1587,7 +1589,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         it('should give presedence to Gloabl ttl over params.ttl ', () => {
           const { serverResponse, bidderRequest } = generateResponseMock('banner');
           config.setConfig({
-            yahooAdvertising: { ttl: 500 }
+            yahooAds: { ttl: 500 }
           });
           bidderRequest.bids[0].params.ttl = 400;
           const response = spec.interpretResponse(serverResponse, {bidderRequest});

@@ -6,9 +6,10 @@ import { Renderer } from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
-const BIDDER_CODE = 'yahooAdvertising';
-const BIDDER_ALIASES = ['yahoossp']
+const BIDDER_CODE = 'yahooAds';
+const BIDDER_ALIASES = ['yahoossp', 'yahooAdvertising']
 const GVLID = 25;
+const ADAPTER_VERSION = '1.1.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -287,6 +288,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
       source: {
         ext: {
           hb: 1,
+          adapterver: ADAPTER_VERSION,
           prebidver: PREBID_VERSION,
           integration: {
             name: INTEGRATION_METHOD,
