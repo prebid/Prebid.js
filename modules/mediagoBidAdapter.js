@@ -242,7 +242,7 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           //   gpid: gpid, // 加入后无法返回广告
         },
-        tagid: validBidRequests.params.tagid,
+        tagid: req.params && req.params.tagid,
       };
       itemMaps[id] = {
         req,
