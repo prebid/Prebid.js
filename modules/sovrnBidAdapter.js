@@ -169,8 +169,10 @@ export const spec = {
         };
       }
 
-      const auctionId = deepAccess(bidderRequest, 'auctionId')
-      deepSetValue(sovrnBidReq, 'source.tid', auctionId)
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
+      }
 
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
