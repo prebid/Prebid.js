@@ -169,7 +169,8 @@ export function receiveMessage(evt) {
       let data = safeJSONParse(evt.data);
       if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
-        const iframeTopicsData = getTopicsData(domain, topics)[0];
+        // const iframeTopicsData = getTopicsData(domain, topics)[0];
+        const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
       }
     } catch (err) { }
@@ -182,13 +183,15 @@ Function to store Topics data recieved from iframe in storage(name: "prebid:topi
 */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  if (storedSegments.has(bidder)) {
-    storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
-    storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
-    storedSegments.set(bidder, storedSegments.get(bidder));
-  } else {
-    storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
-  }
+  const topicsObj = {
+    [lastUpdated]: new Date().getTime()
+  };
+
+  topics.forEach((topic) => {
+    topicsObj[topic.ext.segclass] = topic;
+  });
+
+  storedSegments.set(bidder, topicsObj);
   coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
@@ -245,7 +248,8 @@ export function loadTopicsForBidders(doc = document) {
             .then(data => {
               if (data && data.segment && !isEmpty(data.segment.topics)) {
                 const {domain, topics, bidder} = data.segment;
-                const fetchTopicsData = getTopicsData(domain, topics)[0];
+                // const fetchTopicsData = getTopicsData(domain, topics)[0];
+                const fetchTopicsData = getTopicsData(domain, topics);
                 fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
               }
             });
