@@ -46,20 +46,19 @@ export const spec = {
       withCredentials: false,
     };
 
-    data.user = data.user || {};
-    data.user.ext = data.user.ext || {};
     data.regs = data.regs || {};
     data.regs.ext = data.regs.ext || {};
 
     // GDPR
     if (bidderRequest.gdprConsent) {
-      data.user.ext.consent = bidderRequest.gdprConsent.consentString;
+      data.regs.ext.consent = bidderRequest.gdprConsent.consentString;
       data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     }
 
     // CCPA
-    if (bidderRequest && bidderRequest.uspConsent) {
-      data.regs.ext.us_privacy = 1;
+    if (bidderRequest.uspConsent) {
+      data.regs.ext.consent = bidderRequest.uspConsent.consentString;
+      data.regs.ext.ccpa = 1;
     }
     // coppa compliance
     if (config.getConfig('coppa') === true) {
