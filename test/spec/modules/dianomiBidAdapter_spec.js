@@ -159,14 +159,13 @@ describe('Dianomi adapter', () => {
         {
           bidId: 'bidId',
           params: { smartadId: 1234 },
-          transactionId: 'transactionId',
         },
       ];
       let request = JSON.parse(
-        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data
+        spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, auctionId: 'tid' }).data
       );
 
-      assert.equal(request.source.tid, validBidRequests[0].transactionId);
+      assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);
     });
 

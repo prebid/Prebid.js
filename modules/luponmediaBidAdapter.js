@@ -292,7 +292,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     source: {
       tid: bidRequest.transactionId
     },
-    tmax: config.getConfig('timeout') || 1500,
+    tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
       id: bidRequest.bidId,
       secure: 1,

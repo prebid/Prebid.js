@@ -354,15 +354,22 @@ export const spec = {
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
     const syncs = [];
+    const consentParams = [];
     if (syncOptions.iframeEnabled) {
       let url = 'https://biddr.brealtime.com/check.html';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
         // add 'gdpr' only if 'gdprApplies' is defined
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          url += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+          consentParams.push(`gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
         } else {
-          url += `?gdpr_consent=${gdprConsent.consentString}`;
+          consentParams.push(`?gdpr_consent=${gdprConsent.consentString}`);
         }
+      }
+      if (uspConsent && typeof uspConsent.consentString === 'string') {
+        consentParams.push(`usp=${uspConsent.consentString}`);
+      }
+      if (consentParams.length > 0) {
+        url = url + '?' + consentParams.join('&');
       }
       syncs.push({
         type: 'iframe',

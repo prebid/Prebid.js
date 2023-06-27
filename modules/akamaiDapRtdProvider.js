@@ -10,6 +10,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logInfo, logError} from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
@@ -23,7 +24,7 @@ export const DAP_DEFAULT_TOKEN_TTL = 3600; // in seconds
 export const DAP_MAX_RETRY_TOKENIZE = 1;
 export const DAP_CLIENT_ENTROPY = 'dap_client_entropy'
 
-export const storage = getStorageManager({gvlid: null, moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 let dapRetryTokenize = 0;
 
 /**

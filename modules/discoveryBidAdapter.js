@@ -6,13 +6,14 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
 
 /* ----- _ss_pp_id:start ------ */
-const COOKIE_KEY_MGUID = '_ss_pp_id';
+const COOKIE_KEY_SSPPID = '_ss_pp_id';
+const COOKIE_KEY_MGUID = '__mguid_';
 
 const NATIVERET = {
   id: 'id',
@@ -39,7 +40,7 @@ const NATIVERET = {
         title: {
           len: 75,
         },
-      }
+      },
     ],
     plcmttype: 1,
     privacy: 1,
@@ -58,14 +59,20 @@ const NATIVERET = {
  * @return {string}
  */
 const getUserID = () => {
-  const i = storage.getCookie(COOKIE_KEY_MGUID);
+  let idd = storage.getCookie(COOKIE_KEY_SSPPID);
+  let idm = storage.getCookie(COOKIE_KEY_MGUID);
 
-  if (i === null) {
+  if (idd && !idm) {
+    idm = idd;
+  } else if (idm && !idd) {
+    idd = idm;
+  } else if (!idd && !idm) {
     const uuid = utils.generateUUID();
     storage.setCookie(COOKIE_KEY_MGUID, uuid);
+    storage.setCookie(COOKIE_KEY_SSPPID, uuid);
     return uuid;
   }
-  return i;
+  return idd;
 };
 
 /* ----- _ss_pp_id:end ------ */
@@ -80,7 +87,6 @@ function getKv(obj, ...keys) {
   let o = obj;
 
   for (let key of keys) {
-    // console.log(key, o);
     if (o && o[key]) {
       o = o[key];
     } else {
@@ -222,7 +228,7 @@ function getItems(validBidRequests, bidderRequest) {
     let id = '' + (i + 1);
 
     if (mediaTypes.native) {
-      ret = {...NATIVERET, ...{id, bidFloor}}
+      ret = { ...NATIVERET, ...{ id, bidFloor } };
     }
     // banner
     if (mediaTypes.banner) {
@@ -238,7 +244,9 @@ function getItems(validBidRequests, bidderRequest) {
         }
       }
       if (!matchSize) {
-        return {};
+        matchSize = sizes[0]
+          ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
+          : { h: 0, w: 0 };
       }
       ret = {
         id: id,
@@ -247,8 +255,10 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes,
         },
         ext: {},
+        tagid: globals['tagid'],
       };
     }
     itemMaps[id] = {
@@ -269,18 +279,33 @@ function getItems(validBidRequests, bidderRequest) {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
+  const sharedid =
+    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
+  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+
   let isMobile = getDevice() ? 1 : 0;
+  // input test status by Publisher. more frequently for test true req
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getKv(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
-  const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
-
   const timeout = bidderRequest.timeout || 2000;
+
+  const domain =
+    utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
+  const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+  const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
       id: 'pp_hbjs_' + auctionId,
+      test: +isTest,
       at: 1,
+      bcat: globals['bcat'],
+      badv: globals['adv'],
       cur: ['USD'],
       device: {
         connectiontype: 0,
@@ -289,22 +314,27 @@ function getParam(validBidRequests, bidderRequest) {
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
+      ext: {
+        eids,
+        firstPartyData,
+      },
       user: {
         buyeruid: getUserID(),
-        id: pubcid,
+        id: sharedid || pubcid,
       },
+      eids,
       tmax: timeout,
       site: {
-        name: globals['media'],
-        domain: globals['media'],
-        page: location,
-        ref: location,
+        name: domain,
+        domain: domain,
+        page: page || location,
+        ref: referer,
         mobile: isMobile,
         cat: [], // todo
         publisher: {
+          id: globals['publisher'],
           // todo
-          id: globals['media'],
-          name: globals['media'],
+          // name: xxx
         },
       },
       imp: items,
@@ -329,10 +359,19 @@ export const spec = {
     if (bid.params.token) {
       globals['token'] = bid.params.token;
     }
-    if (bid.params.media) {
-      globals['media'] = bid.params.media;
+    if (bid.params.publisher) {
+      globals['publisher'] = bid.params.publisher;
     }
-    return !!(bid.params.token && bid.params.media);
+    if (bid.params.tagid) {
+      globals['tagid'] = bid.params.tagid;
+    }
+    if (bid.params.bcat) {
+      globals['bcat'] = Array.isArray(bid.params.bcat) ? bid.params.bcat : [];
+    }
+    if (bid.params.badv) {
+      globals['badv'] = Array.isArray(bid.params.badv) ? bid.params.badv : [];
+    }
+    return !!(bid.params.token && bid.params.publisher && bid.params.tagid);
   },
 
   /**
@@ -377,8 +416,8 @@ export const spec = {
           nurl: getKv(bid, 'nurl'),
           ttl: TIME_TO_LIVE,
           meta: {
-            advertiserDomains: getKv(bid, 'adomain') || []
-          }
+            advertiserDomains: getKv(bid, 'adomain') || [],
+          },
         };
         if (mediaType === 'native') {
           const adm = getKv(bid, 'adm');
@@ -424,7 +463,7 @@ export const spec = {
                   native.impressionTrackers.push(tracker.url);
                   break;
                 // case 2:
-                //   native.javascriptTrackers = `<script src=\"${tracker.url}\"></script>`;
+                //   native.javascriptTrackers = `<script src=\'${tracker.url}\'></script>`;
                 //   break;
               }
             });
@@ -460,8 +499,8 @@ export const spec = {
    */
   onBidWon: function (bid) {
     if (bid['nurl']) {
-      utils.triggerPixel(bid['nurl'])
+      utils.triggerPixel(bid['nurl']);
     }
-  }
+  },
 };
 registerBidder(spec);

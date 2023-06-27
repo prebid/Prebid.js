@@ -61,6 +61,7 @@ function buildRequestParams(tags, bidderRequest) {
   let {auctionId, gdprConsent, uspConsent, transactionId, refererInfo} = bidderRequest;
   let req = {
     id: auctionId,
+    // TODO: transactionId is undefined here, should this be auctionId? see #8573
     tid: transactionId,
     site: buildSite(refererInfo),
     imp: tags

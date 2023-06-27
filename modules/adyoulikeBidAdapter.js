@@ -1,6 +1,5 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {createEidsArray} from './userId/eids.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -122,9 +121,11 @@ export const spec = {
       payload.ortb2 = bidderRequest.ortb2;
     }
 
-    if (deepAccess(bidderRequest, 'userId')) {
-      payload.userId = createEidsArray(bidderRequest.userId);
+    if (deepAccess(bidderRequest, 'userIdAsEids')) {
+      payload.userId = bidderRequest.userIdAsEids;
     }
+
+    payload.pbjs_version = '$prebid.version$';
 
     const data = JSON.stringify(payload);
     const options = {
@@ -227,17 +228,23 @@ function createEndpointQS(bidderRequest) {
   const qs = {};
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
-    if (ref?.location) {
-      // RefererUrl will be removed in a future version.
-      qs.RefererUrl = encodeURIComponent(ref.location);
-      if (ref.numIframes > 0) {
-        qs.SafeFrame = true;
+    if (ref) {
+      if (ref.location) {
+        // RefererUrl will be removed in a future version.
+        qs.RefererUrl = encodeURIComponent(ref.location);
+        if (!ref.reachedTop) {
+          qs.SafeFrame = true;
+        }
       }
+
+      qs.PageUrl = encodeURIComponent(ref.topmostLocation);
+      qs.PageReferrer = encodeURIComponent(ref.location);
     }
 
+    // retreive info from ortb2 object if present (prebid7)
     const siteInfo = bidderRequest.ortb2?.site;
     if (siteInfo) {
-      qs.PageUrl = encodeURIComponent(siteInfo.page);
+      qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
       qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
     }
   }

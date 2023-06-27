@@ -16,6 +16,7 @@ const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
+const DEFAULT_TMAX = 500;
 
 /**
  * PulsePoint Bid Adapter.
@@ -54,6 +55,7 @@ export const spec = {
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
       source: source(bidRequests[0].schain),
+      tmax: bidderRequest.timeout || DEFAULT_TMAX,
     };
     return {
       method: 'POST',
@@ -153,6 +155,8 @@ function bidResponseAvailable(request, response) {
  * Produces an OpenRTBImpression from a slot config.
  */
 function impression(slot) {
+  var firstPartyData = slot.ortb2Imp?.ext || {};
+  var ext = Object.assign({}, firstPartyData, slotUnknownParams(slot));
   return {
     id: slot.bidId,
     banner: banner(slot),
@@ -160,7 +164,7 @@ function impression(slot) {
     tagid: slot.params.ct.toString(),
     video: video(slot),
     bidfloor: bidFloor(slot),
-    ext: ext(slot),
+    ext: Object.keys(ext).length > 0 ? ext : null,
   };
 }
 
@@ -209,7 +213,7 @@ function video(slot) {
 /**
  * Unknown params are captured and sent on ext
  */
-function ext(slot) {
+function slotUnknownParams(slot) {
   const ext = {};
   const knownParamsMap = {};
   KNOWN_PARAMS.forEach(value => knownParamsMap[value] = 1);
@@ -330,14 +334,16 @@ function site(bidRequests, bidderRequest) {
   const pubId = bidRequests && bidRequests.length > 0 ? bidRequests[0].params.cp : '0';
   const appParams = bidRequests[0].params.app;
   if (!appParams) {
-    return {
+    // use the first party data if available, and override only publisher/ref/page properties
+    var firstPartyData = bidderRequest?.ortb2?.site || {};
+    return Object.assign({}, firstPartyData, {
       publisher: {
         id: pubId.toString(),
       },
       // TODO: does the fallback make sense here?
       ref: bidderRequest?.refererInfo?.ref || window.document.referrer,
       page: bidderRequest?.refererInfo?.page || ''
-    }
+    });
   }
   return null;
 }
@@ -406,7 +412,8 @@ function adSize(slot, sizes) {
  * an openrtb User object.
  */
 function user(bidRequest, bidderRequest) {
-  var ext = {};
+  var user = bidderRequest?.ortb2?.user || { ext: {} };
+  var ext = user.ext;
   if (bidderRequest) {
     if (bidderRequest.gdprConsent) {
       ext.consent = bidderRequest.gdprConsent.consentString;
@@ -418,7 +425,7 @@ function user(bidRequest, bidderRequest) {
       ext.eids = eids;
     }
   }
-  return { ext };
+  return user;
 }
 
 /**

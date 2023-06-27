@@ -29,7 +29,9 @@
     "BID_TIMEOUT": "bidTimeout",
     "BID_REQUESTED": "bidRequested",
     "BID_RESPONSE": "bidResponse",
+    "BID_REJECTED": "bidRejected",
     "NO_BID": "noBid",
+    "SEAT_NON_BID": "seatNonBid",
     "BID_WON": "bidWon",
     "BIDDER_DONE": "bidderDone",
     "BIDDER_ERROR": "bidderError",
@@ -75,7 +77,8 @@
     "UUID": "hb_uuid",
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host",
-    "ADOMAIN": "hb_adomain"
+    "ADOMAIN": "hb_adomain",
+    "ACAT": "hb_acat"
   },
   "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
@@ -118,6 +121,13 @@
     "BID_TARGETING_SET": "targetingSet",
     "RENDERED": "rendered",
     "BID_REJECTED": "bidRejected"
+  },
+  "REJECTION_REASON": {
+    "INVALID": "Bid has missing or invalid properties",
+    "INVALID_REQUEST_ID": "Invalid request ID",
+    "BIDDER_DISALLOWED": "Bidder code is not allowed by allowedAlternateBidderCodes / allowUnknownBidderCodes",
+    "FLOOR_NOT_MET": "Bid does not meet price floor",
+    "CANNOT_CONVERT_CURRENCY": "Unable to convert currency"
   },
   "PREBID_NATIVE_DATA_KEYS_TO_ORTB": {
     "body": "desc",

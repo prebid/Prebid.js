@@ -1,13 +1,13 @@
-import { expect } from 'chai';
-import { spec } from 'modules/relaidoBidAdapter.js';
+import {expect} from 'chai';
+import {spec} from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { getStorageManager } from '../../../src/storageManager.js';
+import {VIDEO} from 'src/mediaTypes.js';
+import {getCoreStorageManager} from '../../../src/storageManager.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
 
-const storage = getStorageManager();
+const storage = getCoreStorageManager();
 storage.setCookie(UUID_KEY, relaido_uuid);
 
 describe('RelaidoAdapter', function () {

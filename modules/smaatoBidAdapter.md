@@ -63,6 +63,84 @@ var adUnits = [{
 }];
 ```
 
+For native adunits:
+
+```
+var adUnits = [{
+    "code": "native unit",
+    "mediaTypes": {
+        native: {
+            ortb: {
+                ver: "1.2",
+                assets: [
+                    {
+                        id: 1,
+                        required: 1,
+                        img: {
+                            type: 3,
+                            w: 150,
+                            h: 50,
+                        }
+                    },
+                    {
+                        id: 2,
+                        required: 1,
+                        img: {
+                            type: 2,
+                            w: 50,
+                            h: 50
+                        }
+                    },
+                    {
+                        id: 3,
+                        required: 1,
+                        title: {
+                            len: 80
+                        }
+                    },
+                    {
+                        id: 4,
+                        required: 1,
+                        data: {
+                            type: 1
+                        }
+                    },
+                    {
+                        id: 5,
+                        required: 1,
+                        data: {
+                            type: 2
+                        }
+                    },
+                    {
+                        id: 6,
+                        required: 0,
+                        data: {
+                            type: 3
+                        }
+                    },
+                    {
+                        id: 7,
+                        required: 0,
+                        data: {
+                            type: 12
+                        }
+                    }
+                ]
+            },
+            sendTargetingKeys: false,
+        }
+    },
+    "bids": [{
+        "bidder": "smaato",
+        "params": {
+            "publisherId": "1100042525",
+            "adspaceId": "130563103"
+        }
+    }]
+}];
+```
+
 For adpod adunits:
 
 ```

@@ -126,7 +126,7 @@ Object.assign(BidInterceptor.prototype, {
         Object.entries(ref).forEach(([key, val]) => {
           if (typeof val === 'function') {
             result[key] = val(...args);
-          } else if (typeof val === 'object') {
+          } else if (val != null && typeof val === 'object') {
             result[key] = replFn({args, ref: val})
           } else {
             result[key] = val;
@@ -138,7 +138,7 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.ad) {
+      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
         response.ad = this.defaultAd(bid, response);
       }
       response.isDebug = true;

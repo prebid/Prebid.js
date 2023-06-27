@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldoneBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { deepClone } from 'src/utils.js';
 
 const ENDPOINT = 'https://y.one.impact-ad.jp/h_bid';
 const USER_SYNC_URL = 'https://y.one.impact-ad.jp/push_sync';
@@ -141,7 +140,7 @@ describe('yieldoneBidAdapter', function() {
       });
     });
 
-    describe('New Format', function () {
+    describe('Single Format', function () {
       const bidRequests = [
         {
           params: {placementId: '0'},
@@ -207,8 +206,11 @@ describe('yieldoneBidAdapter', function() {
 
       it('width and height should be set as separate parameters on outstream requests', function () {
         expect(request[0].data).to.not.have.property('w');
+        expect(request[0].data).to.not.have.property('h');
         expect(request[1].data).to.not.have.property('w');
+        expect(request[1].data).to.not.have.property('h');
         expect(request[2].data).to.not.have.property('w');
+        expect(request[2].data).to.not.have.property('h');
         expect(request[3].data.w).to.equal(1280);
         expect(request[3].data.h).to.equal(720);
         expect(request[4].data.w).to.equal(1920);
@@ -261,12 +263,13 @@ describe('yieldoneBidAdapter', function() {
 
       it('width and height should be set as separate parameters on outstream requests', function () {
         expect(request[0].data).to.not.have.property('w');
+        expect(request[0].data).to.not.have.property('h');
         expect(request[1].data.w).to.equal(1920);
         expect(request[1].data.h).to.equal(1080);
       });
     });
 
-    describe('FLUX Format', function () {
+    describe('1x1 Format', function () {
       const bidRequests = [
         {
           // It will be treated as a banner.
@@ -327,6 +330,7 @@ describe('yieldoneBidAdapter', function() {
 
       it('width and height should be set as separate parameters on outstream requests', function () {
         expect(request[0].data).to.not.have.property('w');
+        expect(request[0].data).to.not.have.property('h');
         expect(request[1].data.w).to.equal(1920);
         expect(request[1].data.h).to.equal(1080);
         expect(request[2].data.w).to.equal(DEFAULT_VIDEO_SIZE.w);
@@ -428,12 +432,12 @@ describe('yieldoneBidAdapter', function() {
         const bidRequests = [
           {
             params: {placementId: '0'},
-            userId: {dacId: {id: 'dacId_sample'}},
+            userId: {dacId: {fuuid: 'fuuid_sample', id: 'dacId_sample'}},
           },
         ];
         const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request[0].data.fuuid).to.equal('fuuid_sample');
         expect(request[0].data.dac_id).to.equal('dacId_sample');
-        expect(request[0].data.fuuid).to.equal('dacId_sample');
       });
     });
 
@@ -501,9 +505,9 @@ describe('yieldoneBidAdapter', function() {
         'currency': 'JPY',
         'statusMessage': 'Bid available',
         'dealId': 'P1-FIX-7800-DSP-MON',
-        'admoain': [
+        'adomain': [
           'www.example.com'
-        ]
+        ],
       }
     };
 
@@ -529,7 +533,16 @@ describe('yieldoneBidAdapter', function() {
       }];
       let result = spec.interpretResponse(serverResponseBanner, bidRequestBanner[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
+      expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
+      expect(result[0].width).to.equal(expectedResponse[0].width);
+      expect(result[0].height).to.equal(expectedResponse[0].height);
+      expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId);
+      expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
+      expect(result[0].currency).to.equal(expectedResponse[0].currency);
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+      expect(result[0].ad).to.equal(expectedResponse[0].ad);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     let serverResponseVideo = {
@@ -538,7 +551,7 @@ describe('yieldoneBidAdapter', function() {
         'height': 360,
         'width': 640,
         'cpm': 0.0536616,
-        'dealId': 'P1-FIX-766-DSP-MON',
+        'dealId': 'P1-FIX-7800-DSP-MON',
         'crid': '2494768',
         'currency': 'JPY',
         'statusMessage': 'Bid available',
@@ -576,7 +589,7 @@ describe('yieldoneBidAdapter', function() {
         'currency': 'JPY',
         'netRevenue': true,
         'ttl': 3000,
-        'referrer': '',
+        'referrer': 'http%3A%2F%2Flocalhost%3A9876%2F%3Fid%3D74552836',
         'meta': {
           'advertiserDomains': []
         },
@@ -589,9 +602,19 @@ describe('yieldoneBidAdapter', function() {
       }];
       let result = spec.interpretResponse(serverResponseVideo, bidRequestVideo[0]);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse[0]));
+      expect(result[0].requestId).to.equal(expectedResponse[0].requestId);
+      expect(result[0].cpm).to.equal(expectedResponse[0].cpm);
+      expect(result[0].width).to.equal(expectedResponse[0].width);
+      expect(result[0].height).to.equal(expectedResponse[0].height);
+      expect(result[0].creativeId).to.equal(expectedResponse[0].creativeId);
+      expect(result[0].dealId).to.equal(expectedResponse[0].dealId);
+      expect(result[0].currency).to.equal(expectedResponse[0].currency);
+      expect(result[0].vastXml).to.equal(expectedResponse[0].vastXml);
       expect(result[0].mediaType).to.equal(expectedResponse[0].mediaType);
+      expect(result[0].referrer).to.equal(expectedResponse[0].referrer);
       expect(result[0].renderer.id).to.equal(expectedResponse[0].renderer.id);
       expect(result[0].renderer.url).to.equal(expectedResponse[0].renderer.url);
+      expect(result[0].meta.advertiserDomains[0]).to.equal(expectedResponse[0].meta.advertiserDomains[0]);
     });
 
     it('handles empty bid response', function () {

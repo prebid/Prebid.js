@@ -1,382 +1,296 @@
-import { expect } from 'chai';
-import * as utils from '../../../src/utils.js';
-import { config } from '../../../src/config.js';
-import {
-  spec,
-  CW_PAGE_VIEW_ID,
-  ENDPOINT_URL,
-  RENDERER_URL,
-} from '../../../modules/cwireBidAdapter.js';
-import * as prebidGlobal from 'src/prebidGlobal.js';
-
-// ------------------------------------
-// Bid Request Builder
-// ------------------------------------
-
-const BID_DEFAULTS = {
-  request: {
-    bidder: 'cwire',
-    auctionId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-    transactionId: 'txaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-    bidId: 'bid123445',
-    bidderRequestId: 'brid12345',
-    code: 'original-div',
-  },
-  params: {
-    placementId: 123456,
-    pageId: 777,
-  },
-  sizes: [[300, 250], [1, 1]],
-};
-
-const BidderRequestBuilder = function BidderRequestBuilder(options) {
-  const defaults = {
-    bidderCode: 'cwire',
-    auctionId: BID_DEFAULTS.request.auctionId,
-    bidderRequestId: BID_DEFAULTS.request.bidderRequestId,
-    transactionId: BID_DEFAULTS.request.transactionId,
-    timeout: 3000,
-  };
-
-  const request = {
-    ...defaults,
-    ...options
-  };
-
-  this.build = () => request;
-};
-
-const BidRequestBuilder = function BidRequestBuilder(options, deleteKeys) {
-  const defaults = JSON.parse(JSON.stringify(BID_DEFAULTS));
-
-  const request = {
-    ...defaults.request,
-    ...options
-  };
-
-  if (request && utils.isArray(deleteKeys)) {
-    deleteKeys.forEach((k) => {
-      delete request[k];
-    })
-  }
-
-  this.withParams = (options, deleteKeys) => {
-    request.params = {
-      ...defaults.params,
-      ...options
-    };
-    if (request && utils.isArray(deleteKeys)) {
-      deleteKeys.forEach((k) => {
-        delete request.params[k];
-      })
-    }
-    return this;
-  };
-
-  this.build = () => request;
-};
+import {expect} from 'chai';
+import {newBidder} from '../../../src/adapters/bidderFactory';
+import {BID_ENDPOINT, spec, storage} from '../../../modules/cwireBidAdapter';
+import {deepClone, logInfo} from '../../../src/utils';
+import * as utils from 'src/utils.js';
+import {sandbox, stub} from 'sinon';
+import {config} from '../../../src/config';
 
 describe('C-WIRE bid adapter', () => {
-  let sandbox;
-
-  beforeEach(() => {
-    sandbox = sinon.createSandbox();
-  });
-
-  afterEach(() => {
-    sandbox.restore();
-    config.resetConfig();
-  });
-
-  // START TESTING
-  describe('C-WIRE - isBidRequestValid', function () {
-    it('should return true when required params found', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-    });
-
-    it('should fail if there is no placementId', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      delete bid01.params.placementId
-      expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should fail if invalid placementId type', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      delete bid01.params.placementId;
-      bid01.placementId = '322';
-      expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should fail if there is no pageId', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      delete bid01.params.pageId
-      expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should fail if invalid pageId type', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      delete bid01.params.pageId;
-      bid01.params.pageId = '3320';
-      expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should fail if cwcreative of type number', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      delete bid01.params.cwcreative;
-      bid01.params.cwcreative = 3320;
-      expect(spec.isBidRequestValid(bid01)).to.equal(false);
-    });
-
-    it('should pass with valid cwcreative of type string', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-      bid01.params.cwcreative = 'i-am-a-string';
-      expect(spec.isBidRequestValid(bid01)).to.equal(true);
-    });
-  });
-
-  describe('C-WIRE - buildRequests()', function () {
-    it('creates a valid request', function () {
-      const bid01 = new BidRequestBuilder({
-        mediaTypes: {
-          banner: {
-            sizes: [[1, 1]],
-          }
-        }
-      }).withParams({
-        cwcreative: '54321',
-        cwapikey: 'xxx-xxx-yyy-zzz-uuid',
-        refgroups: 'group_1',
-      }).build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(1);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal('54321');
-      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz-uuid');
-      expect(requests.data.refgroups[0]).to.equal('group_1');
-    });
-
-    it('creates a valid request - read debug params from second bid', function () {
-      const bid01 = new BidRequestBuilder().withParams().build();
-
-      const bid02 = new BidRequestBuilder({
-        mediaTypes: {
-          banner: {
-            sizes: [[1, 1]],
-          }
-        }
-      }).withParams({
-        cwcreative: '1234',
-        cwapikey: 'api_key_5',
-        refgroups: 'group_5',
-      }).build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(2);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal('1234');
-      expect(requests.data.cwapikey).to.equal('api_key_5');
-      expect(requests.data.refgroups[0]).to.equal('group_5');
-    });
-
-    it('creates a valid request - read debug params from first bid, ignore second', function () {
-      const bid01 = new BidRequestBuilder()
-        .withParams({
-          cwcreative: '33',
-          cwapikey: 'api_key_33',
-          refgroups: 'group_33',
-        }).build();
-
-      const bid02 = new BidRequestBuilder()
-        .withParams({
-          cwcreative: '1234',
-          cwapikey: 'api_key_5',
-          refgroups: 'group_5',
-        }).build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01, bid02], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(2);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal('33');
-      expect(requests.data.cwapikey).to.equal('api_key_33');
-      expect(requests.data.refgroups[0]).to.equal('group_33');
-    });
-
-    it('creates a valid request - read debug params from 3 different slots', function () {
-      const bid01 = new BidRequestBuilder()
-        .withParams({
-          cwcreative: '33',
-        }).build();
-
-      const bid02 = new BidRequestBuilder()
-        .withParams({
-          cwapikey: 'api_key_5',
-        }).build();
-
-      const bid03 = new BidRequestBuilder()
-        .withParams({
-          refgroups: 'group_5',
-        }).build();
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01, bid02, bid03], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(3);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwcreative).to.equal('33');
-      expect(requests.data.cwapikey).to.equal('api_key_5');
-      expect(requests.data.refgroups[0]).to.equal('group_5');
-    });
-
-    it('creates a valid request - config is overriden by URL params', function () {
-      // for whatever reason stub for getWindowLocation does not work
-      // so this was the closest way to test for get params
-      const params = sandbox.stub(utils, 'getParameterByName');
-      params.withArgs('cwgroups').returns('group_2');
-      params.withArgs('cwcreative').returns('654321');
-
-      const bid01 = new BidRequestBuilder({
-        mediaTypes: {
-          banner: {
-            sizes: [[1, 1]],
-          }
-        }
-      }).withParams({
-        cwcreative: '54321',
-        cwapikey: 'xxx-xxx-yyy-zzz',
-        refgroups: 'group_1',
-      }).build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(1);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal('654321');
-      expect(requests.data.cwapikey).to.equal('xxx-xxx-yyy-zzz');
-      expect(requests.data.refgroups[0]).to.equal('group_2');
-    });
-
-    it('creates a valid request - if params are not set, null or empty array are sent to the API', function () {
-      const bid01 = new BidRequestBuilder({
-        mediaTypes: {
-          banner: {
-            sizes: [[1, 1]],
-          }
-        }
-      }).withParams().build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const requests = spec.buildRequests([bid01], bidderRequest01);
-
-      expect(requests.data.slots.length).to.equal(1);
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.cwid).to.be.null;
-      expect(requests.data.slots[0].sizes[0]).to.equal('1x1');
-      expect(requests.data.cwcreative).to.equal(null);
-      expect(requests.data.cwapikey).to.equal(null);
-      expect(requests.data.refgroups.length).to.equal(0);
-    });
-  });
-
-  describe('C-WIRE - interpretResponse()', function () {
-    const serverResponse = {
-      body: {
-        bids: [{
-          html: '<div><h2>AD CONTENT</h2></div>',
-          currency: 'CHF',
-          cpm: 43.37,
-          dimensions: [1, 1],
-          netRevenue: true,
-          creativeId: '1337',
-          requestId: BID_DEFAULTS.request.bidId,
-          ttl: 3500,
-        }],
-      }
-    };
-
-    const expectedResponse = [{
-      ad: JSON.parse(JSON.stringify(serverResponse.body.bids[0].html)),
-      bidderCode: BID_DEFAULTS.request.bidder,
-      cpm: JSON.parse(JSON.stringify(serverResponse.body.bids[0].cpm)),
-      creativeId: JSON.parse(JSON.stringify(serverResponse.body.bids[0].creativeId)),
-      currency: JSON.parse(JSON.stringify(serverResponse.body.bids[0].currency)),
-      height: JSON.parse(JSON.stringify(serverResponse.body.bids[0].dimensions[0])),
-      width: JSON.parse(JSON.stringify(serverResponse.body.bids[0].dimensions[1])),
-      netRevenue: JSON.parse(JSON.stringify(serverResponse.body.bids[0].netRevenue)),
-      requestId: JSON.parse(JSON.stringify(serverResponse.body.bids[0].requestId)),
-      ttl: JSON.parse(JSON.stringify(serverResponse.body.bids[0].ttl)),
-      meta: {
-        advertiserDomains: [],
+  config.setConfig({debug: true});
+  const adapter = newBidder(spec);
+  let bidRequests = [
+    {
+      'bidder': 'cwire',
+      'params': {
+        'pageId': '4057',
+        'placementId': 'ad-slot-bla'
       },
-      mediaType: 'banner',
-    }]
+      'adUnitCode': 'adunit-code',
+      'sizes': [[300, 250], [300, 600]],
+      'bidId': '30b31c1838de1e',
+      'bidderRequestId': '22edbae2733bf6',
+      'auctionId': '1d1a030790a475',
+      'transactionId': '04f2659e-c005-4eb1-a57c-fa93145e3843'
+    }
+  ];
+  const response = {
+    body: {
+      'cwid': '2ef90743-7936-4a82-8acf-e73382a64e94',
+      'hash': '17112D98BBF55D3A',
+      'bids': [{
+        'html': '<h1>Hello world</h1>',
+        'cpm': 100,
+        'currency': 'CHF',
+        'dimensions': [1, 1],
+        'netRevenue': true,
+        'creativeId': '3454',
+        'requestId': '2c634d4ca5ccfb',
+        'placementId': 177,
+        'transactionId': 'b4b32618-1350-4828-b6f0-fbb5c329e9a4',
+        'ttl': 360
+      }]
+    }
+  }
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
+      expect(adapter.callBids).to.exist.and.to.be.a('function');
+      expect(spec.isBidRequestValid).to.exist.and.to.be.a('function');
+      expect(spec.buildRequests).to.exist.and.to.be.a('function');
+      expect(spec.interpretResponse).to.exist.and.to.be.a('function');
+    });
+  });
+  describe('buildRequests', function () {
+    it('sends bid request to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(request.url).to.equal(BID_ENDPOINT);
+      expect(request.method).to.equal('POST');
+    });
+  });
+  describe('buildRequests with given creative', function () {
+    let utilsStub;
 
-    it('correctly parses response', function () {
-      const bid01 = new BidRequestBuilder({
-        mediaTypes: {
-          banner: {
-            sizes: [[1, 1]],
-          }
-        }
-      }).withParams().build();
-
-      const bidderRequest01 = new BidderRequestBuilder().build();
-      const requests = spec.buildRequests([bid01], bidderRequest01);
-
-      const response = spec.interpretResponse(serverResponse, requests);
-      expect(response).to.deep.equal(expectedResponse);
+    before(function () {
+      utilsStub = stub(utils, 'getParameterByName').callsFake(function () {
+        return 'str-str'
+      });
     });
 
-    it('attaches renderer', function () {
-      const bid01 = new BidRequestBuilder({
-        mediaTypes: {
-          video: {
-            playerSize: [[640, 480]],
-            context: 'outstream',
-          }
-        }
-      }).withParams().build();
-      const bidderRequest01 = new BidderRequestBuilder().build();
-
-      const _serverResponse = utils.deepClone(serverResponse);
-      _serverResponse.body.bids[0].vastXml = '<xml></xml>';
-
-      const _expectedResponse = utils.deepClone(expectedResponse);
-      _expectedResponse[0].mediaType = 'video';
-      _expectedResponse[0].videoScript = JSON.parse(JSON.stringify(_serverResponse.body.bids[0].html));
-      _expectedResponse[0].vastXml = JSON.parse(JSON.stringify(_serverResponse.body.bids[0].vastXml));
-      delete _expectedResponse[0].ad;
-
-      const requests = spec.buildRequests([bid01], bidderRequest01);
-      expect(requests.data.slots[0].sizes).to.deep.equal(['640x480']);
-
-      const response = spec.interpretResponse(_serverResponse, requests);
-      expect(response[0].renderer).to.exist;
-      expect(response[0].renderer.url).to.equals(RENDERER_URL);
-      expect(response[0].renderer.loaded).to.equals(false);
-
-      delete response[0].renderer;
-      expect(response).to.deep.equal(_expectedResponse);
+    after(function () {
+      utilsStub.restore();
     });
+
+    it('should add creativeId if url parameter given', function () {
+      // set from bid.params
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      expect(payload.cwcreative).to.exist;
+      expect(payload.cwcreative).to.deep.equal('str-str');
+    });
+  })
+
+  describe('buildRequests reads adUnit offsetWidth and offsetHeight', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        offsetWidth: 200,
+        offsetHeight: 250
+      });
+    });
+    it('width and height should be set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      const el = document.getElementById(`${bidRequest.adUnitCode}`)
+
+      logInfo(JSON.stringify(payload))
+
+      expect(el).to.exist;
+      expect(payload.slots[0].cwExt.dimensions.width).to.equal(200);
+      expect(payload.slots[0].cwExt.dimensions.height).to.equal(250);
+      expect(payload.slots[0].cwExt.style.maxHeight).to.not.exist;
+      expect(payload.slots[0].cwExt.style.maxWidth).to.not.exist;
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
+  describe('buildRequests reads style attributes', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({
+        style: {
+          maxWidth: '400px',
+          maxHeight: '350px',
+        }
+      });
+    });
+    it('css maxWidth should be set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+      const el = document.getElementById(`${bidRequest.adUnitCode}`)
+
+      logInfo(JSON.stringify(payload))
+
+      expect(el).to.exist;
+      expect(payload.slots[0].cwExt.style.maxWidth).to.eq('400px');
+      !expect(payload.slots[0].cwExt.style.maxHeight).to.eq('350px');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
+
+  describe('buildRequests reads feature flags', function () {
+    before(function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake(function () {
+        return 'feature1,feature2'
+      });
+    });
+
+    it('read from url parameter', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.featureFlags).to.exist;
+      expect(payload.featureFlags).to.include.members(['feature1', 'feature2']);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  });
+
+  describe('buildRequests reads cwgroups flag', function () {
+    before(function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake(function () {
+        return 'group1,group2'
+      });
+    });
+
+    it('read from url parameter', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.refgroups).to.exist;
+      expect(payload.refgroups).to.include.members(['group1', 'group2']);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('buildRequests reads debug flag', function () {
+    before(function () {
+      sandbox.stub(utils, 'getParameterByName').callsFake(function () {
+        return 'true'
+      });
+    });
+
+    it('read from url parameter', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.debug).to.exist;
+      expect(payload.debug).to.equal(true);
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('buildRequests reads cw_id from Localstorage', function () {
+    before(function () {
+      sandbox.stub(storage, 'localStorageIsEnabled').callsFake(() => true);
+      sandbox.stub(storage, 'setDataInLocalStorage');
+      sandbox.stub(storage, 'getDataFromLocalStorage').callsFake((key) => 'taerfagerg');
+    });
+
+    it('cw_id is set', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.cwid).to.exist;
+      expect(payload.cwid).to.equal('taerfagerg');
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('buildRequests maps flattens params for legacy compat', function () {
+    before(function () {
+      const documentStub = sandbox.stub(document, 'getElementById');
+      documentStub.withArgs(`${bidRequests[0].adUnitCode}`).returns({});
+    });
+    it('pageId flattened', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      logInfo(JSON.stringify(payload))
+
+      expect(payload.slots[0].pageId).to.exist;
+    });
+    after(function () {
+      sandbox.restore()
+    });
+  })
+
+  describe('pageId and placementId are required params', function () {
+    it('invalid request', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      delete bidRequest.params
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.false;
+    })
+
+    it('valid request', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.pageId = 42
+      bidRequest.params.placementId = 42
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.true;
+    })
+
+    it('cwcreative must be of type string', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.params.pageId = 42
+      bidRequest.params.placementId = 42
+
+      const valid = spec.isBidRequestValid(bidRequest);
+      expect(valid).to.be.true;
+    })
+
+    it('build request adds pageId', function () {
+      let bidRequest = deepClone(bidRequests[0]);
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.slots[0].pageId).to.exist;
+    })
+  });
+
+  describe('process serverResponse', function () {
+    it('html to ad mapping', function () {
+      let bidResponse = deepClone(response);
+      const bids = spec.interpretResponse(bidResponse, {});
+
+      expect(bids[0].ad).to.exist;
+    })
   });
 });

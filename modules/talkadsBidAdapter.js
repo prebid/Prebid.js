@@ -63,6 +63,7 @@ export const spec = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
       auction_id: paValidBidRequests[0].auctionId,
+      // TODO: should this use auctionId? see #8573
       transaction_id: paValidBidRequests[0].transactionId,
       bids: laBids,
       gdpr: { applies: false, consent: false },

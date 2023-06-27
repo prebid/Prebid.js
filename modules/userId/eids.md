@@ -105,6 +105,22 @@ userIdAsEids = [
             segments: ['s1', 's2']
         }
     },
+    
+    {
+        source: 'bidswitch.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    
+    {
+        source: 'media.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
 
     {
         source: 'merkleinc.com',

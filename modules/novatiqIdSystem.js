@@ -8,7 +8,10 @@
 import { logInfo, getWindowLocation } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+const MODULE_NAME = 'novatiq';
 
 /** @type {Submodule} */
 export const novatiqIdSubmodule = {
@@ -17,7 +20,7 @@ export const novatiqIdSubmodule = {
  * used to link submodule with config
  * @type {string}
  */
-  name: 'novatiq',
+  name: MODULE_NAME,
   /**
    * used to specify vendor id
    * @type {number}
@@ -35,6 +38,16 @@ export const novatiqIdSubmodule = {
         snowflake: novatiqId
       }
     };
+
+    if (novatiqId.syncResponse !== undefined) {
+      responseObj.novatiq.ext = {};
+      responseObj.novatiq.ext.syncResponse = novatiqId.syncResponse;
+    }
+
+    if (typeof config != 'undefined' && typeof config.params !== 'undefined' && typeof config.params.removeAdditionalInfo !== 'undefined' && config.params.removeAdditionalInfo === true) {
+      delete responseObj.novatiq.snowflake.syncResponse;
+    }
+
     return responseObj;
   },
 
@@ -120,7 +133,7 @@ export const novatiqIdSubmodule = {
   getNovatiqId(urlParams) {
     // standard uuid format
     let uuidFormat = [1e7] + -1e3 + -4e3 + -8e3 + -1e11;
-    if (urlParams.useStandardUuid == false) {
+    if (urlParams.useStandardUuid === false) {
       // novatiq standard uuid(like) format
       uuidFormat = uuidFormat + 1e3;
     }
@@ -207,7 +220,7 @@ export const novatiqIdSubmodule = {
     let sharedId = null;
     if (this.useSharedId(configParams)) {
       let cookieOrStorageID = this.getCookieOrStorageID(configParams);
-      const storage = getStorageManager({gvlid: this.gvlid, moduleName: 'pubCommonId'});
+      const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
       // first check local storage
       if (storage.hasLocalStorage()) {

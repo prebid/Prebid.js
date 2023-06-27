@@ -313,32 +313,6 @@ describe('synacormediaBidAdapter ', function () {
       expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout);
     });
 
-    it('should return tmax equal to smaller global timeout', function () {
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          'bidderTimeout': bidderRequestWithTimeout.timeout - 100
-        };
-        return config[key];
-      });
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout);
-      sandbox.restore();
-      expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout - 100);
-    });
-
-    it('should return tmax equal to smaller callback timeout', function () {
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          'bidderTimeout': bidderRequestWithTimeout.timeout + 100
-        };
-        return config[key];
-      });
-      let req = spec.buildRequests([validBidRequest], bidderRequestWithTimeout);
-      sandbox.restore();
-      expect(req.data.tmax).to.eql(bidderRequestWithTimeout.timeout);
-    });
-
     it('should return multiple bids when multiple valid requests with the same seatId are used', function () {
       let secondBidRequest = {
         bidId: 'foobar',

@@ -34,13 +34,13 @@ export const registerAdserver = hook('async', function(adServer) {
 }, 'registerAdserver');
 registerAdserver();
 
-export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid) {
+export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid, reject) {
   if (!bid) {
-    return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
+    return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
   }
 
   if (!config.getConfig('adpod.brandCategoryExclusion')) {
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
@@ -63,7 +63,7 @@ export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation
       logError('Translation mapping data not found in local storage');
     }
   }
-  fn.call(this, adUnitCode, bid);
+  fn.call(this, adUnitCode, bid, reject);
 });
 
 export function initTranslation(url, localStorageKey) {

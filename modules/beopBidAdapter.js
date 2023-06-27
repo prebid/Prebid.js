@@ -1,4 +1,4 @@
-import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
+import { deepAccess, isArray, isStr, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
@@ -37,9 +37,24 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const firstPartyData = bidderRequest.ortb2;
+    const psegs = (firstPartyData && firstPartyData.user && firstPartyData.user.ext && firstPartyData.user.ext.data) ? firstPartyData.user.ext.data.permutive : undefined;
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
+    const kwdsFromRequest = firstSlot.kwds;
+    let keywords = [];
+    if (kwdsFromRequest) {
+      if (isArray(kwdsFromRequest)) {
+        keywords = kwdsFromRequest;
+      } else if (isStr(kwdsFromRequest)) {
+        if (kwdsFromRequest.indexOf(',') != -1) {
+          keywords = kwdsFromRequest.split(',').map((e) => { return e.trim() });
+        } else {
+          keywords.push(kwdsFromRequest);
+        }
+      }
+    }
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
@@ -47,12 +62,18 @@ export const spec = {
       pid: firstSlot.pid,
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: bidderRequest.ortb2?.site?.keywords || [],
+      kwds: keywords,
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
+      gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
+    if (psegs) {
+      Object.assign(payloadObject, {psegs: psegs});
+    }
+
     const payloadString = JSON.stringify(payloadObject);
     return {
       method: 'POST',
@@ -129,6 +150,7 @@ function beOpRequestSlotsMaker(bid) {
     sizes: isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
     pid: getValue(bid.params, 'accountId'),
+    kwds: getValue(bid.params, 'keywords'),
     nid: getValue(bid.params, 'networkId'),
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),

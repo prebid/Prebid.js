@@ -27,6 +27,11 @@ export const spec = {
       let ccpa = '';
       let coppa = 0;
       let tmax = 0;
+      let eids = [];
+
+      if (bidRequests[0].userIdAsEids && bidRequests[0].userIdAsEids.length > 0) {
+        eids = bidRequests[0].userIdAsEids;
+      }
 
       if (bid && bid.gdprConsent) {
         gdprApplies = bid.gdprConsent.gdprApplies ? 1 : 0;
@@ -41,7 +46,7 @@ export const spec = {
         coppa = 1;
       }
 
-      tmax = config.getConfig('bidderTimeout');
+      tmax = bid.timeout;
 
       const params = {
         prebidJS: 1,
@@ -74,7 +79,8 @@ export const spec = {
         },
         user: {
           ext: {
-            consent: gdprConsent
+            consent: gdprConsent,
+            eids: eids
           }
         }
       };
@@ -85,6 +91,11 @@ export const spec = {
       } else {
         params.imp[0].banner.w = bid.sizes[0][0];
         params.imp[0].banner.h = bid.sizes[0][1];
+      }
+
+      if (bid.ortb2?.regs?.gpp) {
+        params.regs.ext.gpp = bid.ortb2.regs.gpp;
+        params.regs.ext.gpp_sid = bid.ortb2.regs.gpp_sid;
       }
 
       return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};

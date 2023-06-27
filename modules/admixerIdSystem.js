@@ -9,8 +9,10 @@ import { logError, logInfo } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager();
+const NAME = 'admixerId';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: NAME});
 
 /** @type {Submodule} */
 export const admixerIdSubmodule = {
@@ -18,7 +20,7 @@ export const admixerIdSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'admixerId',
+  name: NAME,
   /**
    * used to specify vendor id
    * @type {number}

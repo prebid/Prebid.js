@@ -3,6 +3,7 @@ import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { dset as deepSetValue } from 'dset';
 
@@ -20,6 +21,8 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+
+const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -707,10 +710,10 @@ export function getKeyByValue(obj, value) {
   }
 }
 
-export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
+export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -904,7 +907,7 @@ export function isValidMediaTypes(mediaTypes) {
     return false;
   }
 
-  if (mediaTypes.video && mediaTypes.video.context) {
+  if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
     return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
@@ -1375,6 +1378,27 @@ export function safeJSONParse(data) {
   try {
     return JSON.parse(data);
   } catch (e) {}
+}
+
+/**
+ * Returns a memoized version of `fn`.
+ *
+ * @param fn
+ * @param key cache key generator, invoked with the same arguments passed to `fn`.
+ *        By default, the first argument is used as key.
+ * @return {function(): any}
+ */
+export function memoize(fn, key = function (arg) { return arg; }) {
+  const cache = new Map();
+  const memoized = function () {
+    const cacheKey = key.apply(this, arguments);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, fn.apply(this, arguments));
+    }
+    return cache.get(cacheKey);
+  }
+  memoized.clear = cache.clear.bind(cache);
+  return memoized;
 }
 
 /**

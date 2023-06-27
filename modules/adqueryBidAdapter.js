@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { logInfo, buildUrl, triggerPixel } from '../src/utils.js';
+import { logInfo, buildUrl, triggerPixel, parseSizesInput } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const ADQUERY_GVLID = 902;
@@ -11,7 +11,7 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUER
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
-const storage = getStorageManager({gvlid: ADQUERY_GVLID, bidderCode: ADQUERY_BIDDER_CODE});
+const storage = getStorageManager({bidderCode: ADQUERY_BIDDER_CODE});
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -24,7 +24,7 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    return !!(bid && bid.params && bid.params.placementId)
+    return !!(bid && bid.params && bid.params.placementId && bid.mediaTypes.banner.sizes)
   },
 
   /**
@@ -191,7 +191,13 @@ export const spec = {
 };
 function buildRequest(validBidRequests, bidderRequest) {
   let bid = validBidRequests;
+  let pageUrl = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    pageUrl = bidderRequest.refererInfo.page || '';
+  }
+
   return {
+    v: '$prebid.version$',
     placementCode: bid.params.placementId,
     auctionId: bid.auctionId,
     type: bid.params.type,
@@ -199,9 +205,11 @@ function buildRequest(validBidRequests, bidderRequest) {
     bidQid: storage.getDataFromLocalStorage('qid') || null,
     bidId: bid.bidId,
     bidder: bid.bidder,
+    bidPageUrl: pageUrl,
     bidderRequestId: bid.bidderRequestId,
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
+    sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
   };
 }
 
