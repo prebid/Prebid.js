@@ -183,7 +183,7 @@ describe('sovrnBidAdapter', function() {
         expect(payload.tmax).to.equal(3000)
       })
 
-      it('forwards auctionId as tid for source', function() {
+      it('forwards auction level tid', function() {
         const bidderRequest = {
           ...baseBidderRequest,
           ortb2: {
