@@ -183,6 +183,32 @@ describe('sovrnBidAdapter', function() {
         expect(payload.tmax).to.equal(3000)
       })
 
+      it('forwards auctionId as tid for source', function() {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          auctionId: '1d1a030790a475',
+          bids: [baseBidRequest]
+        }
+
+        const payload = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+        expect(payload.source.tid).to.equal('1d1a030790a475')
+      })
+
+      it('forwards transactionId as tid for impressions', function() {
+        const bidRequest = {
+          ...baseBidRequest,
+          transactionId: 'faslk123'
+        }
+
+        const bidderRequest = {
+          ...baseBidderRequest,
+          bids: [bidRequest]
+        }
+
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
+        expect(payload.imp[0].ext.tid).to.equal('faslk123')
+      })
+
       it('includes the ad unit code in the request', function() {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')
