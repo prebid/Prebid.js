@@ -286,7 +286,7 @@ describe('the price floors module', function () {
       let myBidRequest = { ...basicBidRequest };
 
       // should take adunit floormin first even if lower
-      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 2.2);
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floors.floorMin', 2.2);
       expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 2.2,
         floorRuleValue: 1.0,
@@ -297,7 +297,7 @@ describe('the price floors module', function () {
       delete inputFloorData.matchingInputs;
 
       // should take adunit floormin if higher
-      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floorMin', 3.0);
+      utils.deepSetValue(myBidRequest, 'ortb2Imp.ext.prebid.floors.floorMin', 3.0);
       expect(getFirstMatchingFloor(inputFloorData, myBidRequest, { mediaType: 'banner', size: '*' })).to.deep.equal({
         floorMin: 3.0,
         floorRuleValue: 1.0,
@@ -582,7 +582,7 @@ describe('the price floors module', function () {
     const validateBidRequests = (getFloorExpected, FloorDataExpected) => {
       exposedAdUnits.forEach(adUnit => adUnit.bids.forEach(bid => {
         expect(bid.hasOwnProperty('getFloor')).to.equal(getFloorExpected);
-        expect(bid.floorData).to.deep.equal(FloorDataExpected);
+        sinon.assert.match(bid.floorData, FloorDataExpected);
       }));
     };
     const runStandardAuction = (adUnits = [getAdUnitMock('test_div_1')]) => {
@@ -918,16 +918,8 @@ describe('the price floors module', function () {
         floorProvider: 'floorprovider'
       });
     });
-    it('should not overwrite previous data object if the new one is bad', function () {
+    it('should ignore and reset floor data when provided with invalid data', function () {
       handleSetFloorsConfig({...basicFloorConfig});
-      handleSetFloorsConfig({
-        ...basicFloorConfig,
-        data: undefined
-      });
-      handleSetFloorsConfig({
-        ...basicFloorConfig,
-        data: 5
-      });
       handleSetFloorsConfig({
         ...basicFloorConfig,
         data: {
@@ -937,17 +929,7 @@ describe('the price floors module', function () {
         }
       });
       runStandardAuction();
-      validateBidRequests(true, {
-        skipped: false,
-        floorMin: undefined,
-        modelVersion: 'basic model',
-        modelWeight: 10,
-        modelTimestamp: 1606772895,
-        location: 'setConfig',
-        skipRate: 0,
-        fetchStatus: undefined,
-        floorProvider: undefined
-      });
+      validateBidRequests(false, sinon.match({location: 'noData', skipped: true}));
     });
     it('should dynamically add new schema fileds and functions if added via setConfig', function () {
       let deviceSpoof;
@@ -1835,7 +1817,7 @@ describe('the price floors module', function () {
       transactionId: 'au',
     };
     beforeEach(function () {
-      returnedBidResponse = {};
+      returnedBidResponse = null;
       reject = sinon.stub().returns({status: 'rejected'});
       indexStub = sinon.stub(auctionManager, 'index');
       indexStub.get(() => stubAuctionIndex({adUnits: [adUnit]}));
@@ -1867,7 +1849,7 @@ describe('the price floors module', function () {
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
       runBidResponse();
       expect(reject.calledOnce).to.be.true;
-      expect(returnedBidResponse.status).to.equal('rejected');
+      expect(returnedBidResponse).to.not.exist;
     });
     it('if it finds a rule and does not floor should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);

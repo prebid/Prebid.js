@@ -67,6 +67,7 @@
     });
 
     pbjs.que.push(function () {
+      pbjs.setConfig({enableTIDs: true});
       pbjs.addAdUnits(adUnits);
       pbjs.bidderSettings = {
         appnexus: {

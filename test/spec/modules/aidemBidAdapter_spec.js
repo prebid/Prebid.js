@@ -171,7 +171,11 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    ortb2Imp: {
+      ext: {
+        tid: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
+      },
+    },
   }
 ];
 
@@ -196,7 +200,11 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    ortb2Imp: {
+      ext: {
+        tid: '54a58774-7a41-494e-9aaf-fa7b79164f0c',
+      }
+    },
   }
 ];
 

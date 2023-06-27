@@ -12,7 +12,7 @@ import {
   getUniqueIdentifierStr,
   getUserConfiguredParams,
   groupBy,
-  isArray,
+  isArray, isPlainObject,
   isValidMediaTypes,
   logError,
   logInfo,
@@ -22,7 +22,6 @@ import {
   shuffle,
   timestamp,
 } from './utils.js';
-import {processAdUnitsForLabels} from './sizeMapping.js';
 import {decorateAdUnitsWithNativeParams, nativeAdapters} from './native.js';
 import {newBidder} from './adapters/bidderFactory.js';
 import {ajaxBuilder} from './ajax.js';
@@ -42,7 +41,7 @@ import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from './activities/activ
 import {ACTIVITY_PARAM_ANL_CONFIG, ACTIVITY_PARAM_S2S_NAME, activityParamsBuilder} from './activities/params.js';
 import {redactor} from './activities/redactor.js';
 
-const PBS_ADAPTER_NAME = 'pbsBidAdapter';
+export const PBS_ADAPTER_NAME = 'pbsBidAdapter';
 export const PARTITIONS = {
   CLIENT: 'client',
   SERVER: 'server'
@@ -68,6 +67,12 @@ config.getConfig('s2sConfig', config => {
 var _analyticsRegistry = {};
 
 const activityParams = activityParamsBuilder((alias) => adapterManager.resolveAlias(alias));
+
+export function s2sActivityParams(s2sConfig) {
+  return activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
+    [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
+  });
+}
 
 /**
  * @typedef {object} LabelDescriptor
@@ -205,7 +210,7 @@ export let coppaDataHandler = {
  * they should be exposed under `adUnit.bids[].mediaTypes`.
  */
 export const setupAdUnitMediaTypes = hook('sync', (adUnits, labels) => {
-  return processAdUnitsForLabels(adUnits, labels);
+  return adUnits;
 }, 'setupAdUnitMediaTypes')
 
 /**
@@ -250,8 +255,13 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     decorateAdUnitsWithNativeParams(adUnits);
   }
 
-  // filter out bidders that cannot participate in the auction
-  adUnits.forEach(au => au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder))))
+  adUnits.forEach(au => {
+    if (!isPlainObject(au.mediaTypes)) {
+      au.mediaTypes = {};
+    }
+    // filter out bidders that cannot participate in the auction
+    au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+  });
 
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
 
@@ -267,9 +277,13 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
   const ortb2 = ortb2Fragments.global || {};
   const bidderOrtb2 = ortb2Fragments.bidder || {};
 
-  function addOrtb2(bidderRequest) {
-    const redact = dep.redact(activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode));
-    const fpd = Object.freeze(redact.ortb2(mergeDeep({}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
+  function addOrtb2(bidderRequest, s2sActivityParams) {
+    const redact = dep.redact(
+      s2sActivityParams != null
+        ? s2sActivityParams
+        : activityParams(MODULE_TYPE_BIDDER, bidderRequest.bidderCode)
+    );
+    const fpd = Object.freeze(redact.ortb2(mergeDeep({source: {tid: auctionId}}, ortb2, bidderOrtb2[bidderRequest.bidderCode])));
     bidderRequest.ortb2 = fpd;
     bidderRequest.bids = bidderRequest.bids.map((bid) => {
       bid.ortb2 = fpd;
@@ -278,14 +292,9 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     return bidderRequest;
   }
 
-  function isS2SAllowed(s2sConfig) {
-    return dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_PREBID, PBS_ADAPTER_NAME, {
-      [ACTIVITY_PARAM_S2S_NAME]: s2sConfig.configName
-    }));
-  }
-
   _s2sConfigs.forEach(s2sConfig => {
-    if (s2sConfig && s2sConfig.enabled && isS2SAllowed(s2sConfig)) {
+    const s2sParams = s2sActivityParams(s2sConfig);
+    if (s2sConfig && s2sConfig.enabled && dep.isAllowed(ACTIVITY_FETCH_BIDS, s2sParams)) {
       let {adUnits: adUnitsS2SCopy, hasModuleBids} = getAdUnitCopyForPrebidServer(adUnits, s2sConfig);
 
       // uniquePbsTid is so we know which server to send which bids to during the callBids function
@@ -305,7 +314,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           src: CONSTANTS.S2S.SRC,
           refererInfo,
           metrics,
-        });
+        }, s2sParams);
         if (bidderRequest.bids.length !== 0) {
           bidRequests.push(bidderRequest);
         }
@@ -622,9 +631,11 @@ function invokeBidderMethod(bidder, method, spec, fn, ...params) {
 }
 
 function tryCallBidderMethod(bidder, method, param) {
-  const target = getBidderMethod(bidder, method);
-  if (target != null) {
-    invokeBidderMethod(bidder, method, ...target, param);
+  if (param?.src !== CONSTANTS.S2S.SRC) {
+    const target = getBidderMethod(bidder, method);
+    if (target != null) {
+      invokeBidderMethod(bidder, method, ...target, param);
+    }
   }
 }
 

@@ -8,7 +8,7 @@ const analyticsType = 'endpoint';
 
 export const ANALYTICS_VERSION = '1.0.0';
 
-const ANALYTICS_SERVER = 'https://europe-west2-greenbids-357713.cloudfunctions.net/publisher-analytics-endpoint';
+const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
 const {
   EVENTS: {
@@ -43,10 +43,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof config.options.pbuid !== 'string' || config.options.pbuid.length < 1) {
       logError('"options.pbuid" is required.');
       return false;
-    }
-    analyticsOptions.sampled = true;
-    if (typeof config.options.sampling === 'number') {
-      analyticsOptions.sampled = Math.random() < parseFloat(config.options.sampling);
     }
 
     analyticsOptions.pbuid = config.options.pbuid
@@ -149,15 +145,13 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     });
   },
   track({eventType, args}) {
-    if (analyticsOptions.sampled) {
-      switch (eventType) {
-        case BID_TIMEOUT:
-          this.handleBidTimeout(args);
-          break;
-        case AUCTION_END:
-          this.handleAuctionEnd(args);
-          break;
-      }
+    switch (eventType) {
+      case BID_TIMEOUT:
+        this.handleBidTimeout(args);
+        break;
+      case AUCTION_END:
+        this.handleAuctionEnd(args);
+        break;
     }
   },
   getAnalyticsOptions() {

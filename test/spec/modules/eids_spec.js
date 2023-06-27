@@ -348,6 +348,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('euid', function() {
+    const userId = {
+      euid: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'euid.eu',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
+      }]
+    });
+  });
+
   it('kpuid', function() {
     const userId = {
       kpuid: 'Sample_Token'

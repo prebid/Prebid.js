@@ -3,9 +3,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
+import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -120,7 +120,7 @@ export const spec = {
     };
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: imps,
       site,
       device,

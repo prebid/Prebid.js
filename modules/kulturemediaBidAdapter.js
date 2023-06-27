@@ -1,13 +1,14 @@
 import {
-  deepSetValue,
-  logInfo,
   deepAccess,
-  logError,
+  deepSetValue,
+  isArray,
   isFn,
+  isNumber,
   isPlainObject,
   isStr,
-  isNumber,
-  isArray, logMessage
+  logError,
+  logInfo,
+  logMessage
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -423,7 +424,7 @@ function buildBannerRequestData(bidRequests, bidderRequest) {
   }));
 
   const openrtbRequest = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     imp: impr,
     site: {
       domain: bidderRequest.refererInfo?.domain,
@@ -440,7 +441,6 @@ function _createBidResponse(bid) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: spec.code,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
