@@ -169,7 +169,6 @@ export function receiveMessage(evt) {
       let data = safeJSONParse(evt.data);
       if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
-        // const iframeTopicsData = getTopicsData(domain, topics)[0];
         const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
       }
@@ -248,7 +247,6 @@ export function loadTopicsForBidders(doc = document) {
             .then(data => {
               if (data && data.segment && !isEmpty(data.segment.topics)) {
                 const {domain, topics, bidder} = data.segment;
-                // const fetchTopicsData = getTopicsData(domain, topics)[0];
                 const fetchTopicsData = getTopicsData(domain, topics);
                 fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
               }
