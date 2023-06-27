@@ -159,8 +159,11 @@ describe('orbidderBidAdapter', () => {
   });
 
   describe('buildRequests', () => {
-    const request = buildRequest(defaultBidRequestBanner);
-    const nativeRequest = buildRequest(defaultBidRequestNative);
+    let request, nativeRequest;
+    before(() => {
+      request = buildRequest(defaultBidRequestBanner);
+      nativeRequest = buildRequest(defaultBidRequestNative);
+    })
 
     it('sends bid request to endpoint via https using post', () => {
       expect(request.method).to.equal('POST');
@@ -291,7 +294,7 @@ describe('orbidderBidAdapter', () => {
     });
   });
 
-  describe('buildRequests with price floor module', () => {
+  it('buildRequests with price floor module', () => {
     const bidRequest = deepClone(defaultBidRequestBanner);
     bidRequest.params.bidfloor = 1;
     bidRequest.getFloor = (floorObj) => {

@@ -59,7 +59,7 @@ export function readData(key) {
  * @param key
  * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
  */
-function storeData(key, value) {
+function storeData(key, value, cookieStorageEnabled = false) {
   try {
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
@@ -68,7 +68,7 @@ function storeData(key, value) {
         storage.setDataInLocalStorage(key, value);
       }
       const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
-      if (storage.cookiesAreEnabled()) {
+      if (storage.cookiesAreEnabled() && cookieStorageEnabled) {
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
     }
@@ -119,6 +119,7 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
+    const cookieStorageEnabled = typeof configParams.enableCookieStorage === 'boolean' ? configParams.enableCookieStorage : false
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
@@ -127,7 +128,7 @@ export const intentIqIdSubmodule = {
     if (!firstPartyData || !firstPartyData.pcid || firstPartyData.pcidDate) {
       const firstPartyId = generateGUID();
       firstPartyData = { 'pcid': firstPartyId, 'pcidDate': Date.now() };
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
     }
 
     let partnerData = tryParse(readData(FIRST_PARTY_DATA_KEY));
@@ -172,8 +173,8 @@ export const intentIqIdSubmodule = {
             }
             if (shouldUpdateLs === true) {
               partnerData.date = Date.now();
-              storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
-              storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData));
+              storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+              storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), cookieStorageEnabled);
             }
             callback(respJson.data);
           } else {
