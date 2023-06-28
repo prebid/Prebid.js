@@ -227,4 +227,3 @@ function createRenderer(bid, url) {
 }
 
 registerBidder(spec);
-
