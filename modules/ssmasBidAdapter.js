@@ -5,7 +5,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
 
 export const SSMAS_CODE = 'ssmas';
-const SSMAS_SERVER = 'localhost:8080';
+const SSMAS_SERVER = 'ads.ssmas.com';
 export const SSMAS_ENDPOINT = `http://${SSMAS_SERVER}/ortb`;
 const SYNC_URL = `http://sync.ssmas.com/user_sync`;
 export const SSMAS_REQUEST_METHOD = 'POST';
@@ -96,26 +96,26 @@ export const spec = {
   ) => {
     const syncs = [];
 
-    let gdprParams = '';
-    let uspParams = '';
+    let params = ['pbjs=1'];
+
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
+        params.push(`gdpr=${Boolean(gdprConsent.gdprApplies)}&gdpr_consent=${
           gdprConsent.consentString
-        }`;
+        }`);
       } else {
-        gdprParams = `gdpr_consent=${gdprConsent.consentString}`;
+        params.push(`gdpr_consent=${gdprConsent.consentString}`);
       }
     }
 
     if (uspConsent && uspConsent.consentString) {
-      uspParams += `ccpa_consent=${uspConsent.consentString}`;
+      params.push(`ccpa_consent=${uspConsent.consentString}`);
     }
 
     if (syncOptions.pixelEnabled && serverResponses.length > 0) {
       syncs.push({
         type: 'image',
-        url: `${SYNC_URL}?pbjs=1&${gdprParams}${uspParams}`
+        url: `${SYNC_URL}?${params.join('&')}`
       });
     }
     return syncs;
