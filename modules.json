@@ -57,5 +57,6 @@
     "videojsVideoProvider",
     "dfpAdServerVideo",
     "pairIdSystem",
-    "connectIdSystem"
+    "connectIdSystem",
+    "taboolaBidAdapter"
 ]
