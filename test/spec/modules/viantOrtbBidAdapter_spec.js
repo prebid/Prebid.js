@@ -339,4 +339,94 @@ describe('viantOrtbBidAdapter', function () {
       });
     });
   });
+  describe('interpretResponse-Video', function () {
+    const baseVideoBidRequests = [{
+      'bidder': 'viant',
+      'params': {
+        'publisherId': '464',
+        'placementId': '1'
+      },
+      'mediaTypes': {
+        'video': {
+          'context': 'instream',
+          'playerSize': [[640, 480]],
+          'mimes': ['video/mp4'],
+          'protocols': [1, 2, 3, 4, 5, 6, 7, 8],
+          'api': [1, 3],
+          'skip': 1,
+          'skipafter': 5,
+          'minduration': 10,
+          'maxduration': 31
+        }
+      },
+      'sizes': [[640, 480]],
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
+
+    const testWindow = buildWindowTree(['https://www.example.com/test', 'https://www.example.com/other/page', 'https://www.example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
+    const baseBidderRequestReferer = detectReferer(testWindow)();
+    const baseBidderRequest = {
+      'bidderCode': 'viant',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'bidderRequestId': '18084284054531',
+      'auctionStart': 1540945362095,
+      'timeout': 3000,
+      'refererInfo': baseBidderRequestReferer,
+      'start': 1540945362099,
+      'doneCbCallCount': 0
+    };
+
+    it('bid response is a video', function () {
+      const request = testBuildRequests(baseVideoBidRequests, baseBidderRequest)[0];
+      const VIDEO_BID_RESPONSE = {
+        'id': 'bidderRequestId',
+        'bidid': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+        'seatbid': [
+          {
+            'bid': [
+              {
+                'id': '1',
+                'impid': '243310435309b5',
+                'price': 1.09,
+                'adid': '144762342',
+                'nurl': 'http://0.0.0.0:8181/nurl',
+                'adm': '<VAST version="4.2"></VAST>',
+                'adomain': [
+                  'https://dummydomain.com'
+                ],
+                'cid': 'cid',
+                'crid': 'crid',
+                'iurl': 'iurl',
+                'cat': [],
+                'h': 480,
+                'w': 640
+              }
+            ]
+          }
+        ],
+        'cur': 'USD'
+      };
+      let bids = spec.interpretResponse({body: VIDEO_BID_RESPONSE}, request);
+      expect(bids.length).to.equal(1);
+      let bid = bids[0];
+      it('should return the proper mediaType', function () {
+        expect(bid.mediaType).to.equal('video');
+      });
+      it('should return correct Ad Markup', function () {
+        expect(bid.vastXml).to.equal('<VAST version="4.2"></VAST>');
+      });
+      it('should return correct Notification', function () {
+        expect(bid.vastUrl).to.equal('http://0.0.0.0:8181/nurl');
+      });
+      it('should return correct Cpm', function () {
+        expect(bid.cpm).to.equal(1.09);
+      });
+    });
+  });
 });
