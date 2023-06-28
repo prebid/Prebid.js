@@ -130,7 +130,7 @@ import {find, includes} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
@@ -574,10 +574,13 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
   function timeGdpr() {
     return gdprDataHandler.promise.finally(initMetrics.startTiming('userId.init.gdpr'));
   }
+  function timeGpp() {
+    return gppDataHandler.promise.finally(initMetrics.startTiming('userId.init.gpp'))
+  }
 
   let done = cancelAndTry(
     GreedyPromise.all([hooksReady, startInit.promise])
-      .then(timeGdpr)
+      .then(() => GreedyPromise.all([timeGdpr(), timeGpp()]).then(([gdpr]) => gdpr))
       .then(checkRefs((consentData) => {
         initSubmodules(initModules, allModules, consentData);
       }))
