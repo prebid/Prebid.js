@@ -466,16 +466,20 @@ export const spec = {
     }
   },
 
+  ajaxCall: function(url, cb, data, options) {
+    return ajax(url, cb, data, options);
+  },
+
   onDataDeletionRequest: function(data) {
     const uids = [];
-    const aliases = [spec.code , ...spec.aliases.map((alias) => alias.code || alias)];
+    const aliases = [spec.code, ...spec.aliases.map((alias) => alias.code || alias)];
     data.forEach(({ bids }) => bids && bids.forEach(({ bidder, params }) => {
       if (aliases.includes(bidder) && params && params.uid) {
         uids.push(params.uid);
       }
     }));
     if (uids.length) {
-      ajax(USP_DELETE_DATA_HANDLER, () => {}, JSON.stringify({ uids }), {contentType: 'application/json', method: 'POST'});
+      spec.ajaxCall(USP_DELETE_DATA_HANDLER, () => {}, JSON.stringify({ uids }), {contentType: 'application/json', method: 'POST'});
     }
   }
 };
