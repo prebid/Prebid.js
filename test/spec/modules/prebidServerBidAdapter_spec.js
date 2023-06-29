@@ -26,6 +26,7 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import 'modules/fledgeForGpt.js';
+import * as redactor from 'src/activities/redactor.js';
 import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
@@ -636,15 +637,102 @@ describe('S2S Adapter', function () {
       resetSyncedStatus();
     });
 
-    it('should set id and source.tid to auction ID', function () {
-      config.setConfig({ s2sConfig: CONFIG });
+    describe('FPD redaction', () => {
+      let sandbox, ortb2Fragments, redactorMocks, s2sReq;
 
-      adapter.callBids(OUTSTREAM_VIDEO_REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        redactorMocks = {};
+        sandbox.stub(redactor, 'redactor').callsFake((params) => {
+          if (!redactorMocks.hasOwnProperty(params.component)) {
+            redactorMocks[params.component] = {
+              ortb2: sinon.stub().callsFake(o => o),
+              bidRequest: sinon.stub().callsFake(o => o)
+            }
+          }
+          return redactorMocks[params.component];
+        })
+        ortb2Fragments = {
+          global: {
+            mock: 'value'
+          },
+          bidder: {
+            appnexus: {
+              mock: 'A'
+            }
+          }
+        }
+        const s2sConfig = {
+          ...CONFIG,
+        };
+        config.setConfig({s2sConfig});
+        s2sReq = {
+          ...REQUEST,
+          s2sConfig
+        };
+      });
 
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-      expect(requestBid.id).to.equal(BID_REQUESTS[0].auctionId);
-      expect(requestBid.source.tid).to.equal(BID_REQUESTS[0].auctionId);
+      afterEach(() => {
+        sandbox.restore();
+      })
+
+      function callBids() {
+        adapter.callBids({
+          ...s2sReq,
+          ortb2Fragments
+        }, BID_REQUESTS, addBidResponse, done, ajax);
+      }
+
+      it('should be applied to ortb2Fragments', () => {
+        callBids();
+        sinon.assert.calledWithMatch(redactorMocks['prebid.pbsBidAdapter'].ortb2, ortb2Fragments.global);
+        Object.entries(ortb2Fragments.bidder).forEach(([bidder, ortb2]) => {
+          sinon.assert.calledWith(redactorMocks[`bidder.${bidder}`].ortb2, ortb2);
+        });
+      });
+
+      it('should be applied to ad units', () => {
+        callBids();
+        s2sReq.ad_units.forEach(au => {
+          sinon.assert.calledWith(redactorMocks['prebid.pbsBidAdapter'].bidRequest, au);
+          au.bids.forEach((bid) => {
+            sinon.assert.calledWith(redactorMocks[`bidder.${bid.bidder}`].bidRequest, bid);
+          })
+        })
+      })
     });
+
+    describe('transaction IDs', () => {
+      let s2sReq;
+      beforeEach(() => {
+        s2sReq = {
+          ...REQUEST,
+          ortb2Fragments: {global: {source: {tid: 'mock-tid'}}},
+          ad_units: REQUEST.ad_units.map(au => ({...au, ortb2Imp: {ext: {tid: 'mock-tid'}}}))
+        };
+        BID_REQUESTS[0].bids[0].ortb2Imp = {ext: {tid: 'mock-tid'}};
+      });
+
+      function makeRequest() {
+        adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
+        return JSON.parse(server.requests[0].requestBody);
+      }
+
+      it('should not be set when transmitTid is not allowed, with ext.prebid.createtids: false', () => {
+        config.setConfig({ s2sConfig: CONFIG, enableTIDs: false });
+        const req = makeRequest();
+        expect(req.source.tid).to.not.exist;
+        expect(req.imp[0].ext.tid).to.not.exist;
+        expect(req.ext.prebid.createtids).to.equal(false);
+      });
+
+      it('should be picked from FPD otherwise', () => {
+        config.setConfig({s2sConfig: CONFIG, enableTIDs: true});
+        const req = makeRequest();
+        expect(req.source.tid).to.eql('mock-tid');
+        expect(req.imp[0].ext.tid).to.eql('mock-tid');
+      })
+    })
 
     it('should set tmax to s2sConfig.timeout', () => {
       const cfg = {...CONFIG, timeout: 123};
@@ -1405,11 +1493,9 @@ describe('S2S Adapter', function () {
           const ortbReq = JSON.parse(requestBid.imp[0].native.request);
           expect(ortbReq).to.deep.equal({
             ...ORTB_NATIVE_REQ,
-            'context': 1,
-            'plcmttype': 1,
             'eventtrackers': [{
               event: 1,
-              methods: [1]
+              methods: [1, 2]
             }],
           });
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
@@ -1643,19 +1729,17 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          auctiontimestamp: 1510852447530,
-          targeting: {
-            includebidderkeys: false,
-            includewinners: true
-          },
-          channel: {
-            name: 'pbjs',
-            version: 'v$prebid.version$'
-          }
+      sinon.assert.match(requestBid.ext.prebid, {
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
+        },
+        channel: {
+          name: 'pbjs',
+          version: 'v$prebid.version$'
         }
-      });
+      })
     });
 
     it('skips dynamic aliases to request when skipPbsAliasing enabled', function () {
@@ -1682,17 +1766,15 @@ describe('S2S Adapter', function () {
 
       const requestBid = JSON.parse(server.requests[0].requestBody);
 
-      expect(requestBid.ext).to.deep.equal({
-        prebid: {
-          auctiontimestamp: 1510852447530,
-          targeting: {
-            includebidderkeys: false,
-            includewinners: true
-          },
-          channel: {
-            name: 'pbjs',
-            version: 'v$prebid.version$'
-          }
+      sinon.assert.match(requestBid.ext.prebid, {
+        auctiontimestamp: 1510852447530,
+        targeting: {
+          includebidderkeys: false,
+          includewinners: true
+        },
+        channel: {
+          name: 'pbjs',
+          version: 'v$prebid.version$'
         }
       });
     });
@@ -3029,7 +3111,7 @@ describe('S2S Adapter', function () {
       expect(response).to.have.property('ttl', 60);
     });
 
-    it('handles seatnonbid responses and calls SEAT_NON_BID', function () {
+    it('handles seatnonbid responses and emits SEAT_NON_BID', function () {
       const original = CONFIG;
       CONFIG.extPrebid = { returnallbidstatus: true };
       const nonbidResponse = {...RESPONSE_OPENRTB, ext: {seatnonbid: [{}]}};
@@ -3042,6 +3124,8 @@ describe('S2S Adapter', function () {
       const event = events.emit.secondCall.args;
       expect(event[0]).to.equal(CONSTANTS.EVENTS.SEAT_NON_BID);
       expect(event[1].seatnonbid[0]).to.have.property('auctionId', 2);
+      expect(event[1].requestedBidders).to.deep.equal(['appnexus']);
+      expect(event[1].response).to.deep.equal(responding);
     });
 
     it('respects defaultTtl', function () {

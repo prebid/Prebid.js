@@ -151,11 +151,14 @@ export const spec = {
       site.page = bidderRequest.refererInfo.page
       site.domain = bidderRequest.refererInfo.domain
 
+      const tmax = deepAccess(bidderRequest, 'timeout');
+
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {
@@ -164,6 +167,11 @@ export const spec = {
             schain
           }
         };
+      }
+
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
       }
 
       if (bidderRequest.gdprConsent) {
