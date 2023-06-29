@@ -324,10 +324,16 @@ describe('invibesBidAdapter:', function () {
     });
 
     it('has location not cut off', function () {
+      sandbox.stub(config, 'getConfig').callsFake(() => {
+        return {
+          'site': 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      });
+
       const request = spec.buildRequests(bidRequests, {auctionStart: Date.now()});
       const parsedData = request.data;
       expect(parsedData.location).to.contain('?');
-      expect(parsedData.location).to.equal(top.window.location.href);
+      expect(parsedData.location).to.equal('https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue');
     });
 
     it('has capped ids if local storage variable is correctly formatted', function () {

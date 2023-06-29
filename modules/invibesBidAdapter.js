@@ -1,6 +1,7 @@
-import { logInfo } from '../src/utils.js';
+import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {config} from '../src/config.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -16,7 +17,7 @@ const CONSTANTS = {
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
   DISABLE_USER_SYNC: true
 };
-
+const { getConfig } = config;
 const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
@@ -116,7 +117,7 @@ function buildRequest(bidRequests, bidderRequest) {
     bidParamsJson.userId = userIdModel;
   }
   let data = {
-    location: getDocumentLocation(topWin),
+    location: getDocumentLocation(bidderRequest),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: readFromLocalStorage('IvbsCampIdsLocal'),
@@ -371,8 +372,13 @@ function generateRandomId() {
   return (Math.round(Math.random() * 1e12)).toString(36).substring(0, 10);
 }
 
-function getDocumentLocation(topWin) {
-  return topWin.location.href.substring(0, 300);
+function getDocumentLocation(bidderRequest) {
+  var site = getConfig('site') || {};
+
+  if (!site.page) {
+    site.page = bidderRequest.refererInfo.page;
+  }
+  return site.page.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
