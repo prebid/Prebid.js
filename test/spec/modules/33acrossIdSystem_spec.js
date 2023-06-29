@@ -2,8 +2,7 @@ import { thirthyThreeAcrossIdSubmodule } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
-import { uspDataHandler } from 'src/adapterManager.js';
-import { gppDataHandler } from 'src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -148,6 +147,48 @@ describe('33acrossIdSystem', () => {
         expect(request.url).not.to.contain('us_privacy');
 
         uspDataHandler.getConsentData.restore();
+      });
+    });
+
+    context('when coppa is enabled', () => {
+      it('should call endpoint with an enabled coppa signal', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(true);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=1');
+
+        coppaDataHandler.getCoppa.restore();
+      });
+    });
+
+    context('when coppa is not enabled', () => {
+      it('should call endpoint with coppa signal not enabled', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(false);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=0');
+
+        coppaDataHandler.getCoppa.restore();
       });
     });
 

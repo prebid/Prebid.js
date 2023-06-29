@@ -8,7 +8,7 @@
 import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
@@ -37,13 +37,15 @@ function getEnvelope(response) {
 function calculateQueryStringParams(pid, gdprConsentData) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
+  const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
 
   const params = {
     pid,
     gdpr: Number(gdprApplies),
     src: CALLER_NAME,
-    ver: '$prebid.version$'
+    ver: '$prebid.version$',
+    coppa: Number(coppaValue)
   };
 
   if (uspString) {

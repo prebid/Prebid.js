@@ -200,6 +200,14 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withCoppa = coppaValue => {
+      Object.assign(ttxRequest.regs, {
+        coppa: coppaValue
+      });
+
+      return this;
+    };
+
     this.withGppConsent = (consentString, applicableSections) => {
       Object.assign(ttxRequest, {
         regs: {
@@ -1063,11 +1071,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with gdpr consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1105,11 +1113,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with default gdpr consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1149,11 +1157,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with us_privacy consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1191,11 +1199,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with default us_privacy consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1206,6 +1214,46 @@ describe('33acrossBidAdapter:', function () {
           .withUrl('https://foo.com/hb/')
           .build();
         const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when coppa has been enabled', function() {
+      beforeEach(function() {
+        sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      });
+
+      it('returns corresponding server requests with coppa: 1', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withCoppa(1)
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, {});
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when coppa has been disabled', function() {
+      beforeEach(function() {
+        sandbox.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      });
+
+      it('returns corresponding server requests with coppa: 0', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withCoppa(0)
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, {});
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1238,11 +1286,10 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with GPP consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig').withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1828,11 +1875,11 @@ describe('33acrossBidAdapter:', function () {
 
     context('when SRA mode is enabled', function() {
       it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             enableSRAMode: true
-          }
-        });
+          });
 
         const bidRequests = new BidRequestsBuilder()
           .addBid()
