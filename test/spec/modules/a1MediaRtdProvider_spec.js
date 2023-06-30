@@ -36,7 +36,7 @@ describe('a1MediaRtdProvider', function() {
     describe('initialize with expected params', function() {
       let clock;
       before(function() {
-        clock = sinon.useFakeTimers(1686355200000); // 2023-06-10T00:00:00Z
+        clock = sinon.useFakeTimers(1686398400000); // 2023-06-10T12:00:00Z
       });
       after(function() {
         clock.restore();
