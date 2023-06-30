@@ -1139,7 +1139,8 @@ export const spec = {
           },
           prebidVersion: '$prebid.version$',
           featuresVersion: FEATURES_VERSION,
-          usIfr: usIfr
+          usIfr: usIfr,
+          adgjs: storage.localStorageIsEnabled()
         },
         options: {
           contentType: 'text/plain'
