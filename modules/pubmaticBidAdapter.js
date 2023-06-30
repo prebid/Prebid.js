@@ -1378,7 +1378,7 @@ export const spec = {
     // GPP Consent
     if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
       syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
-      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections);
+      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
     // coppa compliance
