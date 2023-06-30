@@ -331,7 +331,7 @@ class WeboramaRtdProvider {
 
       requiredFields.forEach(field => {
         if (!(field in weboSectionConf)) {
-          throw `missing required field '${field}''`;
+          throw `missing required field '${field}'`;
         }
       });
 
@@ -339,11 +339,11 @@ class WeboramaRtdProvider {
         throw 'gdpr consent not ok';
       }
     } catch (e) {
-      logError(`unable to initialize: error on ${subSection} configuration:`, e);
+      logError(`unable to initialize: error on '${subSection}' configuration:`, e);
       return false;
     }
 
-    logMessage(`weborama ${subSection} initialized with success`);
+    logMessage(`weborama '${subSection}' initialized with success`);
 
     return true;
   }
