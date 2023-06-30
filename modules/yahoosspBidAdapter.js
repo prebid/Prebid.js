@@ -114,11 +114,12 @@ function extractUserSyncUrls(syncOptions, pixels) {
  */
 function updateConsentQueryParams(url, consentData) {
   const parameterMap = {
-    'gdpr_consent': consentData.gdpr.consentString,
-    'gdpr': consentData.gdpr.gdprApplies ? '1' : '0',
-    'us_privacy': consentData.uspConsent,
-    'gpp': consentData.gpp.gppString,
-    'gpp_sid': consentData.gpp.applicableSections ? consentData.gpp.applicableSections.join(',') : ''
+    'gdpr_consent': consentData.gdpr ? consentData.gdpr.consentString : '',
+    'gdpr': consentData.gdpr && consentData.gdpr.gdprApplies ? '1' : '0',
+    'us_privacy': consentData.uspConsent ? consentData.uspConsent : '',
+    'gpp': consentData.gpp ? consentData.gpp.gppString : '',
+    'gpp_sid': consentData.gpp && Array.isArray(consentData.gpp.applicableSections)
+      ? consentData.gpp.applicableSections.join(',') : ''
   }
 
   const existingUrl = new URL(url);
@@ -276,8 +277,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
         ext: {
           'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
           gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          gpp: bidderRequest.gppConsent.gppString,
-          gpp_sid: bidderRequest.gppConsent.applicableSections
+          gpp: bidderRequest.gppConsent ? bidderRequest.gppConsent.gppString : '',
+          gpp_sid: bidderRequest.gppConsent ? bidderRequest.gppConsent.applicableSections : []
         }
       },
       source: {
