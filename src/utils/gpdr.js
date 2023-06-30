@@ -10,10 +10,10 @@ export function hasPurpose1Consent(gdprConsent) {
   logWarn(`Privacy - checking purpose1Consent - ${gdprConsent}`);
   if(gdprConsent === null) {
     //logWarn(`Privacy - gdprConsent is null, checking value of defaultGdprScope = ${owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope}`);
-    return !(owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope === true)
+    return !(window.owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope === true)
   }
   if (gdprConsent?.gdprApplies) {
-    //logWarn(`Privacy - gdprConsent?.gdprApplies = ${gdprConsent?.gdprApplies} and purpose consent = ${gdprConsent.vendorData.purpose.consents}`);
+    // logWarn(`Privacy - gdprConsent?.gdprApplies = ${gdprConsent?.gdprApplies} and purpose consent = ${gdprConsent.vendorData.purpose.consents}`);
     return deepAccess(gdprConsent, 'vendorData.purpose.consents.1') === true;
   }
   return true;

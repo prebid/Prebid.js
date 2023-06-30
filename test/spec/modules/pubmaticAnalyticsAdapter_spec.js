@@ -1410,7 +1410,7 @@ describe('pubmatic analytics adapter', function () {
       let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.ih).to.equal('1');
+      expect(data.ih).to.equal(1);
     });
 
     it('Logger: check value of ih field when userid module is disabled', function() {
@@ -1447,7 +1447,7 @@ describe('pubmatic analytics adapter', function () {
       let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.ih).to.equal('0');
+      expect(data.ih).to.equal(0);
     });
   });
 
