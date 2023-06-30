@@ -271,33 +271,63 @@ describe('YahooSSP Bid Adapter:', () => {
     });
 
     describe('user consent parameters are updated', () => {
-      let syncOptions = {
+      const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      let pixelObjects = spec.getUserSyncs(
-        syncOptions,
-        SERVER_RESPONSES,
-        bidderRequest.gdprConsent,
-        bidderRequest.uspConsent,
-        bidderRequest.gppConsent
-      );
-      pixelObjects.forEach(pixelObject => {
-        let url = pixelObject.url;
-        let urlParams = new URL(url).searchParams;
-        const expectedParams = {
-          'baz': 'true',
-          'gdpr_consent': bidderRequest.gdprConsent.consentString,
-          'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
-          'us_privacy': bidderRequest.uspConsent,
-          'gpp': bidderRequest.gppConsent.gppString,
-          'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
-        }
-        for (const [key, value] of Object.entries(expectedParams)) {
-          it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
-            expect(urlParams.get(key)).to.equal(value);
-          });
-        };
+
+      describe('when all consent data is set', () => {
+        const pixelObjects = spec.getUserSyncs(
+          syncOptions,
+          SERVER_RESPONSES,
+          bidderRequest.gdprConsent,
+          bidderRequest.uspConsent,
+          bidderRequest.gppConsent
+        );
+        pixelObjects.forEach(pixelObject => {
+          let url = pixelObject.url;
+          let urlParams = new URL(url).searchParams;
+          const expectedParams = {
+            'baz': 'true',
+            'gdpr_consent': bidderRequest.gdprConsent.consentString,
+            'gdpr': bidderRequest.gdprConsent.gdprApplies ? '1' : '0',
+            'us_privacy': bidderRequest.uspConsent,
+            'gpp': bidderRequest.gppConsent.gppString,
+            'gpp_sid': Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+          }
+          for (const [key, value] of Object.entries(expectedParams)) {
+            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
+              expect(urlParams.get(key)).to.equal(value);
+            });
+          };
+        });
+      });
+
+      describe('when no consent data is set', () => {
+        const pixelObjects = spec.getUserSyncs(
+          syncOptions,
+          SERVER_RESPONSES,
+          undefined,
+          undefined,
+          undefined
+        );
+        pixelObjects.forEach(pixelObject => {
+          let url = pixelObject.url;
+          let urlParams = new URL(url).searchParams;
+          const expectedParams = {
+            'baz': 'true',
+            'gdpr_consent': '',
+            'gdpr': '0',
+            'us_privacy': '',
+            'gpp': '',
+            'gpp_sid': ''
+          }
+          for (const [key, value] of Object.entries(expectedParams)) {
+            it(`Updates the ${key} consent param in user sync URL ${url}`, () => {
+              expect(urlParams.get(key)).to.equal(value);
+            });
+          };
+        });
       });
     });
   });
