@@ -42,6 +42,12 @@ export const spec = {
       withCredentials: false,
     };
 
+    data.imp && data.imp.forEach(imp => {
+      if (imp.ext && imp.ext.placementId) {
+        imp.tagId = imp.ext.placementId;
+      }
+    });
+
     data.regs = data.regs || {};
     data.regs.ext = data.regs.ext || {};
 

@@ -1,6 +1,6 @@
 # Overview
 
-Module Name: ssMas Bidder Adapter
+Module Name: SSMas Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: hzchen.work@gmail.com
 
@@ -28,8 +28,7 @@ var adUnits = [
       bids: [{
          bidder: 'ssmas',
          params: {
-            placementId: "125907",
-            siteId: "001"
+            placementId: "125907"
          }
        }]
    }
