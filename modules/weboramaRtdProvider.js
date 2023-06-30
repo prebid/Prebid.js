@@ -110,7 +110,8 @@ import {
   isPlainObject,
   logWarn,
   mergeDeep,
-  tryAppendQueryString
+  tryAppendQueryString,
+  deepAccess
 } from '../src/utils.js';
 import {
   submodule
@@ -192,9 +193,11 @@ class WeboramaRtdProvider {
    * @method
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
+   * @param {Object} userConsent
+   * @param {?Object} userConsent.gdpr
    * @return {boolean} true if module was initialized with success
    */
-  init(moduleConfig) {
+  init(moduleConfig, userConsent) {
     /** @type {Object} */
     const globalDefaults = {
       setPrebidTargeting: true,
@@ -212,8 +215,14 @@ class WeboramaRtdProvider {
     this.#components.WeboUserData.data = null;
     this.#components.SfbxLiteData.data = null;
 
-    this.#components.WeboCtx.initialized = this.#initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, 'token');
-    this.#components.WeboUserData.initialized = this.#initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION);
+    const weboCtxRequiredFields = ['token'];
+
+    this.#components.WeboCtx.initialized = this.#initSubSection(moduleParams, WEBO_CTX_CONF_SECTION, {
+      requiredFields: weboCtxRequiredFields,
+    });
+    this.#components.WeboUserData.initialized = this.#initSubSection(moduleParams, WEBO_USER_DATA_CONF_SECTION, {
+      userConsent: userConsent || {},
+    });
     this.#components.SfbxLiteData.initialized = this.#initSubSection(moduleParams, SFBX_LITE_DATA_CONF_SECTION);
 
     return Object.values(this.#components).some((c) => c.initialized);
@@ -299,10 +308,12 @@ class WeboramaRtdProvider {
    * @private
    * @param {ModuleParams} moduleParams
    * @param {string} subSection subsection name to initialize
-   * @param {string[]} requiredFields
+   * @param {?Object} extra
+   * @param {string[]} extra.requiredFields
+   * @param {?Object} extra.userConsent
    * @return {boolean} true if module subsection was initialized with success
    */
-  #initSubSection(moduleParams, subSection, ...requiredFields) {
+  #initSubSection(moduleParams, subSection, extra) {
     /** @type {CommonConf} */
     const weboSectionConf = moduleParams[subSection] || { enabled: false };
 
@@ -315,11 +326,18 @@ class WeboramaRtdProvider {
     try {
       this.#normalizeConf(moduleParams, weboSectionConf);
 
+      extra = extra || {};
+      const requiredFields = extra?.requiredFields || [];
+
       requiredFields.forEach(field => {
         if (!(field in weboSectionConf)) {
           throw `missing required field '${field}''`;
         }
       });
+
+      if (isPlainObject(extra?.userConsent?.gdpr) && !this.#checkTCFv2(extra.userConsent.gdpr)) {
+        throw 'gdpr consent not ok';
+      }
     } catch (e) {
       logError(`unable to initialize: error on ${subSection} configuration:`, e);
       return false;
@@ -330,6 +348,34 @@ class WeboramaRtdProvider {
     return true;
   }
 
+  /** check gdpr consent data
+   * @method
+   * @private
+   * @param {Object} gdpr
+   * @param {?boolean} gdpr.gdprApplies
+   * @param {?Object} gdpr.vendorData
+   * @param {?Object} gdpr.vendorData.purpose
+   * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.consents
+   * @param {?Object.<number, boolean>} gdr.vendorData.specialFeatureOptins
+   * @param {?Object} gdpr.vendorData.vendor
+   * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.consents
+   * @return {bool}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #checkTCFv2(gdpr) {
+    if (gdpr?.gdprApplies !== true) {
+      return true;
+    }
+
+    if (deepAccess(gdpr, 'vendorData.vendor.consents') && deepAccess(gdpr, 'vendorData.purpose.consents')) {
+      return gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
+        gdpr.vendorData.purpose.consents[1] === true && // info storage access
+        gdpr.vendorData.purpose.consents[3] === true && // create personalized ads
+        gdpr.vendorData.purpose.consents[4] === true;// select personalized ads
+    }
+
+    return true;
+  }
   /** normalize submodule configuration
    * @method
    * @private
