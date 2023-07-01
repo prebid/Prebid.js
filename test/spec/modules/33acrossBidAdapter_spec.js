@@ -1218,10 +1218,11 @@ describe('33acrossBidAdapter:', function () {
           .withProduct()
           .withCoppa(1)
           .build();
+
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, {});
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
@@ -1241,17 +1242,16 @@ describe('33acrossBidAdapter:', function () {
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
           .build();
-        const [ builtServerRequest ] = spec.buildRequests(bidRequests, {});
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
 
         validateBuiltServerRequest(builtServerRequest, serverRequest);
       });
     });
 
     context('when GPP consent data exists', function() {
-      let bidderRequest;
-
       beforeEach(function() {
         bidderRequest = {
+          ...bidderRequest,
           gppConsent: {
             gppString: 'foo',
             applicableSections: '123'
