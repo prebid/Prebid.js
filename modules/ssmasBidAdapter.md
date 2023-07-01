@@ -12,7 +12,6 @@ Supported currencies: EUR
 
 Required parameters:
 - placement id
-- site id
 
 # Test Parameters
 ```
@@ -28,7 +27,7 @@ var adUnits = [
       bids: [{
          bidder: 'ssmas',
          params: {
-            placementId: "125907"
+            placementId: "10336"
          }
        }]
    }
