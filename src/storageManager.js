@@ -1,7 +1,17 @@
-import {hook} from './hook.js';
-import {checkCookieSupport, hasDeviceAccess, logError, logInfo} from './utils.js';
-import {bidderSettings as defaultBidderSettings} from './bidderSettings.js';
-import {MODULE_TYPE_BIDDER, MODULE_TYPE_CORE} from './activities/modules.js';
+import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
+import {bidderSettings} from './bidderSettings.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
+import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
+import {
+  ACTIVITY_PARAM_ADAPTER_CODE,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE
+} from './activities/params.js';
+
+import {ACTIVITY_ACCESS_DEVICE} from './activities/activities.js';
+import {config} from './config.js';
+import adapterManager from './adapterManager.js';
+import {activityParams} from './activities/activityParams.js';
 
 export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
 export const STORAGE_TYPE_COOKIES = 'cookie';
@@ -11,40 +21,19 @@ export let storageCallbacks = [];
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
-export function newStorageManager({moduleName, moduleType} = {}, {bidderSettings = defaultBidderSettings} = {}) {
-  function isBidderAllowed(storageType) {
-    if (moduleType !== MODULE_TYPE_BIDDER) {
-      return true;
-    }
-    const storageAllowed = bidderSettings.get(moduleName, 'storageAllowed');
-    if (!storageAllowed || storageAllowed === true) return !!storageAllowed;
-    if (Array.isArray(storageAllowed)) return storageAllowed.some((e) => e === storageType);
-    return storageAllowed === storageType;
-  }
-
+export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
   function isValid(cb, storageType) {
-    if (!isBidderAllowed(storageType)) {
-      logInfo(`bidderSettings denied access to device storage for bidder '${moduleName}'`);
-      const result = {valid: false};
-      return cb(result);
-    } else {
-      let value;
-      let hookDetails = {
-        hasEnforcementHook: false
-      }
-      validateStorageEnforcement(moduleType, moduleName, hookDetails, function(result) {
-        if (result && result.hasEnforcementHook) {
-          value = cb(result);
-        } else {
-          let result = {
-            hasEnforcementHook: false,
-            valid: hasDeviceAccess()
-          }
-          value = cb(result);
-        }
-      });
-      return value;
+    let mod = moduleName;
+    const curBidder = config.getCurrentBidder();
+    if (curBidder && moduleType === MODULE_TYPE_BIDDER && adapterManager.aliasRegistry[curBidder] === moduleName) {
+      mod = curBidder;
     }
+    const result = {
+      valid: isAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(moduleType, mod, {
+        [ACTIVITY_PARAM_STORAGE_TYPE]: storageType
+      }))
+    };
+    return cb(result);
   }
 
   function schedule(operation, storageType, done) {
@@ -229,13 +218,6 @@ export function newStorageManager({moduleName, moduleType} = {}, {bidderSettings
 }
 
 /**
- * This hook validates the storage enforcement if gdprEnforcement module is included
- */
-export const validateStorageEnforcement = hook('async', function(moduleType, moduleName, hookDetails, callback) {
-  callback(hookDetails);
-}, 'validateStorageEnforcement');
-
-/**
  * Get a storage manager for a particular module.
  *
  * Either bidderCode or a combination of moduleType + moduleName must be provided. The former is a shorthand
@@ -262,8 +244,39 @@ export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_CORE});
+  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_PREBID});
 }
+
+/**
+ * Block all access to storage when deviceAccess = false
+ */
+export function deviceAccessRule() {
+  if (!hasDeviceAccess()) {
+    return {allow: false}
+  }
+}
+registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAccessRule);
+
+/**
+ * By default, deny bidders accessDevice unless they enable it through bidderSettings
+ *
+ * // TODO: for backwards compat, the check is done on the adapter - rather than bidder's code.
+ */
+export function storageAllowedRule(params, bs = bidderSettings) {
+  if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
+  let allow = bs.get(params[ACTIVITY_PARAM_ADAPTER_CODE], 'storageAllowed');
+  if (!allow || allow === true) {
+    allow = !!allow
+  } else {
+    const storageType = params[ACTIVITY_PARAM_STORAGE_TYPE];
+    allow = Array.isArray(allow) ? allow.some((e) => e === storageType) : allow === storageType;
+  }
+  if (!allow) {
+    return {allow};
+  }
+}
+
+registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'bidderSettings.*.storageAllowed', storageAllowedRule);
 
 export function resetData() {
   storageCallbacks = [];

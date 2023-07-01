@@ -200,6 +200,15 @@ const NATIVE_RESPONSE = Object.assign({}, RESPONSE, {
           value: 'Native body value',
         },
       },
+      {
+        id: 4,
+        img: {
+          url: 'https://localhost:8080/assets/favicon/favicon-16x16.png',
+          w: 16,
+          h: 16,
+          type: 1,
+        },
+      },
     ],
     imptrackers: [
       'http://localhost:8080/ve?d=ODE9ZSY2MTI1MjAzNjMzMzYxPXN0JjA0NWUwZDk0NTY5Yi05M2FiLWUwZTQtOWFjNy1hYWY0MzFiZj1kaXQmMj12',
@@ -567,15 +576,24 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.url).to.equal('https://localhost:8080/yl-logo100x100.jpg');
       expect(result[0].native.image.width).to.equal(100);
       expect(result[0].native.image.height).to.equal(100);
+      expect(result[0].native.icon.url).to.equal('https://localhost:8080/assets/favicon/favicon-16x16.png');
+      expect(result[0].native.icon.width).to.equal(16);
+      expect(result[0].native.icon.height).to.equal(16);
       expect(result[0].native.clickUrl).to.equal('https://www.yieldlab.de');
       expect(result[0].native.impressionTrackers.length).to.equal(3);
-      expect(result[0].native.assets.length).to.equal(3);
+      expect(result[0].native.assets.length).to.equal(4);
       const titleAsset = result[0].native.assets.find(asset => 'title' in asset);
-      const imageAsset = result[0].native.assets.find(asset => 'img' in asset);
+      const imageAsset = result[0].native.assets.find((asset) => {
+        return asset?.img?.type === 3;
+      });
+      const iconAsset = result[0].native.assets.find((asset) => {
+        return asset?.img?.type === 1;
+      });
       const bodyAsset = result[0].native.assets.find(asset => 'data' in asset);
       expect(titleAsset).to.exist.and.to.have.nested.property('id', 1)
       expect(imageAsset).to.exist.and.to.have.nested.property('id', 2)
       expect(bodyAsset).to.exist.and.to.have.nested.property('id', 3)
+      expect(iconAsset).to.exist.and.to.have.nested.property('id', 4)
     });
 
     it('should add adUrl and default native assets when type is Native', () => {
@@ -599,6 +617,28 @@ describe('yieldlabBidAdapter', () => {
       expect(result[0].native.image.url).to.equal('');
       expect(result[0].native.image.width).to.equal(0);
       expect(result[0].native.image.height).to.equal(0);
+    });
+
+    it('should not add icon if not present in the native response', () => {
+      const NATIVE_RESPONSE_WITHOUT_ICON = Object.assign({}, NATIVE_RESPONSE, {
+        native: {
+          link: {
+            url: 'https://www.yieldlab.de',
+          },
+          assets: [
+            {
+              id: 1,
+              title: {
+                text: 'This is a great headline',
+              }
+            }
+          ],
+          imptrackers: [],
+        },
+      });
+      const result = spec.interpretResponse({body: [NATIVE_RESPONSE_WITHOUT_ICON]}, {validBidRequests: [NATIVE_REQUEST()], queryParams: REQPARAMS});
+      expect(result[0].native.hasOwnProperty('icon')).to.be.false;
+      expect(result[0].native.title).to.equal('This is a great headline');
     });
 
     it('should append gdpr parameters to vastUrl', () => {

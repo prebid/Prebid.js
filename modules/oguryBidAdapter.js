@@ -1,9 +1,9 @@
 'use strict';
 
-import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ajax } from '../src/ajax.js'
+import {BANNER} from '../src/mediaTypes.js';
+import {getAdUnitSizes, getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;
@@ -66,7 +66,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     tmax: DEFAULT_TIMEOUT,
     at: 1,
     regs: {
