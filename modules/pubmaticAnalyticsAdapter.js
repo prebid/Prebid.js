@@ -5,6 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
@@ -44,6 +45,7 @@ let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
 let identityOnly = DEFAULT_ISIDENTITY_ONLY;
+const storage = getStorageManager({bidderCode: ADAPTER_CODE});
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -371,7 +373,7 @@ function getTgid() {
 
 function executeBidsLoggerCall(e, highestCpmBids) {
   const HOSTNAME = window.location.host;
-  const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
+  const storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
   const frequencyDepth = storedObject !== null ? JSON.parse(storedObject) : {};
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
