@@ -102,8 +102,6 @@ import {
   deepSetValue,
   isEmpty,
   isFn,
-  logError,
-  logMessage,
   isArray,
   isStr,
   isBoolean,
@@ -111,7 +109,8 @@ import {
   logWarn,
   mergeDeep,
   tryAppendQueryString,
-  deepAccess
+  deepAccess,
+  prefixLog
 } from '../src/utils.js';
 import {
   submodule
@@ -153,6 +152,8 @@ const WEBO_USER_DATA_SOURCE_LABEL = 'wam';
 const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 /** @type {number} */
 const GVLID = 284;
+
+const logger = prefixLog('[WeboramaRTD]');
 
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
@@ -252,7 +253,7 @@ class WeboramaRtdProvider {
     const weboCtxConf = moduleParams.weboCtxConf || {};
 
     this.#fetchContextualProfile(weboCtxConf, (data) => {
-      logMessage('fetchContextualProfile on getBidRequestData is done');
+      logger.logMessage('fetchContextualProfile on getBidRequestData is done');
 
       this.#setWeboContextualProfile(data);
     }, () => {
@@ -276,17 +277,17 @@ class WeboramaRtdProvider {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
     if (isEmpty(profileHandlers)) {
-      logMessage('no data to set targeting');
+      logger.logMessage('no data to set targeting');
       return {};
     }
 
     try {
       return adUnitsCodes.reduce((data, adUnitCode) => {
         data[adUnitCode] = profileHandlers.reduce((targeting, ph) => {
-          // logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
+          // logger.logMessage(`check if should set targeting for adunit '${adUnitCode}'`);
           const [data, metadata] = this.#copyDataAndMetadata(ph);
           if (ph.setTargeting(adUnitCode, data, metadata)) {
-            // logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
+            // logger.logMessage(`set targeting for adunit '${adUnitCode}', source '${metadata.source}'`);
 
             mergeDeep(targeting, data);
           }
@@ -297,7 +298,7 @@ class WeboramaRtdProvider {
         return data;
       }, {});
     } catch (e) {
-      logError(`unable to format weborama rtd targeting data:`, e);
+      logger.logError(`unable to format weborama rtd targeting data:`, e);
 
       return {};
     }
@@ -339,11 +340,11 @@ class WeboramaRtdProvider {
         throw 'gdpr consent not ok';
       }
     } catch (e) {
-      logError(`unable to initialize: error on '${subSection}' configuration:`, e);
+      logger.logError(`unable to initialize: error on '${subSection}' configuration:`, e);
       return false;
     }
 
-    logMessage(`weborama '${subSection}' initialized with success`);
+    logger.logMessage(`weborama '${subSection}' initialized with success`);
 
     return true;
   }
@@ -487,7 +488,7 @@ class WeboramaRtdProvider {
     const profileHandlers = this.#buildProfileHandlers(moduleParams);
 
     if (isEmpty(profileHandlers)) {
-      logMessage('no data to send to bidders');
+      logger.logMessage('no data to send to bidders');
       return;
     }
 
@@ -497,11 +498,11 @@ class WeboramaRtdProvider {
       adUnits.forEach(
         adUnit => adUnit.bids?.forEach(
           bid => profileHandlers.forEach(ph => {
-            // logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
+            // logger.logMessage(`check if bidder '${bid.bidder}' and adunit '${adUnit.code} are share ${ph.metadata.source} data`);
 
             const [data, metadata] = this.#copyDataAndMetadata(ph);
             if (ph.sendToBidders(bid, adUnit.code, data, metadata)) {
-              // logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
+              // logger.logMessage(`handling bidder '${bid.bidder}' with ${ph.metadata.source} data`);
 
               this.#handleBid(reqBidsConfigObj, bid, data, ph.metadata);
             }
@@ -509,7 +510,7 @@ class WeboramaRtdProvider {
         )
       );
     } catch (e) {
-      logError('unable to send data to bidders:', e);
+      logger.logError('unable to send data to bidders:', e);
     }
 
     profileHandlers.forEach(ph => {
@@ -517,7 +518,7 @@ class WeboramaRtdProvider {
         const [data, metadata] = this.#copyDataAndMetadata(ph);
         ph.onData(data, metadata);
       } catch (e) {
-        logError(`error while execute onData callback with ${ph.metadata.source}-based data:`, e);
+        logger.logError(`error while execute onData callback with ${ph.metadata.source}-based data:`, e);
       }
     });
   }
@@ -558,7 +559,7 @@ class WeboramaRtdProvider {
         try {
           assetID = weboCtxConf.assetID();
         } catch (e) {
-          logError('unexpected error while fetching asset id from callback', e);
+          logger.logError('unexpected error while fetching asset id from callback', e);
 
           onDone();
 
@@ -567,7 +568,7 @@ class WeboramaRtdProvider {
       }
 
       if (!assetID) {
-        logError('missing asset id');
+        logger.logError('missing asset id');
 
         onDone();
 
@@ -594,7 +595,7 @@ class WeboramaRtdProvider {
     };
 
     const error = (e, req) => {
-      logError(`unable to get weborama data`, e, req);
+      logger.logError(`unable to get weborama data`, e, req);
 
       onDone();
     };
@@ -652,7 +653,7 @@ class WeboramaRtdProvider {
       if (profileHandler) {
         ph.push(profileHandler);
       } else {
-        logMessage(`skip ${source} profile: no data`);
+        logger.logMessage(`skip ${source} profile: no data`);
       }
 
       return ph;
@@ -783,13 +784,13 @@ class WeboramaRtdProvider {
   // eslint-disable-next-line no-dupe-class-members
   #handleBidViaORTB2(reqBidsConfigObj, bidder, profile, metadata) {
     if (isBoolean(metadata.user)) {
-      logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
+      logger.logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
       const section = metadata.user ? 'user' : 'site';
       const path = `${section}.ext.data`;
 
       this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile)
     } else {
-      logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
+      logger.logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
     }
   }
   /**
