@@ -98,19 +98,19 @@ import {
   getGlobal
 } from '../src/prebidGlobal.js';
 import {
+  deepAccess,
   deepClone,
   deepSetValue,
+  isArray,
+  isBoolean,
   isEmpty,
   isFn,
-  isArray,
-  isStr,
-  isBoolean,
   isPlainObject,
+  isStr,
   logWarn,
   mergeDeep,
-  tryAppendQueryString,
-  deepAccess,
-  prefixLog
+  prefixLog,
+  tryAppendQueryString
 } from '../src/utils.js';
 import {
   submodule
@@ -121,8 +121,10 @@ import {
 import {
   getStorageManager
 } from '../src/storageManager.js';
+import {
+  MODULE_TYPE_RTD
+} from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
-import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -730,15 +732,23 @@ class WeboramaRtdProvider {
   #handleBid(reqBidsConfigObj, bid, profile, metadata) {
     this.#handleBidViaORTB2(reqBidsConfigObj, bid.bidder, profile, metadata);
 
-    /** @type {Object.<string,string>} */
-    const bidderAliasRegistry = adapterManager.aliasRegistry || {};
-
     /** @type {string} */
-    const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
+    const bidder = this.#getAdapterNameForAlias(bid.bidder);
 
     if (bidder == 'appnexus') {
       this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
+  }
+
+  /** return adapter name based on alias, if any
+   * @method
+   * @private
+   * @param {string} aliasName
+   * @returns {string}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #getAdapterNameForAlias(aliasName) {
+    return adapterManager.aliasRegistry[aliasName] || aliasName;
   }
 
   /** function that handles bid request data
