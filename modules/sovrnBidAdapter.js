@@ -169,6 +169,11 @@ export const spec = {
         };
       }
 
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
