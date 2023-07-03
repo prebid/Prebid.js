@@ -213,7 +213,7 @@ function mapImpression(slot, bidderRequest) {
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
   };
-  
+
   const bidfloor = applyFloor(slot);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
