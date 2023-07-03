@@ -70,10 +70,21 @@ describe('adqueryBidAdapter', function () {
     it('should return false if any parameter missing', function () {
       expect(spec.isBidRequestValid(inValidBid)).to.be.false
     })
+
+    it('should return false when sizes for banner are not specified', () => {
+      const bid = utils.deepClone(bidRequest);
+      delete bid.mediaTypes.banner.sizes;
+
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    let req;
+    beforeEach(() => {
+      req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    })
+
     let rdata
 
     it('should return request object', function () {
@@ -107,6 +118,19 @@ describe('adqueryBidAdapter', function () {
 
     it('should include bidder', function () {
       expect(rdata.bidder !== null).to.be.true
+    })
+
+    it('should include sizes', function () {
+      expect(rdata.sizes).not.be.null
+    })
+
+    it('should include version', function () {
+      expect(rdata.v).not.be.null
+      expect(rdata.v).equal('$prebid.version$')
+    })
+
+    it('should include referrer', function () {
+      expect(rdata.bidPageUrl).not.be.null
     })
   })
 

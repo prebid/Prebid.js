@@ -1,18 +1,21 @@
-import { newBidder, registerBidder, preloadBidderMappingFile, storage } from 'src/adapters/bidderFactory.js';
+import {addComponentAuction, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
-import { expect } from 'chai';
-import { userSync } from 'src/userSync.js'
+import {expect} from 'chai';
+import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {config} from 'src/config.js';
 import CONSTANTS from 'src/constants.json';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../../helpers/indexStub.js';
-import { bidderSettings } from '../../../../src/bidderSettings.js';
+import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
+import * as activityRules from 'src/activities/rules.js';
+import {sandbox} from 'sinon';
+import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {ACTIVITY_TRANSMIT_TID} from '../../../../src/activities/activities.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -62,28 +65,30 @@ describe('bidders created by newBidder', function () {
     };
 
     addBidResponseStub = sinon.stub();
+    addBidResponseStub.reject = sinon.stub();
     doneStub = sinon.stub();
   });
 
   describe('when the ajax response is irrelevant', function () {
+    let sandbox;
     let ajaxStub;
     let getConfigSpy;
     let aliasRegistryStub, aliasRegistry;
 
     beforeEach(function () {
-      ajaxStub = sinon.stub(ajax, 'ajax');
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(activityRules, 'isActivityAllowed').callsFake(() => true);
+      ajaxStub = sandbox.stub(ajax, 'ajax');
       addBidResponseStub.reset();
-      getConfigSpy = sinon.spy(config, 'getConfig');
+      getConfigSpy = sandbox.spy(config, 'getConfig');
       doneStub.reset();
       aliasRegistry = {};
-      aliasRegistryStub = sinon.stub(adapterManager, 'aliasRegistry');
+      aliasRegistryStub = sandbox.stub(adapterManager, 'aliasRegistry');
       aliasRegistryStub.get(() => aliasRegistry);
     });
 
     afterEach(function () {
-      ajaxStub.restore();
-      getConfigSpy.restore();
-      aliasRegistryStub.restore();
+      sandbox.restore();
     });
 
     it('should let registerSyncs run with invalid alias and aliasSync enabled', function () {
@@ -133,6 +138,74 @@ describe('bidders created by newBidder', function () {
       aliasRegistry = {[spec.code]: CODE};
       bidder.callBids({ bids: [] }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
       expect(getConfigSpy.withArgs('userSync.filterSettings').calledOnce).to.equal(false);
+    });
+
+    describe('transaction IDs', () => {
+      Object.entries({
+        'be hidden': false,
+        'not be hidden': true,
+      }).forEach(([t, allowed]) => {
+        const expectation = allowed ? (val) => expect(val).to.exist : (val) => expect(val).to.not.exist;
+
+        function checkBidRequest(br) {
+          ['auctionId', 'transactionId'].forEach((prop) => expectation(br[prop]));
+        }
+
+        function checkBidderRequest(br) {
+          expectation(br.auctionId);
+          br.bids.forEach(checkBidRequest);
+        }
+
+        it(`should ${t} from the spec logic when the transmitTid activity is${allowed ? '' : ' not'} allowed`, () => {
+          spec.isBidRequestValid.callsFake(br => {
+            checkBidRequest(br);
+            return true;
+          });
+          spec.buildRequests.callsFake((bidReqs, bidderReq) => {
+            checkBidderRequest(bidderReq);
+            bidReqs.forEach(checkBidRequest);
+            return {method: 'POST'};
+          });
+          spec.interpretResponse.callsFake(() => [
+            {
+              requestId: 'bid',
+              cpm: 123,
+              ttl: 300,
+              creativeId: 'crid',
+              netRevenue: true,
+              currency: 'USD'
+            }
+          ])
+          activityRules.isActivityAllowed.reset();
+          activityRules.isActivityAllowed.callsFake(() => allowed);
+
+          ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
+
+          const bidder = newBidder(spec);
+
+          bidder.callBids({
+            bidderCode: 'mockBidder',
+            auctionId: 'aid',
+            bids: [
+              {
+                adUnitCode: 'mockAU',
+                bidId: 'bid',
+                transactionId: 'tid',
+                auctionId: 'aid'
+              }
+            ]
+          }, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+
+          sinon.assert.calledWithMatch(activityRules.isActivityAllowed, ACTIVITY_TRANSMIT_TID, {
+            componentType: MODULE_TYPE_BIDDER,
+            componentName: 'mockBidder'
+          });
+          sinon.assert.calledWithMatch(addBidResponseStub, sinon.match.any, {
+            transactionId: 'tid',
+            auctionId: 'aid'
+          })
+        });
+      });
     });
 
     it('should handle bad bid requests gracefully', function () {
@@ -508,7 +581,7 @@ describe('bidders created by newBidder', function () {
       expect(userSyncStub.firstCall.args[2]).to.equal('usersync.com');
     });
 
-    it('should logError when required bid response params are missing', function () {
+    it('should logError and reject bid when required bid response params are missing', function () {
       const bidder = newBidder(spec);
 
       const bid = {
@@ -532,9 +605,10 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
-    it('should logError when required bid response params are undefined', function () {
+    it('should logError and reject bid when required response params are undefined', function () {
       const bidder = newBidder(spec);
 
       const bid = {
@@ -562,6 +636,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should require requestId from interpretResponse', () => {
@@ -586,6 +661,7 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(addBidResponseStub.called).to.be.false;
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
   });
 
@@ -856,6 +932,7 @@ describe('validate bid response: ', function () {
     });
 
     addBidResponseStub = sinon.stub();
+    addBidResponseStub.reject = sinon.stub();
     doneStub = sinon.stub();
     ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
       const fakeResponse = sinon.stub();
@@ -954,7 +1031,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logErrorSpy.calledWithMatch('Ignoring bid: Native bid missing some required properties.')).to.equal(true);
     });
   }
@@ -1074,7 +1152,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1085,7 +1164,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should log warning when the particular bidder is not specified in allowedAlternateBidderCodes and allowAlternateBidderCodes flag is true', function () {
@@ -1096,7 +1176,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1147,7 +1228,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
 
@@ -1159,7 +1241,7 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(true);
+      expect(addBidResponseStub.called).to.equal(true);
       expect(logWarnSpy.callCount).to.equal(0);
       expect(logErrorSpy.callCount).to.equal(0);
     });
@@ -1172,8 +1254,9 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
       expect(logWarnSpy.callCount).to.equal(1);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
     });
 
     it('should not accept the bid, when bidderSetting is missing for the bidder. It should fallback to standard setting and reject the bid', function () {
@@ -1183,7 +1266,8 @@ describe('validate bid response: ', function () {
       spec.interpretResponse.returns(bids1);
       bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-      expect(addBidResponseStub.calledOnce).to.equal(false);
+      expect(addBidResponseStub.called).to.equal(false);
+      expect(addBidResponseStub.reject.calledOnce).to.be.true;
       expect(logWarnSpy.callCount).to.equal(1);
     });
   });
@@ -1200,16 +1284,27 @@ describe('validate bid response: ', function () {
     };
     const fledgeAuctionConfig = {
       bidId: '1',
+      config: {
+        foo: 'bar'
+      }
     }
     describe('when response has FLEDGE auction config', function() {
-      let logInfoSpy;
+      let fledgeStub;
 
-      beforeEach(function () {
-        logInfoSpy = sinon.spy(utils, 'logInfo');
+      function fledgeHook(next, ...args) {
+        fledgeStub(...args);
+      }
+
+      before(() => {
+        addComponentAuction.before(fledgeHook);
       });
 
-      afterEach(function () {
-        logInfoSpy.restore();
+      after(() => {
+        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+      })
+
+      beforeEach(function () {
+        fledgeStub = sinon.stub();
       });
 
       it('should unwrap bids', function() {
@@ -1231,8 +1326,8 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.equal(true);
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(true);
         expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
       })
@@ -1245,143 +1340,49 @@ describe('validate bid response: ', function () {
         });
         bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-        expect(logInfoSpy.calledOnce).to.equal(true);
-        expect(logInfoSpy.firstCall.args[1]).to.equal(fledgeAuctionConfig);
+        expect(fledgeStub.calledOnce).to.be.true;
+        sinon.assert.calledWith(fledgeStub, 'mock/placement', fledgeAuctionConfig.config);
         expect(addBidResponseStub.calledOnce).to.equal(false);
       })
     })
   })
 });
 
-describe('preload mapping url hook', function() {
-  let fakeTranslationServer;
-  let getLocalStorageStub;
-  let adapterManagerStub;
-  let adUnits = [{
-    code: 'midroll_1',
-    mediaTypes: {
-      video: {
-        context: 'adpod'
-      }
-    },
-    bids: [
-      {
-        bidder: 'sampleBidder1',
-        params: {
-          placementId: 14542875,
-        }
-      }
-    ]
-  }];
+describe('bid response isValid', () => {
+  describe('size check', () => {
+    let req, index;
 
-  beforeEach(function () {
-    fakeTranslationServer = server;
-    getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
-    adapterManagerStub = sinon.stub(adapterManager, 'getBidAdapter');
-    config.setConfig({
-      'adpod': {
-        'brandCategoryExclusion': true
-      }
-    });
-    adapterManagerStub.withArgs('sampleBidder1').returns({
-      getSpec: function() {
-        return {
-          'getMappingFileInfo': function() {
-            return {
-              url: 'http://sample.com',
-              refreshInDays: 7,
-              key: `sampleBidder1MappingFile`
-            }
+    beforeEach(() => {
+      req = {
+        ...MOCK_BIDS_REQUEST.bids[0],
+        mediaTypes: {
+          banner: {
+            sizes: [[1, 2], [3, 4]]
           }
         }
       }
     });
-  });
 
-  afterEach(function() {
-    getLocalStorageStub.restore();
-    adapterManagerStub.restore();
-    config.resetConfig();
-  });
-
-  it('should preload mapping url file', function() {
-    getLocalStorageStub.returns(null);
-    preloadBidderMappingFile(sinon.spy(), adUnits);
-    expect(fakeTranslationServer.requests.length).to.equal(1);
-  });
-
-  it('should preload mapping url file for all bidders', function() {
-    let adUnits = [{
-      code: 'midroll_1',
-      mediaTypes: {
-        video: {
-          context: 'adpod'
-        }
-      },
-      bids: [
-        {
-          bidder: 'sampleBidder1',
-          params: {
-            placementId: 14542875,
-          }
-        },
-        {
-          bidder: 'sampleBidder2',
-          params: {
-            placementId: 123456,
-          }
-        }
-      ]
-    }];
-    getLocalStorageStub.returns(null);
-    adapterManagerStub.withArgs('sampleBidder2').returns({
-      getSpec: function() {
-        return {
-          'getMappingFileInfo': function() {
-            return {
-              url: 'http://sample.com',
-              refreshInDays: 7,
-              key: `sampleBidder2MappingFile`
-            }
-          }
-        }
+    function mkResponse(width, height) {
+      return {
+        requestId: req.bidId,
+        width,
+        height,
+        cpm: 1,
+        ttl: 60,
+        creativeId: '123',
+        netRevenue: true,
+        currency: 'USD',
+        mediaType: 'banner',
       }
+    }
+
+    function checkValid(bid) {
+      return isValid('au', bid, {index: stubAuctionIndex({bidRequests: [req]})});
+    }
+
+    it('should succeed when response has a size that was in request', () => {
+      expect(checkValid(mkResponse(3, 4))).to.be.true;
     });
-    preloadBidderMappingFile(sinon.spy(), adUnits);
-    expect(fakeTranslationServer.requests.length).to.equal(2);
-
-    config.setConfig({
-      'adpod': {
-        'brandCategoryExclusion': false
-      }
-    });
-    preloadBidderMappingFile(sinon.spy(), adUnits);
-    expect(fakeTranslationServer.requests.length).to.equal(2);
-  });
-
-  it('should make ajax call to update mapping file if data found in localstorage is expired', function() {
-    let clock = sinon.useFakeTimers(utils.timestamp());
-    getLocalStorageStub.returns(JSON.stringify({
-      lastUpdated: utils.timestamp() - 8 * 24 * 60 * 60 * 1000,
-      mapping: {
-        'iab-1': '1'
-      }
-    }));
-    preloadBidderMappingFile(sinon.spy(), adUnits);
-    expect(fakeTranslationServer.requests.length).to.equal(1);
-    clock.restore();
-  });
-
-  it('should not make ajax call to update mapping file if data found in localstorage and is not expired', function () {
-    let clock = sinon.useFakeTimers(utils.timestamp());
-    getLocalStorageStub.returns(JSON.stringify({
-      lastUpdated: utils.timestamp(),
-      mapping: {
-        'iab-1': '1'
-      }
-    }));
-    preloadBidderMappingFile(sinon.spy(), adUnits);
-    expect(fakeTranslationServer.requests.length).to.equal(0);
-    clock.restore();
-  });
+  })
 });

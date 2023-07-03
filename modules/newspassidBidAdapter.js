@@ -1,9 +1,10 @@
-import { logInfo, logError, deepAccess, logWarn, deepSetValue, isArray, contains, parseUrl } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {contains, deepAccess, deepSetValue, isArray, logError, logInfo, logWarn, parseUrl} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {getPriceBucketString} from '../src/cpmBucketManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+
 const BIDDER_CODE = 'newspassid';
 const ORIGIN = 'https://bidder.newspassid.com' // applies only to auction & cookie
 const AUCTIONURI = '/openrtb2/auction';
@@ -258,6 +259,7 @@ export const spec = {
     }
     if (singleRequest) {
       logInfo('buildRequests starting to generate response for a single request');
+      // TODO: fix auctionId & transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       npRequest.id = bidderRequest.auctionId; // Unique ID of the bid request, provided by the exchange.
       npRequest.auctionId = bidderRequest.auctionId; // not sure if this should be here?
       npRequest.imp = tosendtags;
@@ -283,7 +285,7 @@ export const spec = {
       npRequestSingle.auctionId = imp.ext['newspassid'].transactionId; // not sure if this should be here?
       npRequestSingle.imp = [imp];
       npRequestSingle.ext = extObj;
-      deepSetValue(npRequestSingle, 'source.tid', imp.ext['newspassid'].transactionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
+      deepSetValue(npRequestSingle, 'source.tid', bidderRequest.auctionId);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       deepSetValue(npRequestSingle, 'user.ext.eids', userExtEids);
       logInfo('buildRequests RequestSingle (for non-single) = ', npRequestSingle);
       return {

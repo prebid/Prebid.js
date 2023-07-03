@@ -46,9 +46,17 @@ describe('ConnectAd Adapter', function () {
       auctionId: 'e76cbb58-f3e1-4ad9-9f4c-718c1919d0df',
       bidderRequestId: '1c56ad30b9b8ca8',
       transactionId: 'e76cbb58-f3e1-4ad9-9f4c-718c1919d0df',
-      userId: {
-        tdid: '123456'
-      }
+      userIdAsEids: [
+        {
+          'source': 'pubcid.org',
+          'uids': [
+            {
+              'atype': 1,
+              'id': '123456'
+            }
+          ]
+        }
+      ]
     }];
 
     bidderRequest = {

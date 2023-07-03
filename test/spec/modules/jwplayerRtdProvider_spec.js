@@ -659,9 +659,9 @@ describe('jwplayerRtdProvider', function() {
       const segment2 = 'segment2';
       const segment3 = 'segment3';
       const contentSegments = getContentSegments([segment1, segment2, segment3]);
-      expect(contentSegments[0]).to.deep.equal({ id: segment1, value: segment1 });
-      expect(contentSegments[1]).to.deep.equal({ id: segment2, value: segment2 });
-      expect(contentSegments[2]).to.deep.equal({ id: segment3, value: segment3 });
+      expect(contentSegments[0]).to.deep.equal({ id: segment1 });
+      expect(contentSegments[1]).to.deep.equal({ id: segment2 });
+      expect(contentSegments[2]).to.deep.equal({ id: segment3 });
     });
   });
 

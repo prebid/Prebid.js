@@ -3,12 +3,16 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {Renderer} from '../src/Renderer.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
 const BIDDER_ENDPOINT_AUCTION = 'msq_prebid';
 const BIDDER_ENDPOINT_WINNING = 'winning';
+
+const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -40,19 +44,24 @@ export const spec = {
     const test = config.getConfig('debug') ? 1 : 0;
     let adunitValue = null;
     Object.keys(validBidRequests).forEach(key => {
+      floor = {};
       adunitValue = validBidRequests[key];
       if (typeof adunitValue.getFloor === 'function') {
-        floor = adunitValue.getFloor({currency: 'EUR', mediaType: '*', size: '*'});
-      } else {
-        floor = {};
+        if (Array.isArray(adunitValue.sizes)) {
+          adunitValue.sizes.forEach(value => {
+            let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: value});
+            if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
+          });
+        }
       }
       codes.push({
         owner: adunitValue.params.owner,
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         floor: floor
       });
@@ -111,20 +120,17 @@ export const spec = {
           netRevenue: value['net_revenue'],
           ttl: value['ttl'],
           ad: value['ad'],
-          mediasquare: {
-            'bidder': value['bidder'],
-            'code': value['code']
-          },
+          mediasquare: {},
           meta: {
             'advertiserDomains': value['adomain']
           }
         };
-        if ('match' in value) {
-          bidResponse['mediasquare']['match'] = value['match'];
-        }
-        if ('hasConsent' in value) {
-          bidResponse['mediasquare']['hasConsent'] = value['hasConsent'];
-        }
+        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
+        paramsToSearchFor.forEach(param => {
+          if (param in value) {
+            bidResponse['mediasquare'][param] = value[param];
+          }
+        });
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -132,6 +138,7 @@ export const spec = {
           if ('url' in value['video']) { bidResponse['vastUrl'] = value['video']['url'] }
           if ('xml' in value['video']) { bidResponse['vastXml'] = value['video']['xml'] }
           bidResponse['mediaType'] = 'video';
+          bidResponse['renderer'] = createRenderer(value, OUTSTREAM_RENDERER_URL);
         }
         if (value.hasOwnProperty('deal_id')) { bidResponse['dealId'] = value['deal_id']; }
         bidResponses.push(bidResponse);
@@ -162,24 +169,62 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
-    let params = {'pbjs': '$prebid.version$'};
-    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId']
-    if (bid.hasOwnProperty('mediasquare')) {
-      if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
-      if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }
-      if (bid['mediasquare'].hasOwnProperty('match')) { params['match'] = bid['mediasquare']['match']; }
-      if (bid['mediasquare'].hasOwnProperty('hasConsent')) { params['hasConsent'] = bid['mediasquare']['hasConsent']; }
-    };
-    for (let i = 0; i < paramsToSearchFor.length; i++) {
-      if (bid.hasOwnProperty(paramsToSearchFor[i])) {
-        params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
-        if (typeof params[paramsToSearchFor[i]] == 'number') { params[paramsToSearchFor[i]] = params[paramsToSearchFor[i]].toString() }
-      }
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+      return;
     }
+    let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
+    let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
+    if (bid.hasOwnProperty('mediasquare')) {
+      paramsToSearchFor.forEach(param => {
+        if (bid['mediasquare'].hasOwnProperty(param)) {
+          params[param] = bid['mediasquare'][param];
+        }
+      });
+    };
+    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+    paramsToSearchFor.forEach(param => {
+      if (bid.hasOwnProperty(param)) {
+        params[param] = bid[param];
+        if (typeof params[param] == 'number') {
+          params[param] = params[param].toString();
+        }
+      }
+    });
     ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
     return true;
   }
 
 }
+
+function outstreamRender(bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      sizes: [bid.width, bid.height],
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse,
+      rendererOptions: {
+        showBigPlayButton: false,
+        showProgressBar: 'bar',
+        showVolume: false,
+        allowFullscreen: true,
+        skippable: false,
+        content: bid.vastXml
+      }
+    });
+  });
+}
+
+function createRenderer(bid, url) {
+  const renderer = Renderer.install({
+    id: bid.bidId,
+    url: url,
+    loaded: false,
+    adUnitCode: bid.adUnitCode,
+    targetId: bid.adUnitCode
+  });
+  renderer.setRender(outstreamRender);
+  return renderer;
+}
+
 registerBidder(spec);

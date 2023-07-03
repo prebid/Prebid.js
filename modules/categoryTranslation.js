@@ -12,7 +12,7 @@
  */
 
 import {config} from '../src/config.js';
-import {hook, setupBeforeHookFnOnce} from '../src/hook.js';
+import {hook, setupBeforeHookFnOnce, ready} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {logError, timestamp} from '../src/utils.js';
 import {addBidResponse} from '../src/auction.js';
@@ -32,15 +32,16 @@ export const registerAdserver = hook('async', function(adServer) {
     initTranslation(url, DEFAULT_IAB_TO_FW_MAPPING_KEY);
   }
 }, 'registerAdserver');
-registerAdserver();
 
-export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid) {
+ready.then(() => registerAdserver());
+
+export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation', function getAdserverCategoryHook(fn, adUnitCode, bid, reject) {
   if (!bid) {
-    return fn.call(this, adUnitCode); // if no bid, call original and let it display warnings
+    return fn.call(this, adUnitCode, bid, reject); // if no bid, call original and let it display warnings
   }
 
   if (!config.getConfig('adpod.brandCategoryExclusion')) {
-    return fn.call(this, adUnitCode, bid);
+    return fn.call(this, adUnitCode, bid, reject);
   }
 
   let localStorageKey = (config.getConfig('brandCategoryTranslation.translationFile')) ? DEFAULT_IAB_TO_FW_MAPPING_KEY_PUB : DEFAULT_IAB_TO_FW_MAPPING_KEY;
@@ -63,7 +64,7 @@ export const getAdserverCategoryHook = timedBidResponseHook('categoryTranslation
       logError('Translation mapping data not found in local storage');
     }
   }
-  fn.call(this, adUnitCode, bid);
+  fn.call(this, adUnitCode, bid, reject);
 });
 
 export function initTranslation(url, localStorageKey) {

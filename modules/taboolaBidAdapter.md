@@ -31,7 +31,6 @@ The Taboola Bidding adapter requires setup before beginning. Please contact us o
       bidfloor: 0.25, // Optional - default is null
       bcat: ['IAB1-1'], // Optional - default is []
       badv: ['example.com'],  // Optional - default is []
-      endpointUrl: ['https://example.com']  // Optional
     }
   }]
 }];
@@ -46,6 +45,5 @@ The Taboola Bidding adapter requires setup before beginning. Please contact us o
 | `bcat`        | optional | List of blocked advertiser categories (IAB)             | `['IAB1-1']`               | `Array`      |
 | `badv`        | optional | Blocked Advertiser Domains                              | `'example.com'`            | `String Url` |
 | `bidfloor`    | optional | CPM bid floor                                           | `0.25`                     | `Float`      |
-| `endpointUrl` | optional | Endpoint Url (only if provided by Taboola)              | `https://example.com`      | `String`     |
 
 

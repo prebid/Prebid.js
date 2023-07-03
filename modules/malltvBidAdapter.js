@@ -68,6 +68,7 @@ export const spec = {
     });
 
     let body = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
