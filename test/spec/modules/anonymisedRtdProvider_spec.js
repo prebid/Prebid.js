@@ -1,7 +1,7 @@
 import {config} from 'src/config.js';
-import {getRealTimeData, idWardRtdSubmodule, storage} from 'modules/idWardRtdProvider.js';
+import {getRealTimeData, anonymisedRtdSubmodule, storage} from 'modules/anonymisedRtdProvider.js';
 
-describe('idWardRtdProvider', function() {
+describe('anonymisedRtdProvider', function() {
   let getDataFromLocalStorageStub;
 
   const testReqBidsConfigObj = {
@@ -15,7 +15,7 @@ describe('idWardRtdProvider', function() {
   const onDone = function() { return true };
 
   const cmoduleConfig = {
-    'name': 'idWard',
+    'name': 'anonymised',
     'params': {
       'cohortStorageKey': 'cohort_ids'
     }
@@ -30,9 +30,9 @@ describe('idWardRtdProvider', function() {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('idWardRtdSubmodule', function() {
+  describe('anonymisedRtdSubmodule', function() {
     it('successfully instantiates', function () {
-		  expect(idWardRtdSubmodule.init()).to.equal(true);
+		  expect(anonymisedRtdSubmodule.init()).to.equal(true);
     });
   });
 
@@ -52,7 +52,7 @@ describe('idWardRtdProvider', function() {
       };
 
       const rtdUserObj1 = {
-        name: 'id-ward.com',
+        name: 'anonymised.io',
         ext: {
           segtax: 503
         },
