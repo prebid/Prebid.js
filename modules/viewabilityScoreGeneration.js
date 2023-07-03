@@ -4,7 +4,10 @@ import { targeting } from '../src/targeting.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import { isAdUnitCodeMatchingSlot, deepClone } from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
+const BIDDER_CODE = 'pubmatic';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const MODULE_NAME = 'viewabilityScoreGeneration';
 const ENABLED = 'enabled';
 const TARGETING = 'targeting';
@@ -29,17 +32,16 @@ const fireStatHatLogger = (statKeyName) => {
   document.body.appendChild(statHatElement)
 };
 
-export const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
 export const setAndStringifyToLocalStorage = (key, object) => {
   try {
-    window.localStorage.setItem(key, JSON.stringify(object));
+	storage.setDataInLocalStorage(key, JSON.stringify(object));
   } catch (e) {
     // send error to stathat endpoint
     fireStatHatLogger(`${e} --- ${window.location.href}`);
   }
 };
 
-let vsgObj = getAndParseFromLocalStorage('viewability-data');
+let vsgObj;
 
 export const makeBidRequestsHook = (fn, bidderRequests) => {
   if (vsgObj && config.getConfig(MODULE_NAME)?.enabled) {
@@ -304,18 +306,20 @@ export let init = (setGptCb, setTargetingCb) => {
     if (globalConfig[MODULE_NAME][ENABLED] !== true) {
       return;
     }
+	storage.getDataFromLocalStorage('viewability-data', val => {
+		vsgObj = JSON.parse(val);
+		initConfigDefaults(globalConfig);
+		setGptCb();
 
-    initConfigDefaults(globalConfig);
-    setGptCb();
+		if (
+			globalConfig.viewabilityScoreGeneration?.targeting?.enabled &&
+			(globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)
+		) {
+			setTargetingCb(globalConfig);
+		}
 
-    if (
-      globalConfig.viewabilityScoreGeneration?.targeting?.enabled &&
-      (globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)
-    ) {
-      setTargetingCb(globalConfig);
-    }
-
-    adapterManager.makeBidRequests.after(makeBidRequestsHook);
+		adapterManager.makeBidRequests.after(makeBidRequestsHook);
+	});
   });
 }
 

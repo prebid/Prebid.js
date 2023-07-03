@@ -1,5 +1,9 @@
 import adapterManager from '../../../src/adapterManager.js';
 import {deepAccess, timestamp, isEmpty, isPlainObject, getParameterByName} from '../../../src/utils.js';
+import {getStorageManager} from '../../../src/storageManager.js';
+
+const BIDDER_CODE = 'pubmatic';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 let defaultAliases = {
   adg: 'adgeneration',
@@ -11,7 +15,6 @@ let defaultAliases = {
 let iidValue;
 let firstBidRequest;
 const vsgDomain = window.location.hostname;
-const getAndParseFromLocalStorage = key => JSON.parse(window.localStorage.getItem(key));
 const removeViewTimeForZeroValue = obj => {
   // Deleteing this field as it is only required to calculate totalViewtime and no need to send it to translator.
   delete obj.lastViewStarted;
@@ -64,7 +67,7 @@ export function setReqParams(ortbRequest, bidderRequest, context, {am = adapterM
       if (ortbRequest.ext.prebid.bidderparams[bidder]) {
         ortbRequest.ext.prebid.bidderparams[bidder]['wiid'] = iidValue;
         if (firstBidRequest.bids[0]?.bidViewability) {
-          let vsgObj = getAndParseFromLocalStorage('viewability-data');
+          let vsgObj = storage.getDataFromLocalStorage('viewability-data') ? JSON.parse(storage.getDataFromLocalStorage('viewability-data')) : {};
           ortbRequest.ext.prebid.bidderparams[bidder]['bidViewability'] = {'adDomain': removeViewTimeForZeroValue(vsgObj[vsgDomain])};
         }
       }
