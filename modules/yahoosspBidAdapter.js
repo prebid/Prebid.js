@@ -276,8 +276,8 @@ function generateOpenRtbObject(bidderRequest, bid) {
         ext: {
           'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
           gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-          gpp: bidderRequest.gppConsent.gppString,
-          gpp_sid: bidderRequest.gppConsent.applicableSections
+          gpp: bidderRequest.gppConsent?.gppString ? bidderRequest.gppConsent?.gppString : undefined,
+          gpp_sid: bidderRequest.gppConsent?.applicableSections ? bidderRequest.gppConsent?.applicableSections : undefined
         }
       },
       source: {
