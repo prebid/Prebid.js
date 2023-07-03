@@ -707,7 +707,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
-    it('should add userid eids information to the request', function () {
+    it('should add eids eids information to the request', function () {
       let bidRequest = bidRequestWithSinglePlacement;
       bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
@@ -720,8 +720,8 @@ describe('Adyoulike Adapter', function () {
       const request = spec.buildRequests(bidRequest, bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal(bidRequest[0].userIdAsEids);
+      expect(payload.eids).to.exist;
+      expect(payload.eids).to.deep.equal(bidRequest[0].userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {

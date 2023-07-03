@@ -125,7 +125,7 @@ export const spec = {
       payload.ortb2 = bidderRequest.ortb2;
     }
     if (eids) {
-      payload.userId = eids;
+      payload.eids = eids;
     }
 
     payload.pbjs_version = '$prebid.version$';
