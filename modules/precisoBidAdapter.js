@@ -213,7 +213,7 @@ function mapImpression(slot, bidderRequest) {
     native: mapNative(slot),
     tagid: slot.adUnitCode.toString()
   };
-
+  
   const bidfloor = applyFloor(slot);
   if (bidfloor) {
     imp.bidfloor = bidfloor;
@@ -506,6 +506,8 @@ function interpretNativeAd(adm) {
         break;
       case OPENRTB.NATIVE.ASSET_ID.CTA:
         result.cta = asset.data.value;
+        break;
+      default:
         break;
     }
   });
