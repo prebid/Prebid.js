@@ -18,7 +18,6 @@ export const ssmasOrtbConverter = ortbConverter({
     mediaType: BANNER,
   },
   imp(buildImp, bidRequest, context) {
-    // console.log(bidRequest, context);
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'ext.placementId', bidRequest.params.placementId);
     return imp;
@@ -51,18 +50,14 @@ export const spec = {
     data.regs = data.regs || {};
     data.regs.ext = data.regs.ext || {};
 
-    // GDPR
     if (bidderRequest.gdprConsent) {
       data.regs.ext.consent = bidderRequest.gdprConsent.consentString;
       data.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
     }
-
-    // CCPA
     if (bidderRequest.uspConsent) {
       data.regs.ext.consent = bidderRequest.uspConsent.consentString;
       data.regs.ext.ccpa = 1;
     }
-    // coppa compliance
     if (config.getConfig('coppa') === true) {
       data.regs.coppa = 1;
     }
