@@ -227,6 +227,7 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidRequested',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'appnexus',
           bids: [{ bidder: 'appnexus', params: {} }],
         },
@@ -237,6 +238,7 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidRequested',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'appnexus',
           bids: [{ bidder: 'appnexus', params: { account_id: 'test' } }],
         },
@@ -247,6 +249,7 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidRequested',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'appnexus',
           bids: [{ bidder: 'appnexus', params: { placement_id: '123' } }],
         },
@@ -257,16 +260,24 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidRequested',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'setupad',
           bids: [{ bidder: 'setupad', params: { placement_id: '123' } }],
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123`,
+        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
+          {
+            auctionId: 'test-auction-id',
+            bidderCode: 'setupad',
+            bids: [{ bidder: 'setupad', params: { placement_id: '123' } }],
+          }
+        )}`,
       },
 
       {
         eventName: 'bidRequested',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'setupad',
           bids: [
             { bidder: 'setupad', params: { placement_id: '123' } },
@@ -274,12 +285,22 @@ describe('SetupadAdapter', function () {
           ],
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123;321`,
+        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123;321&auctionId=test-auction-id&data=${JSON.stringify(
+          {
+            auctionId: 'test-auction-id',
+            bidderCode: 'setupad',
+            bids: [
+              { bidder: 'setupad', params: { placement_id: '123' } },
+              { bidder: 'setupad', params: { placement_id: '321' } },
+            ],
+          }
+        )}`,
       },
 
       {
         eventName: 'bidResponse',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'appnexus',
         },
 
@@ -289,16 +310,24 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidResponse',
         bid: {
+          auctionId: 'test-auction-id',
           bidderCode: 'setupad',
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder=setupad&placementIds=123`,
+        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
+          {
+            auctionId: 'test-auction-id',
+            bidderCode: 'setupad',
+            params: { placement_id: '123' },
+          }
+        )}`,
       },
 
       {
         eventName: 'noBid',
         bid: {
+          auctionId: 'test-auction-id',
           bidder: 'appnexus',
         },
 
@@ -308,16 +337,24 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'noBid',
         bid: {
+          auctionId: 'test-auction-id',
           bidder: 'setupad',
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=noBid&bidder=setupad&placementIds=123`,
+        expected: `${REPORT_ENDPOINT}?event=noBid&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
+          {
+            auctionId: 'test-auction-id',
+            bidder: 'setupad',
+            params: { placement_id: '123' },
+          }
+        )}`,
       },
 
       {
         eventName: 'bidTimeout',
         bid: {
+          auctionId: 'test-auction-id',
           bidder: 'appnexus',
         },
 
@@ -327,28 +364,37 @@ describe('SetupadAdapter', function () {
       {
         eventName: 'bidTimeout',
         bid: {
+          auctionId: 'test-auction-id',
           bidder: 'setupad',
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidTimeout&bidder=setupad&placementIds=123`,
+        expected: `${REPORT_ENDPOINT}?event=bidTimeout&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
+          {
+            auctionId: 'test-auction-id',
+            bidder: 'setupad',
+            params: { placement_id: '123' },
+          }
+        )}`,
       },
 
       {
         eventName: 'bidWon',
         bid: {
+          auctionId: 'test-auction-id',
           bidder: 'setupad',
           cpm: 0.8,
           params: { placement_id: '123', account_id: 'test' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=setupad&placementIds=123&cpm=0.8&data=${JSON.stringify(
+        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
           {
+            auctionId: 'test-auction-id',
             bidder: 'setupad',
             cpm: 0.8,
             params: { placement_id: '123', account_id: 'test' },
           }
-        )}`,
+        )}&cpm=0.8`,
       },
     ];
 

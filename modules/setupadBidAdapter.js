@@ -214,8 +214,10 @@ export const spec = {
 
   getUrlPixelMetric: function (eventName, bid) {
     const bidder = bid.bidder || bid.bidderCode;
+    const auctionId = bid.auctionId;
     if (bidder != BIDDER_CODE) return;
-
+    // eslint-disable-next-line
+    console.log(eventName, bid);
     let params;
     if (bid.params) {
       params = Array.isArray(bid.params) ? bid.params : [bid.params];
@@ -236,19 +238,19 @@ export const spec = {
     const placementIds =
       (placementIdsArray.length && placementIdsArray.join(';')) || '';
 
-    if (!placementIds) {
-      return;
-    }
+    if (!placementIds) return;
 
-    // additional params on bidWon
     let bidWonParams = '';
+    // additional params on bidWon
     if (eventName === 'bidWon') {
-      bidWonParams = `&cpm=${bid.cpm}&data=${JSON.stringify(bid)}`;
+      bidWonParams = `&cpm=${bid.cpm}`;
     }
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${
       seat || bidder
-    }&placementIds=${placementIds}${bidWonParams}`;
+    }&placementIds=${placementIds}&auctionId=${auctionId}&data=${JSON.stringify(
+      bid
+    )}${bidWonParams}`;
 
     return url;
   },
