@@ -188,6 +188,35 @@ describe('IndexexchangeAdapter', function () {
     }
   ];
 
+  const DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]],
+          pos: 0
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229',
+          ae: 1 // Fledge enabled
+        },
+      },
+      adUnitCode: 'div-fledge-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
   const DEFAULT_BANNER_VALID_BID_PARAM_NO_SIZE = [
     {
       bidder: 'ix',
@@ -733,6 +762,49 @@ describe('IndexexchangeAdapter', function () {
         tid: 'mock-tid'
       }
     }
+  };
+
+  const DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      page: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
+      }
+    },
+    fledgeEnabled: true,
+    defaultForSlots: 1
+  };
+
+  const DEFAULT_OPTION_FLEDGE_ENABLED = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      page: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
+      }
+    },
+    fledgeEnabled: true
   };
 
   const DEFAULT_IDENTITY_RESPONSE = {
@@ -3146,6 +3218,76 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('buildRequestFledge', function () {
+    it('impression should have ae=1 in ext when fledge is enabled through ad unit', function () {
+      config.setConfig({
+        fledgeForGpt: {
+          enabled: true
+        }
+      });
+
+      config.setBidderConfig({
+        bidders: ['ix'],
+        config: {
+          fledgeEnabled: true,
+        }
+      });
+
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1); // Check that ae=1 is added to the impression ext
+    });
+
+    it('impression should have ae=1 in ext when fledge is enabled globaly through setConfig', function () {
+      config.setConfig({
+        fledgeForGpt: {
+          enabled: true,
+          defaultForSlots: 1
+        }
+      });
+
+      config.setBidderConfig({
+        bidders: ['ix'],
+        config: {
+          fledgeEnabled: true,
+          defaultForSlots: 1
+        }
+      });
+
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY);
+
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1);
+    });
+
+    it('should contain correct IXdiag ae property for Fledge', function () {
+      config.setConfig({
+        fledgeForGpt: {
+          enabled: true
+        }
+      });
+
+      config.setBidderConfig({
+        bidders: ['ix'],
+        config: {
+          fledgeEnabled: true,
+          defaultForSlots: 1
+        }
+      });
+      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
+      const request = spec.buildRequests([bid], {});
+      const diagObj = extractPayload(request[0]).ext.ixdiag;
+      expect(diagObj.ae).to.equal(true); // Check if Fledge flag is set to true
+    });
+  });
+
   describe('interpretResponse', function () {
     // generate bidderRequest with real buildRequest logic for intepretResponse testing
     let bannerBidderRequest
@@ -3668,6 +3810,140 @@ describe('IndexexchangeAdapter', function () {
       ];
       const result = spec.interpretResponse({ body: DEFAULT_NATIVE_BID_RESPONSE }, nativeBidderRequest);
       expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    describe('Auction config response', function () {
+      let bidderRequestWithFledgeEnabled;
+      let serverResponseWithoutFledgeConfigs;
+      let serverResponseWithFledgeConfigs;
+      let serverResponseWithMalformedAuctionConfig;
+      let serverResponseWithMalformedAuctionConfigs;
+
+      beforeEach(() => {
+        bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
+        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+
+        serverResponseWithoutFledgeConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE
+          }
+        };
+
+        serverResponseWithFledgeConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: [
+                {
+                  bidId: '59f219e54dc2fc',
+                  config: {
+                    seller: 'https://seller.test.indexexchange.com',
+                    decisionLogicUrl: 'https://seller.test.indexexchange.com/decision-logic.js',
+                    interestGroupBuyers: ['https://buyer.test.indexexchange.com'],
+                    sellerSignals: {
+                      callbackURL: 'https://test.com/ig/v1/ck74j8bcvc9c73a8eg6g'
+                    },
+                    perBuyerSignals: {
+                      'https://buyer.test.indexexchange.com': {}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        };
+
+        serverResponseWithMalformedAuctionConfig = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: ['malformed']
+            }
+          }
+        };
+
+        serverResponseWithMalformedAuctionConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: 'malformed'
+            }
+          }
+        };
+      });
+
+      it('should correctly interpret response with auction configs', () => {
+        const result = spec.interpretResponse(serverResponseWithFledgeConfigs, bidderRequestWithFledgeEnabled);
+        const expectedOutput = [
+          {
+            bidId: '59f219e54dc2fc',
+            config: {
+              ...serverResponseWithFledgeConfigs.body.ext.protectedAudienceAuctionConfigs[0].config,
+              perBuyerSignals: {
+                'https://buyer.test.indexexchange.com': {}
+              }
+            }
+          }
+        ];
+        expect(result.fledgeAuctionConfigs).to.deep.equal(expectedOutput);
+      });
+
+      it('should correctly interpret response without auction configs', () => {
+        const result = spec.interpretResponse(serverResponseWithoutFledgeConfigs, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.undefined;
+      });
+
+      it('should handle malformed auction configs gracefully', () => {
+        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.empty;
+      });
+
+      it('should log warning for malformed auction configs', () => {
+        const logWarnSpy = sinon.spy(utils, 'logWarn');
+        spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
+        expect(logWarnSpy.calledWith('Malformed auction config detected:', 'malformed')).to.be.true;
+        logWarnSpy.restore();
+      });
+
+      it('should return bids when protected audience auction conigs is malformed', () => {
+        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfigs, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.length).to.be.greaterThan(0);
+      });
+    });
+
+    describe('interpretResponse when server response is empty', function() {
+      let serverResponseWithoutBody;
+      let serverResponseWithoutSeatbid;
+      let bidderRequestWithFledgeEnabled;
+      let bidderRequestWithoutFledgeEnabled;
+
+      beforeEach(() => {
+        serverResponseWithoutBody = {};
+
+        serverResponseWithoutSeatbid = {
+          body: {}
+        };
+
+        bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
+        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+
+        bidderRequestWithoutFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
+      });
+
+      it('should return empty bids when response does not have body', function () {
+        let result = spec.interpretResponse(serverResponseWithoutBody, bidderRequestWithFledgeEnabled);
+        expect(result).to.deep.equal([]);
+        result = spec.interpretResponse(serverResponseWithoutBody, bidderRequestWithoutFledgeEnabled);
+        expect(result).to.deep.equal([]);
+      });
+
+      it('should return empty bids when response body does not have seatbid', function () {
+        let result = spec.interpretResponse(serverResponseWithoutSeatbid, bidderRequestWithFledgeEnabled);
+        expect(result).to.deep.equal([]);
+        result = spec.interpretResponse(serverResponseWithoutSeatbid, bidderRequestWithoutFledgeEnabled);
+        expect(result).to.deep.equal([]);
+      });
     });
   });
 
