@@ -230,9 +230,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
-    var adType = 'banner';
+    let adType = 'banner';
     const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-    const context = deepAccess(bid, 'mediaTypes.video.context');
+    const context = deepAccess(bid, 'mediaTypes.video.context') || '';
     if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
@@ -246,7 +246,8 @@ function nobidBuildRequests(bids, bidderRequest) {
         placementId: placementId,
         ad_type: adType,
         params: bid.params,
-        floor: floor
+        floor: floor,
+        ctx: context
       },
       adunits);
     }
