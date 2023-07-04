@@ -87,9 +87,14 @@ describe('weboramaRtdProvider', function() {
                   1: true,
                   3: true,
                   4: true,
+                  5: true,
+                  6: true,
+                  9: true,
                 },
               },
-              specialFeatureOptins: {},
+              specialFeatureOptins: {
+                1: true,
+              },
               vendor: {
                 consents: {
                   284: true,

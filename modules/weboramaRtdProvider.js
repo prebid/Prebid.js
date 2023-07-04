@@ -370,11 +370,18 @@ class WeboramaRtdProvider {
       return true;
     }
 
-    if (deepAccess(gdpr, 'vendorData.vendor.consents') && deepAccess(gdpr, 'vendorData.purpose.consents')) {
+    if (deepAccess(gdpr, 'vendorData.vendor.consents') &&
+      deepAccess(gdpr, 'vendorData.purpose.consents') &&
+      deepAccess(gdpr, 'vendorData.specialFeatureOptins')) {
       return gdpr.vendorData.vendor.consents[GVLID] === true && // check weborama vendor id
         gdpr.vendorData.purpose.consents[1] === true && // info storage access
         gdpr.vendorData.purpose.consents[3] === true && // create personalized ads
-        gdpr.vendorData.purpose.consents[4] === true;// select personalized ads
+        gdpr.vendorData.purpose.consents[4] === true && // select personalized ads
+        gdpr.vendorData.purpose.consents[5] === true && // create personalized content
+        gdpr.vendorData.purpose.consents[6] === true && // select personalized content
+        // understand audiences through statistics or combination of data from different sources
+        gdpr.vendorData.purpose.consents[9] === true &&
+        gdpr.vendorData.specialFeatureOptins[1] === true; // use precise geolocation data
     }
 
     return true;
