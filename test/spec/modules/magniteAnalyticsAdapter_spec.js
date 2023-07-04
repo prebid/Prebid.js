@@ -9,10 +9,6 @@ import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
-import {
-  setConfig,
-  addBidResponseHook,
-} from 'modules/currency.js';
 import { getGlobal } from '../../../src/prebidGlobal.js';
 import { deepAccess } from '../../../src/utils.js';
 
@@ -28,12 +24,24 @@ const {
     BIDDER_DONE,
     BID_WON,
     BID_TIMEOUT,
-    BILLABLE_EVENT
+    BILLABLE_EVENT,
+    SEAT_NON_BID,
+    BID_REJECTED
   }
 } = CONSTANTS;
 
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
+const metrics = {
+  getMetrics: () => {
+    return {
+      'adapter.client.total': 271,
+      'adapter.client.net': 240,
+      'adapter.s2s.total': 371,
+      'adapter.s2s.net': 340
+    }
+  }
+}
 // Mock Event Data
 const MOCK = {
   AUCTION_INIT: {
@@ -159,6 +167,17 @@ const MOCK = {
     'size': '300x250',
     'status': 'rendered',
     getStatusCode: () => 1,
+    metrics
+  },
+  SEAT_NON_BID: {
+    auctionId: '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
+    seatnonbid: [{
+      seat: 'rubicon',
+      nonbid: [{
+        status: 1,
+        impid: 'box'
+      }]
+    }]
   },
   AUCTION_END: {
     'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
@@ -175,6 +194,7 @@ const MOCK = {
         'bidId': '23fcd8cf4bf0d7',
         'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
         'src': 'client',
+        metrics
       }
     ]
   },
@@ -251,6 +271,7 @@ const ANALYTICS_MESSAGE = {
               'source': 'client',
               'status': 'success',
               'clientLatencyMillis': 271,
+              'httpLatencyMillis': 240,
               'bidResponse': {
                 'bidPriceUSD': 3.4,
                 'mediaType': 'banner',
@@ -287,6 +308,7 @@ const ANALYTICS_MESSAGE = {
       'source': 'client',
       'status': 'success',
       'clientLatencyMillis': 271,
+      'httpLatencyMillis': 240,
       'bidResponse': {
         'bidPriceUSD': 3.4,
         'mediaType': 'banner',
@@ -1342,9 +1364,6 @@ describe('magnite analytics adapter', function () {
       // adunit should be marked as error
       expectedMessage.auctions[0].adUnits[0].status = 'error';
 
-      // timed out in 1000 ms
-      expectedMessage.auctions[0].adUnits[0].bids[0].clientLatencyMillis = 1000;
-
       expectedMessage.auctions[0].auctionStart = auctionStart;
 
       expect(message).to.deep.equal(expectedMessage);
@@ -1426,34 +1445,6 @@ describe('magnite analytics adapter', function () {
       expectedMessage.bidsWon[0].bidId = '1a2b3c4d5e6f7g8h9';
 
       expect(message).to.deep.equal(expectedMessage);
-    });
-
-    it('should pass bidderDetail for multibid auctions', function () {
-      // Set the rates
-      setConfig({
-        adServerCurrency: 'JPY',
-        rates: {
-          USD: {
-            JPY: 100
-          }
-        }
-      });
-
-      // set our bid response to JPY
-      let bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
-      bidResponse.currency = 'JPY';
-      bidResponse.cpm = 100;
-
-      // Now add the bidResponse hook which hooks on the currenct conversion function onto the bid response
-      let innerBid;
-      addBidResponseHook(function (adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bidResponse);
-
-      // Use the rubi analytics parseBidResponse Function to get the resulting cpm from the bid response!
-      const bidResponseObj = parseBidResponse(innerBid);
-      expect(bidResponseObj).to.have.property('bidPriceUSD');
-      expect(bidResponseObj.bidPriceUSD).to.equal(1.0);
     });
 
     it('should use the integration type provided in the config instead of the default', () => {
@@ -2038,5 +2029,214 @@ describe('magnite analytics adapter', function () {
         done();
       }
     })
+  });
+
+  describe('BID_RESPONSE events', () => {
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      config.setConfig({ rubicon: { updatePageView: true } });
+    });
+
+    it('should add a no-bid bid to the add unit if it recieves one from the server', () => {
+      const bidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+
+      bidResponse.requestId = 'fakeId';
+      bidResponse.seatBidId = 'fakeId';
+
+      bidResponse.requestId = 'fakeId';
+      events.emit(AUCTION_INIT, auctionInit);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, bidResponse)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+
+      let message = JSON.parse(server.requests[0].requestBody);
+      expect(utils.generateUUID.called).to.equal(true);
+
+      expect(message.auctions[0].adUnits[0].bids[1]).to.deep.equal(
+        {
+          bidder: 'rubicon',
+          source: 'server',
+          status: 'success',
+          bidResponse: {
+            'bidPriceUSD': 3.4,
+            'dimensions': {
+              'height': 250,
+              'width': 300
+            },
+            'mediaType': 'banner'
+          },
+          oldBidId: 'fakeId',
+          unknownBid: true,
+          bidId: 'fakeId',
+          clientLatencyMillis: 271,
+          httpLatencyMillis: 240
+        }
+      );
+    });
+  });
+
+  describe('SEAT_NON_BID events', () => {
+    let seatnonbid;
+
+    const runNonBidAuction = () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(SEAT_NON_BID, seatnonbid)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+    };
+    const checkStatusAgainstCode = (status, code, error, index) => {
+      seatnonbid.seatnonbid[0].nonbid[0].status = code;
+      runNonBidAuction();
+      let message = JSON.parse(server.requests[index].requestBody);
+      let bid = message.auctions[0].adUnits[0].bids[1];
+
+      if (error) {
+        expect(bid.error).to.deep.equal(error);
+      } else {
+        expect(bid.error).to.equal(undefined);
+      }
+      expect(bid.source).to.equal('server');
+      expect(bid.status).to.equal(status);
+      expect(bid.isSeatNonBid).to.equal(true);
+    };
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      seatnonbid = utils.deepClone(MOCK.SEAT_NON_BID);
+    });
+
+    it('adds seatnonbid info to bids array', () => {
+      runNonBidAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[1]).to.deep.equal(
+        {
+          bidder: 'rubicon',
+          source: 'server',
+          status: 'no-bid',
+          isSeatNonBid: true,
+          clientLatencyMillis: -139101369960
+        }
+      );
+    });
+
+    it('adjusts the status according to the status map', () => {
+      const statuses = [
+        {code: 0, status: 'no-bid'},
+        {code: 100, status: 'error', error: {code: 'request-error', description: 'general error'}},
+        {code: 101, status: 'error', error: {code: 'timeout-error', description: 'prebid server timeout'}},
+        {code: 200, status: 'rejected'},
+        {code: 202, status: 'rejected'},
+        {code: 301, status: 'rejected-ipf'}
+      ];
+      statuses.forEach((info, index) => {
+        checkStatusAgainstCode(info.status, info.code, info.error, index);
+      });
+    });
+  });
+
+  describe('BID_REJECTED events', () => {
+    let bidRejectedArgs;
+
+    const runBidRejectedAuction = () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REJECTED, bidRejectedArgs)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+    };
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      bidRejectedArgs = utils.deepClone(MOCK.BID_RESPONSE);
+    });
+
+    it('updates the bid to be rejected by floors', () => {
+      bidRejectedArgs.floorData = {
+        floorValue: 0.5,
+        floorRule: 'banner',
+        floorRuleValue: 0.5,
+        floorCurrency: 'USD',
+        cpmAfterAdjustments: 0.15,
+        enforcements: {
+          enforceJS: true,
+          enforcePBS: false,
+          floorDeals: false,
+          bidAdjustment: true
+        },
+        matchedFields: {
+          mediaType: 'banner'
+        }
+      }
+      bidRejectedArgs.rejectionReason = 'Bid does not meet price floor';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected-ipf',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 0.15,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          floorValue: 0.5,
+          floorRuleValue: 0.5,
+          rejectionReason: 'Bid does not meet price floor'
+        }
+      });
+    });
+
+    it('does general rejection', () => {
+      bidRejectedArgs
+      bidRejectedArgs.rejectionReason = 'this bid is rejected';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 3.4,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          rejectionReason: 'this bid is rejected'
+        }
+      });
+    });
   });
 });

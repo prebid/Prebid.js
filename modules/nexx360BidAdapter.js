@@ -21,11 +21,12 @@ const ALIASES = [
   { code: 'revenuemaker' },
   { code: 'first-id', gvlid: 1178 },
   { code: 'adwebone' },
-  { code: 'league-m', gvlid: 965 }
+  { code: 'league-m', gvlid: 965 },
+  { code: 'prjads' },
+  { code: 'pubtech' },
 ];
 
 export const storage = getStorageManager({
-  gvlid: GVLID,
   bidderCode: BIDDER_CODE,
 });
 

@@ -14,7 +14,6 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -120,6 +119,11 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const bidderRequest = {
+    ortb2: {
+      source: {
+        tid: 'mock-tid'
+      }
+    },
     bids: [simpleBidRequest],
   };
 
@@ -237,7 +241,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.tmax).not.to.exist;
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
+      sinon.assert.match(payload.source, {tid: 'mock-tid'})
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
       sinon.assert.match(payload.imp, [
@@ -579,7 +583,15 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: '1111' } };
+      const userIdAsEids = [
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            atype: 1,
+            id: '1111'
+          }]
+        }
+      ];
       const expectedUserObject = { ext: { eids: [{
         source: 'id5-sync.com',
         uids: [{
@@ -588,7 +600,7 @@ describe('Improve Digital Adapter Tests', function () {
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userIdAsEids = createEidsArray(userId);
+      bidRequest.userIdAsEids = userIdAsEids;
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);

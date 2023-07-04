@@ -49,17 +49,6 @@ describe('Finative adapter', function () {
       assert.deepEqual(keys, data);
     });
 
-    it('Verify the auction ID', function () {
-      let validBidRequests = [{
-        bidId: 'bidId',
-        params: {},
-        auctionId: 'auctionId'
-      }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { referer: 'page' }, auctionId: validBidRequests[0].auctionId }).data);
-
-      assert.equal(request.id, validBidRequests[0].auctionId);
-    });
-
     it('Verify the device', function () {
       let validBidRequests = [{
         bidId: 'bidId',
@@ -166,7 +155,6 @@ describe('Finative adapter', function () {
       assert.deepEqual(result[0].cpm, bid.price);
       assert.deepEqual(result[0].creativeId, bid.crid);
       assert.deepEqual(result[0].mediaType, 'native');
-      assert.deepEqual(result[0].bidderCode, 'finative');
     });
 
     it('should return the correct tracking links', function () {

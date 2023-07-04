@@ -1,8 +1,7 @@
-import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
-import { createEidsArray } from './userId/eids.js';
+import {deepAccess, deepSetValue, generateUUID} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -42,11 +41,11 @@ const getFloor = (bid) => {
 const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   // Create request and set imp bids inside
   let request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     validBidRequests,
     cur: [DEFAULT_CURRENCY],
     imp: [],
-    source: {tid: bidderRequest.auctionId}
+    source: {tid: bidderRequest.ortb2?.source?.tid}
   };
 
   // Get the url parameters
@@ -63,9 +62,8 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
   if (schain) request.source.ext = { schain: schain };
 
   // Set eids
-  let bidUserId = deepAccess(validBidRequests, '0.userId');
-  let eids = createEidsArray(bidUserId);
-  if (eids.length) {
+  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (eids && eids.length) {
     deepSetValue(request, 'user.ext.eids', eids);
   }
 
@@ -93,7 +91,6 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
 
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-    this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
   if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);

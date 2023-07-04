@@ -7,8 +7,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storage = getStorageManager();
+const MODULE_CODE = 'yuktamedia';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 const yuktamediaAnalyticsVersion = 'v3.1.0';
 
 let initOptions;
@@ -261,7 +263,7 @@ yuktamediaAnalyticsAdapter.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: yuktamediaAnalyticsAdapter,
-  code: 'yuktamedia'
+  code: MODULE_CODE,
 });
 
 export default yuktamediaAnalyticsAdapter;

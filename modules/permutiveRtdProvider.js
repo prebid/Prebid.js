@@ -10,6 +10,7 @@ import {submodule} from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safeJSONParse, prefixLog} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'permutive'
 
@@ -20,7 +21,7 @@ export const PERMUTIVE_STANDARD_KEYWORD = 'p_standard'
 export const PERMUTIVE_CUSTOM_COHORTS_KEYWORD = 'permutive'
 export const PERMUTIVE_STANDARD_AUD_KEYWORD = 'p_standard_aud'
 
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME})
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME})
 
 function init(moduleConfig, userConsent) {
   readPermutiveModuleConfigFromCache()
@@ -200,6 +201,12 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
     logger.logInfo(`Extending ortb2.user.ext.data with "${PERMUTIVE_CUSTOM_COHORTS_KEYWORD}"`, customCohortsData)
   }
 
+  // Set site extensions
+  if (segmentIDs.length > 0) {
+    deepSetValue(ortbConfig, `ortb2.site.ext.permutive.${PERMUTIVE_STANDARD_KEYWORD}`, segmentIDs)
+    logger.logInfo(`Extending ortb2.site.ext.permutive with "${PERMUTIVE_STANDARD_KEYWORD}"`, segmentIDs)
+  }
+
   logger.logInfo(`Updated ortb2 config`, { bidder, config: ortbConfig })
   return ortbConfig
 }
@@ -229,12 +236,11 @@ function setSegments (reqBidsConfigObj, moduleConfig, segmentData) {
       }
       const acEnabled = isAcEnabled(moduleConfig, bidder)
       const customFn = getCustomBidderFn(moduleConfig, bidder)
-      const defaultFn = getDefaultBidderFn(bidder)
 
       if (customFn) {
-        customFn(bid, segmentData, acEnabled, utils, defaultFn)
-      } else if (defaultFn) {
-        defaultFn(bid, segmentData, acEnabled)
+        // For backwards compatibility we pass an identity function to any custom bidder function set by a publisher
+        const bidIdentity = (bid) => bid
+        customFn(bid, segmentData, acEnabled, utils, bidIdentity)
       }
     })
   })
@@ -260,40 +266,6 @@ function getCustomBidderFn (moduleConfig, bidder) {
   } else {
     return null
   }
-}
-
-/**
- * Returns a function that receives a `bid` object, a `data` object and a `acEnabled` boolean
- * and which will set the right segment targeting keys for `bid` based on `data` and `acEnabled`
- * @param {string} bidder - Bidder name
- * @return {Object} Bidder function
- */
-function getDefaultBidderFn (bidder) {
-  const isPStandardTargetingEnabled = (data, acEnabled) => {
-    return (acEnabled && data.ac && data.ac.length) || (data.ssp && data.ssp.cohorts && data.ssp.cohorts.length)
-  }
-  const pStandardTargeting = (data, acEnabled) => {
-    const ac = (acEnabled) ? (data.ac ?? []) : []
-    const ssp = data?.ssp?.cohorts ?? []
-    return [...new Set([...ac, ...ssp])]
-  }
-  const bidderMap = {
-    ozone: function (bid, data, acEnabled) {
-      if (isPStandardTargetingEnabled(data, acEnabled)) {
-        const segments = pStandardTargeting(data, acEnabled)
-        deepSetValue(bid, 'params.customData.0.targeting.p_standard', segments)
-      }
-
-      return bid
-    }
-  }
-
-  // On no default bidder just return the same bid as passed in
-  function bidIdentity(bid) {
-    return bid
-  }
-
-  return bidderMap[bidder] || bidIdentity
 }
 
 /**

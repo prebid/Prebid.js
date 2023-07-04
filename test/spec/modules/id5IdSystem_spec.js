@@ -42,7 +42,9 @@ describe('ID5 ID System', function () {
   const ID5_STORED_OBJ = {
     'universal_uid': ID5_STORED_ID,
     'signature': ID5_STORED_SIGNATURE,
-    'link_type': ID5_STORED_LINK_TYPE
+    'ext': {
+      'linkType': ID5_STORED_LINK_TYPE
+    }
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -50,7 +52,10 @@ describe('ID5 ID System', function () {
   const ID5_JSON_RESPONSE = {
     'universal_uid': ID5_RESPONSE_ID,
     'signature': ID5_RESPONSE_SIGNATURE,
-    'link_type': ID5_RESPONSE_LINK_TYPE
+    'link_type': ID5_RESPONSE_LINK_TYPE,
+    'ext': {
+      'linkType': ID5_RESPONSE_LINK_TYPE
+    }
   };
   const ALLOWED_ID5_VENDOR_DATA = {
     purpose: {
@@ -63,6 +68,10 @@ describe('ID5 ID System', function () {
         131: true
       }
     }
+  }
+
+  const HEADERS_CONTENT_TYPE_JSON = {
+    'Content-Type': 'application/json'
   }
 
   function getId5FetchConfig(storageName = ID5_STORAGE_NAME, storageType = 'html5') {
@@ -148,7 +157,7 @@ describe('ID5 ID System', function () {
     }
 
     respondWithConfigAndExpectNext(configRequest, config = ID5_API_CONFIG) {
-      configRequest.respond(200, {'Content-Type': 'application/json'}, JSON.stringify(config));
+      configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(config));
       return this.expectNextRequest()
     }
 
@@ -249,7 +258,7 @@ describe('ID5 ID System', function () {
   });
 
   describe('Xhr Requests from getId()', function () {
-    const responseHeader = {'Content-Type': 'application/json'};
+    const responseHeader = HEADERS_CONTENT_TYPE_JSON
 
     beforeEach(function () {
     });
@@ -719,6 +728,40 @@ describe('ID5 ID System', function () {
     })
   });
 
+  describe('Local storage', () => {
+    let sandbox;
+    beforeEach(() => {
+      sandbox = sinon.sandbox.create();
+      sandbox.stub(storage, 'localStorageIsEnabled');
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    [
+      [true, 1],
+      [false, 0]
+    ].forEach(function ([isEnabled, expectedValue]) {
+      it(`should check localStorage availability and log in request. Available=${isEnabled}`, () => {
+        let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+        let config = getId5FetchConfig();
+        let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
+        storage.localStorageIsEnabled.callsFake(() => isEnabled)
+
+        return xhrServerMock.expectFetchRequest()
+          .then(fetchRequest => {
+            let requestBody = JSON.parse(fetchRequest.requestBody);
+            expect(requestBody.localStorage).is.eq(expectedValue);
+
+            fetchRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
+            return submoduleResponse
+          })
+          .then(submoduleResponse => {
+            expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
+          });
+      })
+    })
+  });
+
   describe('Request Bids Hook', function () {
     let adUnits;
     let sandbox;
@@ -842,8 +885,7 @@ describe('ID5 ID System', function () {
         expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
         expect(requestBody.nbPage).is.eq(2);
         expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(2);
-        const responseHeader = {'Content-Type': 'application/json'};
-        request.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+        request.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
 
         return new Promise(function (resolve) {
           (function waitForCondition() {
@@ -921,7 +963,9 @@ describe('ID5 ID System', function () {
         it('should not expose ID when everyone is in control group', function () {
           storedObject.ab_testing = {result: 'control'};
           storedObject.universal_uid = '';
-          storedObject.link_type = 0;
+          storedObject.ext = {
+            'linkType': 0
+          };
           let decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithoutIdAbOn);
         });

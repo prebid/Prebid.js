@@ -13,7 +13,7 @@ const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
 const GVLID = 241;
 
-const storage = getStorageManager({ gvlid: GVLID, bidderCode: BIDDER_CODE });
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /**
  * Determines whether or not the given bid request is valid.
@@ -264,8 +264,9 @@ function setGeneralInfo(bidRequest) {
   this['adUnitCode'] = bidRequest.adUnitCode;
   this['bidId'] = bidRequest.bidId;
   this['bidderRequestId'] = bidRequest.bidderRequestId;
+  // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
   this['auctionId'] = bidRequest.auctionId;
-  this['transactionId'] = bidRequest.transactionId;
+  this['transactionId'] = bidRequest.ortb2Imp?.ext?.tid;
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;

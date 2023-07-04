@@ -11,8 +11,7 @@
   },
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
-    "GOOD": 1,
-    "NO_BID": 2
+    "GOOD": 1
   },
   "CB": {
     "TYPE": {

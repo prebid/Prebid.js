@@ -9,11 +9,12 @@ import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
 const AU_GVLID = 902;
 
-export const storage = getStorageManager({gvlid: AU_GVLID, moduleName: 'qid'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'qid'});
 
 /**
  * Param or default.

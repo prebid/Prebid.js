@@ -48,7 +48,11 @@ describe('ConcertAdapter', function () {
         },
         adUnitCode: 'desktop_leaderboard_variable',
         bidId: 'foo',
-        transactionId: '',
+        ortb2Imp: {
+          ext: {
+            tid: ''
+          }
+        },
         sizes: [[1030, 590]]
       }
     ];
@@ -149,15 +153,10 @@ describe('ConcertAdapter', function () {
 
     it('should use sharedid if it exists', function() {
       storage.removeDataFromLocalStorage('c_nap');
-      const request = spec.buildRequests(bidRequests, {
-        ...bidRequest,
-        userId: {
-          _sharedid: {
-            id: '123abc'
-          }
-        }
-      });
+      const bidRequestsWithSharedId = [{ ...bidRequests[0], userId: { sharedid: { id: '123abc' } } }]
+      const request = spec.buildRequests(bidRequestsWithSharedId, bidRequest);
       const payload = JSON.parse(request.data);
+
       expect(payload.meta.uid).to.equal('123abc');
     })
 
