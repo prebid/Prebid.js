@@ -168,7 +168,7 @@ livewrappedAnalyticsAdapter.sendEvents = function() {
     requests: sentRequests.sentRequests,
     responses: getResponses(sentRequests.gdpr, sentRequests.auctionIds),
     wins: getWins(sentRequests.gdpr, sentRequests.auctionIds),
-    timeouts: getTimeouts(sentRequests.auctionIds),
+    timeouts: getTimeouts(sentRequests.gdpr, sentRequests.auctionIds),
     bidAdUnits: getbidAdUnits(),
     rf: getAdRenderFailed(sentRequests.auctionIds),
     rcv: getAdblockerRecovered()
@@ -237,27 +237,9 @@ function getResponses(gdpr, auctionIds) {
       if (bid.readyToSend && !(bid.sendStatus & RESPONSESENT) && !bid.timeout) {
         bid.sendStatus |= RESPONSESENT;
 
-        responses.push({
-          timeStamp: auction.timeStamp,
-          adUnit: bid.adUnit,
-          adUnitId: bid.adUnitId,
-          bidder: bid.bidder,
-          width: bid.width,
-          height: bid.height,
-          cpm: bid.cpm,
-          orgCpm: bid.originalCpm,
-          ttr: bid.ttr,
-          IsBid: bid.isBid,
-          mediaType: bid.mediaType,
-          gdpr: gdprPos,
-          floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
-          floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
-          auctionId: auctionIdPos,
-          auc: bid.auc,
-          buc: bid.buc,
-          lw: bid.lw,
-          meta: bid.meta
-        });
+        let response = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+
+        responses.push(response);
       }
     });
   });
@@ -337,27 +319,45 @@ function getAuctionIdPos(auctionIds, auctionId) {
   return auctionIdPos;
 }
 
-function getTimeouts(auctionIds) {
+function getResponseObject(auction, bid, gdprPos, auctionIdPos) {
+  return {
+    timeStamp: auction.timeStamp,
+    adUnit: bid.adUnit,
+    adUnitId: bid.adUnitId,
+    bidder: bid.bidder,
+    width: bid.width,
+    height: bid.height,
+    cpm: bid.cpm,
+    orgCpm: bid.originalCpm,
+    ttr: bid.ttr,
+    IsBid: bid.isBid,
+    mediaType: bid.mediaType,
+    gdpr: gdprPos,
+    floor: bid.lwFloor ? bid.lwFloor : (bid.floorData ? bid.floorData.floorValue : undefined),
+    floorCur: bid.floorData ? bid.floorData.floorCurrency : undefined,
+    auctionId: auctionIdPos,
+    auc: bid.auc,
+    buc: bid.buc,
+    lw: bid.lw,
+    meta: bid.meta
+  };
+}
+
+function getTimeouts(gdpr, auctionIds) {
   var timeouts = [];
 
   Object.keys(cache.auctions).forEach(auctionId => {
     let auctionIdPos = getAuctionIdPos(auctionIds, auctionId);
     Object.keys(cache.auctions[auctionId].bids).forEach(bidId => {
       let auction = cache.auctions[auctionId];
+      let gdprPos = getGdprPos(gdpr, auction);
       let bid = auction.bids[bidId];
       if (!(bid.sendStatus & TIMEOUTSENT) && bid.timeout) {
         bid.sendStatus |= TIMEOUTSENT;
 
-        timeouts.push({
-          bidder: bid.bidder,
-          adUnit: bid.adUnit,
-          adUnitId: bid.adUnitId,
-          timeStamp: auction.timeStamp,
-          auctionId: auctionIdPos,
-          auc: bid.auc,
-          buc: bid.buc,
-          lw: bid.lw
-        });
+        let timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
+
+        timeouts.push(timeout);
       }
     });
   });
