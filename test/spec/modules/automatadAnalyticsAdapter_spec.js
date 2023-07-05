@@ -1,7 +1,7 @@
 import * as events from 'src/events';
 import * as utils from 'src/utils.js';
 
-import spec, {self as exports} from 'modules/atmtdAnalyticsAdapter.js';
+import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
 
 import CONSTANTS from 'src/constants.json';
 import { expect } from 'chai';
