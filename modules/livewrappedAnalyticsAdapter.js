@@ -354,7 +354,7 @@ function getTimeouts(gdpr, auctionIds) {
       let bid = auction.bids[bidId];
       if (!(bid.sendStatus & TIMEOUTSENT) && bid.timeout) {
         bid.sendStatus |= TIMEOUTSENT;
-        
+
         let timeout = getResponseObject(auction, bid, gdprPos, auctionIdPos);
 
         timeouts.push(timeout);
