@@ -21,7 +21,8 @@ const baseBidRequest = {
 }
 const baseBidderRequest = {
   refererInfo: {
-    referer: 'http://example.com/page.html',
+    page: 'http://example.com/page.html',
+    domain: 'example.com',
   }
 }
 
@@ -94,9 +95,9 @@ describe('sovrnBidAdapter', function() {
         expect(impression.banner.h).to.equal(1)
       })
 
-      it('sets the proper video object', function() {
-        const width = 640
-        const height = 480
+      it('sets the proper video object with sizes defined', function() {
+        const width = 300
+        const height = 250
         const mimes = ['video/mp4', 'application/javascript']
         const protocols = [2, 5]
         const minduration = 5
@@ -128,9 +129,58 @@ describe('sovrnBidAdapter', function() {
         expect(impression.video.startdelay).to.equal(startdelay)
       })
 
+      it('sets the proper video object wihtout sizes defined but video sizes defined', function() {
+        const width = 360
+        const height = 240
+        const mimes = ['video/mp4', 'application/javascript']
+        const protocols = [2, 5]
+        const minduration = 5
+        const maxduration = 60
+        const startdelay = 0
+        const modifiedBidRequest = baseBidRequest;
+        delete modifiedBidRequest.sizes;
+        const videoBidRequest = {
+          ...modifiedBidRequest,
+          mediaTypes: {
+            video: {
+              mimes,
+              protocols,
+              playerSize: [[width, height], [360, 240]],
+              minduration,
+              maxduration,
+              startdelay
+            }
+          }
+        }
+        const request = spec.buildRequests([videoBidRequest], baseBidderRequest)
+        const payload = JSON.parse(request.data)
+        const impression = payload.imp[0]
+
+        expect(impression.video.w).to.equal(width)
+        expect(impression.video.h).to.equal(height)
+        expect(impression.video.mimes).to.have.same.members(mimes)
+        expect(impression.video.protocols).to.have.same.members(protocols)
+        expect(impression.video.minduration).to.equal(minduration)
+        expect(impression.video.maxduration).to.equal(maxduration)
+        expect(impression.video.startdelay).to.equal(startdelay)
+      })
+
       it('gets correct site info', function() {
         expect(payload.site.page).to.equal('http://example.com/page.html')
         expect(payload.site.domain).to.equal('example.com')
+      })
+
+      it('sets correct timeout', function() {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          bidderCode: 'sovrn',
+          auctionId: '1d1a030790a475',
+          bidderRequestId: '22edbae2733bf6',
+          timeout: 3000,
+          bids: [baseBidRequest]
+        }
+        const payload = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+        expect(payload.tmax).to.equal(3000)
       })
 
       it('includes the ad unit code in the request', function() {
@@ -211,6 +261,71 @@ describe('sovrnBidAdapter', function() {
       expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent)
     })
 
+    it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        gppConsent: {
+          gppString: 'gppstring',
+          applicableSections: [8]
+        },
+        bids: [baseBidRequest]
+      }
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.gpp).to.equal('gppstring')
+      expect(regs.gpp_sid).to.be.an('array')
+      expect(regs.gpp_sid).to.include(8)
+    })
+
+    it('should not send gpp info when gppConsent is not defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const { regs } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.gpp).to.be.undefined
+    })
+
+    it('should send gdpr info even when gppConsent defined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+        gppConsent: {
+          gppString: 'gppstring',
+          applicableSections: [8]
+        },
+        bids: [baseBidRequest]
+      }
+
+      const { regs, user } = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+
+      expect(regs.ext.gdpr).to.exist.and.to.be.a('number')
+      expect(regs.ext.gdpr).to.equal(1)
+      expect(user.ext.consent).to.exist.and.to.be.a('string')
+      expect(user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString)
+      expect(regs.gpp).to.equal('gppstring')
+      expect(regs.gpp_sid).to.be.an('array')
+      expect(regs.gpp_sid).to.include(8)
+    })
+
     it('should add schain if present', function() {
       const schainRequest = {
         ...baseBidRequest,
@@ -233,14 +348,33 @@ describe('sovrnBidAdapter', function() {
       expect(data.source.ext.schain.nodes.length).to.equal(1)
     })
 
-    it('should add eds to the bid request', function() {
+    it('should add eids to the bid request', function() {
       const criteoIdRequest = {
         ...baseBidRequest,
-        userId: {
-          criteoId: 'A_CRITEO_ID',
-          tdid: 'SOMESORTOFID',
-        }
-      }
+        userIdAsEids: [
+          {
+            source: 'criteo.com',
+            uids: [
+              {
+                atype: 1,
+                id: 'A_CRITEO_ID'
+              }
+            ]
+          },
+          {
+            source: 'adserver.org',
+            uids: [
+              {
+                atype: 1,
+                ext: {
+                  rtiPartner: 'TDID'
+                },
+                id: 'SOMESORTOFID'
+              }
+            ]
+          }
+        ]
+      };
       const criteoIdRequests = [criteoIdRequest, baseBidRequest]
       const ext = JSON.parse(spec.buildRequests(criteoIdRequests, baseBidderRequest).data).user.ext
       const firstEID = ext.eids[0]
@@ -253,8 +387,6 @@ describe('sovrnBidAdapter', function() {
       expect(secondEID.uids[0].id).to.equal('SOMESORTOFID')
       expect(secondEID.uids[0].ext.rtiPartner).to.equal('TDID')
       expect(secondEID.uids[0].atype).to.equal(1)
-      expect(ext.tpid[0].source).to.equal('criteo.com')
-      expect(ext.tpid[0].uid).to.equal('A_CRITEO_ID')
       expect(ext.prebid_criteoid).to.equal('A_CRITEO_ID')
     })
 
@@ -307,30 +439,17 @@ describe('sovrnBidAdapter', function() {
       expect(impression.bidfloor).to.equal(2.00)
     })
     describe('First Party Data', function () {
-      let sandbox
-
-      beforeEach(function() {
-        sandbox = sinon.sandbox.create()
-      })
-      afterEach(function() {
-        sandbox.restore()
-      })
       it('should provide first party data if provided', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const cfg = {
-            ortb2: {
-              site: {
-                keywords: 'test keyword'
-              },
-              user: {
-                data: 'some user data'
-              }
-            }
+        const ortb2 = {
+          site: {
+            keywords: 'test keyword'
+          },
+          user: {
+            data: 'some user data'
           }
-          return utils.deepAccess(cfg, key)
-        })
+        };
 
-        const request = spec.buildRequests([baseBidRequest], baseBidderRequest)
+        const request = spec.buildRequests([baseBidRequest], {...baseBidderRequest, ortb2})
         const { user, site } = JSON.parse(request.data)
 
         expect(user.data).to.equal('some user data')

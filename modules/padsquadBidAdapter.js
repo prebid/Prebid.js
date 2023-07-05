@@ -43,9 +43,9 @@ export const spec = {
       id: bidderRequest.auctionId,
       imp: impressions,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
+        domain: bidderRequest?.refererInfo?.domain,
+        page: bidderRequest?.refererInfo?.page,
+        ref: bidderRequest?.refererInfo?.ref,
       },
       ext: {
         exchange: {

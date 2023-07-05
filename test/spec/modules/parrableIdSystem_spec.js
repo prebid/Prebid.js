@@ -96,6 +96,12 @@ function decodeBase64UrlSafe(encBase64) {
 }
 
 describe('Parrable ID System', function() {
+  after(() => {
+    // reset ID system to avoid delayed callbacks in other tests
+    config.resetConfig();
+    init(config);
+  });
+
   describe('parrableIdSystem.getId()', function() {
     describe('response callback function', function() {
       let logErrorStub;
@@ -128,7 +134,7 @@ describe('Parrable ID System', function() {
         expect(data).to.deep.equal({
           eid: P_COOKIE_EID,
           trackers: P_CONFIG_MOCK.params.partners.split(','),
-          url: getRefererInfo().referer,
+          url: getRefererInfo().page,
           prebidVersion: '$prebid.version$',
           isIframe: true
         });

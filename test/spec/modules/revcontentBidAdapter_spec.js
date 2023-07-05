@@ -45,7 +45,7 @@ describe('revcontent adapter', function () {
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
       request = request[0];
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://trends-s0.revcontent.com/rtb?apiKey=8a33fa9cf220ae685dcc3544f847cdda858d3b1c&userId=673&widgetId=33861');
@@ -66,7 +66,7 @@ describe('revcontent adapter', function () {
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
 
       request = request[0];
       let data = Object.keys(request);
@@ -87,7 +87,7 @@ describe('revcontent adapter', function () {
           bidfloor: 0.05
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
       request = JSON.parse(request[0].data);
       assert.equal(request.imp[0].bidfloor, 0.05);
       assert.equal(request.device.ua, navigator.userAgent);
@@ -112,7 +112,7 @@ describe('revcontent adapter', function () {
           currency: 'USD'
         };
       };
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page'}});
       request = JSON.parse(request[0].data);
       assert.equal(request.imp[0].bidfloor, 0.07);
       assert.equal(request.device.ua, navigator.userAgent);
@@ -146,7 +146,7 @@ describe('revcontent adapter', function () {
           endpoint: 'trends-s0.revcontent.com'
         }
       }];
-      let refererInfo = {referer: 'page'};
+      let refererInfo = {page: 'page'};
       let request = spec.buildRequests(validBidRequests, {refererInfo});
 
       request = JSON.parse(request[0].data);

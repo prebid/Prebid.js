@@ -1,9 +1,10 @@
-import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep} from '../src/utils.js';
+import {deepAccess, getWindowTop, isSafariBrowser, mergeDeep, isFn, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'livewrapped';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -46,6 +47,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const userId = find(bidRequests, hasUserId);
     const pubcid = find(bidRequests, hasPubcid);
     const publisherId = find(bidRequests, hasPublisherId);
@@ -59,12 +63,14 @@ export const spec = {
     const bundle = find(bidRequests, hasBundleParam);
     const tid = find(bidRequests, hasTidParam);
     const schain = bidRequests[0].schain;
-    let ortb2 = config.getConfig('ortb2');
+    let ortb2 = bidderRequest.ortb2;
     const eids = handleEids(bidRequests);
     bidUrl = bidUrl ? bidUrl.params.bidUrl : URL;
     url = url ? url.params.url : (getAppDomain() || getTopWindowLocation(bidderRequest));
     test = test ? test.params.test : undefined;
-    var adRequests = bidRequests.map(bidToAdRequest);
+    const currency = config.getConfig('currency.adServerCurrency') || 'USD';
+    var adRequests = bidRequests.map(b => bidToAdRequest(b, currency));
+    const adRequestsContainFloors = adRequests.some(r => r.flr !== undefined);
 
     if (eids) {
       ortb2 = mergeDeep(mergeDeep({}, ortb2 || {}), eids);
@@ -92,7 +98,8 @@ export const spec = {
       rcv: getAdblockerRecovered(),
       adRequests: [...adRequests],
       rtbData: ortb2,
-      schain: schain
+      schain: schain,
+      flrCur: adRequestsContainFloors ? currency : undefined
     };
 
     if (config.getConfig().debug) {
@@ -219,13 +226,14 @@ function hasPubcid(bid) {
   return !!bid.crumbs && !!bid.crumbs.pubcid;
 }
 
-function bidToAdRequest(bid) {
+function bidToAdRequest(bid, currency) {
   var adRequest = {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
     transactionId: bid.transactionId,
     formats: getSizes(bid).map(sizeToFormat),
+    flr: getBidFloor(bid, currency),
     options: bid.params.options
   };
 
@@ -260,6 +268,22 @@ function sizeToFormat(size) {
   }
 }
 
+function getBidFloor(bid, currency) {
+  if (!isFn(bid.getFloor)) {
+    return undefined;
+  }
+
+  const floor = bid.getFloor({
+    currency: currency,
+    mediaType: '*',
+    size: '*'
+  });
+
+  return isPlainObject(floor) && !isNaN(floor.floor) && floor.currency == currency
+    ? floor.floor
+    : undefined;
+}
+
 function getAdblockerRecovered() {
   try {
     return getWindowTop().I12C && getWindowTop().I12C.Morph === 1;
@@ -276,8 +300,7 @@ function handleEids(bidRequests) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return config.getConfig('pageUrl') || url;
+  return bidderRequest?.refererInfo?.page;
 }
 
 function getAppBundle() {
@@ -299,21 +322,13 @@ function getDeviceIfa() {
 }
 
 function getDeviceWidth() {
-  let device = config.getConfig('device');
-  if (typeof device === 'object' && device.width) {
-    return device.width;
-  }
-
-  return window.innerWidth;
+  const device = config.getConfig('device') || {};
+  return device.w || window.innerWidth;
 }
 
 function getDeviceHeight() {
-  let device = config.getConfig('device');
-  if (typeof device === 'object' && device.height) {
-    return device.height;
-  }
-
-  return window.innerHeight;
+  const device = config.getConfig('device') || {};
+  return device.h || window.innerHeight;
 }
 
 function getCoppa() {

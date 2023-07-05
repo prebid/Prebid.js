@@ -24,6 +24,7 @@ export const spec = {
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('doceree.user')
+    // TODO: this should probably look at refererInfo
     const { page, domain, token } = config.getConfig('doceree.context')
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 

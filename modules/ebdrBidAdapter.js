@@ -31,7 +31,7 @@ export const spec = {
           h: whArr[1]
         },
         bidfloor: bidFloor
-      })
+      });
       ebdrReq[bid.bidId] = {mediaTypes: _mediaTypes,
         w: whArr[0],
         h: whArr[1]

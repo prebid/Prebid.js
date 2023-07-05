@@ -48,3 +48,14 @@ export function submodule(name, ...args) {
     next(modules);
   });
 }
+
+/**
+ * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
+ */
+export function wrapHook(hook, wrapper) {
+  Object.defineProperties(
+    wrapper,
+    Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
+  );
+  return wrapper;
+}

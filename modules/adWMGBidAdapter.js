@@ -27,9 +27,10 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     const timeout = bidderRequest.timeout || 0;
     const debug = config.getConfig('debug') || false;
-    const referrer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value here?
+    const referrer = bidderRequest.refererInfo.page;
     const locale = window.navigator.language && window.navigator.language.length > 0 ? window.navigator.language.substr(0, 2) : '';
-    const domain = config.getConfig('publisherDomain') || (window.location && window.location.host ? window.location.host : '');
+    const domain = bidderRequest.refererInfo.domain || '';
     const ua = window.navigator.userAgent.toLowerCase();
     const additional = spec.parseUserAgent(ua);
 

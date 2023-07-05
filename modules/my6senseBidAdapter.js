@@ -1,5 +1,6 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'my6sense';
 const END_POINT = 'https://hb.mynativeplatform.com/pub2/web/v1.15.0/hbwidget.json';
@@ -11,6 +12,7 @@ function isBidRequestValid(bid) {
 }
 
 function getUrl(url) {
+  // TODO: this should probably look at refererInfo
   if (!url) {
     url = window.location.href;// "clean" url of current web page
   }
@@ -118,6 +120,9 @@ function buildGdprServerProperty(bidderRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
   let requests = [];
 
   if (validBidRequests && validBidRequests.length) {

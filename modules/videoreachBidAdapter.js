@@ -28,7 +28,8 @@ export const spec = {
     };
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      data.referrer = bidderRequest.refererInfo.referer;
+      // TODO: is 'page' the right value here?
+      data.referrer = bidderRequest.refererInfo.page;
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

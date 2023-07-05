@@ -15,7 +15,7 @@ function getSlotConfigs(mediaTypes, params) {
 describe('Hybrid.ai Adapter', function() {
   const PLACE_ID = '5af45ad34d506ee7acad0c26';
   const bidderRequest = {
-    refererInfo: { referer: 'referer' }
+    refererInfo: { page: 'referer' }
   }
   const bannerMandatoryParams = {
     placeId: PLACE_ID,

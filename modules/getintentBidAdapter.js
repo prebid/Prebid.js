@@ -97,7 +97,7 @@ export const spec = {
     return bids;
   }
 
-}
+};
 
 function buildUrl(bid) {
   return 'https://' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);

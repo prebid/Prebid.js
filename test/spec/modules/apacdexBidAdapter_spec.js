@@ -730,22 +730,4 @@ describe('ApacdexBidAdapter', function () {
       expect(validateGeoObject(geoObject)).to.equal(false);
     });
   });
-
-  describe('getDomain', function () {
-    it('should return valid domain from publisherDomain config', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: pageUrl });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return valid domain from pageUrl argument', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return undefined if pageUrl and publisherDomain not config', () => {
-      let pageUrl;
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal(pageUrl);
-    });
-  });
 });

@@ -98,7 +98,7 @@ describe('tpmnAdapterTests', function () {
       const tempBidRequests = [bid];
       const tempBidderRequest = {
         refererInfo: {
-          referer: 'http://localhost/test',
+          page: 'http://localhost/test',
           site: {
             domain: 'localhost',
             page: 'http://localhost/test'

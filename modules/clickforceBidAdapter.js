@@ -1,6 +1,7 @@
 import { _each } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const BIDDER_CODE = 'clickforce';
 const ENDPOINT_URL = 'https://ad.holmesmind.com/adserver/prebid.json?cb=' + new Date().getTime() + '&hb=1&ver=1.21';
 
@@ -24,6 +25,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const bidParams = [];
     _each(validBidRequests, function(bid) {
       bidParams.push({

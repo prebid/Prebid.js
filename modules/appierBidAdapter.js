@@ -43,7 +43,8 @@ export const spec = {
     const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
     const payload = {
       'bids': bidRequests,
-      'refererInfo': bidderRequest.refererInfo,
+      // TODO: please do not pass internal data structures over to the network
+      'refererInfo': bidderRequest.refererInfo.legacy,
       'version': ADAPTER_VERSION
     };
     return [{

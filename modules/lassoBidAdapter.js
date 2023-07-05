@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'lasso';
 const ENDPOINT_URL = 'https://trc.lhmos.com/prebid';
@@ -40,24 +40,24 @@ export const spec = {
         auctionId: bidRequest.auctionId,
         bidId: bidRequest.bidId,
         transactionId: bidRequest.transactionId,
-        device: JSON.stringify(getDeviceData()),
+        device: encodeURIComponent(JSON.stringify(getDeviceData())),
         sizes,
         aimXR,
         uid: '$UID',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 1,
+        version: 3,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined
       }
 
       return {
         method: 'GET',
-        url: getBidRequestUrl(aimXR),
+        url: getBidRequestUrl(aimXR, bidRequest.params),
         data: payload,
         options: {
-          withCredentials: false
+          withCredentials: true
         },
       };
     });
@@ -67,7 +67,7 @@ export const spec = {
     const response = serverResponse && serverResponse.body;
     const bidResponses = [];
 
-    if (!response) {
+    if (!response || !response.bid.ad) {
       return bidResponses;
     }
 
@@ -113,11 +113,15 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-function getBidRequestUrl(aimXR) {
-  if (!aimXR) {
-    return GET_IUD_URL + ENDPOINT_URL + '/request';
+function getBidRequestUrl(aimXR, params) {
+  let path = '/request';
+  if (params && params.dtc) {
+    path = '/dtc-request';
   }
-  return ENDPOINT_URL + '/request'
+  if (!aimXR) {
+    return GET_IUD_URL + ENDPOINT_URL + path;
+  }
+  return ENDPOINT_URL + path;
 }
 
 function getDeviceData() {

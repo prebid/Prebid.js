@@ -270,7 +270,7 @@ const bidderRequest = {
   auctionStart: 1581064124172,
   timeout: 1000,
   refererInfo: {
-    referer: 'https://uni-corn.net/',
+    ref: 'https://uni-corn.net/',
     reachedTop: true,
     numIframes: 0,
     stack: ['https://uni-corn.net/']
@@ -496,6 +496,16 @@ describe('unicornBidAdapterTest', () => {
   });
 
   describe('buildBidRequest', () => {
+    before(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        unicorn: {
+          storageAllowed: true
+        }
+      };
+    });
+    after(function () {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
     it('buildBidRequest', () => {
       const req = spec.buildRequests(validBidRequests, bidderRequest);
       const removeUntestableAttrs = data => {

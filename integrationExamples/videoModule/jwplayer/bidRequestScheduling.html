@@ -1,0 +1,89 @@
+<html>
+
+<head>
+    <script src="https://cdn.jwplayer.com/libraries/l5MchIxB.js"></script>
+    <script async src="../../../build/dev/prebid.js"></script>
+
+    <title>JW Player with Bid Request Scheduling</title>
+
+    <!--This demo configures JW Player's Player Bidding product to handle ad scheduling-->
+
+    <script>
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          video: {
+            providers: [{
+              divId: 'player',
+              vendorCode: 1, // JW Player vendorCode
+              playerConfig: {
+                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                params: {
+                  vendorConfig: {
+                    file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
+                    advertising: {
+                      client: "googima",
+                      schedule: {
+                        adBreak1: {
+                          tag: "//pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/137679306/HB_Dev_Center_Example&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&correlator=",
+                          offset: "pre"
+                        },
+                        adBreak2: {
+                          tag: "//pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/137679306/HB_Dev_Center_Example&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&correlator=",
+                          offset: "10"
+                        },
+                        adBreak3: {
+                          tag: "//pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/137679306/HB_Dev_Center_Example&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&correlator=",
+                          offset: "20"
+                        },
+                        adBreak4: {
+                          tag: "//pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/137679306/HB_Dev_Center_Example&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&correlator=",
+                          offset: "post"
+                        }
+                      },
+                      bids: {
+                        client: "bidding",
+                        settings: {
+                          mediationLayerAdServer: "dfp",
+                          bidTimeout: 2000
+                        },
+                        bidders: [
+                          {
+                            name: "ix",
+                            siteId: "300"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },]
+          },
+        });
+
+        pbjs.onEvent('videoSetupComplete', e => {
+          console.log('player setup complete: ', e);
+        });
+
+        pbjs.onEvent('videoSetupFailed', e => {
+          console.log('player setup failed: ', e);
+        });
+
+        pbjs.onEvent('videoAdError', e => {
+          console.log('adError: ', e);
+        });
+      });
+    </script>
+</head>
+
+<body>
+    <h2>JW Player with Bid Request Scheduling</h2>
+    <h5>Div-1: Player placeholder div</h5>
+    <div id='player'></div>
+</body>
+
+</html>

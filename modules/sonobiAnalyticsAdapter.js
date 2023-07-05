@@ -1,5 +1,5 @@
 import { deepClone, logInfo, logError } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
@@ -255,7 +255,7 @@ sonobiAdapter.sendData = function (auction, data) {
       contentType: 'text/plain'
     }
   );
-}
+};
 
 function _logInfo(message, meta) {
   logInfo(buildLogMessage(message), meta);

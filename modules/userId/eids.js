@@ -5,6 +5,25 @@ export const USER_IDS_CONFIG = {
 
   // key-name : {config}
 
+  // GrowthCode
+  'growthCodeId': {
+    getValue: function(data) {
+      return data.gc_id
+    },
+    source: 'growthcode.io',
+    atype: 1,
+    getUidExt: function(data) {
+      const extendedData = pick(data, [
+        'h1',
+        'h2',
+        'h3',
+      ]);
+      if (Object.keys(extendedData).length) {
+        return extendedData;
+      }
+    }
+  },
+
   // trustpid
   'trustpid': {
     source: 'trustpid.com',
@@ -24,6 +43,12 @@ export const USER_IDS_CONFIG = {
   'naveggId': {
     source: 'navegg.com',
     atype: 1
+  },
+
+  // pairId
+  'pairId': {
+    source: 'google.com',
+    atype: 571187
   },
 
   // justId
@@ -68,12 +93,14 @@ export const USER_IDS_CONFIG = {
     source: 'flashtalking.com',
     atype: 1,
     getValue: function(data) {
-      return data.uid
+      let value = '';
+      if (data && data.ext && data.ext.DeviceID) {
+        value = data.ext.DeviceID;
+      }
+      return value;
     },
     getUidExt: function(data) {
-      if (data.ext) {
-        return data.ext;
-      }
+      return data && data.ext;
     }
   },
 
@@ -122,6 +149,24 @@ export const USER_IDS_CONFIG = {
           segments: data.segments
         };
       }
+    }
+  },
+
+  // bidswitchId
+  'bidswitch': {
+    source: 'bidswitch.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
+  },
+
+  // medianetId
+  'medianet': {
+    source: 'media.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
     }
   },
 
@@ -191,21 +236,9 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // haloId (deprecated in 7.0, use hadronId)
-  'haloId': {
-    source: 'audigent.com',
-    atype: 1
-  },
-
   // quantcastId
   'quantcastId': {
     source: 'quantcast.com',
-    atype: 1
-  },
-
-  // nextroll
-  'nextrollId': {
-    source: 'nextroll.com',
     atype: 1
   },
 
@@ -241,10 +274,13 @@ export const USER_IDS_CONFIG = {
   // Novatiq Snowflake
   'novatiq': {
     getValue: function(data) {
-      return data.snowflake
+      if (data.snowflake.id === undefined) {
+        return data.snowflake;
+      }
+
+      return data.snowflake.id;
     },
     source: 'novatiq.com',
-    atype: 1
   },
 
   'uid2': {
@@ -255,10 +291,12 @@ export const USER_IDS_CONFIG = {
     }
   },
 
-  // Akamai Data Activation Platform (DAP)
-  'dapId': {
-    source: 'akamai.com',
-    atype: 1
+  'euid': {
+    source: 'euid.eu',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    }
   },
 
   'deepintentId': {
@@ -279,7 +317,7 @@ export const USER_IDS_CONFIG = {
   },
 
   amxId: {
-    source: 'amxrtb.com',
+    source: 'amxdt.net',
     atype: 1,
   },
 
@@ -291,6 +329,11 @@ export const USER_IDS_CONFIG = {
   'kpuid': {
     source: 'kpuid.com',
     atype: 3
+  },
+
+  'imppid': {
+    source: 'ppid.intimatemerger.com',
+    atype: 1
   },
 
   'imuid': {
@@ -325,11 +368,49 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // tncId
+  'tncid': {
+    source: 'thenewco.it',
+    atype: 3
+  },
+
   // Gravito MP ID
   'gravitompId': {
     source: 'gravito.net',
     atype: 1
   },
+
+  // czechAdId
+  'czechAdId': {
+    source: 'czechadid.cz',
+    atype: 1
+  },
+
+  // OneKey Data
+  'oneKeyData': {
+    getValue: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        return data.identifiers[0].value;
+      }
+    },
+    source: 'paf',
+    atype: 1,
+    getEidExt: function(data) {
+      if (data && data.preferences) {
+        return {preferences: data.preferences};
+      }
+    },
+    getUidExt: function(data) {
+      if (data && Array.isArray(data.identifiers) && data.identifiers[0]) {
+        const id = data.identifiers[0];
+        return {
+          version: id.version,
+          type: id.type,
+          source: id.source
+        };
+      }
+    }
+  }
 };
 
 // this function will create an eid object for the given UserId sub-module
@@ -338,7 +419,6 @@ function createEidObject(userIdData, subModuleKey) {
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
-
     const value = isFn(conf['getValue']) ? conf['getValue'](userIdData) : userIdData;
     if (isStr(value)) {
       const uid = { id: value, atype: conf['atype'] };
@@ -389,6 +469,7 @@ export function createEidsArray(bidRequestUserId) {
       }
     }
   }
+
   return eids;
 }
 

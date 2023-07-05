@@ -6,6 +6,8 @@ import { newBidder } from 'src/adapters/bidderFactory.js';
 describe('Adyoulike Adapter', function () {
   const canonicalUrl = 'https://canonical.url/?t=%26';
   const referrerUrl = 'http://referrer.url/?param=value';
+  const pageUrl = 'http://page.url/?param=value';
+  const domain = 'domain:123';
   const defaultDC = 'hb-api';
   const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
   const bidderRequest = {
@@ -16,7 +18,8 @@ describe('Adyoulike Adapter', function () {
       consentString: consentString,
       gdprApplies: true
     },
-    refererInfo: {referer: referrerUrl}
+    refererInfo: {location: referrerUrl, canonicalUrl, domain, topmostLocation: 'fakePageURL'},
+    ortb2: {site: {page: pageUrl, ref: referrerUrl}}
   };
   const bidRequestWithEmptyPlacement = [
     {
@@ -592,20 +595,6 @@ describe('Adyoulike Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let canonicalQuery;
-
-    beforeEach(function () {
-      let canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      canonical.href = canonicalUrl;
-      canonicalQuery = sinon.stub(window.top.document.head, 'querySelector');
-      canonicalQuery.withArgs('link[rel="canonical"][href]').returns(canonical);
-    });
-
-    afterEach(function () {
-      canonicalQuery.restore();
-    });
-
     it('Should expand short native image config type', function() {
       const request = spec.buildRequests(bidRequestWithNativeImageType, bidderRequest);
       const payload = JSON.parse(request.data);
@@ -614,7 +603,8 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
-      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
+      expect(request.url).to.contains('PageUrl=' + encodeURIComponent(pageUrl));
+      expect(request.url).to.contains('PageReferrer=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
@@ -682,10 +672,18 @@ describe('Adyoulike Adapter', function () {
         'auctionId': '1d1a030790a475',
         'bidderRequestId': '22edbae2733bf6',
         'timeout': 3000,
-        'userId': {
-          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-          unsuported: '666'
-        }
+        'userIdAsEids':
+        [
+          {
+            'source': 'pubcid.org',
+            'uids': [
+              {
+                'atype': 1,
+                'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
+              }
+            ]
+          }
+        ]
       };
 
       bidderRequest.bids = bidRequestWithSinglePlacement;
@@ -694,13 +692,7 @@ describe('Adyoulike Adapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([{
-        'source': 'pubcid.org',
-        'uids': [{
-          'atype': 1,
-          'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
-        }]
-      }]);
+      expect(payload.userId).to.deep.equal(bidderRequest.userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {
@@ -711,17 +703,18 @@ describe('Adyoulike Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.contains('CanonicalUrl=' + encodeURIComponent(canonicalUrl));
       expect(request.url).to.contains('RefererUrl=' + encodeURIComponent(referrerUrl));
-      expect(request.url).to.contains('PublisherDomain=http%3A%2F%2Flocalhost%3A9876');
+      expect(request.url).to.contains('PageUrl=' + encodeURIComponent(pageUrl));
+      expect(request.url).to.contains('PageReferrer=' + encodeURIComponent(referrerUrl));
 
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
+      expect(payload.ortb2).to.deep.equal({site: {page: pageUrl, ref: referrerUrl}});
     });
 
     it('sends bid request to endpoint with single placement without canonical', function () {
-      canonicalQuery.restore();
-      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, {...bidderRequest, refererInfo: {...bidderRequest.refererInfo, canonicalUrl: null}});
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
@@ -731,12 +724,12 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
     it('sends bid request to endpoint with single placement multiple mediatype', function () {
-      canonicalQuery.restore();
-      const request = spec.buildRequests(bidRequestWithMultipleMediatype, bidderRequest);
+      const request = spec.buildRequests(bidRequestWithSinglePlacement, {...bidderRequest, refererInfo: {...bidderRequest.refererInfo, canonicalUrl: null}});
       const payload = JSON.parse(request.data);
 
       expect(request.url).to.contain(getEndpoint());
@@ -746,6 +739,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -768,6 +762,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_1'].TransactionID).to.be.equal('bid_id_1_transaction_id');
       expect(payload.Bids['bid_id_3'].TransactionID).to.be.equal('bid_id_3_transaction_id');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
     });
 
     it('sends bid request to endpoint setted by parameters', function () {

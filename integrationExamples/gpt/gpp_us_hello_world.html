@@ -1,0 +1,124 @@
+<!--
+  This page calls a single bidder for a single ad slot. It can be considered a "hello world" example for using
+  Prebid with the Google Publisher Tag.
+  It also makes a good test page for new adapter PR submissions. Simply set your server's Bid Params object in the
+  bids array inside the adUnits, and it will use your adapter to load an ad.
+  NOTE that many ad servers won't send back an ad if the URL is localhost... so you might need to
+  set an alias in your /etc/hosts file so that you can load this page from a different domain.
+-->
+
+<html>
+
+<head>
+    <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/semiautomatic.js" 
+    data-cmp-cdid="599af61faf55" data-cmp-host="delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="1"></script>
+
+
+  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var FAILSAFE_TIMEOUT = 3300;
+    var PREBID_TIMEOUT = 1000;
+
+    var adUnits = [{
+      code: 'div-gpt-ad-1460505748561-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]],
+        }
+      },
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'appnexus',
+        params: {
+          placementId: 13144370
+        }
+      }]
+
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.addAdUnits(adUnits);
+      pbjs.setConfig({
+        userSync: {
+          filterSettings: {
+            iframe: {
+              bidders: ['appnexus'],
+              filter: 'include'
+            }
+          }
+        }
+      })
+      pbjs.setConfig({
+        consentManagement: {
+          gpp: {
+            cmpApi: 'iab',
+            timeout: 5000
+          },
+          usp: {
+            cmpApi: 'static',
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        }
+      })
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+
+<body>
+  <h2>Prebid.js Test</h2>
+  <h5>Div-1</h5>
+  <!-- <button onclick="googletag.cmd.push(function () {googletag.pubads().refresh();});">Refresh GAM</button> -->
+  <div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+      googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+  </div>
+</body>
+
+</html>

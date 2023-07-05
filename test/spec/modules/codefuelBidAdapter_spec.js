@@ -139,7 +139,8 @@ describe('Codefuel Adapter', function () {
         timeout: 500,
         auctionId: '12043683-3254-4f74-8934-f941b085579e',
         refererInfo: {
-          referer: 'https://example.com/',
+          page: 'https://example.com/',
+          domain: 'example.com'
         }
       }
 

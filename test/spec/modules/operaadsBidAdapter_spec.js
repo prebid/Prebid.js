@@ -49,7 +49,7 @@ describe('Opera Ads Bid Adapter', function () {
       bidderCode: 'myBidderCode',
       bidderRequestId: '15246a574e859f',
       refererInfo: {
-        referer: 'http://example.com',
+        page: 'http://example.com',
         stack: ['http://example.com']
       },
       gdprConsent: {
@@ -242,7 +242,7 @@ describe('Opera Ads Bid Adapter', function () {
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.site.domain).to.not.be.empty;
-        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.referer);
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
         expect(requestData.at).to.equal(1);
         expect(requestData.bcat).to.be.an('array').that.is.empty;
         expect(requestData.cur).to.be.an('array').that.not.be.empty;

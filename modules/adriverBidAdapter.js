@@ -1,6 +1,6 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
 import { logInfo, getWindowLocation, getBidIdParameter, _each } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adriver';
@@ -22,8 +22,6 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    logInfo('validBidRequests', validBidRequests);
-
     let win = getWindowLocation();
     let customID = Math.round(Math.random() * 999999999) + '-' + Math.round(new Date() / 1000) + '-1-46-';
     let siteId = getBidIdParameter('siteid', validBidRequests[0].params) + '';
@@ -32,7 +30,7 @@ export const spec = {
 
     let timeout = null;
     if (bidderRequest) {
-      timeout = bidderRequest.timeout
+      timeout = bidderRequest.timeout;
     }
 
     const payload = {
@@ -99,21 +97,16 @@ export const spec = {
       });
     });
 
-    let userid = validBidRequests[0].userId;
-    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId.adrcid;
-
+    let adrcidCookie = storage.getDataFromLocalStorage('adrcid') || validBidRequests[0].userId?.adrcid;
     if (adrcidCookie) {
-      payload.adrcid = adrcidCookie;
-      payload.id5 = userid.id5id;
-      payload.sharedid = userid.pubcid;
-      payload.unifiedid = userid.tdid;
+      payload.user.buyerid = adrcidCookie;
     }
     const payloadString = JSON.stringify(payload);
 
     return {
       method: 'POST',
       url: ADRIVER_BID_URL,
-      data: payloadString,
+      data: payloadString
     };
   },
 

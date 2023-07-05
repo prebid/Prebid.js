@@ -4,10 +4,9 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 
-const storage = getStorageManager();
-
 const BIDDER_CODE = 'gnet';
 const ENDPOINT = 'https://service.gnetrtb.com/api';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -31,7 +30,8 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const bidRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'page' the right value?
+    const referer = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = {};

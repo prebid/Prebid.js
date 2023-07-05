@@ -2,11 +2,15 @@ import { _each, parseSizesInput, isStr, isArray } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
+const URL_SAFE_FIELDS = {
+  schain: true,
+  slaves: true
+};
 
 function buildEndpointUrl(emiter, payloadMap) {
   const payload = [];
   _each(payloadMap, function(v, k) {
-    payload.push(k + '=' + (k === 'schain' ? v : encodeURIComponent(v)));
+    payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
   const randomizedPart = Math.random().toString().slice(2);
@@ -17,7 +21,8 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
   let emiter;
   const payload = {
     id: masterId,
-    aosspsizes: []
+    aosspsizes: [],
+    slaves: []
   };
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
@@ -29,7 +34,7 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
   }
 
   const bidIdMap = {};
-
+  const uniquePartLength = 10;
   _each(masterBidRequests, function(bid, slaveId) {
     if (!emiter) {
       emiter = bid.params.emiter;
@@ -38,11 +43,13 @@ function buildRequest(masterBidRequests, masterId, gdprConsent) {
     const slaveSizes = parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
     const rawSlaveId = bid.params.slaveId.replace('adocean', '');
     payload.aosspsizes.push(rawSlaveId + '~' + slaveSizes);
+    payload.slaves.push(rawSlaveId.slice(-uniquePartLength));
 
     bidIdMap[slaveId] = bid.bidId;
   });
 
   payload.aosspsizes = payload.aosspsizes.join('-');
+  payload.slaves = payload.slaves.join(',');
 
   return {
     method: 'GET',

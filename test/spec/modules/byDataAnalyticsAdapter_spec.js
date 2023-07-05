@@ -9,18 +9,19 @@ const initOptions = {
   logFrequency: 1,
 };
 let userData = {
-  userId: '5da77-ec87-277b-8e7a5',
-  client_id: 'asc00000',
-  plateform_name: 'Macintosh',
-  os_version: 10.157,
-  browser_name: 'Chrome',
-  browser_version: 92.04515107,
-  screen_size: {
-    width: 1440,
-    height: 900
+  'uid': '271a8-2b86-f4a4-f59bc',
+  'cid': 'asc00000',
+  'pid': 'www.letsrun.com',
+  'os': 'Macintosh',
+  'osv': 10.157,
+  'br': 'Chrome',
+  'brv': 103,
+  'ss': {
+    'width': 1792,
+    'height': 1120
   },
-  device_type: 'Desktop',
-  time_zone: 'Asia/Calcutta'
+  'de': 'Desktop',
+  'tz': 'Asia/Calcutta'
 };
 let bidTimeoutArgs = [{
   auctionId,
@@ -39,6 +40,18 @@ let noBidArgs = {
   src: 'client',
   transactionId: 'c8ee3914-1ee0-4ce6-9126-748d5692188c'
 }
+let bidWonArgs = {
+  auctionId,
+  adUnitCode: 'div-gpt-ad-mrec1',
+  size: '300x250',
+  requestId: '15c86b6c10d3746',
+  bidder: 'appnexus',
+  timeToRespond: 114,
+  currency: 'USD',
+  mediaType: 'display',
+  cpm: 0.50
+}
+
 let auctionEndArgs = {
   adUnitCodes: ['div-gpt-ad-mrec1'],
   adUnits: [{
@@ -74,21 +87,54 @@ let auctionEndArgs = {
   }]
 }
 let expectedDataArgs = {
-  visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI1ZGE3Ny1lYzg3LTI3N2ItOGU3YTUiLCJjbGllbnRfaWQiOiJhc2MwMDAwMCIsInBsYXRlZm9ybV9uYW1lIjoiTWFjaW50b3NoIiwib3NfdmVyc2lvbiI6MTAuMTU3LCJicm93c2VyX25hbWUiOiJDaHJvbWUiLCJicm93c2VyX3ZlcnNpb24iOjkyLjA0NTE1MTA3LCJzY3JlZW5fc2l6ZSI6eyJ3aWR0aCI6MTQ0MCwiaGVpZ2h0Ijo5MDB9LCJkZXZpY2VfdHlwZSI6IkRlc2t0b3AiLCJ0aW1lX3pvbmUiOiJBc2lhL0NhbGN1dHRhIn0.jNKjsb3Q-ZjkVMcbss_dQFOmu_GdkGqd7t9MbRmqlG4YEMorcJHhUVmUuPi-9pKvC9_t4XlgjED90UieCvdxCQ',
-  auction_id: auctionId,
-  auction_start: 1627973484504,
+  visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
+  aid: auctionId,
+  as: 1627973484504,
   auctionData: [ {
-    'adUnit': 'div-gpt-ad-mrec1',
-    'size': '300x250',
-    'media_type': 'display',
-    'bids_bidder': 'appnexus',
-    'bids_bid_id': '14480e9832f2d2b'
+    au: 'div-gpt-ad-mrec1',
+    auc: 'div-gpt-ad-mrec1',
+    aus: '300x250',
+    bidadv: 'appnexus',
+    bid: '14480e9832f2d2b',
+    inb: 0,
+    ito: 0,
+    ipwb: 0,
+    iwb: 0,
+    mt: 'display',
   }, {
-    'adUnit': 'div-gpt-ad-mrec1',
-    'size': '250x250',
-    'media_type': 'display',
-    'bids_bidder': 'appnexus',
-    'bids_bid_id': '14480e9832f2d2b'
+    au: 'div-gpt-ad-mrec1',
+    auc: 'div-gpt-ad-mrec1',
+    aus: '250x250',
+    bidadv: 'appnexus',
+    bid: '14480e9832f2d2b',
+    inb: 0,
+    ito: 0,
+    ipwb: 0,
+    iwb: 0,
+    mt: 'display',
+  }]
+}
+let expectedBidWonArgs = {
+  visitor_data: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIyNzFhOC0yYjg2LWY0YTQtZjU5YmMiLCJjaWQiOiJhc2MwMDAwMCIsInBpZCI6Ind3dy5sZXRzcnVuLmNvbSIsIm9zIjoiTWFjaW50b3NoIiwib3N2IjoxMC4xNTcsImJyIjoiQ2hyb21lIiwiYnJ2IjoxMDMsInNzIjp7IndpZHRoIjoxNzkyLCJoZWlnaHQiOjExMjB9LCJkZSI6IkRlc2t0b3AiLCJ0eiI6IkFzaWEvQ2FsY3V0dGEifQ.Oj3qnh--t06XO-foVmrMJCGqFfOBed09A-f7LZX5rtfBf4w1_RNRZ4F3on4TMPLonSa7GgzbcEfJS9G_amnleQ',
+  aid: auctionId,
+  as: '',
+  auctionData: [{
+    au: 'div-gpt-ad-mrec1',
+    auc: 'div-gpt-ad-mrec1',
+    aus: '300x250',
+    bid: '15c86b6c10d3746',
+    bidadv: 'appnexus',
+    br_pb_mg: 0.50,
+    br_tr: 114,
+    bradv: 'appnexus',
+    brid: '15c86b6c10d3746',
+    brs: '300x250',
+    cur: 'USD',
+    inb: 0,
+    ito: 0,
+    ipwb: 1,
+    iwb: 1,
+    mt: 'display',
   }]
 }
 
@@ -130,10 +176,14 @@ describe('byData Analytics Adapter ', () => {
     it('sends and formatted auction data ', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
       events.emit(constants.EVENTS.NO_BID, noBidArgs);
+      events.emit(constants.EVENTS.BID_WON, bidWonArgs)
       var userToken = ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
+      var newBwData = ascAdapter.getBidWonData(bidWonArgs);
       newAuData['visitor_data'] = userToken;
+      newBwData['visitor_data'] = userToken;
       expect(newAuData).to.deep.equal(expectedDataArgs);
+      expect(newBwData).to.deep.equal(expectedBidWonArgs);
     });
   });
 });
