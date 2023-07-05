@@ -3126,7 +3126,7 @@ describe('PubMatic adapter', function () {
           expect(data.regs.gpp_sid[0]).to.equal(5);
         });
       });
-      
+
       describe('Fledge', function() {
         it('should not send imp.ext.ae when FLEDGE is disabled, ', function () {
           let bidRequest = Object.assign([], bidRequests);
