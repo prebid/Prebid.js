@@ -354,11 +354,16 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        buildBidderRequest('https://example.com/index.html',
-          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}, uspConsent: '1YNN'}));
+        buildBidderRequest('https://example.com/index.html', {
+          gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}},
+          uspConsent: '1YNN',
+          gppConsent: {gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [2]}}
+        ));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
+      expect(bidRequest.regs.gpp).to.be.eql('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(bidRequest.regs.gpp_sid).to.be.eql([2]);
       expect(bidRequest).to.have.property('user');
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
     });
