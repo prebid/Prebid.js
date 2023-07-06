@@ -376,9 +376,9 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   const storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
   const frequencyDepth = storedObject !== null ? JSON.parse(storedObject) : {};
   let auctionId = e.auctionId;
-  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
   let auctionCache = cache.auctions[auctionId];
-  let floorData = auctionCache.floorData;
+  let floorData = auctionCache?.floorData;
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
@@ -594,11 +594,12 @@ function bidWonHandler(args) {
 }
 
 function auctionEndHandler(args) {
+
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
-  }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
+  }, (cache.auctions[args.auctionId]?.bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
 }
 
 function bidTimeoutHandler(args) {
