@@ -63,10 +63,10 @@ export function getUserAgentDetails() {
 
 export function auctionBidWonHandler(bid) {
   if (frequencyDepth) {
-	frequencyDepth = JSON.parse(storage.getDataFromLocalStorage(PREFIX + HOSTNAME)) || {};
+    frequencyDepth = JSON.parse(storage.getDataFromLocalStorage(PREFIX + HOSTNAME)) || {};
     frequencyDepth.impressionServed = frequencyDepth.impressionServed + 1;
     frequencyDepth.slotLevelFrquencyDepth[codeAdUnitMap[bid.adUnitCode]].impressionServed = frequencyDepth.slotLevelFrquencyDepth[codeAdUnitMap[bid.adUnitCode]].impressionServed + 1;
-	storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
+    storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
   }
   return frequencyDepth;
 }
@@ -84,7 +84,7 @@ export function auctionBidResponseHandler(bid) {
 export function auctionEndHandler() {
   if (frequencyDepth) {
     frequencyDepth.lip = window.owpbjs.adUnits[0]?.bids[0]?.userId && Object.keys(window.owpbjs.adUnits[0].bids[0].userId);
-	storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
+    storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
   }
   return frequencyDepth;
 }
@@ -101,40 +101,40 @@ function checkViewabilityExpiry() {
 
 export function impressionViewableHandler(slot) {
   frequencyDepth = JSON.parse(storage.getDataFromLocalStorage(PREFIX + HOSTNAME));
-  if(frequencyDepth) {
-	frequencyDepth.viewedSlot.timestamp = frequencyDepth.viewedSlot.timestamp ? frequencyDepth.viewedSlot.timestamp : new Date().toJSON().slice(0, 10);
-	frequencyDepth.viewedSlot[frequencyDepth.codeAdUnitMap[slot.getSlotId().getDomId()]] = (frequencyDepth.viewedSlot[frequencyDepth.codeAdUnitMap[slot.getSlotId().getDomId()]] || 0) + 1;
-	storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
+  if (frequencyDepth) {
+    frequencyDepth.viewedSlot.timestamp = frequencyDepth.viewedSlot.timestamp ? frequencyDepth.viewedSlot.timestamp : new Date().toJSON().slice(0, 10);
+    frequencyDepth.viewedSlot[frequencyDepth.codeAdUnitMap[slot.getSlotId().getDomId()]] = (frequencyDepth.viewedSlot[frequencyDepth.codeAdUnitMap[slot.getSlotId().getDomId()]] || 0) + 1;
+    storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
   }
 };
 
 export function auctionInitHandler (args) {
   if (frequencyDepth) {
-	storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
-	let slotCount = window.owpbjs.adUnits.length + (storedObject == null ? frequencyDepth.slotCnt : 0);
-	if (storedObject !== null) {
-	  storedDate = JSON.parse(storedObject).timestamp.date;
-	  const isStorageCleared = clearStorage(storedDate);
-	  if (isStorageCleared) {
-		frequencyDepth.viewedSlot = checkViewabilityExpiry() ? {} : JSON.parse(storedObject).viewedSlot;
-	  }
-	  frequencyDepth = isStorageCleared ? frequencyDepth : JSON.parse(storedObject);
-	  frequencyDepth.pageView = frequencyDepth.pageView + 1;
-	  frequencyDepth.slotCnt = frequencyDepth.slotCnt + slotCount;
-	} else {
-	  frequencyDepth.pageView = 1;
-	  frequencyDepth.slotCnt = slotCount;
-	}
+    storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
+    let slotCount = window.owpbjs.adUnits.length + (storedObject == null ? frequencyDepth.slotCnt : 0);
+    if (storedObject !== null) {
+      storedDate = JSON.parse(storedObject).timestamp.date;
+      const isStorageCleared = clearStorage(storedDate);
+      if (isStorageCleared) {
+        frequencyDepth.viewedSlot = checkViewabilityExpiry() ? {} : JSON.parse(storedObject).viewedSlot;
+      }
+      frequencyDepth = isStorageCleared ? frequencyDepth : JSON.parse(storedObject);
+      frequencyDepth.pageView = frequencyDepth.pageView + 1;
+      frequencyDepth.slotCnt = frequencyDepth.slotCnt + slotCount;
+    } else {
+      frequencyDepth.pageView = 1;
+      frequencyDepth.slotCnt = slotCount;
+    }
 
-	args.adUnits.forEach((adUnit) => {
-	  frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId] = {
-		slotCnt: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.slotCnt || 0) + 1,
-		bidServed: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.bidServed || 0) + 0,
-		impressionServed: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.impressionServed || 0) + 0,
-	  };
-	  codeAdUnitMap[adUnit.code] = adUnit.adUnitId;
-	})
-	frequencyDepth.codeAdUnitMap = codeAdUnitMap;
+    args.adUnits.forEach((adUnit) => {
+      frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId] = {
+        slotCnt: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.slotCnt || 0) + 1,
+        bidServed: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.bidServed || 0) + 0,
+        impressionServed: (frequencyDepth.slotLevelFrquencyDepth[adUnit.adUnitId]?.impressionServed || 0) + 0,
+      };
+      codeAdUnitMap[adUnit.code] = adUnit.adUnitId;
+    })
+    frequencyDepth.codeAdUnitMap = codeAdUnitMap;
   }
   return frequencyDepth;
 }
