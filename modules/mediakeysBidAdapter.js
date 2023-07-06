@@ -20,7 +20,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -606,10 +606,8 @@ export const spec = {
 
     const payload = createOrtbTemplate();
 
-    // Pass the auctionId as ortb2 id
-    // See https://github.com/prebid/Prebid.js/issues/6563
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
-    deepSetValue(payload, 'source.tid', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
+    deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
       let bid = deepClone(validBid);

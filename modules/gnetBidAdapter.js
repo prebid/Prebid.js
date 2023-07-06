@@ -39,7 +39,7 @@ export const spec = {
       data.referer = referer;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.transactionId;
+      data.transactionId = request.ortb2Imp?.ext?.tid;
       data.gftuid = _getCookie();
 
       data.sizes = parseSizesInput(request.sizes);

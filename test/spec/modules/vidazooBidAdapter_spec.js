@@ -38,7 +38,6 @@ const BID = {
     }
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'auctionId': 'auction_id',
@@ -50,6 +49,7 @@ const BID = {
   'mediaTypes': [BANNER],
   'ortb2Imp': {
     'ext': {
+      tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
       'gpid': '1234567890'
     }
   }
@@ -59,7 +59,11 @@ const VIDEO_BID = {
   'bidId': '2d52001cabd527',
   'adUnitCode': '63550ad1ff6642d368cba59dh5884270560',
   'bidderRequestId': '12a8ae9ada9c13',
-  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  ortb2Imp: {
+    ext: {
+      tid: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+    }
+  },
   'auctionId': 'auction_id',
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,

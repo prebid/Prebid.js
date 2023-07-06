@@ -319,7 +319,6 @@ describe('fluctAdapter', function () {
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,
@@ -376,7 +375,6 @@ describe('fluctAdapter', function () {
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,
