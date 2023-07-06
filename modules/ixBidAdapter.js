@@ -76,7 +76,8 @@ const SOURCE_RTI_MAPPING = {
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
-  'intimatemerger.com': ''
+  'intimatemerger.com': '',
+  '33across.com': ''
 };
 const PROVIDERS = [
   'britepoolid',
