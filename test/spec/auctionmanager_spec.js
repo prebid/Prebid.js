@@ -37,7 +37,7 @@ var events = require('src/events');
 const BIDDER_CODE = 'sampleBidder';
 const BIDDER_CODE1 = 'sampleBidder1';
 
-const ADUNIT_CODE = 'adUnitcode';
+const ADUNIT_CODE = 'adUnit-code';
 const ADUNIT_CODE1 = 'adUnit-code-1';
 
 /**

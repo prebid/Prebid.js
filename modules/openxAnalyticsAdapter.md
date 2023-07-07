@@ -12,13 +12,6 @@
 # About this Guide
 This implementation guide walks through the flow of onboarding an alpha Publisher to test OpenX’s new Analytics Adapter.
 
-- [OpenX Analytics Adapter to Prebid.js](#openx-analytics-adapter-to-prebidjs)
-  - [Implementation Guide](#implementation-guide)
-      - [Internal use only](#internal-use-only)
-- [NOTE: OPENX NO LONGER OFFERS ANALYTICS](#note-openx-no-longer-offers-analytics)
-- [THIS ADAPTER NO LONGER FUNCTIONS AND](#this-adapter-no-longer-functions-and)
-- [WILL BE REMOVED IN PREBID 8](#will-be-removed-in-prebid-8)
-- [About this Guide](#about-this-guide)
 - [Adding OpenX Analytics Adapter to Prebid.js](#adding-openx-analytics-adapter-to-prebidjs)
   - [Publisher Builds Prebid.js File Flow](#publisher-builds-prebidjs-file-flow)
   - [OpenX Builds Prebid.js File Flow](#openx-builds-prebidjs-file-flow)
