@@ -8,7 +8,7 @@ import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currencyfile@1/latest.json?date=$$TODAY$$';
+const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];
