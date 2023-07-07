@@ -83,7 +83,7 @@ import {config} from './config.js';
 import {userSync} from './userSync.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
-import {OUTSTREAM} from './video.js';
+import {OUTSTREAM, getVastTrackers, insertVastTrackers} from './video.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
@@ -582,7 +582,9 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
+  const [hasTrackers, vastTrackers] = getVastTrackers(bidResponse);
 
+  if (hasTrackers) { [bidResponse.vastXml, bidResponse.vastImpUrl] = insertVastTrackers(vastTrackers, bidResponse.vastXml, bidResponse.vastImpUrl); }
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;

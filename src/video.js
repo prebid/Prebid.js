@@ -21,6 +21,8 @@ export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bid
 export const hasNonVideoBidder = adUnit =>
   adUnit.bids.filter(bid => !videoBidder(bid)).length;
 
+let vastTrackers = [];
+
 /**
  * @typedef {object} VideoBid
  * @property {string} adId id of the bid
@@ -64,3 +66,49 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
 
   return true;
 }, 'checkVideoBidSetup');
+
+export function registerVASTTrackers(tracker) {
+  vastTrackers.push(tracker);
+}
+
+export function insertVastTrackers(trackers, vastXml, vastImpUrl) {
+  const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
+  const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
+  try {
+    if (wrappers.length) {
+      wrappers.forEach(wrapper => {
+        trackers['impressions'].forEach(trackingUrl => {
+          const impression = doc.createElement('Impression');
+          impression.appendChild(doc.createCDATASection(trackingUrl));
+          wrapper.appendChild(impression)
+        });
+      });
+      vastXml = new XMLSerializer().serializeToString(doc);
+    }
+  } catch (error) {
+    logError('an error happened trying to insert trackers in vastXml');
+  }
+  if (vastImpUrl && vastImpUrl.length > 0) {
+    trackers['impressions'].forEach(trackingUrl => {
+      if ((trackingUrl + encodeURI(vastImpUrl)).length < 2048) {
+        vastImpUrl = trackingUrl + encodeURI(vastImpUrl);
+      }
+    });
+  };
+  return [vastXml, vastImpUrl];
+}
+
+export function getVastTrackers(bid) {
+  let hasTrackers = false;
+  let trackers = {'impressions': []};
+  vastTrackers.forEach(func => {
+    let tmpTrackers = func(bid);
+    for (const key in tmpTrackers) {
+      if (key in trackers && Array.isArray(tmpTrackers[key])) {
+        trackers[key] = trackers[key].concat(tmpTrackers[key]);
+        hasTrackers = true
+      }
+    }
+  });
+  return [hasTrackers, trackers];
+}
