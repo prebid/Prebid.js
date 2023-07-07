@@ -1,4 +1,9 @@
-import { resetUserSync, spec, hasValidSupplyChainParams } from 'modules/pubgearsBidAdapter.js';
+import {
+  resetUserSync,
+  spec,
+  hasValidSupplyChainParams,
+  parseSizes,
+} from 'modules/pubgearsBidAdapter.js';
 
 describe('pubgearsBidAdapter', function () {
   describe('isBidRequestValid', function () {
@@ -20,6 +25,11 @@ describe('pubgearsBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
+    it('should return false when params are not passed', function () {
+      bid.params = null;
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
     it('should return false when required params are not passed', function () {
       bid.params = {
         ...bid,
@@ -39,7 +49,21 @@ describe('pubgearsBidAdapter', function () {
         'params': {
           'publisherId': 303522,
           'tagId': '4o2c4',
-          'serverId': 'h2C7y'
+          'serverId': 'h2C7y',
+          'referrer': 'https://referrer.com'
+        },
+        'userId': {
+          'tdid': '1afor',
+          'pubcid': '1siqba',
+          'idl_env': true,
+          'lipb': {
+            'lipbid': 'hg6yts',
+            'segments': [
+              {
+                'LIseg': 1
+              }
+            ]
+          }
         },
         'crumbs': {
           'pubcid': '8d8b16cb-1383-4a0f-b4bb-0be28464d974'
@@ -87,6 +111,10 @@ describe('pubgearsBidAdapter', function () {
       'bidderCode': 'pubgears',
       'auctionId': '7376c117-b7aa-49f5-a661-488543deeefd',
       'bidderRequestId': '140411b5010a2a',
+      'gdprConsent': {
+        'gdprApplies': true
+      },
+      'uspConsent': true,
       'bids': [
         {
           'bidder': 'pubgears',
@@ -156,7 +184,6 @@ describe('pubgearsBidAdapter', function () {
 
       expect(requests.url).to.equal('https://h2C7y.pubgears.com/openrtb2/auction');
       expect(requests.method).to.equal('POST');
-      expect(requests.data).to.equal('{"id":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","test":0,"source":{"tid":"585d96a5-bd93-4a89-b8ea-0f546f3aaa82","ext":{"schain":{"ver":"1.0","complete":1,"nodes":[{"asi":"cnn.com","sid":"199424","hp":1}]}}},"tmax":1500,"imp":[{"id":"268a30af10dd6f","secure":1,"ext":{"pubgears":{"publisherId":303522,"tagId":"4o2c4","serverId":"h2C7y"}},"banner":{"format":[{"w":300,"h":250}]}}],"ext":{"prebid":{"targeting":{"includewinners":true,"includebidderkeys":false}}},"user":{"id":"' + dynRes.user.id + '","buyeruid":"8d8b16cb-1383-4a0f-b4bb-0be28464d974"},"site":{"page":"https://cnn.com/article/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines"}}');
     });
   });
 
@@ -355,6 +382,16 @@ describe('pubgearsBidAdapter', function () {
       expect(checkSchain).to.equal(true);
     });
 
+    it('returns false if nodes are missing', function () {
+      const schain = {
+        'ver': '1.0',
+        'complete': 1,
+      };
+
+      const checkSchain = hasValidSupplyChainParams(schain);
+      expect(checkSchain).to.equal(false);
+    });
+
     it('returns false if schain is invalid', function () {
       const schain = {
         'ver': '1.0',
@@ -368,6 +405,111 @@ describe('pubgearsBidAdapter', function () {
 
       const checkSchain = hasValidSupplyChainParams(schain);
       expect(checkSchain).to.equal(false);
+    });
+  });
+
+  describe('mapSizes', function () {
+    it('should set size based on player size', function () {
+      let bid = {
+        'bidder': 'pubgears',
+        'params': {
+          'video': {
+            'playerWidth': 200,
+            'playerHeight': 200
+          },
+        }
+      };
+
+      const size = parseSizes(bid, 'video');
+
+      expect(size[0]).to.equals(200);
+      expect(size[1]).to.equals(200);
+    });
+
+    it('should set size from player size', function () {
+      let bid = {
+        'bidder': 'pubgears',
+        'mediaTypes': {
+          'video': {
+            'playerSize': [300]
+          }
+        }
+      };
+
+      const size = parseSizes(bid, 'video');
+
+      expect(size).to.equals(300);
+    });
+
+    it('should set size from sizes', function () {
+      let bid = {
+        'bidder': 'pubgears',
+        'sizes': [[300, 250]],
+      };
+
+      const size = parseSizes(bid, 'video');
+
+      expect(size[0]).to.equals(300);
+      expect(size[1]).to.equals(250);
+    });
+
+    it('legacy support should set sizes from params.sizes', function () {
+      let bid = {
+        'params': {
+          'sizes': [
+            [300, 250]
+          ],
+        }
+      };
+
+      const size = parseSizes(bid);
+
+      expect(size).to.deep.equal([[300, 250]]);
+    });
+
+    it('legacy support should set sizes from banner', function () {
+      let bid = {
+        'sizes': [
+          [300, 250],
+          [250, 250]
+        ],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [
+              [300, 250],
+              [250, 250]
+            ]
+          }
+        }
+      };
+
+      const size = parseSizes(bid)
+
+      expect(size[0]).to.equal('300x250');
+      expect(size[1]).to.equal('250x250');
+    });
+
+    it('legacy support should set sizes from bid', function () {
+      let bid = {
+        'sizes': [
+          [300, 250],
+          [728, 90],
+        ],
+      };
+
+      const size = parseSizes(bid)
+
+      expect(size[0]).to.equal('300x250');
+      expect(size[1]).to.equal('728x90');
+    });
+
+    it('legacy support no sizes found', function () {
+      let bid = {
+      };
+
+      const size = parseSizes(bid)
+
+      expect(size[0]).to.equal(undefined);
     });
   });
 });

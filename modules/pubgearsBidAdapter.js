@@ -235,7 +235,11 @@ export function resetUserSync() {
 }
 
 export function masSizeOrdering(sizes) {
-  const MAS_SIZE_PRIORITY = [15, 2, 9];
+  const MAS_SIZE_PRIORITY = [
+    '300x250',
+    '728x90',
+    '160x600'
+  ];
 
   return sizes.sort((first, second) => {
     // sort by MAS_SIZE_PRIORITY priority order
@@ -416,7 +420,6 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   if (bidRequest.schain && hasValidSupplyChainParams(bidRequest.schain)) {
     deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
-
   const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
   const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
 
@@ -510,24 +513,26 @@ function appendSiteAppDevice(data, bidRequest, bidderRequest) {
  * @param sizes
  * @returns {*}
  */
-function mapSizes(sizes) {
+export function mapSizes(sizes) {
   return parseSizesInput(sizes)
     // map sizes while excluding non-matches
     .reduce((result, size) => {
-      let mappedSize = parseInt(sizeMap[size], 10);
-      if (mappedSize) {
-        result.push(mappedSize);
+      const exists = Object.values(sizeMap).findIndex(s => s === size) > -1;
+
+      if (exists) {
+        result.push(size);
       }
+
       return result;
     }, []);
 }
 
-function parseSizes(bid, mediaType) {
+export function parseSizes(bid, mediaType) {
   let params = bid.params;
   if (mediaType === 'video') {
     let size = [];
 
-    if (params.video && params.video.playerWidth && params.video.playerHeight) {
+    if (params?.video && params.video.playerWidth && params.video.playerHeight) {
       size = [
         params.video.playerWidth,
         params.video.playerHeight
@@ -542,11 +547,11 @@ function parseSizes(bid, mediaType) {
 
   // Deprecated: temp legacy support
   let sizes = [];
-  if (Array.isArray(params.sizes)) {
+  if (Array.isArray(params?.sizes)) {
     sizes = params.sizes;
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
+  } else if (Array.isArray(bid?.sizes) && bid?.sizes?.length > 0) {
     sizes = mapSizes(bid.sizes);
   } else {
     logWarn('Pubgears: no sizes are setup or found');
