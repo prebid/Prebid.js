@@ -99,13 +99,16 @@ export function insertVastTrackers(trackers, vastXml, vastImpUrl) {
 }
 
 export function getVastTrackers(bid) {
+  const videoMediaType = deepAccess(auctionManager.index.getMediaTypes(bid), 'video');
+  const context = videoMediaType && deepAccess(videoMediaType, 'context');
   let hasTrackers = false;
   let trackers = {'impressions': []};
   vastTrackers.forEach(func => {
     let tmpTrackers = func(bid);
     for (const key in tmpTrackers) {
       if (key in trackers && Array.isArray(tmpTrackers[key])) {
-        trackers[key] = trackers[key].concat(tmpTrackers[key]);
+        let replaceContext = tmpTrackers[key].map(function(url) {return url.replace("$$CONTEXT$$", context);});
+        trackers[key] = trackers[key].concat(replaceContext);
         hasTrackers = true
       }
     }
