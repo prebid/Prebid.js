@@ -1,14 +1,14 @@
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
+import {logError, logInfo, logMessage, logWarn} from '../src/utils.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
-import { getHook } from '../src/hook.js';
-import { REQUEST,registerOrtbProcessor } from '../src/pbjsORTB.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { logError,logInfo,logMessage,logWarn } from '../src/utils.js';
-import { timedBidResponseHook } from '../src/utils/perfMetrics.js';
-import { defer } from '../src/utils/promise.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getHook} from '../src/hook.js';
+import {defer} from '../src/utils/promise.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
-const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
+const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currencyfile@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
 var bidResponseQueue = [];

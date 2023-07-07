@@ -23,8 +23,7 @@ This implementation guide walks through the flow of onboarding an alpha Publishe
   - [Publisher Builds Prebid.js File Flow](#publisher-builds-prebidjs-file-flow)
   - [OpenX Builds Prebid.js File Flow](#openx-builds-prebidjs-file-flow)
 - [Website Configuration](#website-configuration)
-  - [Configuration Options](#configuration-options)
-  - [| `payloadWaitTime` | `number` | No | Delay after all slots of an auction renders before the payload is sent.  Defaults to 100ms | 1000 |](#-payloadwaittime--number--no--delay-after-all-slots-of-an-auction-renders-before-the-payload-is-sent--defaults-to-100ms--1000-)
+- [Configuration Options](#configuration-options)
 - [Viewing Data](#viewing-data)
 
 ---

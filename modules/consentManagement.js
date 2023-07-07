@@ -4,14 +4,14 @@
  * and make it available for any GDPR supported adapters to read/pass this information to
  * their system.
  */
-import { gdprDataHandler } from '../src/adapterManager.js';
-import { config } from '../src/config.js';
-import { enrichFPD } from '../src/fpd/enrichment.js';
-import { REQUEST,registerOrtbProcessor } from '../src/pbjsORTB.js';
-import { includes } from '../src/polyfill.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import { deepSetValue,isNumber,isPlainObject,isStr,logError,logInfo,logWarn } from '../src/utils.js';
-import { timedAuctionHook } from '../src/utils/perfMetrics.js';
+import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
+import {includes} from '../src/polyfill.js';
+import {timedAuctionHook} from '../src/utils/perfMetrics.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -25,7 +25,6 @@ let actionTimeout;
 
 let consentData;
 let addedConsentHook = false;
-let provisionalConsent;
 
 // add new CMPs here, with their dedicated lookup function
 const cmpCallMap = {
@@ -85,8 +84,6 @@ function lookupIabConsent({onSuccess, onError, onEvent}) {
       onEvent(tcfData);
       if (tcfData.gdprApplies === false || tcfData.eventStatus === 'tcloaded' || tcfData.eventStatus === 'useractioncomplete') {
         processCmpData(tcfData, {onSuccess, onError});
-      } else {
-        provisionalConsent = tcfData;
       }
     } else {
       onError('CMP unable to register callback function.  Please check CMP setup.');

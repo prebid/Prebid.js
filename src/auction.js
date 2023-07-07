@@ -57,21 +57,6 @@
  * @property {function(): void} callBids - sends requests to all adapters for bids
  */
 
-import { Renderer } from './Renderer.js';
-import adapterManager from './adapterManager.js';
-import { auctionManager } from './auctionManager.js';
-import { bidderSettings } from './bidderSettings.js';
-import { createBid } from './bidfactory.js';
-import { config } from './config.js';
-import CONSTANTS from './constants.json';
-import { getPriceBucketString } from './cpmBucketManager.js';
-import * as events from './events.js';
-import { hook } from './hook.js';
-import { VIDEO } from './mediaTypes.js';
-import { getNativeTargeting,toLegacyResponse } from './native.js';
-import { find,includes } from './polyfill.js';
-import { getGlobal } from './prebidGlobal.js';
-import { userSync } from './userSync.js';
 import {
   _each,
   adUnitsFilter,
@@ -90,11 +75,26 @@ import {
   parseUrl,
   timestamp
 } from './utils.js';
-import { adjustCpm } from './utils/cpm.js';
-import { useMetrics } from './utils/perfMetrics.js';
-import { GreedyPromise } from './utils/promise.js';
-import { OUTSTREAM } from './video.js';
-import { getCacheUrl,store } from './videoCache.js';
+import {getPriceBucketString} from './cpmBucketManager.js';
+import {getNativeTargeting, toLegacyResponse} from './native.js';
+import {getCacheUrl, store} from './videoCache.js';
+import {Renderer} from './Renderer.js';
+import {config} from './config.js';
+import {userSync} from './userSync.js';
+import {hook} from './hook.js';
+import {find, includes} from './polyfill.js';
+import {OUTSTREAM} from './video.js';
+import {VIDEO} from './mediaTypes.js';
+import {auctionManager} from './auctionManager.js';
+import {bidderSettings} from './bidderSettings.js';
+import * as events from './events.js';
+import adapterManager from './adapterManager.js';
+import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
+import {useMetrics} from './utils/perfMetrics.js';
+import {createBid} from './bidfactory.js';
+import {adjustCpm} from './utils/cpm.js';
+import {getGlobal} from './prebidGlobal.js';
 
 const { syncUsers } = userSync;
 

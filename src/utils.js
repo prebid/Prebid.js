@@ -1,9 +1,9 @@
-import clone from 'just-clone';
 import { config } from './config.js';
+import clone from 'just-clone';
+import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
-import { find,includes } from './polyfill.js';
-import { getGlobal } from './prebidGlobal.js';
-import { GreedyPromise } from './utils/promise.js';
+import {GreedyPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { dset as deepSetValue } from 'dset';
 

@@ -126,26 +126,19 @@
  * @property {(function|undefined)} callback - function that will return an id
  */
 
-import { ACTIVITY_ENRICH_EIDS } from '../../src/activities/activities.js';
-import { activityParams } from '../../src/activities/activityParams.js';
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
-import { isActivityAllowed } from '../../src/activities/rules.js';
-import adapterManager,{ gdprDataHandler } from '../../src/adapterManager.js';
-import { getPPID as coreGetPPID } from '../../src/adserver.js';
-import { config } from '../../src/config.js';
-import { GDPR_GVLIDS } from '../../src/consentHandler.js';
-import CONSTANTS from '../../src/constants.json';
+import {find, includes} from '../../src/polyfill.js';
+import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
-import { findRootDomain } from '../../src/fpd/rootDomain.js';
-import { hook,ready as hooksReady,module } from '../../src/hook.js';
-import { REQUEST,registerOrtbProcessor } from '../../src/pbjsORTB.js';
-import { find,includes } from '../../src/polyfill.js';
-import { getGlobal } from '../../src/prebidGlobal.js';
+import {getGlobal} from '../../src/prebidGlobal.js';
+import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
+import CONSTANTS from '../../src/constants.json';
+import {hook, module, ready as hooksReady} from '../../src/hook.js';
+import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
 import {
-  STORAGE_TYPE_COOKIES,
-  STORAGE_TYPE_LOCALSTORAGE,
   getCoreStorageManager,
-  getStorageManager
+  getStorageManager,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE
 } from '../../src/storageManager.js';
 import {
   cyrb53Hash,
@@ -164,10 +157,17 @@ import {
   logInfo,
   logWarn
 } from '../../src/utils.js';
-import { hasPurpose1Consent } from '../../src/utils/gpdr.js';
-import { newMetrics,useMetrics } from '../../src/utils/perfMetrics.js';
-import { GreedyPromise,defer } from '../../src/utils/promise.js';
-import { USER_IDS_CONFIG,buildEidPermissions,createEidsArray } from './eids.js';
+import {getPPID as coreGetPPID} from '../../src/adserver.js';
+import {defer, GreedyPromise} from '../../src/utils/promise.js';
+import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
+import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
+import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
+import {findRootDomain} from '../../src/fpd/rootDomain.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
+import {activityParams} from '../../src/activities/activityParams.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;

@@ -1,5 +1,5 @@
-import { isStr,timestamp } from './utils.js';
-import { GreedyPromise,defer } from './utils/promise.js';
+import {isStr, timestamp} from './utils.js';
+import {defer, GreedyPromise} from './utils/promise.js';
 
 /**
  * Placeholder gvlid for when vendor consent is not required. When this value is used as gvlid, the gdpr

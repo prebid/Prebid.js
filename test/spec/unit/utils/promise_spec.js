@@ -1,4 +1,4 @@
-import { GreedyPromise,defer } from '../../../../src/utils/promise.js';
+import {GreedyPromise, defer} from '../../../../src/utils/promise.js';
 
 describe('GreedyPromise', () => {
   it('throws when resolver is not a function', () => {

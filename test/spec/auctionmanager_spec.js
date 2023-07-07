@@ -1,28 +1,28 @@
-import { expect } from 'chai';
-import 'modules/debugging/index.js'; // some tests look for debugging side effects
-import { registerBidder } from 'src/adapters/bidderFactory.js';
-import * as ajaxLib from 'src/ajax.js';
-import * as auctionModule from 'src/auction.js';
 import {
-  AUCTION_COMPLETED,
-  addBidResponse,
-  adjustBids,
-  auctionCallbacks,
   getKeyValueTargetingPairs,
+  auctionCallbacks,
+  AUCTION_COMPLETED,
+  adjustBids,
   getMediaTypeGranularity,
-  getPriceByGranularity
+  getPriceByGranularity,
+  addBidResponse
 } from 'src/auction.js';
+import CONSTANTS from 'src/constants.json';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';
 import { config } from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
-import { IMAGE as ortbNativeRequest } from 'src/native.js';
-import { find } from 'src/polyfill.js';
 import * as store from 'src/videoCache.js';
+import * as ajaxLib from 'src/ajax.js';
+import {find} from 'src/polyfill.js';
 import { server } from 'test/mocks/xhr.js';
-import { AuctionIndex } from '../../src/auctionIndex.js';
-import { auctionManager } from '../../src/auctionManager.js';
-import { hook } from '../../src/hook.js';
-import { deepClone } from '../../src/utils.js';
+import {hook} from '../../src/hook.js';
+import {auctionManager} from '../../src/auctionManager.js';
+import 'modules/debugging/index.js' // some tests look for debugging side effects
+import {AuctionIndex} from '../../src/auctionIndex.js';
+import {expect} from 'chai';
+import {deepClone} from '../../src/utils.js';
+import { IMAGE as ortbNativeRequest } from 'src/native.js';
 
 var assert = require('assert');
 
@@ -37,7 +37,7 @@ var events = require('src/events');
 const BIDDER_CODE = 'sampleBidder';
 const BIDDER_CODE1 = 'sampleBidder1';
 
-const ADUNIT_CODE = 'adUnit-code';
+const ADUNIT_CODE = 'adUnitcode';
 const ADUNIT_CODE1 = 'adUnit-code-1';
 
 /**

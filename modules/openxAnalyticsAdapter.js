@@ -1,8 +1,8 @@
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
 import {
   logWarn
 } from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adapterManager from '../src/adapterManager.js';
 
 let openxAdapter = Object.assign(adapter({ urlParam: '', analyticsType: 'endpoint' }));
 

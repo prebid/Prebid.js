@@ -1,7 +1,7 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { ajax } from '../src/ajax.js';
 import CONSTANTS from '../src/constants.json';
+import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
 const analyticsType = 'endpoint';

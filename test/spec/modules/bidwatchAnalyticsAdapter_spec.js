@@ -1,5 +1,5 @@
-import { expect } from 'chai';
 import bidwatchAnalytics from 'modules/bidwatchAnalyticsAdapter.js';
+import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');

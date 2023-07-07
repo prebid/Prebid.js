@@ -1,29 +1,30 @@
-import { registerBidder } from 'src/adapters/bidderFactory.js';
-import * as ajaxLib from 'src/ajax.js';
-import * as auctionModule from 'src/auction.js';
-import { resetAuctionState } from 'src/auction.js';
-import { auctionManager,newAuctionManager } from 'src/auctionManager.js';
-import { config as configObj } from 'src/config.js';
-import { find } from 'src/polyfill.js';
-import $$PREBID_GLOBAL$$,* as pbjsModule from 'src/prebid.js';
-import { _sendAdToCreative } from 'src/secureCreatives.js';
-import { filters,newTargeting,targeting } from 'src/targeting.js';
 import {
-  createBidReceived,
   getAdServerTargeting,
-  getAdUnits,
   getBidRequests,
   getBidResponses,
   getBidResponsesFromAPI,
   getTargetingKeys,
-  getTargetingKeysBidLandscape
+  getTargetingKeysBidLandscape,
+  getAdUnits,
+  createBidReceived
 } from 'test/fixtures/fixtures.js';
-import { createBid } from '../../../src/bidfactory.js';
-import { reset as resetDebugging } from '../../../src/debugging.js';
-import { enrichFPD } from '../../../src/fpd/enrichment.js';
-import { hook } from '../../../src/hook.js';
-import { mockFpdEnrichments } from '../../helpers/fpd.js';
-import { stubAuctionIndex } from '../../helpers/indexStub.js';
+import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
+import { targeting, newTargeting, filters } from 'src/targeting.js';
+import { config as configObj } from 'src/config.js';
+import * as ajaxLib from 'src/ajax.js';
+import * as auctionModule from 'src/auction.js';
+import { registerBidder } from 'src/adapters/bidderFactory.js';
+import { _sendAdToCreative } from 'src/secureCreatives.js';
+import {find} from 'src/polyfill.js';
+import * as pbjsModule from 'src/prebid.js';
+import {hook} from '../../../src/hook.js';
+import {reset as resetDebugging} from '../../../src/debugging.js';
+import $$PREBID_GLOBAL$$ from 'src/prebid.js';
+import {resetAuctionState} from 'src/auction.js';
+import {stubAuctionIndex} from '../../helpers/indexStub.js';
+import {createBid} from '../../../src/bidfactory.js';
+import {enrichFPD} from '../../../src/fpd/enrichment.js';
+import {mockFpdEnrichments} from '../../helpers/fpd.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;

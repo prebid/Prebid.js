@@ -1,16 +1,19 @@
 import {
-  consentTimeout,
-  gdprScope,
+  setConsentConfig,
   requestBidsHook,
   resetConsentData,
-  setConsentConfig,
+  userCMP,
+  consentTimeout,
+  actionTimeout,
   staticConsentData,
-  userCMP
+  gdprScope,
+  loadConsentData,
+  setActionTimeout
 } from 'modules/consentManagement.js';
 import { gdprDataHandler } from 'src/adapterManager.js';
+import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import 'src/prebid.js';
-import * as utils from 'src/utils.js';
 
 let expect = require('chai').expect;
 
