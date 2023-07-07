@@ -1,19 +1,19 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {
   deepAccess,
-  uniques,
-  isArray,
+  getWindowSelf,
   getWindowTop,
+  isArray,
   isGptPubadsDefined,
   isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
-  getWindowSelf,
   mergeDeep,
-  pick
+  pick,
+  uniques
 } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
@@ -167,7 +167,8 @@ function buildRequests(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
-    pageUrl
+    pageUrl,
+    referer
   } = _buildRequestParams(bidRequests, bidderRequest);
 
   const groupedRequests = _buildRequestGroups(ttxSettings, bidRequests);
@@ -181,7 +182,9 @@ function buildRequests(bidRequests, bidderRequest) {
         gdprConsent,
         uspConsent,
         pageUrl,
-        ttxSettings
+        referer,
+        ttxSettings,
+        bidderRequest,
       })
     )
   }
@@ -199,7 +202,9 @@ function _buildRequestParams(bidRequests, bidderRequest) {
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
-  const pageUrl = bidderRequest?.refererInfo?.page
+  const pageUrl = bidderRequest?.refererInfo?.page;
+
+  const referer = bidderRequest?.refererInfo?.ref;
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
@@ -207,7 +212,8 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
-    pageUrl
+    pageUrl,
+    referer
   }
 }
 
@@ -241,7 +247,7 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings, bidderRequest }) {
   const ttxRequest = {};
   const firstBidRequest = bidRequests[0];
   const { siteId, test } = firstBidRequest.params;
@@ -262,7 +268,11 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.site.page = pageUrl;
   }
 
-  ttxRequest.id = firstBidRequest.auctionId;
+  if (referer) {
+    ttxRequest.site.ref = referer;
+  }
+
+  ttxRequest.id = bidderRequest?.bidderRequestId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -672,7 +682,6 @@ function _createBidResponse(bid, cur) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: BIDDER_CODE,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
@@ -756,7 +765,7 @@ function _buildDeviceORTB(device = {}) {
   }
 
   if (device.sua) {
-    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
   }
 
   return deviceProps;

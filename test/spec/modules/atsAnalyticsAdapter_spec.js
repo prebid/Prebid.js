@@ -3,14 +3,14 @@ import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import {server} from '../../mocks/xhr.js';
 import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
-import {getStorageManager} from '../../../src/storageManager.js';
+import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
 import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
 let utils = require('src/utils');
 
 let events = require('src/events');
 let constants = require('src/constants.json');
 
-export const storage = getStorageManager();
+const storage = getCoreStorageManager();
 let sandbox;
 let clock;
 let now = new Date();

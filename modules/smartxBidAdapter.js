@@ -10,8 +10,10 @@ import {
 } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
+const GVLID = 115;
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -76,6 +78,7 @@ export const spec = {
       const bidfloor = getBidFloor(bid) || 0;
       const bidfloorcur = getBidIdParameter('bidfloorcur', bid.params) || 'EUR';
       const siteId = getBidIdParameter('siteId', bid.params);
+      const sitekey = getBidIdParameter('sitekey', bid.params);
       const domain = getBidIdParameter('domain', bid.params);
       const cat = getBidIdParameter('cat', bid.params) || [''];
       let pubcid = null;
@@ -189,6 +192,11 @@ export const spec = {
             }
           };
         }
+      }
+
+      // Add sitekey if available
+      if (sitekey) {
+        requestPayload.site.content.ext.sitekey = sitekey;
       }
 
       // Add common id if available

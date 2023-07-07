@@ -174,6 +174,37 @@ describe('Prebid Video', function () {
       expect(nextFn.calledOnce).to.be.true;
       expect(nextFn.getCall(0).args[0].ortb2).to.be.deep.equal({ site: { content: { test: 'contentTestValue' } } });
     });
+
+    it('allows publishers to override video param', function () {
+      const getOrtbVideoSpy = videoCoreMock.getOrtbVideo = sinon.spy(() => ({
+        test: 'videoTestValue',
+        test2: 'videoModuleValue'
+      }));
+
+      let beforeBidRequestCallback;
+      const requestBids = {
+        before: callback_ => beforeBidRequestCallback = callback_
+      };
+
+      pbVideoFactory(null, null, Object.assign({}, pbGlobalMock, { requestBids }));
+      expect(beforeBidRequestCallback).to.not.be.undefined;
+      const nextFn = sinon.spy();
+      const adUnits = [{
+        code: 'ad1',
+        mediaTypes: {
+          video: {
+            test2: 'publisherValue'
+          }
+        },
+        video: { divId: 'divId' }
+      }];
+      beforeBidRequestCallback(nextFn, { adUnits });
+      expect(getOrtbVideoSpy.calledOnce).to.be.true;
+      const adUnit = adUnits[0];
+      expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
+      expect(adUnit.mediaTypes.video).to.have.property('test2', 'publisherValue');
+      expect(nextFn.calledOnce).to.be.true;
+    });
   });
 
   describe('Ad tag injection', function () {

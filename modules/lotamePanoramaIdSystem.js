@@ -16,8 +16,9 @@ import {
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { uspDataHandler } from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const KEY_ID = 'panoramaId';
 const KEY_EXPIRY = `${KEY_ID}_expiry`;
@@ -29,8 +30,9 @@ const DAY_MS = 60 * 60 * 24 * 1000;
 const MISSING_CORE_CONSENT = 111;
 const GVLID = 95;
 const ID_HOST = 'id.crwdcntrl.net';
+const ID_HOST_COOKIELESS = 'c.ltmsphrcl.net';
 
-export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 let cookieDomain;
 
 /**
@@ -252,6 +254,13 @@ export const lotamePanoramaIdSubmodule = {
       usPrivacy = getFromStorage('us_privacy');
     }
 
+    const getRequestHost = function() {
+      if (navigator.userAgent && navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1) {
+        return ID_HOST_COOKIELESS;
+      }
+      return ID_HOST;
+    }
+
     const resolveIdFunction = function (callback) {
       let queryParams = {};
       if (storedUserId) {
@@ -288,7 +297,7 @@ export const lotamePanoramaIdSubmodule = {
 
       const url = buildUrl({
         protocol: 'https',
-        host: ID_HOST,
+        host: getRequestHost(),
         pathname: '/id',
         search: isEmpty(queryParams) ? undefined : queryParams,
       });

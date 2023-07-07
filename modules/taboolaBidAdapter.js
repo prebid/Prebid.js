@@ -3,9 +3,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
+import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -24,7 +24,7 @@ const COOKIE_KEY = 'trc_cookie_storage';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
   getUserId: () => {
     const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
 
@@ -120,10 +120,9 @@ export const spec = {
     };
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: imps,
       site,
-      pageType: ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType,
       device,
       source: {fd: 1},
       tmax: bidderRequest.timeout,
@@ -131,7 +130,10 @@ export const spec = {
       badv: ortb2.badv || bidRequest.params.badv || [],
       wlang: ortb2.wlang || bidRequest.params.wlang || [],
       user,
-      regs
+      regs,
+      ext: {
+        pageType: ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType
+      }
     };
 
     const url = [END_POINT_URL, publisherId].join('/');
@@ -212,9 +214,8 @@ function getImps(validBidRequests) {
     const {tagId, position} = bid.params;
     const imp = {
       id: id + 1,
-      banner: getBanners(bid),
-      tagid: tagId,
-      position: position
+      banner: getBanners(bid, position),
+      tagid: tagId
     }
     if (typeof bid.getFloor === 'function') {
       const floorInfo = bid.getFloor({
@@ -231,12 +232,18 @@ function getImps(validBidRequests) {
       imp.bidfloor = bidfloor;
       imp.bidfloorcur = bidfloorcur;
     }
+    imp['ext'] = {
+      gpid: deepAccess(bid, 'ortb2Imp.ext.gpid')
+    }
     return imp;
   });
 }
 
-function getBanners(bid) {
-  return getSizes(bid.sizes);
+function getBanners(bid, pos) {
+  return {
+    ...getSizes(bid.sizes),
+    pos: pos
+  }
 }
 
 function getSizes(sizes) {
@@ -271,13 +278,15 @@ function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  const {
-    price: cpm, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
+  let {
+    price: cpm, nurl, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
   let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
+
+  ad = replaceAuctionPrice(ad, cpm);
 
   return {
     requestId,
@@ -290,6 +299,7 @@ function getBid(bids, currency, bidResponse) {
     width,
     height,
     meta,
+    nurl,
     netRevenue: true
   };
 }

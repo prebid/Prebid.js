@@ -62,7 +62,6 @@ export const spec = {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: BIDDER_CODE,
           cpm: response.seatbid[0].bid[0].price,
           width: response.seatbid[0].bid[0].w,
           height: response.seatbid[0].bid[0].h,

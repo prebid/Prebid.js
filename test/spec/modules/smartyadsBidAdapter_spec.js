@@ -243,7 +243,7 @@ describe('SmartyadsAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=';
+    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=&gpp=';
     const syncOptions = {
       iframeEnabled: true
     };
