@@ -698,6 +698,95 @@ describe('Adagio bid adapter', () => {
       });
     });
 
+    describe('with GPP', function() {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      const regsGpp = 'regs_gpp_consent_string';
+      const regsApplicableSections = [2];
+
+      const ortb2Gpp = 'ortb2_gpp_consent_string';
+      const ortb2GppSid = [1];
+
+      context('When GPP in regs module', function() {
+        it('send gpp and gppSid to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+              applicableSections: regsApplicableSections,
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(regsGpp);
+          expect(requests[0].data.regs.gppSid).to.equal(regsApplicableSections);
+        });
+      });
+
+      context('When GPP partially defined in regs module', function() {
+        it('send gpp and gppSid coming from ortb2 to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+            },
+            ortb2: {
+              regs: {
+                gpp: ortb2Gpp,
+                gpp_sid: ortb2GppSid,
+              }
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
+          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
+        });
+
+        it('send empty gpp and gppSid if no ortb2 fields to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal('');
+          expect(requests[0].data.regs.gppSid).to.be.empty;
+        });
+      });
+
+      context('When GPP defined in ortb2 module', function() {
+        it('send gpp and gppSid coming from ortb2 to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            ortb2: {
+              regs: {
+                gpp: ortb2Gpp,
+                gpp_sid: ortb2GppSid,
+              }
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
+          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
+        });
+      });
+
+      context('When GPP not defined in any modules', function() {
+        it('send empty gpp and gppSid', function() {
+          const bidderRequest = new BidderRequestBuilder({}).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal('');
+          expect(requests[0].data.regs.gppSid).to.be.empty;
+        });
+      });
+    });
+
     describe('with userID modules', function() {
       const userIdAsEids = [{
         'source': 'pubcid.org',

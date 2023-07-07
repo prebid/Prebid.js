@@ -399,6 +399,17 @@ function _getUspConsent(bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
+function _getGppConsent(bidderRequest) {
+  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
+  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
+
+  if (!gpp || !gppSid) {
+    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '')
+    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', [])
+  }
+  return { gpp, gppSid }
+}
+
 function _getSchain(bidRequest) {
   return deepAccess(bidRequest, 'schain');
 }
@@ -976,6 +987,7 @@ export const spec = {
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa();
+    const gppConsent = _getGppConsent(bidderRequest)
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
     const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
@@ -1144,7 +1156,9 @@ export const spec = {
           regs: {
             gdpr: gdprConsent,
             coppa: coppa,
-            ccpa: uspConsent
+            ccpa: uspConsent,
+            gpp: gppConsent.gpp,
+            gppSid: gppConsent.gppSid
           },
           schain: schain,
           user: {
