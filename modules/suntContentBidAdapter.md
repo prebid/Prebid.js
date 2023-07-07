@@ -36,8 +36,8 @@ var adUnits = [{
     bids: [{
         bidder: 'suntContent',
         params: {
-	    	url  : "https://mockup.seeding-alliance.de/ssp-testing/native.html",
-	    	adUnitId: "2sq2o"
+	    	url  : "https://www.pubdemo.suntcontent.com/",
+	    	adUnitId: "ba4g"
         }
     }]
 }];
