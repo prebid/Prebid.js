@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec} from 'modules/codefuelBidAdapter.js';
 import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr';
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36';
@@ -9,6 +10,13 @@ const setUADefault = () => { window.navigator.__defineGetter__('userAgent', func
 const setUAMock = () => { window.navigator.__defineGetter__('userAgent', function () { return USER_AGENT }) };
 
 describe('Codefuel Adapter', function () {
+  let sandbox;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+  afterEach(() => {
+    sandbox.restore();
+  })
   describe('Bid request and response', function () {
     const commonBidRequest = {
       bidder: 'codefuel',
@@ -137,6 +145,7 @@ describe('Codefuel Adapter', function () {
 
       const commonBidderRequest = {
         timeout: 500,
+        bidderRequestId: 'mock-uuid',
         auctionId: '12043683-3254-4f74-8934-f941b085579e',
         refererInfo: {
           page: 'https://example.com/',
@@ -157,7 +166,7 @@ describe('Codefuel Adapter', function () {
             devicetype: 2,
             ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/92.0.4515.159 Safari/537.36'
           },
-          id: '12043683-3254-4f74-8934-f941b085579e',
+          id: 'mock-uuid',
           imp: [
             {
               banner: {

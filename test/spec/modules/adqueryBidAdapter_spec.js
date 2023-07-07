@@ -80,7 +80,11 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    let req;
+    beforeEach(() => {
+      req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    })
+
     let rdata
 
     it('should return request object', function () {
@@ -118,6 +122,15 @@ describe('adqueryBidAdapter', function () {
 
     it('should include sizes', function () {
       expect(rdata.sizes).not.be.null
+    })
+
+    it('should include version', function () {
+      expect(rdata.v).not.be.null
+      expect(rdata.v).equal('$prebid.version$')
+    })
+
+    it('should include referrer', function () {
+      expect(rdata.bidPageUrl).not.be.null
     })
   })
 

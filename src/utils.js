@@ -1,8 +1,10 @@
-import { config } from './config.js';
+import {config} from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
+
 export { default as deepAccess } from 'dlv/index.js';
 export { dset as deepSetValue } from 'dset';
 
@@ -20,6 +22,8 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+
+const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -707,10 +711,10 @@ export function getKeyByValue(obj, value) {
   }
 }
 
-export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
+export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -904,7 +908,7 @@ export function isValidMediaTypes(mediaTypes) {
     return false;
   }
 
-  if (mediaTypes.video && mediaTypes.video.context) {
+  if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
     return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
@@ -1062,39 +1066,6 @@ export function pick(obj, properties) {
 
     return newObj;
   }, {});
-}
-
-/**
- * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
- * normally read from bidder params
- * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
- * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
- * @param {Object} keywords object of arrays representing keyvalue pairs
- * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
- */
-export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
-  let arrs = [];
-
-  _each(keywords, (v, k) => {
-    if (isArray(v)) {
-      let values = [];
-      _each(v, (val) => {
-        val = getValueString(paramName + '.' + k, val);
-        if (val || val === '') { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = getValueString(paramName + '.' + k, v);
-      if (isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
 }
 
 /**

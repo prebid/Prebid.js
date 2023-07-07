@@ -10,30 +10,65 @@ Connects to Adagio demand source to fetch bids.
 
 ## Configuration
 
+### User Sync
+
+Add the following code to enable user sync. Adagio strongly recommends enabling user syncing through iframes. This functionality improves DSP user match rates and increases the  bid rate and bid price. Be sure to call `pbjs.setConfig()` only once.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    iframeEnabled: true,
+    filterSettings: {
+      iframe: {
+        bidders: ['adagio'],
+        filter: 'include'
+      }
+    }
+  }
+});
+```
+
+### Bidder Settings
+
+The Adagio bid adapter uses browser local storage. Since Prebid.js 7.x, the access to it must be explicitly set.
+
+```js
+// https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
+pbjs.bidderSettings = {
+  adagio: {
+    storageAllowed: true
+  }
+}
+```
+
+### Params configuration
+
 Adagio require several params. These params must be set at Prebid.js BidderConfig config level or at adUnit level.
 
 Below, the list of Adagio params and where they can be set.
 
-| Param name | Global config | AdUnit config |
-| ---------- | ------------- | ------------- |
-| siteId | x |
-| organizationId * | | x
-| site * | | x
-| pagetype | x | x
-| category | x | x
-| useAdUnitCodeAsAdUnitElementId | x | x
-| useAdUnitCodeAsPlacement | x | x
-| placement | | x
-| adUnitElementId | | x
-| debug | | x
-| video | | x
-| native | | x
+| Param name                     | Global config | AdUnit config |
+| ------------------------------ | ------------- | ------------- |
+| siteId                         | x             |               |
+| organizationId *               |               | x             |
+| site *                         |               | x             |
+| pagetype                       | x             | x             |
+| category                       | x             | x             |
+| useAdUnitCodeAsAdUnitElementId | x             | x             |
+| useAdUnitCodeAsPlacement       | x             | x             |
+| placement                      |               | x             |
+| adUnitElementId                |               | x             |
+| debug                          |               | x             |
+| video                          |               | x             |
+| native                         |               | x             |
+| splitKeyword                   |               | x             |
+| dataLayer                      |               | x             |
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 
-### Global configuration
+#### Global Adagio configuration
 
-The global configuration is used to store params once instead of duplicate them to each adUnit. The values will be used as "params" in the ad-request.
+The global Adagio configuration is used to store params once instead of duplicate them to each adUnit. The values will be used as "params" in the ad-request. Be sure to call `pbjs.setConfig()` only once.
 
 ```javascript
 pbjs.setConfig({
@@ -52,20 +87,11 @@ pbjs.setConfig({
     category: 'sport', // Recommended. Category of the content displayed in the page.
     useAdUnitCodeAsAdUnitElementId: false, // Optional. Use it by-pass adUnitElementId and use the adUnit code as value
     useAdUnitCodeAsPlacement: false, // Optional. Use it to by-pass placement and use the adUnit code as value
-  },
+  }
 });
 ```
 
-#### Note on FPD support
-
-Adagio will use FPD data as fallback for the params below:
-- pagetype
-- category
-
-If the FPD value is an array, the 1st value of this array will be used.
-
-### adUnit configuration
-
+#### Ad-unit configuration
 ```javascript
 var adUnits = [
   {
@@ -81,19 +107,33 @@ var adUnits = [
           cpm: 3.00 // default to 1.00
         },
         video: {
+          api: [2, 7], // Required - Your video player must at least support the value 2 and/or 7.
+          playbackMethod: [6], // Highly recommended
           skip: 0
-          // OpenRTB 2.5 video options defined here override ones defined in mediaTypes.
+          // OpenRTB video options defined here override ones defined in mediaTypes.
         },
         native: {
           // Optional OpenRTB Native 1.2 request object. Only `context`, `plcmttype` fields are supported.
           context: 1,
           plcmttype: 2
         },
+        splitKeyword: 'splitrule-one',
+        dl: {
+          placement: '1234'
+        }
       }
     }]
   }
 ];
 ```
+
+#### Note on FPD support
+
+Adagio will use FPD data as fallback for the params below:
+- pagetype
+- category
+
+If the FPD value is an array, the 1st value of this array will be used.
 
 ## Test Parameters
 
@@ -106,6 +146,14 @@ var adUnits = [
       category: 'sport',
       useAdUnitCodeAsAdUnitElementId: false,
       useAdUnitCodeAsPlacement: false,
+    },
+    userSync: {
+      filterSettings: {
+        iframe: {
+          bidders: ['adagio'],
+          filter: 'include'
+        }
+      }
     }
   });
 

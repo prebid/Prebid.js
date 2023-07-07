@@ -1,4 +1,4 @@
-import { _each, pick, logWarn, isStr, isArray, logError } from '../src/utils.js';
+import { _each, pick, logWarn, isStr, isArray, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -110,10 +110,6 @@ function setBidStatus(bid, args) {
       bid.status = SUCCESS;
       delete bid.error; // it's possible for this to be set by a previous timeout
       break;
-    case CONSTANTS.STATUS.NO_BID:
-      bid.status = NO_BID;
-      delete bid.error;
-      break;
     default:
       bid.status = ERROR;
       bid.error = {
@@ -224,6 +220,42 @@ function getAdDomain(bidResponse) {
   }
 }
 
+function isObject(object) {
+  return typeof object === 'object' && object !== null;
+};
+
+function isEmptyObject(object) {
+  return isObject(object) && Object.keys(object).length === 0;
+};
+
+/**
+ * Prepare meta object to pass in logger call
+ * @param {*} meta
+ */
+export function getMetadata(meta) {
+  if (!meta || isEmptyObject(meta)) return;
+  const metaObj = {};
+  if (meta.networkId) metaObj.nwid = meta.networkId;
+  if (meta.advertiserId) metaObj.adid = meta.advertiserId;
+  if (meta.networkName) metaObj.nwnm = meta.networkName;
+  if (meta.primaryCatId) metaObj.pcid = meta.primaryCatId;
+  if (meta.advertiserName) metaObj.adnm = meta.advertiserName;
+  if (meta.agencyId) metaObj.agid = meta.agencyId;
+  if (meta.agencyName) metaObj.agnm = meta.agencyName;
+  if (meta.brandId) metaObj.brid = meta.brandId;
+  if (meta.brandName) metaObj.brnm = meta.brandName;
+  if (meta.dchain) metaObj.dc = meta.dchain;
+  if (meta.demandSource) metaObj.ds = meta.demandSource;
+  if (meta.secondaryCatIds) metaObj.scids = meta.secondaryCatIds;
+
+  if (isEmptyObject(metaObj)) return;
+  return metaObj;
+}
+
+function isS2SBidder(bidder) {
+  return (s2sBidders.indexOf(bidder) > -1) ? 1 : 0
+}
+
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
@@ -243,7 +275,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
-        'ss': (s2sBidders.indexOf(bid.bidder) > -1) ? 1 : 0,
+        'ss': isS2SBidder(bid.bidder),
         't': (bid.status == ERROR && bid.error.code == TIMEOUT_ERROR) ? 1 : 0,
         'wb': (highestBid && highestBid.adId === bid.adId ? 1 : 0),
         'mi': bid.bidResponse ? (bid.bidResponse.mi || undefined) : undefined,
@@ -251,11 +283,23 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
-        'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined)
+        'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined
       });
     });
     return partnerBids;
   }, [])
+}
+
+function getSizesForAdUnit(adUnit) {
+  var bid = Object.values(adUnit.bids).filter((bid) => !!bid.bidResponse && bid.bidResponse.mediaType === 'native')[0];
+  if (!!bid || (bid === undefined && adUnit.dimensions.length === 0)) {
+    return ['1x1'];
+  } else {
+    return adUnit.dimensions.map(function (e) {
+      return e[0] + 'x' + e[1];
+    })
+  }
 }
 
 function getAdUnitAdFormats(adUnit) {
@@ -265,6 +309,14 @@ function getAdUnitAdFormats(adUnit) {
 
 function getAdUnit(adUnits, adUnitId) {
   return adUnits.filter(adUnit => (adUnit.divID && adUnit.divID == adUnitId) || (adUnit.code == adUnitId))[0];
+}
+
+function getTgId() {
+  var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
+  if (testGroupId <= 15 && testGroupId >= 0) {
+    return testGroupId;
+  }
+  return 0;
 }
 
 function executeBidsLoggerCall(e, highestCpmBids) {
@@ -293,13 +345,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pid'] = '' + profileId;
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
-  outputObj['tgid'] = (function() {
-    var testGroupId = parseInt(config.getConfig('testGroupId') || 0);
-    if (testGroupId <= 15 && testGroupId >= 0) {
-      return testGroupId;
-    }
-    return 0;
-  })();
+  outputObj['tgid'] = getTgId();
 
   if (floorData) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
@@ -309,11 +355,12 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
+    // getGptSlotInfoForAdUnitCode returns gptslot corresponding to adunit provided as input.
     let slotObject = {
       'sn': adUnitId,
-      'au': origAdUnit.adUnitId || adUnitId,
+      'au': origAdUnit.adUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
-      'sz': adUnit.dimensions.map(e => e[0] + 'x' + e[1]),
+      'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
       'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
     };
@@ -346,6 +393,12 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
 
   const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
+  let auctionCache = cache.auctions[auctionId];
+  let floorData = auctionCache.floorData;
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
+  let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
+  let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
+
   let pixelURL = END_POINT_WIN_BID_LOGGER;
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
@@ -362,6 +415,17 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
+
+  pixelURL += '&plt=' + enc(getDevicePlatform());
+  pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
+    (winningBid?.bidResponse?.dimensions?.height || '0'));
+  pixelURL += '&tgid=' + enc(getTgId());
+  adv && (pixelURL += '&adv=' + enc(adv));
+  pixelURL += '&orig=' + enc(getDomainFromUrl(referrer));
+  pixelURL += '&ss=' + enc(isS2SBidder(winningBid.bidder));
+  (fskp != undefined) && (pixelURL += '&fskp=' + enc(fskp));
+  pixelURL += '&af=' + enc(winningBid.bidResponse ? (winningBid.bidResponse.mediaType || undefined) : undefined);
+
   ajax(
     pixelURL,
     null,
