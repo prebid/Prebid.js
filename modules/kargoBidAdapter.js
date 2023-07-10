@@ -95,6 +95,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     },
     imp: impressions,
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    schain: firstBidRequest.schain,
   });
 
   const reqCount = getRequestCount()
