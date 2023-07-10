@@ -16,7 +16,7 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'operaads';
 
@@ -227,7 +227,7 @@ export const spec = {
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
   // build OpenRTB request body
   const payload = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     tmax: bidderRequest.timeout,
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),

@@ -185,7 +185,6 @@ export const spec = {
 
       const bidResponse = {
         requestId: bidParam.bidId,
-        bidderCode: spec.code,
         cpm: parseFloat(mid.cpm),
         width: mid.width,
         height: mid.height,

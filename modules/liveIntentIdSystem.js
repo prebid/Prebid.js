@@ -14,6 +14,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
+const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
 const calls = {
@@ -189,15 +190,19 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2 }
+        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.bidswitch) {
-        result.bidswitch = { 'id': value.bidswitch }
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.medianet) {
-        result.medianet = { 'id': value.medianet }
+        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       return result

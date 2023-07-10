@@ -87,6 +87,11 @@ describe('the rubicon adapter', function () {
   function getBidderRequest() {
     return {
       bidderCode: 'rubicon',
+      ortb2: {
+        source: {
+          tid: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+        }
+      },
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
       bidderRequestId: '178e34bad3658f',
       bids: [
@@ -120,7 +125,11 @@ describe('the rubicon adapter', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          ortb2Imp: {
+            ext: {
+              tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            }
+          },
         }
       ],
       start: 1472239426002,
@@ -319,6 +328,11 @@ describe('the rubicon adapter', function () {
     bidderRequest = {
       bidderCode: 'rubicon',
       auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+      ortb2: {
+        source: {
+          tid: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
+        }
+      },
       bidderRequestId: '178e34bad3658f',
       bids: [
         {
@@ -351,7 +365,11 @@ describe('the rubicon adapter', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
-          transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          ortb2Imp: {
+            ext: {
+              tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            }
+          },
         }
       ],
       start: 1472239426002,
@@ -436,7 +454,7 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -626,7 +644,7 @@ describe('the rubicon adapter', function () {
             'rp_secure': /[01]/,
             'rand': '0.1',
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
             'x_imp.ext.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
@@ -807,6 +825,29 @@ describe('the rubicon adapter', function () {
           });
         });
 
+        describe('GPP Consent', function () {
+          it('should send gpp information if bidderRequest has a value for gppConsent', function () {
+            bidderRequest.gppConsent = {
+              gppString: 'consent',
+              applicableSections: 2
+            };
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+            delete bidderRequest.gppConsent;
+
+            expect(data['gpp']).to.equal('consent');
+            expect(data['gpp_sid']).to.equal('2');
+          });
+
+          it('should not send gpp information if bidderRequest does not have a value for gppConsent', function () {
+            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
+            let data = parseQuery(request.data);
+
+            expect(data['gpp']).to.equal(undefined);
+            expect(data['gpp_sid']).to.equal(undefined);
+          });
+        });
+
         describe('first party data', function () {
           it('should not have any tg_v or tg_i params if all are undefined', function () {
             let params = {
@@ -978,7 +1019,7 @@ describe('the rubicon adapter', function () {
               'rp_secure': /[01]/,
               'rand': '0.1',
               'tk_flint': INTEGRATION,
-              'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+              'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
               'p_screen_res': /\d+x\d+/,
               'tk_user_key': '12346',
               'kw': 'a,b,c',
@@ -2285,6 +2326,7 @@ describe('the rubicon adapter', function () {
 
       describe('createSlotParams', function () {
         it('should return a valid slot params object', function () {
+          const localBidderRequest = Object.assign({}, bidderRequest);
           let expectedQuery = {
             'account_id': '14062',
             'site_id': '70608',
@@ -2294,7 +2336,7 @@ describe('the rubicon adapter', function () {
             'p_pos': 'atf',
             'rp_secure': /[01]/,
             'tk_flint': INTEGRATION,
-            'x_source.tid': 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+            'x_source.tid': 'c45dd708-a418-42ec-b8a7-b70a6c6fab0a',
             'p_screen_res': /\d+x\d+/,
             'tk_user_key': '12346',
             'kw': 'a,b,c',
@@ -2307,7 +2349,7 @@ describe('the rubicon adapter', function () {
             'rf': 'localhost'
           };
 
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
 
           // test that all values above are both present and correct
           Object.keys(expectedQuery).forEach(key => {
@@ -3632,6 +3674,24 @@ describe('the rubicon adapter', function () {
         consentString: 'foo'
       }, '1NYN')).to.deep.equal({
         type: 'iframe', url: `${emilyUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      });
+    });
+
+    it('should pass gpp params when gppConsent is present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {
+        gppString: 'foo',
+        applicableSections: [2]
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2`
+      });
+    });
+
+    it('should pass multiple sid\'s when multiple are present', function () {
+      expect(spec.getUserSyncs({iframeEnabled: true}, {}, {}, undefined, {
+        gppString: 'foo',
+        applicableSections: [2, 5]
+      })).to.deep.equal({
+        type: 'iframe', url: `${emilyUrl}?gpp=foo&gpp_sid=2,5`
       });
     });
   });

@@ -4,7 +4,7 @@ Module Name: Bedigitech Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: yogesh@thebeglobal.com
+Maintainer: prebid@bedigitech.com
 
 # Description
 
@@ -23,7 +23,7 @@ About us : https://www.bedigitech.com/
                 {
                     bidder: "bedigitech",
                     params: {
-                      placementId: "1234"
+                      placementId: 309
                     }
                 }
             ]

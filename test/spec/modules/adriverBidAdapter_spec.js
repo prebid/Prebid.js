@@ -321,15 +321,6 @@ describe('adriverAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'id': '221594457-1615288400-1-46-',
       'bidid': 'D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA',

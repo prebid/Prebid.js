@@ -171,6 +171,87 @@ describe('Zeta Ssp Bid Adapter', function () {
     params: params
   }];
 
+  const zetaResponse = {
+    body: {
+      id: '12345',
+      seatbid: [
+        {
+          bid: [
+            {
+              id: 'auctionId',
+              impid: 'impId',
+              price: 0.0,
+              adm: 'adMarkup',
+              crid: 'creativeId',
+              adomain: [
+                'https://example.com'
+              ],
+              h: 250,
+              w: 300
+            }
+          ]
+        }
+      ],
+      cur: 'USD'
+    }
+  }
+
+  const responseBannerPayload = {
+    data: {
+      id: '123',
+      site: {
+        id: 'SITE_ID',
+        page: 'page.com',
+        domain: 'domain.com'
+      },
+      user: {
+        id: '45asdf9tydhrty789adfad4678rew656789',
+        buyeruid: '1234567890'
+      },
+      cur: [
+        'USD'
+      ],
+      imp: [
+        {
+          id: '1',
+          banner: {
+            h: 600,
+            w: 160
+          }
+        }
+      ],
+      at: 1
+    }
+  };
+
+  const responseVideoPayload = {
+    data: {
+      id: '123',
+      site: {
+        id: 'SITE_ID',
+        page: 'page.com',
+        domain: 'domain.com'
+      },
+      user: {
+        id: '45asdf9tydhrty789adfad4678rew656789',
+        buyeruid: '1234567890'
+      },
+      cur: [
+        'USD'
+      ],
+      imp: [
+        {
+          id: '1',
+          video: {
+            h: 600,
+            w: 160
+          }
+        }
+      ],
+      at: 1
+    }
+  };
+
   it('Test the bid validation function', function () {
     const validBid = spec.isBidRequestValid(bannerRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
@@ -224,7 +305,12 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example.com'
                 ],
                 h: 250,
-                w: 300
+                w: 300,
+                ext: {
+                  prebid: {
+                    type: 'banner'
+                  }
+                }
               },
               {
                 id: 'auctionId2',
@@ -238,7 +324,9 @@ describe('Zeta Ssp Bid Adapter', function () {
                 h: 150,
                 w: 200,
                 ext: {
-                  bidtype: 'video'
+                  prebid: {
+                    type: 'video'
+                  }
                 }
               },
               {
@@ -251,7 +339,12 @@ describe('Zeta Ssp Bid Adapter', function () {
                   'https://example3.com'
                 ],
                 h: 400,
-                w: 300
+                w: 300,
+                ext: {
+                  prebid: {
+                    type: 'video'
+                  }
+                }
               }
             ]
           }
@@ -260,7 +353,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       }
     };
 
-    const bidResponse = spec.interpretResponse(response, null);
+    const bidResponse = spec.interpretResponse(response, responseBannerPayload);
     expect(bidResponse).to.not.be.empty;
 
     const bid1 = bidResponse[0];
@@ -464,5 +557,51 @@ describe('Zeta Ssp Bid Adapter', function () {
     // format[2]
     expect(payload.imp[0].banner.format[2].w).to.eql(100);
     expect(payload.imp[0].banner.format[2].h).to.eql(150);
+  });
+
+  it('Test the response default mediaType:banner', function () {
+    const bidResponse = spec.interpretResponse(zetaResponse, responseBannerPayload);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(BANNER);
+    expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.be.undefined;
+  });
+
+  it('Test the response default mediaType:video', function () {
+    const bidResponse = spec.interpretResponse(zetaResponse, responseVideoPayload);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(VIDEO);
+    expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+  });
+
+  it('Test the response mediaType:video from ext param', function () {
+    zetaResponse.body.seatbid[0].bid[0].ext = {
+      prebid: {
+        type: 'video'
+      }
+    }
+    const bidResponse = spec.interpretResponse(zetaResponse, responseBannerPayload);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(VIDEO);
+    expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+  });
+
+  it('Test the response mediaType:banner from ext param', function () {
+    zetaResponse.body.seatbid[0].bid[0].ext = {
+      prebid: {
+        type: 'banner'
+      }
+    }
+    const bidResponse = spec.interpretResponse(zetaResponse, responseVideoPayload);
+    expect(bidResponse).to.not.be.empty;
+    expect(bidResponse.length).to.eql(1);
+    expect(bidResponse[0].mediaType).to.eql(BANNER);
+    expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].vastXml).to.be.undefined;
   });
 });

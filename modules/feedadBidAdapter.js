@@ -234,7 +234,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   });
   data.bids.forEach(bid => BID_METADATA[bid.bidId] = {
     referer: data.refererInfo.page,
-    transactionId: bid.transactionId
+    transactionId: bid.ortb2Imp?.ext?.tid,
   });
   if (bidderRequest.gdprConsent) {
     data.consentIabTcf = bidderRequest.gdprConsent.consentString;
