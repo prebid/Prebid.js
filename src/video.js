@@ -99,8 +99,6 @@ export function insertVastTrackers(trackers, vastXml, vastImpUrl) {
 }
 
 export function getVastTrackers(bid) {
-  const videoMediaType = deepAccess(auctionManager.index.getMediaTypes(bid), 'video');
-  const context = videoMediaType && deepAccess(videoMediaType, 'context');
   let hasTrackers = false;
   let trackers = {'impressions': []};
   vastTrackers.forEach(func => {
