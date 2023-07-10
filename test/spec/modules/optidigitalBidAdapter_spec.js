@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/optidigitalBidAdapter.js';
+import { spec, resetSync } from 'modules/optidigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://pbs.optidigital.com/bidder';
@@ -497,6 +497,7 @@ describe('optidigitalAdapterTests', function () {
     let test;
     beforeEach(function () {
       test = sinon.sandbox.create();
+      resetSync();
     });
     afterEach(function() {
       test.restore();
@@ -508,16 +509,22 @@ describe('optidigitalAdapterTests', function () {
       }]);
     });
 
-    it('should return appropriate URL', function() {
+    it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=0&gdpr_consent=foo`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 1 and no consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent and CCPA consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, {consentString: 'fooUsp'})).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&ccpa_consent=fooUsp`
       }]);
