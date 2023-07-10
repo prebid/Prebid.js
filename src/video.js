@@ -107,8 +107,7 @@ export function getVastTrackers(bid) {
     let tmpTrackers = func(bid);
     for (const key in tmpTrackers) {
       if (key in trackers && Array.isArray(tmpTrackers[key])) {
-        let replaceContext = tmpTrackers[key].map(function(url) { return url.replace('$$CONTEXT$$', context); });
-        trackers[key] = trackers[key].concat(replaceContext);
+        trackers[key] = trackers[key].concat(tmpTrackers[key]);
         hasTrackers = true
       }
     }
