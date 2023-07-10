@@ -200,7 +200,7 @@ export const spec = {
     const refererInfo = bidderRequest.refererInfo;
 
     const commonPayload = {
-      id: bidderRequest.auctionId,
+      id: utils.generateUUID(),
       ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
