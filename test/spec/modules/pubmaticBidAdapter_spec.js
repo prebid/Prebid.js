@@ -79,7 +79,11 @@ describe('PubMatic adapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        ortb2Imp: {
+          ext: {
+            tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+          }
+        },
         schain: schainConfig
       }
     ];
@@ -111,6 +115,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 10,
             maxbitrate: 10
           }
@@ -162,6 +167,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -382,6 +388,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -508,6 +515,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -577,6 +585,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -1120,7 +1129,12 @@ describe('PubMatic adapter', function () {
 
   		it('Request params check', function () {
         let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+          ortb2: {
+            source: {
+              tid: 'source-tid'
+            }
+          }
         });
         let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
@@ -1130,13 +1144,13 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
+        expect(data.source.tid).to.equal('source-tid'); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
   		  expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1383,12 +1397,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1594,12 +1608,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
+        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal('new-auction-id'); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1630,12 +1644,12 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1662,12 +1676,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
+        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -2692,10 +2706,10 @@ describe('PubMatic adapter', function () {
           expect(data.site.publisher.id).to.equal(multipleMediaRequests[0].params.publisherId); // publisher Id
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
-          expect(data.device.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.device.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-          expect(data.user.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.user.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.device.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
+          expect(data.device.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.user.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
+          expect(data.user.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2738,6 +2752,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[1]['video']['linearity']).to.equal(multipleMediaRequests[1].params.video['linearity']);
           expect(data.imp[1]['video']['placement']).to.equal(multipleMediaRequests[1].params.video['placement']);
+          expect(data.imp[1]['video']['plcmt']).to.equal(multipleMediaRequests[1].params.video['plcmt']);
           expect(data.imp[1]['video']['minbitrate']).to.equal(multipleMediaRequests[1].params.video['minbitrate']);
           expect(data.imp[1]['video']['maxbitrate']).to.equal(multipleMediaRequests[1].params.video['maxbitrate']);
 
@@ -3033,6 +3048,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[0]['video']['linearity']).to.equal(videoBidRequests[0].params.video['linearity']);
           expect(data.imp[0]['video']['placement']).to.equal(videoBidRequests[0].params.video['placement']);
+          expect(data.imp[0]['video']['plcmt']).to.equal(videoBidRequests[0].params.video['plcmt']);
           expect(data.imp[0]['video']['minbitrate']).to.equal(videoBidRequests[0].params.video['minbitrate']);
           expect(data.imp[0]['video']['maxbitrate']).to.equal(videoBidRequests[0].params.video['maxbitrate']);
 
@@ -3040,6 +3056,101 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
         });
       }
+
+      describe('GPP', function() {
+        it('Request params check with GPP Consent', function () {
+          let bidRequest = {
+            gppConsent: {
+              'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+              'fullGppData': {
+                'sectionId': 3,
+                'gppVersion': 1,
+                'sectionList': [
+                  5,
+                  7
+                ],
+                'applicableSections': [
+                  5
+                ],
+                'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+                'pingData': {
+                  'cmpStatus': 'loaded',
+                  'gppVersion': '1.0',
+                  'cmpDisplayStatus': 'visible',
+                  'supportedAPIs': [
+                    'tcfca',
+                    'usnat',
+                    'usca',
+                    'usva',
+                    'usco',
+                    'usut',
+                    'usct'
+                  ],
+                  'cmpId': 31
+                },
+                'eventName': 'sectionChange'
+              },
+              'applicableSections': [
+                5
+              ],
+              'apiVersion': 1
+            }
+          };
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+          expect(data.regs.gpp_sid[0]).to.equal(5);
+        });
+
+        it('Request params check without GPP Consent', function () {
+          let bidRequest = {};
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs).to.equal(undefined);
+        });
+
+        it('Request params check with GPP Consent read from ortb2', function () {
+          let bidRequest = {
+            ortb2: {
+              regs: {
+                'gpp': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+                'gpp_sid': [
+                  5
+                ]
+              }
+            }
+          };
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+          expect(data.regs.gpp_sid[0]).to.equal(5);
+        });
+      });
+
+      describe('Fledge', function() {
+        it('should not send imp.ext.ae when FLEDGE is disabled, ', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          let data = JSON.parse(req.data);
+          if (data.imp[0].ext) {
+            expect(data.imp[0].ext).to.not.have.property('ae');
+          }
+        });
+
+        it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          delete bidRequest[0].params.test;
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          let data = JSON.parse(req.data);
+          expect(data.imp[0].ext.ae).to.equal(1);
+        });
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -3949,6 +4060,55 @@ describe('PubMatic adapter', function () {
         expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
+      });
+
+      describe('GPP', function() {
+        it('should return userSync url without Gpp consent if gppConsent is undefined', () => {
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, undefined);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.gppString is undefined', () => {
+          const gppConsent = { applicableSections: ['5'] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.applicableSections is undefined', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN' };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.applicableSections is an empty array', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should concatenate gppString and applicableSections values in the returned userSync iframe url', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+          }]);
+        });
+
+        it('should concatenate gppString and applicableSections values in the returned userSync image url', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+          const result = spec.getUserSyncs({iframeEnabled: false}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+          }]);
+        });
       });
     });
 

@@ -439,7 +439,7 @@ function sendTimeoutData(auctionId, auctionTimeout) {
 function getImpression(bid) {
   const imp = {
     id: bid.bidId,
-    tid: bid.transactionId,
+    tid: bid.ortb2Imp?.ext?.tid,
     pid: bid.params.placementId,
     code: bid.adUnitCode
   };

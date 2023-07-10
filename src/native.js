@@ -557,6 +557,21 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
 }
 
 /**
+ * Greatest common divisor between two positive integers
+ * https://en.wikipedia.org/wiki/Euclidean_algorithm
+ */
+function gcd(a, b) {
+  while (a && b && a !== b) {
+    if (a > b) {
+      a = a - b;
+    } else {
+      b = b - a;
+    }
+  }
+  return a || b;
+}
+
+/**
  * This function converts an OpenRTB native request object to Prebid proprietary
  * format. The purpose of this function is to help adapters to handle the
  * transition phase where publishers may be using OpenRTB objects but the
@@ -584,12 +599,13 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.img.w && asset.img.h) {
         image.sizes = [asset.img.w, asset.img.h];
       } else if (asset.img.wmin && asset.img.hmin) {
-        image.aspect_ratios = {
+        const scale = gcd(asset.img.wmin, asset.img.hmin)
+        image.aspect_ratios = [{
           min_width: asset.img.wmin,
           min_height: asset.img.hmin,
-          ratio_width: asset.img.wmin,
-          ratio_height: asset.img.hmin
-        }
+          ratio_width: asset.img.wmin / scale,
+          ratio_height: asset.img.hmin / scale
+        }]
       }
 
       if (asset.img.type === NATIVE_IMAGE_TYPES.MAIN) {
