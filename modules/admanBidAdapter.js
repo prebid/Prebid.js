@@ -66,6 +66,7 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const content = deepAccess(bidderRequest, 'ortb2.site.content', config.getAnyConfig('ortb2.site.content'));
 
     let winTop = window;
     let location;
@@ -85,7 +86,7 @@ export const spec = {
       'secure': 1,
       'host': location.host,
       'page': location.pathname,
-      'placements': placements
+      'placements': placements,
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
@@ -94,6 +95,9 @@ export const spec = {
       }
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
+      }
+      if (content) {
+        request.content = content;
       }
     }
     const len = validBidRequests.length;
