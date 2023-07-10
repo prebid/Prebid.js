@@ -447,6 +447,7 @@ function processSubmoduleCallbacks(submodules, cb, allModules) {
  * @param {SubmoduleContainer[]} submodules
  */
 function getCombinedSubmoduleIds(submodules) {
+  console.log('DEBUG', submodules);
   if (!Array.isArray(submodules) || !submodules.length) {
     return {};
   }

@@ -205,6 +205,7 @@ export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook
  */
 function processCmpData(consentObject, {onSuccess, onError}) {
   function checkData() {
+    console.log('TRACING', consentObject);
     // if CMP does not respond with a gdprApplies boolean, use defaultGdprScope (gdprScope)
     const gdprApplies = consentObject && typeof consentObject.gdprApplies === 'boolean' ? consentObject.gdprApplies : gdprScope;
     const tcString = consentObject && consentObject.tcString;
