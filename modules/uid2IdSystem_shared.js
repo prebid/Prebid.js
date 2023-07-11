@@ -336,6 +336,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
+  // Just call CSTG calls for testing purposes!!!!!
   // if (config.paramToken) {
   //   suppliedToken = config.paramToken;
   //   _logInfo('Read token from params', suppliedToken);
