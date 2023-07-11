@@ -57,6 +57,8 @@ export const spec = {
         impObject.video = createVideoRequest(br);
       } else if (br.mediaTypes.native) {
         impObject.native = {
+          // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          // Also, `id` is not in the ORTB native spec
           id: br.transactionId,
           ver: '1.2',
           request: createNativeRequest(br)
@@ -80,7 +82,7 @@ export const spec = {
         domain: parseUrl(page).hostname,
         page: page,
       },
-      tmax: bidderRequest.timeout || config.getConfig('bidderTimeout') || 500,
+      tmax: bidderRequest.timeout,
       imp
     };
 

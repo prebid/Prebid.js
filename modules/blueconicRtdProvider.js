@@ -9,13 +9,14 @@
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'blueconic';
 
 export const RTD_LOCAL_NAME = 'bcPrebidData';
 
-export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
 /**
 * Try parsing stringified array of data.

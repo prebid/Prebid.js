@@ -218,16 +218,7 @@ describe('AudienceRun bid adapter tests', function () {
 
     it('should add userid eids information to the request', function () {
       const bid = Object.assign({}, bidRequest);
-      bid.userId = {
-        pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-        unsuported: '666',
-      }
-
-      const request = spec.buildRequests([bid]);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([
+      bid.userIdAsEids = [
         {
           source: 'pubcid.org',
           uids: [
@@ -237,7 +228,13 @@ describe('AudienceRun bid adapter tests', function () {
             },
           ],
         },
-      ]);
+      ];
+
+      const request = spec.buildRequests([bid]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.userId).to.exist;
+      expect(payload.userId).to.deep.equal(bid.userIdAsEids);
     });
 
     it('should add schain object if available', function() {

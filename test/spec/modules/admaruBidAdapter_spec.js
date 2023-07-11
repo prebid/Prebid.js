@@ -121,4 +121,52 @@ describe('Admaru Adapter', function () {
       expect(result.length).to.equal(0);
     });
   });
+
+  describe('getUserSyncs()', () => {
+    it('should return iframe user sync if iframe sync is enabled', () => {
+      const syncs = spec.getUserSyncs(
+        {
+          pixelEnabled: true,
+          iframeEnabled: true,
+        },
+        null
+      );
+
+      expect(syncs).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://p2.admaru.net/UserSync/sync',
+        },
+      ]);
+    });
+
+    it('should return image syncs if they are enabled and iframe is disabled', () => {
+      const syncs = spec.getUserSyncs(
+        {
+          pixelEnabled: true,
+          iframeEnabled: false,
+        },
+        null
+      );
+
+      expect(syncs).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://p2.admaru.net/UserSync/sync',
+        },
+      ]);
+    });
+
+    it('should not return user syncs if syncs are disabled', () => {
+      const syncs = spec.getUserSyncs(
+        {
+          pixelEnabled: false,
+          iframeEnabled: false,
+        },
+        null
+      );
+
+      expect(syncs).to.deep.equal([]);
+    });
+  });
 });
