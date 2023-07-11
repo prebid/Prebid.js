@@ -84,7 +84,7 @@ export const spec = {
       }
     }
 
-    const ortb2Params = bidderRequest?.ortb2 || {};
+    const ortb2Params = config.getConfig('ortb2');
     ['site', 'user', 'device', 'bcat', 'badv'].forEach(entry => {
       const ortb2Param = ortb2Params[entry];
       if (ortb2Param) {
