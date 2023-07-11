@@ -34,7 +34,7 @@ const fireStatHatLogger = (statKeyName) => {
 
 export const setAndStringifyToLocalStorage = (key, object) => {
   try {
-	storage.setDataInLocalStorage(key, JSON.stringify(object));
+    storage.setDataInLocalStorage(key, JSON.stringify(object));
   } catch (e) {
     // send error to stathat endpoint
     fireStatHatLogger(`${e} --- ${window.location.href}`);
@@ -306,20 +306,20 @@ export let init = (setGptCb, setTargetingCb) => {
     if (globalConfig[MODULE_NAME][ENABLED] !== true) {
       return;
     }
-	storage.getDataFromLocalStorage('viewability-data', val => {
-		vsgObj = JSON.parse(val);
-		initConfigDefaults(globalConfig);
-		setGptCb();
+    storage.getDataFromLocalStorage('viewability-data', val => {
+      vsgObj = JSON.parse(val);
+      initConfigDefaults(globalConfig);
+      setGptCb();
 
-		if (
+      if (
 			globalConfig.viewabilityScoreGeneration?.targeting?.enabled &&
 			(globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)
-		) {
-			setTargetingCb(globalConfig);
-		}
+      ) {
+        setTargetingCb(globalConfig);
+      }
 
-		adapterManager.makeBidRequests.after(makeBidRequestsHook);
-	});
+      adapterManager.makeBidRequests.after(makeBidRequestsHook);
+    });
   });
 }
 
