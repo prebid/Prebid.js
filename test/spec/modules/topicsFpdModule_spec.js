@@ -5,14 +5,14 @@ import {
   loadTopicsForBidders,
   processFpd,
   receiveMessage,
-  topicStorageName,
-  reset
+  reset,
+  topicStorageName
 } from '../../../modules/topicsFpdModule.js';
 import {deepClone, safeJSONParse} from '../../../src/utils.js';
 import {getCoreStorageManager} from 'src/storageManager.js';
-import {config} from 'src/config.js'
+import {config} from 'src/config.js';
 import * as activities from '../../../src/activities/rules.js';
-import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
+import {ACTIVITY_ENRICH_UFPD} from '../../../src/activities/activities.js';
 
 describe('topics', () => {
   beforeEach(() => {
@@ -369,11 +369,9 @@ describe('topics', () => {
         assert.deepEqual(getCachedTopics(), expected);
       });
 
-      it('should NOT return segments for bidder if transmitUfpd is NOT allowed', () => {
+      it('should NOT return segments for bidder if enrichUfpd is NOT allowed', () => {
         sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
-          if (activity === ACTIVITY_TRANSMIT_UFPD && params.component === 'bidder.pubmatic') {
-            return false;
-          }
+          return !(activity === ACTIVITY_ENRICH_UFPD && params.component === 'bidder.pubmatic');
         });
         expect(getCachedTopics()).to.eql([]);
       });

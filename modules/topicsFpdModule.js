@@ -6,7 +6,7 @@ import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {isActivityAllowed} from '../src/activities/rules.js';
-import {ACTIVITY_TRANSMIT_UFPD} from '../src/activities/activities.js';
+import {ACTIVITY_ENRICH_UFPD} from '../src/activities/activities.js';
 import {activityParams} from '../src/activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../src/activities/modules.js';
 
@@ -140,7 +140,7 @@ export function getCachedTopics() {
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
     let bidderConfigObj = bidderList.find(({bidder}) => cachedBidder === bidder)
-    if (bidderConfigObj && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, cachedBidder))) {
+    if (bidderConfigObj && isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_BIDDER, cachedBidder))) {
       if (!isCachedDataExpired(value[lastUpdated], bidderConfigObj?.expiry || DEFAULT_EXPIRATION_DAYS)) {
         Object.keys(value).forEach((segData) => {
           segData !== lastUpdated && cachedTopicData.push(value[segData]);
