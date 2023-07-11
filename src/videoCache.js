@@ -12,6 +12,7 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
+import {getVastTrackers} from './video.js';
 
 /**
  * Might be useful to be configurable in the future
@@ -42,17 +43,22 @@ const ttlBufferInSeconds = 15;
  * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri, impUrl) {
+function wrapURI(uri, impUrl, arrayVastTrackers) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
-  let vastImp = (impUrl) ? `<![CDATA[${impUrl}]]>` : ``;
+  let impressions = (impUrl) ? `<Impression><![CDATA[${impUrl}]]></Impression>` : ``;
+  if (Array.isArray(arrayVastTrackers) && arrayVastTrackers.length == 2 && arrayVastTrackers[1].hasOwnProperty('impressions')) {
+    arrayVastTrackers[1]['impressions'].forEach(trackingImp => {
+      impressions += `<Impression><![CDATA[${trackingImp}]]></Impression>`;
+    });
+  }
   return `<VAST version="3.0">
     <Ad>
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[${uri}]]></VASTAdTagURI>
-        <Impression>${vastImp}</Impression>
+        ${impressions}
         <Creatives></Creatives>
       </Wrapper>
     </Ad>
@@ -67,7 +73,7 @@ function wrapURI(uri, impUrl) {
  * @param index
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl, getVastTrackers(bid));
   const auction = index.getAuction(bid);
   const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
   let payload = {
