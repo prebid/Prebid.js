@@ -269,7 +269,8 @@ describe('Adagio bid adapter', () => {
       'prebidVersion',
       'featuresVersion',
       'data',
-      'usIfr'
+      'usIfr',
+      'adgjs',
     ];
 
     it('groups requests by organizationId', function() {
