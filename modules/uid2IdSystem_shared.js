@@ -222,87 +222,8 @@ function _arrayBufferToBase64(buffer) {
   return window.btoa(binary);
 }
 
-function exportPublicKey() {
-  let resolvePromise;
-  let rejectPromise;
-  const promise = new Promise((resolve, reject) => {
-    resolvePromise = resolve;
-    rejectPromise = reject;
-  });
-
-  var result = window.crypto.subtle.deriveKey(
-    {
-      name: 'ECDH',
-      public: publicKey,
-    },
-    privateKey,
-    {
-      name: 'AES-GCM',
-      length: 256,
-    },
-    false,
-    ['encrypt', 'decrypt']
-  );
-  resolvePromise(result);
-  return promise;
-}
-
-function encryptEmail(email, sharedKey) {
-  let resolvePromise;
-  let rejectPromise;
-  const promise = new Promise((resolve, reject) => {
-    resolvePromise = resolve;
-    rejectPromise = reject;
-  });
-
-  let result = window.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv },
-    sharedKey,
-    str2ab(email));
-
-  resolvePromise(result);
-  return promise;
-}
-
-function callCstgAndStore(baseUrl, cstgBody, sharedKey, clientId, storageManager, _logInfo, _logWarn) {
-  _logInfo('UID2 base url provided: ', baseUrl);
-  const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
-  return client.callCstgApi(cstgBody).then((base64ResponseBody) => {
-    _logInfo('Refresh endpoint responded with:', base64ResponseBody);
-
-    // got the CSTG endpoint response decrypting:
-    const encryptedResponseBody = window.atob(base64ResponseBody);
-    console.log('Decrypting response...');
-    const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
-    console.log(responseBodyArrayBuffer);
-
-    const decryptedResponseBody = window.crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12) },
-      sharedKey,
-      responseBodyArrayBuffer.slice(12),
-    ).then((result) => { return result });
-
-    const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
-    console.log('response: %s', decryptedResponseBodyText);
-
-    const tokens = {
-      originalToken: 'TODO XXXXXXX',
-      latestToken: decryptedResponseBodyText.identity,
-    };
-    storageManager.storeValue(tokens);
-    return tokens;
-  });
-}
-
 function generateClientKeyPair() {
-  let resolvePromise;
-  let rejectPromise;
-  const promise = new Promise((resolve, reject) => {
-    resolvePromise = resolve;
-    rejectPromise = reject;
-  });
-
-  const clientKeyPair = window.crypto.subtle.generateKey(
+  return window.crypto.subtle.generateKey(
     {
       name: 'ECDH',
       namedCurve: 'P-256',
@@ -310,18 +231,9 @@ function generateClientKeyPair() {
     false,
     ['deriveKey']
   );
-
-  clientKeyPair.then(resolvePromise(result));
-  return promise;
 }
 
-function deriveSecretKey(privateKey, serverPublicKey) {
-  let resolvePromise;
-  let rejectPromise;
-  const promise = new Promise((resolve, reject) => {
-    resolvePromise = resolve;
-    rejectPromise = reject;
-  });
+function deriveSecretKey(privateKey, publicKey) {
   return window.crypto.subtle.deriveKey(
     {
       name: 'ECDH',
@@ -334,60 +246,87 @@ function deriveSecretKey(privateKey, serverPublicKey) {
     },
     false,
     ['encrypt', 'decrypt']
-  ).then((cryptoResult) => { resolvePromise( cryptoResult.publicKey)});
+  );
 }
 
-// function cstg(config, prebidStorageManager, _logInfo, _logWarn) {
-//   const preferLocalStorage = (config.storage !== 'cookie');
-//   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
-//
-//   _logInfo('Getting public key...');
-//   const serverPublicKey = 'PUBLICKEY..................';
-//   _logInfo('Generating client key pair...');
-//   const clientKeyPair = generateClientKeyPair()
-//     .then((result) => { return deriveSecretKey(
-//       result,
-//       serverPublicKey
-//     ) })
-//     .then(());
-//
-//   _logInfo('Deriving secret key...');
-//   const sharedKey = deriveSecretKey(
-//     clientKeyPair.privateKey,
-//     serverPublicKey
-//   ).then((result) => { return result });
-//
-//   _logInfo('Exporting public key...');
-//   const exportedPublicKey = exportPublicKey(clientKeyPair.publicKey).then((result) => { return result });
-//
-//   // iv will be needed for decryption
-//   const iv = window.crypto.getRandomValues(new Uint8Array(12));
-//
-//   _logInfo('Encrypting email...');
-//
-//   const encryptedEmail = encryptEmail('test@example.com', sharedKey).then((result) => { return result });
-//
-//   const body = {
-//     email: _arrayBufferToBase64(encryptedEmail),
-//     publicKey: _arrayBufferToBase64(exportedPublicKey),
-//     iv: _arrayBufferToBase64(iv),
-//   };
-//
-//   _logInfo('Generating CSTG token...');
-//   const encryptedResponse = callCstgAndStore(config.apiBaseUrl, JSON.stringify(body), sharedKey, config.clientId, storageManager, _logInfo, _logWarn)
-//     .then((result) => {
-//       return result
-//     });
-//   _logInfo('Token is expired but can be refreshed, attempting refresh.');
-//   return {
-//     callback: (cb) => {
-//       encryptedResponse.then((result) => {
-//         _logInfo('CSTG reponded, passing the updated token on.', result);
-//         cb(result);
-//       });
-//     }
-//   };
-// }
+function exportPublicKey(clientKeyPair) {
+  return window.crypto.subtle.exportKey('spki', clientKeyPair.publicKey);
+}
+
+function encryptEmail(email, sharedKey) {
+  return window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    sharedKey,
+    str2ab(email));
+}
+
+function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
+  const preferLocalStorage = (config.storage !== 'cookie');
+  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
+  const serverPublicKey = 'PUBLICKEY..................';
+  const testEmail = 'test@example.com';
+
+  let clientKeyPair;
+  let iv;
+  let sharedKey;
+  let exportedPublicKey;
+  let encryptedEmail;
+  _logInfo('Generating client key pair...');
+  return generateClientKeyPair()
+    .then((clientKeyPairResult) => {
+      clientKeyPair = clientKeyPairResult;
+      _logInfo('Deriving secret key...');
+      return deriveSecretKey(clientKeyPairResult.privateKey, serverPublicKey);
+    })
+    .then((sharedKeyResult) => {
+      sharedKey = sharedKeyResult;
+      _logInfo('Exporting public key...');
+      return exportPublicKey(clientKeyPair);
+    })
+    .then((exportedPublicKeyResult) => {
+      exportedPublicKey = exportedPublicKeyResult;
+      // iv will be needed for decryption
+      iv = window.crypto.getRandomValues(new Uint8Array(12));
+      _logInfo('Encrypting email...');
+      return encryptEmail(testEmail, sharedKey);
+    })
+    .then((encryptedEmailResult) => {
+      encryptedEmail = encryptedEmailResult;
+      const cstgBody = {
+        email: _arrayBufferToBase64(encryptedEmail),
+        publicKey: _arrayBufferToBase64(exportedPublicKey),
+        iv: _arrayBufferToBase64(iv),
+      };
+      _logInfo('Generating CSTG token...');
+      const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);
+      return client.callCstgApi(cstgBody);
+    })
+    .then((base64ResponseBody) => {
+      _logInfo('CSTG endpoint responded with:', base64ResponseBody);
+
+      // got the CSTG endpoint response decrypting:
+      const encryptedResponseBody = window.atob(base64ResponseBody);
+      const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
+      _logInfo('Decrypting response', responseBodyArrayBuffer);
+
+      return window.crypto.subtle.decrypt(
+        {name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12)},
+        sharedKey,
+        responseBodyArrayBuffer.slice(12),
+      );
+    })
+    .then((decryptedResponseBody) => {
+      const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
+      _logInfo('response:', decryptedResponseBodyText);
+      const result = JSON.parse(decryptedResponseBodyText);
+      const tokens = {
+        originalToken: 'TODO XXXXXXX',
+        latestToken: result.identity,
+      };
+      storageManager.storeValue(tokens);
+      return tokens;
+    });
+}
 
 // ------------------------------------------------------ CSTG END ------------------------------------------------------
 
@@ -397,58 +336,63 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
-  if (config.paramToken) {
-    suppliedToken = config.paramToken;
-    _logInfo('Read token from params', suppliedToken);
-  } else if (config.serverCookieName) {
-    suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
-    _logInfo('Read token from server-supplied cookie', suppliedToken);
-  }
+  // if (config.paramToken) {
+  //   suppliedToken = config.paramToken;
+  //   _logInfo('Read token from params', suppliedToken);
+  // } else if (config.serverCookieName) {
+  //   suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
+  //   _logInfo('Read token from server-supplied cookie', suppliedToken);
+  // }
+  // let storedTokens = storageManager.getStoredValueWithFallback();
+  // _logInfo('Loaded module-stored tokens:', storedTokens);
+  //
+  // if (storedTokens && typeof storedTokens === 'string') {
+  //   // Stored value is a plain token - if no token is supplied, just use the stored value.
+  //
+  //   if (!suppliedToken) {
+  //     _logInfo('Returning legacy cookie value.');
+  //     return { id: storedTokens };
+  //   }
+  //   // Otherwise, ignore the legacy value - it should get over-written later anyway.
+  //   _logInfo('Discarding superseded legacy cookie.');
+  //   storedTokens = null;
+  // }
+  //
+  // if (suppliedToken && storedTokens) {
+  //   if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
+  //     _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+  //     // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
+  //     storedTokens = null;
+  //   }
+  // }
+  // // At this point, any legacy values or superseded stored tokens have been nulled out.
+  // const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
+  // const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
+  // _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  // if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
+  //   _logInfo('Newest available token is expired and not refreshable.');
+  //   return { id: null };
+  // }
+  // if (Date.now() > newestAvailableToken.identity_expires) {
+  //   const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  //   _logInfo('Token is expired but can be refreshed, attempting refresh.');
+  //   return { callback: (cb) => {
+  //     promise.then((result) => {
+  //       _logInfo('Refresh reponded, passing the updated token on.', result);
+  //       cb(result);
+  //     });
+  //   } };
+  // }
+  // // If should refresh (but don't need to), refresh in the background.
+  // if (Date.now() > newestAvailableToken.refresh_from) {
+  //   _logInfo(`Refreshing token in background with low priority.`);
+  //   refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  // }
+
+  _logInfo(`Refreshing token in background with low priority.`);
+  cstgAndStore(config, storageManager, _logInfo, _logWarn);
   let storedTokens = storageManager.getStoredValueWithFallback();
-  _logInfo('Loaded module-stored tokens:', storedTokens);
-
-  if (storedTokens && typeof storedTokens === 'string') {
-    // Stored value is a plain token - if no token is supplied, just use the stored value.
-
-    if (!suppliedToken) {
-      _logInfo('Returning legacy cookie value.');
-      return { id: storedTokens };
-    }
-    // Otherwise, ignore the legacy value - it should get over-written later anyway.
-    _logInfo('Discarding superseded legacy cookie.');
-    storedTokens = null;
-  }
-
-  if (suppliedToken && storedTokens) {
-    if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
-      _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
-      // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
-      storedTokens = null;
-    }
-  }
-  // At this point, any legacy values or superseded stored tokens have been nulled out.
-  const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
-  const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
-  if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
-    _logInfo('Newest available token is expired and not refreshable.');
-    return { id: null };
-  }
-  if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-    _logInfo('Token is expired but can be refreshed, attempting refresh.');
-    return { callback: (cb) => {
-      promise.then((result) => {
-        _logInfo('Refresh reponded, passing the updated token on.', result);
-        cb(result);
-      });
-    } };
-  }
-  // If should refresh (but don't need to), refresh in the background.
-  if (Date.now() > newestAvailableToken.refresh_from) {
-    _logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-  }
+  const newestAvailableToken = storedTokens.latestToken;
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
