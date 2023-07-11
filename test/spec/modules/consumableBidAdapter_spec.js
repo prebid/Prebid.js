@@ -54,7 +54,7 @@ const BIDDER_REQUEST_1 = {
     gdprApplies: false
   },
   gppConsent: {
-    applicableSections: [1,2],
+    applicableSections: [1, 2],
     gppString: 'consent-string'
   },
   refererInfo: {
