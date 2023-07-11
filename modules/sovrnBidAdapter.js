@@ -248,7 +248,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -261,6 +261,10 @@ export const spec = {
           }
           if (uspConsent) {
             params.push(['us_privacy', uspConsent]);
+          }
+          if (gppConsent) {
+            params.push(['gpp', gppConsent.gppString]);
+            params.push(['gpp_sid', gppConsent.applicableSections])
           }
 
           if (iidArr[0]) {

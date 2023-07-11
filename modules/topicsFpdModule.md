@@ -37,6 +37,10 @@ pbjs.setConfig({
                 iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html',
                 expiry: 7 // Configurable expiry days
             },{
+                bidder: 'rtbhouse',
+                iframeURL: 'https://topics.authorizedvault.com/topicsapi.html',
+                expiry: 7 // Configurable expiry days
+            },{
                 bidder: 'rubicon',
                 iframeURL: 'https://rubicon.com:8080/topics/fpd/topic.html', // dummy URL
                 expiry: 7 // Configurable expiry days
