@@ -43,13 +43,13 @@ const ttlBufferInSeconds = 15;
  * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
-function wrapURI(uri, impUrl, arrayVastTrackers) {
+function wrapURI(uri, impUrl, vastTrackers) {
   // Technically, this is vulnerable to cross-script injection by sketchy vastUrl bids.
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
   let impressions = (impUrl) ? `<Impression><![CDATA[${impUrl}]]></Impression>` : ``;
-  if (Array.isArray(arrayVastTrackers) && arrayVastTrackers.length == 2 && arrayVastTrackers[1].hasOwnProperty('impressions')) {
-    arrayVastTrackers[1]['impressions'].forEach(trackingImp => {
+  if (Array.isArray(vastTrackers) && vastTrackers.length == 2 && vastTrackers[1].hasOwnProperty('impressions')) {
+    vastTrackers[1]['impressions'].forEach(trackingImp => {
       impressions += `<Impression><![CDATA[${trackingImp}]]></Impression>`;
     });
   }
