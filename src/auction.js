@@ -4,7 +4,7 @@
  * In Prebid 0.x, $$PREBID_GLOBAL$$ had _bidsRequested and _bidsReceived as public properties.
  * Starting 1.0, Prebid will support concurrent auctions. Each auction instance will store private properties, bidsRequested and bidsReceived.
  *
- * AuctionManager will create instance of auction and will store all the auctions.
+ * AuctionManager will create an instance of auction and will store all the auctions.
  *
  */
 
@@ -821,12 +821,32 @@ export const getPriceByGranularity = (granularity) => {
 }
 
 /**
+ * This function returns a function to get crid from bid response
+ * @returns {function}
+ */
+export const getCreativeId = () => {
+  return (bid) => {
+    return (bid.creativeId) ? bid.creativeId : '';
+  }
+}
+
+/**
  * This function returns a function to get first advertiser domain from bid response meta
  * @returns {function}
  */
 export const getAdvertiserDomain = () => {
   return (bid) => {
     return (bid.meta && bid.meta.advertiserDomains && bid.meta.advertiserDomains.length > 0) ? [bid.meta.advertiserDomains].flat()[0] : '';
+  }
+}
+
+/**
+ * This function returns a function to get dsp name or id from bid response meta
+ * @returns {function}
+ */
+export const getDSP = () => {
+  return (bid) => {
+    return (bid.meta && (bid.meta.networkId || bid.meta.networkName) ? bid.meta.networkName || bid.meta.networkId : '';
   }
 }
 
@@ -866,6 +886,8 @@ function defaultAdserverTargeting() {
     createKeyVal(TARGETING_KEYS.FORMAT, 'mediaType'),
     createKeyVal(TARGETING_KEYS.ADOMAIN, getAdvertiserDomain()),
     createKeyVal(TARGETING_KEYS.ACAT, getPrimaryCatId()),
+    createKeyVal(TARGETING_KEYS.DSP, getDSP()),
+    createKeyVal(TARGETING_KEYS.CRID, getCreativeId()),
   ]
 }
 
