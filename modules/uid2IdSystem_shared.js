@@ -81,6 +81,38 @@ export class Uid2ApiClient {
     req.send(refreshDetails.refresh_token);
     return promise;
   }
+
+  callCstgApi(cstgDetails) {
+    const url = this._baseUrl + '/v2/token/client-generate';
+    const req = new XMLHttpRequest();
+    req.overrideMimeType('text/plain');
+    req.open('POST', url, true);
+    req.setRequestHeader('X-UID2-Client-Version', this._clientVersion);
+    let resolvePromise;
+    let rejectPromise;
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+    req.onreadystatechange = () => {
+      if (req.readyState !== req.DONE) {
+        return;
+      }
+      try {
+        if (req.status !== 200) {
+          // if (!cstgDetails.refresh_response_key || req.status !== 200) {
+          rejectPromise(response);
+        } else {
+          resolvePromise(req.responseText);
+        }
+      } catch (err) {
+        rejectPromise(err);
+      }
+    };
+    this._logInfo('Sending cstg request', cstgDetails);
+    req.send(cstgDetails);
+    return promise;
+  }
 }
 export class Uid2StorageManager {
   constructor(storage, preferLocalStorage, storageName, logInfo) {
@@ -164,6 +196,200 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
     return tokens;
   });
 }
+
+// ----------------------------------------------------- CSTG START -----------------------------------------------------
+
+// ------
+// https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#subjectpublickeyinfo
+// from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+function str2ab(str) {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+
+// https://stackoverflow.com/a/9458996/
+function _arrayBufferToBase64(buffer) {
+  var binary = '';
+  var bytes = new Uint8Array(buffer);
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[ i ]);
+  }
+  return window.btoa(binary);
+}
+
+function exportPublicKey() {
+  let resolvePromise;
+  let rejectPromise;
+  const promise = new Promise((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+
+  var result = window.crypto.subtle.deriveKey(
+    {
+      name: 'ECDH',
+      public: publicKey,
+    },
+    privateKey,
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    false,
+    ['encrypt', 'decrypt']
+  );
+  resolvePromise(result);
+  return promise;
+}
+
+function encryptEmail(email, sharedKey) {
+  let resolvePromise;
+  let rejectPromise;
+  const promise = new Promise((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+
+  let result = window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    sharedKey,
+    str2ab(email));
+
+  resolvePromise(result);
+  return promise;
+}
+
+function callCstgAndStore(baseUrl, cstgBody, sharedKey, clientId, storageManager, _logInfo, _logWarn) {
+  _logInfo('UID2 base url provided: ', baseUrl);
+  const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
+  return client.callCstgApi(cstgBody).then((base64ResponseBody) => {
+    _logInfo('Refresh endpoint responded with:', base64ResponseBody);
+
+    // got the CSTG endpoint response decrypting:
+    const encryptedResponseBody = window.atob(base64ResponseBody);
+    console.log('Decrypting response...');
+    const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
+    console.log(responseBodyArrayBuffer);
+
+    const decryptedResponseBody = window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12) },
+      sharedKey,
+      responseBodyArrayBuffer.slice(12),
+    ).then((result) => { return result });
+
+    const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
+    console.log('response: %s', decryptedResponseBodyText);
+
+    const tokens = {
+      originalToken: 'TODO XXXXXXX',
+      latestToken: decryptedResponseBodyText.identity,
+    };
+    storageManager.storeValue(tokens);
+    return tokens;
+  });
+}
+
+function generateClientKeyPair() {
+  let resolvePromise;
+  let rejectPromise;
+  const promise = new Promise((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+
+  const clientKeyPair = window.crypto.subtle.generateKey(
+    {
+      name: 'ECDH',
+      namedCurve: 'P-256',
+    },
+    false,
+    ['deriveKey']
+  );
+
+  clientKeyPair.then(resolvePromise(result));
+  return promise;
+}
+
+function deriveSecretKey(privateKey, serverPublicKey) {
+  let resolvePromise;
+  let rejectPromise;
+  const promise = new Promise((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+  return window.crypto.subtle.deriveKey(
+    {
+      name: 'ECDH',
+      public: publicKey,
+    },
+    privateKey,
+    {
+      name: 'AES-GCM',
+      length: 256,
+    },
+    false,
+    ['encrypt', 'decrypt']
+  ).then((cryptoResult) => { resolvePromise( cryptoResult.publicKey)});
+}
+
+// function cstg(config, prebidStorageManager, _logInfo, _logWarn) {
+//   const preferLocalStorage = (config.storage !== 'cookie');
+//   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
+//
+//   _logInfo('Getting public key...');
+//   const serverPublicKey = 'PUBLICKEY..................';
+//   _logInfo('Generating client key pair...');
+//   const clientKeyPair = generateClientKeyPair()
+//     .then((result) => { return deriveSecretKey(
+//       result,
+//       serverPublicKey
+//     ) })
+//     .then(());
+//
+//   _logInfo('Deriving secret key...');
+//   const sharedKey = deriveSecretKey(
+//     clientKeyPair.privateKey,
+//     serverPublicKey
+//   ).then((result) => { return result });
+//
+//   _logInfo('Exporting public key...');
+//   const exportedPublicKey = exportPublicKey(clientKeyPair.publicKey).then((result) => { return result });
+//
+//   // iv will be needed for decryption
+//   const iv = window.crypto.getRandomValues(new Uint8Array(12));
+//
+//   _logInfo('Encrypting email...');
+//
+//   const encryptedEmail = encryptEmail('test@example.com', sharedKey).then((result) => { return result });
+//
+//   const body = {
+//     email: _arrayBufferToBase64(encryptedEmail),
+//     publicKey: _arrayBufferToBase64(exportedPublicKey),
+//     iv: _arrayBufferToBase64(iv),
+//   };
+//
+//   _logInfo('Generating CSTG token...');
+//   const encryptedResponse = callCstgAndStore(config.apiBaseUrl, JSON.stringify(body), sharedKey, config.clientId, storageManager, _logInfo, _logWarn)
+//     .then((result) => {
+//       return result
+//     });
+//   _logInfo('Token is expired but can be refreshed, attempting refresh.');
+//   return {
+//     callback: (cb) => {
+//       encryptedResponse.then((result) => {
+//         _logInfo('CSTG reponded, passing the updated token on.', result);
+//         cb(result);
+//       });
+//     }
+//   };
+// }
+
+// ------------------------------------------------------ CSTG END ------------------------------------------------------
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
