@@ -1,5 +1,5 @@
 import chai from 'chai';
-import { registerVASTTrackers } from 'src/video.js';
+import { registerVastTrackers } from 'src/video.js';
 import { getCacheUrl, store } from 'src/videoCache.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
@@ -151,7 +151,7 @@ describe('The video cache', function () {
     });
 
     it('should include additional impressions trackers on top of vastImpUrl when they exist', function() {
-      registerVASTTrackers(function(bidResponse) {
+      registerVastTrackers(function(bidResponse) {
         return {
           'impressions': [`https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`]
         };

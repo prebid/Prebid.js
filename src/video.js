@@ -67,7 +67,7 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
   return true;
 }, 'checkVideoBidSetup');
 
-export function registerVASTTrackers(tracker) {
+export function registerVastTrackers(tracker) {
   vastTrackers.push(tracker);
 }
 
