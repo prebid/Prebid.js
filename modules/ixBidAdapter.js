@@ -77,7 +77,8 @@ const SOURCE_RTI_MAPPING = {
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
   'intimatemerger.com': '',
-  '33across.com': ''
+  '33across.com': '',
+  'liveintent.indexexchange.com': ''
 };
 const PROVIDERS = [
   'britepoolid',
