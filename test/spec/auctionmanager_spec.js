@@ -205,7 +205,7 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
       expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
       expected[ CONSTANTS.TARGETING_KEYS.DSP ] = bid.meta.networkId;
-      expected[ CONSTANTS.TARGETING_KEYS.CRID ] = bid.meta.creativeId;
+      expected[ CONSTANTS.TARGETING_KEYS.CRID ] = bid.creativeId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
