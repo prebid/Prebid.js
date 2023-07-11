@@ -260,6 +260,7 @@ function encryptEmail(email, sharedKey) {
     str2ab(email));
 }
 
+//call cstg endpoint and store the generated tokens into the local storage for the last few lines of Uid2GetId function to retrieve
 function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
@@ -330,6 +331,7 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
 
 // ------------------------------------------------------ CSTG END ------------------------------------------------------
 
+//This is the entry point how prebid.js gets the UID2 token
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
@@ -390,7 +392,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   //   refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   // }
 
-  _logInfo(`Refreshing token in background with low priority.`);
+
   cstgAndStore(config, storageManager, _logInfo, _logWarn);
   let storedTokens = storageManager.getStoredValueWithFallback();
   const newestAvailableToken = storedTokens.latestToken;
