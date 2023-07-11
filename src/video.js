@@ -98,8 +98,13 @@ export function getVastTrackers(bid) {
     let tmpTrackers = func(bid);
     for (const key in tmpTrackers) {
       if (key in trackers && Array.isArray(tmpTrackers[key])) {
-        trackers[key] = trackers[key].concat(tmpTrackers[key]);
-        hasTrackers = true
+        // only add not existing trackers
+        tmpTrackers[key].forEach(item => {
+          if (!trackers[key].includes(item)) {
+            trackers[key].push(item);
+            hasTrackers = true;
+          }
+        });
       }
     }
   });
