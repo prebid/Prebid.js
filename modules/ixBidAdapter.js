@@ -78,7 +78,7 @@ const SOURCE_RTI_MAPPING = {
   'utiq.com': '', // Utiq
   'intimatemerger.com': '',
   '33across.com': '',
-  'liveintent.indexexchange.com': ''
+  'liveintent.indexexchange.com': '',
 };
 const PROVIDERS = [
   'britepoolid',
