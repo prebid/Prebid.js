@@ -71,7 +71,7 @@ export function registerVASTTrackers(tracker) {
   vastTrackers.push(tracker);
 }
 
-export function insertVastTrackers(trackers, vastXml, vastImpUrl) {
+export function insertVastTrackers(trackers, vastXml) {
   const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
   const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
   try {
@@ -88,14 +88,7 @@ export function insertVastTrackers(trackers, vastXml, vastImpUrl) {
   } catch (error) {
     logError('an error happened trying to insert trackers in vastXml');
   }
-  if (vastImpUrl && vastImpUrl.length > 0) {
-    trackers['impressions'].forEach(trackingUrl => {
-      if ((trackingUrl + encodeURI(vastImpUrl)).length < 2048) {
-        vastImpUrl = trackingUrl + encodeURI(vastImpUrl);
-      }
-    });
-  };
-  return [vastXml, vastImpUrl];
+  return vastXml;
 }
 
 export function getVastTrackers(bid) {

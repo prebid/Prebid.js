@@ -104,31 +104,20 @@ describe('video.js', function () {
   it('insert into tracker list', function() {
     registerVASTTrackers(function(bidResponse) {
       return {
-        'impressions': [`https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}&redir=`]
+        'impressions': [`https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`]
       };
     });
     const [hasTrackers, trackers] = getVastTrackers({'cpm': 1.0});
     expect(hasTrackers).to.equal(true);
     expect(trackers).to.have.property('impressions');
     expect(trackers.impressions.length).to.equal(1);
-    expect(trackers.impressions[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1&redir=');
+    expect(trackers.impressions[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
   });
 
   it('insert trackers in vastXml', function() {
     const [hasTrackers, trackers] = getVastTrackers({'cpm': 1.0});
     let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
-    let vastImpUrl;
-    [vastXml, vastImpUrl] = insertVastTrackers(trackers, vastXml, vastImpUrl);
-    expect(vastImpUrl).to.equal(undefined);
-    expect(vastXml).to.equal('<VAST><Ad><Wrapper><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1&redir=]]></Impression></Wrapper></Ad></VAST>');
-  });
-
-  it('insert trackers in vastImpUrl', function() {
-    const [hasTrackers, trackers] = getVastTrackers({'cpm': 1.0});
-    let vastXml;
-    let vastImpUrl = 'https://finalvast.domain.com';
-    [vastXml, vastImpUrl] = insertVastTrackers(trackers, vastXml, vastImpUrl);
-    expect(vastXml).to.equal(undefined);
-    expect(vastImpUrl).to.equal('https://vasttracking.mydomain.com/vast?cpm=1&redir=' + encodeURI('https://finalvast.domain.com'));
+    vastXml = insertVastTrackers(trackers, vastXml);
+    expect(vastXml).to.equal('<VAST><Ad><Wrapper><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1]]></Impression></Wrapper></Ad></VAST>');
   });
 });
