@@ -33,7 +33,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && !isNaN(bid.params.region));
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid');
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {

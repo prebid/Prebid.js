@@ -52,8 +52,7 @@ describe('PrecisoAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'publisherId');
-      expect(placement.placementId).to.equal('0');
+      expect(placement).to.have.keys('region', 'bidId', 'traffic', 'sizes', 'publisherId');
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
       expect(placement.region).to.equal('prebid-eu');
