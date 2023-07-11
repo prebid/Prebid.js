@@ -56,7 +56,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     adUnitCode,
     schain,
     mediaTypes,
-    auctionId,
     ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
@@ -112,8 +111,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     gpid: gpid,
     cat: cat,
     pagecat: pagecat,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    auctionId: auctionId,
     transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
