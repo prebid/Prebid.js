@@ -846,7 +846,7 @@ export const getAdvertiserDomain = () => {
  */
 export const getDSP = () => {
   return (bid) => {
-    return (bid.meta && (bid.meta.networkId || bid.meta.networkName) ? bid.meta.networkName || bid.meta.networkId : '';
+    return (bid.meta && (bid.meta.networkId || bid.meta.networkName)) ? deepAccess(bid, meta.networkName) || deepAccess(bid, meta.networkId) : '';
   }
 }
 
