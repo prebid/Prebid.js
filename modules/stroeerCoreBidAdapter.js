@@ -212,11 +212,13 @@ export const spec = {
       schain: anyBid.schain
     };
 
-    const userIds = anyBid.userId;
-    if (!utils.isEmpty(userIds)) {
-      commonPayload.user = {
-        euids: userIds
-      };
+    const user = utils.cleanObj({
+      euids: anyBid.userId,
+      data: utils.deepAccess(bidderRequest, 'ortb2.user.data')
+    });
+
+    if (!utils.isEmpty(user)) {
+      commonPayload.user = user;
     }
 
     const gdprConsent = bidderRequest.gdprConsent;

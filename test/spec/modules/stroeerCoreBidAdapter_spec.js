@@ -1136,6 +1136,45 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
           assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
         });
+
+        it('should add all user data if available', () => {
+          const bidReq = buildBidderRequest();
+
+          const ortb2 = {
+            user: {
+              data: [
+                {
+                  name: 'example-site.com',
+                  ext: {
+                    segtax: '1',
+                    segclass: '123'
+                  },
+                  segment: [{id: '12'}, {id: '10'}]
+                },
+                {
+                  name: 'example-provider.com',
+                  segment: [{
+                    id: '2',
+                    name: 'name',
+                    value: 'value',
+                    ext: {
+                      xyz: 'abc'
+                    }
+                  }]
+                }
+              ]
+            }
+          }
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+          const actualUserData = serverRequestInfo.data.user.data;
+          const expectedUserData = ortb2.user.data;
+
+          assert.deepEqual(actualUserData, expectedUserData);
+        })
       });
 
       describe('Split bid requests', () => {
