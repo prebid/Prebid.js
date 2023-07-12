@@ -411,7 +411,7 @@ describe('Adf adapter', function () {
       });
 
       describe('price floors', function () {
-        var result, mediaTypes;
+        let result, mediaTypes;
         it('should not add if floors module not configured', function () {
           const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
           let imp = getRequestImps(validBidRequests)[0];
