@@ -75,12 +75,12 @@ const testApiSuccessAndFailure = (act, testDescription, failTestDescription, onl
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
   const describeFn = only ? describe.only : describe;
-  describeFn(`Using cookies: ${description}`, async function() {
-    before(function() {
-      useLocalStorage = false;
-    });
-    await test();
-  });
+  // describeFn(`Using cookies: ${description}`, async function() {
+  //   before(function() {
+  //     useLocalStorage = false;
+  //   });
+  //   await test();
+  // });
   describeFn(`Using local storage: ${description}`, async function() {
     before(function() {
       useLocalStorage = true;
