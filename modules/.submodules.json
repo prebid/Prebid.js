@@ -54,6 +54,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
@@ -77,8 +78,7 @@
       "sirdataRtdProvider",
       "timeoutRtdProvider",
       "weboramaRtdProvider", 
-      "zeusPrimeRtdProvider",
-      "a1MediaRtdProvider"
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
       "validationFpdModule",

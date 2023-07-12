@@ -59,11 +59,31 @@ function init(config, userConsent) {
 function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
   const a1seg = getStorageData(A1_SEG_KEY);
   const a1gid = getStorageData(A1_AUD_KEY);
+
+  const a1UserSegData = {
+    name: 'a1mediagroup.com',
+    segment: a1seg.split(',').map(x => ({id: x}))
+  };
+
+  const a1UserEid = {
+    source: 'a1mediagroup.com',
+    uids: [
+      {
+        id: a1gid,
+        atype: 1
+      }
+    ]
+  };
+
   const a1Ortb2 = {
     user: {
-      buyeruid: a1gid,
+      data: [
+        a1UserSegData
+      ],
       ext: {
-        a1tg: a1seg
+        eids: [
+          a1UserEid
+        ]
       }
     }
   };

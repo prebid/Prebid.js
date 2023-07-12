@@ -24,12 +24,27 @@ const reqBidsConfigObj = {
 };
 const a1TestOrtbObj = {
   user: {
-    buyeruid: 'tester',
+    data: [
+      {
+        name: 'a1mediagroup.com',
+        segment: [{id: 'test'}]
+      }
+    ],
     ext: {
-      a1tg: 'test'
+      eids: [
+        {
+          source: 'a1mediagroup.com',
+          uids: [
+            {
+              id: 'tester',
+              atype: 1
+            }
+          ]
+        }
+      ]
     }
   }
-}
+};
 
 describe('a1MediaRtdProvider', function() {
   describe('init', function() {
