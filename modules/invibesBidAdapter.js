@@ -1,7 +1,6 @@
 import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {config} from '../src/config.js';
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -17,7 +16,7 @@ const CONSTANTS = {
   META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
   DISABLE_USER_SYNC: true
 };
-const { getConfig } = config;
+
 const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
