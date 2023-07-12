@@ -74,6 +74,11 @@ const processEvents = () => {
             window.atmtdAnalytics.bidResponseHandler(args);
           }
           break;
+        case CONSTANTS.EVENTS.BID_REJECTED:
+          if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler) {
+            window.atmtdAnalytics.bidRejectedHandler(args);
+          }
+          break;
         case CONSTANTS.EVENTS.BIDDER_DONE:
           if (window.atmtdAnalytics && window.atmtdAnalytics.bidderDoneHandler) {
             window.atmtdAnalytics.bidderDoneHandler(args);
@@ -204,6 +209,14 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
       case CONSTANTS.EVENTS.BID_REQUESTED:
         if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler) {
           window.atmtdAnalytics.bidRequestedHandler(args);
+        } else {
+          self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
+          self.__atmtdAnalyticsQueue.push([eventType, args])
+        }
+        break;
+      case CONSTANTS.EVENTS.BID_REJECTED:
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler) {
+          window.atmtdAnalytics.bidRejectedHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
           self.__atmtdAnalyticsQueue.push([eventType, args])
