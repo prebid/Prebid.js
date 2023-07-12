@@ -282,7 +282,7 @@ describe('33acrossIdSystem', () => {
           error: 'foo'
         }));
 
-        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response`)).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response foo`)).to.be.true;
 
         logErrorSpy.restore();
       });

@@ -1,6 +1,15 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {_each, _map, createTrackPixelHtml, deepAccess, isFn, isNumber, logError, logWarn} from '../src/utils.js';
+import {
+  _each,
+  _map,
+  createTrackPixelHtml,
+  deepAccess,
+  isFn,
+  isNumber,
+  logError,
+  logWarn
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 
 export const BIDDER_CODE = 'deltaprojects';
@@ -27,7 +36,7 @@ function isBidRequestValid(bid) {
 function buildRequests(validBidRequests, bidderRequest) {
   /** == shared ==**/
   // -- build id
-  const id = bidderRequest.auctionId;
+  const id = bidderRequest.bidderRequestId;
 
   // -- build site
   const publisherId = setOnAny(validBidRequests, 'params.publisherId');
@@ -90,7 +99,7 @@ function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs
 
   // build source
   const source = {
-    tid: validBidRequest.transactionId,
+    tid: validBidRequest.auctionId,
     fd: 1,
   }
 

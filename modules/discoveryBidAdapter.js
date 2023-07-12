@@ -6,7 +6,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
@@ -244,7 +244,9 @@ function getItems(validBidRequests, bidderRequest) {
         }
       }
       if (!matchSize) {
-        return {};
+        matchSize = sizes[0]
+          ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
+          : { h: 0, w: 0 };
       }
       ret = {
         id: id,
@@ -253,9 +255,10 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes,
         },
         ext: {},
-        tagid: globals['tagid'],
+        tagid: req.params && req.params.tagid
       };
     }
     itemMaps[id] = {
@@ -294,9 +297,11 @@ function getParam(validBidRequests, bidderRequest) {
   const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'pp_hbjs_' + auctionId,
       test: +isTest,
       at: 1,
@@ -312,6 +317,7 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {
         eids,
+        firstPartyData,
       },
       user: {
         buyeruid: getUserID(),

@@ -121,6 +121,13 @@ describe('teadsBidAdapter', () => {
       expect(request.method).to.equal('POST');
     });
 
+    it('should not send auctionId in bid request ', function() {
+      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.data[0].auctionId).to.not.exist
+    });
+
     it('should send US Privacy to endpoint', function() {
       let usPrivacy = 'OHHHFCP1'
       let bidderRequest = {

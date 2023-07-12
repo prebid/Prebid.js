@@ -13,6 +13,7 @@ const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
 const AUCTION_ID = '6653';
 
 const defaultBidderRequest = {
+  bidderRequestId: 'mock-uuid',
   gdprConsent: {
     consentString: CONSENT_STRING,
     gdprApplies: true
@@ -297,6 +298,21 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.regs.ext.us_privacy).to.equal('uspConsentString');
       });
 
+      it('sends gpp', () => {
+        const ortb2 = {
+          regs: {
+            gpp: 'gppString',
+            gpp_sid: [7]
+          }
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.gpp).to.eql('gppString');
+        expect(req.regs.ext.gpp_sid).to.eql([7]);
+      });
+
       it('sends no schain if no schain exists', () => {
         const reqs = spec.buildRequests([singleBannerBidRequest], defaultBidderRequest);
 
@@ -341,6 +357,13 @@ describe('smaatoBidAdapterTest', () => {
             keywords: 'a,b',
             gender: 'M',
             yob: 1984
+          },
+          device: {
+            ifa: 'ifa',
+            geo: {
+              lat: 53.5488,
+              lon: 9.9872
+            }
           }
         };
 
@@ -353,6 +376,9 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.user.ext.consent).to.equal(CONSENT_STRING);
         expect(req.site.keywords).to.eql('power tools,drills');
         expect(req.site.publisher.id).to.equal('publisherId');
+        expect(req.device.ifa).to.equal('ifa');
+        expect(req.device.geo.lat).to.equal(53.5488);
+        expect(req.device.geo.lon).to.equal(9.9872);
       });
 
       it('has no user ids', () => {
@@ -529,7 +555,7 @@ describe('smaatoBidAdapterTest', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.id).to.exist;
             expect(req.imp.length).to.be.equal(ADPOD_DURATION / DURATION_RANGE[0]);
             expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
@@ -633,7 +659,7 @@ describe('smaatoBidAdapterTest', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.id).to.exist;
             expect(req.imp.length).to.be.equal(DURATION_RANGE.length);
             expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
@@ -990,6 +1016,28 @@ describe('smaatoBidAdapterTest', () => {
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.device.geo).to.deep.equal(LOCATION);
         expect(req.device.ifa).to.equal(DEVICE_ID);
+      });
+
+      it('when geo and ifa info present and fpd present, then prefer fpd', () => {
+        const ortb2 = {
+          device: {
+            ifa: 'ifa',
+            geo: {
+              lat: 53.5488,
+              lon: 9.9872
+            }
+          }
+        };
+
+        const inAppBidRequest = utils.deepClone(inAppBidRequestWithoutAppParams);
+        inAppBidRequest.params.app = {ifa: DEVICE_ID, geo: LOCATION};
+
+        const reqs = spec.buildRequests([inAppBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.device.geo.lat).to.equal(53.5488);
+        expect(req.device.geo.lon).to.equal(9.9872);
+        expect(req.device.ifa).to.equal('ifa');
       });
 
       it('when ifa is present but geo is missing, then add only ifa to device object', () => {

@@ -36,6 +36,11 @@ describe('Livewrapped adapter tests', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+          ortb2Imp: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            }
+          },
           transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
         }
       ],
@@ -1211,7 +1216,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1251,7 +1255,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1293,7 +1296,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1347,7 +1349,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1359,7 +1360,6 @@ describe('Livewrapped adapter tests', function () {
         meta: undefined
       }, {
         requestId: '42e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 3.565917,
         width: 980,
         height: 240,
@@ -1398,7 +1398,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,

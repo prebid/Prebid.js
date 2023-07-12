@@ -1,4 +1,3 @@
-
 let t = require('@babel/core').types;
 let prebid = require('../package.json');
 const path = require('path');
@@ -28,10 +27,12 @@ function getNpmVersion(version) {
 
 module.exports = function(api, options) {
   const pbGlobal = options.globalVarName || prebid.globalVarName;
+  const defineGlobal = typeof (options.defineGlobal) !== 'undefined' ? options.defineGlobal : prebid.defineGlobal;
   const features = featureMap(options.disableFeatures);
   let replace = {
     '$prebid.version$': prebid.version,
     '$$PREBID_GLOBAL$$': pbGlobal,
+    '$$DEFINE_PREBID_GLOBAL$$': defineGlobal,
     '$$REPO_AND_VERSION$$': `${prebid.repository.url.split('/')[3]}_prebid_${prebid.version}`,
     '$$PREBID_DIST_URL_BASE$$': options.prebidDistUrlBase || `https://cdn.jsdelivr.net/npm/prebid.js@${getNpmVersion(prebid.version)}/dist/`
   };
@@ -41,6 +42,12 @@ module.exports = function(api, options) {
   ];
 
   const PREBID_ROOT = path.resolve(__dirname, '..');
+  // on Windows, require paths are not filesystem paths
+  const SEP_PAT = new RegExp(path.sep.replace(/\\/g, '\\\\'), 'g')
+
+  function relPath(from, toRelToProjectRoot) {
+    return path.relative(path.dirname(from), path.join(PREBID_ROOT, toRelToProjectRoot)).replace(SEP_PAT, '/');
+  }
 
   function getModuleName(filename) {
     const modPath = path.parse(path.relative(PREBID_ROOT, filename));
@@ -63,8 +70,14 @@ module.exports = function(api, options) {
       Program(path, state) {
         const modName = getModuleName(state.filename);
         if (modName != null) {
-          // append "registration" of module file to $$PREBID_GLOBAL$$.installedModules
-          path.node.body.push(...api.parse(`window.${pbGlobal}.installedModules.push('${modName}');`, {filename: state.filename}).program.body);
+          // append "registration" of module file to getGlobal().installedModules
+          let i = 0;
+          let registerName;
+          do {
+            registerName = `__r${i++}`
+          } while (path.scope.hasBinding(registerName))
+          path.node.body.unshift(...api.parse(`import {registerModule as ${registerName}} from '${relPath(state.filename, 'src/prebidGlobal.js')}';`, {filename: state.filename}).program.body);
+          path.node.body.push(...api.parse(`${registerName}('${modName}');`, {filename: state.filename}).program.body);
         }
       },
       StringLiteral(path) {
@@ -72,7 +85,7 @@ module.exports = function(api, options) {
           if (path.node.value.includes(name)) {
             path.node.value = path.node.value.replace(
               new RegExp(escapeRegExp(name), 'g'),
-              replace[name]
+              replace[name].toString()
             );
           }
         });
@@ -102,7 +115,7 @@ module.exports = function(api, options) {
               );
             } else {
               path.replaceWith(
-                t.Identifier(replace[name])
+                t.Identifier(replace[name].toString())
               );
             }
           }

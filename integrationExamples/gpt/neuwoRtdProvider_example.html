@@ -6,9 +6,6 @@
         <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
         <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
         <script>
-            var helper = document.getElementById('need-help');
-            if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
-
             /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
             var div_1_sizes = [
                 [300, 250],
@@ -90,10 +87,18 @@
                 let fieldElem = document.getElementById('token-to-use');
                 let publicToken = fieldElem ? fieldElem.value : '';
                 if (!publicToken) {
-                    alert('please enter your token for Neuwo AI API on the field');
+                    alert('please enter your token for Neuwo AI API to the field');
                     if (fieldElem) fieldElem.focus();
                     return;
                 }
+                let apiUrlField = document.getElementById('neuwo-api-url');
+                let apiUrl = apiUrlField ? apiUrlField.value : '';
+                if (!apiUrl) {
+                    alert('please enter Neuwo AI API url to the field');
+                    if (apiUrlField) apiUrlField.focus();
+                    return;
+                }
+
                 let urlElem = document.getElementById('url-to-use');
                 let argUrl = urlElem ? urlElem.value : undefined;
                 pbjs.que.push(function() {
@@ -106,6 +111,7 @@
                                     waitForIt: true,
                                     params: {
                                         publicToken,
+                                        apiUrl,
                                         argUrl
                                     }
                                 }
@@ -161,6 +167,7 @@
         </div>
         <div>
             <p>Add token and url to use for Neuwo extension configuration</p>
+            <input type="text" placeholder="Neuwo API url" id="neuwo-api-url" />
             <input type="text" placeholder="Token for Neuwo API" id="token-to-use" />
             <input type="text" placeholder="Use url for site" id="url-to-use" />
             <button onClick="onSettingsUpdate()">Update</button>
@@ -187,4 +194,8 @@
         </div>
 
     </body>
+    <script type="text/javascript">
+        var helper = document.getElementById('need-help');
+        if (helper) helper.style.display = location.href !== 'http://localhost:9999/integrationExamples/gpt/neuwoRtdProvider_example.html' ? 'block' : 'none';
+    </script>
 </html>
