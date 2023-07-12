@@ -176,7 +176,7 @@ function buildRequest(validBidRequests, bidderRequest) {
     tmax: bidderRequest.timeout,
     source: {
       fd: 1,
-      tid: bidderRequest.auctionId,
+      tid: bidderRequest.ortb2?.source?.tid,
     },
     site: {
       // TODO: are these the right refererInfo values?
