@@ -48,8 +48,8 @@ function wrapURI(uri, impUrl, vastTrackers) {
   // We could make sure it's a valid URI... but since we're loading VAST XML from the
   // URL they provide anyway, that's probably not a big deal.
   let impressions = (impUrl) ? `<Impression><![CDATA[${impUrl}]]></Impression>` : ``;
-  if (Array.isArray(vastTrackers) && vastTrackers.length == 2 && vastTrackers[1].hasOwnProperty('impressions')) {
-    vastTrackers[1]['impressions'].forEach(trackingImp => {
+  if (vastTrackers && vastTrackers.get('impressions')) {
+    vastTrackers.get('impressions').forEach(trackingImp => {
       impressions += `<Impression><![CDATA[${trackingImp}]]></Impression>`;
     });
   }

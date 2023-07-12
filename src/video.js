@@ -77,11 +77,13 @@ export function insertVastTrackers(trackers, vastXml) {
   try {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
-        trackers['impressions'].forEach(trackingUrl => {
-          const impression = doc.createElement('Impression');
-          impression.appendChild(doc.createCDATASection(trackingUrl));
-          wrapper.appendChild(impression)
-        });
+        if (trackers.get('impression')) {
+          trackers.get('impression').forEach(trackingUrl => {
+            const impression = doc.createElement('Impression');
+            impression.appendChild(doc.createCDATASection(trackingUrl));
+            wrapper.appendChild(impression)
+          });
+        }
       });
       vastXml = new XMLSerializer().serializeToString(doc);
     }
@@ -92,21 +94,30 @@ export function insertVastTrackers(trackers, vastXml) {
 }
 
 export function getVastTrackers(bid) {
-  let hasTrackers = false;
-  let trackers = {'impressions': []};
+  let trackers = [];
   vastTrackers.forEach(func => {
-    let tmpTrackers = func(bid);
-    for (const key in tmpTrackers) {
-      if (key in trackers && Array.isArray(tmpTrackers[key])) {
-        // only add not existing trackers
-        tmpTrackers[key].forEach(item => {
-          if (!trackers[key].includes(item)) {
-            trackers[key].push(item);
-            hasTrackers = true;
-          }
-        });
-      }
-    }
+    // get tracker list from function
+    let trackersToAdd = func(bid);
+    trackersToAdd.forEach(trackerToAdd => {
+      if (validVastTracker(trackers, trackerToAdd)) { trackers.push(trackerToAdd); }
+    });
   });
-  return [hasTrackers, trackers];
+  const trackersMap = trackersToMap(trackers);
+  return (trackersMap.size ? trackersMap : null);
+};
+
+function validVastTracker(trackers, trackerToAdd) {
+  if (!trackerToAdd.hasOwnProperty('event') || !trackerToAdd.hasOwnProperty('url')) { return false; }
+  trackers.forEach(tracker => {
+    if (tracker['event'] == trackerToAdd['event'] && tracker['url'] == trackerToAdd['url']) { return false; }
+  });
+  return true;
+}
+
+function trackersToMap(trackers) {
+  let trackersMap = new Map();
+  trackers.forEach(tracker => {
+    if (!trackersMap.get(tracker['event'])) { trackersMap.set(tracker['event'], [tracker['url']]) } else { trackersMap.get(tracker['event']).push(tracker['url']); }
+  });
+  return trackersMap;
 }

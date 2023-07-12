@@ -152,9 +152,9 @@ describe('The video cache', function () {
 
     it('should include additional impressions trackers on top of vastImpUrl when they exist', function() {
       registerVastTrackers(function(bidResponse) {
-        return {
-          'impressions': [`https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`]
-        };
+        return [
+	  {'event': 'impressions', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
+        ];
       });
       const expectedValue = `<VAST version="3.0">
     <Ad>

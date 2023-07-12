@@ -582,9 +582,9 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
-  const [hasTrackers, vastTrackers] = getVastTrackers(bidResponse);
+  const vastTrackers = getVastTrackers(bidResponse);
 
-  if (hasTrackers) { bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml); }
+  if (vastTrackers) { bidResponse.vastXml = insertVastTrackers(vastTrackers, bidResponse.vastXml); }
   if (config.getConfig('cache.url') && (useCacheKey || context !== OUTSTREAM)) {
     if (!bidResponse.videoCacheKey || config.getConfig('cache.ignoreBidderCacheKey')) {
       addBid = false;

@@ -103,19 +103,19 @@ describe('video.js', function () {
 
   it('insert into tracker list', function() {
     registerVastTrackers(function(bidResponse) {
-      return {
-        'impressions': [`https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`]
-      };
+      return [
+        {'event': 'impression', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
+      ];
     });
-    const [hasTrackers, trackers] = getVastTrackers({'cpm': 1.0});
-    expect(hasTrackers).to.equal(true);
-    expect(trackers).to.have.property('impressions');
-    expect(trackers.impressions.length).to.equal(1);
-    expect(trackers.impressions[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
+    const trackers = getVastTrackers({'cpm': 1.0});
+    expect(trackers).to.be.a('map');
+    expect(trackers.get('impression')).to.exists;
+    expect(trackers.get('impression').length).to.equal(1);
+    expect(trackers.get('impression')[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
   });
 
   it('insert trackers in vastXml', function() {
-    const [hasTrackers, trackers] = getVastTrackers({'cpm': 1.0});
+    const trackers = getVastTrackers({'cpm': 1.0});
     let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
     vastXml = insertVastTrackers(trackers, vastXml);
     expect(vastXml).to.equal('<VAST><Ad><Wrapper><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1]]></Impression></Wrapper></Ad></VAST>');
