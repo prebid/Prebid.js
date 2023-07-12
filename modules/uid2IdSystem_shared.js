@@ -260,59 +260,53 @@ function encryptEmail(email, sharedKey) {
     str2ab(email));
 }
 
-//call cstg endpoint and store the generated tokens into the local storage for the last few lines of Uid2GetId function to retrieve
+// call cstg endpoint and store the generated tokens into the local storage for the last few lines of Uid2GetId function to retrieve
 function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   const serverPublicKey = 'PUBLICKEY..................';
   const testEmail = 'test@example.com';
 
-  let clientKeyPair;
-  let iv;
-  let sharedKey;
-  let exportedPublicKey;
-  let encryptedEmail;
   _logInfo('Generating client key pair...');
+
+  // encryptionConfigs is a map lookup that would store the outputs of various promises as the promises are
+  // fulfilled sequentially, so that all these variables can be carried over and used in subsequent promises
   return generateClientKeyPair()
-    .then((clientKeyPairResult) => {
-      clientKeyPair = clientKeyPairResult;
+    .then((clientKeyPair) => {
       _logInfo('Deriving secret key...');
-      return deriveSecretKey(clientKeyPairResult.privateKey, serverPublicKey);
+      return {clientKeyPair, sharedKey: deriveSecretKey(clientKeyPair.privateKey, serverPublicKey)};
     })
-    .then((sharedKeyResult) => {
-      sharedKey = sharedKeyResult;
+    .then((encryptionConfigs) => {
       _logInfo('Exporting public key...');
-      return exportPublicKey(clientKeyPair);
+      return {...encryptionConfigs, exportedPublicKey: exportPublicKey(encryptionConfigs.clientKeyPair)};
     })
-    .then((exportedPublicKeyResult) => {
-      exportedPublicKey = exportedPublicKeyResult;
+    .then((encryptionConfigs) => {
       // iv will be needed for decryption
-      iv = window.crypto.getRandomValues(new Uint8Array(12));
+      let iv = window.crypto.getRandomValues(new Uint8Array(12));
       _logInfo('Encrypting email...');
-      return encryptEmail(testEmail, sharedKey);
+      return {...encryptionConfigs, iv, encryptedEmail: encryptEmail(testEmail, encryptionConfigs.sharedKey)};
     })
-    .then((encryptedEmailResult) => {
-      encryptedEmail = encryptedEmailResult;
+    .then((encryptionConfigs) => {
       const cstgBody = {
-        email: _arrayBufferToBase64(encryptedEmail),
-        publicKey: _arrayBufferToBase64(exportedPublicKey),
-        iv: _arrayBufferToBase64(iv),
+        email: _arrayBufferToBase64(encryptionConfigs.encryptedEmail),
+        publicKey: _arrayBufferToBase64(encryptionConfigs.exportedPublicKey),
+        iv: _arrayBufferToBase64(encryptionConfigs.iv),
       };
       _logInfo('Generating CSTG token...');
       const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);
-      return client.callCstgApi(cstgBody);
+      return {...encryptionConfigs, base64ResponseBody: client.callCstgApi(cstgBody)};
     })
-    .then((base64ResponseBody) => {
-      _logInfo('CSTG endpoint responded with:', base64ResponseBody);
+    .then((encryptionConfigs) => {
+      _logInfo('CSTG endpoint responded with:', encryptionConfigs.base64ResponseBody);
 
       // got the CSTG endpoint response decrypting:
-      const encryptedResponseBody = window.atob(base64ResponseBody);
+      const encryptedResponseBody = window.atob(encryptionConfigs.base64ResponseBody);
       const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
       _logInfo('Decrypting response', responseBodyArrayBuffer);
 
       return window.crypto.subtle.decrypt(
         {name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12)},
-        sharedKey,
+        encryptionConfigs.sharedKey,
         responseBodyArrayBuffer.slice(12),
       );
     })
@@ -320,18 +314,23 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
       const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
       _logInfo('response:', decryptedResponseBodyText);
       const result = JSON.parse(decryptedResponseBodyText);
+
+      // store the token response at the end
       const tokens = {
         originalToken: 'TODO XXXXXXX',
         latestToken: result.identity,
       };
       storageManager.storeValue(tokens);
       return tokens;
+    })
+    .catch((error) => {
+      _logWarn('cstgAndStore Caught Error:', error);
     });
 }
 
 // ------------------------------------------------------ CSTG END ------------------------------------------------------
 
-//This is the entry point how prebid.js gets the UID2 token
+// This is the entry point how prebid.js gets the UID2 token
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
@@ -339,6 +338,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
   // Just call CSTG calls for testing purposes!!!!!
+
   // if (config.paramToken) {
   //   suppliedToken = config.paramToken;
   //   _logInfo('Read token from params', suppliedToken);
@@ -392,10 +392,12 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   //   refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   // }
 
-
+  // ----------------------------------------------------- CSTG START -------------------------------------------------
   cstgAndStore(config, storageManager, _logInfo, _logWarn);
   let storedTokens = storageManager.getStoredValueWithFallback();
   const newestAvailableToken = storedTokens.latestToken;
+  // ----------------------------------------------------- CSTG END  --------------------------------------------------
+
   const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
