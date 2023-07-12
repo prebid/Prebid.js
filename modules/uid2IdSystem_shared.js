@@ -101,7 +101,7 @@ export class Uid2ApiClient {
       try {
         if (req.status !== 200) {
           // if (!cstgDetails.refresh_response_key || req.status !== 200) {
-          rejectPromise(response);
+          rejectPromise(new Error('cstg endpoint status: ' + req.status));
         } else {
           resolvePromise(req.responseText);
         }
@@ -253,7 +253,7 @@ function exportPublicKey(clientKeyPair) {
   return window.crypto.subtle.exportKey('spki', clientKeyPair.publicKey);
 }
 
-function encryptEmail(email, sharedKey) {
+function encryptEmail(email, sharedKey, iv) {
   return window.crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: iv },
     sharedKey,
@@ -284,7 +284,7 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
       // iv will be needed for decryption
       let iv = window.crypto.getRandomValues(new Uint8Array(12));
       _logInfo('Encrypting email...');
-      return {...encryptionConfigs, iv, encryptedEmail: encryptEmail(testEmail, encryptionConfigs.sharedKey)};
+      return {...encryptionConfigs, iv, encryptedEmail: encryptEmail(testEmail, encryptionConfigs.sharedKey, iv)};
     })
     .then((encryptionConfigs) => {
       const cstgBody = {
@@ -339,63 +339,63 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
 
   // Just call CSTG calls for testing purposes!!!!!
 
-  // if (config.paramToken) {
-  //   suppliedToken = config.paramToken;
-  //   _logInfo('Read token from params', suppliedToken);
-  // } else if (config.serverCookieName) {
-  //   suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
-  //   _logInfo('Read token from server-supplied cookie', suppliedToken);
-  // }
-  // let storedTokens = storageManager.getStoredValueWithFallback();
-  // _logInfo('Loaded module-stored tokens:', storedTokens);
-  //
-  // if (storedTokens && typeof storedTokens === 'string') {
-  //   // Stored value is a plain token - if no token is supplied, just use the stored value.
-  //
-  //   if (!suppliedToken) {
-  //     _logInfo('Returning legacy cookie value.');
-  //     return { id: storedTokens };
-  //   }
-  //   // Otherwise, ignore the legacy value - it should get over-written later anyway.
-  //   _logInfo('Discarding superseded legacy cookie.');
-  //   storedTokens = null;
-  // }
-  //
-  // if (suppliedToken && storedTokens) {
-  //   if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
-  //     _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
-  //     // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
-  //     storedTokens = null;
-  //   }
-  // }
-  // // At this point, any legacy values or superseded stored tokens have been nulled out.
-  // const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
-  // const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  // _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
-  // if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
-  //   _logInfo('Newest available token is expired and not refreshable.');
-  //   return { id: null };
-  // }
-  // if (Date.now() > newestAvailableToken.identity_expires) {
-  //   const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-  //   _logInfo('Token is expired but can be refreshed, attempting refresh.');
-  //   return { callback: (cb) => {
-  //     promise.then((result) => {
-  //       _logInfo('Refresh reponded, passing the updated token on.', result);
-  //       cb(result);
-  //     });
-  //   } };
-  // }
-  // // If should refresh (but don't need to), refresh in the background.
-  // if (Date.now() > newestAvailableToken.refresh_from) {
-  //   _logInfo(`Refreshing token in background with low priority.`);
-  //   refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-  // }
+  if (config.paramToken) {
+    suppliedToken = config.paramToken;
+    _logInfo('Read token from params', suppliedToken);
+  } else if (config.serverCookieName) {
+    suppliedToken = storageManager.readProvidedCookie(config.serverCookieName);
+    _logInfo('Read token from server-supplied cookie', suppliedToken);
+  }
+  let storedTokens = storageManager.getStoredValueWithFallback();
+  _logInfo('Loaded module-stored tokens:', storedTokens);
+
+  if (storedTokens && typeof storedTokens === 'string') {
+    // Stored value is a plain token - if no token is supplied, just use the stored value.
+
+    if (!suppliedToken) {
+      _logInfo('Returning legacy cookie value.');
+      return { id: storedTokens };
+    }
+    // Otherwise, ignore the legacy value - it should get over-written later anyway.
+    _logInfo('Discarding superseded legacy cookie.');
+    storedTokens = null;
+  }
+
+  if (suppliedToken && storedTokens) {
+    if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
+      _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+      // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
+      storedTokens = null;
+    }
+  }
+  // At this point, any legacy values or superseded stored tokens have been nulled out.
+  const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
+  const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
+  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
+    _logInfo('Newest available token is expired and not refreshable.');
+    return { id: null };
+  }
+  if (Date.now() > newestAvailableToken.identity_expires) {
+    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+    _logInfo('Token is expired but can be refreshed, attempting refresh.');
+    return { callback: (cb) => {
+      promise.then((result) => {
+        _logInfo('Refresh reponded, passing the updated token on.', result);
+        cb(result);
+      });
+    } };
+  }
+  // If should refresh (but don't need to), refresh in the background.
+  if (Date.now() > newestAvailableToken.refresh_from) {
+    _logInfo(`Refreshing token in background with low priority.`);
+    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  }
 
   // ----------------------------------------------------- CSTG START -------------------------------------------------
-  cstgAndStore(config, storageManager, _logInfo, _logWarn);
-  let storedTokens = storageManager.getStoredValueWithFallback();
-  const newestAvailableToken = storedTokens.latestToken;
+  // cstgAndStore(config, storageManager, _logInfo, _logWarn);
+  // let storedTokens = storageManager.getStoredValueWithFallback();
+  // const newestAvailableToken = storedTokens.latestToken;
   // ----------------------------------------------------- CSTG END  --------------------------------------------------
 
   const tokens = {

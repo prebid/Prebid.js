@@ -449,7 +449,7 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
-//just test CSTG!
+// just test CSTG!
 gulp.task('cstg-watch', testTaskMaker({watch: true, file: ['test/spec/modules/uid2idsystem_spec.js']}));
 gulp.task('test-watch', testTaskMaker({watch: true, file: ['test/spec/modules/uid2idsystem_spec.js', 'test/spec/modules/euididsystem_spec.js', 'test/spec/modules/userid_spec.js']}));
 // gulp.task('test-watch', testTaskMaker({watch: true, file: ['test/spec/modules/uid2idsystem_spec.js', 'test/spec/modules/euididsystem_spec.js']}));
