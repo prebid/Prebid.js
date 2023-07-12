@@ -7,7 +7,7 @@
       "amxIdSystem",
       "britepoolIdSystem",
       "connectIdSystem",
-      "cpexIdSystem",
+      "czechAdIdSystem",
       "criteoIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
@@ -40,11 +40,13 @@
       "tncIdSystem",
       "trustpidSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
-      "gravitoIdSystem"
+      "gravitoIdSystem",
+      "freepassIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -52,10 +54,14 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
+      "arcspanRtdProvider",
       "blueconicRtdProvider",
       "browsiRtdProvider",
+      "captifyRtdProvider",
+      "confiantRtdProvider",
       "dgkeywordRtdProvider",
       "geoedgeRtdProvider",
       "hadronRtdProvider",
@@ -63,18 +69,23 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider", 
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
-      "enrichmentFpdModule",
       "validationFpdModule",
       "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
   }
 }

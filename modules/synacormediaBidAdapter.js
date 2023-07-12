@@ -49,9 +49,7 @@ export const spec = {
       imp: []
     };
 
-    const callbackTimeout = bidderRequest.timeout;
-    const globalTimeout = config.getConfig('bidderTimeout');
-    const tmax = globalTimeout ? Math.min(globalTimeout, callbackTimeout) : callbackTimeout;
+    const tmax = bidderRequest.timeout;
     if (tmax) {
       openRtbBidRequest.tmax = tmax;
     }
@@ -71,7 +69,7 @@ export const spec = {
         seatId = bid.params.seatId;
       }
       const tagIdOrPlacementId = bid.params.tagId || bid.params.placementId;
-      let pos = parseInt(bid.params.pos, 10);
+      let pos = parseInt(bid.params.pos || deepAccess(bid.mediaTypes, 'video.pos'), 10);
       if (isNaN(pos)) {
         logWarn(`Synacormedia: there is an invalid POS: ${bid.params.pos}`);
         pos = 0;

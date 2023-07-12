@@ -330,6 +330,54 @@ describe('microadBidAdapter', () => {
         })
       })
     })
+
+    Object.entries({
+      'ID5 ID': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        userIdAsEids: [
+          {
+            source: 'id5-sync.com',
+            uids: [{id: 'id5id-sample', aType: 1, ext: {linkType: 2, abTestingControlGroup: false}}]
+          }
+        ],
+        expected: {
+          aids: JSON.stringify([{type: 8, id: 'id5id-sample', ext: {linkType: 2, abTestingControlGroup: false}}])
+        }
+      },
+      'Unified ID': {
+        userId: {tdid: 'unified-sample'},
+        userIdAsEids: [
+          {
+            source: 'adserver.org',
+            uids: [{id: 'unified-sample', aType: 1, ext: {rtiPartner: 'TDID'}}]
+          }
+        ],
+        expected: {aids: JSON.stringify([{type: 9, id: 'unified-sample', ext: {rtiPartner: 'TDID'}}])}
+      },
+      'not add': {
+        userId: {id5id: {uid: 'id5id-sample'}},
+        userIdAsEids: [],
+        expected: {
+          aids: JSON.stringify([{type: 8, id: 'id5id-sample'}])
+        }
+      }
+    }).forEach(([test, arg]) => {
+      it(`should ${test} ext if it is available in request parameters`, () => {
+        const bidRequestWithUserId = {
+          ...bidRequestTemplate,
+          userId: arg.userId,
+          userIdAsEids: arg.userIdAsEids
+        }
+        const requests = spec.buildRequests([bidRequestWithUserId], bidderRequest)
+        requests.forEach((request) => {
+          expect(request.data).to.deep.equal({
+            ...expectedResultTemplate,
+            cbt: request.data.cbt,
+            ...arg.expected
+          })
+        })
+      });
+    })
   });
 
   describe('interpretResponse', () => {

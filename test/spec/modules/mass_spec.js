@@ -130,6 +130,8 @@ describe('MASS Module', function() {
   });
 
   it('should have a default renderer', function() {
+    // SOT needs at least one script to be on the page; ugly solution, but good enough since mass is to be removed in v8
+    document.body.appendChild(document.createElement('script'));
     const render = useDefaultRender('https://example.com/render.js', 'abc');
     render({});
 

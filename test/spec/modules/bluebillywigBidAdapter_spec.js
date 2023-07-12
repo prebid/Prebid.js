@@ -535,10 +535,8 @@ describe('BlueBillywigAdapter', () => {
     });
 
     it('should set user ids when present', () => {
-      const userId = { tdid: 123 };
-
       const newBaseValidBidRequests = deepClone(baseValidBidRequests);
-      newBaseValidBidRequests[0].userId = { criteoId: 'sample-userid' };
+      newBaseValidBidRequests[0].userIdAsEids = [ {} ];
 
       const request = spec.buildRequests(newBaseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);

@@ -293,7 +293,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
   const generalBidParams = getBidIdParameter('params', sharedParams);
   const userIds = getBidIdParameter('userId', sharedParams);
   const ortb2Metadata = bidderRequest.ortb2 || {};
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   const params = {
     adapter_version: VERSION,

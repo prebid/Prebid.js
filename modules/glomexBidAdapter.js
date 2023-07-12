@@ -4,9 +4,11 @@ import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT = 'https://prebid.mes.glomex.cloud/request-bid'
 const BIDDER_CODE = 'glomex'
+const GVLID = 967
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {

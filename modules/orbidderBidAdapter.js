@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const storageManager = getStorageManager({bidderCode: 'orbidder'});
 
@@ -96,7 +97,7 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: $$PREBID_GLOBAL$$.version,
+          v: getGlobal().version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,

@@ -5,6 +5,7 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
@@ -314,3 +315,11 @@ function roundFloat(num, dec) {
   }
   return Math.round(num * d) / d;
 }
+
+export function setOrtbCurrency(ortbRequest, bidderRequest, context) {
+  if (currencySupportEnabled) {
+    ortbRequest.cur = ortbRequest.cur || [context.currency || adServerCurrency];
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'currency', fn: setOrtbCurrency});

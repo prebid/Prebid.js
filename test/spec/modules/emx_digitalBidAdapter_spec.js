@@ -707,7 +707,7 @@ describe('emx_digital Adapter', function () {
       }));
     });
 
-    it('returns valid advertiser domain', function () {
+    it('returns valid advertiser domains', function () {
       const bidResponse = utils.deepClone(serverResponse);
       let result = spec.interpretResponse({body: bidResponse});
       expect(result[0].meta.advertiserDomains).to.deep.equal(expectedResponse[0].meta.advertiserDomains);
@@ -724,6 +724,7 @@ describe('emx_digital Adapter', function () {
       expect(syncs).to.not.be.an('undefined');
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html')
     });
 
     it('should pass gdpr params', function () {
@@ -734,6 +735,34 @@ describe('emx_digital Adapter', function () {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
       expect(syncs[0].url).to.contains('gdpr=0');
+      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=0&gdpr_consent=test')
+    });
+
+    it('should pass us_privacy string', function () {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {}, {}, {
+        consentString: 'test',
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.contains('usp=test');
+    });
+
+    it('should pass us_privacy and gdpr strings', function () {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
+        {
+          gdprApplies: true,
+          consentString: 'test'
+        },
+        {
+          consentString: 'test'
+        });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.contains('gdpr=1');
+      expect(syncs[0].url).to.contains('usp=test');
+      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test')
     });
   });
 });

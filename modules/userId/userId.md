@@ -102,7 +102,7 @@ pbjs.setConfig({
                  expires: 1
               }
         }, {
-            name: "cpexId"
+            name: "czechAdId"
         }, {
             name: 'mwOpenLinkId',
             params: {
@@ -126,7 +126,8 @@ pbjs.setConfig({
             }
         },{
             name: 'uid2'
-        }
+        }, {
+            name: 'euid'
         }, {
               name: 'admixerId',
               params: {

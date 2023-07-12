@@ -2,7 +2,7 @@ import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
 import { expect } from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {deepEqual, waitForElementToLoad} from 'src/utils.js';
+import {memoize, deepEqual, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -1260,3 +1260,47 @@ describe('Utils', function () {
     });
   });
 });
+
+describe('memoize', () => {
+  let fn;
+
+  beforeEach(() => {
+    fn = sinon.stub().callsFake(function() {
+      return Array.from(arguments);
+    });
+  });
+
+  it('delegates to fn', () => {
+    expect(memoize(fn)('one', 'two')).to.eql(['one', 'two']);
+  });
+
+  it('caches result after first call, if first argument is the same', () => {
+    const mem = memoize(fn);
+    mem('one', 'two');
+    expect(mem('one', 'three')).to.eql(['one', 'two']);
+    expect(fn.callCount).to.equal(1);
+  });
+
+  it('delegates again when the first argument changes', () => {
+    const mem = memoize(fn);
+    mem('one', 'two');
+    expect(mem('two', 'one')).to.eql(['two', 'one']);
+    expect(fn.callCount).to.eql(2);
+  });
+
+  it('can clear cache with .clear', () => {
+    const mem = memoize(fn);
+    mem('arg');
+    mem.clear();
+    expect(mem('arg')).to.eql(['arg']);
+    expect(fn.callCount).to.equal(2);
+  });
+
+  it('allows setting cache keys', () => {
+    const mem = memoize(fn, (...args) => args.join(','))
+    mem('one', 'two');
+    mem('one', 'three');
+    expect(mem('one', 'three')).to.eql(['one', 'three']);
+    expect(fn.callCount).to.eql(2);
+  })
+})

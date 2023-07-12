@@ -9,13 +9,14 @@ import { logInfo, logError, logWarn } from '../src/utils.js';
 import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'merkleId';
 const ID_URL = 'https://prebid.sv.rkdms.com/identity/';
 const DEFAULT_REFRESH = 7 * 3600;
 const SESSION_COOKIE_NAME = '_svsid';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function getSession(configParams) {
   let session = null;

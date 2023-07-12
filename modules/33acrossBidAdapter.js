@@ -167,7 +167,8 @@ function buildRequests(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
-    pageUrl
+    pageUrl,
+    referer
   } = _buildRequestParams(bidRequests, bidderRequest);
 
   const groupedRequests = _buildRequestGroups(ttxSettings, bidRequests);
@@ -181,6 +182,7 @@ function buildRequests(bidRequests, bidderRequest) {
         gdprConsent,
         uspConsent,
         pageUrl,
+        referer,
         ttxSettings
       })
     )
@@ -199,7 +201,9 @@ function _buildRequestParams(bidRequests, bidderRequest) {
 
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
 
-  const pageUrl = bidderRequest?.refererInfo?.page
+  const pageUrl = bidderRequest?.refererInfo?.page;
+
+  const referer = bidderRequest?.refererInfo?.ref;
 
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
@@ -207,7 +211,8 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
-    pageUrl
+    pageUrl,
+    referer
   }
 }
 
@@ -241,7 +246,7 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings }) {
   const ttxRequest = {};
   const firstBidRequest = bidRequests[0];
   const { siteId, test } = firstBidRequest.params;
@@ -260,6 +265,10 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
+  }
+
+  if (referer) {
+    ttxRequest.site.ref = referer;
   }
 
   ttxRequest.id = firstBidRequest.auctionId;
@@ -756,7 +765,7 @@ function _buildDeviceORTB(device = {}) {
   }
 
   if (device.sua) {
-    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model' ]);
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
   }
 
   return deviceProps;

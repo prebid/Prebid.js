@@ -228,7 +228,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
   // build OpenRTB request body
   const payload = {
     id: bidderRequest.auctionId,
-    tmax: bidderRequest.timeout || config.getConfig('bidderTimeout'),
+    tmax: bidderRequest.timeout,
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),
     device: getDevice(),

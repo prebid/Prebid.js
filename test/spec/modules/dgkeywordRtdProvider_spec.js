@@ -383,10 +383,11 @@ describe('Digital Garage Keyword Module', function () {
       }
       let moduleConfig = cloneDeep(DEF_CONFIG);
       window.localStorage.setItem('ope_fpid', uuid);
+      moduleConfig.params.enableReadFpid = true;
       dgRtd.getDgKeywordsAndSet(
         pbjs,
         () => {
-          const url = dgRtd.getProfileApiUrl(null);
+          const url = dgRtd.getProfileApiUrl(null, moduleConfig.params.enableReadFpid);
           expect(url.indexOf(uuid) > 0).to.equal(true);
           expect(url).to.equal(server.requests[0].url);
           done();
@@ -410,11 +411,10 @@ describe('Digital Garage Keyword Module', function () {
       }
       let moduleConfig = cloneDeep(DEF_CONFIG);
       window.localStorage.setItem('ope_fpid', uuid);
-      moduleConfig.params.disableReadFpid = true;
       dgRtd.getDgKeywordsAndSet(
         pbjs,
         () => {
-          const url = dgRtd.getProfileApiUrl(null, moduleConfig.params.disableReadFpid);
+          const url = dgRtd.getProfileApiUrl(null);
           expect(url.indexOf(uuid) > 0).to.equal(false);
           expect(url).to.equal(server.requests[0].url);
           done();

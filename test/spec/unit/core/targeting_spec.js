@@ -269,6 +269,40 @@ describe('targeting tests', function () {
     bidCacheFilterFunction = undef;
   });
 
+  describe('isBidNotExpired', () => {
+    let clock;
+    beforeEach(() => {
+      clock = sandbox.useFakeTimers(0);
+    });
+
+    Object.entries({
+      'bid.ttlBuffer': (bid, ttlBuffer) => {
+        bid.ttlBuffer = ttlBuffer
+      },
+      'setConfig({ttlBuffer})': (_, ttlBuffer) => {
+        config.setConfig({ttlBuffer})
+      },
+    }).forEach(([t, setup]) => {
+      describe(`respects ${t}`, () => {
+        [0, 2].forEach(ttlBuffer => {
+          it(`when ttlBuffer is ${ttlBuffer}`, () => {
+            const bid = {
+              responseTimestamp: 0,
+              ttl: 10,
+            }
+            setup(bid, ttlBuffer);
+
+            expect(filters.isBidNotExpired(bid)).to.be.true;
+            clock.tick((bid.ttl - ttlBuffer) * 1000 - 100);
+            expect(filters.isBidNotExpired(bid)).to.be.true;
+            clock.tick(101);
+            expect(filters.isBidNotExpired(bid)).to.be.false;
+          });
+        });
+      });
+    });
+  });
+
   describe('getAllTargeting', function () {
     let amBidsReceivedStub;
     let amGetAdUnitsStub;

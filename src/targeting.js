@@ -28,7 +28,15 @@ import CONSTANTS from './constants.json';
 var pbTargetingKeys = [];
 
 const MAX_DFP_KEYLENGTH = 20;
-const TTL_BUFFER = 1000;
+let DEFAULT_TTL_BUFFER = 1;
+
+config.getConfig('ttlBuffer', (cfg) => {
+  if (typeof cfg.ttlBuffer === 'number') {
+    DEFAULT_TTL_BUFFER = cfg.ttlBuffer;
+  } else {
+    logError('Invalid value for ttlBuffer', cfg.ttlBuffer);
+  }
+})
 
 const CFG_ALLOW_TARGETING_KEYS = `targetingControls.allowTargetingKeys`;
 const CFG_ADD_TARGETING_KEYS = `targetingControls.addTargetingKeys`;
@@ -39,7 +47,7 @@ export const TARGETING_KEYS = Object.keys(CONSTANTS.TARGETING_KEYS).map(
 );
 
 // return unexpired bids
-const isBidNotExpired = (bid) => (bid.responseTimestamp + bid.ttl * 1000 - TTL_BUFFER) > timestamp();
+const isBidNotExpired = (bid) => (bid.responseTimestamp + (bid.ttl - (bid.hasOwnProperty('ttlBuffer') ? bid.ttlBuffer : DEFAULT_TTL_BUFFER)) * 1000) > timestamp();
 
 // return bids whose status is not set. Winning bids can only have a status of `rendered`.
 const isUnusedBid = (bid) => bid && ((bid.status && !includes([CONSTANTS.BID_STATUS.RENDERED], bid.status)) || !bid.status);
