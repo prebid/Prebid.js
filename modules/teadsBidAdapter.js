@@ -12,7 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -227,8 +227,7 @@ function buildRequestObject(bid) {
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }
   return reqObj;
 }

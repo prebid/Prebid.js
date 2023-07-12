@@ -138,10 +138,13 @@ function mockRandomSizeArray(len) {
   });
 }
 
-function mockBidRequestListData(mediaType, size) {
+function mockBidRequestListData(mediaType, size, customSizes) {
   return Array.apply(null, {length: size}).map((i, index) => {
     const id = Math.floor(Math.random() * 800) * (index + 1);
     let mediaTypes;
+    let params = {
+      endpointId: id
+    }
 
     if (mediaType == 'video') {
       mediaTypes = {
@@ -158,13 +161,15 @@ function mockBidRequestListData(mediaType, size) {
       }
     }
 
+    if (customSizes === undefined || customSizes.length > 0) {
+      params.sizes = customSizes
+    }
+
     return {
       adUnitCode: `adUnitCode-${id}`,
       mediaTypes: mediaTypes,
       bidId: `bidId-${id}`,
-      params: {
-        endpointId: id
-      }
+      params: params
     }
   });
 }
@@ -211,7 +216,7 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   let mockBidRequest;
   let mockReferer;
   beforeEach(() => {
-    mockBidRequest = mockBidRequestListData('banner', 8);
+    mockBidRequest = mockBidRequestListData('banner', 8, []);
     mockReferer = mockRefererData();
   });
   it('has return data', () => {
@@ -238,13 +243,45 @@ describe('SmartyTechDSPAdapter: buildRequests', () => {
   });
 });
 
+describe('SmartyTechDSPAdapter: buildRequests banner custom size', () => {
+  let mockBidRequest;
+  let mockReferer;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('banner', 8, [[300, 600]]);
+    mockReferer = mockRefererData();
+  });
+
+  it('correct request data', () => {
+    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    data.forEach((request, index) => {
+      expect(request.banner.sizes).to.be.equal(mockBidRequest[index].params.sizes);
+    })
+  });
+});
+
+describe('SmartyTechDSPAdapter: buildRequests video custom size', () => {
+  let mockBidRequest;
+  let mockReferer;
+  beforeEach(() => {
+    mockBidRequest = mockBidRequestListData('video', 8, [[300, 300], [250, 250]]);
+    mockReferer = mockRefererData();
+  });
+
+  it('correct request data', () => {
+    const data = spec.buildRequests(mockBidRequest, mockReferer).data;
+    data.forEach((request, index) => {
+      expect(request.video.sizes).to.be.equal(mockBidRequest[index].params.sizes);
+    })
+  });
+});
+
 describe('SmartyTechDSPAdapter: interpretResponse', () => {
   let mockBidRequest;
   let mockReferer;
   let request;
   let mockResponse;
   beforeEach(() => {
-    const brData = mockBidRequestListData('banner', 2);
+    const brData = mockBidRequestListData('banner', 2, []);
     mockReferer = mockRefererData();
     request = spec.buildRequests(brData, mockReferer);
     mockBidRequest = {
@@ -290,7 +327,7 @@ describe('SmartyTechDSPAdapter: interpretResponse video', () => {
   let request;
   let mockResponse;
   beforeEach(() => {
-    const brData = mockBidRequestListData('video', 2);
+    const brData = mockBidRequestListData('video', 2, []);
     mockReferer = mockRefererData();
     request = spec.buildRequests(brData, mockReferer);
     mockBidRequest = {

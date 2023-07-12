@@ -15,10 +15,13 @@ let LOAD_TOPICS_INITIALISE = false;
 const HAS_DEVICE_ACCESS = hasDeviceAccess();
 
 const bidderIframeList = {
-  maxTopicCaller: 1,
+  maxTopicCaller: 2,
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+  }, {
+    bidder: 'rtbhouse',
+    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
   }]
 }
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
@@ -28,7 +31,10 @@ export const lastUpdated = 'lastUpdated';
 const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
-  '1': 600
+  '1': 600,
+  '2': 601,
+  '3': 602,
+  '4': 603
 }
 
 function partitionBy(field, items) {

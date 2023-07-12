@@ -3,9 +3,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
+import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -24,7 +24,7 @@ const COOKIE_KEY = 'trc_cookie_storage';
  * 4. new user set it to 0
  */
 export const userData = {
-  storageManager: getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE}),
+  storageManager: getStorageManager({bidderCode: BIDDER_CODE}),
   getUserId: () => {
     const {getFromLocalStorage, getFromCookie, getFromTRC} = userData;
 
@@ -120,7 +120,7 @@ export const spec = {
     };
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: imps,
       site,
       device,
@@ -278,13 +278,15 @@ function getBid(bids, currency, bidResponse) {
   if (!bidResponse) {
     return;
   }
-  const {
+  let {
     price: cpm, nurl, crid: creativeId, adm: ad, w: width, h: height, exp: ttl, adomain: advertiserDomains, meta = {}
   } = bidResponse;
   let requestId = bids[bidResponse.impid - 1].bidId;
   if (advertiserDomains && advertiserDomains.length > 0) {
     meta.advertiserDomains = advertiserDomains
   }
+
+  ad = replaceAuctionPrice(ad, cpm);
 
   return {
     requestId,

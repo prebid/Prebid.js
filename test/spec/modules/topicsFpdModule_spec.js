@@ -372,9 +372,14 @@ describe('getCachedTopics()', () => {
     }
   ];
 
-  const evt = {
+  const evt_pm = {
     data: '{"segment":{"domain":"ads.pubmatic.com","topics":[{"configVersion":"chrome.1","modelVersion":"2206021246","taxonomyVersion":"1","topic":165,"version":"chrome.1:1:2206021246"}],"bidder":"pubmatic"},"date":1669743901858}',
     origin: 'https://ads.pubmatic.com'
+  };
+
+  const evt_rh = {
+    data: '{"segment":{"domain":"topics.authorizedvault.com","topics":[{"configVersion":"chrome.1","modelVersion":"2206021246","taxonomyVersion":"1","topic":165,"version":"chrome.1:1:2206021246"}],"bidder":"rtbhouse"},"date":1669743901858}',
+    origin: 'https://topics.authorizedvault.com'
   };
 
   let gdprDataHdlrStub;
@@ -413,9 +418,10 @@ describe('getCachedTopics()', () => {
   it('should stored segments if receiveMessage event is triggerred with segment data', () => {
     return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
       .then(({global}) => {
-        receiveMessage(evt);
+        receiveMessage(evt_pm);
+        receiveMessage(evt_rh);
         let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
-        expect(segments.has('pubmatic')).to.equal(true);
+        expect(segments.has('pubmatic') || segments.has('rtbhouse')).to.equal(true);
       });
   });
 
@@ -424,7 +430,7 @@ describe('getCachedTopics()', () => {
     storage.setDataInLocalStorage(topicStorageName, storedSegments);
     return processFpd({}, {global: {}}, {data: Promise.resolve(mockData)})
       .then(({global}) => {
-        receiveMessage(evt);
+        receiveMessage(evt_pm);
         let segments = new Map(safeJSONParse(storage.getDataFromLocalStorage(topicStorageName)));
         expect(segments.get('pubmatic')[2206021246].segment.length).to.equal(1);
       });
