@@ -8,6 +8,7 @@ import { expect } from 'chai';
 
 const {
   AUCTION_DEBUG,
+  BID_REQUESTED,
   AUCTION_INIT,
   BIDDER_DONE,
   BID_RESPONSE,
@@ -22,7 +23,7 @@ const CONFIG_WITH_DEBUG = {
     publisherID: '230',
     siteID: '421'
   },
-  includeEvents: [AUCTION_DEBUG, AUCTION_INIT, BIDDER_DONE, BID_RESPONSE, BID_TIMEOUT, NO_BID, BID_WON]
+  includeEvents: [AUCTION_DEBUG, AUCTION_INIT, BIDDER_DONE, BID_RESPONSE, BID_TIMEOUT, NO_BID, BID_WON, BID_REQUESTED, BID_REQUESTED]
 }
 
 describe('Automatad Analytics Adapter', () => {
@@ -123,6 +124,7 @@ describe('Automatad Analytics Adapter', () => {
         noBidHandler: (args) => {},
         auctionDebugHandler: (args) => {},
         bidderTimeoutHandler: (args) => {},
+        bidRequestedHandler: (args) => {}
       }
 
       global.window.atmtdAnalytics = obj
@@ -146,6 +148,11 @@ describe('Automatad Analytics Adapter', () => {
     it('Should call the auctionInitHandler when the auction init event is fired', () => {
       events.emit(AUCTION_INIT, {type: AUCTION_INIT})
       expect(global.window.atmtdAnalytics.auctionInitHandler.called).to.equal(true)
+    });
+
+    it('Should call the bidRequested when the bidRequested event is fired', () => {
+      events.emit(BID_REQUESTED, {type: BID_REQUESTED})
+      expect(global.window.atmtdAnalytics.bidRequestedHandler.called).to.equal(true)
     });
 
     it('Should call the bidResponseHandler when the bidResponse event is fired', () => {
@@ -218,6 +225,15 @@ describe('Automatad Analytics Adapter', () => {
       expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
       expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_RESPONSE)
       expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_RESPONSE)
+    });
+
+    it('Should push to the que when the bidRequested event is fired', () => {
+      events.emit(BID_REQUESTED, {type: BID_REQUESTED})
+      expect(exports.__atmtdAnalyticsQueue.push.called).to.equal(true)
+      expect(exports.__atmtdAnalyticsQueue).to.be.an('array').to.have.lengthOf(1)
+      expect(exports.__atmtdAnalyticsQueue[0]).to.have.lengthOf(2)
+      expect(exports.__atmtdAnalyticsQueue[0][0]).to.equal(BID_REQUESTED)
+      expect(exports.__atmtdAnalyticsQueue[0][1].type).to.equal(BID_REQUESTED)
     });
 
     it('Should push to the que when the bidderDone event is fired', () => {
