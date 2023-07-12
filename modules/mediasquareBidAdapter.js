@@ -120,23 +120,17 @@ export const spec = {
           netRevenue: value['net_revenue'],
           ttl: value['ttl'],
           ad: value['ad'],
-          mediasquare: {
-            'bidder': value['bidder'],
-            'code': value['code']
-          },
+          mediasquare: {},
           meta: {
             'advertiserDomains': value['adomain']
           }
         };
-        if ('context' in value) {
-          bidResponse['mediasquare']['context'] = value['context'];
-        }
-        if ('match' in value) {
-          bidResponse['mediasquare']['match'] = value['match'];
-        }
-        if ('hasConsent' in value) {
-          bidResponse['mediasquare']['hasConsent'] = value['hasConsent'];
-        }
+        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
+        paramsToSearchFor.forEach(param => {
+          if (param in value) {
+            bidResponse['mediasquare'][param] = value[param];
+          }
+        });
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -180,21 +174,23 @@ export const spec = {
     }
     let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context'];
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
     if (bid.hasOwnProperty('mediasquare')) {
-      for (let i = 0; i < paramsToSearchFor.length; i++) {
-        if (bid['mediasquare'].hasOwnProperty(paramsToSearchFor[i])) {
-          params[paramsToSearchFor[i]] = bid['mediasquare'][paramsToSearchFor[i]];
+      paramsToSearchFor.forEach(param => {
+        if (bid['mediasquare'].hasOwnProperty(param)) {
+          params[param] = bid['mediasquare'][param];
         }
-      }
+      });
     };
     paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
-    for (let i = 0; i < paramsToSearchFor.length; i++) {
-      if (bid.hasOwnProperty(paramsToSearchFor[i])) {
-        params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
-        if (typeof params[paramsToSearchFor[i]] == 'number') { params[paramsToSearchFor[i]] = params[paramsToSearchFor[i]].toString() }
+    paramsToSearchFor.forEach(param => {
+      if (bid.hasOwnProperty(param)) {
+        params[param] = bid[param];
+        if (typeof params[param] == 'number') {
+          params[param] = params[param].toString();
+        }
       }
-    }
+    });
     ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
     return true;
   }

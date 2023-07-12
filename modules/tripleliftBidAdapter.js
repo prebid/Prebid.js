@@ -56,6 +56,10 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
+    if (bidderRequest && bidderRequest.fledgeEnabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
+    }
+
     if (config.getConfig('coppa') === true) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
@@ -80,7 +84,7 @@ export const tripleliftAdapterSpec = {
     });
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -100,6 +104,15 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
+    if (gppConsent) {
+      if (gppConsent.gppString) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
+      }
+      if (gppConsent.applicableSections && gppConsent.applicableSections.length !== 0) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', _filterSid(gppConsent.applicableSections));
+      }
+    }
+
     return [{
       type: syncType,
       url: syncEndpoint
@@ -111,6 +124,13 @@ function _getSyncType(syncOptions) {
   if (!syncOptions) return;
   if (syncOptions.iframeEnabled) return 'iframe';
   if (syncOptions.pixelEnabled) return 'image';
+}
+
+function _filterSid(sid) {
+  return sid.filter(element => {
+    return Number.isInteger(element);
+  })
+    .join(',');
 }
 
 function _buildPostBody(bidRequests, bidderRequest) {
