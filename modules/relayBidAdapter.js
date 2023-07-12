@@ -1,7 +1,7 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
-import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes.js';
+import { isNumber, logMessage } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'relay';
@@ -46,27 +46,27 @@ function interpretResponse(response, request) {
 };
 
 function isBidRequestValid(bid) {
-  return utils.isNumber((bid.params || {}).accountId);
+  return isNumber((bid.params || {}).accountId);
 };
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   let syncs = []
   for (const response of serverResponses) {
-    const response_syncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])
+    const responseSyncs = ((((response || {}).body || {}).ext || {}).user_syncs || [])
     // Relay returns user_syncs in the format expected by prebid. If for any
     // reason the request/response failed to properly capture the GDPR settings
     // -- fallback to those identified by Prebid.
-    for (const sync of response_syncs) {
-      const sync_url = new URL(sync.url);
-      const missing_gdpr = !sync_url.searchParams.has('gdpr');
-      const missing_gdpr_consent = !sync_url.searchParams.has('gdpr_consent');
-      if (missing_gdpr) {
-        sync_url.searchParams.set('gdpr', Number(gdprConsent.gdprApplies))
-        sync.url = sync_url.toString();
+    for (const sync of responseSyncs) {
+      const syncUrl = new URL(sync.url);
+      const missingGdpr = !syncUrl.searchParams.has('gdpr');
+      const missingGdprConsent = !syncUrl.searchParams.has('gdpr_consent');
+      if (missingGdpr) {
+        syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies))
+        sync.url = syncUrl.toString();
       }
-      if (missing_gdpr_consent) {
-        sync_url.searchParams.set('gdpr_consent', gdprConsent.consentString);
-        sync.url = sync_url.toString();
+      if (missingGdprConsent) {
+        syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
+        sync.url = syncUrl.toString();
       }
       if (syncOptions.iframeEnabled && sync.type === 'iframe') { syncs.push(sync); }
       if (syncOptions.pixelEnabled && sync.type === 'image') { syncs.push(sync); }
@@ -76,7 +76,6 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
   return syncs;
 }
 
-
 export const spec = {
   code: BIDDER_CODE,
   isBidRequestValid,
@@ -84,13 +83,13 @@ export const spec = {
   interpretResponse,
   getUserSyncs,
   onTimeout: function (timeoutData) {
-    utils.logMessage('Timeout: ', timeoutData);
+    logMessage('Timeout: ', timeoutData);
   },
   onBidWon: function (bid) {
-    utils.logMessage('Bid won: ', bid);
+    logMessage('Bid won: ', bid);
   },
   onBidderError: function ({ error, bidderRequest }) {
-    utils.logMessage('Error: ', error, bidderRequest);
+    logMessage('Error: ', error, bidderRequest);
   },
   supportedMediaTypes: [BANNER, VIDEO, NATIVE]
 }
