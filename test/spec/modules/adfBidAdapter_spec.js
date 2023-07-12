@@ -411,7 +411,6 @@ describe('Adf adapter', function () {
       });
 
       describe('price floors', function () {
-        let result, mediaTypes;
         it('should not add if floors module not configured', function () {
           const validBidRequests = [{ bidId: 'bidId', params: {mid: 1000}, mediaTypes: {video: {}} }];
           let imp = getRequestImps(validBidRequests)[0];
@@ -449,7 +448,8 @@ describe('Adf adapter', function () {
         });
 
         it('should add correct params to getFloor', function () {
-          mediaTypes = { video: {
+          let result;
+          let mediaTypes = { video: {
             playerSize: [ 100, 200 ]
           } };
           const expectedFloors = [ 1, 1.3, 0.5 ];
@@ -477,21 +477,21 @@ describe('Adf adapter', function () {
           getRequestImps(validBidRequests);
 
           assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
-        });
 
-        function getBidWithFloorTest(floor) {
-          return {
-            params: { mid: 1 },
-            mediaTypes: mediaTypes,
-            getFloor: (args) => {
-              result = args;
-              return {
-                currency: 'DKK',
-                floor
-              };
-            }
-          };
-        }
+          function getBidWithFloorTest(floor) {
+            return {
+              params: { mid: 1 },
+              mediaTypes: mediaTypes,
+              getFloor: (args) => {
+                result = args;
+                return {
+                  currency: 'DKK',
+                  floor
+                };
+              }
+            };
+          }
+        });
 
         function getBidWithFloor(floor) {
           return {
