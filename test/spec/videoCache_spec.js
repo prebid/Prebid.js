@@ -6,6 +6,7 @@ import { server } from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
 import { batchingCache } from '../../src/auction.js';
+import { MODULE_TYPE_ANALYTICS } from 'src/activities/modules.js';
 
 const should = chai.should();
 
@@ -151,7 +152,7 @@ describe('The video cache', function () {
     });
 
     it('should include additional impressions trackers on top of vastImpUrl when they exist', function() {
-      registerVastTrackers(function(bidResponse) {
+      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', function(bidResponse) {
         return [
 	  {'event': 'impressions', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
         ];

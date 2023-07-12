@@ -1,6 +1,7 @@
 import { isValidVideoBid, registerVastTrackers, insertVastTrackers, getVastTrackers } from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
+import { MODULE_TYPE_ANALYTICS } from 'src/activities/modules.js';
 
 describe('video.js', function () {
   before(() => {
@@ -102,7 +103,7 @@ describe('video.js', function () {
   });
 
   it('insert into tracker list', function() {
-    registerVastTrackers(function(bidResponse) {
+    registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', function(bidResponse) {
       return [
         {'event': 'impression', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
       ];

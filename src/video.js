@@ -4,6 +4,9 @@ import { config } from '../src/config.js';
 import {includes} from './polyfill.js';
 import { hook } from './hook.js';
 import {auctionManager} from './auctionManager.js';
+import {isActivityAllowed} from './activities/rules.js';
+import {activityParams} from './activities/activityParams.js';
+import {ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
@@ -67,8 +70,8 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
   return true;
 }, 'checkVideoBidSetup');
 
-export function registerVastTrackers(tracker) {
-  vastTrackers.push(tracker);
+export function registerVastTrackers(moduleType, moduleName, trackerFn) {
+  if (typeof trackerFn == 'function') { vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn}); }
 }
 
 export function insertVastTrackers(trackers, vastXml) {
@@ -95,9 +98,10 @@ export function insertVastTrackers(trackers, vastXml) {
 
 export function getVastTrackers(bid) {
   let trackers = [];
-  vastTrackers.forEach(func => {
-    // get tracker list from function
-    let trackersToAdd = func(bid);
+  vastTrackers.filter(
+    ({moduleType, moduleName, trackerFn}) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
+  ).forEach(({trackerFn}) => {
+    let trackersToAdd = trackerFn(bid);
     trackersToAdd.forEach(trackerToAdd => {
       if (validVastTracker(trackers, trackerToAdd)) { trackers.push(trackerToAdd); }
     });
