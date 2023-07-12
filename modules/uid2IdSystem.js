@@ -32,8 +32,8 @@ function createLogger(logger, prefix) {
     logger(prefix + ' ', ...strings);
   }
 }
-const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
-const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
+const _logInfo = console.log;// createLogger(logInfo, LOG_PRE_FIX);
+const _logWarn = console.log;// createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
