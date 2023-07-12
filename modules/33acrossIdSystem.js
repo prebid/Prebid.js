@@ -8,7 +8,7 @@
 import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { uspDataHandler } from '../src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
@@ -37,19 +37,30 @@ function getEnvelope(response) {
 function calculateQueryStringParams(pid, gdprConsentData) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
+  const coppaValue = coppaDataHandler.getCoppa();
+  const gppConsent = gppDataHandler.getConsentData();
+
   const params = {
     pid,
     gdpr: Number(gdprApplies),
     src: CALLER_NAME,
-    ver: '$prebid.version$'
+    ver: '$prebid.version$',
+    coppa: Number(coppaValue)
   };
 
   if (uspString) {
     params.us_privacy = uspString;
   }
 
-  if (gdprApplies) {
-    params.gdpr_consent = gdprConsentData.consentString || '';
+  if (gppConsent) {
+    const { gppString = '', applicableSections = [] } = gppConsent;
+
+    params.gpp = gppString;
+    params.gpp_sid = encodeURIComponent(applicableSections.join(','))
+  }
+
+  if (gdprConsentData?.consentString) {
+    params.gdpr_consent = gdprConsentData.consentString;
   }
 
   return params;
