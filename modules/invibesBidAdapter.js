@@ -373,12 +373,7 @@ function generateRandomId() {
 }
 
 function getDocumentLocation(bidderRequest) {
-  var site = getConfig('site') || {};
-
-  if (!site.page) {
-    site.page = bidderRequest.refererInfo.page;
-  }
-  return site.page.substring(0, 300);
+  return bidderRequest.refererInfo.page.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
