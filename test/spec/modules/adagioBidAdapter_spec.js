@@ -256,7 +256,6 @@ describe('Adagio bid adapter', () => {
 
   describe('buildRequests()', function() {
     const expectedDataKeys = [
-      'id',
       'organizationId',
       'secure',
       'device',
@@ -269,7 +268,8 @@ describe('Adagio bid adapter', () => {
       'prebidVersion',
       'featuresVersion',
       'data',
-      'usIfr'
+      'usIfr',
+      'adgjs',
     ];
 
     it('groups requests by organizationId', function() {

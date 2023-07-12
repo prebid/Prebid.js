@@ -8,7 +8,7 @@ import {
   ACTIVITY_TRANSMIT_UFPD
 } from './activities.js';
 
-export const ORTB_UFPD_PATHS = ['user.data', 'user.ext.data'];
+export const ORTB_UFPD_PATHS = ['user.data', 'user.ext.data', 'user.yob', 'user.gender', 'user.keywords', 'user.kwarray'];
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
 

@@ -156,6 +156,10 @@ const displayBidderRequestWithConsents = {
     gdprApplies: true,
     consentString: 'test'
   },
+  gppConsent: {
+    gppString: 'abc12345234',
+    applicableSections: [7, 8]
+  },
   uspConsent: 'iHaveIt'
 };
 
@@ -363,6 +367,10 @@ describe('adtelligentBidAdapter', () => {
       it('sets GDPR', () => {
         expect(bidRequestWithPubSettingsData.GDPR).to.be.equal(1);
         expect(bidRequestWithPubSettingsData.GDPRConsent).to.be.equal(displayBidderRequestWithConsents.gdprConsent.consentString);
+      });
+      it('sets GPP flags', () => {
+        expect(bidRequestWithPubSettingsData.GPP).to.be.equal(displayBidderRequestWithConsents.gppConsent.gppString);
+        expect(bidRequestWithPubSettingsData.GPPSid).to.be.equal('7,8');
       });
       it('sets USP', () => {
         expect(bidRequestWithPubSettingsData.USP).to.be.equal(displayBidderRequestWithConsents.uspConsent);
