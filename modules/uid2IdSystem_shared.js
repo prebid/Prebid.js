@@ -234,6 +234,8 @@ function generateClientKeyPair() {
 }
 
 function deriveSecretKey(privateKey, publicKey) {
+  console.log('privateKey: ' + privateKey);
+  console.log('publicKey: ' + publicKey);
   return window.crypto.subtle.deriveKey(
     {
       name: 'ECDH',
@@ -264,19 +266,21 @@ function encryptEmail(email, sharedKey, iv) {
 function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
-  const serverPublicKey = 'PUBLICKEY..................';
+  const serverPublicKey = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElME9famscrgcMVY5l5ro1v+/X8YyPMoZj13/4LCRuxpL5fw1IAUsUetqH/fWAnE6EuHv2CmeSMPy6P4ml2SVQQ==';
+  // const serverPrivateKey = 'MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDb7UC8HN1OOlyc1KB0s1rjGichZ92Ecnn8xViEOhAhIg==';
   const testEmail = 'test@example.com';
 
   _logInfo('Generating client key pair...');
-
   // encryptionConfigs is a map lookup that would store the outputs of various promises as the promises are
   // fulfilled sequentially, so that all these variables can be carried over and used in subsequent promises
   return generateClientKeyPair()
     .then((clientKeyPair) => {
+      _logInfo('Generated client key pair:', clientKeyPair);
       _logInfo('Deriving secret key...');
       return {clientKeyPair, sharedKey: deriveSecretKey(clientKeyPair.privateKey, serverPublicKey)};
     })
     .then((encryptionConfigs) => {
+      _logInfo('Derived secret key:', encryptionConfigs.sharedKey);
       _logInfo('Exporting public key...');
       return {...encryptionConfigs, exportedPublicKey: exportPublicKey(encryptionConfigs.clientKeyPair)};
     })
@@ -292,6 +296,7 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
         publicKey: _arrayBufferToBase64(encryptionConfigs.exportedPublicKey),
         iv: _arrayBufferToBase64(encryptionConfigs.iv),
       };
+      _logInfo('cstgBody: ', cstgBody);
       _logInfo('Generating CSTG token...');
       const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);
       return {...encryptionConfigs, base64ResponseBody: client.callCstgApi(cstgBody)};
@@ -311,7 +316,7 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
       );
     })
     .then((decryptedResponseBody) => {
-      const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
+      const decryptedResponseBodyText = 'decryptedResponse'; // TODO new TextDecoder().decode(decryptedResponseBody);
       _logInfo('response:', decryptedResponseBodyText);
       const result = JSON.parse(decryptedResponseBodyText);
 
@@ -349,59 +354,66 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let storedTokens = storageManager.getStoredValueWithFallback();
   _logInfo('Loaded module-stored tokens:', storedTokens);
 
-  if (storedTokens && typeof storedTokens === 'string') {
-    // Stored value is a plain token - if no token is supplied, just use the stored value.
-
-    if (!suppliedToken) {
-      _logInfo('Returning legacy cookie value.');
-      return { id: storedTokens };
-    }
-    // Otherwise, ignore the legacy value - it should get over-written later anyway.
-    _logInfo('Discarding superseded legacy cookie.');
-    storedTokens = null;
-  }
-
-  if (suppliedToken && storedTokens) {
-    if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
-      _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
-      // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
-      storedTokens = null;
-    }
-  }
-  // At this point, any legacy values or superseded stored tokens have been nulled out.
-  const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
-  const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
-  _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
-  if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
-    _logInfo('Newest available token is expired and not refreshable.');
-    return { id: null };
-  }
-  if (Date.now() > newestAvailableToken.identity_expires) {
-    const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-    _logInfo('Token is expired but can be refreshed, attempting refresh.');
-    return { callback: (cb) => {
-      promise.then((result) => {
-        _logInfo('Refresh reponded, passing the updated token on.', result);
-        cb(result);
-      });
-    } };
-  }
-  // If should refresh (but don't need to), refresh in the background.
-  if (Date.now() > newestAvailableToken.refresh_from) {
-    _logInfo(`Refreshing token in background with low priority.`);
-    refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
-  }
+  // if (storedTokens && typeof storedTokens === 'string') {
+  //   // Stored value is a plain token - if no token is supplied, just use the stored value.
+  //
+  //   if (!suppliedToken) {
+  //     _logInfo('Returning legacy cookie value.');
+  //     return { id: storedTokens };
+  //   }
+  //   // Otherwise, ignore the legacy value - it should get over-written later anyway.
+  //   _logInfo('Discarding superseded legacy cookie.');
+  //   storedTokens = null;
+  // }
+  //
+  // if (suppliedToken && storedTokens) {
+  //   if (storedTokens.originalToken?.advertising_token !== suppliedToken.advertising_token) {
+  //     _logInfo('Server supplied new token - ignoring stored value.', storedTokens.originalToken?.advertising_token, suppliedToken.advertising_token);
+  //     // Stored token wasn't originally sourced from the provided token - ignore the stored value. A new user has logged in?
+  //     storedTokens = null;
+  //   }
+  // }
+  // // At this point, any legacy values or superseded stored tokens have been nulled out.
+  // const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
+  // const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
+  // _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
+  // if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
+  //   _logInfo('Newest available token is expired and not refreshable.');
+  //   return { id: null };
+  // }
+  // if (Date.now() > newestAvailableToken.identity_expires) {
+  //   const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  //   _logInfo('Token is expired but can be refreshed, attempting refresh.');
+  //   return { callback: (cb) => {
+  //     promise.then((result) => {
+  //       _logInfo('Refresh reponded, passing the updated token on.', result);
+  //       cb(result);
+  //     });
+  //   } };
+  // }
+  // // If should refresh (but don't need to), refresh in the background.
+  // if (Date.now() > newestAvailableToken.refresh_from) {
+  //   _logInfo(`Refreshing token in background with low priority.`);
+  //   refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
+  // }
 
   // ----------------------------------------------------- CSTG START -------------------------------------------------
-  // cstgAndStore(config, storageManager, _logInfo, _logWarn);
-  // let storedTokens = storageManager.getStoredValueWithFallback();
+  const promise = cstgAndStore(config, storageManager, _logInfo, _logWarn);
+  return { callback: (cb) => {
+    promise.then((result) => {
+      _logInfo('Refresh reponded, passing the updated token on.', result);
+      cb(result);
+    });
+  } };
+
   // const newestAvailableToken = storedTokens.latestToken;
   // ----------------------------------------------------- CSTG END  --------------------------------------------------
 
-  const tokens = {
-    originalToken: suppliedToken ?? storedTokens?.originalToken,
-    latestToken: newestAvailableToken,
-  };
-  storageManager.storeValue(tokens);
-  return { id: tokens };
+  // const tokens = {
+  //   originalToken: suppliedToken ?? storedTokens?.originalToken,
+  //   latestToken: newestAvailableToken,
+  // };
+  // storageManager.storeValue(tokens);
+  // return { id: tokens };
+  // return { id: "abc" };
 }
