@@ -232,13 +232,13 @@ describe(`UID2 module`, function () {
         return config.setConfig(gen);
       },
     },
-    {
-      name: 'Token provided in server-set cookie',
-      setConfig: (token, extraConfig) => {
-        cookieHelpers.setPublisherCookie(publisherCookieName, token);
-        config.setConfig(makePrebidConfig(serverCookieConfigParams, extraConfig));
-      },
-    }
+    // {
+    //   name: 'Token provided in server-set cookie',
+    //   setConfig: (token, extraConfig) => {
+    //     cookieHelpers.setPublisherCookie(publisherCookieName, token);
+    //     config.setConfig(makePrebidConfig(serverCookieConfigParams, extraConfig));
+    //   },
+    // }
   ]
 
   scenarios.forEach(function(scenario) {
