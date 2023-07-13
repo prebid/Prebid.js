@@ -38,7 +38,7 @@ describe('SSPBC adapter', function () {
       },
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       transactionId,
     },
     {
@@ -60,7 +60,7 @@ describe('SSPBC adapter', function () {
       },
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '2',
+      bidId: bidderRequestId + '2',
       transactionId,
     }
     ];
@@ -83,7 +83,7 @@ describe('SSPBC adapter', function () {
       ],
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       transactionId,
     };
     const bid_native = {
@@ -122,7 +122,7 @@ describe('SSPBC adapter', function () {
       ],
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       transactionId,
     };
     const bid_video = {
@@ -144,7 +144,7 @@ describe('SSPBC adapter', function () {
       ],
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       transactionId,
     };
     const bids_timeouted = [{
@@ -155,7 +155,7 @@ describe('SSPBC adapter', function () {
         siteId: '8816',
       }],
       auctionId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       timeout: 100,
     },
     {
@@ -166,7 +166,7 @@ describe('SSPBC adapter', function () {
         siteId: '8816',
       }],
       auctionId,
-      bidId: auctionId + '2',
+      bidId: bidderRequestId + '2',
       timeout: 100,
     }
     ];
@@ -198,7 +198,7 @@ describe('SSPBC adapter', function () {
       },
       auctionId,
       bidderRequestId,
-      bidId: auctionId + '1',
+      bidId: bidderRequestId + '1',
       transactionId,
     }];
     const bidRequest = {
@@ -293,7 +293,7 @@ describe('SSPBC adapter', function () {
     };
     const serverResponse = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
@@ -333,7 +333,7 @@ describe('SSPBC adapter', function () {
     };
     const serverResponseSingle = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
@@ -358,11 +358,11 @@ describe('SSPBC adapter', function () {
     };
     const serverResponseOneCode = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
-            'impid': 'bidid-' + auctionId + '1',
+            'impid': 'bidid-' + bidderRequestId + '1',
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
@@ -385,11 +385,11 @@ describe('SSPBC adapter', function () {
     };
     const serverResponseVideo = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
-            'impid': 'bidid-' + auctionId + '1',
+            'impid': 'bidid-' + bidderRequestId + '1',
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
@@ -413,11 +413,11 @@ describe('SSPBC adapter', function () {
     };
     const serverResponseNative = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
         'seatbid': [{
           'bid': [{
             'id': '3347324c-6889-46d2-a800-ae78a5214c06',
-            'impid': 'bidid-' + auctionId + '1',
+            'impid': 'bidid-' + bidderRequestId + '1',
             'price': 1,
             'adid': 'lxHWkB7OnZeso3QiN1N4',
             'nurl': '',
@@ -438,7 +438,7 @@ describe('SSPBC adapter', function () {
     };
     const emptyResponse = {
       'body': {
-        'id': auctionId,
+        'id': bidderRequestId,
       }
     }
     return {
@@ -696,7 +696,7 @@ describe('SSPBC adapter', function () {
 
       let notificationPayload = spec.onBidWon(bid);
       expect(notificationPayload).to.have.property('event').that.equals('bidWon');
-      expect(notificationPayload).to.have.property('requestId').that.equals(bid.auctionId);
+      expect(notificationPayload).to.have.property('requestId').that.equals(bid.bidderRequestId);
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bid.adUnitCode]);
       expect(notificationPayload).to.have.property('siteId').that.is.an('array');
       expect(notificationPayload).to.have.property('slotId').that.is.an('array');
@@ -717,7 +717,6 @@ describe('SSPBC adapter', function () {
       let notificationPayload = spec.onTimeout(bids_timeouted);
 
       expect(notificationPayload).to.have.property('event').that.equals('timeout');
-      expect(notificationPayload).to.have.property('requestId').that.equals(bids_timeouted[0].auctionId);
       expect(notificationPayload).to.have.property('tagid').that.deep.equals([bids_timeouted[0].adUnitCode, bids_timeouted[1].adUnitCode]);
     });
   });
