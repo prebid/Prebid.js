@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import {ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL} from '../../../modules/adpartnerBidAdapter';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -1462,6 +1463,47 @@ describe('TheMediaGrid Adapter', function () {
 
       const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+
+  describe('onDataDeletionRequest', function() {
+    let ajaxStub;
+    beforeEach(function() {
+      ajaxStub = sinon.stub(spec, 'ajaxCall');
+    });
+
+    it('should send right request on onDataDeletionRequest call', function() {
+      spec.onDataDeletionRequest([{
+        bids: [
+          {
+            bidder: 'grid',
+            params: {
+              uid: 1
+            }
+          },
+          {
+            bidder: 'grid',
+            params: {
+              uid: 2
+            }
+          },
+          {
+            bidder: 'another',
+            params: {
+              uid: 3
+            }
+          },
+          {
+            bidder: 'gridNM',
+            params: {
+              uid: 4
+            }
+          }
+        ],
+      }]);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete');
+      expect(ajaxStub.firstCall.args[2]).to.equal('{"uids":[1,2,4]}');
     });
   });
 

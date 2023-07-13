@@ -1,4 +1,4 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {_each, chunk, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -48,7 +48,7 @@ function isBidRequestValid(bid) {
   return !!(extractCID(params) && extractPID(params));
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const {
     params,
     bidId,
@@ -56,7 +56,6 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     adUnitCode,
     schain,
     mediaTypes,
-    auctionId,
     ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
@@ -69,9 +68,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const sId = getVidazooSessionId();
-  const cId = extractCID(params);
   const pId = extractPID(params);
-  const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
@@ -114,8 +111,6 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     gpid: gpid,
     cat: cat,
     pagecat: pagecat,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    auctionId: auctionId,
     transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
@@ -153,17 +148,46 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
+  _each(ext, (value, key) => {
+    data['ext.' + key] = value;
+  });
+
+  return data;
+}
+
+function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+  const {params} = bid;
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout);
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
-
-  _each(ext, (value, key) => {
-    dto.data['ext.' + key] = value;
-  });
-
   return dto;
+}
+
+function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+  const {params} = bidRequests[0];
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = bidRequests.map(bid => {
+    const sizes = parseSizesInput(bid.sizes);
+    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
+  });
+  const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
+
+  const chunkedData = chunk(data, chunkSize);
+  return chunkedData.map(chunk => {
+    return {
+      method: 'POST',
+      url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
+      data: {
+        bids: chunk
+      }
+    };
+  });
 }
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
@@ -193,12 +217,34 @@ function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+
   const requests = [];
-  validBidRequests.forEach(validBidRequest => {
-    const sizes = parseSizesInput(validBidRequest.sizes);
-    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-    requests.push(request);
-  });
+
+  if (singleRequestMode) {
+    // banner bids are sent as a single request
+    const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
+    if (bannerBidRequests.length > 0) {
+      const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+      requests.push(...singleRequests);
+    }
+
+    // video bids are sent as a single request for each bid
+
+    const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+    videoBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  } else {
+    validBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  }
   return requests;
 }
 
@@ -206,13 +252,15 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {bidId} = request.data;
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+  const reqBidId = deepAccess(request, 'data.bidId');
   const {results} = serverResponse.body;
 
   let output = [];
 
   try {
-    results.forEach(result => {
+    results.forEach((result, i) => {
       const {
         creativeId,
         ad,
@@ -221,6 +269,7 @@ function interpretResponse(serverResponse, request) {
         width,
         height,
         currency,
+        bidId,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -230,7 +279,7 @@ function interpretResponse(serverResponse, request) {
       }
 
       const response = {
-        requestId: bidId,
+        requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
         cpm: price,
         width: width,
         height: height,
@@ -264,6 +313,7 @@ function interpretResponse(serverResponse, request) {
       }
       output.push(response);
     });
+
     return output;
   } catch (e) {
     return [];

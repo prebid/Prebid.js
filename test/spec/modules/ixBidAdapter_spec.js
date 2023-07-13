@@ -759,7 +759,8 @@ describe('IndexexchangeAdapter', function () {
     uid2: { id: 'testuid2' }, // UID 2.0
     // similar to uid2, but id5's getValue takes .uid
     id5id: { uid: 'testid5id' }, // ID5
-    imuid: 'testimuid'
+    imuid: 'testimuid',
+    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -813,7 +814,12 @@ describe('IndexexchangeAdapter', function () {
     }, {
       source: 'intimatemerger.com',
       uids: [{
-        id: DEFAULT_USERID_DATA.imuid,
+        id: DEFAULT_USERID_DATA.imuid
+      }]
+    }, {
+      source: '33across.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['33acrossId'].envelope
       }]
     }
   ];
@@ -832,6 +838,18 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('getUserSync tests', function () {
+    before(() => {
+      // TODO (dgirardi): the assertions in this block rely on
+      // global state (consent and siteId) set up in the SOT
+      // this is an outsider's attempt to recreate that state more explicitly after shuffling around setup code
+      // in this test suite
+
+      // please make your preconditions explicit;
+      // also, please, avoid global state if possible.
+
+      spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+    })
+
     it('UserSync test : check type = iframe, check usermatch URL', function () {
       const syncOptions = {
         'iframeEnabled': true
@@ -1207,7 +1225,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(7);
+        expect(payload.user.eids).to.have.lengthOf(8);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1395,7 +1413,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.lengthOf(8);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1528,7 +1546,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(9);
+      expect(payload.user.eids).to.have.lengthOf(10);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1570,7 +1588,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(9);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
@@ -1771,16 +1789,19 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
-    const requestUrl = request.url;
-    const requestMethod = request.method;
-    const payloadData = request.data;
-
     const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutSchain[0].schain;
-    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
-    const payloadWithoutSchain = extractPayload(requestWithoutSchain);
     const GPID = '/19968336/some-adunit-path';
+    let request, requestUrl, requestMethod, payloadData, requestWithoutSchain, payloadWithoutSchain;
+
+    before(() => {
+      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+      requestUrl = request.url;
+      requestMethod = request.method;
+      payloadData = request.data;
+      requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+      payloadWithoutSchain = extractPayload(requestWithoutSchain);
+    });
 
     it('request should be made to IX endpoint with POST method and siteId in query param', function () {
       expect(requestMethod).to.equal('POST');
@@ -2302,7 +2323,11 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('request should contain both banner and video requests', function () {
-      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
+      let request;
+      before(() => {
+        request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
+      });
+
       it('should have banner request', () => {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
@@ -2332,8 +2357,83 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    describe('video request should set displaymanager', () => {
+      it('ix renderer preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('ix renderer not preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
+      });
+      it('ix renderer not preferrered - bad url', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('renderer url provided and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://js-sec.indexww.rendererplayer.com',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('renderer url undefined and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('schain', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = SAMPLE_SCHAIN;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
+      });
+    });
+
     describe('request should contain both banner and native requests', function () {
-      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
+      let request;
+      before(() => {
+        request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
+      })
 
       it('should have banner request', () => {
         const bannerImpression = extractPayload(request[0]).imp[0];
@@ -2541,8 +2641,11 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequestVideo', function () {
-    const request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
-    const payloadData = request[0].data;
+    let request, payloadData;
+    before(() => {
+      request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
+      payloadData = request[0].data;
+    })
 
     it('auction type should be set correctly', function () {
       const at = payloadData.at;
@@ -2922,7 +3025,10 @@ describe('IndexexchangeAdapter', function () {
 
     describe('both banner and video bidder params set', function () {
       const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-      const request = spec.buildRequests(bids, {});
+      let request;
+      before(() => {
+        request = spec.buildRequests(bids, {});
+      })
 
       it('should return valid banner requests', function () {
         const impressions = extractPayload(request[0]).imp;

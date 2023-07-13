@@ -40,7 +40,6 @@ const BID = {
   'placementCode': 'div-gpt-ad-1460505748561-0',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
-  'auctionId': 'auction_id',
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
@@ -64,7 +63,6 @@ const VIDEO_BID = {
       tid: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
     }
   },
-  'auctionId': 'auction_id',
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
@@ -142,6 +140,7 @@ const SERVER_RESPONSE = {
     cid: 'testcid123',
     results: [{
       'ad': '<iframe>console.log("hello world")</iframe>',
+      'bidId': '2d52001cabd527-response',
       'price': 0.8,
       'creativeId': '12610997325162499419',
       'exp': 30,
@@ -287,7 +286,6 @@ describe('VidazooBidAdapter', function () {
           usPrivacy: 'consent_string',
           gppString: 'gpp_string',
           gppSid: [7],
-          auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
@@ -361,7 +359,6 @@ describe('VidazooBidAdapter', function () {
           usPrivacy: 'consent_string',
           gppString: 'gpp_string',
           gppSid: [7],
-          auctionId: 'auction_id',
           bidRequestsCount: 4,
           bidderRequestsCount: 3,
           bidderWinsCount: 1,
@@ -413,8 +410,122 @@ describe('VidazooBidAdapter', function () {
       });
     });
 
+    it('should build single banner request for multiple bids', function () {
+      config.setConfig({
+        bidderTimeout: 3000,
+        vidazoo: {
+          singleRequest: true,
+          chunkSize: 2
+        }
+      });
+
+      const hashUrl = hashCode(BIDDER_REQUEST.refererInfo.page);
+
+      const BID2 = utils.deepClone(BID);
+      BID2.bidId = '2d52001cabd528';
+      BID2.adUnitCode = 'div-gpt-ad-12345-1';
+      BID2.sizes = [[300, 250]];
+
+      const REQUEST_DATA = {
+        gdprConsent: 'consent_string',
+        gdpr: 1,
+        usPrivacy: 'consent_string',
+        gppString: 'gpp_string',
+        gppSid: [7],
+        bidRequestsCount: 4,
+        bidderRequestsCount: 3,
+        bidderWinsCount: 1,
+        bidderTimeout: 3000,
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        bidderRequestId: '1fdb5ff1b6eaa7',
+        sizes: ['300x250', '300x600'],
+        sua: {
+          'source': 2,
+          'platform': {
+            'brand': 'Android',
+            'version': ['8', '0', '0']
+          },
+          'browsers': [
+            {'brand': 'Not_A Brand', 'version': ['99', '0', '0', '0']},
+            {'brand': 'Google Chrome', 'version': ['109', '0', '5414', '119']},
+            {'brand': 'Chromium', 'version': ['109', '0', '5414', '119']}
+          ],
+          'mobile': 1,
+          'model': 'SM-G955U',
+          'bitness': '64',
+          'architecture': ''
+        },
+        url: 'https%3A%2F%2Fwww.greatsite.com',
+        referrer: 'https://www.somereferrer.com',
+        cb: 1000,
+        bidFloor: 0.1,
+        bidId: '2d52001cabd527',
+        adUnitCode: 'div-gpt-ad-12345-0',
+        publisherId: '59ac17c192832d0011283fe3',
+        dealId: 3,
+        sessionId: '',
+        uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
+        bidderVersion: adapter.version,
+        prebidVersion: version,
+        schain: BID.schain,
+        ptrace: '1000',
+        res: `${window.top.screen.width}x${window.top.screen.height}`,
+        mediaTypes: [BANNER],
+        uqs: getTopWindowQueryParams(),
+        'ext.param1': 'loremipsum',
+        'ext.param2': 'dolorsitamet',
+        isStorageAllowed: true,
+        gpid: '1234567890',
+        cat: ['IAB2'],
+        pagecat: ['IAB2-2'],
+        webSessionId: webSessionId
+      };
+
+      const REQUEST_DATA2 = utils.deepClone(REQUEST_DATA);
+      REQUEST_DATA2.bidId = '2d52001cabd528';
+      REQUEST_DATA2.adUnitCode = 'div-gpt-ad-12345-1';
+      REQUEST_DATA2.sizes = ['300x250'];
+      REQUEST_DATA2.dealId = 4;
+
+      const requests = adapter.buildRequests([BID, BID2], BIDDER_REQUEST);
+      expect(requests).to.have.length(1);
+
+      expect(requests[0]).to.deep.equal({
+        method: 'POST',
+        url: `${createDomain(SUB_DOMAIN)}/prebid/multi/59db6b3b4ffaa70004f45cdc`,
+        data: {bids: [REQUEST_DATA, REQUEST_DATA2]}
+      });
+    });
+
+    it('should return seperated requests for video and banner if singleRequest is true', function () {
+      config.setConfig({
+        bidderTimeout: 3000,
+        vidazoo: {
+          singleRequest: true,
+          chunkSize: 2
+        }
+      });
+
+      const requests = adapter.buildRequests([BID, VIDEO_BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(2);
+    });
+
+    it('should chunk requests if requests exceed chunkSize and singleRequest is true', function () {
+      config.setConfig({
+        bidderTimeout: 3000,
+        vidazoo: {
+          singleRequest: true,
+          chunkSize: 2
+        }
+      });
+
+      const requests = adapter.buildRequests([BID, BID, BID, BID], BIDDER_REQUEST);
+      expect(requests).to.have.length(2);
+    });
+
     after(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
+      config.resetConfig();
       sandbox.restore();
     });
   });
@@ -513,6 +624,21 @@ describe('VidazooBidAdapter', function () {
           advertiserDomains: ['vidazoo.com']
         }
       });
+    });
+
+    it('should populate requestId from response in case of singleRequest true', function () {
+      config.setConfig({
+        vidazoo: {
+          singleRequest: true,
+          chunkSize: 2
+        }
+      });
+
+      const responses = adapter.interpretResponse(SERVER_RESPONSE, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].requestId).to.equal('2d52001cabd527-response');
+
+      config.resetConfig();
     });
 
     it('should take default TTL', function () {
