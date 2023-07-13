@@ -1,11 +1,10 @@
-import { pick, isFn, isStr, isPlainObject, deepAccess } from '../../src/utils.js';
+import {deepAccess, isFn, isPlainObject, isStr} from '../../src/utils.js';
 
-// Each user-id sub-module is expected to mention respective config here
-export const USER_IDS_CONFIG = {};
+export const EID_CONFIG = new Map();
 
 // this function will create an eid object for the given UserId sub-module
 function createEidObject(userIdData, subModuleKey) {
-  const conf = USER_IDS_CONFIG[subModuleKey];
+  const conf = EID_CONFIG.get(subModuleKey);
   if (conf && userIdData) {
     let eid = {};
     eid.source = isFn(conf['getSource']) ? conf['getSource'](userIdData) : conf['source'];
@@ -71,11 +70,12 @@ export function buildEidPermissions(submodules) {
   submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
     .forEach(i => {
       Object.keys(i.idObj).forEach(key => {
+        const eidConf = EID_CONFIG.get(key) || {};
         if (deepAccess(i, 'config.bidders') && Array.isArray(i.config.bidders) &&
-          deepAccess(USER_IDS_CONFIG, key + '.source')) {
+          eidConf.source) {
           eidPermissions.push(
             {
-              source: USER_IDS_CONFIG[key].source,
+              source: eidConf.source,
               bidders: i.config.bidders
             }
           );
