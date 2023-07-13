@@ -101,7 +101,7 @@ export class Uid2ApiClient {
       try {
         if (req.status !== 200) {
           // if (!cstgDetails.refresh_response_key || req.status !== 200) {
-          rejectPromise(new Error('cstg endpoint status: ' + req.status));
+          rejectPromise(new Error('CSTG endpoint status: ' + req.status));
         } else {
           resolvePromise(req.responseText);
         }
@@ -109,7 +109,7 @@ export class Uid2ApiClient {
         rejectPromise(err);
       }
     };
-    this._logInfo('Sending cstg request', cstgDetails);
+    this._logInfo('CSTG Sending request', cstgDetails);
     req.send(cstgDetails);
     return promise;
   }
@@ -255,8 +255,7 @@ function exportPublicKey(clientKeyPair) {
 
 function importPublicKey(pem) {
   // base64 decode the string to get the binary data
-  const x = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElME9famscrgcMVY5l5ro1v+/X8YyPMoZj13/4LCRuxpL5fw1IAUsUetqH/fWAnE6EuHv2CmeSMPy6P4ml2SVQQ==';
-  const binaryDerString = window.atob(x);
+  const binaryDerString = window.atob(pem);
   // convert from a binary string to an ArrayBuffer
   const binaryDer = str2ab(binaryDerString);
   return window.crypto.subtle.importKey(
@@ -286,132 +285,72 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
   // const serverPrivateKey = 'MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDb7UC8HN1OOlyc1KB0s1rjGichZ92Ecnn8xViEOhAhIg==';
   const testEmail = 'test@example.com';
 
-  _logInfo('Generating client key pair...');
-  // encryptionConfigs is a map lookup that would store the outputs of various promises as the promises are
-  // fulfilled sequentially, so that all these variables can be carried over and used in subsequent promises
-  // return generateClientKeyPair()
-  //   .then((clientKeyPair) => {
-  //     _logInfo('Generated client key pair:', clientKeyPair);
-  //     _logInfo('Deriving secret key...');
-  //     return {clientKeyPair, sharedKey: deriveSecretKey(clientKeyPair.privateKey, serverPublicKey)};
-  //   })
-  //   .then((encryptionConfigs) => {
-  //     _logInfo('Derived secret key:', encryptionConfigs.sharedKey);
-  //     _logInfo('Exporting public key...');
-  //     return {...encryptionConfigs, exportedPublicKey: exportPublicKey(encryptionConfigs.clientKeyPair)};
-  //   })
-  //   .then((encryptionConfigs) => {
-  //     // iv will be needed for decryption
-  //     let iv = window.crypto.getRandomValues(new Uint8Array(12));
-  //     _logInfo('Encrypting email...');
-  //     return {...encryptionConfigs, iv, encryptedEmail: encryptEmail(testEmail, encryptionConfigs.sharedKey, iv)};
-  //   })
-  //   .then((encryptionConfigs) => {
-  //     const cstgBody = {
-  //       email: _arrayBufferToBase64(encryptionConfigs.encryptedEmail),
-  //       publicKey: _arrayBufferToBase64(encryptionConfigs.exportedPublicKey),
-  //       iv: _arrayBufferToBase64(encryptionConfigs.iv),
-  //     };
-  //     _logInfo('cstgBody: ', cstgBody);
-  //     _logInfo('Generating CSTG token...');
-  //     const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);
-  //     return {...encryptionConfigs, base64ResponseBody: client.callCstgApi(cstgBody)};
-  //   })
-  //   .then((encryptionConfigs) => {
-  //     _logInfo('CSTG endpoint responded with:', encryptionConfigs.base64ResponseBody);
-  //
-  //     // got the CSTG endpoint response decrypting:
-  //     const encryptedResponseBody = window.atob(encryptionConfigs.base64ResponseBody);
-  //     const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
-  //     _logInfo('Decrypting response', responseBodyArrayBuffer);
-  //
-  //     return window.crypto.subtle.decrypt(
-  //       {name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12)},
-  //       encryptionConfigs.sharedKey,
-  //       responseBodyArrayBuffer.slice(12),
-  //     );
-  //   })
-  //   .then((decryptedResponseBody) => {
-  //     const decryptedResponseBodyText = 'decryptedResponse'; // TODO new TextDecoder().decode(decryptedResponseBody);
-  //     _logInfo('response:', decryptedResponseBodyText);
-  //     const result = JSON.parse(decryptedResponseBodyText);
-  //
-  //     // store the token response at the end
-  //     const tokens = {
-  //       originalToken: 'TODO XXXXXXX',
-  //       latestToken: result.identity,
-  //     };
-  //     storageManager.storeValue(tokens);
-  //     return tokens;
-  //   })
-  //   .catch((error) => {
-  //     _logWarn('cstgAndStore Caught Error:', error);
-  //   });
-  // const getPublicKey = importPublicKey(serverPublicKey).then(
-  const getPublicKey = importPublicKey(serverPublicKey).then(
-    (result) => {
-      _logInfo('importPublicKey Result:', result);
-    }
+  _logInfo('CSTG Generating client key pair...');
 
-  )
-    .catch((err) => {
-      console.log('Errorrrrrrrrrrrrrrr ', err);
-    });
-  return getPublicKey;
+  const getPublicKey = importPublicKey(serverPublicKey);
+  const getClientKeyPair = generateClientKeyPair();
+  //
+  const getSharedKey = Promise.all([getClientKeyPair, getPublicKey]).then(([clientKeyPair, publicKey]) => {
+    _logInfo('CSTG Deriving secret key... ', clientKeyPair, publicKey);
+    return deriveSecretKey(clientKeyPair.privateKey, publicKey);
+  }).catch((err) => {
+    console.log('CSTG Errorrrrrrrrrrrrrrr1 ', err);
+  });
+  const getExportedPublicKey = getClientKeyPair.then((clientKeyPair) => {
+    _logInfo('CSTG Exporting public key...', clientKeyPair);
+    return exportPublicKey(clientKeyPair);
+  });
+  let iv = window.crypto.getRandomValues(new Uint8Array(12));
+  var getEncryptedEmail = getSharedKey.then((sharedKey) => {
+    _logInfo('CSTG Encrypting email...', sharedKey, iv);
+    return encryptEmail(testEmail, sharedKey, iv);
+  });
+  const makeCstgApiCall = Promise.all([getEncryptedEmail, getExportedPublicKey]).then(([encryptedEmail, exportedPublicKey]) => {
+    _logInfo('CSTG Forming CSTG Body...', encryptedEmail, exportedPublicKey);
+    const cstgBody = {
+      email: _arrayBufferToBase64(encryptedEmail),
+      publicKey: _arrayBufferToBase64(exportedPublicKey),
+      iv: _arrayBufferToBase64(iv),
+    };
+    _logInfo('CSTG cstgBody: ', cstgBody);
+    _logInfo('Generating CSTG token...');
 
-  // const getClientKeyPair = generateClientKeyPair();
-  // const sharedKey = Promise.all([getClientKeyPair, getPublicKey]).then(([clientKeyPair, publicKey]) => {
-  //   _logInfo('Deriving secret key... ', publicKey);
-  //   return deriveSecretKey(clientKeyPair.privateKey, publicKey);
-  // });
-  // const exportedPublicKey = getClientKeyPair.then((result) => {
-  //   _logInfo('Exporting public key...');
-  //   return exportPublicKey(result);
-  // });
-  // let iv = window.crypto.getRandomValues(new Uint8Array(12));
-  // var encryptEmailResult = Promise.all([sharedKey, exportedPublicKey]).then((result) => {
-  //   _logInfo('Encrypting email...');
-  //   return encryptEmail(testEmail, result[1], iv);
-  // }).catch((err) => {
-  //   console.log('Errorrrrrrrrrrrrrrr ', err);
-  // });
-  // const formCSTGBody = encryptEmailResult.then((result) => {
-  //   const cstgBody = {
-  //     email: _arrayBufferToBase64(result.encryptedEmail),
-  //     publicKey: _arrayBufferToBase64(result.exportedPublicKey),
-  //     iv: _arrayBufferToBase64(iv),
+    // TODO only when we are ready to make actual cstg call then uncomment these 2 lines!
+    // const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);;
+    // return client.callCstgApi(cstgBody);
+  });
+
+  // TODO when we are ready to make actual cstg call then uncomment these lines!
+  // const decryptCstgApiResponse = Promise.all([getSharedKey, makeCstgApiCall]).then(([sharedKey, base64ResponseBody]) => {
+  //   _logInfo('Decrypting CSTG endpoint response:', base64ResponseBody);
+  //   const encryptedResponseBody = window.atob(base64ResponseBody);
+  //   const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
+  //   return window.crypto.subtle.decrypt(
+  //     {name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12)},
+  //     sharedKey,
+  //     responseBodyArrayBuffer.slice(12),
+  //   );
+  // })
+  // const getCstgTokenResponse = decryptCstgApiResponse.then((decryptedResponseBody) => {
+  //   const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
+  //   _logInfo('CSTG response:', decryptedResponseBodyText);
+  //   const result = JSON.parse(decryptedResponseBodyText);
+  //
+  //   // store the token response at the end
+  //   const tokens = {
+  //     originalToken: 'TODO XXXXXXX',
+  //     latestToken: result.identity,
   //   };
-  //   _logInfo('cstgBody: ', cstgBody);
-  //   _logInfo('Generating CSTG token...');
-  //   return 'abc';
+  //   storageManager.storeValue(tokens);
+  //   return tokens;
+  // }).catch((error) => {
+  //   _logWarn('CSTG cstgAndStore Caught Error:', error);
   // });
-  // return formCSTGBody;
+  //
+  // return getCstgTokenResponse;
 
-  // const clientKeyPair = generateClientKeyPair();
-  // const sharedKey = clientKeyPair.then((result) => {
-  //   _logInfo('Deriving secret key...');
-  //   return deriveSecretKey(result.privateKey, serverPublicKey);
-  // });
-  // const exportedPublicKey = clientKeyPair.then((result) => {
-  //   _logInfo('Exporting public key...');
-  //   return exportPublicKey(result);
-  // });
-  // let iv = window.crypto.getRandomValues(new Uint8Array(12));
-  // var encryptEmailResult = Promise.all([clientKeyPair, sharedKey, exportedPublicKey]).then((result) => {
-  //   _logInfo('Encrypting email...');
-  //   return encryptEmail(testEmail, result[1], iv);
-  // });
-  // const formCSTGBody = encryptEmailResult.then((result) => {
-  //   const cstgBody = {
-  //     email: _arrayBufferToBase64(result.encryptedEmail),
-  //     publicKey: _arrayBufferToBase64(result.exportedPublicKey),
-  //     iv: _arrayBufferToBase64(iv),
-  //   };
-  //   _logInfo('cstgBody: ', cstgBody);
-  //   _logInfo('Generating CSTG token...');
-  //   return 'abc';
-  // });
-  // return formCSTGBody;
+  // TODO when we are ready to make actual cstg call then remove this line!
+  return makeCstgApiCall;
 }
 
 // ------------------------------------------------------ CSTG END ------------------------------------------------------
