@@ -15,7 +15,7 @@ import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 
-const ADAPTER_VERSION = '1.19';
+const ADAPTER_VERSION = '1.20';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
