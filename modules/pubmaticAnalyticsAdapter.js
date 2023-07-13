@@ -377,6 +377,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
+  let floorFetchStatus = (floorData?.floorRequestData?.fetchStatus).toLowerCase() === CONSTANTS.SUCCESS ? true : false; 
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
@@ -409,7 +410,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['tis'] = frequencyDepth?.impressionServed;
   outputObj['lip'] = frequencyDepth?.lip;
 
-  if (floorData) {
+  if (floorData && floorFetchStatus) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
     outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
   }
@@ -422,7 +423,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'au': origAdUnit.adUnitId || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
-      'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
+      'fskp': floorData && floorFetchStatus ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
       'bs': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.bidServed,
       'is': frequencyDepth?.slotLevelFrquencyDepth?.[origAdUnit.adUnitId]?.impressionServed,
