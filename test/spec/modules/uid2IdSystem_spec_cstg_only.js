@@ -100,14 +100,15 @@ describe(`UID2 module`, function () {
     uninstallGdprEnforcement();
 
     suiteSandbox = sinon.sandbox.create();
+    // TODO commenting these out as during cstg dev, we require to use legit crypto functions so we can't mock it out for now
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
-    if (typeof window.crypto.subtle === 'undefined') {
-      restoreSubtleToUndefined = true;
-      window.crypto.subtle = { importKey: () => {}, decrypt: () => {} };
-    }
-    suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
-    suiteSandbox.stub(window.crypto.subtle, 'decrypt').callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
+    // if (typeof window.crypto.subtle === 'undefined') {
+    //   restoreSubtleToUndefined = true;
+    //   window.crypto.subtle = { importKey: () => {}, decrypt: () => {} };
+    // }
+    // suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
+    // suiteSandbox.stub(window.crypto.subtle, 'decrypt').callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
   });
 
   after(function () {
