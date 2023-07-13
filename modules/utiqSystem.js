@@ -124,6 +124,15 @@ export const utiqSubmodule = {
       return { callback: result };
     }
   },
+  eids: {
+    'utiq': {
+      source: 'utiq.com',
+      atype: 1,
+      getValue: function (data) {
+        return data;
+      },
+    },
+  }
 };
 
 submodule('userId', utiqSubmodule);

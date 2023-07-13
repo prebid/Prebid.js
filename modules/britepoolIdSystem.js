@@ -136,6 +136,12 @@ export const britepoolIdSubmodule = {
       }
     }
     return valueObj;
+  },
+  eids: {
+    'britepoolid': {
+      source: 'britepool.com',
+      atype: 3
+    },
   }
 };
 
