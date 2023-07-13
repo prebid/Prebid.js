@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone} from '../src/utils.js';
+import {deepAccess, deepClone, getDNT} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -29,11 +29,15 @@ export const spec = {
       bids.push({
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
+        instl: bidRequest.params.instl,
+        exp: bidRequest.params.exp,
         bidFloor: getBidFloor(bidRequest, formatTypes),
         sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
         playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
         impMediaTypes: formatTypes,
-        adUnitCode: bidRequest.adUnitCode
+        adUnitCode: bidRequest.adUnitCode,
+        video: deepAccess(bidRequest, 'mediaTypes.video'),
+        banner: deepAccess(bidRequest, 'mediaTypes.banner')
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -48,7 +52,12 @@ export const spec = {
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0].schain,
-      cpp: config.getConfig('coppa') ? 1 : 0
+      cpp: config.getConfig('coppa') ? 1 : 0,
+      device: {
+        dnt: getDNT() ? 1 : 0,
+        w: screen.width,
+        h: screen.height
+      }
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
