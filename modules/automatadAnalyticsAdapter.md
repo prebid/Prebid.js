@@ -14,7 +14,7 @@ Analytics adapter for automatad.com. Contact tech@automatad.com for information.
 ```
 {
   provider: 'automatadAnalytics',
-  options : {
+  options: {
     publisherID: 'N8vZLx',
     siteID: 'PXfvBq'
   }
