@@ -85,6 +85,12 @@ export const dmdIdSubmodule = {
       };
       return { callback: resp };
     }
+  },
+  eids: {
+    'dmdId': {
+      source: 'hcn.health',
+      atype: 3
+    },
   }
 };
 
