@@ -1,4 +1,4 @@
-import { logInfo } from '../src/utils.js';
+import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -9,7 +9,7 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 9,
+  PREBID_VERSION: 10,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
@@ -116,7 +116,7 @@ function buildRequest(bidRequests, bidderRequest) {
     bidParamsJson.userId = userIdModel;
   }
   let data = {
-    location: getDocumentLocation(topWin),
+    location: getDocumentLocation(bidderRequest),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: readFromLocalStorage('IvbsCampIdsLocal'),
@@ -371,8 +371,8 @@ function generateRandomId() {
   return (Math.round(Math.random() * 1e12)).toString(36).substring(0, 10);
 }
 
-function getDocumentLocation(topWin) {
-  return topWin.location.href.substring(0, 300).split(/[?#]/)[0];
+function getDocumentLocation(bidderRequest) {
+  return bidderRequest.refererInfo.page.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
