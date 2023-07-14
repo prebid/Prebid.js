@@ -7,6 +7,7 @@ const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
 const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
 let CUR = 'USD';
+let isSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -136,21 +137,23 @@ export const spec = {
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let syncurl = '';
+    if (!isSynced) {
+      // Attaching GDPR Consent Params in UserSync url
+      if (gdprConsent) {
+        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+        syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      }
+      if (uspConsent && uspConsent.consentString) {
+        syncurl += `&ccpa_consent=${uspConsent.consentString}`;
+      }
 
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncurl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: USER_SYNC_URL_IFRAME + syncurl
-      }];
+      if (syncOptions.iframeEnabled) {
+        isSynced = true;
+        return [{
+          type: 'iframe',
+          url: USER_SYNC_URL_IFRAME + syncurl
+        }];
+      }
     }
   },
 };
@@ -216,6 +219,10 @@ function _getFloor (bid, sizes, currency) {
     } catch (err) {}
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+export function resetSync() {
+  isSynced = false;
 }
 
 registerBidder(spec);
