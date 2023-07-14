@@ -12,7 +12,7 @@ const participatedBidders = []
 export const spec = {
   gvlid: 251,
   code: 'yieldlove',
-  aliases: ['yl'],
+  aliases: [],
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
