@@ -20,7 +20,7 @@ const adUnits = [
       {
         bidder: 'yieldlove',
         params: {
-          pid: 19242
+          pid: 19242,
           rid: 'website.com'
         }
       }
