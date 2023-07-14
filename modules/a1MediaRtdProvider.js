@@ -34,12 +34,7 @@ function loadLbScript(tagname) {
   if (!linkback.l) {
     linkback.l = true;
 
-    const d = new Date();
-    const month = `0${(d.getMonth() + 1)}`.slice(-2);
-    const day = `0${d.getDate()}`.slice(-2);
-    const todaysDate = `${d.getFullYear()}${month}${day}`;
-
-    const scriptUrl = `${SCRIPT_URL}/${todaysDate}/${tagname}.min.js`;
+    const scriptUrl = `${SCRIPT_URL}/${tagname}`;
     loadExternalScript(scriptUrl, MODULE_NAME);
   }
 }
@@ -62,6 +57,9 @@ function alterBidRequests(reqBidsConfigObj, callback, config, userConsent) {
 
   const a1UserSegData = {
     name: 'a1mediagroup.com',
+    ext: {
+      segtax: 900
+    },
     segment: a1seg.split(',').map(x => ({id: x}))
   };
 

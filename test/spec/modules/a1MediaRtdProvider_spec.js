@@ -7,7 +7,7 @@ const configWithParams = {
   name: 'a1Media',
   waitForIt: true,
   params: {
-    tagId: 'lb4test',
+    tagId: 'lb4test.min.js',
   },
 };
 const configWithoutParams = {
@@ -27,6 +27,9 @@ const a1TestOrtbObj = {
     data: [
       {
         name: 'a1mediagroup.com',
+        ext: {
+          segtax: 900
+        },
         segment: [{id: 'test'}]
       }
     ],
@@ -49,19 +52,11 @@ const a1TestOrtbObj = {
 describe('a1MediaRtdProvider', function() {
   describe('init', function() {
     describe('initialize with expected params', function() {
-      let clock;
-      before(function() {
-        clock = sinon.useFakeTimers(1686398400000); // 2023-06-10T12:00:00Z
-      });
-      after(function() {
-        clock.restore();
-      });
-
       it('successfully initialize with load script', function() {
         expect(subModuleObj.init(configWithParams)).to.be.true;
         expect(window.linkback.l).to.be.true;
         expect(loadExternalScript.called).to.be.true;
-        expect(loadExternalScript.args[0][0]).to.deep.equal('https://linkback.contentsfeed.com/src/20230610/lb4test.min.js');
+        expect(loadExternalScript.args[0][0]).to.deep.equal('https://linkback.contentsfeed.com/src/lb4test.min.js');
       })
 
       it('successfully initialize but script is already exist', function() {
