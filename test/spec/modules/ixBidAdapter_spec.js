@@ -3,7 +3,6 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -763,8 +762,6 @@ describe('IndexexchangeAdapter', function () {
     '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
   };
 
-  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
-
   const DEFAULT_USERID_PAYLOAD = [
     {
       source: 'liveramp.com',
@@ -823,6 +820,8 @@ describe('IndexexchangeAdapter', function () {
       }]
     }
   ];
+
+  const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'

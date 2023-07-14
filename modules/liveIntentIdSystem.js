@@ -242,6 +242,59 @@ export const liveIntentIdSubmodule = {
     }
 
     return { callback: result };
+  },
+  eids: {
+    'lipb': {
+      getValue: function(data) {
+        return data.lipbid;
+      },
+      source: 'liveintent.com',
+      atype: 3,
+      getEidExt: function(data) {
+        if (Array.isArray(data.segments) && data.segments.length) {
+          return {
+            segments: data.segments
+          };
+        }
+      }
+    },
+    'bidswitch': {
+      source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'medianet': {
+      source: 'media.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'magnite': {
+      source: 'rubiconproject.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+
   }
 };
 

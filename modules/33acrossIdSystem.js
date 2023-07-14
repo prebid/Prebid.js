@@ -126,6 +126,15 @@ export const thirthyThreeAcrossIdSubmodule = {
         }, calculateQueryStringParams(pid, gdprConsentData), { method: 'GET', withCredentials: true });
       }
     };
+  },
+  eids: {
+    '33acrossId': {
+      source: '33across.com',
+      atype: 1,
+      getValue: function(data) {
+        return data.envelope;
+      }
+    },
   }
 };
 

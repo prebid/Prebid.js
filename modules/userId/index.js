@@ -133,7 +133,7 @@ import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import CONSTANTS from '../../src/constants.json';
 import {module, ready as hooksReady} from '../../src/hook.js';
-import {buildEidPermissions, createEidsArray, USER_IDS_CONFIG} from './eids.js';
+import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {
   getCoreStorageManager,
   getStorageManager,
@@ -232,6 +232,7 @@ function submoduleMetrics(moduleName) {
 /** @param {Submodule[]} submodules */
 export function setSubmoduleRegistry(submodules) {
   submoduleRegistry = submodules;
+  updateEIDConfig(submodules);
 }
 
 function cookieSetter(submodule, storageMgr) {
@@ -465,7 +466,7 @@ function getSubmoduleId(submodules, sourceName) {
 
   const prioritisedIds = getPrioritizedCombinedSubmoduleIds(submodules);
   const eligibleIdName = Object.keys(prioritisedIds).find(idName => {
-    const config = USER_IDS_CONFIG[idName];
+    const config = EID_CONFIG.get(idName);
     return config?.source === sourceName || (isFn(config?.getSource) && config.getSource() === sourceName);
   });
 
@@ -487,32 +488,33 @@ function getCombinedSubmoduleIdsForBidder(submodules, bidder) {
   return getPrioritizedCombinedSubmoduleIds(eligibleSubmodules);
 }
 
+function collectByPriority(submodules, getIds, getName) {
+  return Object.fromEntries(Object.entries(submodules.reduce((carry, submod) => {
+    const ids = getIds(submod);
+    ids && Object.keys(ids).forEach(key => {
+      const maybeCurrentIdPriority = idPriority[key]?.indexOf(getName(submod));
+      const currentIdPriority = isNumber(maybeCurrentIdPriority) ? maybeCurrentIdPriority : -1;
+      const currentIdState = {priority: currentIdPriority, value: ids[key]};
+      if (carry[key]) {
+        const winnerIdState = currentIdState.priority > carry[key].priority ? currentIdState : carry[key];
+        carry[key] = winnerIdState;
+      } else {
+        carry[key] = currentIdState;
+      }
+    });
+    return carry;
+  }, {})).map(([k, v]) => [k, v.value]));
+}
+
 /**
  * @param {SubmoduleContainer[]} submodules
  */
 function getPrioritizedCombinedSubmoduleIds(submodules) {
-  const combinedIdStates = submodules
-    .filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length)
-    .reduce((carry, i) => {
-      Object.keys(i.idObj).forEach(key => {
-        const maybeCurrentIdPriority = idPriority[key]?.indexOf(i.submodule.name);
-        const currentIdPriority = isNumber(maybeCurrentIdPriority) ? maybeCurrentIdPriority : -1;
-        const currentIdState = {priority: currentIdPriority, value: i.idObj[key]};
-        if (carry[key]) {
-          const winnerIdState = currentIdState.priority > carry[key].priority ? currentIdState : carry[key];
-          carry[key] = winnerIdState;
-        } else {
-          carry[key] = currentIdState;
-        }
-      });
-      return carry;
-    }, {});
-
-  const result = {};
-  Object.keys(combinedIdStates).forEach(key => {
-    result[key] = combinedIdStates[key].value
-  });
-  return result;
+  return collectByPriority(
+    submodules.filter(i => isPlainObject(i.idObj) && Object.keys(i.idObj).length),
+    (submod) => submod.idObj,
+    (submod) => submod.submodule.name
+  )
 }
 
 /**
@@ -997,10 +999,20 @@ function canUseStorage(submodule) {
   return false;
 }
 
+function updateEIDConfig(submodules) {
+  EID_CONFIG.clear();
+  Object.entries(collectByPriority(
+    submodules,
+    (mod) => mod.eids,
+    (mod) => mod.name
+  )).forEach(([id, conf]) => EID_CONFIG.set(id, conf));
+}
+
 /**
  * update submodules by validating against existing configs and storage types
  */
 function updateSubmodules() {
+  updateEIDConfig(submoduleRegistry);
   const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry);
   if (!configs.length) {
     return;
