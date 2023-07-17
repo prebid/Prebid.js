@@ -137,6 +137,12 @@ export const mwOpenLinkIdSubModule = {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     if (!isValidConfig(submoduleConfigParams)) return undefined;
     return setID(submoduleConfigParams);
+  },
+  eids: {
+    'mwOpenLinkId': {
+      source: 'mediawallahscript.com',
+      atype: 1
+    },
   }
 };
 

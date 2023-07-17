@@ -195,7 +195,7 @@ function slotParams(bidRequest) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
-    transactionId: bidRequest.transactionId,
+    transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
@@ -331,6 +331,7 @@ function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     ortb2: bidderRequests.ortb2,
