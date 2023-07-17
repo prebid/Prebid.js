@@ -159,7 +159,7 @@ export const spec = {
   code: 'adkernelAdn',
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['engagesimply'],
+  aliases: ['engagesimply', 'adpluto_dsp'],
 
   isBidRequestValid: function(bidRequest) {
     return 'params' in bidRequest &&
