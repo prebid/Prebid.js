@@ -53,6 +53,12 @@ export const gravitoIdSystemSubmodule = {
     }
     return undefined;
   },
+  eids: {
+    'gravitompId': {
+      source: 'gravito.net',
+      atype: 1
+    },
+  }
 }
 
 submodule('userId', gravitoIdSystemSubmodule);

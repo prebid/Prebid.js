@@ -154,7 +154,21 @@ export const id5IdSubmodule = {
 
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     return cacheIdObj;
-  }
+  },
+  eids: {
+    'id5id': {
+      getValue: function(data) {
+        return data.uid
+      },
+      source: 'id5-sync.com',
+      atype: 1,
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+  },
 };
 
 class IdFetchFlow {

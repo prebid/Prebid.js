@@ -7,10 +7,12 @@
 import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {gppDataHandler} from '../src/adapterManager.js';
-import {includes} from '../src/polyfill.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import { enrichFPD } from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {cmpClient} from '../libraries/cmp/cmpClient.js';
+import {GreedyPromise} from '../src/utils/promise.js';
+import {buildActivityParams} from '../src/activities/params.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -18,7 +20,7 @@ const CMP_VERSION = 1;
 
 export let userCMP;
 export let consentTimeout;
-export let staticConsentData;
+let staticConsentData;
 
 let consentData;
 let addedConsentHook = false;
@@ -30,27 +32,15 @@ const cmpCallMap = {
 };
 
 /**
- * This function checks the state of the IAB gppData's applicableSection field (to ensure it's populated and has a valid value).
- * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
- *
- * TODO --- The initial version of the GPP CMP API spec used this naming convention, but it was later changed as an update to the spec.
- * CMPs should adjust their logic to use the new format (applicableSecctions), but that may not be the case with the initial release.
- * Added support just in case for this transition period, can likely be removed at a later date...
- * @param gppData represents the IAB gppData object
- * @returns true|false
- */
-function checkApplicableSectionIsReady(gppData) {
-  return gppData && Array.isArray(gppData.applicableSection) && gppData.applicableSection.length > 0 && gppData.applicableSection[0] !== 0;
-}
-
-/**
  * This function checks the state of the IAB gppData's applicableSections field (to ensure it's populated and has a valid value).
  * section === 0 represents a CMP's default value when CMP is loading, it shoud not be used a real user's section.
  * @param gppData represents the IAB gppData object
- * @returns true|false
+ * @returns {Array}
  */
-function checkApplicableSectionsIsReady(gppData) {
-  return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0;
+function applicableSections(gppData) {
+  return gppData && Array.isArray(gppData.applicableSections) && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== 0
+    ? gppData.applicableSections
+    : [];
 }
 
 /**
@@ -68,107 +58,36 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
  * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
  */
-function lookupIabConsent({onSuccess, onError}) {
-  const cmpApiName = '__gpp';
-  const cmpCallbacks = {};
-  let registeredPostMessageResponseListener = false;
-
-  function findCMP() {
-    let f = window;
-    let cmpFrame;
-    let cmpDirectAccess = false;
-    while (true) {
-      try {
-        if (typeof f[cmpApiName] === 'function') {
-          cmpFrame = f;
-          cmpDirectAccess = true;
-          break;
-        }
-      } catch (e) {}
-
-      // need separate try/catch blocks due to the exception errors thrown when trying to check for a frame that doesn't exist in 3rd party env
-      try {
-        if (f.frames['__gppLocator']) {
-          cmpFrame = f;
-          break;
-        }
-      } catch (e) {}
-
-      if (f === window.top) break;
-      f = f.parent;
-    }
-
-    return {
-      cmpFrame,
-      cmpDirectAccess
-    };
-  }
-
-  const {cmpFrame, cmpDirectAccess} = findCMP();
-
-  if (!cmpFrame) {
+export function lookupIabConsent({onSuccess, onError}, mkClient = cmpClient) {
+  const cmp = mkClient({
+    apiName: '__gpp',
+    apiVersion: CMP_VERSION,
+  });
+  if (!cmp) {
     return onError('GPP CMP not found.');
   }
 
-  const invokeCMP = (cmpDirectAccess) ? invokeCMPDirect : invokeCMPFrame;
-
-  function invokeCMPDirect({command, callback, parameter, version = CMP_VERSION}, resultCb) {
-    if (typeof resultCb === 'function') {
-      resultCb(cmpFrame[cmpApiName](command, callback, parameter, version));
-    } else {
-      cmpFrame[cmpApiName](command, callback, parameter, version);
-    }
-  }
-
-  function invokeCMPFrame({command, callback, parameter, version = CMP_VERSION}, resultCb) {
-    const callName = `${cmpApiName}Call`;
-    if (!registeredPostMessageResponseListener) {
-      // when we get the return message, call the stashed callback;
-      window.addEventListener('message', readPostMessageResponse, false);
-      registeredPostMessageResponseListener = true;
-    }
-
-    // call CMP via postMessage
-    const callId = Math.random().toString();
-    const msg = {
-      [callName]: {
-        command: command,
-        parameter,
-        version,
-        callId: callId
-      }
-    };
-
-    // TODO? - add logic to check if random was already used in the same session, and roll another if so?
-    cmpCallbacks[callId] = (typeof callback === 'function') ? callback : resultCb;
-    cmpFrame.postMessage(msg, '*');
-
-    function readPostMessageResponse(event) {
-      const cmpDataPkgName = `${cmpApiName}Return`;
-      const json = (typeof event.data === 'string' && event.data.includes(cmpDataPkgName)) ? JSON.parse(event.data) : event.data;
-      if (json[cmpDataPkgName] && json[cmpDataPkgName].callId) {
-        const payload = json[cmpDataPkgName];
-
-        if (cmpCallbacks.hasOwnProperty(payload.callId)) {
-          cmpCallbacks[payload.callId](payload.returnValue);
-        }
-      }
-    }
-  }
-
-  const startupMsg = (cmpDirectAccess) ? 'Detected GPP CMP API is directly accessible, calling it now...'
+  const startupMsg = (cmp.isDirect) ? 'Detected GPP CMP API is directly accessible, calling it now...'
     : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
   logInfo(startupMsg);
 
-  invokeCMP({
+  cmp({
     command: 'addEventListener',
     callback: function (evt) {
       if (evt) {
-        logInfo(`Received a ${(cmpDirectAccess ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
+        logInfo(`Received a ${(cmp.isDirect ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
         if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
-          invokeCMP({command: 'getGPPData'}, function (gppData) {
-            logInfo(`Received a ${cmpDirectAccess ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
-            processCmpData(gppData, {onSuccess, onError});
+          cmp({command: 'getGPPData'}).then((gppData) => {
+            logInfo(`Received a ${cmp.isDirect ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);
+            return GreedyPromise.all(
+              (gppData?.pingData?.supportedAPIs || [])
+                .map((name) => cmp({command: 'getSection', parameter: name})
+                  .catch(() => { logError(`Could not retrieve section data for GPP section '${name}'`) })
+                  .then((res) => [name, res]))
+            ).then((sections) => {
+              const sectionData = Object.fromEntries(sections.filter(([_, val]) => val != null));
+              processCmpData({gppData, sectionData}, {onSuccess, onError});
+            })
           });
         } else if (evt.pingData.cmpStatus === 'error') {
           onError('CMP returned with a cmpStatus:error response.  Please check CMP setup.');
@@ -199,7 +118,7 @@ function loadConsentData(cb) {
     }
   }
 
-  if (!includes(Object.keys(cmpCallMap), userCMP)) {
+  if (!cmpCallMap.hasOwnProperty(userCMP)) {
     done(null, false, `GPP CMP framework (${userCMP}) is not a supported framework.  Aborting consentManagement module and resuming auction.`);
     return;
   }
@@ -219,7 +138,7 @@ function loadConsentData(cb) {
       }
       processCmpData(consentData, {
         onSuccess: continueToAuction,
-        onError: () => continueToAuction(storeConsentData(undefined))
+        onError: () => continueToAuction(storeConsentData())
       })
     }
     if (consentTimeout === 0) {
@@ -281,11 +200,10 @@ export const requestBidsHook = timedAuctionHook('gpp', function requestBidsHook(
  * If it's bad, we call `onError`
  * If it's good, then we store the value and call `onSuccess`
  */
-function processCmpData(consentObject, {onSuccess, onError}) {
+function processCmpData(consentData, {onSuccess, onError}) {
   function checkData() {
-    const gppString = consentObject && consentObject.gppString;
-    const gppSection = (checkApplicableSectionsIsReady(consentObject)) ? consentObject.applicableSections
-      : (checkApplicableSectionIsReady(consentObject)) ? consentObject.applicableSection : [];
+    const gppString = consentData?.gppData?.gppString;
+    const gppSection = consentData?.gppData?.applicableSections;
 
     return !!(
       (!Array.isArray(gppSection)) ||
@@ -294,25 +212,25 @@ function processCmpData(consentObject, {onSuccess, onError}) {
   }
 
   if (checkData()) {
-    onError(`CMP returned unexpected value during lookup process.`, consentObject);
+    onError(`CMP returned unexpected value during lookup process.`, consentData);
   } else {
-    onSuccess(storeConsentData(consentObject));
+    onSuccess(storeConsentData(consentData));
   }
 }
 
 /**
  * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
- * @param {object} cmpConsentObject required; an object representing user's consent choices (can be undefined in certain use-cases for this function only)
+ * @param {{}} gppData the result of calling a CMP's `getGPPData` (or equivalent)
+ * @param {{}} sectionData map from GPP section name to the result of calling a CMP's `getSection` (or equivalent)
  */
-function storeConsentData(cmpConsentObject) {
+export function storeConsentData({gppData, sectionData} = {}) {
   consentData = {
-    gppString: (cmpConsentObject) ? cmpConsentObject.gppString : undefined,
-
-    fullGppData: (cmpConsentObject) || undefined,
+    gppString: (gppData) ? gppData.gppString : undefined,
+    gppData: (gppData) || undefined,
   };
-  consentData.applicableSections = (checkApplicableSectionsIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSections
-    : (checkApplicableSectionIsReady(cmpConsentObject)) ? cmpConsentObject.applicableSection : [];
+  consentData.applicableSections = applicableSections(gppData);
   consentData.apiVersion = CMP_VERSION;
+  consentData.sectionData = sectionData;
   return consentData;
 }
 
@@ -353,7 +271,7 @@ export function setConsentConfig(config) {
 
   if (userCMP === 'static') {
     if (isPlainObject(config.consentData)) {
-      staticConsentData = config.consentData;
+      staticConsentData = {gppData: config.consentData, sectionData: config.sectionData};
       consentTimeout = 0;
     } else {
       logError(`consentManagement.gpp config with cmpApi: 'static' did not specify consentData. No consents will be available to adapters.`);
@@ -364,6 +282,9 @@ export function setConsentConfig(config) {
 
   if (!addedConsentHook) {
     getGlobal().requestBids.before(requestBidsHook, 50);
+    buildActivityParams.before((next, params) => {
+      return next(Object.assign({gppConsent: gppDataHandler.getConsentData()}, params));
+    });
   }
   addedConsentHook = true;
   gppDataHandler.enable();

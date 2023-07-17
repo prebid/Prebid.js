@@ -630,7 +630,7 @@ function _addJWPlayerSegmentData(imp, bid) {
   ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
-function _createImpressionObject(bid) {
+function _createImpressionObject(bid, bidderRequest) {
   var impObj = {};
   var bannerObj;
   var videoObj;
@@ -638,6 +638,7 @@ function _createImpressionObject(bid) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
+  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
 
   impObj = {
     id: bid.bidId,
@@ -708,9 +709,24 @@ function _createImpressionObject(bid) {
 
   _addFloorFromFloorModule(impObj, bid);
 
+  _addFledgeflag(impObj, bid, isFledgeEnabled)
+
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
           (FEATURES.VIDEO && impObj.hasOwnProperty(VIDEO)) ? impObj : UNDEFINED;
+}
+
+function _addFledgeflag(impObj, bid, isFledgeEnabled) {
+  if (isFledgeEnabled) {
+    impObj.ext = impObj.ext || {};
+    if (bid?.ortb2Imp?.ext?.ae !== undefined) {
+      impObj.ext.ae = bid.ortb2Imp.ext.ae;
+    }
+  } else {
+    if (impObj.ext?.ae) {
+      delete impObj.ext.ae;
+    }
+  }
 }
 
 function _addImpressionFPD(imp, bid) {
@@ -1095,7 +1111,7 @@ export const spec = {
       if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
         allowedIabCategories = allowedIabCategories.concat(bid.params.acat);
       }
-      var impObj = _createImpressionObject(bid);
+      var impObj = _createImpressionObject(bid, bidderRequest);
       if (impObj) {
         payload.imp.push(impObj);
       }
@@ -1176,6 +1192,15 @@ export const spec = {
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    // Attaching GPP Consent Params
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
 
     // coppa compliance
@@ -1336,7 +1361,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     let syncurl = '' + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
@@ -1348,6 +1373,12 @@ export const spec = {
     // CCPA
     if (uspConsent) {
       syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP Consent
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
     // coppa compliance
