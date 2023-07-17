@@ -12,7 +12,7 @@ const bidderConfig = 'sp_pb_ortb';
 const bidderVersion = '1.0.0';
 const DEFAULT_CURRENCY = 'USD';
 
-export const REQUEST_URL = 'https://prebid.chocolateplatform.com/bidder/?identifier=prebidchoc';
+export const REQUEST_URL = 'https://prebid.chocolateplatform.co/bidder/?identifier=prebidchoc';
 export const SP_OUTSTREAM_PLAYER_URL = 'https://xaido.sgp1.cdn.digitaloceanspaces.com/prebid/spoutstream.min.js';
 
 const VIDEO_ORTB_PARAMS = [
