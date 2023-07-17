@@ -8,7 +8,9 @@ function isValidIdentity(identity) {
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
 export class Uid2ApiClient {
   constructor(opts, clientId, logInfo, logWarn) {
-    this._baseUrl = opts.baseUrl;
+    // this._baseUrl = opts.baseUrl;
+    this._baseUrl = opts;
+    console.log('CSTG Generating token...123', this._baseUrl);
     this._clientVersion = clientId;
     this._logInfo = logInfo;
     this._logWarn = logWarn;
@@ -88,6 +90,9 @@ export class Uid2ApiClient {
     req.overrideMimeType('text/plain');
     req.open('POST', url, true);
     req.setRequestHeader('X-UID2-Client-Version', this._clientVersion);
+
+    this._logInfo('CSTG request url', url, cstgDetails);
+
     let resolvePromise;
     let rejectPromise;
     const promise = new Promise((resolve, reject) => {
@@ -270,20 +275,48 @@ function importPublicKey(pem) {
     []);
 }
 
-function encryptEmail(email, sharedKey, iv) {
+function encryptEmail(data, sharedKey, iv, additionalData) {
   return window.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: iv },
+    { name: 'AES-GCM', iv: iv, additionalData: additionalData },
     sharedKey,
-    str2ab(email));
+    data);
 }
+
+function generateRequestPayload(email) {
+  // TODO: email normalization.
+  const encoder = new TextEncoder();
+  return window.crypto.subtle.digest('SHA-256', encoder.encode(email));
+}
+
+const decrypt = (data, key, iv) => {
+  return window.crypto.subtle.decrypt({
+    name: 'AES-GCM',
+    iv: iv,
+  }, key, data);
+};
+
+const base64ToBytes = (base64) => {
+  const binString = atob(base64);
+  return Uint8Array.from(binString, (m) => m.codePointAt(0));
+};
+const bytesToBase64 = (bytes) => {
+  const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
+  return btoa(binString);
+};
 
 // call cstg endpoint and store the generated tokens into the local storage for the last few lines of Uid2GetId function to retrieve
 function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
+  // using the public key in operator cstg branch
+  // https://github.com/IABTechLab/uid2-operator/blob/cstg/conf/local-config.json#L32
+  const serverPublicKey = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsziOqRXZ7II0uJusaMxxCxlxgj8el/MUYLFMtWfB71Q3G1juyrAnzyqruNiPPnIuTETfFOridglP9UQNlwzNQg==';
+  const testEmail = 'prebid_test@example.com';
+  const testOperatorUrl = 'http://localhost:8080';
+  // if you are running operator branch locally and can connect to localhost:8080 operator endpoint
+  // otherwise it will just generate cstg request body and ends there
+  const connectToLocalOperatorCstgEndpoint = true;
+
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
-  const serverPublicKey = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElME9famscrgcMVY5l5ro1v+/X8YyPMoZj13/4LCRuxpL5fw1IAUsUetqH/fWAnE6EuHv2CmeSMPy6P4ml2SVQQ==';
-  // const serverPrivateKey = 'MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDb7UC8HN1OOlyc1KB0s1rjGichZ92Ecnn8xViEOhAhIg==';
-  const testEmail = 'test@example.com';
 
   _logInfo('CSTG Generating client key pair...');
 
@@ -300,57 +333,71 @@ function cstgAndStore(config, prebidStorageManager, _logInfo, _logWarn) {
     _logInfo('CSTG Exporting public key...', clientKeyPair);
     return exportPublicKey(clientKeyPair);
   });
+
+  const getRequestPayload = generateRequestPayload(testEmail).then((emailHash) => {
+    _logInfo('CSTG Generated EMail Hash:', emailHash);
+    _logInfo('CSTG Forming request payload... ');
+    // atlassian.thetradedesk.com/confluence/display/UID2/Proposal%3A+New+Operator+API+Endpoint
+    const encoder = new TextEncoder();
+    const payload = {
+      email_hash: bytesToBase64(new Uint8Array(emailHash))
+    };
+    return encoder.encode(JSON.stringify(payload));
+  });
+
   let iv = window.crypto.getRandomValues(new Uint8Array(12));
-  var getEncryptedEmail = getSharedKey.then((sharedKey) => {
-    _logInfo('CSTG Encrypting email...', sharedKey, iv);
-    return encryptEmail(testEmail, sharedKey, iv);
+  const now = Date.now();
+  var getEncryptedEmail = Promise.all([getSharedKey, getRequestPayload]).then(([sharedKey, data]) => {
+    _logInfo('CSTG Encrypting email...', data, sharedKey, iv);
+    return encryptEmail(data, sharedKey, iv, new TextEncoder().encode(JSON.stringify([now])));
   });
   const makeCstgApiCall = Promise.all([getEncryptedEmail, getExportedPublicKey]).then(([encryptedEmail, exportedPublicKey]) => {
     _logInfo('CSTG Forming CSTG Body...', encryptedEmail, exportedPublicKey);
     const cstgBody = {
-      email: _arrayBufferToBase64(encryptedEmail),
-      publicKey: _arrayBufferToBase64(exportedPublicKey),
+      payload: _arrayBufferToBase64(encryptedEmail),
       iv: _arrayBufferToBase64(iv),
+      public_key: _arrayBufferToBase64(exportedPublicKey),
+      timestamp: now,
+      subscription_id: 'abcdefg'
     };
     _logInfo('CSTG cstgBody: ', cstgBody);
-    _logInfo('Generating CSTG token...');
 
-    // TODO only when we are ready to make actual cstg call then uncomment these 2 lines!
-    // const client = new Uid2ApiClient(config.apiBaseUrl, config.clientId, _logInfo, _logWarn);;
-    // return client.callCstgApi(cstgBody);
+    if (connectToLocalOperatorCstgEndpoint) {
+      const client = new Uid2ApiClient(testOperatorUrl, config.clientId, _logInfo, _logWarn);
+      return client.callCstgApi(JSON.stringify(cstgBody));
+    }
   });
 
-  // TODO when we are ready to make actual cstg call then uncomment these lines!
-  // const decryptCstgApiResponse = Promise.all([getSharedKey, makeCstgApiCall]).then(([sharedKey, base64ResponseBody]) => {
-  //   _logInfo('Decrypting CSTG endpoint response:', base64ResponseBody);
-  //   const encryptedResponseBody = window.atob(base64ResponseBody);
-  //   const responseBodyArrayBuffer = str2ab(encryptedResponseBody);
-  //   return window.crypto.subtle.decrypt(
-  //     {name: 'AES-GCM', iv: responseBodyArrayBuffer.slice(0, 12)},
-  //     sharedKey,
-  //     responseBodyArrayBuffer.slice(12),
-  //   );
-  // })
-  // const getCstgTokenResponse = decryptCstgApiResponse.then((decryptedResponseBody) => {
-  //   const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
-  //   _logInfo('CSTG response:', decryptedResponseBodyText);
-  //   const result = JSON.parse(decryptedResponseBodyText);
-  //
-  //   // store the token response at the end
-  //   const tokens = {
-  //     originalToken: 'TODO XXXXXXX',
-  //     latestToken: result.identity,
-  //   };
-  //   storageManager.storeValue(tokens);
-  //   return tokens;
-  // }).catch((error) => {
-  //   _logWarn('CSTG cstgAndStore Caught Error:', error);
-  // });
-  //
-  // return getCstgTokenResponse;
+  if (connectToLocalOperatorCstgEndpoint) {
+    // TODO when we are ready to make actual cstg call then uncomment these lines!
+    const decryptCstgApiResponse = Promise.all([getSharedKey, makeCstgApiCall]).then(([sharedKey, base64ResponseBody]) => {
+      _logInfo('Decrypting CSTG endpoint response:', base64ResponseBody);
 
-  // TODO when we are ready to make actual cstg call then remove this line!
-  return makeCstgApiCall;
+      const resultBytes = base64ToBytes(base64ResponseBody);
+      return decrypt(resultBytes.slice(12), sharedKey, resultBytes.slice(0, 12));
+    }).catch((err) => {
+      console.log('CSTG Errorrrrrrrrrrrrrrr2 ', err);
+    });
+
+    const getCstgTokenResponse = decryptCstgApiResponse.then((decryptedResponseBody) => {
+      const decryptedResponseBodyText = new TextDecoder().decode(decryptedResponseBody);
+      _logInfo('CSTG response:', decryptedResponseBodyText);
+      const result = JSON.parse(decryptedResponseBodyText);
+      _logInfo('CSTG JSON Token Response:', result);
+
+      // store the token response at the end
+      // const tokens = {
+      //   originalToken: 'TODO XXXXXXX',
+      //   latestToken: result.identity,
+      // };
+      // storageManager.storeValue(tokens);
+    }).catch((error) => {
+      _logWarn('CSTG cstgAndStore Caught Error:', error);
+    });
+    return getCstgTokenResponse;
+  } else {
+    return makeCstgApiCall;
+  }
 }
 
 // ------------------------------------------------------ CSTG END ------------------------------------------------------
