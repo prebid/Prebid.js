@@ -2675,7 +2675,7 @@ describe('the rubicon adapter', function () {
               };
               bidReq.bids[0].params.bidonmultiformat = true;
               let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
-              expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.params.formats).to.deep.equal(['native', 'banner']);
+              expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.formats).to.deep.equal(['native', 'banner']);
             });
 
             it('should include multiformat data in the fastlane request', () => {
