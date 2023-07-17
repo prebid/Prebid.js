@@ -11,7 +11,7 @@ import {
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  syncUserRule,
+  syncUserRule, ufpdRule,
   validateRules
 } from 'modules/gdprEnforcement.js';
 import {config} from 'src/config.js';
@@ -462,6 +462,46 @@ describe('gdpr enforcement', function () {
     });
   });
 
+  describe('transmitUfpdRule', () => {
+    it('should allow when purpose 3 consent is given', () => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'personalizedAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+          }]
+        }
+      });
+      Object.assign(gvlids, {
+        mockBidder: 123
+      });
+      const consent = setupConsentData();
+      consent.vendorData.purpose.consents[4] = true;
+      consent.vendorData.vendor.consents[123] = true;
+      expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
+    });
+
+    it('should return deny when purpose 4 consent is withheld', () => {
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'personalizedAds',
+            enforcePurpose: true,
+            enforceVendor: true,
+          }]
+        }
+      });
+      Object.assign(gvlids, {
+        mockBidder: 123
+      });
+      const consent = setupConsentData();
+      consent.vendorData.purpose.consents[4] = true;
+      consent.vendorData.vendor.consents[123] = false;
+      expectAllow(false, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
+    });
+  });
+
   describe('validateRules', function () {
     const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = [], softVendorExceptions = []) => ({
       purpose: purposeName,
@@ -599,7 +639,8 @@ describe('gdpr enforcement', function () {
       Object.entries({
         'storage': 1,
         'basicAds': 2,
-        'measurement': 7
+        'measurement': 7,
+        'personalizedAds': 4,
       }).forEach(([purpose, purposeNo]) => {
         describe(`for purpose ${purpose}`, () => {
           const rule = createGdprRule(purpose);

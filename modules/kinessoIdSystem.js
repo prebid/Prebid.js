@@ -233,8 +233,13 @@ export const kinessoIdSubmodule = {
     const payloadString = JSON.stringify(kinessoIdPayload);
     ajax(kinessoSyncUrl(accountId, consentData), syncId(knnsoId), payloadString, {method: 'POST', withCredentials: true});
     return {'id': knnsoId};
-  }
-
+  },
+  eids: {
+    'kpuid': {
+      source: 'kpuid.com',
+      atype: 3
+    },
+  },
 };
 
 // Register submodule for userId

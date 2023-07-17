@@ -1133,7 +1133,6 @@ export const spec = {
         method: 'POST',
         url: ENDPOINT,
         data: {
-          id: generateUUID(),
           organizationId: organizationId,
           secure: secure,
           device: device,

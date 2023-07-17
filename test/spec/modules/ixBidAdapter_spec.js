@@ -3,7 +3,6 @@ import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -763,8 +762,6 @@ describe('IndexexchangeAdapter', function () {
     '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
   };
 
-  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
-
   const DEFAULT_USERID_PAYLOAD = [
     {
       source: 'liveramp.com',
@@ -823,6 +820,8 @@ describe('IndexexchangeAdapter', function () {
       }]
     }
   ];
+
+  const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
@@ -2354,6 +2353,78 @@ describe('IndexexchangeAdapter', function () {
         expect(videoImpression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
         expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+      });
+    });
+
+    describe('video request should set displaymanager', () => {
+      it('ix renderer preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('ix renderer not preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
+      });
+      it('ix renderer not preferrered - bad url', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('renderer url provided and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://js-sec.indexww.rendererplayer.com',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('renderer url undefined and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('schain', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = SAMPLE_SCHAIN;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
       });
     });
 

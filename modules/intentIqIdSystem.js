@@ -193,6 +193,12 @@ export const intentIqIdSubmodule = {
       }
     };
     return { callback: resp };
+  },
+  eids: {
+    'intentIqId': {
+      source: 'intentiq.com',
+      atype: 1
+    },
   }
 };
 

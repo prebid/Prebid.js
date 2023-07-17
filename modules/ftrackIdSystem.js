@@ -221,6 +221,22 @@ export const ftrackIdSubmodule = {
     if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
+  },
+  eids: {
+    'ftrackId': {
+      source: 'flashtalking.com',
+      atype: 1,
+      getValue: function(data) {
+        let value = '';
+        if (data && data.ext && data.ext.DeviceID) {
+          value = data.ext.DeviceID;
+        }
+        return value;
+      },
+      getUidExt: function(data) {
+        return data && data.ext;
+      }
+    },
   }
 };
 
