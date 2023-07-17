@@ -11,7 +11,7 @@ import {
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  syncUserRule, transmitUfpdRule,
+  syncUserRule, ufpdRule,
   validateRules
 } from 'modules/gdprEnforcement.js';
 import {config} from 'src/config.js';
@@ -479,7 +479,7 @@ describe('gdpr enforcement', function () {
       const consent = setupConsentData();
       consent.vendorData.purpose.consents[4] = true;
       consent.vendorData.vendor.consents[123] = true;
-      expectAllow(true, transmitUfpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
+      expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
     it('should return deny when purpose 4 consent is withheld', () => {
@@ -498,7 +498,7 @@ describe('gdpr enforcement', function () {
       const consent = setupConsentData();
       consent.vendorData.purpose.consents[4] = true;
       consent.vendorData.vendor.consents[123] = false;
-      expectAllow(false, transmitUfpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
+      expectAllow(false, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
     });
   });
 

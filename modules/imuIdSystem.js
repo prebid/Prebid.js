@@ -160,6 +160,16 @@ export const imuIdSubmodule = {
         imppid: localData.ppid
       }
     };
+  },
+  eids: {
+    'imppid': {
+      source: 'ppid.intimatemerger.com',
+      atype: 1
+    },
+    'imuid': {
+      source: 'intimatemerger.com',
+      atype: 1
+    },
   }
 };
 
