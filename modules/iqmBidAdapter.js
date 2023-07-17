@@ -1,6 +1,5 @@
 import {_each, deepAccess, getBidIdParameter, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM} from '../src/video.js';
 
@@ -112,6 +111,7 @@ export const spec = {
         device: device,
         site: site,
         imp: imp,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         adUnitCode: bid.adUnitCode,
         bidderRequestId: bid.bidderRequestId,
@@ -155,7 +155,7 @@ export const spec = {
               auctionId: bidRequest.data.auctionId,
               mediaType: bidRequest.data.imp.mediatype,
 
-              ttl: bid.ttl || config.getConfig('_bidderTimeout')
+              ttl: bid.ttl || 60
             };
 
             if (bidRequest.data.imp.mediatype === VIDEO) {

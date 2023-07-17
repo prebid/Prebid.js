@@ -20,6 +20,7 @@ import {
   mergeDeep,
   parseSizesInput, _each
 } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -168,7 +169,7 @@ export const converter = ortbConverter({
       deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
     }
 
-    addOrtbFirstPartyData(data, bidRequests);
+    addOrtbFirstPartyData(data, bidRequests, bidderRequest.ortb2);
 
     delete data?.ext?.prebid?.storedrequest;
 
@@ -207,11 +208,15 @@ export const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.meta.mediaType = deepAccess(bid, 'ext.prebid.type');
     const {bidRequest} = context;
+
+    let [parseSizeWidth, parseSizeHeight] = bidRequest.mediaTypes.video?.context === 'outstream' ? parseSizes(bidRequest, VIDEO) : [undefined, undefined];
+
+    bidResponse.width = bid.w || parseSizeWidth || bidResponse.playerWidth;
+    bidResponse.height = bid.h || parseSizeHeight || bidResponse.playerHeight;
+
     if (bidResponse.mediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
       bidResponse.renderer = outstreamRenderer(bidResponse);
     }
-    bidResponse.width = bid.w || deepAccess(bidRequest, 'mediaTypes.video.w') || deepAccess(bidRequest, 'params.video.playerWidth');
-    bidResponse.height = bid.h || deepAccess(bidRequest, 'mediaTypes.video.h') || deepAccess(bidRequest, 'params.video.playerHeight');
 
     if (deepAccess(bid, 'ext.bidder.rp.advid')) {
       deepSetValue(bidResponse, 'meta.advertiserId', bid.ext.bidder.rp.advid);
@@ -378,6 +383,8 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'us_privacy',
+      'gpp',
+      'gpp_sid',
       'rp_schain',
     ].concat(Object.keys(params).filter(item => containsUId.test(item)))
       .concat([
@@ -464,8 +471,8 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': bidRequest.transactionId,
-      'x_imp.ext.tid': bidRequest.transactionId,
+      'x_source.tid': bidderRequest.ortb2?.source?.tid,
+      'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
@@ -547,6 +554,11 @@ export const spec = {
 
     if (bidderRequest.uspConsent) {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest.gppConsent?.gppString) {
+      data['gpp'] = bidderRequest.gppConsent.gppString;
+      data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
@@ -691,7 +703,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = {};
@@ -707,6 +719,11 @@ export const spec = {
 
       if (uspConsent) {
         params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
       }
 
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
@@ -1187,9 +1204,9 @@ function setBidFloors(bidRequest, imp) {
   }
 }
 
-function addOrtbFirstPartyData(data, nonBannerRequests) {
+function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   let fpd = {};
-  const keywords = new Set();
+  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
       user: {ext: {data: {...bidRequest.params.visitor}}},
@@ -1204,10 +1221,6 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
       }
     }
 
-    if (bidRequest.params.keywords) {
-      const keywordsArray = (!Array.isArray(bidRequest.params.keywords) ? bidRequest.params.keywords.split(',') : bidRequest.params.keywords);
-      keywordsArray.forEach(keyword => keywords.add(keyword));
-    }
     fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);
 
     // add user.id from config.
@@ -1218,8 +1231,8 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
 
   mergeDeep(data, fpd);
 
-  if (keywords && keywords.size) {
-    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  if (keywords && keywords.length) {
+    deepSetValue(data, 'site.keywords', keywords.join(','));
   }
   delete data?.ext?.prebid?.storedrequest;
 }

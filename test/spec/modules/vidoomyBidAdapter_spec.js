@@ -219,6 +219,55 @@ describe('vidoomyBidAdapter', function() {
         expect(bidRequest.data.bidfloor).to.equal(bidfloor);
       });
     });
+
+    describe('badv, bcat, bapp, btype, battr', function () {
+      const bidderRequestNew = {
+        ...bidderRequest,
+        bcat: ['EX1', 'EX2', 'EX3'],
+        badv: ['site.com'],
+        bapp: ['app.com'],
+        btype: [1, 2, 3],
+        battr: [1, 2, 3]
+      }
+      const request = spec.buildRequests(bidRequests, bidderRequestNew);
+      it('should have badv, bcat, bapp, btype, battr in request', function () {
+        expect(request[0].data).to.include.any.keys('badv');
+        expect(request[0].data).to.include.any.keys('bcat');
+        expect(request[0].data).to.include.any.keys('bapp');
+        expect(request[0].data).to.include.any.keys('btype');
+        expect(request[0].data).to.include.any.keys('battr');
+      })
+
+      it('should have equal badv, bcat, bapp, btype, battr in request', function () {
+        expect(request[0].badv).to.deep.equal(bidderRequest.refererInfo.badv);
+        expect(request[0].bcat).to.deep.equal(bidderRequest.refererInfo.bcat);
+        expect(request[0].bapp).to.deep.equal(bidderRequest.refererInfo.bapp);
+        expect(request[0].btype).to.deep.equal(bidderRequest.refererInfo.btype);
+        expect(request[0].battr).to.deep.equal(bidderRequest.refererInfo.battr);
+      })
+    })
+
+    describe('first party data', function () {
+      const bidderRequest2 = {
+        ...bidderRequest,
+        ortb2: {
+          bcat: ['EX1', 'EX2', 'EX3'],
+          badv: ['site.com'],
+          bapp: ['app.com'],
+          btype: [1, 2, 3],
+          battr: [1, 2, 3]
+        }
+      }
+      const request = spec.buildRequests(bidRequests, bidderRequest2);
+
+      it('should have badv, bcat, bapp, btype, battr in request and equal to bidderRequest.ortb2', function () {
+        expect(request[0].data.bcat).to.deep.equal(bidderRequest2.ortb2.bcat)
+        expect(request[0].data.badv).to.deep.equal(bidderRequest2.ortb2.badv)
+        expect(request[0].data.bapp).to.deep.equal(bidderRequest2.ortb2.bapp);
+        expect(request[0].data.btype).to.deep.equal(bidderRequest2.ortb2.btype);
+        expect(request[0].data.battr).to.deep.equal(bidderRequest2.ortb2.battr);
+      });
+    });
   });
 
   describe('interpretResponse', function () {

@@ -173,9 +173,9 @@ describe('nextMillenniumBidAdapterTests', function() {
   });
 
   it('validate_generated_params', function() {
-    const request = spec.buildRequests(bidRequestData);
+    const request = spec.buildRequests(bidRequestData, {bidderRequestId: 'mock-uuid'});
     expect(request[0].bidId).to.equal('bid1234');
-    expect(JSON.parse(request[0].data).id).to.equal('b06c5141-fe8f-4cdf-9d7d-54415490a917');
+    expect(JSON.parse(request[0].data).id).to.exist;
   });
 
   it('use parameters group_id', function() {

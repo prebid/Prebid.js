@@ -49,7 +49,7 @@ export const spec = {
     return ret;
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest);
+    let aux = parseRequestPrebidjsToOpenRTB(bidderRequest, bidderRequest);
     let payload = aux.payload;
     return {
       method: 'POST',
@@ -71,7 +71,7 @@ export const spec = {
   }
 };
 
-function parseRequestPrebidjsToOpenRTB(prebidRequest) {
+function parseRequestPrebidjsToOpenRTB(prebidRequest, bidderRequest) {
   let ret = {
     payload: {},
     partnerId: null
@@ -81,10 +81,11 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
   let domain = window.location.hostname;
   let secure = (window.location.protocol == 'https:' ? 1 : 0);
   let openRTBRequest = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequest']));
-  openRTBRequest.id = prebidRequest.auctionId;
+  openRTBRequest.id = bidderRequest.bidderRequestId;
   openRTBRequest.ext = {
     // TODO: please do not send internal data structures over the network
     refererInfo: prebidRequest.refererInfo.legacy,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: prebidRequest.auctionId
   };
 
@@ -105,7 +106,7 @@ function parseRequestPrebidjsToOpenRTB(prebidRequest) {
 
   openRTBRequest.source = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestSource']));
   openRTBRequest.source.fd = 0;
-  openRTBRequest.source.tid = prebidRequest.auctionId;
+  openRTBRequest.source.tid = prebidRequest.ortb2?.source?.tid;
   openRTBRequest.source.pchain = '';
 
   openRTBRequest.device = JSON.parse(JSON.stringify(DEFAULT['OpenRTBBidRequestDevice']));

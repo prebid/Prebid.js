@@ -44,7 +44,11 @@ describe('Adyoulike Adapter', function () {
         'params': {
           'placement': 'placement_0'
         },
-        'transactionId': 'bid_id_0_transaction_id'
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'bid_id_0_transaction_id'
+          }
+        },
       }
     ],
   };
@@ -108,7 +112,11 @@ describe('Adyoulike Adapter', function () {
           ]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      }
     }
   ];
 
@@ -142,7 +150,11 @@ describe('Adyoulike Adapter', function () {
           },
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -162,7 +174,11 @@ describe('Adyoulike Adapter', function () {
           'playerSize': [[ 640, 480 ]]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -185,7 +201,11 @@ describe('Adyoulike Adapter', function () {
           }
         },
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -286,7 +306,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -304,7 +328,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_1',
@@ -319,7 +347,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x600']
           }
         },
-      'transactionId': 'bid_id_1_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_1_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_2',
@@ -327,7 +359,11 @@ describe('Adyoulike Adapter', function () {
       'placementCode': 'adunit/hb-2',
       'params': {},
       'sizes': '300x400',
-      'transactionId': 'bid_id_2_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_2_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_3',
@@ -336,7 +372,11 @@ describe('Adyoulike Adapter', function () {
       'params': {
         'placement': 'placement_3'
       },
-      'transactionId': 'bid_id_3_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_3_transaction_id'
+        }
+      },
     }
   ];
 

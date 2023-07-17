@@ -1,9 +1,9 @@
-import { logError, deepAccess, parseSizesInput } from '../src/utils.js';
+import {deepAccess, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import { Renderer } from '../src/Renderer.js';
-import { INSTREAM, OUTSTREAM } from '../src/video.js';
+import {Renderer} from '../src/Renderer.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
 
 const ENDPOINT = `https://d.vidoomy.com/api/rtbserver/prebid/`;
 const BIDDER_CODE = 'vidoomy';
@@ -129,6 +129,14 @@ const buildRequests = (validBidRequests, bidderRequest) => {
     const bidfloor = deepAccess(bid, `params.bidfloor`, 0);
     const floor = getBidFloor(bid, adType, sizes, bidfloor);
 
+    const ortb2 = bidderRequest.ortb2 || {
+      bcat: [],
+      badv: [],
+      bapp: [],
+      btype: [],
+      battr: []
+    };
+
     let eids;
     const userEids = deepAccess(bid, 'userIdAsEids');
     if (Array.isArray(userEids) && userEids.length > 0) {
@@ -155,7 +163,12 @@ const buildRequests = (validBidRequests, bidderRequest) => {
       sp: encodeURIComponent(bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation),
       usp: bidderRequest.uspConsent || '',
       coppa: !!config.getConfig('coppa'),
-      videoContext: videoContext || ''
+      videoContext: videoContext || '',
+      bcat: ortb2.bcat || bid.params.bcat || [],
+      badv: ortb2.badv || bid.params.badv || [],
+      bapp: ortb2.bapp || bid.params.bapp || [],
+      btype: ortb2.btype || bid.params.btype || [],
+      battr: ortb2.battr || bid.params.battr || []
     };
 
     if (bidderRequest.gdprConsent) {
@@ -261,7 +274,7 @@ const interpretResponse = (serverResponse, bidRequest) => {
   }
 };
 
-function getUserSyncs (syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
   if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
     const pixelType = syncOptions.pixelEnabled ? 'image' : 'iframe';
     const urls = deepAccess(responses, '0.body.pixels') || COOKIE_SYNC_FALLBACK_URLS;
@@ -288,7 +301,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function getDomainWithoutSubdomain (hostname) {
+function getDomainWithoutSubdomain(hostname) {
   const parts = hostname.split('.');
   const newParts = [];
   for (let i = parts.length - 1; i >= 0; i--) {
