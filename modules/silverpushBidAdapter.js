@@ -110,7 +110,7 @@ export const CONVERTER = ortbConverter({
       bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
     }
 
-    bidResponse = buildVideoVastResponse(bidResponse)
+    bidResponse = buildVideoVastResponse(bidResponse);
     bidResponse = buildVideoOutstreamResponse(bidResponse, context)
 
     return bidResponse;
