@@ -201,7 +201,7 @@ export const converter = ortbConverter({
     delete imp.ext?.prebid?.storedrequest;
 
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
-      deepSetValue(imp, 'ext.prebid.bidder.rubicon.params.formats', bidRequestType);
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
     }
 
     setBidFloors(bidRequest, imp);
