@@ -502,8 +502,8 @@ export const spec = {
     }
 
     // Send multiformat data if requested
-    if (params.bidonmultiformat === true && deepAccess(params, 'params.formats.length') && params.params.formats.length > 1) {
-      data['p_formats'] = params.params.formats.join(',');
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
     }
 
     // add p_pos only if specified and valid
