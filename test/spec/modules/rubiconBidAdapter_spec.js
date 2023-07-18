@@ -2663,6 +2663,35 @@ describe('the rubicon adapter', function () {
               expect(pbsRequest.data.imp).to.have.nested.property('[0].native');
               expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
             });
+
+            it('should include multiformat data in the pbs request', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              bidReq.bids[0].params.bidonmultiformat = true;
+              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.formats).to.deep.equal(['native', 'banner']);
+            });
+
+            it('should include multiformat data in the fastlane request', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              bidReq.bids[0].params.bidonmultiformat = true;
+              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              let formatsIncluded = fastlanteRequest.data.indexOf('formats=native%2Cbanner') !== -1;
+              expect(formatsIncluded).to.equal(true);
+            });
           });
           describe('with bidonmultiformat === false', () => {
             it('should send only banner request because there\'s no params.video', () => {
