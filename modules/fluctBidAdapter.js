@@ -1,4 +1,5 @@
-import { _each, isEmpty } from '../src/utils.js';
+import { _each, deepSetValue, isEmpty } from '../src/utils.js';
+import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'fluct';
@@ -39,18 +40,33 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const serverRequests = [];
-    const referer = bidderRequest.refererInfo.referer;
+    const page = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
       const data = Object();
 
-      data.referer = referer;
+      data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.transactionId;
       data.user = {
         eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };
+
+      if (bidderRequest.gdprConsent) {
+        deepSetValue(data, 'regs.gdpr', {
+          consent: bidderRequest.gdprConsent.consentString,
+          gdprApplies: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+        });
+      }
+      if (bidderRequest.uspConsent) {
+        deepSetValue(data, 'regs.us_privacy', {
+          consent: bidderRequest.uspConsent,
+        });
+      }
+      if (config.getConfig('coppa') === true) {
+        deepSetValue(data, 'regs.coppa', 1);
+      }
 
       data.sizes = [];
       _each(request.sizes, (size) => {
@@ -61,6 +77,11 @@ export const spec = {
       });
 
       data.params = request.params;
+
+      if (request.schain) {
+        data.schain = request.schain;
+      }
+
       const searchParams = new URLSearchParams({
         dfpUnitCode: request.params.dfpUnitCode,
         tagId: request.params.tagId,
@@ -135,8 +156,22 @@ export const spec = {
    *
    */
   getUserSyncs: (syncOptions, serverResponses) => {
-    return [];
-  },
+    // gdpr, us_privacy, and coppa params to be handled on the server end.
+    const usersyncs = serverResponses.reduce((acc, serverResponse) => [
+      ...acc,
+      ...(serverResponse.body.usersyncs ?? []),
+    ], []);
+    const syncs = usersyncs.filter(
+      (sync) => (
+        (sync['type'] === 'image' && syncOptions.pixelEnabled) ||
+        (sync['type'] === 'iframe' && syncOptions.iframeEnabled)
+      )
+    ).map((sync) => ({
+      type: sync.type,
+      url: sync.url,
+    }));
+    return syncs;
+  }
 };
 
 registerBidder(spec);

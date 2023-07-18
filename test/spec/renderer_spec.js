@@ -52,7 +52,7 @@ describe('Renderer', function () {
       expect(testRenderer2.getConfig()).to.deep.equal({ test: 'config2' });
     });
 
-    it('sets a render function with setRender method', function () {
+    it('sets a render function with the setRender method', function () {
       testRenderer1.setRender(spyRenderFn);
       expect(typeof testRenderer1.render).to.equal('function');
       testRenderer1.render();
@@ -106,6 +106,20 @@ describe('Renderer', function () {
       sinon.assert.calledOnce(func1);
       sinon.assert.calledOnce(func2);
       expect(testRenderer1.cmd.length).to.equal(0);
+    });
+
+    it('renders immediately when requested', function () {
+      const testRenderer3 = Renderer.install({
+        config: { test: 'config2' },
+        id: 2,
+        renderNow: true
+      });
+      const func1 = sinon.spy();
+      const testArg = 'testArgument';
+
+      testRenderer3.setRender(func1);
+      testRenderer3.render(testArg);
+      func1.calledWith(testArg).should.be.ok;
     });
   });
 

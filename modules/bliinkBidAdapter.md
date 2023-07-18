@@ -3,10 +3,10 @@
 ```
 Module Name: BLIINK Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: samuel@bliink.io | jonathan@bliink.io
+Maintainer: samuel@bliink.io | ibrahima@bliink.io
 gdpr_supported: true
 tcf2_supported: true
-media_types: banner, native, video
+media_types: banner, video
 ```
 
 # Description
@@ -30,7 +30,6 @@ const adUnits = [
       {
         bidder: 'bliink',
         params: {
-          placement: 'banner',
           tagId: '41'
         }
       }
@@ -58,7 +57,6 @@ const adUnits = [
         bidder: 'bliink',
         params: {
           tagId: '41',
-          placement: 'video',
         }
       }
     ]
@@ -85,7 +83,6 @@ const adUnits = [
         bidder: 'bliink',
         params: {
           tagId: '41',
-          placement: 'video',
         }
       }
     ]

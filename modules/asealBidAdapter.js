@@ -59,7 +59,8 @@ export const spec = {
 
     const data = {
       bids: validBidRequests,
-      refererInfo: bidderRequest.refererInfo,
+      // TODO: please do not pass internal data structures over to the network
+      refererInfo: bidderRequest.refererInfo?.legacy,
       device: {
         webSessionId: getTrekWebSessionId(),
       },

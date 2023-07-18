@@ -113,8 +113,8 @@ function buildRequestObject(bid) {
 }
 function getReferrerInfo(bidderRequest) {
   let ref = window.location.href;
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    ref = bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    ref = bidderRequest.refererInfo.page;
   }
   return ref;
 }

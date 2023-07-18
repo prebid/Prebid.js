@@ -3,6 +3,7 @@ import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
+import {parseDomain} from '../../../src/refererDetection.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -16,6 +17,9 @@ describe('Adkernel adapter', function () {
         banner: {
           sizes: [[300, 250], [300, 200]]
         }
+      },
+      ortb2Imp: {
+        battr: [6, 7, 9]
       }
     }, bid2_zone2 = {
       bidder: 'adkernel',
@@ -94,12 +98,12 @@ describe('Adkernel adapter', function () {
       params: {
         zoneId: 1,
         host: 'rtb.adkernel.com',
-        video: {api: [1, 2]}
       },
       mediaTypes: {
         video: {
           context: 'instream',
-          playerSize: [[640, 480]]
+          playerSize: [[640, 480]],
+          api: [1, 2]
         }
       },
       adUnitCode: 'ad-unit-1'
@@ -253,7 +257,7 @@ describe('Adkernel adapter', function () {
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
+    return Object.assign({}, params, {refererInfo: {page: url, domain: parseDomain(url), reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
@@ -292,6 +296,7 @@ describe('Adkernel adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest, bidRequests, _;
+
     before(function () {
       [_, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
@@ -334,6 +339,11 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('ipv6', 'caller');
       expect(bidRequest.device).to.have.property('ua', 'caller');
       expect(bidRequest.device).to.have.property('dnt', 1);
+    });
+
+    it('should copy FPD to imp.banner', function() {
+      expect(bidRequest.imp[0].banner).to.have.property('battr');
+      expect(bidRequest.imp[0].banner.battr).to.be.eql([6, 7, 9]);
     });
 
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {

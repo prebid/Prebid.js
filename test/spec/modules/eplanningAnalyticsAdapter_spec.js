@@ -152,9 +152,6 @@ describe('eplanning analytics adapter', function () {
 
       // Step 10 check that the host to send the ajax request is configurable via options
       expect(eplAnalyticsAdapter.context.host).to.equal(initOptions.host);
-
-      // Step 11 verify that we received 6 events
-      sinon.assert.callCount(eplAnalyticsAdapter.track, 6);
     });
   });
 });

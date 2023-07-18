@@ -1,6 +1,8 @@
-import { deepAccess, isEmpty, isStr } from '../src/utils.js';
+import { deepAccess, isArray, isEmpty, isStr } from '../src/utils.js';
+import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'microad';
 
@@ -21,6 +23,19 @@ const EXT_GEO_STRING = '${COMPASS_EXT_GEO}';
 const BANNER_CODE = 1;
 const NATIVE_CODE = 2;
 const VIDEO_CODE = 4;
+
+const AUDIENCE_IDS = [
+  {type: 6, bidKey: 'userId.imuid', source: 'intimatemerger.com'},
+  {type: 8, bidKey: 'userId.id5id.uid', source: 'id5-sync.com'},
+  {type: 9, bidKey: 'userId.tdid', source: 'adserver.org'},
+  {type: 10, bidKey: 'userId.novatiq.snowflake', source: 'novatiq.com'},
+  {type: 11, bidKey: 'userId.parrableId.eid', source: 'parrable.com'},
+  {type: 12, bidKey: 'userId.dacId.id', source: 'dac.co.jp'},
+  {type: 13, bidKey: 'userId.idl_env', source: 'liveramp.com'},
+  {type: 14, bidKey: 'userId.criteoId', source: 'criteo.com'},
+  {type: 15, bidKey: 'userId.pubcid', source: 'pubcid.org'},
+  {type: 17, bidKey: 'userId.uid2.id', source: 'uidapi.com'}
+];
 
 function createCBT() {
   const randomValue = Math.floor(Math.random() * Math.pow(10, 18)).toString(16);
@@ -45,14 +60,18 @@ export const spec = {
     return !!(bid && bid.params && bid.params.spot && bid.mediaTypes && (bid.mediaTypes.banner || bid.mediaTypes.native || bid.mediaTypes.video));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const requests = [];
 
     validBidRequests.forEach(bid => {
       const bidParams = bid.params;
       const params = {
         spot: bidParams.spot,
-        url: bidderRequest.refererInfo.canonicalUrl || window.location.href,
-        referrer: bidderRequest.refererInfo.referer,
+        // TODO: are these the right refererInfo values - does the fallback make sense here?
+        url: bidderRequest.refererInfo.page || window.location.href,
+        referrer: bidderRequest.refererInfo.ref,
         bid_id: bid.bidId,
         transaction_id: bid.transactionId,
         media_types: convertMediaTypes(bid),
@@ -82,9 +101,26 @@ export const spec = {
         }
       }
 
-      const idlEnv = deepAccess(bid, 'userId.idl_env')
-      if (!isEmpty(idlEnv) && isStr(idlEnv)) {
-        params['idl_env'] = idlEnv
+      const aidsParams = []
+      const userIdAsEids = bid.userIdAsEids;
+      AUDIENCE_IDS.forEach((audienceId) => {
+        const bidAudienceId = deepAccess(bid, audienceId.bidKey);
+        if (!isEmpty(bidAudienceId) && isStr(bidAudienceId)) {
+          const aidParam = { type: audienceId.type, id: bidAudienceId };
+          // Set ext
+          if (isArray(userIdAsEids)) {
+            const targetEid = find(userIdAsEids, (eid) => eid.source === audienceId.source) || {};
+            if (!isEmpty(deepAccess(targetEid, 'uids.0.ext'))) {
+              aidParam.ext = targetEid.uids[0].ext;
+            }
+          }
+          aidsParams.push(aidParam);
+          // Set Ramp ID
+          if (audienceId.type === 13) params['idl_env'] = bidAudienceId;
+        }
+      })
+      if (aidsParams.length > 0) {
+        params['aids'] = JSON.stringify(aidsParams)
       }
 
       requests.push({

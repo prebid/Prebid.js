@@ -69,7 +69,7 @@ describe('gnetAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://gnetrtb.com'
+        page: 'https://gnetrtb.com'
       }
     };
 

@@ -1,19 +1,19 @@
 /* eslint-disable no-console */
 /* eslint-disable indent */
-import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { EVENTS } from '../src/constants.json';
-import {
-  logInfo,
-  logError,
-  generateUUID,
-  deepClone,
-  isGptPubadsDefined,
-} from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
+import { find } from '../src/polyfill.js';
 import $$PREBID_GLOBAL$$ from '../src/prebid.js';
+import {
+  deepClone,
+  generateUUID,
+  isGptPubadsDefined,
+  logError,
+  logInfo,
+} from '../src/utils.js';
 /** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
 
 const url = 'https://an.adingo.jp';
@@ -39,7 +39,6 @@ const url = 'https://an.adingo.jp';
 /** @typedef {{ adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: BidRequestedEvent[], bidsReceived: BidResponse[], labels?: string, noBids: BidRequest[], timeout: number, timestamp: number, winningBids: BidResponse[] }} AuctionEvent */
 /** @typedef {(BidResponse & { params: Params, status: string })} BidWonEvent */
 /** @typedef {(BidResponse & { adId: string, bid: BidResponse & { params: Params, status: string }})} AdRenderSucceededEvent */
-
 
 /** @type {{ auctions: { [auctionId: string]: AuctionEvent & { aidSuffix?: string, bids: { [requestId: string]: BidWonEvent & BidFlag }}}, gpt: { registered: boolean }, timeouts: { [auctionId: string]: number }, bidRequests: { [bidId: string]: BidRequest }}} */
 const cache = {

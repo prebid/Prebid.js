@@ -1,5 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'logicad';
 const ENDPOINT_URL = 'https://pb.ladsp.com/adrequest/prebid';
@@ -11,6 +13,9 @@ export const spec = {
     return !!(bid.params && bid.params.tid);
   },
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     const requests = [];
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {
@@ -48,7 +53,7 @@ export const spec = {
 };
 
 function newBidRequest(bid, bidderRequest) {
-  return {
+  const data = {
     auctionId: bid.auctionId,
     bidderRequestId: bid.bidderRequestId,
     bids: [{
@@ -60,10 +65,23 @@ function newBidRequest(bid, bidderRequest) {
       mediaTypes: bid.mediaTypes
     }],
     prebidJsVersion: '$prebid.version$',
-    referrer: bidderRequest.refererInfo.referer,
+    // TODO: is 'page' the right value here?
+    referrer: bidderRequest.refererInfo.page,
     auctionStartTime: bidderRequest.auctionStart,
     eids: bid.userIdAsEids,
   };
+
+  const sua = deepAccess(bid, 'ortb2.device.sua');
+  if (sua) {
+    data.sua = sua;
+  }
+
+  const userData = deepAccess(bid, 'ortb2.user.data');
+  if (userData) {
+    data.userData = userData;
+  }
+
+  return data;
 }
 
 registerBidder(spec);

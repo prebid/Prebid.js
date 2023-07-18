@@ -36,7 +36,8 @@ export const spec = {
         _vzPlacementId: bidRequest.params.placementId,
         sizes: sizes,
         _slotBidId: bidRequest.bidId,
-        _rqsrc: bidderRequest.refererInfo.referer,
+        // TODO: is 'page' the right value here?
+        _rqsrc: bidderRequest.refererInfo.page,
       };
 
       const payload = {
@@ -67,6 +68,8 @@ export const spec = {
       requestId: response.slotBidId,
       cpm: response.cpm,
       currency: response.currency || DEFAULT_CURRENCY,
+      adType: response.adType || '1',
+      settings: response.settings,
       width: response.adWidth,
       height: response.adHeight,
       ttl: CREATIVE_TTL,

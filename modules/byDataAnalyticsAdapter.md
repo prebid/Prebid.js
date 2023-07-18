@@ -1,7 +1,7 @@
 # Overview
 
 layout: Analytics Adapter
-title: Ascendeum Pvt Ltd. (https://ascendeum.com/)
+title: byData. (https://bydata.com/)
 description: Bydata Analytics Adapter
 modulecode: byDataAnalyticsAdapter
 gdpr_supported: false   (EU GDPR support)
@@ -13,11 +13,12 @@ enable_download: false       (in case you don't want users of the website to dow
 
 Module Name: Bydata Analytics Adapter
 Module Type: Analytics Adapter
-Maintainer: Ascendeum
+Maintainer: byData
 
 # Description
 
-Analytics adapter for https://ascendeum.com/. Contact engineering@ascendeum.com for information.
+Analytics adapter for https://bydata.com/. Contact admin@byData.com for information.
+
 
 # Test Parameters
 
@@ -25,10 +26,8 @@ Analytics adapter for https://ascendeum.com/. Contact engineering@ascendeum.com 
 {
   provider: 'bydata',
     options : {
-        clientId: "ASCENDEUM_PROVIDED_CLIENT_ID",   
+        clientId: "please contact byData team to get a clientId",   
         logFrequency : 100, // Sample Rate Default - 1%   
     }
 }
 ```
-
-

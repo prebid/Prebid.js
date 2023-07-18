@@ -68,7 +68,7 @@ export const spec = {
       meta: {
         advertiserDomains: ad.adomain || []
       }
-    }
+    };
 
     if (ad.adType === AD_TYPE.VIDEO) {
       const videoAd = bidderResponse.ad.video;

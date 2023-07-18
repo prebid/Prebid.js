@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/datablocksBidAdapter.js';
 import { BotClientTests } from '../../../modules/datablocksBidAdapter.js';
 import { getStorageManager } from '../../../src/storageManager.js';
-export let storage = getStorageManager();
 
 const bid = {
   bidId: '2dd581a2b6281d',

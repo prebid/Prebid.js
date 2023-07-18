@@ -1,6 +1,7 @@
 import { isFn, deepAccess, getWindowTop } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mobfoxpb';
 const AD_URL = 'https://bes.mobfox.com/pbjs';
@@ -48,6 +49,8 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const winTop = getWindowTop();
     const location = winTop.location;
     const placements = [];
@@ -66,7 +69,7 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
     }
 
@@ -79,7 +82,7 @@ export const spec = {
         schain: bid.schain || {},
         bidfloor: getBidFloor(bid)
       };
-      const mediaType = bid.mediaTypes
+      const mediaType = bid.mediaTypes;
 
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.traffic = BANNER;

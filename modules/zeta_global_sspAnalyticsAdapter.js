@@ -3,7 +3,7 @@ import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
 const ZETA_GVL_ID = 833;
 const ADAPTER_CODE = 'zeta_global_ssp';

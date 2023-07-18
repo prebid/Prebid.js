@@ -108,8 +108,10 @@ describe('Inmar adapter tests', function () {
         gdprApplies: true
       },
       refererInfo: {
-        referer: 'https://domain.com',
-        numIframes: 0
+        legacy: {
+          referer: 'https://domain.com',
+          numIframes: 0
+        }
       }
     });
 

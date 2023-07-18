@@ -132,7 +132,7 @@ describe('mediaforce bid adapter', function () {
     });
 
     const refererInfo = {
-      referer: 'https://www.prebid.org',
+      ref: 'https://www.prebid.org',
       reachedTop: true,
       stack: [
         'https://www.prebid.org/page.html',
@@ -181,7 +181,7 @@ describe('mediaforce bid adapter', function () {
         site: {
           id: bid.params.publisher_id,
           publisher: {id: bid.params.publisher_id},
-          ref: encodeURIComponent(refererInfo.referer),
+          ref: encodeURIComponent(refererInfo.ref),
           page: pageUrl,
         },
         device: {
@@ -265,7 +265,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub123',
               publisher: {id: 'pub123'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {
@@ -321,7 +321,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub124',
               publisher: {id: 'pub124'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {
