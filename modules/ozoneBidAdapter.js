@@ -373,7 +373,6 @@ export const spec = {
         ozoneRequest.id = ozUuid; // Unique ID of the bid request, provided by the exchange. (REQUIRED)
         ozoneRequest.imp = tosendtags.slice(i, i + 10);
         ozoneRequest.ext = extObj;
-        deepSetValue(ozoneRequest, 'source.tid', ozUuid);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
         deepSetValue(ozoneRequest, 'user.ext.eids', userExtEids);
         if (ozoneRequest.imp.length > 0) {
           arrRet.push({
