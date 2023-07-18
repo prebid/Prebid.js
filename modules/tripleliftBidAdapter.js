@@ -193,7 +193,7 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (bidderRequest?.ortb2) {
     data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
   }
-  
+
   return data;
 }
 
