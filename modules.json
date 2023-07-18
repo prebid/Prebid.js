@@ -21,7 +21,6 @@
     "hadronIdSystem",
     "hadronRtdProvider",
     "identityLinkIdSystem",
-    "intentIqIdSystem",
     "ixBidAdapter",
     "justpremiumBidAdapter",
     "kargoBidAdapter",
