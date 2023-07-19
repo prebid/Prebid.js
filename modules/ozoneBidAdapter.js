@@ -25,7 +25,7 @@ const ORIGIN_DEV = 'https://test.ozpr.net';
 const OZONEVERSION = '2.9.0';
 export const spec = {
   gvlid: 524,
-  aliases: [{code: 'lmc', gvlid: 524}, {code: 'newspassid', gvlid: 524}, {code: 'newspass', gvlid: 524}],
+  aliases: [{code: 'lmc', gvlid: 524}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
@@ -407,8 +407,6 @@ export const spec = {
     let arrRet = tosendtags.map(imp => {
       logInfo('buildRequests starting to generate non-single response, working on imp : ', imp);
       let ozoneRequestSingle = Object.assign({}, ozoneRequest);
-      imp.ext[whitelabelBidder].pageAuctionId = bidderRequest['auctionId']; // make a note in the ext object of what the original auctionId was, in the bidderRequest object
-      deepSetValue(ozoneRequestSingle, 'source.tid', ozUuid);// RTB 2.5 : tid is Transaction ID that must be common across all participants in this bid request (e.g., potentially multiple exchanges).
       ozoneRequestSingle.id = generateUUID(); // Unique ID of the bid request, provided by the exchange. (REQUIRED)
       ozoneRequestSingle.imp = [imp];
       ozoneRequestSingle.ext = extObj;
@@ -453,6 +451,7 @@ export const spec = {
     logInfo(`interpretResponse time: ${startTime} . Time between buildRequests done and interpretResponse start was ${startTime - this.propertyBag.buildRequestsEnd}ms`);
     logInfo(`serverResponse, request`, JSON.parse(JSON.stringify(serverResponse)), JSON.parse(JSON.stringify(request)));
     serverResponse = serverResponse.body || {};
+    let aucId = serverResponse.id; // this will be correct for single requests and non-single
     if (!serverResponse.hasOwnProperty('seatbid')) {
       return [];
     }
@@ -547,7 +546,7 @@ export const spec = {
           }
         }
         let {seat: winningSeat, bid: winningBid} = ozoneGetWinnerForRequestBid(thisBid.bidId, serverResponse.seatbid);
-        adserverTargeting[whitelabelPrefix + '_auc_id'] = String(request.bidderRequest.auctionId);
+        adserverTargeting[whitelabelPrefix + '_auc_id'] = String(aucId); // was request.bidderRequest.auctionId
         adserverTargeting[whitelabelPrefix + '_winner'] = String(winningSeat);
         adserverTargeting[whitelabelPrefix + '_bid'] = 'true';
         adserverTargeting[whitelabelPrefix + '_cache_id'] = deepAccess(thisBid, 'ext.prebid.targeting.hb_cache_id', 'no-id');
