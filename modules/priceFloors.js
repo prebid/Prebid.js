@@ -28,6 +28,7 @@ import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {beConvertCurrency} from '../src/utils/currency.js';
+import {adjustCpm} from '../src/utils/cpm.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -150,8 +151,9 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
     matchingRule
   };
   // use adUnit floorMin as priority!
-  if (typeof deepAccess(bidObject, 'ortb2Imp.ext.prebid.floorMin') === 'number') {
-    matchingData.floorMin = bidObject.ortb2Imp.ext.prebid.floorMin;
+  const floorMin = deepAccess(bidObject, 'ortb2Imp.ext.prebid.floors.floorMin');
+  if (typeof floorMin === 'number') {
+    matchingData.floorMin = floorMin;
   }
   matchingData.matchingFloor = Math.max(matchingData.floorMin, matchingData.floorRuleValue);
   // save for later lookup if needed
@@ -179,12 +181,8 @@ function generatePossibleEnumerations(arrayOfFields, delimiter) {
 /**
  * @summary If a the input bidder has a registered cpmadjustment it returns the input CPM after being adjusted
  */
-export function getBiddersCpmAdjustment(bidderName, inputCpm, bid = {}) {
-  const adjustmentFunction = bidderSettings.get(bidderName, 'bidCpmAdjustment');
-  if (adjustmentFunction) {
-    return parseFloat(adjustmentFunction(inputCpm, {...bid, cpm: inputCpm}));
-  }
-  return parseFloat(inputCpm);
+export function getBiddersCpmAdjustment(inputCpm, bid, bidRequest) {
+  return parseFloat(adjustCpm(inputCpm, {...bid, cpm: inputCpm}, bidRequest));
 }
 
 /**
@@ -249,8 +247,14 @@ export function getFloor(requestParams = {currency: 'USD', mediaType: '*', size:
 
   // if cpmAdjustment flag is true and we have a valid floor then run the adjustment on it
   if (floorData.enforcement.bidAdjustment && floorInfo.matchingFloor) {
-    let cpmAdjustment = getBiddersCpmAdjustment(bidRequest.bidder, floorInfo.matchingFloor);
-    floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
+    // pub provided inverse function takes precedence, otherwise do old adjustment stuff
+    const inverseFunction = bidderSettings.get(bidRequest.bidder, 'inverseBidAdjustment');
+    if (inverseFunction) {
+      floorInfo.matchingFloor = inverseFunction(floorInfo.matchingFloor, bidRequest);
+    } else {
+      let cpmAdjustment = getBiddersCpmAdjustment(floorInfo.matchingFloor, null, bidRequest);
+      floorInfo.matchingFloor = cpmAdjustment ? calculateAdjustedFloor(floorInfo.matchingFloor, cpmAdjustment) : floorInfo.matchingFloor;
+    }
   }
 
   if (floorInfo.matchingFloor) {
@@ -307,6 +311,8 @@ export function getFloorDataFromAdUnits(adUnits) {
         // copy over the new rules into our values object
         Object.assign(accum.values, newRules);
       }
+    } else if (adUnit.floors != null) {
+      logWarn(`adUnit '${adUnit.code}' provides an invalid \`floor\` definition, it will be ignored for floor calculations`, adUnit);
     }
     return accum;
   }, {});
@@ -627,7 +633,7 @@ export function handleSetFloorsConfig(config) {
       'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true
     ]),
     'additionalSchemaFields', additionalSchemaFields => typeof additionalSchemaFields === 'object' && Object.keys(additionalSchemaFields).length > 0 ? addFieldOverrides(additionalSchemaFields) : undefined,
-    'data', data => (data && parseFloorData(data, 'setConfig')) || _floorsConfig.data // do not overwrite if passed in data not valid
+    'data', data => (data && parseFloorData(data, 'setConfig')) || undefined
   ]);
 
   // if enabled then do some stuff
@@ -731,7 +737,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   }
 
   // ok we got the bid response cpm in our desired currency. Now we need to run the bidders CPMAdjustment function if it exists
-  adjustedCpm = getBiddersCpmAdjustment(bid.bidderCode, adjustedCpm, bid);
+  adjustedCpm = getBiddersCpmAdjustment(adjustedCpm, bid, matchingBidRequest);
 
   // add necessary data information for analytics adapters / floor providers would possibly need
   addFloorDataToBid(floorData, floorInfo, bid, adjustedCpm);
@@ -739,10 +745,9 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   // now do the compare!
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
-    // continue with a "NO_BID" bid, TODO: remove this in v8
-    const flooredBid = reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
-    logWarn(`${MODULE_NAME}: ${flooredBid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
-    return fn.call(this, adUnitCode, flooredBid, reject);
+    reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
+    logWarn(`${MODULE_NAME}: ${bid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
+    return;
   }
   return fn.call(this, adUnitCode, bid, reject);
 });

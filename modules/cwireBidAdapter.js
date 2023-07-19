@@ -1,307 +1,234 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {OUTSTREAM} from '../src/video.js';
-import {
-  deepAccess,
-  generateUUID,
-  getBidIdParameter,
-  getParameterByName,
-  getValue,
-  isArray,
-  isNumber,
-  isStr,
-  logError,
-  logWarn,
-  parseSizesInput,
-} from '../src/utils.js';
-import {Renderer} from '../src/Renderer.js';
-import {find} from '../src/polyfill.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
-export const ENDPOINT_URL = 'https://embed.cwi.re/delivery/prebid';
-export const RENDERER_URL = 'https://cdn.cwi.re/prebid/renderer/LATEST/renderer.min.js';
-// ------------------------------------
-export const CW_PAGE_VIEW_ID = generateUUID();
-const LS_CWID_KEY = 'cw_cwid';
-const CW_GROUPS_QUERY = 'cwgroups';
-const CW_CREATIVE_QUERY = 'cwcreative';
+const CWID_KEY = 'cw_cwid';
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const BID_ENDPOINT = 'https://prebid.cwi.re/v1/bid';
+export const EVENT_ENDPOINT = 'https://prebid.cwi.re/v1/event';
 
 /**
- * ------------------------------------
- * ------------------------------------
- * @param bid
- * @returns {Array<string>}
+ * Allows limiting ad impressions per site render. Unique per prebid instance ID.
  */
-export function getSlotSizes(bid) {
-  return parseSizesInput(getAllMediaSizes(bid));
+export const pageViewId = generateUUID();
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+
+/**
+ * Retrieve dimensions and CSS max height/width from a given slot and attach the properties to the bidRequest.
+ * @param bid
+ * @returns {*&{cwExt: {dimensions: {width: number, height: number}, style: {maxWidth: number, maxHeight: number}}}}
+ */
+function slotDimensions(bid) {
+  let adUnitCode = bid.adUnitCode;
+  let slotEl = document.getElementById(adUnitCode);
+
+  if (slotEl) {
+    logInfo(`Slot element found: ${adUnitCode}`)
+    const slotW = slotEl.offsetWidth
+    const slotH = slotEl.offsetHeight
+    const cssMaxW = slotEl.style?.maxWidth;
+    const cssMaxH = slotEl.style?.maxHeight;
+    logInfo(`Slot dimensions (w/h): ${slotW} / ${slotH}`)
+    logInfo(`Slot Styles (maxW/maxH): ${cssMaxW} / ${cssMaxH}`)
+
+    bid = {
+      ...bid,
+      cwExt: {
+        dimensions: {
+          width: slotW,
+          height: slotH,
+        },
+        style: {
+          ...(cssMaxW) && {
+            maxWidth: cssMaxW
+          },
+          ...(cssMaxH) && {
+            maxHeight: cssMaxH
+          }
+        }
+      }
+    }
+  }
+  return bid
 }
 
 /**
- * ------------------------------------
- * ------------------------------------
- * @param bid
- * @returns {*[]}
+ * Extracts feature flags from a comma-separated url parameter `cwfeatures`.
+ *
+ * @returns *[]
  */
-export function getAllMediaSizes(bid) {
-  let playerSizes = deepAccess(bid, 'mediaTypes.video.playerSize');
-  let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
-  let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
-
-  const sizes = [];
-
-  if (isArray(playerSizes)) {
-    playerSizes.forEach((s) => {
-      sizes.push(s);
-    })
+function getFeatureFlags() {
+  let ffParam = getParameterByName('cwfeatures')
+  if (ffParam) {
+    return ffParam.split(',')
   }
-
-  if (isArray(videoSizes)) {
-    videoSizes.forEach((s) => {
-      sizes.push(s);
-    })
-  }
-
-  if (isArray(bannerSizes)) {
-    bannerSizes.forEach((s) => {
-      sizes.push(s);
-    })
-  }
-  return sizes;
+  return []
 }
 
-const getQueryVariable = (variable) => {
-  let value = getParameterByName(variable);
-  if (value === '') {
-    value = null;
+function getRefGroups() {
+  const groups = getParameterByName('cwgroups')
+  if (groups) {
+    return groups.split(',')
   }
-  return value;
-};
+  return []
+}
 
 /**
- * ------------------------------------
- * ------------------------------------
- * @param validBidRequests
- * @returns {*[]}
+ * Reads the CWID from local storage.
  */
-export const mapSlotsData = function(validBidRequests) {
-  const slots = [];
-  validBidRequests.forEach(bid => {
-    const bidObj = {};
-    // get testing / debug params
-    let cwcreative = getValue(bid.params, 'cwcreative');
-    let refgroups = getValue(bid.params, 'refgroups');
-    let cwapikey = getValue(bid.params, 'cwapikey');
+function getCwid() {
+  return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(CWID_KEY) : null;
+}
 
-    // get the pacement and page ids
-    let placementId = getValue(bid.params, 'placementId');
-    let pageId = getValue(bid.params, 'pageId');
-    // get the rest of the auction/bid/transaction info
-    bidObj.auctionId = getBidIdParameter('auctionId', bid);
-    bidObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-    bidObj.bidId = getBidIdParameter('bidId', bid);
-    bidObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
-    bidObj.placementId = placementId;
-    bidObj.pageId = pageId;
-    bidObj.mediaTypes = getBidIdParameter('mediaTypes', bid);
-    bidObj.transactionId = getBidIdParameter('transactionId', bid);
-    bidObj.sizes = getSlotSizes(bid);
-    bidObj.cwcreative = cwcreative;
-    bidObj.refgroups = refgroups;
-    bidObj.cwapikey = cwapikey;
-    slots.push(bidObj);
-  });
+function hasCwid() {
+  return storage.localStorageIsEnabled() && storage.getDataFromLocalStorage(CWID_KEY);
+}
 
-  return slots;
-};
+/**
+ * Store the CWID to local storage.
+ */
+function updateCwid(cwid) {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(CWID_KEY, cwid)
+  } else {
+    logInfo(`Could not set CWID ${cwid} in localstorage`);
+  }
+}
+
+/**
+ * Extract and collect cwire specific extensions.
+ */
+function getCwExtension() {
+  const cwId = getCwid();
+  const cwCreative = getParameterByName('cwcreative')
+  const cwGroups = getRefGroups()
+  const cwFeatures = getFeatureFlags();
+  // Enable debug flag by passing ?cwdebug=true as url parameter.
+  // Note: pbjs_debug=true enables it on prebid level
+  // More info: https://docs.prebid.org/troubleshooting/troubleshooting-guide.html#turn-on-prebidjs-debug-messages
+  const debug = getParameterByName('cwdebug');
+
+  return {
+    ...(cwId) && {
+      cwid: cwId
+    },
+    ...(cwGroups.length > 0) && {
+      refgroups: cwGroups
+    },
+    ...(cwFeatures.length > 0) && {
+      featureFlags: cwFeatures
+    },
+    ...(cwCreative) && {
+      cwcreative: cwCreative
+    },
+    ...(debug) && {
+      debug: true
+    }
+  };
+}
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER],
+
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function(bid) {
-    bid.params = bid.params || {};
-
-    if (bid.params.cwcreative && !isStr(bid.params.cwcreative)) {
-      logError('cwcreative must be of type string!');
+  isBidRequestValid: function (bid) {
+    if (!bid.params?.placementId || !isNumber(bid.params.placementId)) {
+      logError('placementId not provided or not a number');
       return false;
     }
 
-    if (!bid.params.placementId || !isNumber(bid.params.placementId)) {
-      logError('placementId not provided or invalid');
+    if (!bid.params?.pageId || !isNumber(bid.params.pageId)) {
+      logError('pageId not provided or not a number');
       return false;
     }
-
-    if (!bid.params.pageId || !isNumber(bid.params.pageId)) {
-      logError('pageId not provided');
-      return false;
-    }
-
     return true;
   },
 
   /**
-   * ------------------------------------
-   * itterate trough slots array and try
-   * to extract first occurence of a given
-   * key, if not found - return null
-   * ------------------------------------
-   */
-  getFirstValueOrNull: function(slots, key) {
-    const found = slots.find((item) => {
-      return (typeof item[key] !== 'undefined');
-    });
-
-    return (found) ? found[key] : null;
-  },
-
-  /**
-   * ------------------------------------
-   * Make a server request from the
-   * list of BidRequests.
-   * ------------------------------------
-   * @param {validBidRequests[]} - an array of bids
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} validBidRequests An array of bids.
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function(validBidRequests, bidderRequest) {
-    let slots = [];
-    let referer;
-    try {
-      referer = bidderRequest?.refererInfo?.page;
-      slots = mapSlotsData(validBidRequests);
-    } catch (e) {
-      logWarn(e);
-    }
+  buildRequests: function (validBidRequests, bidderRequest) {
+    // There are more fields on the refererInfo object
+    let referrer = bidderRequest?.refererInfo?.page
 
-    let refgroups = [];
+    // process bid requests
+    let processed = validBidRequests
+      .map(bid => slotDimensions(bid))
+      // Flattens the pageId and placement Id for backwards compatibility.
+      .map((bid) => ({...bid, pageId: bid.params?.pageId, placementId: bid.params?.placementId}));
 
-    const cwCreative = getQueryVariable(CW_CREATIVE_QUERY) || null;
-    const cwCreativeIdFromConfig = this.getFirstValueOrNull(slots, 'cwcreative');
-    const refGroupsFromConfig = this.getFirstValueOrNull(slots, 'refgroups');
-    const cwApiKeyFromConfig = this.getFirstValueOrNull(slots, 'cwapikey');
-    const rgQuery = getQueryVariable(CW_GROUPS_QUERY);
-
-    if (refGroupsFromConfig !== null) {
-      refgroups = refGroupsFromConfig.split(',');
-    }
-
-    if (rgQuery !== null) {
-      // override if query param is present
-      refgroups = [];
-      refgroups = rgQuery.split(',');
-    }
-
-    const localStorageCWID = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(LS_CWID_KEY) : null;
-
+    const extensions = getCwExtension();
     const payload = {
-      cwid: localStorageCWID,
-      refgroups,
-      cwcreative: cwCreative || cwCreativeIdFromConfig,
-      slots: slots,
-      cwapikey: cwApiKeyFromConfig,
-      httpRef: referer || '',
-      pageViewId: CW_PAGE_VIEW_ID,
+      slots: processed,
+      httpRef: referrer,
+      // TODO: Verify whether the auctionId and the usage of pageViewId make sense.
+      pageViewId: pageViewId,
+      sdk: {
+        version: '$prebid.version$'
+      },
+      ...extensions
     };
-
+    const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL,
-      data: payload
+      url: BID_ENDPOINT,
+      data: payloadString,
     };
   },
-
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function(serverResponse, bidRequest) {
-    const bidResponses = [];
-
-    try {
-      if (typeof bidRequest.data === 'string') {
-        bidRequest.data = JSON.parse(bidRequest.data);
+  interpretResponse: function (serverResponse, bidRequest) {
+    if (!hasCwid()) {
+      const cwid = serverResponse.body?.cwid
+      if (cwid) {
+        updateCwid(cwid);
       }
-      const serverBody = serverResponse.body;
-      serverBody.bids.forEach((br) => {
-        const bidReq = find(bidRequest.data.slots, bid => bid.bidId === br.requestId);
-
-        let mediaType = BANNER;
-
-        const bidResponse = {
-          requestId: br.requestId,
-          cpm: br.cpm,
-          bidderCode: BIDDER_CODE,
-          width: br.dimensions[0],
-          height: br.dimensions[1],
-          creativeId: br.creativeId,
-          currency: br.currency,
-          netRevenue: br.netRevenue,
-          ttl: br.ttl,
-          meta: {
-            advertiserDomains: br.adomains ? br.advertiserDomains : [],
-          },
-
-        };
-
-        // ------------------------------------
-        // IF BANNER
-        // ------------------------------------
-
-        if (deepAccess(bidReq, 'mediaTypes.banner')) {
-          bidResponse.ad = br.html;
-        }
-        // ------------------------------------
-        // IF VIDEO
-        // ------------------------------------
-        if (deepAccess(bidReq, 'mediaTypes.video')) {
-          mediaType = VIDEO;
-          bidResponse.vastXml = br.vastXml;
-          bidResponse.videoScript = br.html;
-          const mediaTypeContext = deepAccess(bidReq, 'mediaTypes.video.context');
-          if (mediaTypeContext === OUTSTREAM) {
-            const r = Renderer.install({
-              id: bidResponse.requestId,
-              adUnitCode: bidReq.adUnitCode,
-              url: RENDERER_URL,
-              loaded: false,
-              config: {
-                ...deepAccess(bidReq, 'mediaTypes.video'),
-                ...deepAccess(br, 'outstream', {})
-              }
-            });
-
-            // set renderer
-            try {
-              bidResponse.renderer = r;
-              bidResponse.renderer.setRender(function(bid) {
-                if (window.CWIRE && window.CWIRE.outstream) {
-                  window.CWIRE.outstream.renderAd(bid);
-                }
-              });
-            } catch (err) {
-              logWarn('Prebid Error calling setRender on newRenderer', err);
-            }
-          }
-        }
-
-        bidResponse.mediaType = mediaType;
-        bidResponses.push(bidResponse);
-      });
-    } catch (e) {
-      logWarn(e);
     }
 
-    return bidResponses;
+    // Rename `html` response property to `ad` as used by prebid.
+    const bids = serverResponse.body?.bids.map(({html, ...rest}) => ({...rest, ad: html}));
+    return bids || [];
   },
+
+  onBidWon: function (bid) {
+    logInfo(`Bid won.`)
+    const event = {
+      type: 'BID_WON',
+      payload: {
+        bid: bid
+      }
+    }
+    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+  },
+
+  onBidderError: function (error, bidderRequest) {
+    logInfo(`Bidder error: ${error}`)
+    const event = {
+      type: 'BID_ERROR',
+      payload: {
+        error: error,
+        bidderRequest: bidderRequest
+      }
+    }
+    navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
+  },
+
 };
 registerBidder(spec);

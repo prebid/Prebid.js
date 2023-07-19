@@ -1,44 +1,55 @@
 # Overview
 
-Module Name: SmartyTech Bidder Adapter
-
-Module Type: Bidder Adapter
-
+```
+Module Name:  SmartyTech Bid Adapter
+Module Type:  Bidder Adapter
 Maintainer: info@adpartner.pro
+```
 
 # Description
 
-You can use this adapter to get a bid from smartytech.io.
+Connects to SmartyTech's exchange for bids.
 
-About us : https://smartytech.io
+SmartyTech bid adapter supports Banner and Video
 
-# Test Parameters
-
-```javascript
-    var adUnits = [
-    {
-        code: 'div-smartytech-example',
-        sizes: [[300, 250]],
-        bids: [
-            {
-                bidder: "smartytech",
-                params: {
-                    endpointId: 14
-                }
-            }
-        ]
+# Sample Ad Unit: For Publishers
+## Sample Banner Ad Unit
+```
+var adUnits = [{
+    code: '/123123123/prebidjs-banner',
+    mediaTypes: {
+        banner: {
+            sizes: [
+                [300, 301],
+                [300, 250]
+            ]
+        }
     },
-    {
-        code: 'div-smartytech-example-2',
-        sizes: [[300, 250]],
-        bids: [
-            {
-                bidder: "smartytech",
-                params: {
-                    endpointId: 14
-                }
-            }
-        ]
-    }
-];
+    bids: [{
+        bidder: 'smartytech',
+        params: {
+            endpointId: 12
+        }
+    }]
+}];
+```
+
+## Sample Video Ad Unit
+```
+var videoAdUnit = {
+    code: '/123123123/video-vast-banner',
+    mediaTypes: {
+        video: {
+            context: 'instream',
+            playerSize: [640, 480],
+            mimes: ['video/mp4'],
+        }
+    },
+    bids: [{
+        bidder: 'smartytech',
+        params: {
+            endpointId: 12
+        }
+    }]
+};
 ```

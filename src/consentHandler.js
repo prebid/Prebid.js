@@ -107,3 +107,56 @@ export class GdprConsentHandler extends ConsentHandler {
     }
   }
 }
+
+export class GppConsentHandler extends ConsentHandler {
+  getConsentMeta() {
+    const consentData = this.getConsentData();
+    if (consentData && this.generatedTime) {
+      return {
+        generatedAt: this.generatedTime,
+      }
+    }
+  }
+}
+
+export function gvlidRegistry() {
+  const registry = {};
+  const flat = {};
+  const none = {};
+  return {
+    /**
+     * Register a module's GVL ID.
+     * @param {string} moduleType defined in `activities/modules.js`
+     * @param {string} moduleName
+     * @param {number} gvlid
+     */
+    register(moduleType, moduleName, gvlid) {
+      if (gvlid) {
+        (registry[moduleName] = registry[moduleName] || {})[moduleType] = gvlid;
+        if (flat.hasOwnProperty(moduleName)) {
+          if (flat[moduleName] !== gvlid) flat[moduleName] = none;
+        } else {
+          flat[moduleName] = gvlid;
+        }
+      }
+    },
+    /**
+     * Get a module's GVL ID(s).
+     *
+     * @param {string} moduleName
+     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     *   `modules` is a map from module type to that module's GVL ID;
+     *   `gvlid` is the single GVL ID for this family of modules (only defined
+     *   if all modules with this name declared the same ID).
+     */
+    get(moduleName) {
+      const result = {modules: registry[moduleName] || {}};
+      if (flat.hasOwnProperty(moduleName) && flat[moduleName] !== none) {
+        result.gvlid = flat[moduleName];
+      }
+      return result;
+    }
+  }
+}
+
+export const GDPR_GVLIDS = gvlidRegistry();

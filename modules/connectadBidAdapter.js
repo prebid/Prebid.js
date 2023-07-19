@@ -2,8 +2,6 @@ import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../sr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
-import {createEidsArray} from './userId/eids.js';
-
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
@@ -73,12 +71,13 @@ export const spec = {
     }
 
     // EIDS Support
-    if (validBidRequests[0].userId) {
-      deepSetValue(data, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+    if (validBidRequests[0].userIdAsEids) {
+      deepSetValue(data, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
     validBidRequests.map(bid => {
       const placement = Object.assign({
+        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bid.transactionId,
         divName: bid.bidId,
         pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],

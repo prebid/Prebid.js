@@ -45,6 +45,26 @@ describe('AjaAdapter', function () {
         bidId: '30b31c1838de1e',
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
+        ortb2: {
+          device: {
+            sua: {
+              source: 2,
+              platform: {
+                brand: 'Android',
+                version: ['8', '0', '0']
+              },
+              browsers: [
+                {brand: 'Not_A Brand', version: ['99', '0', '0', '0']},
+                {brand: 'Google Chrome', version: ['109', '0', '5414', '119']},
+                {brand: 'Chromium', version: ['109', '0', '5414', '119']}
+              ],
+              mobile: 1,
+              model: 'SM-G955U',
+              bitness: '64',
+              architecture: ''
+            }
+          }
+        }
       }
     ];
 
@@ -58,7 +78,7 @@ describe('AjaAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&');
     });
   });
 

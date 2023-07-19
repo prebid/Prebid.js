@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const storageManager = getStorageManager({bidderCode: 'orbidder'});
 
@@ -96,11 +97,12 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: $$PREBID_GLOBAL$$.version,
+          v: getGlobal().version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
           auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           bidRequestCount: bidRequest.bidRequestCount,
           params: bidRequest.params,

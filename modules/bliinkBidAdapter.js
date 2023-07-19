@@ -125,7 +125,7 @@ export const buildBid = (bidResponse) => {
     requestId: deepAccess(bidResponse, 'extras.transaction_id'),
     width: deepAccess(bidResponse, `creative.${bid.mediaType}.width`) || 1,
     height: deepAccess(bidResponse, `creative.${bid.mediaType}.height`) || 1,
-    ttl: 3600,
+    ttl: 300,
     netRevenue: true,
   });
 };
@@ -154,6 +154,7 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     return {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
       id: bid.params.tagId,
+      // TODO: bidId is globally unique, is it a good choice for transaction ID (vs ortb2Imp.ext.tid)?
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
       imageUrl: deepAccess(bid, 'params.imageUrl', ''),
