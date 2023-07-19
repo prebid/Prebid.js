@@ -142,8 +142,8 @@ function buildRequest(bidRequest, bidderRequest) {
     deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
-  if (bidderRequest.schain) {
-    deepSetValue(openrtbRequest, 'source.schain', bidderRequest.schain);
+  if (bidRequest.schain) {
+    deepSetValue(openrtbRequest, 'source.schain', bidRequest.schain);
   }
 
   openrtbRequest.tmax = bidderRequest.timeout || 200;
