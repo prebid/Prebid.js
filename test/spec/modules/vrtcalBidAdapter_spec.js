@@ -29,7 +29,12 @@ describe('vrtcalBidAdapter', function () {
         'bidderRequestId': 'br0001',
         'auctionId': 'auction0001',
         'userIdAsEids': {},
-        timeout: 435
+        timeout: 435,
+
+        refererInfo: {
+          page: 'page'
+        }
+
       }
     ];
 
