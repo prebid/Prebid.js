@@ -6,17 +6,21 @@ import {GreedyPromise} from '../../src/utils/promise.js';
  * @param {{}} params CMP parameters. Currently this is a subset of {command, callback, parameter, version}.
  * @returns {Promise<*>} a promise that:
  *    - if a `callback` param was provided, resolves (with no result) just before the first time it's run;
- *    - if `callback` was *not* provided, resolves to the return value of the CMP command
+ *    - if `callback` was *not* provided, resolves to the return value of the CMP command*
  * @property {boolean} isDirect true if the CMP is directly accessible (no postMessage required)
  */
 
 /**
- * Returns a function that can interface with a CMP regardless of where it's located.
+ * Returns a client function that can interface with a CMP regardless of where it's located.
  *
  * @param apiName name of the CMP api, e.g. "__gpp"
  * @param apiVersion? CMP API version
  * @param apiArgs? names of the arguments taken by the api function, in order.
  * @param callbackArgs? names of the cross-frame response payload properties that should be passed as callback arguments, in order
+ * @param cbReturns? if true, disregard return values from the underlying API function; instead, pass it a callback,
+ *  and expect it to be invoked only once with what is essentially the API function's return value
+ *  (and will likewise be used to fulfill promises returned by the client).
+ *  This has no effect when the client is passed a "true" callback, nor when the API lives on a different frame.
  * @param win
  * @returns {CMPClient} CMP invocation function (or null if no CMP was found).
  */
@@ -26,6 +30,7 @@ export function cmpClient(
     apiVersion,
     apiArgs = ['command', 'callback', 'parameter', 'version'],
     callbackArgs = ['returnValue', 'success'],
+    cbReturns = false
   },
   win = window
 ) {
@@ -108,9 +113,9 @@ export function cmpClient(
       return new GreedyPromise((resolve, reject) => {
         const ret = cmpFrame[apiName](...resolveParams({
           ...params,
-          callback: params.callback && wrapCallback(params.callback, resolve, reject)
+          callback: (params.callback || cbReturns) && wrapCallback(params.callback, resolve, reject)
         }).map(([_, val]) => val));
-        if (params.callback == null) {
+        if (params.callback == null && !cbReturns) {
           resolve(ret);
         }
       });

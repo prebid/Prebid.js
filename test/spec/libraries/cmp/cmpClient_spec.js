@@ -64,8 +64,9 @@ describe('cmpClient', () => {
           })
           Object.entries({
             callback: [sinon.stub(), 'undefined', undefined],
-            'no callback': [undefined, 'api return value', 'val']
-          }).forEach(([t, [callback, tResult, expectedResult]]) => {
+            'no callback': [undefined, 'api return value', 'val'],
+            'no callback, but cbReturns = true': [undefined, 'callback arg', 'cbVal', true]
+          }).forEach(([t, [callback, tResult, expectedResult, cbReturns]]) => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': undefined,
@@ -73,7 +74,7 @@ describe('cmpClient', () => {
               }).forEach(([t, success]) => {
                 it(`resolves to ${tResult} (${t})`, (done) => {
                   cbResult = ['cbVal', success];
-                  mkClient()({callback}).then((val) => {
+                  mkClient({cbReturns})({callback}).then((val) => {
                     expect(val).to.equal(expectedResult);
                     done();
                   })
@@ -82,13 +83,21 @@ describe('cmpClient', () => {
             })
           });
 
-          it('rejects to undefined when callback is provided and success = false', () => {
+          it('rejects to undefined when callback is provided and success = false', (done) => {
             cbResult = ['cbVal', false];
             mkClient()({callback: sinon.stub()}).catch(val => {
-              expect(val).to.equal('cbVal');
+              expect(val).to.not.exist;
               done();
             })
           });
+
+          it('rejects to callback arg when callback is NOT provided, success = false, cbReturns = true', (done) => {
+            cbResult = ['cbVal', false];
+            mkClient({cbReturns: true})().catch(val => {
+              expect(val).to.eql('cbVal');
+              done();
+            })
+          })
 
           it('rejects when CMP api throws', (done) => {
             mockApiFn.reset();
@@ -98,7 +107,7 @@ describe('cmpClient', () => {
               expect(val).to.equal(e);
               done();
             });
-          })
+          });
         })
 
         it('should use apiArgs to choose and order the arguments to pass to the API fn', () => {
