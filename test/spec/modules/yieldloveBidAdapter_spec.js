@@ -4,7 +4,7 @@ import { spec } from 'modules/yieldloveBidAdapter.js';
 const ENDPOINT_URL = '//s2s.yieldlove-ad-serving.net/openrtb2/auction';
 
 // test params
-const pid = 19242;
+const pid = 34437;
 const rid = 'website.com';
 
 describe('Yieldlove Bid Adaper', function () {
