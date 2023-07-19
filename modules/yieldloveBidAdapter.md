@@ -35,4 +35,4 @@ const adUnits = [
 | Name          | Scope        | Description                                             | Example                    | Type         |
 |---------------|--------------|---------------------------------------------------------|----------------------------|--------------|
 | rid           | **required** | Publisher ID on the Yieldlove platform                  | `website.com`              | String       |
-| pid           | **required** | Placement ID on the Yieldlove platform                  | `19242`                    | Number       |
+| pid           | **required** | Placement ID on the Yieldlove platform                  | `34437`                    | Number       |
