@@ -525,18 +525,14 @@ describe('consentManagementGpp', function () {
             })
           }
 
-          function mockGppCmp(gppdata) {
+          function mockGppCmp(gppData, pingData = {cmpStatus: 'loaded'}) {
             gppStub.callsFake((api, cb) => {
               if (api === 'addEventListener') {
                 // eslint-disable-next-line standard/no-callback-literal
-                cb({
-                  pingData: {
-                    cmpStatus: 'loaded'
-                  }
-                }, true);
+                cb({pingData}, true);
               }
-              if (api === 'getGPPData') {
-                return gppdata;
+              if (gppData != null && api === 'getGPPData') {
+                return gppData;
               }
             });
           }
@@ -547,6 +543,16 @@ describe('consentManagementGpp', function () {
 
           afterEach(() => {
             gppStub.restore();
+          })
+
+          it('should continue auction with null consent when CMP is not version 1.0', () => {
+            mockGppCmp(null, {cmpStatus: 'loaded', gppVersion: '1.1'});
+            return runAuction().then(() => {
+              sinon.assert.match(gppDataHandler.getConsentData(), {
+                gppString: undefined,
+                applicableSections: [],
+              })
+            })
           })
 
           it('should continue auction with null consent when CMP is unresponsive', () => {
