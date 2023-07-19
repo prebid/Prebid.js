@@ -21,6 +21,7 @@ const VIDEO_ORTB_PARAMS = [
   'protocols',
   'startdelay',
   'placement',
+  'plcmt',
   'skip',
   'skipafter',
   'minbitrate',
@@ -43,11 +44,12 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    if (!bid || !bid.params) {
+    const params = bid && bid.params;
+    if (!params) {
       return false;
     }
 
-    return !!bid.params.placementId && !!bid.params.pubId;
+    return !!params.placementId && !!params.publisherId && !!params.siteId;
   },
 
   /**
@@ -129,7 +131,7 @@ function buildRequest(bidRequest, bidderRequest) {
     device: buildRequestDevice()
   };
 
-  // Attaching GDPR Consent Params
+  // GDPR Consent Params
   if (bidderRequest.gdprConsent) {
     deepSetValue(openrtbRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     deepSetValue(openrtbRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
@@ -139,6 +141,12 @@ function buildRequest(bidRequest, bidderRequest) {
   if (bidderRequest.uspConsent) {
     deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
+
+  if (bidderRequest.schain) {
+    deepSetValue(openrtbRequest, 'source.schain', bidderRequest.schain);
+  }
+
+  openrtbRequest.tmax = bidderRequest.timeout || 200;
 
   return JSON.stringify(openrtbRequest);
 }
@@ -177,14 +185,18 @@ function buildImpressionVideo(bidRequest) {
 
 function buildImpressionExtension(bidRequest) {
   return {
-    appnexus: {
-      placement_id: bidRequest.params.placementId
+    prebid: {
+      bidder: {
+        jwplayer: {
+          placementId: bidRequest.params.placementId
+        }
+      }
     }
   };
 }
 
 function buildBidFloorData(bidRequest) {
-  const {params} = bidRequest;
+  const { params } = bidRequest;
   const currency = params.currency || 'USD';
 
   let floorData;
@@ -196,7 +208,7 @@ function buildBidFloorData(bidRequest) {
     };
     floorData = bidRequest.getFloor(bidFloorRequest);
   } else if (params.bidfloor) {
-    floorData = {floor: params.bidfloor, currency: currency};
+    floorData = { floor: params.bidfloor, currency: currency };
   }
 
   return floorData;
@@ -212,6 +224,9 @@ function buildRequestSite(bidderRequest) {
   if (!site.ref && referer) {
     site.ref = referer;
   }
+
+  deepSetValue(site, 'publisher.ext.jwplayer.publisherId', bidderRequest.params.publisherId);
+  deepSetValue(site, 'publisher.ext.jwplayer.siteId', bidderRequest.params.siteId);
 
   return site;
 }
