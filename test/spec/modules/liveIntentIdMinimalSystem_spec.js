@@ -251,6 +251,11 @@ describe('LiveIntentMinimalId', function() {
     expect(result).to.eql({'uid2': {'id': 'bar'}});
   });
 
+  it('should decode a magnite id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', magnite: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar'}});
+  });
+
   it('should allow disabling nonId resolution', function() {
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: {
