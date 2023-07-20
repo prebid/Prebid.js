@@ -13,7 +13,6 @@ import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 import * as activityRules from 'src/activities/rules.js';
-import {sandbox} from 'sinon';
 import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../../../src/activities/activities.js';
 
@@ -141,6 +140,21 @@ describe('bidders created by newBidder', function () {
     });
 
     describe('transaction IDs', () => {
+      beforeEach(() => {
+        activityRules.isActivityAllowed.reset();
+        ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
+        spec.interpretResponse.callsFake(() => [
+          {
+            requestId: 'bid',
+            cpm: 123,
+            ttl: 300,
+            creativeId: 'crid',
+            netRevenue: true,
+            currency: 'USD'
+          }
+        ])
+      });
+
       Object.entries({
         'be hidden': false,
         'not be hidden': true,
@@ -166,20 +180,7 @@ describe('bidders created by newBidder', function () {
             bidReqs.forEach(checkBidRequest);
             return {method: 'POST'};
           });
-          spec.interpretResponse.callsFake(() => [
-            {
-              requestId: 'bid',
-              cpm: 123,
-              ttl: 300,
-              creativeId: 'crid',
-              netRevenue: true,
-              currency: 'USD'
-            }
-          ])
-          activityRules.isActivityAllowed.reset();
           activityRules.isActivityAllowed.callsFake(() => allowed);
-
-          ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
 
           const bidder = newBidder(spec);
 
@@ -206,6 +207,33 @@ describe('bidders created by newBidder', function () {
           })
         });
       });
+
+      it('should not be hidden from request methods', (done) => {
+        const bidderRequest = {
+          bidderCode: 'mockBidder',
+          auctionId: 'aid',
+          getAID() { return this.auctionId },
+          bids: [
+            {
+              adUnitCode: 'mockAU',
+              bidId: 'bid',
+              transactionId: 'tid',
+              auctionId: 'aid',
+              getTIDs() {
+                return [this.auctionId, this.transactionId]
+              }
+            }
+          ]
+        };
+        activityRules.isActivityAllowed.callsFake(() => false);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.callsFake((reqs, bidderReq) => {
+          expect(bidderReq.getAID()).to.eql('aid');
+          expect(reqs[0].getTIDs()).to.eql(['aid', 'tid']);
+          done();
+        });
+        newBidder(spec).callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      })
     });
 
     it('should handle bad bid requests gracefully', function () {
