@@ -2,7 +2,7 @@ import { expect, assert } from 'chai';
 import { spec } from 'modules/jwplayerBidAdapter.js';
 import { config } from 'src/config.js';
 
-describe('jwplayer adapter tests', function() {
+describe('jwplayer bid adapter tests', function() {
   beforeEach(function() {
     this.defaultBidderRequest = {
       'gdprConsent': {
@@ -17,39 +17,48 @@ describe('jwplayer adapter tests', function() {
   });
 
   describe('isBidRequestValid', function() {
-    it('passes when the bid includes a placement ID and a publisher ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo', pubId: 'bar'}}) === true);
+    it('passes when the bid includes a placement ID, a publisher ID and a site ID', function() {
+      assert(spec.isBidRequestValid({params: {placementId: 'foo', publisherId: 'bar', siteId: 'siteId '}}) === true);
     });
 
-    it('fails when the bid does not include a placement ID', function() {
-      assert(spec.isBidRequestValid({params: {pubId: 'foo'}}) === false);
+    it('fails when the bid request only includes a publisher ID', function() {
+      assert(spec.isBidRequestValid({params: {publisherId: 'foo'}}) === false);
     });
 
-    it('fails when the bid does not include a publisher ID', function() {
+    it('fails when the bid request only includes a placement ID', function() {
       assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === false);
     });
 
-    it('fails when bid is falsey', function() {
+    it('fails when the bid request only includes a site ID', function() {
+      assert(spec.isBidRequestValid({params: {siteId: 'foo'}}) === false);
+    });
+
+    it('fails when bid is undefined', function() {
       assert(spec.isBidRequestValid() === false);
     });
 
-    it('fails when the bid has no params at all', function() {
+    it('fails when bid is null', function() {
+      assert(spec.isBidRequestValid(null) === false);
+    });
+
+    it('fails when the bid has no params', function() {
       assert(spec.isBidRequestValid({}) === false);
     });
   });
 
   describe('buildRequests for video', function() {
-    it('buildRequests works', function() {
+    it('should build requests', function() {
       const bidRequests = [
         {
           'bidder': 'jwplayer',
           'params': {
-            'placementId': 12345
+            'placementId': 'testPlacementId',
+            'publisherId': 'testPublisherId',
+            'siteId': 'testSiteId'
           },
           'mediaTypes': {
             'video': {
               'playerSize': [640, 480],
-              'content': {}
             }
           },
           'bidRequestsCount': 1,
@@ -96,9 +105,8 @@ describe('jwplayer adapter tests', function() {
         expect(openrtbRequest.imp[0]).to.not.equal(null);
         expect(openrtbRequest.imp[0].video).to.not.equal(null);
         expect(openrtbRequest.imp[0].ext).to.not.equal(null);
-        expect(openrtbRequest.imp[0].ext.appnexus).to.not.equal(null);
-        expect(openrtbRequest.imp[0].ext.appnexus.placement_id).to.not.equal(null);
-        expect(openrtbRequest.imp[0].ext.appnexus.placement_id).to.equal(12345);
+        expect(openrtbRequest.imp[0].ext.prebid.bidder.jwplayer.placementId).to.not.equal(null);
+        expect(openrtbRequest.imp[0].ext.prebid.bidder.jwplayer.placementId).to.equal('testPlacementId');
 
         expect(openrtbRequest.user).to.not.equal(null);
         expect(openrtbRequest.user.ext).to.not.equal(null);

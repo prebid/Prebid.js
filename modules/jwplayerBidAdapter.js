@@ -127,7 +127,7 @@ function buildRequest(bidRequest, bidderRequest) {
   const openrtbRequest = {
     id: bidRequest.bidId,
     imp: buildRequestImpression(bidRequest, bidderRequest),
-    site: buildRequestSite(bidderRequest),
+    site: buildRequestSite(bidRequest, bidderRequest),
     device: buildRequestDevice()
   };
 
@@ -214,7 +214,7 @@ function buildBidFloorData(bidRequest) {
   return floorData;
 }
 
-function buildRequestSite(bidderRequest) {
+function buildRequestSite(bidRequest, bidderRequest) {
   const site = config.getConfig('ortb2.site') || {};
 
   site.domain = site.domain || config.publisherDomain || window.location.hostname;
@@ -225,8 +225,8 @@ function buildRequestSite(bidderRequest) {
     site.ref = referer;
   }
 
-  deepSetValue(site, 'publisher.ext.jwplayer.publisherId', bidderRequest.params.publisherId);
-  deepSetValue(site, 'publisher.ext.jwplayer.siteId', bidderRequest.params.siteId);
+  deepSetValue(site, 'publisher.ext.jwplayer.publisherId', bidRequest.params.publisherId);
+  deepSetValue(site, 'publisher.ext.jwplayer.siteId', bidRequest.params.siteId);
 
   return site;
 }
