@@ -46,6 +46,7 @@
     "schain",
     "consentManagementUsp",
     "userId",
+    "identityLinkIdSystem",
     "criteoIdSystem",
     "sharedIdSystem",
     "uid2IdSystem",
