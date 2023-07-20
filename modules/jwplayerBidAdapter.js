@@ -7,7 +7,7 @@ import {
   deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
 const BIDDER_CODE = 'jwplayer';
-const URL = 'https://ib.adnxs.com/openrtb2/prebid';
+const URL = 'https://vpb-server.jwplayer.com/openrtb2/auction';
 
 const GVLID = 1046;
 const SUPPORTED_AD_TYPES = [VIDEO];
@@ -207,8 +207,8 @@ function buildBidFloorData(bidRequest) {
       size: '*'
     };
     floorData = bidRequest.getFloor(bidFloorRequest);
-  } else if (params.bidfloor) {
-    floorData = { floor: params.bidfloor, currency: currency };
+  } else if (params.bidFloor) {
+    floorData = { floor: params.bidFloor, currency: currency };
   }
 
   return floorData;
