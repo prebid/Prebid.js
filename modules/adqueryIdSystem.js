@@ -75,7 +75,14 @@ export const adqueryIdSubmodule = {
       let qid = window.qid;
 
       if (!qid) {
-        qid = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
+        // qid = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
+        const ramdomValues = window.crypto.getRandomValues(new Uint32Array(4));
+        qid = (ramdomValues[0].toString(36) +
+          ramdomValues[1].toString(36) +
+          ramdomValues[2].toString(36) +
+          ramdomValues[3].toString(36))
+          .substring(0, 20);
+
         logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
       }
       logInfo('adqueryIdSubmodule ID QID:', qid);
