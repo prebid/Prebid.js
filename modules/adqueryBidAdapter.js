@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, logInfo, parseSizesInput, triggerPixel, getUniqueIdentifierStr} from '../src/utils.js';
+import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
@@ -188,10 +188,8 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    // userId = (getUniqueIdentifierStr() + '_' + getUniqueIdentifierStr()).substring(0, 22);
-
-    // GOOD: the random suffix is cryptographically secure
-    userId = window.crypto.getRandomValues(new Uint32Array(1))[0];
+    const ramdomValues = window.crypto.getRandomValues(new BigUint64Array(2));
+    userId = (ramdomValues[0].toString(36) + ramdomValues[1].toString(36)).substring(0, 20);
 
     window.qid = userId;
   }
