@@ -15,7 +15,7 @@ import {
   logError,
   logWarn, memoize,
   parseQueryStringParameters,
-  parseSizesInput,
+  parseSizesInput, pick,
   uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
@@ -150,6 +150,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const TIDS = ['auctionId', 'transactionId'];
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -192,7 +193,7 @@ function guardTids(bidderCode) {
     };
   }
   function get(target, prop, receiver) {
-    if (['transactionId', 'auctionId'].includes(prop)) {
+    if (TIDS.includes(prop)) {
       return null;
     }
     return Reflect.get(target, prop, receiver);
@@ -312,7 +313,7 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);

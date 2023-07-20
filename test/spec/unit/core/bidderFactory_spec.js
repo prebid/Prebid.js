@@ -1107,6 +1107,25 @@ describe('validate bid response: ', function () {
     expect(logErrorSpy.callCount).to.equal(0);
   });
 
+  it('should disregard auctionId/transactionId set by the adapter', () => {
+    let bidderRequest = {
+      bids: [{
+        bidder: CODE,
+        bidId: '1',
+        auctionId: 'aid',
+        transactionId: 'tid',
+        adUnitCode: 'au',
+      }]
+    };
+    const bidder = newBidder(spec);
+    spec.interpretResponse.returns(Object.assign({}, bids[0], {transactionId: 'ignored', auctionId: 'ignored'}));
+    bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+    sinon.assert.calledWith(addBidResponseStub, sinon.match.any, sinon.match({
+      transactionId: 'tid',
+      auctionId: 'aid'
+    }));
+  })
+
   describe(' Check for alternateBiddersList ', function() {
     let bidRequest;
     let bids1;
