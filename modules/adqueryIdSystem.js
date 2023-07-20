@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isFn, isPlainObject, isStr, logError, logInfo, getUniqueIdentifierStr} from '../src/utils.js';
+import {isFn, isPlainObject, isStr, logError, logInfo} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
@@ -75,7 +75,6 @@ export const adqueryIdSubmodule = {
       let qid = window.qid;
 
       if (!qid) {
-        // qid = (getUniqueIdentifierStr() + getUniqueIdentifierStr()).substring(0, 22);
         const ramdomValues = window.crypto.getRandomValues(new Uint32Array(4));
         qid = (ramdomValues[0].toString(36) +
           ramdomValues[1].toString(36) +
