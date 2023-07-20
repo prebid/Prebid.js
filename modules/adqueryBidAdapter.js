@@ -188,7 +188,11 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    userId = (getUniqueIdentifierStr() + '_' + getUniqueIdentifierStr()).substring(0, 22);
+    // userId = (getUniqueIdentifierStr() + '_' + getUniqueIdentifierStr()).substring(0, 22);
+
+    // GOOD: the random suffix is cryptographically secure
+    userId = window.crypto.getRandomValues(new Uint32Array(1))[0];
+
     window.qid = userId;
   }
 
