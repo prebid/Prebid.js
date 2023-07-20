@@ -123,6 +123,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+
+    {
         source: 'merkleinc.com',
         uids: [{
             id: 'some-random-id-value',

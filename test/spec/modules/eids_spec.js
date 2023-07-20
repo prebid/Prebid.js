@@ -216,6 +216,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('magnite', function() {
+    const userId = {
+      magnite: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
   it('britepoolId', function() {
     const userId = {
       britepoolid: 'some-random-id-value'
