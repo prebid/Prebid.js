@@ -105,6 +105,12 @@ export const adqueryIdSubmodule = {
       ajax(url + '?qid=' + qid, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
+  },
+  eids: {
+    'qid': {
+      source: 'adquery.io',
+      atype: 1
+    },
   }
 };
 

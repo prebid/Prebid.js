@@ -79,6 +79,12 @@ export const identityLinkSubmodule = {
     };
 
     return { callback: resp };
+  },
+  eids: {
+    'idl_env': {
+      source: 'liveramp.com',
+      atype: 3
+    },
   }
 };
 // return envelope from third party endpoint

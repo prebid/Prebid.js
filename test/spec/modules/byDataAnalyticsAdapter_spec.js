@@ -96,7 +96,7 @@ let expectedDataArgs = {
     aus: '300x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
@@ -107,7 +107,7 @@ let expectedDataArgs = {
     aus: '250x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
@@ -167,11 +167,13 @@ describe('byData Analytics Adapter ', () => {
   });
 
   describe('track-events', function () {
-    ascAdapter.enableAnalytics(initOptions)
-    // Step 1: Initialize adapter
-    adapterManager.enableAnalytics({
-      provider: 'bydata',
-      options: initOptions
+    before(() => {
+      ascAdapter.enableAnalytics(initOptions)
+      // Step 1: Initialize adapter
+      adapterManager.enableAnalytics({
+        provider: 'bydata',
+        options: initOptions
+      });
     });
     it('sends and formatted auction data ', function () {
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
