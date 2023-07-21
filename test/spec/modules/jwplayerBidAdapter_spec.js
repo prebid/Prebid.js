@@ -12,7 +12,8 @@ describe('jwplayer bid adapter tests', function() {
       'uspConsent': 'testCCPA',
       'refererInfo': {
         'referer': 'https://example.com'
-      }
+      },
+      timeout: 1000,
     }
   });
 
@@ -167,7 +168,7 @@ describe('jwplayer bid adapter tests', function() {
           ]
         });
 
-        expect(openrtbRequest.tmax).to.not.equal(null);
+        expect(openrtbRequest.tmax).to.equal(1000);
       });
 
       sandbox.restore();
