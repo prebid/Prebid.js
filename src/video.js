@@ -103,14 +103,14 @@ export function getVastTrackers(bid) {
   ).forEach(({trackerFn}) => {
     let trackersToAdd = trackerFn(bid);
     trackersToAdd.forEach(trackerToAdd => {
-      if (validVastTracker(trackers, trackerToAdd)) { trackers.push(trackerToAdd); }
+      if (isValidVastTracker(trackers, trackerToAdd)) { trackers.push(trackerToAdd); }
     });
   });
   const trackersMap = trackersToMap(trackers);
   return (trackersMap.size ? trackersMap : null);
 };
 
-function validVastTracker(trackers, trackerToAdd) {
+function isValidVastTracker(trackers, trackerToAdd) {
   if (!trackerToAdd.hasOwnProperty('event') || !trackerToAdd.hasOwnProperty('url')) { return false; }
   trackers.forEach(tracker => {
     if (tracker['event'] == trackerToAdd['event'] && tracker['url'] == trackerToAdd['url']) { return false; }
@@ -121,7 +121,11 @@ function validVastTracker(trackers, trackerToAdd) {
 function trackersToMap(trackers) {
   let trackersMap = new Map();
   trackers.forEach(tracker => {
-    if (!trackersMap.get(tracker['event'])) { trackersMap.set(tracker['event'], [tracker['url']]) } else { trackersMap.get(tracker['event']).push(tracker['url']); }
+    if (!trackersMap.get(tracker['event'])) {
+      trackersMap.set(tracker['event'], [tracker['url']])
+    } else {
+      trackersMap.get(tracker['event']).push(tracker['url']);
+    }
   });
   return trackersMap;
 }
