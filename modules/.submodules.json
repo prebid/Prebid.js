@@ -46,7 +46,8 @@
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
       "gravitoIdSystem",
-      "freepassIdSystem"
+      "freepassIdSystem",
+      "operaadsIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
