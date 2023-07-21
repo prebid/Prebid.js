@@ -480,6 +480,11 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       continue;
     }
 
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
+      continue;
+    }
+
     const asset = legacyNativeAssets[key];
     let required = 0;
     if (asset.required && isBoolean(asset.required)) {
@@ -622,6 +627,9 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
+    }
+    if (openRTBRequest.privacy) {
+      oldNativeObject.privacyLink = { required: true };
     }
     // video was not supported by old prebid assets
   }

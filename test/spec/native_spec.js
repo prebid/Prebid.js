@@ -860,6 +860,9 @@ describe('validate native', function () {
             }]
           },
           address: {},
+          privacyLink: {
+            required: true
+          }
         },
       },
     };
@@ -915,6 +918,7 @@ describe('validate native', function () {
         type: 9,
       }
     });
+    expect(ortb.privacy).to.equal(1);
   });
 
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
@@ -1022,11 +1026,14 @@ describe('validate native', function () {
     expect(oldNativeRequest.sponsoredBy).to.include({
       required: true,
       len: 25
-    })
+    });
     expect(oldNativeRequest.body).to.include({
       required: true,
       len: 140
-    })
+    });
+    expect(oldNativeRequest.privacyLink).to.include({
+      required: true
+    });
   });
 
   if (FEATURES.NATIVE) {
