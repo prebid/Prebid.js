@@ -112,9 +112,6 @@ export function getVastTrackers(bid) {
 
 function isValidVastTracker(trackers, trackerToAdd) {
   if (!trackerToAdd.hasOwnProperty('event') || !trackerToAdd.hasOwnProperty('url')) { return false; }
-  trackers.forEach(tracker => {
-    if (tracker['event'] == trackerToAdd['event'] && tracker['url'] == trackerToAdd['url']) { return false; }
-  });
   return true;
 }
 
