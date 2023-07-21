@@ -235,7 +235,7 @@ describe('afrontAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.afront.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://snt1.afront.io/?rsd=prebidjs&sk=accountId');
     });
 
     it('Returns empty data if no valid requests are passed', function () {
@@ -265,7 +265,7 @@ describe('afrontAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.afront.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://snt1.afront.io/?rsd=prebidjs&sk=accountId');
     });
   });
 
@@ -284,7 +284,7 @@ describe('afrontAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(request.url).to.equal('https://us-e-node1.afront.com/bid?pass=accountId&integration=prebidjs');
+      expect(request.url).to.equal('https://snt1.afront.io/?rsd=prebidjs&sk=accountId');
     });
   });
 
