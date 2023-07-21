@@ -80,8 +80,8 @@ export function insertVastTrackers(trackers, vastXml) {
   try {
     if (wrappers.length) {
       wrappers.forEach(wrapper => {
-        if (trackers.get('impression')) {
-          trackers.get('impression').forEach(trackingUrl => {
+        if (trackers.get('impressions')) {
+          trackers.get('impressions').forEach(trackingUrl => {
             const impression = doc.createElement('Impression');
             impression.appendChild(doc.createCDATASection(trackingUrl));
             wrapper.appendChild(impression)
@@ -115,14 +115,30 @@ function isValidVastTracker(trackers, trackerToAdd) {
   return true;
 }
 
+// need to add this othersize gulp test for test/spec/video_spec.js and test/spec/videoCache_spec.js duplicates their trackings
+function isTrackingDuplicate(trackersMap, trackingEvent, trackingUrl) {
+  const urls = trackersMap.get(trackingEvent);
+  if (Array.isArray(urls) && urls.includes(trackingUrl)) { return true; }
+  return false;
+}
+
 function trackersToMap(trackers) {
   let trackersMap = new Map();
   trackers.forEach(tracker => {
     if (!trackersMap.get(tracker['event'])) {
       trackersMap.set(tracker['event'], [tracker['url']])
-    } else {
+    } else if (!isTrackingDuplicate(trackersMap, tracker['event'], tracker['url'])) {
       trackersMap.get(tracker['event']).push(tracker['url']);
     }
   });
+  return trackersMap;
+}
+
+export function addImpUrlToTrackers(bid, trackersMap) {
+  if (bid.vastImpUrl) {
+    if (!trackersMap) { trackersMap = new Map(); }
+    if (!trackersMap.get('impressions')) { trackersMap.set('impressions', []); }
+    trackersMap.get('impressions').push(bid.vastImpUrl);
+  }
   return trackersMap;
 }

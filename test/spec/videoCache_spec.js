@@ -162,7 +162,7 @@ describe('The video cache', function () {
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression><![CDATA[imptracker.com]]></Impression><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression>
+        <Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression>
         <Creatives></Creatives>
       </Wrapper>
     </Ad>

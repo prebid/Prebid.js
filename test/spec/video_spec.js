@@ -1,4 +1,4 @@
-import { isValidVideoBid, registerVastTrackers, insertVastTrackers, getVastTrackers } from 'src/video.js';
+import { isValidVideoBid, registerVastTrackers, insertVastTrackers, getVastTrackers, addImpUrlToTrackers } from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
 import { MODULE_TYPE_ANALYTICS } from 'src/activities/modules.js';
@@ -105,14 +105,14 @@ describe('video.js', function () {
   it('insert into tracker list', function() {
     registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', function(bidResponse) {
       return [
-        {'event': 'impression', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
+        {'event': 'impressions', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
       ];
     });
     const trackers = getVastTrackers({'cpm': 1.0});
     expect(trackers).to.be.a('map');
-    expect(trackers.get('impression')).to.exists;
-    expect(trackers.get('impression').length).to.equal(1);
-    expect(trackers.get('impression')[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
+    expect(trackers.get('impressions')).to.exists;
+    expect(trackers.get('impressions').length).to.equal(1);
+    expect(trackers.get('impressions')[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
   });
 
   it('insert trackers in vastXml', function() {
@@ -120,5 +120,13 @@ describe('video.js', function () {
     let vastXml = '<VAST><Ad><Wrapper></Wrapper></Ad></VAST>';
     vastXml = insertVastTrackers(trackers, vastXml);
     expect(vastXml).to.equal('<VAST><Ad><Wrapper><Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1]]></Impression></Wrapper></Ad></VAST>');
+  });
+
+  it('test addImpUrlToTrackers', function() {
+    const trackers = addImpUrlToTrackers({'vastImpUrl': 'imptracker.com'}, getVastTrackers({'cpm': 1.0}));
+    expect(trackers).to.be.a('map');
+    expect(trackers.get('impressions')).to.exists;
+    expect(trackers.get('impressions').length).to.equal(2);
+    expect(trackers.get('impressions')[1]).to.equal('imptracker.com');
   });
 });
