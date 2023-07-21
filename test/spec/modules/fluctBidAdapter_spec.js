@@ -159,6 +159,12 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([
         {
+          source: 'foobar.com',
+          uids: [
+            { id: 'foobar-id' }
+          ],
+        },
+        {
           source: 'adserver.org',
           uids: [
             { id: 'tdid' }
