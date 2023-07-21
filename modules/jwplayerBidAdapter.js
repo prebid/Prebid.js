@@ -37,12 +37,6 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {object} bid The bid to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
   isBidRequestValid: function(bid) {
     const params = bid && bid.params;
     if (!params) {
@@ -52,13 +46,6 @@ export const spec = {
     return !!params.placementId && !!params.publisherId && !!params.siteId;
   },
 
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {BidRequest[]} bidRequests A non-empty list of bid requests, or ad units, which should be sent to the server.
-   * @param bidderRequest
-   * @return ServerRequest Info describing the request to the server.
-   */
   buildRequests: function(bidRequests, bidderRequest) {
     if (!bidRequests) {
       return;
