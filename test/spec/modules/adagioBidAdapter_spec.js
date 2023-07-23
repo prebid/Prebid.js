@@ -256,7 +256,6 @@ describe('Adagio bid adapter', () => {
 
   describe('buildRequests()', function() {
     const expectedDataKeys = [
-      'id',
       'organizationId',
       'secure',
       'device',

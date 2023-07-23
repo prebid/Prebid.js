@@ -29,7 +29,12 @@ describe('vrtcalBidAdapter', function () {
         'bidderRequestId': 'br0001',
         'auctionId': 'auction0001',
         'userIdAsEids': {},
-        timeout: 435
+        timeout: 435,
+
+        refererInfo: {
+          page: 'page'
+        }
+
       }
     ];
 
@@ -79,9 +84,12 @@ describe('vrtcalBidAdapter', function () {
     });
 
     it('pass 3rd party IDs with the request when present', function () {
-      bidRequests[0].userIdAsEids = createEidsArray({
-        tdid: 'TTD_ID_FROM_USER_ID_MODULE'
-      });
+      bidRequests[0].userIdAsEids = [
+        {
+          source: 'adserver.org',
+          uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]
+        }
+      ];
 
       request = spec.buildRequests(bidRequests);
       expect(request[0].data).to.include(JSON.stringify({ext: {consent: 'gdpr-consent-string', eids: [{source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]}]}}));

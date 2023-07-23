@@ -969,23 +969,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
   describe('User data', () => {
     it('should set the allowed sources user eids', () => {
       const { validBidRequests, bidderRequest } = generateBuildRequestMock({});
-      validBidRequests[0].userIdAsEids = createEidsArray({
-        connectId: 'connectId_FROM_USER_ID_MODULE',
-        admixerId: 'admixerId_FROM_USER_ID_MODULE',
-        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE',
-        amxId: 'amxId_FROM_USER_ID_MODULE',
-        britepoolid: 'britepoolid_FROM_USER_ID_MODULE',
-        deepintentId: 'deepintentId_FROM_USER_ID_MODULE',
-        publinkId: 'publinkId_FROM_USER_ID_MODULE',
-        intentIqId: 'intentIqId_FROM_USER_ID_MODULE',
-        idl_env: 'idl_env_FROM_USER_ID_MODULE',
-        imuid: 'imuid_FROM_USER_ID_MODULE',
-        criteoId: 'criteoId_FROM_USER_ID_MODULE',
-        fabrickId: 'fabrickId_FROM_USER_ID_MODULE',
-      });
-      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
-
-      expect(data.user.ext.eids).to.deep.equal([
+      validBidRequests[0].userIdAsEids = [
         {source: 'yahoo.com', uids: [{id: 'connectId_FROM_USER_ID_MODULE', atype: 3}]},
         {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
         {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
@@ -998,7 +982,10 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         {source: 'intimatemerger.com', uids: [{id: 'imuid_FROM_USER_ID_MODULE', atype: 1}]},
         {source: 'criteo.com', uids: [{id: 'criteoId_FROM_USER_ID_MODULE', atype: 1}]},
         {source: 'neustar.biz', uids: [{id: 'fabrickId_FROM_USER_ID_MODULE', atype: 1}]}
-      ]);
+      ];
+      const data = spec.buildRequests(validBidRequests, bidderRequest)[0].data;
+
+      expect(data.user.ext.eids).to.deep.equal(validBidRequests[0].userIdAsEids);
     });
 
     it('should not set not allowed user eids sources', () => {
