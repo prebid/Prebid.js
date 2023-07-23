@@ -377,7 +377,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
-  let floorFetchStatus = (floorData?.floorRequestData?.fetchStatus).toLowerCase() === CONSTANTS.SUCCESS ? true : false; 
+  let floorFetchStatus = (floorData?.floorRequestData?.fetchStatus)?.toLowerCase() === CONSTANTS.SUCCESS;
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
