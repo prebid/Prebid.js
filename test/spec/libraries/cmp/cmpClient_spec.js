@@ -224,18 +224,40 @@ describe('cmpClient', () => {
           });
         });
 
-        it('should re-use callback for messages with same callId', () => {
-          messenger.reset();
-          let callId;
-          messenger.callsFake((msg) => { if (msg.mockApiCall) callId = msg.mockApiCall.callId });
-          const callback = sinon.stub();
-          mkClient()({callback});
-          expect(callId).to.exist;
-          win.postMessage({mockApiReturn: {callId, returnValue: 'a'}});
-          win.postMessage({mockApiReturn: {callId, returnValue: 'b'}});
-          sinon.assert.calledWith(callback, 'a');
-          sinon.assert.calledWith(callback, 'b');
-        })
+        describe('messages with same callID', () => {
+          let callback, callId;
+
+          function runCallback(returnValue) {
+            win.postMessage({mockApiReturn: {callId, returnValue}});
+          }
+
+          beforeEach(() => {
+            callId = null;
+            messenger.reset();
+            messenger.callsFake((msg) => {
+              if (msg.mockApiCall) callId = msg.mockApiCall.callId;
+            });
+            callback = sinon.stub();
+          });
+
+          it('should re-use callback for messages with same callId', () => {
+            mkClient()({callback});
+            expect(callId).to.exist;
+            runCallback('a');
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledWith(callback, 'b');
+          });
+
+          it('should NOT re-use callback if once = true', () => {
+            mkClient()({callback}, true);
+            expect(callId).to.exist;
+            runCallback('a');
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledOnce(callback);
+          });
+        });
       });
     });
   });

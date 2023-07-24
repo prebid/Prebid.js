@@ -4,6 +4,7 @@ import {GreedyPromise} from '../../src/utils/promise.js';
  * @typedef {function} CMPClient
  *
  * @param {{}} params CMP parameters. Currently this is a subset of {command, callback, parameter, version}.
+ * @param {bool} once if true, discard cross-frame event listeners once a reply message is received.
  * @returns {Promise<*>} a promise that:
  *    - if a `callback` param was provided, resolves (with no result) just before the first time it's run;
  *    - if `callback` was *not* provided, resolves to the return value of the CMP command*
@@ -123,7 +124,7 @@ export function cmpClient(
   } else {
     win.addEventListener('message', handleMessage, false);
 
-    client = function invokeCMPFrame(params) {
+    client = function invokeCMPFrame(params, once = false) {
       return new GreedyPromise((resolve, reject) => {
         // call CMP via postMessage
         const callId = Math.random().toString();
@@ -134,7 +135,7 @@ export function cmpClient(
           }
         };
 
-        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, params?.callback == null && (() => { delete cmpCallbacks[callId] }));
+        cmpCallbacks[callId] = wrapCallback(params?.callback, resolve, reject, (once || params?.callback == null) && (() => { delete cmpCallbacks[callId] }));
         cmpFrame.postMessage(msg, '*');
       });
     };
