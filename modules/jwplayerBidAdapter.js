@@ -1,11 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
-import {
-  isArray,
-  isFn,
-  deepAccess,
-  deepSetValue } from '../src/utils.js';
+import { isArray, isFn, deepAccess, deepSetValue, getDNT, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
+
 const BIDDER_CODE = 'jwplayer';
 const URL = 'https://vpb-server.jwplayer.com/openrtb2/auction';
 
@@ -15,6 +12,10 @@ const SUPPORTED_AD_TYPES = [VIDEO];
 // Video Parameters
 // https://docs.prebid.org/dev-docs/bidder-adaptor.html#step-2-accept-video-parameters-and-pass-them-to-your-server
 const VIDEO_ORTB_PARAMS = [
+  'pos',
+  'w',
+  'h',
+  'playbackend',
   'mimes',
   'minduration',
   'maxduration',
@@ -50,6 +51,16 @@ export const spec = {
     if (!bidRequests) {
       return;
     }
+
+    if (!hasContentUrl(bidderRequest.ortb2)) {
+      logError(`${BIDDER_CODE}: cannot bid without a valid Content URL. Please populate ortb2.site.content.url`);
+      return;
+    }
+
+    const warnings = getWarnings(bidderRequest);
+    warnings.forEach(warning => {
+      logWarn(`${BIDDER_CODE}: ${warning}`);
+    })
 
     return bidRequests.map(bidRequest => {
       const payload = buildRequest(bidRequest, bidderRequest);
@@ -202,7 +213,7 @@ function buildBidFloorData(bidRequest) {
 }
 
 function buildRequestSite(bidRequest, bidderRequest) {
-  const site = config.getConfig('ortb2.site') || {};
+  const site = bidderRequest.ortb2 || {};
 
   site.domain = site.domain || config.publisherDomain || window.location.hostname;
   site.page = site.page || config.pageUrl || window.location.href;
@@ -212,16 +223,72 @@ function buildRequestSite(bidRequest, bidderRequest) {
     site.ref = referer;
   }
 
-  deepSetValue(site, 'publisher.ext.jwplayer.publisherId', bidRequest.params.publisherId);
-  deepSetValue(site, 'publisher.ext.jwplayer.siteId', bidRequest.params.siteId);
+  const jwplayerPublisherExtChain = 'publisher.ext.jwplayer.';
+
+  deepSetValue(site, jwplayerPublisherExtChain + 'publisherId', bidRequest.params.publisherId);
+  deepSetValue(site, jwplayerPublisherExtChain + 'siteId', bidRequest.params.siteId);
 
   return site;
 }
 
 function buildRequestDevice() {
-  return {
-    ua: navigator.userAgent
+  const device = {
+    h: screen.height,
+    w: screen.width,
+    ua: navigator.userAgent,
+    dnt: getDNT() ? 1 : 0,
+    js: 1
   };
+
+  const language = getLanguage();
+  if (language) {
+    device.language = language;
+  }
+
+  return device;
+}
+
+function getLanguage() {
+  const navigatorLanguage = navigator.language;
+  if (!navigatorLanguage) {
+    return;
+  }
+
+  const languageCodeSegments = navigatorLanguage.split('-');
+  if (!languageCodeSegments.length) {
+    return;
+  }
+
+  return languageCodeSegments[0];
+}
+
+function hasContentUrl(ortb2) {
+  const site = ortb2.site;
+  const content = site && site.content;
+  return !!(content && content.url);
+}
+
+function getWarnings(bidderRequest) {
+  const content = bidderRequest.ortb2.site.content;
+  const contentChain = 'ortb2.site.content.';
+  const warnings = [];
+  if (!content.id) {
+    warnings.push(getMissingFieldMessage(contentChain + 'id'));
+  }
+
+  if (!content.title) {
+    warnings.push(getMissingFieldMessage(contentChain + 'title'));
+  }
+
+  if (!content.ext && !content.ext.description) {
+    warnings.push(getMissingFieldMessage(contentChain + 'ext.description'));
+  }
+
+  return warnings;
+}
+
+function getMissingFieldMessage(fieldName) {
+  return `Optional field ${fieldName} is not populated; we recommend populating for maximum performance.`
 }
 
 registerBidder(spec);
