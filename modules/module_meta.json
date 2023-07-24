@@ -13,60 +13,65 @@
   ],
   "RTD Module": [
     {
+      "name": "arcspanRtdProvider",
+      "path": "/modules/arcspanRtdProvider.js",
+      "module": "arcspanRtdProvider"
+    },
+    {
       "name": "browsiRtdProvider",
       "path": "/modules/browsiRtdProvider.js",
       "module": "browsiRtdProvider"
     },
-  {
-    "name": "1plusXRtdProvider",
-    "path": "/modules/1plusXRtdProvider.js",
-    "module": "1plusXRtdProvider"
-  },
-  {
-    "name": "adnuntiusRtdProvider",
-    "path": "/modules/adnuntiusRtdProvider.js",
-    "module": "adnuntiusRtdProvider"
-  },
-  {
-    "name": "airgridRtdProvider",
-    "path": "/modules/airgridRtdProvider.js",
-    "module": "airgridRtdProvider"
-  },
-  {
-    "name": "akamaiDapRtdProvider",
-    "path": "/modules/akamaiDapRtdProvider.js",
-    "module": "akamaiDapRtdProvider"
-  },
-  {
-    "name": "blueconicRtdProvider",
-    "path": "/modules/blueconicRtdProvider.js",
-    "module": "blueconicRtdProvider"
-  },
-  {
-    "name": "brandmetricsRtdProvider",
-    "path": "/modules/brandmetricsRtdProvider.js",
-    "module": "brandmetricsRtdProvider"
-  },
-  {
-    "name": "cleanioRtdProvider",
-    "path": "/modules/cleanioRtdProvider.js",
-    "module": "cleanioRtdProvider"
-  },
-  {
-    "name": "idWardRtdProvider",
-    "path": "/modules/idWardRtdProvider.js",
-    "module": "idWardRtdProvider"
-  },
+    {
+      "name": "1plusXRtdProvider",
+      "path": "/modules/1plusXRtdProvider.js",
+      "module": "1plusXRtdProvider"
+    },
+    {
+      "name": "adnuntiusRtdProvider",
+      "path": "/modules/adnuntiusRtdProvider.js",
+      "module": "adnuntiusRtdProvider"
+    },
+    {
+      "name": "airgridRtdProvider",
+      "path": "/modules/airgridRtdProvider.js",
+      "module": "airgridRtdProvider"
+    },
+    {
+      "name": "akamaiDapRtdProvider",
+      "path": "/modules/akamaiDapRtdProvider.js",
+      "module": "akamaiDapRtdProvider"
+    },
+    {
+      "name": "blueconicRtdProvider",
+      "path": "/modules/blueconicRtdProvider.js",
+      "module": "blueconicRtdProvider"
+    },
+    {
+      "name": "brandmetricsRtdProvider",
+      "path": "/modules/brandmetricsRtdProvider.js",
+      "module": "brandmetricsRtdProvider"
+    },
+    {
+      "name": "cleanioRtdProvider",
+      "path": "/modules/cleanioRtdProvider.js",
+      "module": "cleanioRtdProvider"
+    },
+    {
+      "name": "idWardRtdProvider",
+      "path": "/modules/idWardRtdProvider.js",
+      "module": "idWardRtdProvider"
+    },
     {
       "name": "dgkeywordRtdProvider",
       "path": "/modules/dgkeywordRtdProvider.js",
       "module": "dgkeywordRtdProvider"
     },
-  {
-    "name": "imRtdProvider",
-    "path": "/modules/imRtdProvider.js",
-    "module": "imRtdProvider"
-  },
+    {
+      "name": "imRtdProvider",
+      "path": "/modules/imRtdProvider.js",
+      "module": "imRtdProvider"
+    },
     {
       "name": "geoedgeRtdProvider",
       "path": "/modules/geoedgeRtdProvider.js",
@@ -130,17 +135,17 @@
     {
       "name": "mgidRtdProvider",
       "path": "/modules/mgidRtdProvider.js",
-      "module":"mgidRtdProvider"
+      "module": "mgidRtdProvider"
     },
     {
       "name": "aaxBlockmeterRtdProvider",
       "path": "/modules/aaxBlockmeterRtdProvider.js",
-      "module":"aaxBlockmeterRtdProvider"
+      "module": "aaxBlockmeterRtdProvider"
     },
     {
       "name": "oneKeyRtdProvider",
       "path": "/modules/oneKeyRtdProvider.js",
-      "module":"oneKeyRtdProvider"
+      "module": "oneKeyRtdProvider"
     }
   ],
   "FPD Module": [
@@ -416,170 +421,174 @@
       "path": "/modules/yuktamediaAnalyticsAdapter.js",
       "module": "yuktamediaAnalyticsAdapter"
     },
-  {
-    "name": "intersectionRtdProvider",
-    "path": "/modules/intersectionRtdProvider.js",
-    "module": "intersectionRtdProvider"
-  },
-  {
-    "name": "bidwatchAnalyticsAdapter",
-    "path": "/modules/bidwatchAnalyticsAdapter.js",
-    "module": "bidwatchAnalyticsAdapter"
-  },
-  {
-    "name": "conversantAnalyticsAdapter",
-    "path": "/modules/conversantAnalyticsAdapter.js",
-    "module": "conversantAnalyticsAdapter"
-  },
-  {
-    "name": "hadronAnalyticsAdapter",
-    "path": "/modules/hadronAnalyticsAdapter.js",
-    "module": "hadronAnalyticsAdapter"
-  },
-  {
-    "name": "liveIntentAnalyticsAdapter",
-    "path": "/modules/liveIntentAnalyticsAdapter.js",
-    "module": "liveIntentAnalyticsAdapter"
-  },
-  {
-    "name": "magniteAnalyticsAdapter",
-    "path": "/modules/magniteAnalyticsAdapter.js",
-    "module": "magniteAnalyticsAdapter"
-  },
-  {
-    "name": "pianoDmpAnalyticsAdapter",
-    "path": "/modules/pianoDmpAnalyticsAdapter.js",
-    "module": "pianoDmpAnalyticsAdapter"
-  }
+    {
+      "name": "intersectionRtdProvider",
+      "path": "/modules/intersectionRtdProvider.js",
+      "module": "intersectionRtdProvider"
+    },
+    {
+      "name": "bidwatchAnalyticsAdapter",
+      "path": "/modules/bidwatchAnalyticsAdapter.js",
+      "module": "bidwatchAnalyticsAdapter"
+    },
+    {
+      "name": "conversantAnalyticsAdapter",
+      "path": "/modules/conversantAnalyticsAdapter.js",
+      "module": "conversantAnalyticsAdapter"
+    },
+    {
+      "name": "hadronAnalyticsAdapter",
+      "path": "/modules/hadronAnalyticsAdapter.js",
+      "module": "hadronAnalyticsAdapter"
+    },
+    {
+      "name": "liveIntentAnalyticsAdapter",
+      "path": "/modules/liveIntentAnalyticsAdapter.js",
+      "module": "liveIntentAnalyticsAdapter"
+    },
+    {
+      "name": "magniteAnalyticsAdapter",
+      "path": "/modules/magniteAnalyticsAdapter.js",
+      "module": "magniteAnalyticsAdapter"
+    },
+    {
+      "name": "pianoDmpAnalyticsAdapter",
+      "path": "/modules/pianoDmpAnalyticsAdapter.js",
+      "module": "pianoDmpAnalyticsAdapter"
+    }
   ],
   "Others": [
-  {
-    "name": "consentManagement",
-    "path": "/modules/consentManagement.js",
-    "module": "consentManagement"
-  },
-  {
-    "name": "CCPA",
-    "path": "/modules/consentManagementUsp.js",
-    "module": "consentManagementUsp"
-  },
-  {
-    "name": "gdprEnforcement",
-    "path": "/modules/gdprEnforcement.js",
-    "module": "gdprEnforcement"
-  },
-  {
-    "name": "gptPreAuction",
-    "path": "/modules/gptPreAuction.js",
-    "module": "gptPreAuction"
-  },
-  {
-    "name": "bidViewability",
-    "path": "/modules/bidViewability.js",
-    "module": "bidViewability"
-  },
-  {
-    "name": "iABCategoryTranslation",
-    "path": "/modules/categoryTranslation.js",
-    "module": "categoryTranslation"
-  },
-  {
-    "name": "Currency",
-    "path": "/modules/currency.js",
-    "module": "currency"
-  },
-  {
-    "name": "dataControllerModule",
-    "path": "/modules/dataControllerModule.js",
-    "module": "dataControllerModule"
-  },
-  {
-    "name": "dchain",
-    "path": "/modules/dchain.js",
-    "module": "dchain"
-  },
-  {
-    "name": "debugging",
-    "path": "/modules/debugging.js",
-    "module": "debugging"
-  },
-  {
-    "name": "priceFloors",
-    "path": "/modules/priceFloors.js",
-    "module": "priceFloors"
-  },
-  {
-    "name": "idImportLibrary",
-    "path": "/modules/idImportLibrary.js",
-    "module": "idImportLibrary"
-  },
-  {
-    "name": "instreamTracking",
-    "path": "/modules/instreamTracking.js",
-    "module": "instreamTracking"
-  },
-  {
-    "name": "mass",
-    "path": "/modules/mass.js",
-    "module": "mass"
-  },
-  {
-    "name": "multibid",
-    "path": "/modules/multibid/index.js",
-    "module": "multibid"
-  },
-  {
-    "name": "Server-to-Server Testing",
-    "path": "/modules/ssTesting.js",
-    "module": "ssTesting"
-  },
-  {
-    "name": "publisherCommonId",
-    "path": "/modules/pubCommonId.js",
-    "module": "pubCommonId"
-  },
-  {
-    "name": "supplyChainObject",
-    "path": "/modules/schain.js",
-    "module": "schain"
-  },
-  {
-    "name": "userId",
-    "path": "/modules/userId/index.js",
-    "module": "userId"
-  },
-  {
-    "name": "viewability",
-    "path": "/modules/viewability.js",
-    "module": "viewability"
-  },
-  {
-    "name": "gAMExpress",
-    "path": "/modules/express.js",
-    "module": "express"
-  },
-  {
-    "name": "konduitAccelerate",
-    "path": "/modules/konduitWrapper.js",
-    "module": "konduitWrapper"
-  },
-  {
-    "name": "yieldmoSyntheticInventoryModule",
-    "path": "/modules/yieldmoSyntheticInventoryModule.js",
-    "module": "yieldmoSyntheticInventoryModule"
-  }
-],
-"Video": [
-  {
-    "name": "jwplayerVideoProvider",
-    "path": "/modules/jwplayerVideoProvider.js",
-    "module": "jwplayerVideoProvider"
-  },
-  {
-    "name": "videojsVideoProvider",
-    "path": "/modules/videojsVideoProvider.js",
-    "module": "videojsVideoProvider"
-  }
-
-]
+    {
+      "name": "consentManagement",
+      "path": "/modules/consentManagement.js",
+      "module": "consentManagement"
+    },
+    {
+      "name": "CCPA",
+      "path": "/modules/consentManagementUsp.js",
+      "module": "consentManagementUsp"
+    },
+    {
+      "name": "gdprEnforcement",
+      "path": "/modules/gdprEnforcement.js",
+      "module": "gdprEnforcement"
+    },
+    {
+      "name": "gptPreAuction",
+      "path": "/modules/gptPreAuction.js",
+      "module": "gptPreAuction"
+    },
+    {
+      "name": "bidViewability",
+      "path": "/modules/bidViewability.js",
+      "module": "bidViewability"
+    },
+    {
+      "name": "iABCategoryTranslation",
+      "path": "/modules/categoryTranslation.js",
+      "module": "categoryTranslation"
+    },
+    {
+      "name": "Currency",
+      "path": "/modules/currency.js",
+      "module": "currency"
+    },
+    {
+      "name": "dataControllerModule",
+      "path": "/modules/dataControllerModule.js",
+      "module": "dataControllerModule"
+    },
+    {
+      "name": "dchain",
+      "path": "/modules/dchain.js",
+      "module": "dchain"
+    },
+    {
+      "name": "debugging",
+      "path": "/modules/debugging.js",
+      "module": "debugging"
+    },
+    {
+      "name": "priceFloors",
+      "path": "/modules/priceFloors.js",
+      "module": "priceFloors"
+    },
+    {
+      "name": "idImportLibrary",
+      "path": "/modules/idImportLibrary.js",
+      "module": "idImportLibrary"
+    },
+    {
+      "name": "instreamTracking",
+      "path": "/modules/instreamTracking.js",
+      "module": "instreamTracking"
+    },
+    {
+      "name": "mass",
+      "path": "/modules/mass.js",
+      "module": "mass"
+    },
+    {
+      "name": "multibid",
+      "path": "/modules/multibid/index.js",
+      "module": "multibid"
+    },
+    {
+      "name": "Server-to-Server Testing",
+      "path": "/modules/ssTesting.js",
+      "module": "ssTesting"
+    },
+    {
+      "name": "publisherCommonId",
+      "path": "/modules/pubCommonId.js",
+      "module": "pubCommonId"
+    },
+    {
+      "name": "supplyChainObject",
+      "path": "/modules/schain.js",
+      "module": "schain"
+    },
+    {
+      "name": "userId",
+      "path": "/modules/userId/index.js",
+      "module": "userId"
+    },
+    {
+      "name": "viewability",
+      "path": "/modules/viewability.js",
+      "module": "viewability"
+    },
+    {
+      "name": "gAMExpress",
+      "path": "/modules/express.js",
+      "module": "express"
+    },
+    {
+      "name": "konduitAccelerate",
+      "path": "/modules/konduitWrapper.js",
+      "module": "konduitWrapper"
+    },
+    {
+      "name": "yieldmoSyntheticInventoryModule",
+      "path": "/modules/yieldmoSyntheticInventoryModule.js",
+      "module": "yieldmoSyntheticInventoryModule"
+    },
+    {
+      "name": "sizeMappingV2",
+      "path": "/modules/sizeMappingV2.js",
+      "module": "sizeMappingV2"
+    }
+  ],
+  "Video": [
+    {
+      "name": "jwplayerVideoProvider",
+      "path": "/modules/jwplayerVideoProvider.js",
+      "module": "jwplayerVideoProvider"
+    },
+    {
+      "name": "videojsVideoProvider",
+      "path": "/modules/videojsVideoProvider.js",
+      "module": "videojsVideoProvider"
+    }
+  ]
 }
