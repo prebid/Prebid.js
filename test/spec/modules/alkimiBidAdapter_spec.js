@@ -109,7 +109,6 @@ describe('alkimiBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
     let requestData = {
-      auctionId: '123',
       refererInfo: {
         page: 'http://test.com/path.html'
       },
@@ -137,7 +136,7 @@ describe('alkimiBidAdapter', function () {
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
-      expect(bidderRequest.data.requestId).to.equal('123')
+      expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
       expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'alkimi-onboarding.com', sid: '00001', hp: 1 }] })
       expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined })

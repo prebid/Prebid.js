@@ -1,5 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone, getDNT} from '../src/utils.js';
+import {deepAccess, deepClone, getDNT, generateUUID} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -45,8 +45,7 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      requestId: bidderRequest.auctionId,
+      requestId: generateUUID(),
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
       referer: bidderRequest.refererInfo.page,
@@ -57,6 +56,11 @@ export const spec = {
         dnt: getDNT() ? 1 : 0,
         w: screen.width,
         h: screen.height
+      },
+      ortb2: {
+        at: bidderRequest.ortb2?.at,
+        bcat: bidderRequest.ortb2?.bcat,
+        wseat: bidderRequest.ortb2?.wseat
       }
     }
 
