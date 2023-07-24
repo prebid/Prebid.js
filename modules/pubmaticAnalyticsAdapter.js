@@ -5,6 +5,7 @@ import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
@@ -44,6 +45,7 @@ let profileId = DEFAULT_PROFILE_ID; // int: optional
 let profileVersionId = DEFAULT_PROFILE_VERSION_ID; // int: optional
 let s2sBidders = [];
 let identityOnly = DEFAULT_ISIDENTITY_ONLY;
+const storage = getStorageManager({bidderCode: ADAPTER_CODE});
 
 /// /////////// HELPER FUNCTIONS //////////////
 
@@ -371,10 +373,10 @@ function getTgid() {
 
 function executeBidsLoggerCall(e, highestCpmBids) {
   const HOSTNAME = window.location.host;
-  const storedObject = window.localStorage.getItem(PREFIX + HOSTNAME);
+  const storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
   const frequencyDepth = storedObject !== null ? JSON.parse(storedObject) : {};
   let auctionId = e.auctionId;
-  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
+  let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
   let floorFetchStatus = (floorData?.floorRequestData?.fetchStatus)?.toLowerCase() === CONSTANTS.SUCCESS;
@@ -415,6 +417,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
   }
 
+  window.PWT.CC?.cc && (outputObj.ctr = window.PWT.CC.cc);
   outputObj.s = Object.keys(auctionCache.adUnitCodes).reduce(function(slotsArray, adUnitId) {
     let adUnit = auctionCache.adUnitCodes[adUnitId];
     let origAdUnit = getAdUnit(auctionCache.origAdUnits, adUnitId) || {};
@@ -592,11 +595,12 @@ function bidWonHandler(args) {
 }
 
 function auctionEndHandler(args) {
+
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {
     executeBidsLoggerCall.call(this, args, highestCpmBids);
-  }, (cache.auctions[args.auctionId].bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
+  }, (cache.auctions[args.auctionId]?.bidderDonePendingCount === 0 ? 500 : SEND_TIMEOUT));
 }
 
 function bidTimeoutHandler(args) {
