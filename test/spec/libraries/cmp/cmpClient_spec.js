@@ -1,11 +1,15 @@
-import {cmpClient} from '../../../../libraries/cmp/cmpClient.js';
+import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
+
   function mockWindow(props = {}) {
     let listeners = [];
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
         evt === 'message' && listeners.push(listener)
+      }),
+      removeEventListener: sinon.stub().callsFake((evt, listener) => {
+        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
       }),
       postMessage: sinon.stub().callsFake((msg) => {
         listeners.forEach(ln => ln({data: msg}))
@@ -62,11 +66,15 @@ describe('cmpClient', () => {
               return 'val'
             })
           })
+
           Object.entries({
             callback: [sinon.stub(), 'undefined', undefined],
+            'callback, mode = MODE_CALLBACK': [sinon.stub(), 'undefined', undefined, MODE_CALLBACK],
+            'callback, mode = MODE_RETURN': [sinon.stub(), 'api return value', 'val', MODE_RETURN],
             'no callback': [undefined, 'api return value', 'val'],
-            'no callback, but cbReturns = true': [undefined, 'callback arg', 'cbVal', true]
-          }).forEach(([t, [callback, tResult, expectedResult, cbReturns]]) => {
+            'no callback, mode = MODE_CALLBACK': [undefined, 'callback arg', 'cbVal', MODE_CALLBACK],
+            'no callback, mode = MODE_RETURN': [undefined, 'api return value', 'val', MODE_RETURN],
+          }).forEach(([t, [callback, tResult, expectedResult, mode]]) => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': undefined,
@@ -74,10 +82,15 @@ describe('cmpClient', () => {
               }).forEach(([t, success]) => {
                 it(`resolves to ${tResult} (${t})`, (done) => {
                   cbResult = ['cbVal', success];
-                  mkClient({cbReturns})({callback}).then((val) => {
+                  mkClient({mode})({callback}).then((val) => {
                     expect(val).to.equal(expectedResult);
                     done();
                   })
+                });
+
+                it('should pass either a function or undefined as callback', () => {
+                  mkClient({mode})({callback});
+                  sinon.assert.calledWith(mockApiFn, sinon.match.any, sinon.match(arg => typeof arg === 'undefined' || typeof arg === 'function'))
                 })
               });
             })
@@ -91,9 +104,9 @@ describe('cmpClient', () => {
             })
           });
 
-          it('rejects to callback arg when callback is NOT provided, success = false, cbReturns = true', (done) => {
+          it('rejects to callback arg when callback is NOT provided, success = false, mode = MODE_CALLBACK', (done) => {
             cbResult = ['cbVal', false];
-            mkClient({cbReturns: true})().catch(val => {
+            mkClient({mode: MODE_CALLBACK})().catch(val => {
               expect(val).to.eql('cbVal');
               done();
             })
@@ -118,6 +131,10 @@ describe('cmpClient', () => {
           });
           sinon.assert.calledWith(mockApiFn, 'mockParam', 'mockCmd');
         });
+
+        it('should not choke on .close()', () => {
+          mkClient({}).close();
+        })
       })
     })
   })
@@ -198,8 +215,12 @@ describe('cmpClient', () => {
           })
           Object.entries({
             'callback': [sinon.stub(), 'undefined', undefined],
+            'callback, mode = MODE_RETURN': [sinon.stub(), 'undefined', undefined, MODE_RETURN],
+            'callback, mode = MODE_CALLBACK': [sinon.stub(), 'undefined', undefined, MODE_CALLBACK],
             'no callback': [undefined, 'response returnValue', 'val'],
-          }).forEach(([t, [callback, tResult, expectedResult]]) => {
+            'no callback, mode = MODE_RETURN': [undefined, 'undefined', undefined, MODE_RETURN],
+            'no callback, mode = MODE_CALLBACK': [undefined, 'response returnValue', 'val', MODE_CALLBACK],
+          }).forEach(([t, [callback, tResult, expectedResult, mode]]) => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': {},
@@ -207,19 +228,21 @@ describe('cmpClient', () => {
               }).forEach(([t, resp]) => {
                 it(`resolves to ${tResult} (${t})`, () => {
                   Object.assign(response, resp);
-                  mkClient()({callback}).then((val) => {
+                  mkClient({mode})({callback}).then((val) => {
                     expect(val).to.equal(expectedResult);
                   })
                 })
               });
 
-              it(`rejects to ${tResult} when success = false`, (done) => {
-                response.success = false;
-                mkClient()({callback}).catch((err) => {
-                  expect(err).to.equal(expectedResult);
-                  done();
+              if (mode !== MODE_RETURN) { // in return mode, the promise never rejects
+                it(`rejects to ${tResult} when success = false`, (done) => {
+                  response.success = false;
+                  mkClient()({mode, callback}).catch((err) => {
+                    expect(err).to.equal(expectedResult);
+                    done();
+                  });
                 });
-              });
+              }
             })
           });
         });
@@ -257,6 +280,16 @@ describe('cmpClient', () => {
             sinon.assert.calledWith(callback, 'a');
             sinon.assert.calledOnce(callback);
           });
+
+          it('should NOT fire again after .close()', () => {
+            const client = mkClient();
+            client({callback});
+            runCallback('a');
+            client.close();
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledOnce(callback);
+          })
         });
       });
     });

@@ -52,6 +52,22 @@ function lookupStaticConsentData({onSuccess, onError}) {
 }
 
 /**
+ * Ping the CMP to determine its version.
+ * @param mkClient
+ * @returns {Promise<[CMPClient, {}]>} a promise to two objects:
+ *  - a CMP client function (with settings appropriate to the CMP version); and
+ *  - the result from the ping command.
+ */
+export function pingCMP(mkClient = cmpClient) {
+  const clientOptions = {
+    apiName: '__gpp',
+    apiArgs: ['command', 'callback', 'parameter'], // do not pass version - not clear what it's for (or what we should use)
+    cbReturns: true // in 1.1, all commands use callbacks instead of return values
+  }
+  let cmp = mkClient(clientOptions);
+}
+
+/**
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
