@@ -277,7 +277,7 @@ describe('fluctAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('should interpretResponse', function() {
     const callBeaconSnippet = '<script type="application/javascript">' +
       '(function() { var img = new Image(); img.src = ' +
       '"https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99"' +
