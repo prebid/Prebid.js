@@ -34,5 +34,6 @@
   "userId",
   "id5IdSystem",
   "intersectionRtdProvider",
-  "mediasquareBidAdapter"
+  "mediasquareBidAdapter",
+  "shortcutBidAdapter"
 ]
