@@ -2,10 +2,9 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { isArray, isFn, deepAccess, deepSetValue, getDNT, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr'
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'jwplayer';
-/cookie_sync
 const URL = 'https://vpb-server.jwplayer.com/openrtb2/';
 const AUCTION_URL = URL + 'auction';
 const USER_SYNC_URL = URL + 'setuid';
@@ -110,16 +109,29 @@ export const spec = {
   },
 
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
-    if (!hasPurpose1Consent(gdprConsent) || !syncOptions.pixelEnabled) {
+    if (!hasPurpose1Consent(gdprConsent)) {
       return [];
     }
 
+    const userSyncs = [];
     const gdpr = gdprConsent.gdprApplies ? 1 : 0;
+    const url = `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&gdpr=${gdpr}&gdpr_consent=${gdprConsent.consentString}`;
 
-    return [{
-      type: 'image',
-      url: `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&gdpr=${gdpr}&gdpr_consent=${gdprConsent.consentString}`
-    }];
+    if (syncOptions.iframeEnabled) {
+      userSyncs.push({
+        type: 'iframe',
+        url
+      });
+    }g
+
+    if (syncOptions.pixelEnabled) {
+      userSyncs.push({
+        type: 'image',
+        url
+      });
+    }
+
+    return userSyncs;
   }
 
   // Optional?
