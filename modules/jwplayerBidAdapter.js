@@ -2,9 +2,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { isArray, isFn, deepAccess, deepSetValue, getDNT, logError, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr'
 
 const BIDDER_CODE = 'jwplayer';
-const URL = 'https://vpb-server.jwplayer.com/openrtb2/auction';
+/cookie_sync
+const URL = 'https://vpb-server.jwplayer.com/openrtb2/';
+const AUCTION_URL = URL + 'auction';
+const USER_SYNC_URL = URL + 'setuid';
 
 const GVLID = 1046;
 const SUPPORTED_AD_TYPES = [VIDEO];
@@ -67,19 +71,12 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: URL,
+        url: AUCTION_URL,
         data: payload
       }
     });
   },
 
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @param bidderRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
   interpretResponse: function(serverResponse) {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
@@ -112,7 +109,18 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if (!hasPurpose1Consent(gdprConsent) || !syncOptions.pixelEnabled) {
+      return [];
+    }
+
+    const gdpr = gdprConsent.gdprApplies ? 1 : 0;
+
+    return [{
+      type: 'image',
+      url: `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&gdpr=${gdpr}&gdpr_consent=${gdprConsent.consentString}`
+    }];
+  }
 
   // Optional?
   // onTimeout: function(timeoutData) {},
@@ -284,7 +292,6 @@ function getWarnings(bidderRequest) {
     warnings.push(getMissingFieldMessage(contentChain + 'ext.description'));
   }
 
-  console.log('karimWarn: ', warnings);
   return warnings;
 }
 
