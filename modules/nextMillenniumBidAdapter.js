@@ -1,35 +1,37 @@
 import {
-  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
-  isStr,
-  getWindowTop,
   getBidIdParameter,
+  getDefinedParams,
+  getWindowTop,
+  isArray,
+  isStr,
   logMessage,
+  parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
-  getDefinedParams,
-  parseGPTSingleSizeArrayToRtbSize,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
+const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
   'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
   'playbackmethod', 'protocols', 'startdelay'
 ];
+const GVLID = 1060;
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -43,6 +45,7 @@ events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: GVLID,
 
   isBidRequestValid: function(bid) {
     return !!(
@@ -66,7 +69,7 @@ export const spec = {
       const device = getDeviceObj();
 
       const postBody = {
-        'id': bid.auctionId,
+        'id': bidderRequest?.bidderRequestId,
         'ext': {
           'prebid': {
             'storedrequest': {
@@ -87,6 +90,7 @@ export const spec = {
       };
 
       const imp = {
+        id: bid.adUnitCode,
         ext: {
           prebid: {
             storedrequest: {id}
@@ -170,6 +174,7 @@ export const spec = {
         const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         addWurl({auctionId, requestId, wurl});
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
@@ -182,7 +187,7 @@ export const spec = {
           height: bid.h,
           creativeId: bid.adid,
           currency: response.cur,
-          netRevenue: false,
+          netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
             advertiserDomains: bid.adomain || []
@@ -231,6 +236,13 @@ export const spec = {
       })
     }
 
+    if (!pixels.length) {
+      let syncUrl = SYNC_ENDPOINT;
+      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString + '&';
+      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent + '&';
+      if (syncOptions.iframeEnabled) pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
+      if (syncOptions.pixelEnabled) pixels.push({type: 'image', url: syncUrl + 'type=image'});
+    }
     return pixels;
   },
 

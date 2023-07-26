@@ -1,9 +1,11 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, deepClone, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
+import { bidderSettings } from '../src/bidderSettings.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -37,8 +39,8 @@ export const spec = {
         return false;
       }
     } else if (deepAccess(bid, 'mediaTypes.video')) {
-      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !bid.params.sizes) {
-        // bids.params.sizes is required for outstream video adUnits
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
+        // playerSize is required for outstream video adUnits
         return false;
       }
       if (deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
@@ -49,6 +51,7 @@ export const spec = {
 
     return true;
   },
+
   /**
    * Make a server request from the list of BidRequests.
    *
@@ -93,7 +96,7 @@ export const spec = {
       'lib_name': 'prebid',
       'lib_v': '$prebid.version$',
       'us': 0,
-
+      'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? JSON.stringify(loadOrCreateFirstPartyData()) : null,
     };
 
     const fpd = bidderRequest.ortb2;
@@ -132,22 +135,13 @@ export const spec = {
     if (validBidRequests[0].schain) {
       payload.schain = JSON.stringify(validBidRequests[0].schain);
     }
-    if (deepAccess(validBidRequests[0], 'userId') && Object.keys(validBidRequests[0].userId).length > 0) {
-      const userIds = deepClone(validBidRequests[0].userId);
-
-      if (userIds.id5id) {
-        userIds.id5id = deepAccess(userIds, 'id5id.uid');
-      }
-
-      payload.userid = JSON.stringify(userIds);
-    }
 
     const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
     if (Array.isArray(eids) && eids.length > 0) {
       payload.eids = JSON.stringify(eids);
     }
 
-    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
 
     if (keywords) {
       payload.kw = keywords;
@@ -254,10 +248,7 @@ export const spec = {
             bidRequest,
             'renderer.options'
           ));
-          let videoSize = deepAccess(bidRequest, 'params.sizes');
-          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
-            videoSize = videoSize[0]; // Only take the first size for outstream
-          }
+          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
           if (videoSize) {
             bids.width = videoSize[0];
             bids.height = videoSize[1];
@@ -397,6 +388,67 @@ export function _getPlatform(context = window) {
   }
   return 'desktop';
 }
+/**
+ * Check for local storage
+ * Generate a UUID for the user if one does not exist in local storage
+ * Store the UUID in local storage for future use
+ * @return {object} firstPartyData - Data object containing first party information
+ */
+function loadOrCreateFirstPartyData() {
+  var localStorageEnabled;
+
+  var FIRST_PARTY_KEY = '_iiq_fdata';
+  var tryParse = function (data) {
+    try {
+      return JSON.parse(data);
+    } catch (err) {
+      return null;
+    }
+  };
+  var readData = function (key) {
+    if (hasLocalStorage()) {
+      return window.localStorage.getItem(key);
+    }
+    return null;
+  };
+  var hasLocalStorage = function () {
+    if (typeof localStorageEnabled != 'undefined') { return localStorageEnabled; } else {
+      try {
+        localStorageEnabled = !!window.localStorage;
+        return localStorageEnabled;
+      } catch (e) {
+        localStorageEnabled = false;
+      }
+    }
+    return false;
+  };
+  var generateGUID = function () {
+    var d = new Date().getTime();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+      return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  };
+  var storeData = function (key, value) {
+    try {
+      if (hasLocalStorage()) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (error) {
+      return null;
+    }
+  };
+  var firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+  if (!firstPartyData || !firstPartyData.pcid) {
+    var firstPartyId = generateGUID();
+    firstPartyData = { pcid: firstPartyId, pcidDate: Date.now() };
+  } else if (firstPartyData && !firstPartyData.pcidDate) {
+    firstPartyData.pcidDate = Date.now();
+  }
+  storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+  return firstPartyData;
+};
 
 function newRenderer(adUnitCode, bid, rendererOptions = {}) {
   const renderer = Renderer.install({
