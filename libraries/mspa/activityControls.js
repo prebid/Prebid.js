@@ -6,6 +6,7 @@ import {
   ACTIVITY_TRANSMIT_PRECISE_GEO
 } from '../../src/activities/activities.js';
 import {gppDataHandler} from '../../src/adapterManager.js';
+import {logInfo} from '../../src/utils.js';
 
 // default interpretation for MSPA consent(s):
 // https://docs.prebid.org/features/mspa-usnat.html
@@ -103,8 +104,10 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
 
 export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
   const unreg = [];
+  const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
+  logInfo(`Enabling activity controls for ${ruleName}`)
   Object.entries(rules).forEach(([activity, denies]) => {
-    unreg.push(registerRule(activity, `MSPA (${api})`, mspaRule(sids, () => normalizeConsent(getConsentData()?.sectionData?.[api]), denies, () => getConsentData()?.applicableSections || [])))
+    unreg.push(registerRule(activity, ruleName, mspaRule(sids, () => normalizeConsent(getConsentData()?.sectionData?.[api]), denies, () => getConsentData()?.applicableSections || [])))
   })
   return () => unreg.forEach(ur => ur())
 }
