@@ -444,7 +444,12 @@ describe('handles fetch request for topics api headers', () => {
     });
 
     stubbedFetch.returns(Promise.resolve(true));
-    loadTopicsForBidders();
+    loadTopicsForBidders({
+      browsingTopics: true,
+      featurePolicy: {
+        allowsFeature() { return true }
+      }
+    });
     sinon.assert.calledOnce(stubbedFetch);
     stubbedFetch.calledWith('http://localhost:3000/topics-server.js');
   });
@@ -463,7 +468,12 @@ describe('handles fetch request for topics api headers', () => {
       }
     });
 
-    loadTopicsForBidders();
+    loadTopicsForBidders({
+      browsingTopics: true,
+      featurePolicy: {
+        allowsFeature() { return true }
+      }
+    });
     sinon.assert.notCalled(stubbedFetch);
   });
 
@@ -496,7 +506,12 @@ describe('handles fetch request for topics api headers', () => {
       }
     });
 
-    loadTopicsForBidders();
+    loadTopicsForBidders({
+      browsingTopics: true,
+      featurePolicy: {
+        allowsFeature() { return true }
+      }
+    });
     sinon.assert.notCalled(stubbedFetch);
   });
 });
