@@ -1,7 +1,6 @@
 import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
-
   function mockWindow(props = {}) {
     let listeners = [];
     const win = {

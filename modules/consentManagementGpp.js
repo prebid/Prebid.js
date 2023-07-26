@@ -25,7 +25,7 @@ let consentData;
 let addedConsentHook = false;
 
 function pipeCallbacks(fn, {onSuccess, onError}) {
-  GreedyPromise.resolve(fn()).then(onSuccess, (err) => {
+  new GreedyPromise((resolve) => resolve(fn())).then(onSuccess, (err) => {
     if (err instanceof GPPError) {
       onError(err.message, ...err.args);
     } else {
