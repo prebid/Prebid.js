@@ -15,7 +15,7 @@ const ENDPOINT_URL =
   'https://rtb-us.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 
@@ -242,6 +242,7 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           //   gpid: gpid, // 加入后无法返回广告
         },
+        tagid: req.params && req.params.tagid,
       };
       itemMaps[id] = {
         req,
@@ -285,6 +286,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   if (items && items.length) {
     let c = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'mgprebidjs_' + auctionId,
       test: +isTest,
       at: 1,

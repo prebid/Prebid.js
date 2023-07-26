@@ -67,6 +67,17 @@ export const unifiedIdSubmodule = {
       ajax(url, callbacks, undefined, {method: 'GET', withCredentials: true});
     };
     return {callback: resp};
+  },
+  eids: {
+    'tdid': {
+      source: 'adserver.org',
+      atype: 1,
+      getUidExt: function() {
+        return {
+          rtiPartner: 'TDID'
+        };
+      }
+    },
   }
 };
 

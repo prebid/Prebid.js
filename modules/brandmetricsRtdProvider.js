@@ -6,8 +6,10 @@
  * @requires module:modules/realTimeData
  */
 import {submodule} from '../src/hook.js';
-import {deepAccess, deepSetValue, logError, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, logError, mergeDeep, generateUUID} from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
@@ -15,12 +17,15 @@ const RECEIVED_EVENTS = []
 const GVL_ID = 422
 const TCF_PURPOSES = [1, 7]
 
+let billableEventsInitialized = false
+
 function init (config, userConsent) {
   const hasConsent = checkConsent(userConsent)
 
   if (hasConsent) {
     const moduleConfig = getMergedConfig(config)
     initializeBrandmetrics(moduleConfig.params.scriptId)
+    initializeBillableEvents()
   }
   return hasConsent
 }
@@ -82,7 +87,6 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
   if (RECEIVED_EVENTS.length > 0) {
     callBidTargeting(RECEIVED_EVENTS[RECEIVED_EVENTS.length - 1])
   } else {
-    window._brandmetrics = window._brandmetrics || []
     window._brandmetrics.push({
       cmd: '_addeventlistener',
       val: {
@@ -120,12 +124,42 @@ function setBidderTargeting (reqBidsConfigObj, moduleConfig, key, val) {
  * @param {string} scriptId - The script- id provided by brandmetrics or brandmetrics partner
  */
 function initializeBrandmetrics(scriptId) {
+  window._brandmetrics = window._brandmetrics || []
+
   if (scriptId) {
     const path = 'https://cdn.brandmetrics.com/survey/script/'
     const file = scriptId + '.js'
     const url = path + file
 
     loadExternalScript(url, MODULE_CODE)
+  }
+}
+
+/**
+* Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
+*/
+function initializeBillableEvents() {
+  if (!billableEventsInitialized) {
+    window._brandmetrics.push({
+      cmd: '_addeventlistener',
+      val: {
+        event: 'creative_in_view',
+        handler: (ev) => {
+          if (ev.source && ev.source.type === 'pbj') {
+            const bid = ev.source.data;
+            events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+              vendor: 'brandmetrics',
+              type: 'creative_in_view',
+              measurementId: ev.mid,
+              billingId: generateUUID(),
+              auctionId: bid.auctionId,
+              transactionId: bid.transactionId,
+            });
+          }
+        },
+      }
+    })
+    billableEventsInitialized = true
   }
 }
 

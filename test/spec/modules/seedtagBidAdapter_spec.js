@@ -20,7 +20,11 @@ function getSlotConfigs(mediaTypes, params) {
     bidder: 'seedtag',
     mediaTypes: mediaTypes,
     src: 'client',
-    transactionId: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+    ortb2Imp: {
+      ext: {
+        tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+      }
+    },
     adUnitCode: 'adunit-code',
   };
 }

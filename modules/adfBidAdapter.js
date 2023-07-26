@@ -3,7 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {deepAccess, deepSetValue, mergeDeep, parseSizesInput, deepClone} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, mergeDeep, parseSizesInput} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 
@@ -58,7 +58,7 @@ export const spec = {
     const adxDomain = setOnAny(validBidRequests, 'params.adxDomain') || 'adx.adform.net';
 
     const pt = setOnAny(validBidRequests, 'params.pt') || setOnAny(validBidRequests, 'params.priceType') || 'net';
-    const tid = bidderRequest.auctionId;
+    const tid = bidderRequest.ortb2?.source?.tid;
     const test = setOnAny(validBidRequests, 'params.test');
     const currency = getConfig('currency.adServerCurrency');
     const cur = currency && [ currency ];
@@ -69,8 +69,11 @@ export const spec = {
       bid.netRevenue = pt;
 
       const floorInfo = bid.getFloor ? bid.getFloor({
-        currency: currency || 'USD'
+        currency: currency || 'USD',
+        size: '*',
+        mediaType: '*'
       }) : {};
+
       const bidfloor = floorInfo.floor;
       const bidfloorcur = floorInfo.currency;
       const { mid, inv, mname } = bid.params;
@@ -139,7 +142,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site,
       app,
       user,

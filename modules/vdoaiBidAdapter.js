@@ -1,5 +1,4 @@
-import { getAdUnitSizes } from '../src/utils.js';
-import {config} from '../src/config.js';
+import {getAdUnitSizes} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
@@ -39,6 +38,7 @@ export const spec = {
         bidId: bidRequest.bidId,
         // TODO: is 'page' the right value here?
         referer: bidderRequest.refererInfo.page,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bidRequest.auctionId,
         mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };
@@ -87,7 +87,7 @@ export const spec = {
         // dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: config.getConfig('_bidderTimeout'),
+        ttl: 60,
         // referrer: referrer,
         // ad: response.adm
         // ad: adCreative,
