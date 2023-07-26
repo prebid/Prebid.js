@@ -74,7 +74,7 @@ export const spec = {
       pbTimeout: config.getConfig('bidderTimeout'),
       pbjsVersion: prebidVersion,
       placements: [],
-      ref: deepAccess(bidderRequest, 'refererInfo.ref') ? bidderRequest.refererInfo.ref : undefined,
+      ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
       usp: {},
       userIds: {
         '33acrossId': deepAccess(validBidRequests[0], 'userId.33acrossId.envelope') ? validBidRequests[0].userId['33acrossId'].envelope : undefined,
@@ -185,7 +185,6 @@ export const spec = {
 
       const bidResponse = {
         requestId: bidParam.bidId,
-        bidderCode: spec.code,
         cpm: parseFloat(mid.cpm),
         width: mid.width,
         height: mid.height,
@@ -193,7 +192,7 @@ export const spec = {
         creativeId: mid.mid,
         currency: 'USD',
         netRevenue: false,
-        ttl: mid.ttl || 60,
+        ttl: mid.ttl || 300,
         meta: {
           advertiserDomains: mid.advertiser_domains || []
         }

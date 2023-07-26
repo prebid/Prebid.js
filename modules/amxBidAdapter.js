@@ -1,5 +1,5 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {
   _each,
   deepAccess,
@@ -10,15 +10,16 @@ import {
   logError,
   parseUrl,
   triggerPixel,
+  generateUUID,
 } from '../src/utils.js';
-import {config} from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
+import { config } from '../src/config.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const SIMPLE_TLD_TEST = /\.com?\.\w{2,4}$/;
 const DEFAULT_ENDPOINT = 'https://prebid.a-mo.net/a/c';
-const VERSION = 'pba1.3.2';
+const VERSION = 'pba1.3.3';
 const VAST_RXP = /^\s*<\??(?:vast|xml)/i;
 const TRACKING_ENDPOINT = 'https://1x1.a-mo.net/hbx/';
 const AMUID_KEY = '__amuidpb';
@@ -255,12 +256,12 @@ function getGpp(bidderRequest) {
     return bidderRequest.gppConsent;
   }
 
-  return bidderRequest?.ortb2?.regs?.gpp ?? {gppString: '', applicableSections: ''};
+  return bidderRequest?.ortb2?.regs?.gpp ?? { gppString: '', applicableSections: '' };
 }
 
 function buildReferrerInfo(bidderRequest) {
   if (bidderRequest.refererInfo == null) {
-    return {r: '', t: false, c: '', l: 0, s: []}
+    return { r: '', t: false, c: '', l: 0, s: [] }
   }
 
   const re = bidderRequest.refererInfo;
@@ -303,7 +304,7 @@ export const spec = {
         };
 
     const payload = {
-      a: bidderRequest.auctionId,
+      a: generateUUID(),
       B: 0,
       b: loc.host,
       brc: fbid.bidderRequestsCount || 0,
@@ -387,9 +388,9 @@ export const spec = {
     const output = [];
     let hasFrame = false;
 
-    _each(serverResponses, function ({ body: response }) {
+    _each(serverResponses, function({ body: response }) {
       if (response != null && response.p != null && response.p.hreq) {
-        _each(response.p.hreq, function (syncPixel) {
+        _each(response.p.hreq, function(syncPixel) {
           const pixelType =
             syncPixel.indexOf('__st=iframe') !== -1 ? 'iframe' : 'image';
           if (syncOptions.iframeEnabled || pixelType === 'image') {
@@ -482,7 +483,6 @@ export const spec = {
       bid: timeoutData.bidId,
       a: timeoutData.adUnitCode,
       cn: timeoutData.timeout,
-      aud: timeoutData.auctionId,
     });
   },
 

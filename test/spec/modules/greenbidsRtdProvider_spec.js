@@ -18,7 +18,7 @@ describe('greenbidsRtdProvider', () => {
     server.restore();
   });
 
-  const endPoint = 'europe-west1-greenbids-357713.cloudfunctions.net';
+  const endPoint = 't.greenbids.ai';
 
   const SAMPLE_MODULE_CONFIG = {
     params: {

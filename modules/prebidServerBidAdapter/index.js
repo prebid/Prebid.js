@@ -96,10 +96,8 @@ export const s2sDefaultConfig = {
   adapterOptions: {},
   syncUrlModifier: {},
   ortbNative: {
-    context: 1,
-    plcmttype: 1,
     eventtrackers: [
-      {event: 1, methods: [1]}
+      {event: 1, methods: [1, 2]}
     ],
   }
 };
@@ -472,7 +470,13 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            emitNonBids(response.ext.seatnonbid, bidRequests[0].auctionId);
+            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+              seatnonbid: response.ext.seatnonbid,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            });
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -576,13 +580,6 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
-}
-
-function emitNonBids(seatnonbid, auctionId) {
-  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
-    seatnonbid,
-    auctionId
-  });
 }
 
 /**

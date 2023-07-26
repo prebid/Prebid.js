@@ -8,8 +8,8 @@
 import { logError, logInfo } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
-import {getStorageManager} from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const PCID_EXPIRY = 365;
 
@@ -59,7 +59,7 @@ export function readData(key) {
  * @param key
  * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
  */
-function storeData(key, value) {
+function storeData(key, value, cookieStorageEnabled = false) {
   try {
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
 
@@ -68,7 +68,7 @@ function storeData(key, value) {
         storage.setDataInLocalStorage(key, value);
       }
       const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
-      if (storage.cookiesAreEnabled()) {
+      if (storage.cookiesAreEnabled() && cookieStorageEnabled) {
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
     }
@@ -119,15 +119,16 @@ export const intentIqIdSubmodule = {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
       return;
     }
+    const cookieStorageEnabled = typeof configParams.enableCookieStorage === 'boolean' ? configParams.enableCookieStorage : false
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
     // Read Intent IQ 1st party id or generate it if none exists
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
-    if (!firstPartyData || !firstPartyData.pcid) {
+    if (!firstPartyData || !firstPartyData.pcid || firstPartyData.pcidDate) {
       const firstPartyId = generateGUID();
-      firstPartyData = { 'pcid': firstPartyId };
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
+      firstPartyData = { 'pcid': firstPartyId, 'pcidDate': Date.now() };
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
     }
 
     let partnerData = tryParse(readData(FIRST_PARTY_DATA_KEY));
@@ -141,6 +142,7 @@ export const intentIqIdSubmodule = {
     url += firstPartyData.pid ? '&pid=' + encodeURIComponent(firstPartyData.pid) : '';
     url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
+    url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
 
     const resp = function (callback) {
       const callbacks = {
@@ -171,8 +173,8 @@ export const intentIqIdSubmodule = {
             }
             if (shouldUpdateLs === true) {
               partnerData.date = Date.now();
-              storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData));
-              storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData));
+              storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+              storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), cookieStorageEnabled);
             }
             callback(respJson.data);
           } else {
@@ -191,6 +193,12 @@ export const intentIqIdSubmodule = {
       }
     };
     return { callback: resp };
+  },
+  eids: {
+    'intentIqId': {
+      source: 'intentiq.com',
+      atype: 1
+    },
   }
 };
 

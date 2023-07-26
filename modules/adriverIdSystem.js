@@ -42,7 +42,7 @@ export const adriverIdSubmodule = {
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
-    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1';
+    const url = 'https://ad.adriver.ru/cgi-bin/json.cgi?sid=1&ad=719473&bt=55&pid=3198680&bid=7189165&bn=7189165&tuid=1&cfa=1';
     const resp = function (callback) {
       let creationDate = storage.getDataFromLocalStorage('adrcid_cd') || storage.getCookie('adrcid_cd');
       let cookie = storage.getDataFromLocalStorage('adrcid') || storage.getCookie('adrcid');

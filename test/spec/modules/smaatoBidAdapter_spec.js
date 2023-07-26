@@ -13,6 +13,7 @@ const CONSENT_STRING = 'HFIDUYFIUYIUYWIPOI87392DSU'
 const AUCTION_ID = '6653';
 
 const defaultBidderRequest = {
+  bidderRequestId: 'mock-uuid',
   gdprConsent: {
     consentString: CONSENT_STRING,
     gdprApplies: true
@@ -554,7 +555,7 @@ describe('smaatoBidAdapterTest', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.id).to.exist;
             expect(req.imp.length).to.be.equal(ADPOD_DURATION / DURATION_RANGE[0]);
             expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
@@ -658,7 +659,7 @@ describe('smaatoBidAdapterTest', () => {
             const reqs = spec.buildRequests([longFormVideoBidRequest], defaultBidderRequest);
 
             const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-            expect(req.id).to.be.equal(AUCTION_ID);
+            expect(req.id).to.exist;
             expect(req.imp.length).to.be.equal(DURATION_RANGE.length);
             expect(req.imp[0].id).to.be.equal(BID_ID);
             expect(req.imp[0].tagid).to.be.equal(ADBREAK_ID);
@@ -1094,17 +1095,15 @@ describe('smaatoBidAdapterTest', () => {
             criteoId: '123456',
             tdid: '89145'
           },
-          userIdAsEids: createEidsArray({
-            criteoId: '123456',
-            tdid: '89145'
-          })
+          userIdAsEids: [
+            {id: 1}, {id: 2}
+          ]
         };
 
         const reqs = spec.buildRequests([userIdBidRequest], defaultBidderRequest);
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
-        expect(req.user.ext.eids).to.exist;
-        expect(req.user.ext.eids).to.have.length(2);
+        expect(req.user.ext.eids).to.eql(userIdBidRequest.userIdAsEids);
       });
     });
 

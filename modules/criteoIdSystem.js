@@ -216,6 +216,12 @@ export const criteoIdSubmodule = {
       id: localData.bidId ? { criteoId: localData.bidId } : undefined,
       callback: result
     }
+  },
+  eids: {
+    'criteoId': {
+      source: 'criteo.com',
+      atype: 1
+    },
   }
 };
 
