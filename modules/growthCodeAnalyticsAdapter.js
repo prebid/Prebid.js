@@ -30,8 +30,8 @@ let bidRequestTimeout = 0;
 let analyticsType = 'endpoint';
 
 let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}), {
-  track({eventType, eventData}) {
-    eventData = eventData ? JSON.parse(JSON.stringify(eventData)) : {};
+  track({eventType, args}) {
+    let eventData = args ? JSON.parse(JSON.stringify(args)) : {};
     let data = {};
     if (!trackEvents.includes(eventType)) return;
     switch (eventType) {
@@ -95,6 +95,11 @@ let growthCodeAnalyticsAdapter = Object.assign(adapter({url: url, analyticsType}
 
       case CONSTANTS.EVENTS.ADD_AD_UNITS: {
         data = eventData;
+        break;
+      }
+
+      case CONSTANTS.EVENTS.NO_BID: {
+        data = eventData
         break;
       }
 

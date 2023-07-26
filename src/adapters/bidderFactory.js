@@ -15,7 +15,7 @@ import {
   logError,
   logWarn, memoize,
   parseQueryStringParameters,
-  parseSizesInput,
+  parseSizesInput, pick,
   uniques
 } from '../utils.js';
 import {hook} from '../hook.js';
@@ -150,6 +150,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
+const TIDS = ['auctionId', 'transactionId'];
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -184,7 +185,7 @@ export function registerBidder(spec) {
   }
 }
 
-function guardTids(bidderCode) {
+export function guardTids(bidderCode) {
   if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
     return {
       bidRequest: (br) => br,
@@ -192,12 +193,20 @@ function guardTids(bidderCode) {
     };
   }
   function get(target, prop, receiver) {
-    if (['transactionId', 'auctionId'].includes(prop)) {
+    if (TIDS.includes(prop)) {
       return null;
     }
     return Reflect.get(target, prop, receiver);
   }
-  const bidRequest = memoize((br) => new Proxy(br, {get}), (arg) => arg.bidId)
+  function privateAccessProxy(target, handler) {
+    const proxy = new Proxy(target, handler);
+    // always allow methods (such as getFloor) private access to TIDs
+    Object.entries(target)
+      .filter(([_, v]) => typeof v === 'function')
+      .forEach(([prop, fn]) => proxy[prop] = fn.bind(target));
+    return proxy;
+  }
+  const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
   /**
    * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
    *
@@ -207,7 +216,7 @@ function guardTids(bidderCode) {
    */
   return {
     bidRequest,
-    bidderRequest: (br) => new Proxy(br, {
+    bidderRequest: (br) => privateAccessProxy(br, {
       get(target, prop, receiver) {
         if (prop === 'bids') return br.bids.map(bidRequest);
         return get(target, prop, receiver);
@@ -312,7 +321,7 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);

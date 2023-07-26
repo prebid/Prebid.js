@@ -2,8 +2,6 @@ import { expect } from 'chai';
 import { spec } from 'modules/outbrainBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr';
-import { createEidsArray } from 'modules/userId/eids.js';
-import * as utils from 'src/utils.js';
 
 describe('Outbrain Adapter', function () {
   describe('Bid request and response', function () {
@@ -511,9 +509,9 @@ describe('Outbrain Adapter', function () {
         let bidRequest = {
           bidId: 'bidId',
           params: {},
-          userIdAsEids: createEidsArray({
-            idl_env: 'id-value',
-          }),
+          userIdAsEids: [
+            { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
+          ],
           ...commonBidRequest,
         };
 
