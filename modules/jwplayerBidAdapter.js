@@ -213,7 +213,7 @@ function buildBidFloorData(bidRequest) {
 }
 
 function buildRequestSite(bidRequest, bidderRequest) {
-  const site = bidderRequest.ortb2 || {};
+  const site = bidderRequest.ortb2.site || {};
 
   site.domain = site.domain || config.publisherDomain || window.location.hostname;
   site.page = site.page || config.pageUrl || window.location.href;
@@ -280,10 +280,11 @@ function getWarnings(bidderRequest) {
     warnings.push(getMissingFieldMessage(contentChain + 'title'));
   }
 
-  if (!content.ext && !content.ext.description) {
+  if (!content.ext || !content.ext.description) {
     warnings.push(getMissingFieldMessage(contentChain + 'ext.description'));
   }
 
+  console.log('karimWarn: ', warnings);
   return warnings;
 }
 

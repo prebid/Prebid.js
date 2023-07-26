@@ -5,15 +5,43 @@ import { config } from 'src/config.js';
 describe('jwplayer bid adapter tests', function() {
   beforeEach(function() {
     this.defaultBidderRequest = {
-      'gdprConsent': {
-        'consentString': 'testConsentString',
-        'gdprApplies': true
+      gdprConsent: {
+        consentString: 'testConsentString',
+        gdprApplies: true
       },
-      'uspConsent': 'testCCPA',
-      'refererInfo': {
-        'referer': 'https://example.com'
+      uspConsent: 'testCCPA',
+      refererInfo: {
+        referer: 'https://example.com'
       },
-      timeout: 1000,
+      ortb2: {
+        site: {
+          domain: 'page.example.com',
+          page: 'https://examplepage.com',
+          content: {
+            url: 'media.mp4',
+            id: 'testMediaId',
+            title: 'testTile',
+            data: [{
+              name: 'jwplayer.com',
+              segment: [{
+                id: '00000000'
+              }, {
+                id: '88888888'
+              }, {
+                id: '80808080'
+              }],
+              ext: {
+                segtax: 502,
+                cids: ['testMediaId', 'externalTestId'],
+              }
+            }],
+            ext: {
+              description: 'testDescription'
+            }
+          }
+        }
+      },
+      timeout: 1000
     }
   });
 
@@ -61,6 +89,7 @@ describe('jwplayer bid adapter tests', function() {
           },
           mediaTypes: {
             video: {
+              pos: 3,
               playerSize: [640, 480],
               context: 'instream',
               mimes: [
@@ -81,6 +110,7 @@ describe('jwplayer bid adapter tests', function() {
               api: [2],
               delivery: [2],
               playbackmethod: [1],
+              playbackend: 2
             }
           },
           schain: {
@@ -98,18 +128,7 @@ describe('jwplayer bid adapter tests', function() {
           adUnitCode: 'testAdUnitCode',
           bidId: 'testBidId'
         }
-      ]
-
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(config, 'getConfig').callsFake((key) => {
-        const config = {
-          'ortb2.site': {
-            domain: 'page.example.com',
-            page: 'https://examplepage.com'
-          }
-        };
-        return config[key];
-      });
+      ];
 
       const serverRequests = spec.buildRequests(bidRequests, this.defaultBidderRequest);
 
@@ -124,9 +143,26 @@ describe('jwplayer bid adapter tests', function() {
         expect(openrtbRequest.site.domain).to.equal('page.example.com');
         expect(openrtbRequest.site.page).to.equal('https://examplepage.com');
         expect(openrtbRequest.site.ref).to.equal('https://example.com');
+
         expect(openrtbRequest.site.publisher.ext.jwplayer.publisherId).to.equal('testPublisherId');
         expect(openrtbRequest.site.publisher.ext.jwplayer.siteId).to.equal('testSiteId');
 
+        expect(openrtbRequest.site.content.url).to.equal('media.mp4');
+        expect(openrtbRequest.site.content.id).to.equal('testMediaId');
+        expect(openrtbRequest.site.content.title).to.equal('testTile');
+        expect(openrtbRequest.site.content.ext.description).to.equal('testDescription');
+        expect(openrtbRequest.site.content.data.length).to.equal(1);
+        const datum = openrtbRequest.site.content.data[0];
+        expect(datum.name).to.equal('jwplayer.com');
+        expect(datum.segment).to.deep.equal([{
+          id: '00000000'
+        }, {
+          id: '88888888'
+        }, {
+          id: '80808080'
+        }]);
+        expect(datum.ext.segtax).to.equal(502);
+        expect(datum.ext.cids).to.deep.equal(['testMediaId', 'externalTestId']);
         expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
 
         expect(openrtbRequest.imp[0].id).to.equal('testAdUnitCode');
@@ -136,6 +172,7 @@ describe('jwplayer bid adapter tests', function() {
         expect(openrtbRequest.imp[0].video.startdelay).to.equal(0);
         expect(openrtbRequest.imp[0].video.placement).to.equal(1);
         expect(openrtbRequest.imp[0].video.plcmt).to.equal(1);
+        expect(openrtbRequest.imp[0].video.pos).to.equal(3);
         expect(openrtbRequest.imp[0].video.minduration).to.equal(3);
         expect(openrtbRequest.imp[0].video.maxduration).to.equal(60);
         expect(openrtbRequest.imp[0].video.skip).to.equal(1);
@@ -144,6 +181,7 @@ describe('jwplayer bid adapter tests', function() {
         expect(openrtbRequest.imp[0].video.maxbitrate).to.equal(1000);
         expect(openrtbRequest.imp[0].video.delivery).to.deep.equal([2]);
         expect(openrtbRequest.imp[0].video.playbackmethod).to.deep.equal([1]);
+        expect(openrtbRequest.imp[0].video.playbackend).to.equal(2);
         expect(openrtbRequest.imp[0].video.linearity).to.equal(1);
 
         expect(openrtbRequest.imp[0].bidfloor).to.equal(10);
@@ -171,7 +209,6 @@ describe('jwplayer bid adapter tests', function() {
         expect(openrtbRequest.tmax).to.equal(1000);
       });
 
-      sandbox.restore();
     });
   });
 
