@@ -2,7 +2,7 @@ import { assert, expect } from 'chai';
 import { spec, NATIVE_ASSETS } from 'modules/yandexBidAdapter.js';
 import { parseUrl } from 'src/utils.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes';
-import {OPENRTB} from '../../../modules/rtbhouseBidAdapter';
+import { config } from '../../../src/config';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {
@@ -88,6 +88,22 @@ describe('Yandex adapter', function () {
       expect(data.site).to.not.equal(null);
       expect(data.site.page).to.equal('https://ya.ru/');
       expect(data.site.ref).to.equal('https://ya.ru/');
+    });
+
+    it('should send currency if defined', function () {
+      config.setConfig({
+        currency: {
+          adServerCurrency: 'USD'
+        }
+      });
+
+      const bannerRequest = getBidRequest();
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+      const { url } = requests[0];
+      const parsedRequestUrl = parseUrl(url);
+      const { search: query } = parsedRequestUrl
+
+      expect(query['ssp-cur']).to.equal('USD');
     });
 
     describe('banner', () => {
@@ -273,7 +289,7 @@ describe('Yandex adapter', function () {
           },
         });
       });
-    })
+    });
   });
 
   describe('interpretResponse', function () {
@@ -294,6 +310,7 @@ describe('Yandex adapter', function () {
                 'example.com'
               ],
               adid: 'yabs.123=',
+              nurl: 'https://example.com/nurl/?price=${AUCTION_PRICE}&cur=${AUCTION_CURRENCY}',
             }
           ]
         }],
@@ -314,11 +331,12 @@ describe('Yandex adapter', function () {
       const rtbBid = result[0];
       expect(rtbBid.width).to.equal(300);
       expect(rtbBid.height).to.equal(250);
-      expect(rtbBid.cpm).to.be.within(0.1, 0.5);
+      expect(rtbBid.cpm).to.be.within(0.3, 0.3);
       expect(rtbBid.ad).to.equal('<!-- HTML/JS -->');
       expect(rtbBid.currency).to.equal('USD');
       expect(rtbBid.netRevenue).to.equal(true);
       expect(rtbBid.ttl).to.equal(180);
+      expect(rtbBid.nurl).to.equal('https://example.com/nurl/?price=0.3&cur=USD');
 
       expect(rtbBid.meta.advertiserDomains).to.deep.equal(['example.com']);
     });

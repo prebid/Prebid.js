@@ -275,7 +275,13 @@ describe('FPD enrichment', () => {
 
   describe('sua', () => {
     it('does not set device.sua if resolved sua is null', () => {
-      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve())
+      sandbox.stub(dep, 'getHighEntropySUA').returns(Promise.resolve());
+      // Add hints so it will attempt to retrieve high entropy values
+      config.setConfig({
+        firstPartyData: {
+          uaHints: ['bitness'],
+        }
+      });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.not.exist;
       })
