@@ -312,7 +312,6 @@ const cmpCallMap = {
   'static': lookupStaticConsentData
 };
 
-
 /**
  * Look up consent data and store it in the `consentData` global as well as `adapterManager.js`' gdprDataHandler.
  *
