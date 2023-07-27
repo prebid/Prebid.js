@@ -1,10 +1,12 @@
 import { getParameterByName, logInfo, generateUUID, debugTurnedOn } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
-const storage = getStorageManager();
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+const MODULE_CODE = 'pubwise';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 /****
  * PubWise.io Analytics
@@ -157,7 +159,7 @@ function extendUserSessionTimeout() {
 }
 
 function userSessionID() {
-  return storage.getDataFromLocalStorage(localStorageSessName()) ? localStorage.getItem(localStorageSessName()) : '';
+  return storage.getDataFromLocalStorage(localStorageSessName()) || '';
 }
 
 function sessionExpired() {
@@ -295,7 +297,7 @@ pubwiseAnalytics.handleEvent = function(eventType, data) {
   if (eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON) {
     flushEvents();
   }
-}
+};
 
 pubwiseAnalytics.storeSessionID = function (userSessID) {
   storage.setDataInLocalStorage(localStorageSessName(), userSessID);
@@ -304,11 +306,14 @@ pubwiseAnalytics.storeSessionID = function (userSessID) {
 
 // ensure a session exists, if not make one, always store it
 pubwiseAnalytics.ensureSession = function () {
-  if (sessionExpired() === true || userSessionID() === null || userSessionID() === '') {
+  let sessionId = userSessionID();
+  if (sessionExpired() === true || sessionId === null || sessionId === '') {
     let generatedId = generateUUID();
     expireUtmData();
     this.storeSessionID(generatedId);
     sessionData.sessionId = generatedId;
+  } else if (sessionId != null) {
+    sessionData.sessionId = sessionId;
   }
   // eslint-disable-next-line
   // console.log('ensured session');
@@ -331,7 +336,7 @@ pubwiseAnalytics.enableAnalytics = function (config) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubwiseAnalytics,
-  code: 'pubwise',
+  code: MODULE_CODE,
   gvlid: 842
 });
 

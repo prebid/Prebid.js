@@ -70,7 +70,7 @@ export const fabrickIdSubmodule = {
           }
         }
         // pull off the trailing &
-        url = url.slice(0, -1)
+        url = url.slice(0, -1);
         const referer = _getRefererInfo(configParams);
         const refs = new Map();
         _setReferrer(refs, referer.topmostLocation);
@@ -174,7 +174,7 @@ export function appendUrl(url, paramName, s, configParams) {
         s = s.substring(0, thisMaxRefLen - 2);
       }
     }
-    return `${url}${s}`
+    return `${url}${s}`;
   } else {
     return url;
   }

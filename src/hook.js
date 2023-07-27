@@ -1,11 +1,11 @@
 import funHooks from 'fun-hooks/no-eval/index.js';
-import {promiseControls} from './utils/promise.js';
+import {defer} from './utils/promise.js';
 
 export let hook = funHooks({
   ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
 });
 
-const readyCtl = promiseControls();
+const readyCtl = defer();
 hook.ready = (() => {
   const ready = hook.ready;
   return function () {
@@ -47,4 +47,15 @@ export function submodule(name, ...args) {
     modules.push(args);
     next(modules);
   });
+}
+
+/**
+ * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
+ */
+export function wrapHook(hook, wrapper) {
+  Object.defineProperties(
+    wrapper,
+    Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
+  );
+  return wrapper;
 }

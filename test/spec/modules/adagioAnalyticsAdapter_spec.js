@@ -83,34 +83,27 @@ describe('adagio analytics adapter', () => {
         timeToRespond: 132,
       };
 
-      // Step 1: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      const testEvents = {
+        [constants.EVENTS.BID_REQUESTED]: bidRequest,
+        [constants.EVENTS.BID_RESPONSE]: bidResponse,
+        [constants.EVENTS.AUCTION_END]: {}
+      };
 
-      // Step 2: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      // Step 1-3: Send events
+      Object.entries(testEvents).forEach(([ev, payload]) => events.emit(ev, payload));
 
-      // Step 3: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      function eventItem(eventName, args) {
+        return sinon.match({
+          action: 'pb-analytics-event',
+          ts: sinon.match((val) => val !== undefined),
+          data: {
+            eventName,
+            args
+          }
+        })
+      }
 
-      sandbox.assert.callCount(adagioQueuePushSpy, 3);
-
-      const call0 = adagioQueuePushSpy.getCall(0);
-      expect(call0.args[0].action).to.equal('pb-analytics-event');
-      expect(call0.args[0].ts).to.not.be.undefined;
-      expect(call0.args[0].data).to.not.be.undefined;
-      expect(call0.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_REQUESTED, args: bidRequest});
-
-      const call1 = adagioQueuePushSpy.getCall(1);
-      expect(call1.args[0].action).to.equal('pb-analytics-event');
-      expect(call1.args[0].ts).to.not.be.undefined;
-      expect(call1.args[0].data).to.not.be.undefined;
-      expect(call1.args[0].data).to.deep.equal({eventName: constants.EVENTS.BID_RESPONSE, args: bidResponse});
-
-      const call2 = adagioQueuePushSpy.getCall(2);
-      expect(call2.args[0].action).to.equal('pb-analytics-event');
-      expect(call2.args[0].ts).to.not.be.undefined;
-      expect(call2.args[0].data).to.not.be.undefined;
-      expect(call2.args[0].data).to.deep.equal({eventName: constants.EVENTS.AUCTION_END, args: {}});
+      Object.entries(testEvents).forEach(([ev, payload]) => sinon.assert.calledWith(adagioQueuePushSpy, eventItem(ev, payload)));
     });
   });
 

@@ -68,6 +68,7 @@ export const spec = {
     });
 
     let body = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: auctionId,
       propertyId: propertyId,
       pageViewGuid: pageViewGuid,
@@ -81,7 +82,7 @@ export const spec = {
       data: data,
       gdpr_applies: gdrpApplies,
       gdpr_consent: gdprConsent,
-    }
+    };
 
     return [{
       method: 'POST',
@@ -120,7 +121,7 @@ export const spec = {
     }
     return bidResponses;
   }
-}
+};
 
 /**
 * Generate size param for bid request using sizes array

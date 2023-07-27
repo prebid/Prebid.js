@@ -1,7 +1,8 @@
-import { parseUrl, isEmpty, isStr, triggerPixel } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {isEmpty, isStr, parseUrl, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'brave';
 const DEFAULT_CUR = 'USD';
@@ -38,6 +39,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests.length === 0 || !bidderRequest) return [];
 
     const endpointURL = ENDPOINT_URL.replace('hash', validBidRequests[0].params.placementId);
@@ -54,7 +58,8 @@ export const spec = {
         impObject.video = createVideoRequest(br);
       } else if (br.mediaTypes.native) {
         impObject.native = {
-          id: br.transactionId,
+          // TODO: `id` is not part of the ORTB native spec, is this intentional?
+          id: br.bidId,
           ver: '1.2',
           request: createNativeRequest(br)
         };
@@ -79,7 +84,7 @@ export const spec = {
         domain: parseUrl(page).hostname,
         page: page,
       },
-      tmax: bidderRequest.timeout || config.getConfig('bidderTimeout') || 500,
+      tmax: bidderRequest.timeout,
       imp
     };
 
@@ -225,7 +230,8 @@ const createBannerRequest = br => {
 };
 
 const createVideoRequest = br => {
-  let videoObj = {id: br.transactionId};
+  // TODO: `id` is not part of imp.video in ORTB; is this intentional?
+  let videoObj = {id: br.bidId};
   let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'minbitrate', 'maxbitrate', 'api', 'linearity'];
 
   for (let param of supportParamsList) {

@@ -22,6 +22,10 @@ const HOST_GETTERS = {
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
   pgam: () => 'ghb.pgamssp.com',
+  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
+  '9dotsmedia': () => 'ghb.platform.audiodots.com',
+  copper6: () => 'ghb.app.copper6.com'
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -37,9 +41,19 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
+  aliases: [
+    'onefiftytwomedia',
+    'appaloosa',
+    'bidsxchange',
+    'streamkey',
+    'janet',
+    { code: 'selectmedia', gvlid: 775 },
     { code: 'navelix', gvlid: 380 },
-    'pgam'
+    'pgam',
+    { code: 'ocm', gvlid: 1148 },
+    { code: 'vidcrunchllc', gvlid: 1145 },
+    '9dotsmedia',
+    'copper6',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -187,7 +201,7 @@ function bidToTag(bidRequests, adapterRequest) {
   }
 
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

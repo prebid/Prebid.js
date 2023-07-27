@@ -1,6 +1,7 @@
 import { logMessage, getWindowLocation } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js'
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'bidscube'
 const URL = 'https://supply.bidscube.com/?c=o&m=multi'
@@ -15,6 +16,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     validBidRequests = validBidRequests || []
     let winTop = window
     try {

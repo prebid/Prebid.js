@@ -41,7 +41,7 @@ export const spec = {
 
       const bidrequest = {
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
         adunitId: bidRequest.adUnitCode,
         pubid: bidderParams.pubid,
         placementid: bidderParams.placementid || '',
@@ -198,7 +198,7 @@ function getIsHidden(elem) {
     } catch (o) {
       return false;
     }
-  } while ((m < 250) && (lastElem != null) && (elemHidden === false))
+  } while ((m < 250) && (lastElem != null) && (elemHidden === false));
   return elemHidden;
 }
 

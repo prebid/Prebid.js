@@ -87,7 +87,7 @@ export const spec = {
       syncArr.push({
         type: 'iframe',
         url: IFRAMESYNC + policyParam
-      })
+      });
     } else {
       syncArr.push({
         type: 'image',
@@ -157,6 +157,7 @@ function bidToRequest(bid) {
   bidObj.publisherId = bid.params.publisherId;
   bidObj.bidId = bid.bidId;
   bidObj.adUnitCode = bid.adUnitCode;
+  // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
   bidObj.auctionId = bid.auctionId;
 
   return bidObj;

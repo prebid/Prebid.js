@@ -7,7 +7,7 @@
       "amxIdSystem",
       "britepoolIdSystem",
       "connectIdSystem",
-      "cpexIdSystem",
+      "czechAdIdSystem",
       "criteoIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
@@ -29,30 +29,39 @@
       "naveggIdSystem",
       "netIdSystem",
       "novatiqIdSystem",
+      "oneKeyIdSystem",
       "parrableIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
       "sharedIdSystem",
       "tapadIdSystem",
+      "teadsIdSystem",
       "tncIdSystem",
-      "trustpidSystem",
+      "utiqSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
-      "gravitoIdSystem"
+      "gravitoIdSystem",
+      "freepassIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
       "dfpAdServerVideo"
     ],
     "rtdModule": [
+      "1plusXRtdProvider",
+      "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
+      "arcspanRtdProvider",
       "blueconicRtdProvider",
       "browsiRtdProvider",
+      "captifyRtdProvider",
+      "confiantRtdProvider",
       "dgkeywordRtdProvider",
       "geoedgeRtdProvider",
       "hadronRtdProvider",
@@ -60,28 +69,23 @@
       "iasRtdProvider",
       "jwplayerRtdProvider",
       "medianetRtdProvider",
+      "mgidRtdProvider",
+      "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider"
+      "weboramaRtdProvider", 
+      "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
-      "enrichmentFpdModule",
-      "validationFpdModule"
+      "validationFpdModule",
+      "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
     ]
-  },
-  "libraries": {
-    "getOrigin": {
-      "files": [
-        "./index.js"
-      ],
-      "dependants": [
-        "ooloAnalyticsAdapter",
-        "resetdigitalBidAdapter",
-        "rtbhouseBidAdapter.js"
-      ]
-    }
   }
 }

@@ -19,6 +19,7 @@ import {
   uniques
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 /**
  * CONSTANTS
@@ -101,6 +102,9 @@ function isBidRequestValid(bidRequest) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
+  // convert Native ORTB definition to old-style prebid native definition
+  validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
   const requests = [];
 
   if (validBidRequests.length > 0) {
@@ -199,7 +203,7 @@ function buildRegs(bidderRequest) {
 function buildSource(bidRequests, bidderRequest) {
   const source = {
     fd: 1,
-    tid: bidderRequest.auctionId,
+    tid: bidderRequest.ortb2.source.tid,
   };
   const schain = deepAccess(bidRequests, '0.schain');
 

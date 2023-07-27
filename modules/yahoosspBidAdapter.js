@@ -24,12 +24,13 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
   'crwdcntrl.net',
   'deepintent.com',
+  'epsilon.com',
   'hcn.health',
   'id5-sync.com',
   'idx.lat',
@@ -45,7 +46,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'novatiq.com',
   'parrable.com',
   'pubcid.org',
-  'quantcast.com',
   'quantcast.com',
   'tapad.com',
   'uidapi.com',
@@ -100,6 +100,37 @@ function extractUserSyncUrls(syncOptions, pixels) {
 
   return userSyncObjects;
 }
+
+/**
+ * @param {string} url
+ * @param {object} consentData
+ * @param {object} consentData.gpp
+ * @param {string} consentData.gpp.gppConsent
+ * @param {array} consentData.gpp.applicableSections
+ * @param {object} consentData.gdpr
+ * @param {object} consentData.gdpr.consentString
+ * @param {object} consentData.gdpr.gdprApplies
+ * @param {string} consentData.uspConsent
+ */
+function updateConsentQueryParams(url, consentData) {
+  const parameterMap = {
+    'gdpr_consent': consentData.gdpr.consentString,
+    'gdpr': consentData.gdpr.gdprApplies ? '1' : '0',
+    'us_privacy': consentData.uspConsent,
+    'gpp': consentData.gpp.gppString,
+    'gpp_sid': consentData.gpp.applicableSections ? consentData.gpp.applicableSections.join(',') : ''
+  }
+
+  const existingUrl = new URL(url);
+  const params = existingUrl.searchParams;
+
+  for (const [key, value] of Object.entries(parameterMap)) {
+    params.set(key, value);
+  }
+
+  existingUrl.search = params.toString();
+  return existingUrl.toString();
+};
 
 function getSupportedEids(bid) {
   if (isArray(deepAccess(bid, 'userIdAsEids'))) {
@@ -237,12 +268,16 @@ function generateOpenRtbObject(bidderRequest, bid) {
       device: {
         dnt: 0,
         ua: navigator.userAgent,
-        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
+        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
+        w: window.screen.width,
+        h: window.screen.height
       },
       regs: {
         ext: {
           'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
-          gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+          gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections
         }
       },
       source: {
@@ -277,11 +312,17 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+    };
+
     if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -372,6 +413,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
   const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
+  const sitePublisherObject = deepAccess(siteObject, 'publisher') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
   const appContentObject = deepAccess(ortb2Object, 'app.content') || undefined;
   const appContentDataArray = deepAccess(ortb2Object, 'app.content.data') || undefined;
@@ -385,6 +427,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
   };
+
+  if (sitePublisherObject && isPlainObject(sitePublisherObject)) {
+    const allowedPublisherObjectKeys = ['ext'];
+    outBoundBidRequest.site.publisher = validateAppendObject('object', allowedPublisherObjectKeys, sitePublisherObject, outBoundBidRequest.site.publisher);
+  }
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
     const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
@@ -407,7 +454,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -427,7 +474,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
           }
         };
         outBoundBidRequest.app.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -487,7 +534,7 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
   })
@@ -504,6 +551,7 @@ function createRenderer(bidderRequest, bidResponse) {
   }
   return renderer;
 }
+
 /* Utility functions */
 
 export const spec = {
@@ -620,11 +668,19 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
 
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
-      return extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
+      const userSyncObjects = extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
+      userSyncObjects.forEach(userSyncObject => {
+        userSyncObject.url = updateConsentQueryParams(userSyncObject.url, {
+          gpp: gppConsent,
+          gdpr: gdprConsent,
+          uspConsent: uspConsent
+        });
+      });
+      return userSyncObjects;
     }
 
     return [];

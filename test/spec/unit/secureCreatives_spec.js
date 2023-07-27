@@ -1,7 +1,6 @@
 import {
   _sendAdToCreative, getReplier, receiveMessage
 } from 'src/secureCreatives.js';
-import * as secureCreatives from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -164,6 +163,7 @@ describe('secureCreatives', () => {
       stubGetAllAssetsMessage.restore();
       stubEmit.restore();
       resetAuction();
+      adResponse.adId = bidId;
     });
 
     describe('Prebid Request', function() {
@@ -336,16 +336,17 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
         sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledOnce(spyAddWinningBid);
         sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
       });
 
-      it('Prebid native should allow stale rendering without config', function () {
-        pushBidResponseToAuction({});
+      it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
+        let adId = 3;
+        pushBidResponseToAuction({ adId });
 
         const data = {
-          adId: bidId,
+          adId: adId,
           message: 'Prebid Native',
           action: 'allAssetRequest'
         };
@@ -359,81 +360,18 @@ describe('secureCreatives', () => {
         });
 
         receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubGetAllAssetsMessage);
-        sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-        sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-
-        resetHistories(ev.source.postMessage);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
 
         receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubGetAllAssetsMessage);
-        sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-        sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-      });
-
-      it('Prebid native should allow stale rendering with config', function () {
-        configObj.setConfig({'auctionOptions': {'suppressStaleRender': true}});
-
-        pushBidResponseToAuction({});
-
-        const data = {
-          adId: bidId,
-          message: 'Prebid Native',
-          action: 'allAssetRequest'
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-          source: {
-            postMessage: sinon.stub()
-          },
-          origin: 'any origin'
-        });
-
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubGetAllAssetsMessage);
-        sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-        sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-
-        resetHistories(ev.source.postMessage);
-
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubGetAllAssetsMessage);
-        sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
-        sinon.assert.calledOnce(ev.source.postMessage);
-        sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
-
-        configObj.setConfig({'auctionOptions': {}});
+        stubEmit.withArgs(CONSTANTS.EVENTS.BID_WON, adResponse).calledOnce;
       });
 
       it('Prebid native should fire trackers', function () {
-        pushBidResponseToAuction({});
+        let adId = 2;
+        pushBidResponseToAuction({adId});
 
         const data = {
-          adId: bidId,
+          adId: adId,
           message: 'Prebid Native',
           action: 'click',
         };
@@ -450,8 +388,8 @@ describe('secureCreatives', () => {
 
         sinon.assert.neverCalledWith(spyLogWarn, warning);
         sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
+        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledOnce(spyAddWinningBid);
 
         resetHistories(ev.source.postMessage);
 
@@ -461,8 +399,8 @@ describe('secureCreatives', () => {
 
         sinon.assert.neverCalledWith(spyLogWarn, warning);
         sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
+        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
+        sinon.assert.notCalled(spyAddWinningBid);
 
         expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
       });

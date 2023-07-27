@@ -2,6 +2,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'adprime';
 const AD_URL = 'https://delta.adprime.com/pbjs';
@@ -50,6 +52,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let winTop = window;
     let location;
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
@@ -124,7 +129,7 @@ export const spec = {
         wPlayer: sizes ? sizes[0] : 0,
         hPlayer: sizes ? sizes[1] : 0,
         schain: bid.schain || {},
-        keywords: bid.params.keywords || [],
+        keywords: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords),
         audiences: bid.params.audiences || [],
         identeties,
         bidFloor: getBidFloor(bid)

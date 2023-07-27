@@ -7,7 +7,7 @@ import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler, uspDataHandler} from '../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
 
 const MODULE_NAME = 'bidViewability';
@@ -43,6 +43,11 @@ export let fireViewabilityPixels = (globalModuleConfig, bid) => {
 
     const uspConsent = uspDataHandler.getConsentData();
     if (uspConsent) { queryParams.us_privacy = uspConsent; }
+
+    const gppConsent = gppDataHandler.getConsentData();
+    if (gppConsent) {
+      // TODO - need to know what to set here for queryParams...
+    }
 
     bid[BID_VURL_ARRAY].forEach(url => {
       // add '?' if not present in URL

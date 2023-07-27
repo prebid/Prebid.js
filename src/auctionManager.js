@@ -24,6 +24,7 @@ import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auct
 import {find} from './polyfill.js';
 import {AuctionIndex} from './auctionIndex.js';
 import CONSTANTS from './constants.json';
+import {useMetrics} from './utils/perfMetrics.js';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -36,6 +37,10 @@ export function newAuctionManager() {
   const auctionManager = {};
 
   auctionManager.addWinningBid = function(bid) {
+    const metrics = useMetrics(bid.metrics);
+    metrics.checkpoint('bidWon');
+    metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
+    metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;

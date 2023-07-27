@@ -567,7 +567,9 @@ describe('pubxai analytics adapter', function() {
         'host': location.host,
         'path': location.pathname,
         'search': location.search,
-        'adUnitCount': 1
+        'adUnits': [
+          '/19968336/header-bid-tag-1'
+        ]
       },
       'floorDetail': {
         'fetchStatus': 'success',
@@ -624,6 +626,11 @@ describe('pubxai analytics adapter', function() {
           }
         },
         'floorProvider': 'PubXFloorProvider',
+        'floorFetchStatus': 'success',
+        'floorLocation': 'fetch',
+        'floorModelVersion': 'test model 1.0',
+        'floorSkipRate': 0,
+        'isFloorSkipped': false,
         'isWinningBid': true,
         'mediaType': 'banner',
         'netRevenue': true,

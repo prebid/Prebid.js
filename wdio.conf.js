@@ -51,6 +51,7 @@ exports.config = {
   user: process.env.BROWSERSTACK_USERNAME,
   key: process.env.BROWSERSTACK_ACCESS_KEY,
   maxInstances: 5, // Do not increase this, since we have only 5 parallel tests in browserstack account
+  maxInstancesPerCapability: 1,
   capabilities: getCapabilities(),
   logLevel: 'info', // put option here: info | trace | debug | warn| error | silent
   bail: 0,

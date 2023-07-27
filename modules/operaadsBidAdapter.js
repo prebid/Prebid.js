@@ -16,6 +16,7 @@ import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'operaads';
 
@@ -118,6 +119,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(validBidRequest => (buildOpenRtbBidRequest(validBidRequest, bidderRequest)))
   },
 
@@ -223,8 +227,8 @@ export const spec = {
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
   // build OpenRTB request body
   const payload = {
-    id: bidderRequest.auctionId,
-    tmax: bidderRequest.timeout || config.getConfig('bidderTimeout'),
+    id: bidderRequest.bidderRequestId,
+    tmax: bidderRequest.timeout,
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),
     device: getDevice(),
@@ -545,7 +549,7 @@ function createImp(bidRequest) {
   const floorDetail = getBidFloor(bidRequest, {
     mediaType: mediaType || '*',
     size: size || '*'
-  })
+  });
 
   impItem.bidfloor = floorDetail.floor;
   impItem.bidfloorcur = floorDetail.currency;

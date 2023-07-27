@@ -7,6 +7,7 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
@@ -141,6 +142,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let results = [];
     const requestType = 'POST';
@@ -162,6 +166,7 @@ export const spec = {
             requestId: bidderRequest.bidderRequestId,
             bidId: bidRequest.bidId,
             adUnitCode: bidRequest['adUnitCode'],
+            // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
             auctionId: bidRequest['auctionId'],
           };
         }
@@ -202,7 +207,7 @@ export const spec = {
         let bidWidth = nullify(bid.w);
         let bidHeight = nullify(bid.h);
 
-        let creative = null
+        let creative = null;
         let videoXml = null;
         let mediaType = null;
         let native = null;
@@ -249,7 +254,6 @@ export const spec = {
         }
 
         let response = {
-          bidderCode: BIDDER_CODE,
           requestId: request.bidId,
           cpm: bid.price,
           width: bidWidth | 0,
@@ -385,7 +389,7 @@ let extractValidSize = (bidRequest, bidderRequest) => {
       requestedSizes = mediaTypes.video.sizes;
     }
   } else if (!isEmpty(bidRequest.sizes)) {
-    requestedSizes = bidRequest.sizes
+    requestedSizes = bidRequest.sizes;
   }
 
   // Ensure the size array is normalized

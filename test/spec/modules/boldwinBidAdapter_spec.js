@@ -59,11 +59,12 @@ describe('BoldwinBidAdapter', function () {
       expect(data.gdpr).to.not.exist;
       expect(data.ccpa).to.not.exist;
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'bidFloor');
+      expect(placement).to.have.keys('placementId', 'bidId', 'adFormat', 'sizes', 'hPlayer', 'wPlayer', 'schain', 'bidFloor', 'type');
       expect(placement.placementId).to.equal('testBanner');
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.adFormat).to.equal(BANNER);
       expect(placement.schain).to.be.an('object');
+      expect(placement.type).to.exist.and.to.equal('publisher');
     });
 
     it('Returns valid data for mediatype video', function () {

@@ -244,11 +244,12 @@ function generateBidParameters(bid, bidderRequest) {
   const bidObject = {
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     bidId: getBidIdParameter('bidId', bid),
+    loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     floorPrice: Math.max(getFloorPrice(bid, mediaType), paramsFloorPrice),
     mediaType,
     sizes: sizesArray,
-    transactionId: getBidIdParameter('transactionId', bid)
+    transactionId: bid.ortb2Imp?.ext?.tid || ''
   };
 
   if (pos) {
@@ -292,7 +293,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
   const generalBidParams = getBidIdParameter('params', sharedParams);
   const userIds = getBidIdParameter('userId', sharedParams);
   const ortb2Metadata = bidderRequest.ortb2 || {};
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   const params = {
     adapter_version: VERSION,
@@ -308,7 +309,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$'
-  }
+  };
 
   if (syncEnabled) {
     const allowedSyncMethod = getSyncMethod(filterSettings, bidderCode);
@@ -351,7 +352,7 @@ function generateSharedParams(sharedParams, bidderRequest) {
     params.userIds = JSON.stringify(userIds);
   }
 
-  return params
+  return params;
 }
 
 /**

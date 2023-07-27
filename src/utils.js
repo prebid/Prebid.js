@@ -1,9 +1,12 @@
-import { config } from './config.js';
+import {config} from './config.js';
 import clone from 'just-clone';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {GreedyPromise} from './utils/promise.js';
+import {getGlobal} from './prebidGlobal.js';
+
 export { default as deepAccess } from 'dlv/index.js';
-export { default as deepSetValue } from 'dset';
+export { dset as deepSetValue } from 'dset';
 
 var tArr = 'Array';
 var tStr = 'String';
@@ -19,6 +22,8 @@ let consoleWarnExists = Boolean(consoleExists && window.console.warn);
 let consoleErrorExists = Boolean(consoleExists && window.console.error);
 
 let eventEmitter;
+
+const pbjsInstance = getGlobal();
 
 export function _setEventEmitter(emitFn) {
   // called from events.js - this hoop is to avoid circular imports
@@ -51,7 +56,7 @@ export const internal = {
   deepEqual
 };
 
-let prebidInternal = {}
+let prebidInternal = {};
 /**
  * Returns object that is used as internal prebid namespace
  */
@@ -487,7 +492,7 @@ export function hasOwn(objectToCheck, propertyToCheckFor) {
 * @param {HTMLElement} [doc]
 * @param {HTMLElement} [target]
 * @param {Boolean} [asLastChildChild]
-* @return {HTMLElement}
+* @return {HTML Element}
 */
 export function insertElement(elm, doc, target, asLastChildChild) {
   doc = doc || document;
@@ -517,7 +522,7 @@ export function insertElement(elm, doc, target, asLastChildChild) {
  */
 export function waitForElementToLoad(element, timeout) {
   let timer = null;
-  return new Promise((resolve) => {
+  return new GreedyPromise((resolve) => {
     const onLoad = function() {
       element.removeEventListener('load', onLoad);
       element.removeEventListener('error', onLoad);
@@ -706,10 +711,10 @@ export function getKeyByValue(obj, value) {
   }
 }
 
-export function getBidderCodes(adUnits = $$PREBID_GLOBAL$$.adUnits) {
+export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
-    .reduce(flatten, [])).reduce(flatten, []).filter(uniques);
+    .reduce(flatten, [])).reduce(flatten, []).filter((bidder) => typeof bidder !== 'undefined').filter(uniques);
 }
 
 export function isGptPubadsDefined() {
@@ -903,7 +908,7 @@ export function isValidMediaTypes(mediaTypes) {
     return false;
   }
 
-  if (mediaTypes.video && mediaTypes.video.context) {
+  if (FEATURES.VIDEO && mediaTypes.video && mediaTypes.video.context) {
     return includes(SUPPORTED_STREAM_TYPES, mediaTypes.video.context);
   }
 
@@ -954,14 +959,22 @@ export function isSlotMatchingAdUnitCode(adUnitCode) {
 }
 
 /**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
  */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+export function getGptSlotForAdUnitCode(adUnitCode) {
   let matchingSlot;
   if (isGptPubadsDefined()) {
     // find the first matching gpt slot on the page
     matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
   }
+  return matchingSlot;
+};
+
+/**
+ * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
+ */
+export function getGptSlotInfoForAdUnitCode(adUnitCode) {
+  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (matchingSlot) {
     return {
       gptSlot: matchingSlot.getAdUnitPath(),
@@ -1053,39 +1066,6 @@ export function pick(obj, properties) {
 
     return newObj;
   }, {});
-}
-
-/**
- * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
- * normally read from bidder params
- * eg { foo: ['bar', 'baz'], fizz: ['buzz'] }
- * becomes [{ key: 'foo', value: ['bar', 'baz']}, {key: 'fizz', value: ['buzz']}]
- * @param {Object} keywords object of arrays representing keyvalue pairs
- * @param {string} paramName name of parent object (eg 'keywords') containing keyword data, used in error handling
- */
-export function transformBidderParamKeywords(keywords, paramName = 'keywords') {
-  let arrs = [];
-
-  _each(keywords, (v, k) => {
-    if (isArray(v)) {
-      let values = [];
-      _each(v, (val) => {
-        val = getValueString(paramName + '.' + k, val);
-        if (val || val === '') { values.push(val); }
-      });
-      v = values;
-    } else {
-      v = getValueString(paramName + '.' + k, v);
-      if (isStr(v)) {
-        v = [v];
-      } else {
-        return;
-      } // unsuported types - don't send a key
-    }
-    arrs.push({key: k, value: v});
-  });
-
-  return arrs;
 }
 
 /**
@@ -1367,3 +1347,64 @@ export function safeJSONParse(data) {
     return JSON.parse(data);
   } catch (e) {}
 }
+
+/**
+ * Returns a memoized version of `fn`.
+ *
+ * @param fn
+ * @param key cache key generator, invoked with the same arguments passed to `fn`.
+ *        By default, the first argument is used as key.
+ * @return {function(): any}
+ */
+export function memoize(fn, key = function (arg) { return arg; }) {
+  const cache = new Map();
+  const memoized = function () {
+    const cacheKey = key.apply(this, arguments);
+    if (!cache.has(cacheKey)) {
+      cache.set(cacheKey, fn.apply(this, arguments));
+    }
+    return cache.get(cacheKey);
+  }
+  memoized.clear = cache.clear.bind(cache);
+  return memoized;
+}
+
+/**
+ * Sets dataset attributes on a script
+ * @param {Script} script
+ * @param {object} attributes
+ */
+export function setScriptAttributes(script, attributes) {
+  for (let key in attributes) {
+    if (attributes.hasOwnProperty(key)) {
+      script.setAttribute(key, attributes[key]);
+    }
+  }
+}
+
+/**
+ * Encode a string for inclusion in HTML.
+ * See https://pragmaticwebsecurity.com/articles/spasecurity/json-stringify-xss.html and
+ * https://codeql.github.com/codeql-query-help/javascript/js-bad-code-sanitization/
+ * @return {string}
+ */
+export const escapeUnsafeChars = (() => {
+  const escapes = {
+    '<': '\\u003C',
+    '>': '\\u003E',
+    '/': '\\u002F',
+    '\\': '\\\\',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\0': '\\0',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029'
+  };
+
+  return function(str) {
+    return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
+  }
+})();

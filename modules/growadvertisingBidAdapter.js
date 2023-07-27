@@ -3,6 +3,7 @@
 import { getBidIdParameter, deepAccess, _each, triggerPixel } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'growads';
 
@@ -15,6 +16,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let zoneId;
     let domain;
     let requestURI;

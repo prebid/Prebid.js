@@ -24,8 +24,10 @@ import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+const MODULE_NAME = 'browsi';
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -55,6 +57,18 @@ export function addBrowsiTag(data) {
     script.prebidData.kn = _moduleParams.keyName;
   }
   return script;
+}
+
+export function sendPageviewEvent(eventType) {
+  if (eventType === 'PAGEVIEW') {
+    window.addEventListener('browsi_pageview', () => {
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'pageview',
+        billingId: generateUUID()
+      })
+    })
+  }
 }
 
 /**
@@ -93,7 +107,7 @@ export function collectData() {
 function waitForData(callback) {
   if (_browsiData) {
     _dataReadyCallback = null;
-    callback(_browsiData);
+    callback();
   } else {
     _dataReadyCallback = callback;
   }
@@ -102,7 +116,7 @@ function waitForData(callback) {
 export function setData(data) {
   _browsiData = data;
   if (isFn(_dataReadyCallback)) {
-    _dataReadyCallback(_browsiData);
+    _dataReadyCallback();
     _dataReadyCallback = null;
   }
 }
@@ -262,10 +276,11 @@ function getPredictionsFromServer(url) {
           try {
             const data = JSON.parse(response);
             if (data && data.p && data.kn) {
-              setData({p: data.p, kn: data.kn, pmd: data.pmd});
+              setData({p: data.p, kn: data.kn, pmd: data.pmd, bet: data.bet});
             } else {
               setData({});
             }
+            sendPageviewEvent(data.bet);
             addBrowsiTag(data);
           } catch (err) {
             logError('unable to parse data');
@@ -323,7 +338,7 @@ export const browsiSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: 'browsi',
+  name: MODULE_NAME,
   /**
    * get data and send back to realTimeData module
    * @function
@@ -336,19 +351,22 @@ export const browsiSubmodule = {
 
 function getTargetingData(uc, c, us, a) {
   const targetingData = getRTD(uc);
-  const auctionId = a.auctionId
+  const auctionId = a.auctionId;
+  const sendAdRequestEvent = (_browsiData && _browsiData['bet'] === 'AD_REQUEST');
   uc.forEach(auc => {
     if (isNumber(_ic[auc])) {
       _ic[auc] = _ic[auc] + 1;
     }
-    const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
-      vendor: 'browsi',
-      type: 'adRequest',
-      billingId: generateUUID(),
-      transactionId: transactionId,
-      auctionId: auctionId
-    })
+    if (sendAdRequestEvent) {
+      const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'adRequest',
+        billingId: generateUUID(),
+        transactionId: transactionId,
+        auctionId: auctionId
+      })
+    }
   });
   logInfo('Browsi RTD provider returned targeting data', targetingData, 'for', uc)
   return targetingData;

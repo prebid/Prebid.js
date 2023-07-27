@@ -72,7 +72,11 @@ describe('InsticatorBidAdapter', function () {
 
   let bidderRequest = {
     bidderRequestId,
-    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    ortb2: {
+      source: {
+        tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+      }
+    },
     timeout: 300,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -183,6 +187,11 @@ describe('InsticatorBidAdapter', function () {
     let sandbox;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        insticator: {
+          storageAllowed: true
+        }
+      };
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       getCookieStub = sinon.stub(storage, 'getCookie');
@@ -198,6 +207,7 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
@@ -242,7 +252,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.tmax).to.equal(bidderRequest.timeout);
       expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
       expect(data.source.fd).to.equal(1);
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
       expect(data.source.ext).to.have.property('schain').to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -270,7 +280,6 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
-      expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
       expect(data.user).to.have.property('yob');
       expect(data.user.yob).to.equal(1984);
       expect(data.user).to.have.property('gender');

@@ -118,6 +118,16 @@ describe('Adloox Ad Server Video', function () {
   });
 
   describe('buildVideoUrl', function () {
+    beforeEach(() => {
+      sinon.stub(URL, 'createObjectURL');
+      sinon.stub(URL, 'revokeObjectURL');
+    });
+
+    afterEach(() => {
+      URL.createObjectURL.restore()
+      URL.revokeObjectURL.restore()
+    });
+
     describe('invalid arguments', function () {
       it('should require callback', function (done) {
         const ret = buildVideoUrl();
@@ -243,42 +253,16 @@ describe('Adloox Ad Server Video', function () {
           url: wrapperUrl,
           bid: BID
         };
+
+        URL.createObjectURL.callsFake(() => 'mock-blob-url');
+
         const ret = buildVideoUrl(options, function (url) {
           expect(url.substr(0, options.url_vast.length)).is.equal(options.url_vast);
-
-          const match = url.match(/[?&]vast=(blob%3A[^&]+)/);
-          expect(match).is.not.null;
-
-          const blob = decodeURIComponent(match[1]);
-
-          const xfr = sandbox.useFakeXMLHttpRequest();
-          xfr.useFilters = true;
-          xfr.addFilter(x => true);	// there is no network traffic for Blob URLs here
-
-          ajax(blob, {
-            success: (responseText, q) => {
-              expect(q.status).is.equal(200);
-              expect(q.getResponseHeader('content-type')).is.equal(vastHeaders['content-type']);
-
-              clock.runAll();
-
-              ajax(blob, {
-                success: (responseText, q) => {
-                  xfr.useFilters = false;		// .restore() does not really work
-                  if (q.status == 0) return done();
-                  done(new Error('Blob should have expired'));
-                },
-                error: (statusText, q) => {
-                  xfr.useFilters = false;
-                  done();
-                }
-              });
-            },
-            error: (statusText, q) => {
-              xfr.useFilters = false;
-              done(new Error(statusText));
-            }
-          });
+          expect(url).to.match(/[?&]vast=mock-blob-url/);
+          sinon.assert.calledWith(URL.createObjectURL, sinon.match((val) => val.type === vastHeaders['content-type']));
+          clock.runAll();
+          sinon.assert.calledWith(URL.revokeObjectURL, 'mock-blob-url');
+          done();
         });
         expect(ret).is.true;
 
