@@ -72,7 +72,7 @@ export const spec = {
           consent: bidderRequest.gdprConsent?.consentString
         },
       },
-      id: bidderRequest.auctionId,
+      id: utils.generateUUID(),
       imp: impressions,
       regs: {
         ext: {
