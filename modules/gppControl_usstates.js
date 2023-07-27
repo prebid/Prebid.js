@@ -84,9 +84,6 @@ export const NORMALIZATIONS = {
   // https://docs.prebid.org/features/mspa-usnat.html
   7: (consent) => consent,
   8: normalizer({
-    nullify: [
-      'SensitiveDataProcessing.10'
-    ],
     move: {
       SensitiveDataProcessing: {
         1: 9,
