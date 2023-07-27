@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/yieldloveBidAdapter.js';
 
-const ENDPOINT_URL = '//s2s.yieldlove-ad-serving.net/openrtb2/auction';
+const ENDPOINT_URL = 'https://s2s.yieldlove-ad-serving.net/openrtb2/auction';
 
 // test params
 const pid = 34437;
