@@ -54,6 +54,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",

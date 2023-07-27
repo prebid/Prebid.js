@@ -1130,6 +1130,46 @@ describe('triplelift adapter', function () {
 
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
+    it('should add ortb2 ext object if global fpd is available', function() {
+      const ortb2 = {
+        site: {
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2'],
+          page: 'https://page.example.com/here.html',
+        },
+        user: {
+          yob: 1985,
+          gender: 'm',
+          keywords: 'a,b',
+          data: [
+            {
+              name: 'dataprovider.com',
+              ext: { segtax: 4 },
+              segment: [{ id: '1' }]
+            }
+          ],
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      };
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const { data: payload } = request;
+      expect(payload.ext.ortb2).to.exist;
+      expect(payload.ext.ortb2.site).to.deep.equal({
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2'],
+        page: 'https://page.example.com/here.html',
+      });
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
