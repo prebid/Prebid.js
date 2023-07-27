@@ -24,7 +24,7 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
-  ACTIVITY_ENRICH_EIDS,
+  ACTIVITY_ENRICH_EIDS, ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
   ACTIVITY_REPORT_ANALYTICS,
   ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_UFPD
@@ -235,7 +235,7 @@ export const fetchBidsRule = ((rule) => {
 
 export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]));
 
-export const transmitUfpdRule = gdprRule(4, () => purpose4Rule, ufpdBlocked);
+export const ufpdRule = gdprRule(4, () => purpose4Rule, ufpdBlocked);
 
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
@@ -301,7 +301,10 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
     }
     if (purpose4Rule) {
-      RULE_HANDLES.push(registerActivityControl(ACTIVITY_TRANSMIT_UFPD, RULE_NAME, transmitUfpdRule));
+      RULE_HANDLES.push(
+        registerActivityControl(ACTIVITY_TRANSMIT_UFPD, RULE_NAME, ufpdRule),
+        registerActivityControl(ACTIVITY_ENRICH_UFPD, RULE_NAME, ufpdRule)
+      );
     }
     if (purpose7Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule));

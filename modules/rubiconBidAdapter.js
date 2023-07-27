@@ -200,6 +200,10 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
+    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
+    }
+
     setBidFloors(bidRequest, imp);
 
     return imp;
@@ -495,6 +499,11 @@ export const spec = {
         logError('Rubicon: getFloor threw an error: ', e);
       }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
+    // Send multiformat data if requested
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
     }
 
     // add p_pos only if specified and valid

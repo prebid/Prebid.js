@@ -135,11 +135,11 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should pass 3rd party IDs with the request when present', function () {
       const bidRequest = bidRequests[0];
-      bidRequest.userIdAsEids = createEidsArray({
-        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-        admixerId: 'admixerId_FROM_USER_ID_MODULE',
-        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE'
-      });
+      bidRequest.userIdAsEids = [
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ];
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([

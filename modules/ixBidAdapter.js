@@ -77,7 +77,8 @@ const SOURCE_RTI_MAPPING = {
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
   'intimatemerger.com': '',
-  '33across.com': ''
+  '33across.com': '',
+  'liveintent.indexexchange.com': '',
 };
 const PROVIDERS = [
   'britepoolid',
@@ -735,6 +736,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
+    r = addDeviceInfo(r);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -2053,6 +2055,21 @@ function getFormatCount(imp) {
     formatCount += 1;
   }
   return formatCount;
+}
+
+/**
+ * Adds device.w / device.h info
+ * @param {object} r
+ * @returns object
+ */
+export function addDeviceInfo(r) {
+  if (r.device == undefined) {
+    r.device = {};
+  }
+  r.device.h = window.screen.height;
+  r.device.w = window.screen.width;
+
+  return r;
 }
 
 registerBidder(spec);
