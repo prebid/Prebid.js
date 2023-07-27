@@ -185,6 +185,7 @@ export const coppaDataHandler = (() => {
     getCoppa,
     getConsentData: getCoppa,
     getConsentMeta: getCoppa,
+    reset() {},
     get promise() {
       return GreedyPromise.resolve(getCoppa())
     },
@@ -213,14 +214,14 @@ export function multiHandler(handlers = ALL_HANDLERS) {
   return Object.assign(
     {
       get promise() {
-        return Promise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
+        return GreedyPromise.all(handlers.map(([name, handler]) => handler.promise.then(val => [name, val])))
           .then(entries => Object.fromEntries(entries));
       },
       get hash() {
-        return handlers.map(([_, handler]) => handler.hash).join(':');
+        return cyrb53Hash(handlers.map(([_, handler]) => handler.hash).join(':'));
       }
     },
-    Object.fromEntries(['getConsentData', 'getConsentMeta'].map(n => [n, collector(n)])),
+    Object.fromEntries(['getConsentData', 'getConsentMeta', 'reset'].map(n => [n, collector(n)])),
   )
 }
 

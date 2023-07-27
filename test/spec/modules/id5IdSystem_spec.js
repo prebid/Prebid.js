@@ -10,7 +10,7 @@ import {
   storeInLocalStorage,
   storeNbInCache,
 } from 'modules/id5IdSystem.js';
-import {coreStorage, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {coreStorage, getConsentHash, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -791,6 +791,7 @@ describe('ID5 ID System', function () {
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
+      coreStorage.setDataInLocalStorage(ID5_STORAGE_NAME + '_cst', getConsentHash())
       adUnits = [getAdUnitMock()];
     });
     afterEach(function () {
@@ -798,6 +799,7 @@ describe('ID5 ID System', function () {
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
+      coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME + '_cst')
       sandbox.restore();
     });
 

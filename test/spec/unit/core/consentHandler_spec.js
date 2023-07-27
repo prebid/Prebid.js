@@ -1,4 +1,4 @@
-import {multiHandler, ConsentHandler, gvlidRegistry} from '../../../../src/consentHandler.js';
+import {ConsentHandler, gvlidRegistry, multiHandler} from '../../../../src/consentHandler.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -128,10 +128,14 @@ describe('multiHandler', () => {
   });
 
   describe('.hash', () => {
-    it('concats underlying hashses', () => {
-      handlers.h1.hash = 'one';
-      handlers.h2.hash = 'two';
-      expect(multi.hash).to.eql('one:two');
+    ['h1', 'h2'].forEach((handler, i) => {
+      it(`changes when handler #${i + 1} changes hash`, () => {
+        handlers.h1.hash = 'one';
+        handlers.h2.hash = 'two'
+        const first = multi.hash;
+        handlers[handler].hash = 'new';
+        expect(multi.hash).to.not.eql(first);
+      })
     })
   })
 })
