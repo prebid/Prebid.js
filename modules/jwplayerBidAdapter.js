@@ -5,10 +5,9 @@ import { config } from '../src/config.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const BIDDER_CODE = 'jwplayer';
-const URL = 'https://vpb-server.jwplayer.com/openrtb2/';
-const AUCTION_URL = URL + 'auction';
-const USER_SYNC_URL = URL + 'setuid';
-
+const BASE_URL = 'https://vpb-server.jwplayer.com/';
+const AUCTION_URL = BASE_URL + 'openrtb2/auction';
+const USER_SYNC_URL = BASE_URL + 'setuid';
 const GVLID = 1046;
 const SUPPORTED_AD_TYPES = [VIDEO];
 
@@ -114,15 +113,15 @@ export const spec = {
     }
 
     const userSyncs = [];
-    const gdpr = gdprConsent.gdprApplies ? 1 : 0;
-    const url = `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&gdpr=${gdpr}&gdpr_consent=${gdprConsent.consentString}`;
+    const consentQueryParams = getUserSyncConsentQueryParams(gdprConsent);
+    const url = `https://ib.adnxs.com/getuid?${USER_SYNC_URL}?bidder=jwplayer&uid=$UID&f=i` + consentQueryParams
 
     if (syncOptions.iframeEnabled) {
       userSyncs.push({
         type: 'iframe',
         url
       });
-    }g
+    }
 
     if (syncOptions.pixelEnabled) {
       userSyncs.push({
@@ -140,6 +139,25 @@ export const spec = {
   // onSetTargeting: function(bid) {},
   // onBidderError: function({ error, bidderRequest }) {}
 };
+
+function getUserSyncConsentQueryParams(gdprConsent) {
+  if (!gdprConsent) {
+    return '';
+  }
+
+  const consentString = gdprConsent.consentString;
+  if (!consentString) {
+    return '';
+  }
+
+  let gdpr = 0;
+  const gdprApplies = gdprConsent.gdprApplies;
+  if (typeof gdprApplies === 'boolean') {
+    gdpr = Number(gdprApplies)
+  }
+
+  return `&gdpr=${gdpr}&gdpr_consent=${consentString}`;
+}
 
 function buildRequest(bidRequest, bidderRequest) {
   const openrtbRequest = {
