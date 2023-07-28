@@ -169,5 +169,12 @@
     "adTemplate",
     "rendererUrl",
     "type"
-  ]
+  ],
+  "FLOOR_VALUES": {
+	"NO_DATA": "noData",
+	"AD_UNIT": "adUnit",
+	"SET_CONFIG": "setConfig",
+	"FETCH": "fetch",
+	"SUCCESS": "success"
+  }
 }
