@@ -75,7 +75,7 @@ describe('jwplayer bid adapter tests', function() {
     });
   });
 
-  describe('buildRequests for video', function() {
+  describe('buildRequests', function() {
     it('should include proper ortb params in requests', function() {
       const bidRequests = [
         {
@@ -208,11 +208,10 @@ describe('jwplayer bid adapter tests', function() {
 
         expect(openrtbRequest.tmax).to.equal(1000);
       });
-
     });
   });
 
-  describe('interpretResponse for video', function() {
+  describe('interpretResponse', function() {
     const bidResponse = {
       id: 'testId',
       impid: 'test-imp-id',
@@ -256,5 +255,109 @@ describe('jwplayer bid adapter tests', function() {
     expect(bidResponses[0].meta.advertiserDomains[0]).to.equal('prebid.com');
   });
 
-  describe('user sync handler', function() {});
+  describe('getUserSyncs', function() {
+    const consentString = 'test_consent_string';
+    const baseGdprConsent = {
+      gdprApplies: true,
+      vendorData: {
+        purpose: {
+          consents: {
+            1: true
+          }
+        }
+      }
+    };
+
+    const expectedBaseUrl = 'https://ib.adnxs.com/getuid?https://vpb-server.jwplayer.com/setuid?bidder=jwplayer&uid=$UID&f=i';
+
+    it('should return empty when Purpose 1 consent is not granted', function() {
+      expect(spec.getUserSyncs({}, {})).to.be.empty;
+      expect(spec.getUserSyncs({}, {}, {})).to.be.empty;
+      expect(spec.getUserSyncs({}, {}, { gdprApplies: false })).to.be.empty;
+      expect(spec.getUserSyncs({}, {}, {
+        gdprApplies: true,
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      })).to.be.empty;
+    });
+
+    it('should return iframe when enabled', function () {
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true }, {}, baseGdprConsent);
+      expect(userSyncs.length).to.equal(1);
+      const sync = userSyncs[0];
+      expect(sync.type).to.equal('iframe');
+      expect(sync.url).to.equal(expectedBaseUrl);
+    });
+
+    it('should return image when enabled', function () {
+      const userSyncs = spec.getUserSyncs({ pixelEnabled: true }, {}, baseGdprConsent);
+      expect(userSyncs.length).to.equal(1);
+      const sync = userSyncs[0];
+      expect(sync.type).to.equal('image');
+      expect(sync.url).to.equal(expectedBaseUrl);
+    });
+
+    it('should return both iframe and image when enabled', function () {
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, {}, baseGdprConsent);
+      expect(userSyncs.length).to.equal(2);
+
+      const iframeSync = userSyncs[0];
+      expect(iframeSync.type).to.equal('iframe');
+      expect(iframeSync.url).to.equal(expectedBaseUrl);
+
+      const imageSync = userSyncs[1];
+      expect(imageSync.type).to.equal('image');
+      expect(imageSync.url).to.equal(expectedBaseUrl);
+    });
+
+    it('should include gdpr consent query params in sync redirect url', function () {
+      const expectedUrl = expectedBaseUrl + '&gdpr=1&gdpr_consent=' + consentString;
+      const gdprConsent = Object.assign({ }, baseGdprConsent, { consentString });
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, {}, gdprConsent);
+      expect(userSyncs.length).to.equal(2);
+
+      const iframeSync = userSyncs[0];
+      expect(iframeSync.type).to.equal('iframe');
+      expect(iframeSync.url).to.equal(expectedUrl);
+
+      const imageSync = userSyncs[1];
+      expect(imageSync.type).to.equal('image');
+      expect(imageSync.url).to.equal(expectedUrl);
+    });
+
+    it('should include gdpr 0 in consent query params when gdprApplies is false', function () {
+      const expectedUrl = expectedBaseUrl + '&gdpr=0&gdpr_consent=' + consentString;
+      const gdprConsent = Object.assign({ }, baseGdprConsent, { consentString, gdprApplies: false });
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, {}, gdprConsent);
+      expect(userSyncs.length).to.equal(2);
+
+      const iframeSync = userSyncs[0];
+      expect(iframeSync.type).to.equal('iframe');
+      expect(iframeSync.url).to.equal(expectedUrl);
+
+      const imageSync = userSyncs[1];
+      expect(imageSync.type).to.equal('image');
+      expect(imageSync.url).to.equal(expectedUrl);
+    });
+
+    it('should include gdpr 0 in consent query params when gdprApplies is not a bool', function () {
+      const expectedUrl = expectedBaseUrl + '&gdpr=0&gdpr_consent=' + consentString;
+      const gdprConsent = Object.assign({ }, baseGdprConsent, { consentString, gdprApplies: 1 });
+      const userSyncs = spec.getUserSyncs({ iframeEnabled: true, pixelEnabled: true }, {}, gdprConsent);
+      expect(userSyncs.length).to.equal(2);
+
+      const iframeSync = userSyncs[0];
+      expect(iframeSync.type).to.equal('iframe');
+      expect(iframeSync.url).to.equal(expectedUrl);
+
+      const imageSync = userSyncs[1];
+      expect(imageSync.type).to.equal('image');
+      expect(imageSync.url).to.equal(expectedUrl);
+    });
+  });
 });
