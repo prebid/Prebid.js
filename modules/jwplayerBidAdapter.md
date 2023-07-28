@@ -3,7 +3,7 @@
 ```
 Module Name:  JWPlayer Bid Adapter
 Module Type:  Bidder Adapter
-Maintainer: jrocha@jwplayer.com
+Maintainer: boost-engineering@jwplayer.com
 ```
 
 # Description
