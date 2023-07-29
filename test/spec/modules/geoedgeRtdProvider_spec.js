@@ -42,7 +42,8 @@ function mockMessageFromClient(key) {
   return {
     key,
     impression: true,
-    adId: 1234
+    adId: 1234,
+    type: 'impression'
   };
 }
 
@@ -105,7 +106,7 @@ describe('Geoedge RTD module', function () {
           expect(counter).to.equal(1);
           done();
         });
-        window.postMessage(mockMessageFromClient(key));
+        window.postMessage(mockMessageFromClient(key), '*');
       });
       it('should load the in page code when gpt params is true', function () {
         geoedgeSubmodule.init(makeConfig(true));
