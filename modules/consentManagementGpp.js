@@ -71,11 +71,20 @@ export function lookupIabConsent({onSuccess, onError}, mkClient = cmpClient) {
     : 'Detected GPP CMP is outside the current iframe where Prebid.js is located, calling it now...';
   logInfo(startupMsg);
 
+  let versionMismatch = false;
+
   cmp({
     command: 'addEventListener',
     callback: function (evt) {
-      if (evt) {
+      if (evt && !versionMismatch) {
         logInfo(`Received a ${(cmp.isDirect ? 'direct' : 'postmsg')} response from GPP CMP for event`, evt);
+        const cmpVer = evt?.pingData?.gppVersion;
+        if (cmpVer != null && cmpVer !== '1.0') {
+          logWarn(`Unsupported GPP CMP version: ${cmpVer}. Continuing auction without consent`);
+          versionMismatch = true;
+          onSuccess(storeConsentData());
+          return;
+        }
         if (evt.eventName === 'sectionChange' || evt.pingData.cmpStatus === 'loaded') {
           cmp({command: 'getGPPData'}).then((gppData) => {
             logInfo(`Received a ${cmp.isDirect ? 'direct' : 'postmsg'} response from GPP CMP for getGPPData`, gppData);

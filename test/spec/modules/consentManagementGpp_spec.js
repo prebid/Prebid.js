@@ -157,6 +157,22 @@ describe('consentManagementGpp', function () {
           expect(res.sectionData).to.eql(sectionData);
         })
       });
+
+      it('continues with no consent when CMP version is not 1.0', () => {
+        const pm = runLookup();
+        mockCmpEvent({
+          eventName: 'listenerRegistered',
+          pingData: {
+            gppVersion: '1.1'
+          }
+        });
+        return pm.then((res) => {
+          sinon.assert.match(res, {
+            gppString: undefined,
+            applicableSections: []
+          })
+        })
+      })
     })
 
     describe('static consent string setConsentConfig value', () => {

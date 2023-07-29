@@ -100,7 +100,8 @@ export const spec = {
     {code: 'bidbuddy'},
     {code: 'adliveconnect'},
     {code: 'didnadisplay'},
-    {code: 'qortex'}
+    {code: 'qortex'},
+    {code: 'adpluto'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
