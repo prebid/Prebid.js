@@ -4,12 +4,13 @@
  * information and make it available for any USP (CCPA) supported adapters to
  * read/pass this information to their system.
  */
-import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
+import {cmpClient} from '../libraries/cmp/cmpClient.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -41,35 +42,6 @@ function lookupStaticConsentData({onSuccess, onError}) {
  * based on the appropriate result.
  */
 function lookupUspConsent({onSuccess, onError}) {
-  function findUsp() {
-    let f = window;
-    let uspapiFrame;
-    let uspapiFunction;
-
-    while (true) {
-      try {
-        if (typeof f.__uspapi === 'function') {
-          uspapiFunction = f.__uspapi;
-          uspapiFrame = f;
-          break;
-        }
-      } catch (e) {}
-
-      try {
-        if (f.frames['__uspapiLocator']) {
-          uspapiFrame = f;
-          break;
-        }
-      } catch (e) {}
-      if (f === window.top) break;
-      f = f.parent;
-    }
-    return {
-      uspapiFrame,
-      uspapiFunction,
-    };
-  }
-
   function handleUspApiResponseCallbacks() {
     const uspResponse = {};
 
@@ -92,86 +64,36 @@ function lookupUspConsent({onSuccess, onError}) {
   }
 
   let callbackHandler = handleUspApiResponseCallbacks();
-  let uspapiCallbacks = {};
 
-  let { uspapiFrame, uspapiFunction } = findUsp();
+  const cmp = cmpClient({
+    apiName: '__uspapi',
+    apiVersion: USPAPI_VERSION,
+    apiArgs: ['command', 'version', 'callback'],
+  });
 
-  if (!uspapiFrame) {
+  if (!cmp) {
     return onError('USP CMP not found.');
   }
 
-  function registerDataDelHandler(invoker, arg2) {
-    try {
-      invoker('registerDeletion', arg2, adapterManager.callDataDeletionRequest);
-    } catch (e) {
-      logError('Error invoking CMP `registerDeletion`:', e);
-    }
-  }
-
-  // to collect the consent information from the user, we perform a call to USPAPI
-  // to collect the user's consent choices represented as a string (via getUSPData)
-
-  // the following code also determines where the USPAPI is located and uses the proper workflow to communicate with it:
-  // - use the USPAPI locator code to see if USP's located in the current window or an ancestor window.
-  // - else assume prebid is in an iframe, and use the locator to see if the CMP is located in a higher parent window. This works in cross domain iframes.
-  // - if USPAPI is not found, the iframe function will call the uspError exit callback to abort the rest of the USPAPI workflow
-
-  if (isFn(uspapiFunction)) {
+  if (cmp.isDirect) {
     logInfo('Detected USP CMP is directly accessible, calling it now...');
-    uspapiFunction(
-      'getUSPData',
-      USPAPI_VERSION,
-      callbackHandler.consentDataCallback
-    );
-    registerDataDelHandler(uspapiFunction, USPAPI_VERSION);
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
     );
-    callUspApiWhileInIframe(
-      'getUSPData',
-      uspapiFrame,
-      callbackHandler.consentDataCallback
-    );
-    registerDataDelHandler(callUspApiWhileInIframe, uspapiFrame);
   }
 
-  let listening = false;
+  cmp({
+    command: 'getUSPData',
+    callback: callbackHandler.consentDataCallback
+  });
 
-  function callUspApiWhileInIframe(commandName, uspapiFrame, moduleCallback) {
-    function callUsp(cmd, ver, callback) {
-      let callId = Math.random() + '';
-      let msg = {
-        __uspapiCall: {
-          command: cmd,
-          version: ver,
-          callId: callId,
-        },
-      };
-
-      uspapiCallbacks[callId] = callback;
-      uspapiFrame.postMessage(msg, '*');
-    };
-
-    /** when we get the return message, call the stashed callback */
-    if (!listening) {
-      window.addEventListener('message', readPostMessageResponse, false);
-      listening = true;
-    }
-
-    // call uspapi
-    callUsp(commandName, USPAPI_VERSION, moduleCallback);
-
-    function readPostMessageResponse(event) {
-      const res = event && event.data && event.data.__uspapiReturn;
-      if (res && res.callId) {
-        if (uspapiCallbacks.hasOwnProperty(res.callId)) {
-          uspapiCallbacks[res.callId](res.returnValue, res.success);
-          delete uspapiCallbacks[res.callId];
-        }
-      }
-    }
-  }
+  cmp({
+    command: 'registerDeletion',
+    callback: adapterManager.callDataDeletionRequest
+  }).catch(e => {
+    logError('Error invoking CMP `registerDeletion`:', e);
+  });
 }
 
 /**

@@ -6,11 +6,9 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
-const BIDDER_CODE_DEAL_ALIAS_1 = BIDDER_CODE_DEAL_ALIAS_BASE + '1';
-const BIDDER_CODE_DEAL_ALIAS_2 = BIDDER_CODE_DEAL_ALIAS_BASE + '2';
-const BIDDER_CODE_DEAL_ALIAS_3 = BIDDER_CODE_DEAL_ALIAS_BASE + '3';
-const BIDDER_CODE_DEAL_ALIAS_4 = BIDDER_CODE_DEAL_ALIAS_BASE + '4';
-const BIDDER_CODE_DEAL_ALIAS_5 = BIDDER_CODE_DEAL_ALIAS_BASE + '5';
+const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
+  return BIDDER_CODE_DEAL_ALIAS_BASE + num;
+});
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
@@ -54,13 +52,7 @@ const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [
-    BIDDER_CODE_DEAL_ALIAS_1,
-    BIDDER_CODE_DEAL_ALIAS_2,
-    BIDDER_CODE_DEAL_ALIAS_3,
-    BIDDER_CODE_DEAL_ALIAS_4,
-    BIDDER_CODE_DEAL_ALIAS_5
-  ],
+  aliases: BIDDER_CODE_DEAL_ALIASES,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
@@ -178,7 +170,7 @@ export const spec = {
 
     const hasBidAdUnits = adUnits.filter((au) => {
       const bid = bidsById[au.targetId];
-      if (bid && bid.bidder === BIDDER_CODE) {
+      if (bid && bid.bidder && BIDDER_CODE_DEAL_ALIASES.indexOf(bid.bidder) < 0) {
         return au.matchedAdCount > 0;
       } else {
         // We do NOT accept bids when using this adaptor via one of the

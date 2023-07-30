@@ -200,6 +200,10 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
+    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
+    }
+
     setBidFloors(bidRequest, imp);
 
     return imp;
@@ -383,6 +387,8 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'us_privacy',
+      'gpp',
+      'gpp_sid',
       'rp_schain',
     ].concat(Object.keys(params).filter(item => containsUId.test(item)))
       .concat([
@@ -495,6 +501,11 @@ export const spec = {
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
+    // Send multiformat data if requested
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
+    }
+
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     let posMapping = {1: 'atf', 3: 'btf'};
@@ -552,6 +563,11 @@ export const spec = {
 
     if (bidderRequest.uspConsent) {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest.gppConsent?.gppString) {
+      data['gpp'] = bidderRequest.gppConsent.gppString;
+      data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
@@ -696,7 +712,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = {};
@@ -712,6 +728,11 @@ export const spec = {
 
       if (uspConsent) {
         params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
       }
 
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
