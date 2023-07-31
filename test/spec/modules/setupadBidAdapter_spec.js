@@ -220,11 +220,12 @@ describe('SetupadAdapter', function () {
     });
   });
 
-  describe('getUrlPixelMetric', function () {
+  describe('getPixelUrl', function () {
     const REPORT_ENDPOINT =
       'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
     const mockData = [
       {
+        timestamp: 123456789,
         eventName: 'bidRequested',
         bid: {
           auctionId: 'test-auction-id',
@@ -236,6 +237,7 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidRequested',
         bid: {
           auctionId: 'test-auction-id',
@@ -247,6 +249,7 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidRequested',
         bid: {
           auctionId: 'test-auction-id',
@@ -258,6 +261,7 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidRequested',
         bid: {
           auctionId: 'test-auction-id',
@@ -265,16 +269,11 @@ describe('SetupadAdapter', function () {
           bids: [{ bidder: 'setupad', params: { placement_id: '123' } }],
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidderCode: 'setupad',
-            bids: [{ bidder: 'setupad', params: { placement_id: '123' } }],
-          }
-        )}`,
+        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidRequested',
         bid: {
           auctionId: 'test-auction-id',
@@ -285,19 +284,11 @@ describe('SetupadAdapter', function () {
           ],
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123;321&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidderCode: 'setupad',
-            bids: [
-              { bidder: 'setupad', params: { placement_id: '123' } },
-              { bidder: 'setupad', params: { placement_id: '321' } },
-            ],
-          }
-        )}`,
+        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123;321&auctionId=test-auction-id&timestamp=123456789`,
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidResponse',
         bid: {
           auctionId: 'test-auction-id',
@@ -308,23 +299,21 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidResponse',
         bid: {
           auctionId: 'test-auction-id',
           bidderCode: 'setupad',
+          originalCpm: 0.8,
+          originalCurrency: 'USD',
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidderCode: 'setupad',
-            params: { placement_id: '123' },
-          }
-        )}`,
+        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder=setupad&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
       },
 
       {
+        timestamp: 123456789,
         eventName: 'noBid',
         bid: {
           auctionId: 'test-auction-id',
@@ -335,6 +324,7 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'noBid',
         bid: {
           auctionId: 'test-auction-id',
@@ -342,16 +332,11 @@ describe('SetupadAdapter', function () {
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=noBid&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidder: 'setupad',
-            params: { placement_id: '123' },
-          }
-        )}`,
+        expected: `${REPORT_ENDPOINT}?event=noBid&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidTimeout',
         bid: {
           auctionId: 'test-auction-id',
@@ -362,6 +347,7 @@ describe('SetupadAdapter', function () {
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidTimeout',
         bid: {
           auctionId: 'test-auction-id',
@@ -369,38 +355,27 @@ describe('SetupadAdapter', function () {
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidTimeout&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidder: 'setupad',
-            params: { placement_id: '123' },
-          }
-        )}`,
+        expected: `${REPORT_ENDPOINT}?event=bidTimeout&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
       },
 
       {
+        timestamp: 123456789,
         eventName: 'bidWon',
         bid: {
           auctionId: 'test-auction-id',
           bidder: 'setupad',
-          cpm: 0.8,
+          originalCpm: 0.8,
+          originalCurrency: 'USD',
           params: { placement_id: '123', account_id: 'test' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=setupad&placementIds=123&auctionId=test-auction-id&data=${JSON.stringify(
-          {
-            auctionId: 'test-auction-id',
-            bidder: 'setupad',
-            cpm: 0.8,
-            params: { placement_id: '123', account_id: 'test' },
-          }
-        )}&cpm=0.8`,
+        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=setupad&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
       },
     ];
 
     it('should return correct url', function () {
-      mockData.forEach(({ eventName, bid, expected }) => {
-        const url = spec.getUrlPixelMetric(eventName, bid);
+      mockData.forEach(({ eventName, bid, timestamp, expected }) => {
+        const url = spec.getPixelUrl(eventName, bid, timestamp);
         expect(url).to.equal(expected);
       });
     });

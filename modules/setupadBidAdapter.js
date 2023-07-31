@@ -143,7 +143,6 @@ export const spec = {
       _each(res.bid, (bid) => {
         const requestId = bidRequest.bidId;
         const params = bidRequest.params;
-
         const { ad, adUrl } = getAd(bid);
 
         const bidResponse = {
@@ -212,12 +211,11 @@ export const spec = {
     return syncs;
   },
 
-  getUrlPixelMetric: function (eventName, bid) {
+  getPixelUrl: function (eventName, bid, timestamp) {
     const bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
     if (bidder != BIDDER_CODE) return;
-    // eslint-disable-next-line
-    console.log(eventName, bid);
+
     let params;
     if (bid.params) {
       params = Array.isArray(bid.params) ? bid.params : [bid.params];
@@ -240,17 +238,15 @@ export const spec = {
 
     if (!placementIds) return;
 
-    let bidWonParams = '';
+    let extraBidParams = '';
     // additional params on bidWon
-    if (eventName === 'bidWon') {
-      bidWonParams = `&cpm=${bid.cpm}`;
+    if (eventName === 'bidWon' || eventName === 'bidResponse') {
+      extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
     }
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${
       seat || bidder
-    }&placementIds=${placementIds}&auctionId=${auctionId}&data=${JSON.stringify(
-      bid
-    )}${bidWonParams}`;
+    }&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
 
     return url;
   },
@@ -408,7 +404,7 @@ function initSendingDataStatistic() {
       return (bid) => {
         if (this.disabledSending) return;
 
-        const url = spec.getUrlPixelMetric(eventName, bid);
+        const url = spec.getPixelUrl(eventName, bid, Date.now());
         if (!url) return;
         triggerPixel(url);
       };
