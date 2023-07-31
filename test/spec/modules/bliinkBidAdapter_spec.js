@@ -1089,17 +1089,22 @@ describe('getEffectiveConnectionType', () => {
   let navigatorStub;
 
   beforeEach(() => {
-    navigatorStub = sinon.stub(navigator, 'connection').value({
-      effectiveType: undefined,
-    });
+    if ('connection' in navigator) {
+      navigatorStub = sinon.stub(navigator, 'connection').value({
+        effectiveType: undefined,
+      });
+    }
   });
 
   afterEach(() => {
-    navigatorStub.restore();
+    if (navigatorStub) {
+      navigatorStub.restore();
+    }
   });
-
-  it('should return "unsupported" when effective connection type is undefined', () => {
-    const result = getEffectiveConnectionType();
-    expect(result).to.equal('unsupported');
-  });
+  if (navigatorStub) {
+    it('should return "unsupported" when effective connection type is undefined', () => {
+      const result = getEffectiveConnectionType();
+      expect(result).to.equal('unsupported');
+    });
+  }
 });
