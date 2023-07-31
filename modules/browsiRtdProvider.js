@@ -24,8 +24,10 @@ import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+const MODULE_NAME = 'browsi';
 
-const storage = getStorageManager();
+const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -59,10 +61,12 @@ export function addBrowsiTag(data) {
 
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
-    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
-      vendor: 'browsi',
-      type: 'pageview',
-      billingId: generateUUID()
+    window.addEventListener('browsi_pageview', () => {
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: 'browsi',
+        type: 'pageview',
+        billingId: generateUUID()
+      })
     })
   }
 }
@@ -334,7 +338,7 @@ export const browsiSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: 'browsi',
+  name: MODULE_NAME,
   /**
    * get data and send back to realTimeData module
    * @function

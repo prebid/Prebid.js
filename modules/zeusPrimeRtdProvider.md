@@ -1,5 +1,8 @@
 # Overview
 
+# NOTE: ZEUS PRIME HAS BEEN DEPRECATED!
+# THIS MODULE WILL BE REMOVED IN PREBID 8.
+
 Module Name: Zeus Prime RTD Provider
 Module Type: Rtd Provider
 Maintainer: support@zeustechnology.com

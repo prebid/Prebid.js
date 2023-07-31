@@ -32,6 +32,12 @@ const PBS_CONVERTER = ortbConverter({
   imp(buildImp, proxyBidRequest, context) {
     Object.assign(context, proxyBidRequest.pbsData);
     const imp = buildImp(proxyBidRequest, context);
+    (proxyBidRequest.bids || []).forEach(bid => {
+      if (bid.ortb2Imp && Object.keys(bid.ortb2Imp).length > 0) {
+        // set bidder-level imp attributes; see https://github.com/prebid/prebid-server/issues/2335
+        deepSetValue(imp, `ext.prebid.imp.${bid.bidder}`, bid.ortb2Imp);
+      }
+    });
     if (Object.values(SUPPORTED_MEDIA_TYPES).some(mtype => imp[mtype])) {
       imp.secure = context.s2sBidRequest.s2sConfig.secure;
       return imp;
@@ -47,7 +53,7 @@ const PBS_CONVERTER = ortbConverter({
       request.tmax = s2sBidRequest.s2sConfig.timeout;
       deepSetValue(request, 'source.tid', proxyBidderRequest.auctionId);
 
-      [request.app, request.site].forEach(section => {
+      [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
           deepSetValue(section, 'publisher.id', s2sBidRequest.s2sConfig.accountId);
         }
@@ -161,7 +167,11 @@ const PBS_CONVERTER = ortbConverter({
           deepSetValue(ortbRequest, 'ext.prebid', mergeDeep(ortbRequest.ext?.prebid || {}, context.s2sBidRequest.s2sConfig.extPrebid));
         }
 
-        const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).map(([bidder, ortb2]) => ({
+        const fpdConfigs = Object.entries(context.s2sBidRequest.ortb2Fragments?.bidder || {}).filter(([bidder]) => {
+          const bidders = context.s2sBidRequest.s2sConfig.bidders;
+          const allowUnknownBidderCodes = context.s2sBidRequest.s2sConfig.allowUnknownBidderCodes;
+          return allowUnknownBidderCodes || (bidders && bidders.includes(bidder));
+        }).map(([bidder, ortb2]) => ({
           bidders: [bidder],
           config: {ortb2}
         }));
@@ -215,6 +225,13 @@ const PBS_CONVERTER = ortbConverter({
       serverSideStats(orig, response, ortbResponse, context) {
         // override to process each request
         context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
+      },
+      fledgeAuctionConfigs(orig, response, ortbResponse, context) {
+        const configs = Object.values(context.impContext)
+          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({adUnitCode: impCtx.adUnit.code, config: cfg.config})));
+        if (configs.length > 0) {
+          response.fledgeAuctionConfigs = configs;
+        }
       }
     }
   },
@@ -246,12 +263,16 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
     impIds.add(impId)
     proxyBidRequests.push({
       ...adUnit,
+      adUnitCode: adUnit.code,
       ...getDefinedParams(actualBidRequests.values().next().value || {}, ['userId', 'userIdAsEids', 'schain']),
-      pbsData: {impId, actualBidRequests, adUnit}
+      pbsData: {impId, actualBidRequests, adUnit},
     });
   });
 
-  const proxyBidderRequest = Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k)))
+  const proxyBidderRequest = {
+    ...Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k))),
+    fledgeEnabled: bidderRequests.some(req => req.fledgeEnabled)
+  }
 
   return PBS_CONVERTER.toORTB({
     bidderRequest: proxyBidderRequest,

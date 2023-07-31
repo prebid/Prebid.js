@@ -729,10 +729,45 @@ describe('E-Planning Adapter', function () {
       expect(ur).to.equal(bidderRequest.refererInfo.page);
     });
 
+    it('should return ur parameter without params query string when current window url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.page = refererUrl + '?param=' + 'x'.repeat(255);
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(refererUrl);
+    });
+
+    it('should return ur parameter with a length of 255 when url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.page = refererUrl;
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(url_255_characters);
+    });
+
     it('should return fr parameter when there is a referrer', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
       expect(dataRequest.fr).to.equal(refererUrl);
+    });
+    it('should return fr parameter without params query string when ref length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.ref = refererUrl + '?param=' + 'x'.repeat(255);
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(refererUrl);
+    });
+
+    it('should return fr parameter with a length of 255 when url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.ref = refererUrl;
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(url_255_characters);
     });
 
     it('should return crs parameter with document charset', function () {
@@ -840,7 +875,7 @@ describe('E-Planning Adapter', function () {
     });
 
     it('should correctly map the parameters in the response vast', function () {
-      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const bidResponse = spec.interpretResponse(responseVast, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID }, data: { vv: 2 } })[0];
       const expectedResponse = {
         requestId: BID_ID,
         cpm: CPM,
@@ -851,13 +886,13 @@ describe('E-Planning Adapter', function () {
         netRevenue: true,
         currency: 'USD',
         vastXml: ADM_VAST,
-        mediaTypes: VIDEO
+        mediaType: VIDEO
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });
 
     it('should correctly map the parameters in the response vast vv 1', function () {
-      const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID } })[0];
+      const bidResponse = spec.interpretResponse(responseVastVV1, { adUnitToBidId: { [CLEAN_ADUNIT_CODE_VAST]: BID_ID }, data: { vv: 1 } })[0];
       const expectedResponse = {
         requestId: BID_ID,
         cpm: CPM,
@@ -868,7 +903,7 @@ describe('E-Planning Adapter', function () {
         netRevenue: true,
         currency: 'USD',
         vastXml: ADM_VAST_VV_1,
-        mediaTypes: VIDEO
+        mediaType: VIDEO
       };
       expect(bidResponse).to.deep.equal(expectedResponse);
     });

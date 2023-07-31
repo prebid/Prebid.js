@@ -35,7 +35,7 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
@@ -159,6 +159,13 @@ export const spec = {
     if (bidderRequest) {
       consentData.gdpr = bidderRequest.gdprConsent;
       consentData.uspConsent = bidderRequest.uspConsent;
+      consentData.gppConsent = bidderRequest.gppConsent;
+      if (!consentData.gppConsent && bidderRequest.ortb2?.regs?.gpp) {
+        consentData.gppConsent = {
+          gppString: bidderRequest.ortb2.regs.gpp,
+          applicableSections: bidderRequest.ortb2.regs.gpp_sid
+        }
+      }
     }
 
     return bids.map(bid => {
@@ -371,6 +378,11 @@ export const spec = {
 
     if (consentData.uspConsent) {
       params.us_privacy = consentData.uspConsent;
+    }
+
+    if (consentData.gppConsent && consentData.gppConsent.gppString) {
+      params.gpp = consentData.gppConsent.gppString;
+      params.gpp_sid = consentData.gppConsent.applicableSections;
     }
 
     return params;

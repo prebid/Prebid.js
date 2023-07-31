@@ -2,6 +2,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
@@ -145,6 +146,7 @@ function handleBidWon(args) {
     });
   }
   args['cpmIncrement'] = increment;
+  args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
   if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
   ajax(endpoint + '.bidwatch.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }

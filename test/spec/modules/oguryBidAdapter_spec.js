@@ -245,6 +245,7 @@ describe('OguryBidAdapter', function () {
     const stubbedWidth = 200
     const stubbedHeight = 600
     const stubbedCurrentTime = 1234567890
+    const stubbedDevicePixelRatio = 1
     const stubbedWidthMethod = sinon.stub(window.top.document.documentElement, 'clientWidth').get(function() {
       return stubbedWidth;
     });
@@ -253,6 +254,10 @@ describe('OguryBidAdapter', function () {
     });
     const stubbedCurrentTimeMethod = sinon.stub(document.timeline, 'currentTime').get(function() {
       return stubbedCurrentTime;
+    });
+
+    const stubbedDevicePixelMethod = sinon.stub(window, 'devicePixelRatio').get(function() {
+      return stubbedDevicePixelRatio;
     });
 
     const defaultTimeout = 1000;
@@ -305,11 +310,12 @@ describe('OguryBidAdapter', function () {
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.4.0'
+        adapterversion: '1.4.1'
       },
       device: {
         w: stubbedWidth,
-        h: stubbedHeight
+        h: stubbedHeight,
+        pxratio: stubbedDevicePixelRatio,
       }
     };
 
@@ -317,6 +323,7 @@ describe('OguryBidAdapter', function () {
       stubbedWidthMethod.restore();
       stubbedHeightMethod.restore();
       stubbedCurrentTimeMethod.restore();
+      stubbedDevicePixelMethod.restore();
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -337,6 +344,14 @@ describe('OguryBidAdapter', function () {
       expect(request.data.imp[0].ext.timeSpentOnPage).to.equal(0);
       stubbedTimelineMethod.restore();
     });
+
+    it('send device pixel ratio in bid request', function() {
+      const validBidRequests = utils.deepClone(bidRequests)
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestObject);
+      expect(request.data.device.pxratio).to.be.a('number');
+    })
 
     it('bid request object should be conform', function () {
       const validBidRequests = utils.deepClone(bidRequests)
@@ -697,7 +712,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.4.0',
+        adapterVersion: '1.4.1',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -714,7 +729,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.4.0',
+        adapterVersion: '1.4.1',
         prebidVersion: '$prebid.version$'
       }]
 

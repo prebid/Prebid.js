@@ -24,6 +24,7 @@ const VAST_INSTREAM = 1;
 const VAST_OUTSTREAM = 2;
 const VAST_VERSION_DEFAULT = 3;
 const DEFAULT_SIZE_VAST = '640x480';
+const MAX_LEN_URL = 255;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -60,7 +61,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: pageUrl || FILE,
+        ur: cutUrl(pageUrl || FILE),
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -70,7 +71,7 @@ export const spec = {
       }
 
       if (referrerUrl) {
-        params.fr = referrerUrl;
+        params.fr = cutUrl(referrerUrl);
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -128,9 +129,9 @@ export const spec = {
                 advertiserDomains: ad.adom
               };
             }
-            if (isVastResponse(ad)) {
+            if (request && request.data && request.data.vv) {
               bidResponse.vastXml = ad.adm;
-              bidResponse.mediaTypes = VIDEO;
+              bidResponse.mediaType = VIDEO;
             } else {
               bidResponse.ad = ad.adm;
             }
@@ -491,6 +492,17 @@ function visibilityHandler(obj) {
   }
 }
 
+function cutUrl (url) {
+  if (url.length > MAX_LEN_URL) {
+    url = url.split('?')[0];
+    if (url.length > MAX_LEN_URL) {
+      url = url.slice(0, MAX_LEN_URL);
+    }
+  }
+
+  return url;
+}
+
 function registerAuction(storageID) {
   let value;
   try {
@@ -502,10 +514,6 @@ function registerAuction(storageID) {
   }
 
   return true;
-}
-
-function isVastResponse(bid) {
-  return bid.adm.match(/^(<VAST)|(<VideoAdServingTemplate)/gmi);
 }
 
 registerBidder(spec);

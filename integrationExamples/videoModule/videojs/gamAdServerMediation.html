@@ -96,8 +96,6 @@
 
         pbjs.addAdUnits(adUnits);
 
-        pbjs.requestBids(adUnits);
-
         pbjs.onEvent('videoSetupComplete', e => {
           // Load media with its Metadata when the video player is done instantiating.
           videojs('player').loadMedia({
@@ -125,6 +123,7 @@
           console.log('An Ad Impression came from a Bid: ', e);
         });
 
+        pbjs.requestBids(adUnits);
       });
     </script>
 </head>

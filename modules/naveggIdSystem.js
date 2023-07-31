@@ -7,7 +7,8 @@
 import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'naveggId';
 const OLD_NAVEGG_ID = 'nid';
@@ -16,7 +17,7 @@ const BASE_URL = 'https://id.navegg.com/uid/';
 const DEFAULT_EXPIRE = 8 * 24 * 3600 * 1000;
 const INVALID_EXPIRE = 3600 * 1000;
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function getNaveggIdFromApi() {
   const callbacks = {

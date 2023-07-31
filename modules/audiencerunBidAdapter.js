@@ -1,18 +1,17 @@
 import {
+  _each,
   deepAccess,
+  formatQS,
+  getBidIdParameter,
+  getValue,
+  isArray,
   isFn,
   logError,
-  getValue,
-  getBidIdParameter,
-  _each,
-  isArray,
   triggerPixel,
-  formatQS,
 } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'audiencerun';
 const BASE_URL = 'https://d.audiencerun.com';
@@ -135,7 +134,7 @@ export const spec = {
 
     payload.uspConsent = deepAccess(bidderRequest, 'uspConsent');
     payload.schain = deepAccess(bidRequests, '0.schain');
-    payload.userId = deepAccess(bidRequests, '0.userId') ? createEidsArray(bidRequests[0].userId) : [];
+    payload.userId = deepAccess(bidRequests, '0.userIdAsEids') || []
 
     if (bidderRequest && bidderRequest.gdprConsent) {
       payload.gdpr = {

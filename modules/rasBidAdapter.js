@@ -1,4 +1,3 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
@@ -12,9 +11,15 @@ const getEndpoint = (network) => {
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
+  if (params.customParams && typeof params.customParams === 'object') {
+    for (const param in params.customParams) {
+      if (params.customParams.hasOwnProperty(param)) {
+        newParams[param] = params.customParams[param];
+      }
+    }
+  }
   const du = deepAccess(bidderRequest, 'refererInfo.page');
   const dr = deepAccess(bidderRequest, 'refererInfo.ref');
-
   if (du) {
     newParams.du = du;
   }
@@ -93,7 +98,7 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
-    const slotSequence = utils.deepAccess(adunit, 'params.slotSequence');
+    const slotSequence = deepAccess(adunit, 'params.slotSequence');
 
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
