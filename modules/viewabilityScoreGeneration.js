@@ -311,10 +311,7 @@ export let init = (setGptCb, setTargetingCb) => {
       initConfigDefaults(globalConfig);
       setGptCb();
 
-      if (
-			globalConfig.viewabilityScoreGeneration?.targeting?.enabled &&
-			(globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)
-      ) {
+      if (globalConfig.viewabilityScoreGeneration?.targeting?.enabled && (globalConfig.viewabilityScoreGeneration?.targeting?.score || globalConfig.viewabilityScoreGeneration?.targeting?.bucket)) {
         setTargetingCb(globalConfig);
       }
 

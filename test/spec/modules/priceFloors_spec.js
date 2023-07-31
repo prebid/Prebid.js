@@ -1958,14 +1958,14 @@ describe('the price floors module', function () {
       });
       expect(returnedBidResponse.cpm).to.equal(7.5);
     });
-	it('should update bid with floor data even for s2s partners', function() {
-		s2sBid = utils.deepClone(basicBidResponse);
-		s2sBid.source = 's2s'
-		_floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
-		_floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
-		runBidResponse(s2sBid);
-		expect(reject.calledOnce).to.be.true;
-		expect(returnedBidResponse.status).to.equal('rejected');
+    it('should update bid with floor data even for s2s partners', function() {
+      s2sBid = utils.deepClone(basicBidResponse);
+      s2sBid.source = 's2s'
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+      runBidResponse(s2sBid);
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse.status).to.equal('rejected');
 	  });
 	  it('should add floor data to s2s bid response', function () {
 		  _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);

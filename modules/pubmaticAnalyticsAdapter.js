@@ -371,6 +371,17 @@ function getTgid() {
   return 0;
 }
 
+function getFloorFetchStatus(floorData) {
+  if (!floorData?.floorRequestData) {
+    return false;
+  }
+  const { location, fetchStatus } = floorData?.floorRequestData;
+  const isDataValid = location !== CONSTANTS.FLOOR_VALUES.NO_DATA;
+  const isFetchSuccessful = location === CONSTANTS.FLOOR_VALUES.FETCH && fetchStatus === CONSTANTS.FLOOR_VALUES.SUCCESS;
+  const isAdUnitOrSetConfig = location === CONSTANTS.FLOOR_VALUES.AD_UNIT || location === CONSTANTS.FLOOR_VALUES.SET_CONFIG;
+  return isDataValid && (isAdUnitOrSetConfig || isFetchSuccessful);
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   const HOSTNAME = window.location.host;
   const storedObject = storage.getDataFromLocalStorage(PREFIX + HOSTNAME);
@@ -379,7 +390,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId]?.referer || '';
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache?.floorData;
-  let floorFetchStatus = (floorData?.floorRequestData?.fetchStatus)?.toLowerCase() === CONSTANTS.SUCCESS;
+  let floorFetchStatus = getFloorFetchStatus(auctionCache.floorData);
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
 
@@ -595,7 +606,6 @@ function bidWonHandler(args) {
 }
 
 function auctionEndHandler(args) {
-
   // if for the given auction bidderDonePendingCount == 0 then execute logger call sooners
   let highestCpmBids = getGlobal().getHighestCpmBids() || [];
   setTimeout(() => {

@@ -64,7 +64,7 @@ export function getUserAgentDetails() {
 export function auctionBidWonHandler(bid) {
   frequencyDepth = JSON.parse(storage.getDataFromLocalStorage(PREFIX + HOSTNAME));
   if (frequencyDepth) {
-	frequencyDepth.impressionServed = frequencyDepth.impressionServed + 1;
+    frequencyDepth.impressionServed = frequencyDepth.impressionServed + 1;
     frequencyDepth.slotLevelFrquencyDepth[codeAdUnitMap[bid.adUnitCode]].impressionServed = frequencyDepth.slotLevelFrquencyDepth[codeAdUnitMap[bid.adUnitCode]].impressionServed + 1;
     storage.setDataInLocalStorage(PREFIX + HOSTNAME, JSON.stringify(frequencyDepth));
   }
