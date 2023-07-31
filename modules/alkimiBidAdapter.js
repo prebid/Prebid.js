@@ -12,7 +12,7 @@ export const spec = {
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.bidFloor && bid.params.token);
+    return !!(bid.params && bid.params.token);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -28,7 +28,6 @@ export const spec = {
 
       bids.push({
         token: bidRequest.params.token,
-        pos: bidRequest.params.pos,
         instl: bidRequest.params.instl,
         exp: bidRequest.params.exp,
         bidFloor: getBidFloor(bidRequest, formatTypes),
