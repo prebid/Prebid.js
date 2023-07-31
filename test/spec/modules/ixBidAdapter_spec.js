@@ -2,8 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -759,10 +758,9 @@ describe('IndexexchangeAdapter', function () {
     uid2: { id: 'testuid2' }, // UID 2.0
     // similar to uid2, but id5's getValue takes .uid
     id5id: { uid: 'testid5id' }, // ID5
-    imuid: 'testimuid'
+    imuid: 'testimuid',
+    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
   };
-
-  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
 
   const DEFAULT_USERID_PAYLOAD = [
     {
@@ -813,10 +811,17 @@ describe('IndexexchangeAdapter', function () {
     }, {
       source: 'intimatemerger.com',
       uids: [{
-        id: DEFAULT_USERID_DATA.imuid,
+        id: DEFAULT_USERID_DATA.imuid
+      }]
+    }, {
+      source: '33across.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['33acrossId'].envelope
       }]
     }
   ];
+
+  const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
@@ -1219,7 +1224,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(7);
+        expect(payload.user.eids).to.have.lengthOf(8);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1407,7 +1412,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(7);
+      expect(payload.user.eids).to.have.lengthOf(8);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1540,7 +1545,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(9);
+      expect(payload.user.eids).to.have.lengthOf(10);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1582,7 +1587,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(9);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
@@ -2197,7 +2202,8 @@ describe('IndexexchangeAdapter', function () {
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
-        expect(payload.device).to.be.undefined
+        expect(payload.device.h).to.exist;
+        expect(payload.device.w).to.exist;
       });
 
       it('should not set first party data if it is not an object', function () {
@@ -2348,6 +2354,78 @@ describe('IndexexchangeAdapter', function () {
         expect(videoImpression.id).to.equal(DEFAULT_VIDEO_VALID_BID[0].bidId);
         expect(videoImpression.video.w).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[0]);
         expect(videoImpression.video.h).to.equal(DEFAULT_VIDEO_VALID_BID[0].params.size[1]);
+      });
+    });
+
+    describe('video request should set displaymanager', () => {
+      it('ix renderer preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('ix renderer not preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
+      });
+      it('ix renderer not preferrered - bad url', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('renderer url provided and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://js-sec.indexww.rendererplayer.com',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('renderer url undefined and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('schain', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = SAMPLE_SCHAIN;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
       });
     });
 
@@ -4827,6 +4905,24 @@ describe('IndexexchangeAdapter', function () {
       };
 
       expect(removeSiteIDs(request)).to.deep.equal(expected);
+    });
+  });
+  describe('addDeviceInfo', () => {
+    it('should add device to request when device already exists', () => {
+      let r = {
+        device: {
+          ip: '127.0.0.1'
+        }
+      }
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
+    });
+    it('should add device to request when device doesnt exist', () => {
+      let r = {}
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
     });
   });
 });

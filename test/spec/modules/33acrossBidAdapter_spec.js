@@ -200,6 +200,29 @@ describe('33acrossBidAdapter:', function () {
       return this;
     };
 
+    this.withCoppa = coppaValue => {
+      Object.assign(ttxRequest.regs, {
+        coppa: coppaValue
+      });
+
+      return this;
+    };
+
+    this.withGppConsent = (consentString, applicableSections) => {
+      Object.assign(ttxRequest, {
+        regs: {
+          gpp: consentString,
+          gpp_sid: applicableSections,
+          ext: Object.assign(
+            {},
+            ttxRequest.regs.ext
+          )
+        }
+      });
+
+      return this;
+    };
+
     this.withSite = site => {
       Object.assign(ttxRequest, { site });
       return this;
@@ -1049,11 +1072,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with gdpr consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1085,11 +1108,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with default gdpr consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1128,11 +1151,11 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with us_privacy consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
@@ -1164,15 +1187,102 @@ describe('33acrossBidAdapter:', function () {
       });
 
       it('returns corresponding test server requests with default us_privacy consent data', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             'url': 'https://foo.com/hb/'
-          }
-        });
+          });
 
         const ttxRequest = new TtxRequestBuilder()
           .withBanner()
           .withProduct()
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .withUrl('https://foo.com/hb/')
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when coppa has been enabled', function() {
+      beforeEach(function() {
+        sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
+      });
+
+      it('returns corresponding server requests with coppa: 1', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withCoppa(1)
+          .build();
+
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when coppa has been disabled', function() {
+      beforeEach(function() {
+        sandbox.stub(config, 'getConfig').withArgs('coppa').returns(false);
+      });
+
+      it('returns corresponding server requests with coppa: 0', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withCoppa(0)
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+    });
+
+    context('when GPP consent data exists', function() {
+      beforeEach(function() {
+        bidderRequest = {
+          ...bidderRequest,
+          gppConsent: {
+            gppString: 'foo',
+            applicableSections: '123'
+          }
+        }
+      });
+
+      it('returns corresponding server requests with GPP consent data', function() {
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withGppConsent('foo', '123')
+          .build();
+        const serverRequest = new ServerRequestBuilder()
+          .withData(ttxRequest)
+          .build();
+        const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+        validateBuiltServerRequest(builtServerRequest, serverRequest);
+      });
+
+      it('returns corresponding test server requests with GPP consent data', function() {
+        sandbox.stub(config, 'getConfig').withArgs('ttxSettings')
+          .returns({
+            'url': 'https://foo.com/hb/'
+          });
+
+        const ttxRequest = new TtxRequestBuilder()
+          .withBanner()
+          .withProduct()
+          .withGppConsent('foo', '123')
           .build();
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -1747,11 +1857,11 @@ describe('33acrossBidAdapter:', function () {
 
     context('when SRA mode is enabled', function() {
       it('builds a single request with multiple imps corresponding to each group {siteId, productId}', function() {
-        sandbox.stub(config, 'getConfig').callsFake(() => {
-          return {
+        sandbox.stub(config, 'getConfig')
+          .withArgs('ttxSettings')
+          .returns({
             enableSRAMode: true
-          }
-        });
+          });
 
         const bidRequests = new BidRequestsBuilder()
           .addBid()
@@ -2219,11 +2329,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             }
           ]
 
@@ -2239,11 +2349,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=1`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=1`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=&gdpr=1`
             }
           ];
 
@@ -2259,11 +2369,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=1`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=&gdpr=1`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=1`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=&gdpr=1`
             }
           ];
 
@@ -2279,11 +2389,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=0`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gdpr=0`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -2298,11 +2408,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -2317,11 +2427,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=0`
+              url: `${syncs[0].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=&gdpr=0`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gdpr=0`
+              url: `${syncs[1].url}&gdpr_consent=consent123A&us_privacy=undefined&gpp=&gpp_sid=&gdpr=0`
             }
           ];
           expect(syncResults).to.deep.equal(expectedSyncs);
@@ -2336,11 +2446,11 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
             }
           ]
 
@@ -2356,11 +2466,54 @@ describe('33acrossBidAdapter:', function () {
           const expectedSyncs = [
             {
               type: 'iframe',
-              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=foo`
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=foo&gpp=&gpp_sid=`
             },
             {
               type: 'iframe',
-              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=foo`
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=foo&gpp=&gpp_sid=`
+            }
+          ];
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        });
+      });
+
+      context('when there is no GPP data', function() {
+        it('returns sync urls with empty GPP params', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {});
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=&gpp_sid=`
+            }
+          ]
+
+          expect(syncResults).to.deep.equal(expectedSyncs);
+        })
+      });
+
+      context('when there is GPP data', function() {
+        it('returns sync urls with GPP consent string & GPP Section ID as params', function() {
+          spec.buildRequests(bidRequests);
+
+          const syncResults = spec.getUserSyncs(syncOptions, {}, {}, undefined, {
+            gppString: 'foo',
+            applicableSections: ['123', '456']
+          });
+          const expectedSyncs = [
+            {
+              type: 'iframe',
+              url: `${syncs[0].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=foo&gpp_sid=123%2C456`
+            },
+            {
+              type: 'iframe',
+              url: `${syncs[1].url}&gdpr_consent=undefined&us_privacy=undefined&gpp=foo&gpp_sid=123%2C456`
             }
           ];
 

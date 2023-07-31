@@ -10,6 +10,7 @@ import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
+import { ajax } from '../src/ajax.js';
 
 const GVLID = 91;
 export const ADAPTER_VERSION = 36;
@@ -306,6 +307,23 @@ export const spec = {
       adapter.handleSetTargeting(bid);
     }
   },
+
+  /**
+   * @param {BidRequest[]} bidRequests
+   */
+  onDataDeletionRequest: (bidRequests) => {
+    const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
+    if (id) {
+      deleteFromAllStorages(BUNDLE_COOKIE_NAME);
+    }
+    ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+      null,
+      JSON.stringify({ publisherUserId: id }),
+      {
+        contentType: 'application/json',
+        method: 'POST'
+      });
+  }
 };
 
 function readFromAllStorages(name) {

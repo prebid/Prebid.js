@@ -3,6 +3,7 @@ import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {find} from 'src/polyfill.js';
+import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -51,8 +52,6 @@ describe('stroeerCore bid adapter', function () {
     assert.notProperty(bidObject, 'ad');
   }
 
-  const AUCTION_ID = utils.getUniqueIdentifierStr();
-
   // Vendor user ids and associated data
   const userIds = Object.freeze({
     criteoId: 'criteo-user-id',
@@ -72,7 +71,6 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const buildBidderRequest = () => ({
-    auctionId: AUCTION_ID,
     bidderRequestId: 'bidder-request-id-123',
     bidderCode: 'stroeerCore',
     timeout: 5000,
@@ -394,6 +392,10 @@ describe('stroeerCore bid adapter', function () {
         clock.tick(13500);
         const bidReq = buildBidderRequest();
 
+        const UUID = 'fb6a39e3-083f-424c-9046-f1095e15f3d5';
+
+        const generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
+
         const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
@@ -401,7 +403,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(expectedTimeout, 1500);
 
         const expectedJsonPayload = {
-          'id': AUCTION_ID,
+          'id': UUID,
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
@@ -429,8 +431,9 @@ describe('stroeerCore bid adapter', function () {
 
         // trim away fields with undefined
         const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
-
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
+
+        generateUUIDStub.restore();
       });
 
       describe('video bids', () => {

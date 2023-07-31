@@ -9,11 +9,12 @@ import {
 } from 'modules/criteoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import * as refererDetection from 'src/refererDetection.js';
+import * as ajax from 'src/ajax.js';
 import { config } from '../../../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('The Criteo bidding adapter', function () {
-  let utilsMock, sandbox;
+  let utilsMock, sandbox, ajaxStub;
 
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
@@ -26,6 +27,7 @@ describe('The Criteo bidding adapter', function () {
     utilsMock = sinon.mock(utils);
 
     sandbox = sinon.sandbox.create();
+    ajaxStub = sandbox.stub(ajax, 'ajax');
   });
 
   afterEach(function () {
@@ -33,6 +35,7 @@ describe('The Criteo bidding adapter', function () {
     global.Criteo = undefined;
     utilsMock.restore();
     sandbox.restore();
+    ajaxStub.restore();
   });
 
   describe('getUserSyncs', function () {
@@ -56,7 +59,9 @@ describe('The Criteo bidding adapter', function () {
       cookiesAreEnabledStub,
       localStorageIsEnabledStub,
       getCookieStub,
-      getDataFromLocalStorageStub;
+      setCookieStub,
+      getDataFromLocalStorageStub,
+      removeDataFromLocalStorageStub;
 
     beforeEach(function () {
       getConfigStub = sinon.stub(config, 'getConfig');
@@ -75,8 +80,10 @@ describe('The Criteo bidding adapter', function () {
       localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
 
-      getCookieStub = sinon.stub(storage, 'getCookie')
+      getCookieStub = sinon.stub(storage, 'getCookie');
+      setCookieStub = sinon.stub(storage, 'setCookie');
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      removeDataFromLocalStorageStub = sinon.stub(storage, 'removeDataFromLocalStorage');
     });
 
     afterEach(function () {
@@ -86,7 +93,9 @@ describe('The Criteo bidding adapter', function () {
       cookiesAreEnabledStub.restore();
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
+      setCookieStub.restore();
       getDataFromLocalStorageStub.restore();
+      removeDataFromLocalStorageStub.restore();
     });
 
     it('should not trigger sync if publisher is using fast bid', function () {
@@ -197,6 +206,25 @@ describe('The Criteo bidding adapter', function () {
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
+    });
+
+    it('should delete user data when calling onDataDeletionRequest', () => {
+      const cookieData = {
+        'cto_bundle': 'a'
+      };
+      const lsData = {
+        'cto_bundle': 'a'
+      }
+      getCookieStub.callsFake(cookieName => cookieData[cookieName]);
+      setCookieStub.callsFake((cookieName, value, expires) => cookieData[cookieName] = value);
+      removeDataFromLocalStorageStub.callsFake(name => lsData[name] = '');
+      spec.onDataDeletionRequest([]);
+      expect(getCookieStub.calledOnce).to.equal(true);
+      expect(setCookieStub.calledOnce).to.equal(true);
+      expect(removeDataFromLocalStorageStub.calledOnce).to.equal(true);
+      expect(cookieData.cto_bundle).to.equal('');
+      expect(lsData.cto_bundle).to.equal('');
+      expect(ajaxStub.calledOnce).to.equal(true);
     });
   });
 
