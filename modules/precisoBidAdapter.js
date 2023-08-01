@@ -5,8 +5,8 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'preciso';
-const AD_URL = 'http://ssp-bidder.mndtrk.com/bid_request/openrtb';
-const URL_SYNC = 'http://ck.2trk.info/rtb/user/cookiematch.aspx?id=preciso_srl';
+const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=preciso_srl';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
 
@@ -115,12 +115,12 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}&gpp=${gppConsent}`
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
       });
     } else {
       syncs.push({
         type: 'image',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}&gpp=${gppConsent}`
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
       });
     }
 

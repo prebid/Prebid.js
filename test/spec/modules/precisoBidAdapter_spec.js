@@ -38,7 +38,7 @@ describe('PrecisoAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('http://ssp-bidder.mndtrk.com/bid_request/openrtb');
+      expect(serverRequest.url).to.equal('https://ssp-bidder.mndtrk.com/bid_request/openrtb');
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -245,7 +245,7 @@ describe('PrecisoAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncUrl = 'http://ck.2trk.info/rtb/user/cookiematch.aspx?id=preciso_srl&gdpr=0&gdpr_consent=&type=iframe&us_privacy=&gpp=';
+    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=preciso_srl&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
       iframeEnabled: true
     };
