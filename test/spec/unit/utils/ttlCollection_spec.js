@@ -8,12 +8,21 @@ describe('ttlCollection', () => {
     coll.add(2);
     expect(coll.toArray()).to.eql([1, 2]);
   });
+
   it('can clear', () => {
     const coll = ttlCollection();
     coll.add('item');
     coll.clear();
     expect(coll.toArray()).to.eql([]);
   });
+
+  it('can be iterated over', () => {
+    const coll = ttlCollection();
+    coll.add('1');
+    coll.add('2');
+    expect(Array.from(coll)).to.eql(['1', '2']);
+  })
+
   describe('autopurge', () => {
     let clock, pms, waitForPromises;
     const SLACK = 2000;
@@ -43,6 +52,7 @@ describe('ttlCollection', () => {
             slack: SLACK
           })
         });
+
         it('should clear items after enough time has passed', () => {
           coll.add({no: 'ttl'});
           coll.add({ttl: 1000});
@@ -114,6 +124,7 @@ describe('ttlCollection', () => {
               });
             });
           });
+
           it('should refresh existing TTLs', () => {
             const item = {
               ttl: 1000
@@ -131,6 +142,7 @@ describe('ttlCollection', () => {
               });
             });
           });
+
           it('should discard initial TTL if it does not resolve before a refresh', () => {
             let resolveTTL;
             const item = {
@@ -147,6 +159,7 @@ describe('ttlCollection', () => {
               expect(coll.toArray()).to.eql([item]);
             });
           });
+
           it('should discard TTLs on clear', () => {
             const item = {
               ttl: 1000
