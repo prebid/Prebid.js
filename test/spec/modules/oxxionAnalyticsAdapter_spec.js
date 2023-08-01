@@ -167,7 +167,8 @@ describe('Oxxion Analytics', function () {
         'meta': {
           'advertiserDomains': [
             'example.com'
-          ]
+          ],
+	  'demandSource': 'something'
         },
         'renderer': 'something',
         'originalCpm': 25.02521,
@@ -305,7 +306,7 @@ describe('Oxxion Analytics', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
       events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
-      expect(server.requests.length).to.equal(1);
+       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionEnd').exist;
       expect(message.auctionEnd).to.have.lengthOf(1);
@@ -313,6 +314,7 @@ describe('Oxxion Analytics', function () {
       expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
       expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
       expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('demandSource');
       expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId');
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');

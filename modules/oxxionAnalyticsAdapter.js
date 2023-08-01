@@ -41,15 +41,25 @@ function filterAttributes(arg, removead) {
     }
     if (typeof arg['gdprConsent'] != 'undefined') {
       response['gdprConsent'] = {};
-      if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
+      if (typeof arg['gdprConsent']['consentString'] != 'undefined') {
+        response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString'];
+      }
     }
-    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
-      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    if (typeof arg['meta'] == 'object') {
+      response['meta'] = {};
+      if (typeof arg['meta']['advertiserDomains'] != 'undefined') {
+        response['meta']['advertiserDomains'] = arg['meta']['advertiserDomains'];
+      }
+      if (typeof arg['meta']['demandSource'] == 'string') {
+        response['meta']['demandSource'] = arg['meta']['demandSource'];
+      }
     }
     requestsAttributes.forEach((attr) => {
       if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
     });
-    if (typeof response['creativeId'] == 'number') { response['creativeId'] = response['creativeId'].toString(); }
+    if (typeof response['creativeId'] == 'number') {
+      response['creativeId'] = response['creativeId'].toString();
+    }
   }
   return response;
 }
