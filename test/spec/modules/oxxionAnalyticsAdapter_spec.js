@@ -306,7 +306,7 @@ describe('Oxxion Analytics', function () {
       events.emit(constants.EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
       events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
       events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
-       expect(server.requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionEnd').exist;
       expect(message.auctionEnd).to.have.lengthOf(1);
@@ -319,9 +319,11 @@ describe('Oxxion Analytics', function () {
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
+      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('oxxionMode');
     });
 
     it('test bidWon', function() {
+      window.OXXION_MODE = {'abtest': true};
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics
@@ -339,6 +341,7 @@ describe('Oxxion Analytics', function () {
       expect(message).not.to.have.property('ad');
       expect(message).to.have.property('adId')
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
+      expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
       // sinon.assert.callCount(oxxionAnalytics.track, 1);
     });
   });

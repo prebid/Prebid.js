@@ -21,6 +21,7 @@ let saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
+let mode = {};
 let endpoint = 'https://default'
 let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
 
@@ -61,6 +62,7 @@ function filterAttributes(arg, removead) {
       response['creativeId'] = response['creativeId'].toString();
     }
   }
+  response['oxxionMode'] = mode;
   return response;
 }
 
@@ -239,7 +241,12 @@ oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
 oxxionAnalytics.enableAnalytics = function (config) {
   oxxionAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
+  if (initOptions.domain) {
+    endpoint = 'https://' + initOptions.domain;
+  }
+  if (window.OXXION_MODE) {
+    mode = window.OXXION_MODE;
+  }
 };
 
 adapterManager.registerAnalyticsAdapter({
