@@ -1,3 +1,4 @@
+import { logInfo, logError } from './../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
@@ -7,26 +8,26 @@ const TIMEOUT = 500;
     GeoDetection module is to be used to get the region information.
     This needs to be called with the URL of API and path of region (e.g. location.data.region)
 */
-$$PREBID_GLOBAL$$.detectLocation = function(URL, callback) {
-  getRegion = function(loc) {
+$$PREBID_GLOBAL$$.detectLocation = function(URL, passBack) {
+  const getRegion = function(loc) {
     try {
       let location = JSON.parse(loc);
-      callback(location);
+      passBack(location);
     } catch (e) {
-      console.log('Location data is expected to be an object');
-      callback({error: e});
+      logInfo('Location data is expected to be an object');
+      passBack({error: e});
     }
   }
 
   try {
     ajaxBuilder(TIMEOUT)(
       URL,
-      { success: getRegion, error: function(e) { callback({error: e}) } },
+      { success: getRegion, error: function(e) { passBack({error: e}) } },
       null,
       { contentType: 'application/x-www-form-urlencoded', method: 'GET' }
     );
   } catch (e) {
-    callback({error: e});
+    passBack({error: e});
   }
 }
 
@@ -41,8 +42,8 @@ $$PREBID_GLOBAL$$.getDataFromLocalStorage = function(key, expiry) {
       let currentDate = new Date().valueOf();
       const diff = Math.abs(currentDate - createdDate);
       if (diff > expiry) {
-			  storage.removeDataFromLocalStorage(key);
-			  return undefined;
+        storage.removeDataFromLocalStorage(key);
+        return undefined;
       }
       return storedObject;
     }
@@ -54,9 +55,9 @@ $$PREBID_GLOBAL$$.getDataFromLocalStorage = function(key, expiry) {
 
 $$PREBID_GLOBAL$$.setAndStringifyToLocalStorage = function(key, object) {
   try {
-	  object.createdDate = new Date().valueOf();
-	  storage.setDataInLocalStorage(key, JSON.stringify(object));
+    object.createdDate = new Date().valueOf();
+    storage.setDataInLocalStorage(key, JSON.stringify(object));
   } catch (e) {
-    refThis.logError('Error in setting localstorage ', e);
+    logError('Error in setting localstorage ', e);
   }
 }
