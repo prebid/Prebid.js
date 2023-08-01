@@ -8,10 +8,13 @@ import { BANNER } from '../src/mediaTypes.js';
 const ADSINTERACTIVE_CODE = 'adsinteractive';
 const USER_SYNC_URL_IMAGE = 'https://sync.adsinteractive.com/img';
 const USER_SYNC_URL_IFRAME = 'https://sync.adsinteractive.com/sync';
+const GVLID = 1212;
+
 
 export const spec = {
   code: ADSINTERACTIVE_CODE,
   supportedMediaTypes: [BANNER],
+  gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
     return (
