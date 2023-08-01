@@ -33,7 +33,7 @@ The following configuration parameters are available:
 
 ```javascript
 pbjs.enableAnalytics({
-    provider: 'hadron',
+    provider: 'hadronAnalytics',
     options: {
         partnerId: 1234, // change to the Partner ID you got from Audigent
         eventsToTrack: ['auctionEnd','bidWon']
@@ -41,8 +41,8 @@ pbjs.enableAnalytics({
 });
 ```
 
-| Parameter | Scope | Type | Description                                             | Example |
-| --- | --- | --- |---------------------------------------------------------| --- |
-| provider | Required | String | The name of this module: `hadronAnalytics`              | `hadronAnalytics` |
-| options.partnerId | Required | Number | This is the Audigent Partner ID obtained from Audigent. | `1234` |
+| Parameter             | Scope    | Type             | Description                                             | Example                   |
+|-----------------------|----------|------------------|---------------------------------------------------------|---------------------------|
+| provider              | Required | String           | The name of this module: `hadronAnalytics`              | `hadronAnalytics`         |
+| options.partnerId     | Required | Number           | This is the Audigent Partner ID obtained from Audigent. | `1234`                    |
 | options.eventsToTrack | Optional | Array of strings | Overrides the set of tracked events                     | `['auctionEnd','bidWon']` |

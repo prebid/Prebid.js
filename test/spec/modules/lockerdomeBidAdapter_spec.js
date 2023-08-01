@@ -74,7 +74,7 @@ describe('LockerDomeAdapter', function () {
       const bidderRequest = {
         refererInfo: {
           canonicalUrl: 'https://example.com/canonical',
-          referer: 'https://example.com'
+          topmostLocation: 'https://example.com'
         }
       };
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -88,7 +88,7 @@ describe('LockerDomeAdapter', function () {
       expect(bids).to.have.lengthOf(2);
 
       expect(requestData.url).to.equal(encodeURIComponent(bidderRequest.refererInfo.canonicalUrl));
-      expect(requestData.referrer).to.equal(encodeURIComponent(bidderRequest.refererInfo.referer));
+      expect(requestData.referrer).to.equal(encodeURIComponent(bidderRequest.refererInfo.topmostLocation));
 
       expect(bids[0].requestId).to.equal('2652ca954bce9');
       expect(bids[0].adUnitCode).to.equal('ad-1');

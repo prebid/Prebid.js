@@ -70,10 +70,10 @@ export const fabrickIdSubmodule = {
           }
         }
         // pull off the trailing &
-        url = url.slice(0, -1)
+        url = url.slice(0, -1);
         const referer = _getRefererInfo(configParams);
         const refs = new Map();
-        _setReferrer(refs, referer.referer);
+        _setReferrer(refs, referer.topmostLocation);
         if (referer.stack && referer.stack[0]) {
           _setReferrer(refs, referer.stack[0]);
         }
@@ -117,6 +117,12 @@ export const fabrickIdSubmodule = {
     } catch (e) {
       logError(`fabrickIdSystem encountered an error`, e);
     }
+  },
+  eids: {
+    'fabrickId': {
+      source: 'neustar.biz',
+      atype: 1
+    },
   }
 };
 
@@ -174,7 +180,7 @@ export function appendUrl(url, paramName, s, configParams) {
         s = s.substring(0, thisMaxRefLen - 2);
       }
     }
-    return `${url}${s}`
+    return `${url}${s}`;
   } else {
     return url;
   }

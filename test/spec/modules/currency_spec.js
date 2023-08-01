@@ -169,6 +169,28 @@ describe('currency', function () {
       expect(getGlobal().convertCurrency(1.0, 'USD', 'EUR')).to.equal(4);
       expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
     });
+    it('uses default rates until currency file is loaded', function () {
+      setConfig({
+        adServerCurrency: 'USD',
+        defaultRates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+
+      // Race condition where a bid is converted before the file has been loaded
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(100);
+
+      fakeCurrencyFileServer.respondWith(JSON.stringify({
+        'dataAsOf': '2017-04-25',
+        'conversions': {
+          'USD': { JPY: 200 }
+        }
+      }));
+      fakeCurrencyFileServer.respond();
+      expect(getGlobal().convertCurrency(1.0, 'USD', 'JPY')).to.equal(200);
+    });
   });
   describe('bidder override', function () {
     it('allows setConfig to set bidder currency', function () {
@@ -329,6 +351,11 @@ describe('currency', function () {
   });
 
   describe('currency.addBidResponseDecorator', function () {
+    let reject;
+    beforeEach(() => {
+      reject = sinon.stub().returns({status: 'rejected'});
+    });
+
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
       setConfig({});
       var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
@@ -339,15 +366,16 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal(1);
     });
 
-    it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
+    it('should reject bid when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
 
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
     it('should not buffer bid when currency is already in desired currency', function () {
@@ -362,7 +390,7 @@ describe('currency', function () {
       expect(bid).to.equal(innerBid);
     });
 
-    it('should result in NO_BID when fromCurrency is not supported in file', function () {
+    it('should reject bid when fromCurrency is not supported in file', function () {
       // RESET to request currency file
       setConfig({ 'adServerCurrency': undefined });
 
@@ -370,23 +398,25 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
-    it('should result in NO_BID when adServerCurrency is not supported in file', function () {
+    it('should reject bid when adServerCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {

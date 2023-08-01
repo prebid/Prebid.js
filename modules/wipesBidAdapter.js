@@ -1,5 +1,4 @@
-import { logWarn } from '../src/utils.js';
-import {config} from '../src/config.js';
+import {logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
@@ -50,7 +49,7 @@ function interpretResponse(serverResponse, bidRequest) {
       dealId: response.deal_id,
       currency: 'JPY',
       netRevenue: netRevenue,
-      ttl: config.getConfig('_bidderTimeout'),
+      ttl: 60,
       referrer: bidRequest.data.r || '',
       mediaType: BANNER,
       ad: response.ad_tag,

@@ -19,9 +19,9 @@ module.exports = {
     'import'
   ],
   globals: {
-    '$$PREBID_GLOBAL$$': false,
     'BROWSERSTACK_USERNAME': false,
-    'BROWSERSTACK_KEY': false
+    'BROWSERSTACK_KEY': false,
+    'FEATURES': 'readonly',
   },
   // use babel as parser for fancy syntax
   parser: '@babel/eslint-parser',

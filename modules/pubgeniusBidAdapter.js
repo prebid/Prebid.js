@@ -1,7 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {
   deepAccess,
   deepSetValue,
@@ -41,7 +41,7 @@ export const spec = {
 
   buildRequests: function (bidRequests, bidderRequest) {
     const data = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: bidRequests.map(buildImp),
       tmax: bidderRequest.timeout,
       ext: {
@@ -228,20 +228,15 @@ function buildSite(bidderRequest) {
   let site = null;
   const { refererInfo } = bidderRequest;
 
-  const pageUrl = config.getConfig('pageUrl') || refererInfo.canonicalUrl || refererInfo.referer;
+  const pageUrl = refererInfo.page;
   if (pageUrl) {
     site = site || {};
     site.page = pageUrl;
   }
 
-  if (refererInfo.reachedTop) {
-    try {
-      const pageRef = window.top.document.referrer;
-      if (pageRef) {
-        site = site || {};
-        site.ref = pageRef;
-      }
-    } catch (e) {}
+  if (refererInfo.ref) {
+    site = site || {};
+    site.ref = refererInfo.ref;
   }
 
   return site;

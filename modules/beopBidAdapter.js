@@ -1,7 +1,18 @@
-import { deepAccess, isArray, logWarn, triggerPixel, buildUrl, logInfo, getValue, getBidIdParameter } from '../src/utils.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import {
+  buildUrl,
+  deepAccess,
+  getBidIdParameter,
+  getValue,
+  isArray,
+  logInfo,
+  logWarn,
+  triggerPixel
+} from '../src/utils.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';
 const TCF_VENDOR_ID = 666;
@@ -37,23 +48,33 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
+    const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
+    const siteBpSegs = firstPartyData.site?.ext?.bpsegs || firstPartyData.site?.ext?.data?.bpsegs || [];
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
-    const fpd = config.getLegacyFpd(config.getConfig('ortb2'));
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
+    const kwdsFromRequest = firstSlot.kwds;
+    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
+
     const payloadObject = {
       at: new Date().toString(),
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
+      psegs: psegs,
+      bpsegs: (userBpSegs.concat(siteBpSegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
-      kwds: (fpd && fpd.site && fpd.site.keywords) || [],
+      kwds: keywords,
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
+      gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
+
     const payloadString = JSON.stringify(payloadObject);
     return {
       method: 'POST',
@@ -100,15 +121,14 @@ export const spec = {
 }
 
 function buildTrackingParams(data, info, value) {
-  const accountId = data.params.accountId;
+  let params = Array.isArray(data.params) ? data.params[0] : data.params;
   const pageUrl = getPageUrl(null, window);
   return {
-    pid: accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : accountId,
-    nid: data.params.networkId,
-    nptnid: data.params.networkPartnerId,
+    pid: params.accountId === undefined ? data.ad.match(/account: \“([a-f\d]{24})\“/)[1] : params.accountId,
+    nid: params.networkId,
+    nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
-    aid: data.auctionId,
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
@@ -130,13 +150,13 @@ function beOpRequestSlotsMaker(bid) {
     sizes: isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
     pid: getValue(bid.params, 'accountId'),
+    kwds: getValue(bid.params, 'keywords'),
     nid: getValue(bid.params, 'networkId'),
     nptnid: getValue(bid.params, 'networkPartnerId'),
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
     name: getBidIdParameter('adUnitCode', bid),
-    aid: getBidIdParameter('auctionId', bid),
-    tid: getBidIdParameter('transactionId', bid),
+    tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),

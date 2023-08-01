@@ -9,13 +9,14 @@ import { logInfo, logError, logWarn } from '../src/utils.js';
 import * as ajaxLib from '../src/ajax.js';
 import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'merkleId';
 const ID_URL = 'https://prebid.sv.rkdms.com/identity/';
 const DEFAULT_REFRESH = 7 * 3600;
 const SESSION_COOKIE_NAME = '_svsid';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function getSession(configParams) {
   let session = null;
@@ -159,7 +160,7 @@ export const merkleIdSubmodule = {
 
     if (typeof configParams.endpoint !== 'string') {
       logWarn('User ID - merkleId submodule endpoint string is not defined');
-      configParams.endpoint = ID_URL
+      configParams.endpoint = ID_URL;
     }
 
     if (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) {
@@ -188,13 +189,37 @@ export const merkleIdSubmodule = {
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > refreshInSeconds * 1000);
       if (refreshNeeded) {
         logInfo('User ID - merkleId needs refreshing id');
-        const resp = generateId(configParams, configStorage)
+        const resp = generateId(configParams, configStorage);
         return {callback: resp};
       }
     }
 
     logInfo('User ID - merkleId not refreshed');
     return {id: storedId};
+  },
+  eids: {
+    'merkleId': {
+      atype: 3,
+      getSource: function(data) {
+        if (data?.ext?.ssp) {
+          return `${data.ext.ssp}.merkleinc.com`
+        }
+        return 'merkleinc.com'
+      },
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.keyID) {
+          return {
+            keyID: data.keyID
+          }
+        }
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
   }
 
 };

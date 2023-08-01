@@ -87,7 +87,7 @@ export const spec = {
       syncArr.push({
         type: 'iframe',
         url: IFRAMESYNC + policyParam
-      })
+      });
     } else {
       syncArr.push({
         type: 'image',
@@ -116,13 +116,13 @@ registerBidder(spec);
  * Creates site description object
  */
 function createSite(refInfo) {
-  let url = parseUrl(refInfo.referer);
+  let url = parseUrl(refInfo.page || '');
   let site = {
     'domain': url.hostname,
     'page': url.protocol + '://' + url.hostname + url.pathname
   };
-  if (self === top && document.referrer) {
-    site.ref = document.referrer;
+  if (refInfo.ref) {
+    site.ref = refInfo.ref
   }
   let keywords = document.getElementsByTagName('meta')['keywords'];
   if (keywords && keywords.content) {
@@ -157,6 +157,7 @@ function bidToRequest(bid) {
   bidObj.publisherId = bid.params.publisherId;
   bidObj.bidId = bid.bidId;
   bidObj.adUnitCode = bid.adUnitCode;
+  // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
   bidObj.auctionId = bid.auctionId;
 
   return bidObj;

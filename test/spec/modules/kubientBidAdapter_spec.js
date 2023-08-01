@@ -91,7 +91,7 @@ describe('KubientAdapter', function () {
     auctionStart: 1472239426000,
     timeout: 5000,
     refererInfo: {
-      referer: 'http://www.example.com',
+      page: 'http://www.example.com',
       reachedTop: true,
     },
     gdprConsent: {

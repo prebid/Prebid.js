@@ -34,9 +34,14 @@ export const spec = {
           w: size[0],
           h: size[1]
         })),
-        transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
+        transactionId: bid.ortb2Imp?.ext?.tid,
+        timeout: bidderRequest?.timeout,
         bidId: bid.bidId,
+        /** positionType is undocumented
+        It is unclear what this parameter means.
+        If it means the same as pos in openRTB,
+        It should read from openRTB object
+        or from mediaTypes.banner.pos */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
@@ -51,13 +56,18 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        payload.pageDomain = bidderRequest.refererInfo.referer || '';
+        payload.pageDomain = bidderRequest.refererInfo.page || '';
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
+
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',

@@ -17,7 +17,6 @@ const BIDDER_ENDPOINT = 'https://bid.essrtb.com/bid/prebid_rtb_call';
 const DEV_BIDDER_ENDPOINT = 'https://bid-service.dev.essrtb.com/bid/prebid_rtb_call';
 const TIMEOUT_NOTIFICATION_ENDPOINT = 'https://bid.essrtb.com/notify/prebid_timeout';
 const SUPPORTED_CURRENCY = 'USD';
-const DEFAULT_TIMEOUT = 1000;
 const TIME_TO_LIVE_IN_SECONDS = 10 * 60;
 
 export const isBidRequestValid = function (bid) {
@@ -91,6 +90,7 @@ export const onTimeout = function (timeoutDataArray) {
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
@@ -102,30 +102,32 @@ export const onTimeout = function (timeoutDataArray) {
   }
 };
 
-function getPageUrlFromRefererInfo() {
-  const refererInfo = getRefererInfo();
-  return (refererInfo && refererInfo.referer)
-    ? refererInfo.referer
-    : window.location.href;
-}
-
 function getPageUrlFromRequest(validBidRequest, bidderRequest) {
   // pageUrl is considered only when testing to ensure that non-test requests always contain the correct URL
   if (isTest(validBidRequest) && config.getConfig('pageUrl')) {
+    // TODO: it's not clear what the intent is here - but all adapters should always respect pageUrl.
+    // With prebid 7, using `refererInfo.page` will do that automatically.
     return config.getConfig('pageUrl');
   }
 
-  return (bidderRequest.refererInfo && bidderRequest.refererInfo.referer)
-    ? bidderRequest.refererInfo.referer
+  return (bidderRequest.refererInfo && bidderRequest.refererInfo.page)
+    ? bidderRequest.refererInfo.page
+    : window.location.href;
+}
+
+function getPageUrlFromRefererInfo() {
+  const refererInfo = getRefererInfo();
+  return (refererInfo && refererInfo.page)
+    ? refererInfo.page
     : window.location.href;
 }
 
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
-  const timeout = bidderRequest.timeout || config.getConfig('bidderTimeout') || DEFAULT_TIMEOUT;
+  const timeout = bidderRequest.timeout;
   const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest)
   const request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     tmax: timeout,
     cur: [SUPPORTED_CURRENCY],

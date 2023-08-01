@@ -2,6 +2,7 @@ import { isEmpty, parseUrl, isStr, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'videoheroes';
 const DEFAULT_CUR = 'USD';
@@ -38,6 +39,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     if (validBidRequests.length === 0 || !bidderRequest) return [];
 
     const endpointURL = ENDPOINT_URL.replace('hash', validBidRequests[0].params.placementId);
@@ -54,6 +57,8 @@ export const spec = {
         impObject.video = createVideoRequest(br);
       } else if (br.mediaTypes.native) {
         impObject.native = {
+          // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          // Also, `id` is not in the ORTB native spec
           id: br.transactionId,
           ver: '1.2',
           request: createNativeRequest(br)
@@ -62,23 +67,7 @@ export const spec = {
       return impObject;
     });
 
-    let w = window;
-    let l = w.document.location.href;
-    let r = w.document.referrer;
-
-    let loopChecker = 0;
-    while (w !== w.parent) {
-      if (++loopChecker == 10) break;
-      try {
-        w = w.parent;
-        l = w.location.href;
-        r = w.document.referrer;
-      } catch (e) {
-        break;
-      }
-    }
-
-    let page = l || bidderRequest.refererInfo.referer;
+    let page = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
 
     let data = {
       id: bidderRequest.bidderRequestId,
@@ -93,12 +82,12 @@ export const spec = {
         domain: parseUrl(page).hostname,
         page: page,
       },
-      tmax: bidderRequest.timeout || config.getConfig('bidderTimeout') || 500,
+      tmax: bidderRequest.timeout,
       imp
     };
 
-    if (r) {
-      data.site.ref = r;
+    if (bidderRequest.refererInfo.ref) {
+      data.site.ref = bidderRequest.refererInfo.ref;
     }
 
     if (bidderRequest.gdprConsent) {

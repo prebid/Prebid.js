@@ -54,6 +54,16 @@ describe('fluctAdapter', function () {
   });
 
   describe('buildRequests', function () {
+    let sb;
+
+    beforeEach(function () {
+      sb = sinon.sandbox.create();
+    });
+
+    afterEach(function () {
+      sb.restore();
+    });
+
     const bidRequests = [{
       bidder: 'fluct',
       params: {
@@ -70,7 +80,7 @@ describe('fluctAdapter', function () {
     }];
     const bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com'
+        page: 'http://example.com'
       }
     };
 
@@ -84,6 +94,11 @@ describe('fluctAdapter', function () {
       expect(request.url).to.equal('https://hb.adingo.jp/prebid?dfpUnitCode=%2F100000%2Funit_code&tagId=10000%3A100000001&groupId=1000000002');
     });
 
+    it('includes data.page by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.page).to.eql('http://example.com');
+    });
+
     it('includes data.user.eids = [] by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([]);
@@ -94,7 +109,17 @@ describe('fluctAdapter', function () {
       expect(request.data.params.kv).to.eql(undefined);
     });
 
-    it('includes filtered user.eids if any exists', function () {
+    it('includes no data.schain by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.schain).to.eql(undefined);
+    });
+
+    it('includes no data.regs by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs).to.eql(undefined);
+    });
+
+    it('includes filtered user.eids if any exist', function () {
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign(bidReq, {
           userIdAsEids: [
@@ -175,6 +200,75 @@ describe('fluctAdapter', function () {
         imsids: ['imsid1', 'imsid2']
       });
     });
+
+    it('includes data.schain if any exists', function () {
+      // this should be done by schain.js
+      const bidRequests2 = bidRequests.map(
+        (bidReq) => Object.assign(bidReq, {
+          schain: {
+            ver: '1.0',
+            complete: 1,
+            nodes: [
+              {
+                asi: 'example.com',
+                sid: 'publisher-id',
+                hp: 1
+              }
+            ]
+          }
+        })
+      );
+      const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
+      expect(request.data.schain).to.eql({
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'example.com',
+            sid: 'publisher-id',
+            hp: 1
+          }
+        ]
+      });
+    });
+
+    it('includes data.regs.gdpr if bidderRequest.gdprConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          gdprConsent: {
+            consentString: 'gdpr-consent-string',
+            gdprApplies: true,
+          },
+        }),
+      )[0];
+      expect(request.data.regs.gdpr).to.eql({
+        consent: 'gdpr-consent-string',
+        gdprApplies: 1,
+      });
+    });
+
+    it('includes data.regs.us_privacy if bidderRequest.uspConsent exists', function () {
+      const request = spec.buildRequests(
+        bidRequests,
+        Object.assign({}, bidderRequest, {
+          uspConsent: 'usp-consent-string',
+        }),
+      )[0];
+      expect(request.data.regs.us_privacy).to.eql({
+        consent: 'usp-consent-string',
+      });
+    });
+
+    it('includes data.regs.coppa if config.getConfig("coppa") is true', function () {
+      const cfg = {
+        coppa: true,
+      };
+      sb.stub(config, 'getConfig').callsFake(key => cfg[key]);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.regs.coppa).to.eql(1);
+    });
   });
 
   describe('interpretResponse', function() {
@@ -211,15 +305,20 @@ describe('fluctAdapter', function () {
               adm: '<!-- test creative -->',
               burl: 'https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99',
               crid: 'test_creative',
-              adomain: ['test_adomain']
+              adomain: ['test_adomain'],
             }]
-          }]
+          }],
+          usersyncs: [
+            {
+              'type': 'image',
+              'url': 'https://cs.adingo.jp/sync',
+            },
+          ],
         }
       };
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,
@@ -276,7 +375,6 @@ describe('fluctAdapter', function () {
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,
@@ -300,6 +398,73 @@ describe('fluctAdapter', function () {
 
     it('should get empty response when bid server returns 204', function() {
       expect(spec.interpretResponse({})).to.be.empty;
+    });
+  });
+
+  describe('getUserSyncs', function () {
+    const syncOptions = {};
+    const serverResponse = {
+      body: {
+        usersyncs: [
+          {
+            type: 'image',
+            url: 'https://cs.adingo.jp/foo',
+          },
+          {
+            type: 'image',
+            url: 'https://cs.adingo.jp/bar',
+          },
+          {
+            type: 'iframe',
+            url: 'https://cs.adingo.jp/buz',
+          },
+        ],
+      },
+    };
+
+    it('returns no user syncs if syncOption.pixelEnabled !== true and syncOption.iframeEnabled !== true', function () {
+      const actual = spec.getUserSyncs(
+        syncOptions,
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([]);
+    });
+
+    it('returns user syncs if syncOption.pixelEnabled === true', function () {
+      const actual = spec.getUserSyncs(
+        Object.assign({}, syncOptions, {
+          pixelEnabled: true,
+        }),
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([
+        {
+          type: 'image',
+          url: 'https://cs.adingo.jp/foo',
+        },
+        {
+          type: 'image',
+          url: 'https://cs.adingo.jp/bar',
+        },
+      ]);
+    });
+
+    it('returns user syncs if syncOption.iframeEnabled === true', function () {
+      const actual = spec.getUserSyncs(
+        Object.assign({}, syncOptions, {
+          iframeEnabled: true,
+        }),
+        [serverResponse],
+      );
+
+      expect(actual).to.eql([
+        {
+          type: 'iframe',
+          url: 'https://cs.adingo.jp/buz',
+        },
+      ]);
     });
   });
 });

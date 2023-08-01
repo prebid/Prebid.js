@@ -50,7 +50,11 @@ describe('GmosspAdapter', function () {
         bidId: '2b84475b5b636e',
         bidderRequestId: '1f4001782ac16c',
         auctionId: 'aba03555-4802-4c45-9f15-05ffa8594cff',
-        transactionId: '791e9d84-af92-4903-94da-24c7426d9d0c',
+        ortb2Imp: {
+          ext: {
+            tid: '791e9d84-af92-4903-94da-24c7426d9d0c',
+          }
+        },
         userId: {
           imuid: 'h.0a4749e7ffe09fa6',
           pubcid: '1111',
@@ -62,7 +66,7 @@ describe('GmosspAdapter', function () {
     it('sends bid request to ENDPOINT via GET', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://hoge.com'
+          topmostLocation: 'https://hoge.com'
         }
       };
       const requests = spec.buildRequests(bidRequests, bidderRequest);
@@ -74,7 +78,7 @@ describe('GmosspAdapter', function () {
     it('should use fallback if refererInfo.referer in bid request is empty and im_uid ,shared_id, idl_env cookie is empty', function () {
       const bidderRequest = {
         refererInfo: {
-          referer: ''
+          topmostLocation: ''
         },
       };
       bidRequests[0].userId.imuid = '';

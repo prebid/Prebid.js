@@ -1,8 +1,8 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepClone, deepAccess } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {deepAccess, deepClone} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
@@ -18,16 +18,22 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     let bids = [];
     let bidIds = [];
+    let eids;
     validBidRequests.forEach(bidRequest => {
-      let sizes = prepareSizes(bidRequest.sizes)
+      let formatTypes = getFormatType(bidRequest)
+
+      if (bidRequest.userIdAsEids) {
+        eids = eids || bidRequest.userIdAsEids
+      }
 
       bids.push({
         token: bidRequest.params.token,
         pos: bidRequest.params.pos,
-        bidFloor: bidRequest.params.bidFloor,
-        width: sizes[0].width,
-        height: sizes[0].height,
-        impMediaType: getFormatType(bidRequest)
+        bidFloor: getBidFloor(bidRequest, formatTypes),
+        sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
+        playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
+        impMediaTypes: formatTypes,
+        adUnitCode: bidRequest.adUnitCode
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -35,11 +41,29 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       requestId: bidderRequest.auctionId,
-      signRequest: { bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID },
+      signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
-      referer: bidderRequest.refererInfo.referer,
-      signature: alkimiConfig && alkimiConfig.signature
+      referer: bidderRequest.refererInfo.page,
+      signature: alkimiConfig && alkimiConfig.signature,
+      schain: validBidRequests[0].schain,
+      cpp: config.getConfig('coppa') ? 1 : 0
+    }
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdprConsent = {
+        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : false,
+        consentString: bidderRequest.gdprConsent.consentString
+      }
+    }
+
+    if (bidderRequest.uspConsent) {
+      payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (eids) {
+      payload.eids = eids
     }
 
     const options = {
@@ -63,7 +87,7 @@ export const spec = {
       return [];
     }
 
-    const { prebidResponse } = serverBody;
+    const {prebidResponse} = serverBody;
     if (!prebidResponse || typeof prebidResponse !== 'object') {
       return [];
     }
@@ -91,7 +115,7 @@ export const spec = {
     let winUrl;
     if (bid.winUrl || bid.vastUrl) {
       winUrl = bid.winUrl ? bid.winUrl : bid.vastUrl;
-      winUrl = winUrl.replace(/\$\{AUCTION_PRICE\}/, bid.cpm);
+      winUrl = winUrl.replace(/\$\{AUCTION_PRICE}/, bid.cpm);
     } else if (bid.ad) {
       let trackImg = bid.ad.match(/(?!^)<img src=".+dsp-win.+">/);
       bid.ad = bid.ad.replace(trackImg[0], '');
@@ -107,13 +131,34 @@ export const spec = {
 }
 
 function prepareSizes(sizes) {
-  return sizes && sizes.map(size => ({ width: size[0], height: size[1] }));
+  return sizes ? sizes.map(size => ({width: size[0], height: size[1]})) : []
+}
+
+function prepareBidFloorSize(sizes) {
+  return sizes && sizes.length === 1 ? sizes : ['*'];
+}
+
+function getBidFloor(bidRequest, formatTypes) {
+  let minFloor
+  if (typeof bidRequest.getFloor === 'function') {
+    const bidFloorSizes = prepareBidFloorSize(bidRequest.sizes)
+    formatTypes.forEach(formatType => {
+      bidFloorSizes.forEach(bidFloorSize => {
+        const floor = bidRequest.getFloor({currency: 'USD', mediaType: formatType.toLowerCase(), size: bidFloorSize});
+        if (floor && !isNaN(floor.floor) && (floor.currency === 'USD')) {
+          minFloor = !minFloor || floor.floor < minFloor ? floor.floor : minFloor
+        }
+      })
+    })
+  }
+  return minFloor || bidRequest.params.bidFloor;
 }
 
 const getFormatType = bidRequest => {
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) return 'Banner'
-  if (deepAccess(bidRequest, 'mediaTypes.video')) return 'Video'
-  if (deepAccess(bidRequest, 'mediaTypes.audio')) return 'Audio'
+  let formats = []
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) formats.push('Banner')
+  if (deepAccess(bidRequest, 'mediaTypes.video')) formats.push('Video')
+  return formats
 }
 
 registerBidder(spec);

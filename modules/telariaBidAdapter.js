@@ -235,7 +235,7 @@ function generateUrl(bid, bidderRequest) {
 
     url += `${getUrlParams(params, bid.schain)}`;
 
-    url += (`&transactionId=${bid.transactionId}`);
+    url += (`&transactionId=${bid.ortb2Imp?.ext?.tid}`);
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
@@ -247,8 +247,9 @@ function generateUrl(bid, bidderRequest) {
         }
       }
 
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.referer)}`);
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.page)}`);
       }
     }
 

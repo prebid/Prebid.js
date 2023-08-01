@@ -1,8 +1,26 @@
-import { logWarn, isStr, deepAccess, isArray, getBidIdParameter, deepSetValue, isEmpty, _each, convertTypes, parseUrl, mergeDeep, buildUrl, _map, logError, isFn, isPlainObject } from '../src/utils.js';
+import {
+  logWarn,
+  isStr,
+  deepAccess,
+  isArray,
+  getBidIdParameter,
+  deepSetValue,
+  isEmpty,
+  _each,
+  convertTypes,
+  parseUrl,
+  mergeDeep,
+  buildUrl,
+  _map,
+  logError,
+  isFn,
+  isPlainObject,
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { config } from '../src/config.js';
+
+// Maintainer: mediapsr@epsilon.com
 
 const GVLID = 24;
 
@@ -13,7 +31,7 @@ const URL = 'https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25';
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['cnvr'], // short code
+  aliases: ['cnvr', 'epsilon'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -55,9 +73,8 @@ export const spec = {
    * @return {ServerRequest} Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
-    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.referer : '';
+    const page = (bidderRequest && bidderRequest.refererInfo) ? bidderRequest.refererInfo.page : '';
     let siteId = '';
-    let requestId = '';
     let pubcid = null;
     let pubcidName = '_pubcid';
     let bidurl = URL;
@@ -67,8 +84,6 @@ export const spec = {
 
       siteId = getBidIdParameter('site_id', bid.params) || siteId;
       pubcidName = getBidIdParameter('pubcid_name', bid.params) || pubcidName;
-
-      requestId = bid.auctionId;
 
       const imp = {
         id: bid.bidId,
@@ -123,8 +138,11 @@ export const spec = {
     });
 
     const payload = {
-      id: requestId,
+      id: bidderRequest.bidderRequestId,
       imp: conversantImps,
+      source: {
+        tid: bidderRequest.ortb2?.source?.tid,
+      },
       site: {
         id: siteId,
         mobile: document.querySelector('meta[name="viewport"][content*="width=device-width"]') !== null ? 1 : 0,
@@ -143,6 +161,10 @@ export const spec = {
     }
 
     if (bidderRequest) {
+      if (bidderRequest.timeout) {
+        deepSetValue(payload, 'tmax', bidderRequest.timeout);
+      }
+
       // Add GDPR flag and consent string
       if (bidderRequest.gdprConsent) {
         userExt.consent = bidderRequest.gdprConsent.consentString;
@@ -177,7 +199,7 @@ export const spec = {
       payload.user = {ext: userExt};
     }
 
-    const firstPartyData = config.getConfig('ortb2') || {};
+    const firstPartyData = bidderRequest.ortb2 || {};
     mergeDeep(payload, firstPartyData);
 
     return {

@@ -71,10 +71,16 @@ describe('Trion adapter tests', function () {
 
   beforeEach(function () {
     // adapter = trionAdapter.createNew();
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      trion: {
+        storageAllowed: true
+      }
+    };
     sinon.stub(document.body, 'appendChild');
   });
 
   afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
     document.body.appendChild.restore();
   });
 

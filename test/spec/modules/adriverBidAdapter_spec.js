@@ -297,25 +297,18 @@ describe('adriverAdapter', function () {
       { adrcid: undefined }
     ]
     cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
-      let expectedValues = {
-        adrcid: cookieValue.adrcid,
-        at: '',
-        cur: '',
-        tmax: '',
-        site: '',
-        id: '',
-        user: '',
-        device: '',
-        imp: ''
-      }
+      let expectedValues = [
+        'buyerid',
+        'ext'
+      ]
 
       it('check adrcid if it exists', function () {
         bidRequests[0].userId.adrcid = cookieValue.adrcid;
         const payload = JSON.parse(spec.buildRequests(bidRequests).data);
         if (cookieValue.adrcid) {
-          expect(Object.keys(payload)).to.have.members(Object.keys(expectedValues));
+          expect(Object.keys(payload.user)).to.have.members(expectedValues);
         } else {
-          expect(payload.adrcid).to.equal(undefined);
+          expect(payload.user.buyerid).to.equal(0);
         }
       });
     }));
@@ -328,15 +321,6 @@ describe('adriverAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'id': '221594457-1615288400-1-46-',
       'bidid': 'D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA',

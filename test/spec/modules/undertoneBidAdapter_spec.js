@@ -41,7 +41,9 @@ const videoBidReq = [{
   },
   mediaTypes: {video: {
     context: 'outstream',
-    playerSize: [640, 480]
+    playerSize: [640, 480],
+    placement: 1,
+    plcmt: 1
   }},
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
@@ -152,13 +154,13 @@ const bidReqUserIds = [{
 
 const bidderReq = {
   refererInfo: {
-    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
   }
 };
 
 const bidderReqGdpr = {
   refererInfo: {
-    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
   },
   gdprConsent: {
     gdprApplies: true,
@@ -168,20 +170,45 @@ const bidderReqGdpr = {
 
 const bidderReqCcpa = {
   refererInfo: {
-    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
   },
   uspConsent: 'NY12'
 };
 
 const bidderReqCcpaAndGdpr = {
   refererInfo: {
-    referer: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
   },
   gdprConsent: {
     gdprApplies: true,
     consentString: 'acdefgh'
   },
   uspConsent: 'NY12'
+};
+
+const bidderReqGpp = {
+  refererInfo: {
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gppConsent: {
+    gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+    applicableSections: [7]
+  }
+};
+
+const bidderReqFullGppCcpaGdpr = {
+  refererInfo: {
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gppConsent: {
+    gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+    applicableSections: [7]
+  },
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'gdprConsent'
+  },
+  uspConsent: '1YNN'
 };
 
 const validBidRes = {
@@ -343,18 +370,18 @@ describe('Undertone Adapter', () => {
     });
     it('should send request to correct url via POST not in GDPR or CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
-      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
-      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
-      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
     it('should send request to correct url via POST when in GDPR', function () {
       const request = spec.buildRequests(bidReq, bidderReqGdpr);
-      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
-      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
-      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
       let gdpr = bidderReqGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}`;
       expect(request.url).to.equal(REQ_URL);
@@ -362,9 +389,9 @@ describe('Undertone Adapter', () => {
     });
     it('should send request to correct url via POST when in CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReqCcpa);
-      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
-      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
-      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
       let ccpa = bidderReqCcpa.uspConsent;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&ccpa=${ccpa}`;
       expect(request.url).to.equal(REQ_URL);
@@ -372,12 +399,37 @@ describe('Undertone Adapter', () => {
     });
     it('should send request to correct url via POST when in GDPR and CCPA', function () {
       const request = spec.buildRequests(bidReq, bidderReqCcpaAndGdpr);
-      const domainStart = bidderReq.refererInfo.referer.indexOf('//');
-      const domainEnd = bidderReq.refererInfo.referer.indexOf('/', domainStart + 2);
-      const domain = bidderReq.refererInfo.referer.substring(domainStart + 2, domainEnd);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
       let ccpa = bidderReqCcpaAndGdpr.uspConsent;
       let gdpr = bidderReqCcpaAndGdpr.gdprConsent.gdprApplies ? 1 : 0;
       const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${bidderReqGdpr.gdprConsent.consentString}&ccpa=${ccpa}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it(`should have gppConsent fields`, function () {
+      const request = spec.buildRequests(bidReq, bidderReqGpp);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
+      const gppStr = bidderReqGpp.gppConsent.gppString;
+      const gppSid = bidderReqGpp.gppConsent.applicableSections;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gpp=${gppStr}&gpp_sid=${gppSid}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it(`should have gpp, ccpa and gdpr fields`, function () {
+      const request = spec.buildRequests(bidReq, bidderReqFullGppCcpaGdpr);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
+      const gppStr = bidderReqFullGppCcpaGdpr.gppConsent.gppString;
+      const gppSid = bidderReqFullGppCcpaGdpr.gppConsent.applicableSections;
+      const ccpa = bidderReqFullGppCcpaGdpr.uspConsent;
+      const gdpr = bidderReqFullGppCcpaGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      const gdprStr = bidderReqFullGppCcpaGdpr.gdprConsent.consentString;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${gdprStr}&ccpa=${ccpa}&gpp=${gppStr}&gpp_sid=${gppSid}`;
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
@@ -409,10 +461,14 @@ describe('Undertone Adapter', () => {
       expect(bidVideo.video.playbackMethod).to.equal(2);
       expect(bidVideo.video.maxDuration).to.equal(30);
       expect(bidVideo.video.skippable).to.equal(true);
+      expect(bidVideo.video.placement).to.equal(1);
+      expect(bidVideo.video.plcmt).to.equal(1);
 
       expect(bidVideo2.video.skippable).to.equal(null);
       expect(bidVideo2.video.maxDuration).to.equal(null);
       expect(bidVideo2.video.playbackMethod).to.equal(null);
+      expect(bidVideo2.video.placement).to.equal(null);
+      expect(bidVideo2.video.plcmt).to.equal(null);
     });
     it('should send all userIds data to server', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);

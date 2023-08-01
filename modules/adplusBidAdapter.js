@@ -127,6 +127,7 @@ function createBidRequest(bid) {
       screenWidth: screen.width,
       screenHeight: screen.height,
       language: window.navigator.language || 'en-US',
+      // TODO: these should probably look at refererInfo
       pageUrl: window.location.href,
       domain: window.location.hostname,
       referrer: window.location.referrer,

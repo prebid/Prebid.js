@@ -45,17 +45,16 @@ export const spec = {
 
     const bidRequests = [];
     const tz = new Date().getTimezoneOffset()
-    const referrer = bidderRequest && bidderRequest.refererInfo ? bidderRequest.refererInfo.referer : '';
+    // TODO: are these the right referer values?
+    const referrer = bidderRequest?.refererInfo?.page || '';
+    const topOrigin = bidderRequest?.refererInfo?.domain || '';
 
     _each(validBidRequests, (bid) => {
-      let topOrigin = ''
-      try {
-        if (isStr(referrer)) topOrigin = new URL(referrer).host
-      } catch (e) { /* do nothing */ }
       const domain = isStr(bid.params.domain) ? bid.params.domain : topOrigin
       const cur = getValue(bid.params, 'currency') || DEFAULT_CURRENCY
       const bidid = getBidIdParameter('bidId', bid)
-      const transactionid = getBidIdParameter('transactionId', bid)
+      const transactionid = bid.ortb2Imp?.ext?.tid || '';
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       const auctionid = getBidIdParameter('auctionId', bid)
       const bidfloor = _getBidFloor(bid)
 
@@ -114,7 +113,6 @@ export const spec = {
             netRevenue: true,
             ad: bid.ad,
             ttl: bid.ttl,
-            transactionId: bid.transactionid,
             meta: {
               advertiserDomains: bid.adDomain ? [bid.adDomain] : []
             }

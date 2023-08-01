@@ -23,13 +23,14 @@ export const spec = {
           output: 'js',
           pub: bidRequest.params.pub,
           zone: bidRequest.params.zone,
-          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '',
+          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.page) : '',
           width: arrSize[0],
           height: arrSize[1],
           vpw: window.screen.width,
           vph: window.screen.height,
           callback: 'json',
           callback_uid: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auction: bidRequest.auctionId,
         },
       };

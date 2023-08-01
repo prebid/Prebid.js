@@ -35,6 +35,7 @@ describe('InsticatorBidAdapter', function () {
         ],
         w: 250,
         h: 300,
+        placement: 2,
       },
     },
     bidId: '30b31c1838de1e',
@@ -71,7 +72,11 @@ describe('InsticatorBidAdapter', function () {
 
   let bidderRequest = {
     bidderRequestId,
-    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    ortb2: {
+      source: {
+        tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+      }
+    },
     timeout: 300,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -81,7 +86,9 @@ describe('InsticatorBidAdapter', function () {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://example.com',
+      page: 'https://example.com',
+      domain: 'example.com',
+      ref: 'https://referrer.com',
       stack: ['https://example.com']
     },
   };
@@ -153,14 +160,39 @@ describe('InsticatorBidAdapter', function () {
         }
       })).to.be.false;
     });
+
+    it('should return false if video placement is not a number', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+              placement: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
   });
 
   describe('buildRequests', function () {
     let getDataFromLocalStorageStub, localStorageIsEnabledStub;
     let getCookieStub, cookiesAreEnabledStub;
     let sandbox;
+    let serverRequests, serverRequest;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        insticator: {
+          storageAllowed: true
+        }
+      };
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       getCookieStub = sinon.stub(storage, 'getCookie');
@@ -176,14 +208,18 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+    before(() => {
+      serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+      serverRequest = serverRequests[0];
+    })
+
     it('should create a request', function () {
       expect(serverRequests).to.have.length(1);
     });
 
-    const serverRequest = serverRequests[0];
     it('should create a request object with method, URL, options and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -220,7 +256,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.tmax).to.equal(bidderRequest.timeout);
       expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
       expect(data.source.fd).to.equal(1);
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
       expect(data.source.ext).to.have.property('schain').to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -236,7 +272,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
-      expect(data.site.ref).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
@@ -248,7 +284,6 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
-      expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
       expect(data.user).to.have.property('yob');
       expect(data.user.yob).to.equal(1984);
       expect(data.user).to.have.property('gender');
@@ -274,7 +309,7 @@ describe('InsticatorBidAdapter', function () {
         banner: {
           format: [
             { w: 300, h: 250 },
-            { w: 300, h: 600 },
+            { w: 300, h: 600 }
           ]
         },
         video: {
@@ -284,6 +319,7 @@ describe('InsticatorBidAdapter', function () {
           ],
           h: 300,
           w: 250,
+          placement: 2,
         },
         ext: {
           gpid: bidRequest.ortb2Imp.ext.gpid,

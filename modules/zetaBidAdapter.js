@@ -1,6 +1,7 @@
-import { logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {deepAccess, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+
 const BIDDER_CODE = 'zeta_global';
 const PREBID_DEFINER_ID = '44253'
 const ENDPOINT_URL = 'https://prebid.rfihub.com/prebid';
@@ -40,12 +41,6 @@ export const spec = {
       return false;
     }
 
-    if (!(bid.params.device.geo &&
-          bid.params.device.geo.country)) {
-      logWarn('Invalid bid request - missing required geo data');
-      return false;
-    }
-
     if (!bid.params.definerId) {
       logWarn('Invalid bid request - missing required definer data');
       return false;
@@ -71,7 +66,7 @@ export const spec = {
       banner: buildBanner(request)
     };
     let payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: [impData],
       site: params.site ? params.site : {},
       app: params.app ? params.app : {},
@@ -84,7 +79,7 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
@@ -94,7 +89,7 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
-    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.page = bidderRequest.refererInfo.page;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     payload.ext.definerId = params.definerId;
 

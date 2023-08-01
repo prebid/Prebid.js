@@ -1,7 +1,8 @@
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import { ajax } from '../src/ajax.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
@@ -21,7 +22,7 @@ let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
@@ -42,6 +43,9 @@ function filterAttributes(arg, removead) {
       response['gdprConsent'] = {};
       if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
     }
+    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
+      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    }
     requestsAttributes.forEach((attr) => {
       if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
     });
@@ -53,7 +57,7 @@ function filterAttributes(arg, removead) {
 function cleanAuctionEnd(args) {
   let response = {};
   let filteredObj;
-  let objects = ['bidderRequests', 'bidsReceived', 'noBids'];
+  let objects = ['bidderRequests', 'bidsReceived', 'noBids', 'adUnits'];
   objects.forEach((attr) => {
     if (Array.isArray(args[attr])) {
       response[attr] = [];
@@ -73,7 +77,8 @@ function cleanAuctionEnd(args) {
 }
 
 function cleanCreatives(args) {
-  return filterAttributes(args, false);
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  return filterAttributes(stringArgs, false);
 }
 
 function enhanceMediaType(arg) {
@@ -89,7 +94,7 @@ function enhanceMediaType(arg) {
 
 function addBidResponse(args) {
   let eventType = BID_RESPONSE;
-  let argsCleaned = cleanCreatives(JSON.parse(JSON.stringify(args))); ;
+  let argsCleaned = cleanCreatives(args); ;
   if (allEvents[eventType] == undefined) { allEvents[eventType] = [] }
   allEvents[eventType].push(argsCleaned);
 }
@@ -106,7 +111,9 @@ function addTimeout(args) {
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
   let argsCleaned = [];
-  let argsDereferenced = JSON.parse(JSON.stringify(args));
+  let argsDereferenced = {}
+  let stringArgs = JSON.parse(dereferenceWithoutRenderer(args));
+  argsDereferenced = stringArgs;
   argsDereferenced.forEach((attr) => {
     argsCleaned.push(filterAttributes(JSON.parse(JSON.stringify(attr)), false));
   });
@@ -114,17 +121,42 @@ function addTimeout(args) {
   auctionEnd[eventType].push(argsCleaned);
 }
 
+export const dereferenceWithoutRenderer = function(args) {
+  if (args.renderer) {
+    let tmp = args.renderer;
+    delete args.renderer;
+    let stringified = JSON.stringify(args);
+    args['renderer'] = tmp;
+    return stringified;
+  }
+  if (args.bidsReceived) {
+    let tmp = {}
+    for (let key in args.bidsReceived) {
+      if (args.bidsReceived[key].renderer) {
+        tmp[key] = args.bidsReceived[key].renderer;
+        delete args.bidsReceived[key].renderer;
+      }
+    }
+    let stringified = JSON.stringify(args);
+    for (let key in tmp) {
+      args.bidsReceived[key].renderer = tmp[key];
+    }
+    return stringified;
+  }
+  return JSON.stringify(args);
+}
+
 function addAuctionEnd(args) {
   let eventType = AUCTION_END;
   if (saveEvents[eventType] == undefined) { saveEvents[eventType] = [] }
   saveEvents[eventType].push(args);
-  let argsCleaned = cleanAuctionEnd(JSON.parse(JSON.stringify(args)));
+  let argsCleaned = cleanAuctionEnd(JSON.parse(dereferenceWithoutRenderer(args)));
   if (auctionEnd[eventType] == undefined) { auctionEnd[eventType] = [] }
   auctionEnd[eventType].push(argsCleaned);
 }
 
 function handleBidWon(args) {
-  args = enhanceMediaType(filterAttributes(JSON.parse(JSON.stringify(args)), true));
+  args = enhanceMediaType(filterAttributes(JSON.parse(dereferenceWithoutRenderer(args)), true));
   let increment = args['cpm'];
   if (typeof saveEvents['auctionEnd'] == 'object') {
     saveEvents['auctionEnd'].forEach((auction) => {
@@ -142,6 +174,7 @@ function handleBidWon(args) {
     });
   }
   args['cpmIncrement'] = increment;
+  args['referer'] = encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation);
   if (typeof saveEvents.bidRequested == 'object' && saveEvents.bidRequested.length > 0 && saveEvents.bidRequested[0].gdprConsent) { args.gdpr = saveEvents.bidRequested[0].gdprConsent; }
   ajax(endpoint + '.bidwatch.io/analytics/bid_won', null, JSON.stringify(args), {method: 'POST', withCredentials: true});
 }
@@ -150,8 +183,13 @@ function handleAuctionEnd() {
   ajax(endpoint + '.bidwatch.io/analytics/auctions', function (data) {
     let list = JSON.parse(data);
     if (Array.isArray(list) && typeof allEvents['bidResponse'] != 'undefined') {
+      let alreadyCalled = [];
       allEvents['bidResponse'].forEach((bidResponse) => {
-        if (list.includes(bidResponse['originalBidder'] + '_' + bidResponse['creativeId'])) { ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true}); }
+        let tmpId = bidResponse['originalBidder'] + '_' + bidResponse['creativeId'];
+        if (list.includes(tmpId) && !alreadyCalled.includes(tmpId)) {
+          alreadyCalled.push(tmpId);
+          ajax(endpoint + '.bidwatch.io/analytics/creatives', null, JSON.stringify(bidResponse), {method: 'POST', withCredentials: true});
+        }
       });
     }
     allEvents = {};

@@ -18,6 +18,8 @@
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { generateUUID, insertElement, isEmpty, logError } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
@@ -105,6 +107,7 @@ function getMacros(bid, key) {
     '%%PATTERN:hb_bidder%%': bid.bidderCode,
     '%_isHb!': true,
     '%_hbcid!': bid.creativeId || '',
+    '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
     '%%SITE%%': location.hostname,
     '%_pimp%': PV_ID
@@ -184,6 +187,24 @@ function conditionallyWrap(bidResponse, config, userConsent) {
   }
 }
 
+/**
+ * Fire billable events for applicable bids
+ */
+function fireBillableEventsForApplicableBids(params) {
+  events.on(CONSTANTS.EVENTS.BID_WON, function (winningBid) {
+    if (shouldWrap(winningBid, params)) {
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: SUBMODULE_NAME,
+        billingId: generateUUID(),
+        type: 'impression',
+        transactionId: winningBid.transactionId,
+        auctionId: winningBid.auctionId,
+        bidId: winningBid.requestId
+      });
+    }
+  });
+}
+
 function init(config, userConsent) {
   let params = config.params;
   if (!params || !params.key) {
@@ -191,6 +212,7 @@ function init(config, userConsent) {
     return false;
   }
   preloadClient(params.key);
+  fireBillableEventsForApplicableBids(params);
   return true;
 }
 

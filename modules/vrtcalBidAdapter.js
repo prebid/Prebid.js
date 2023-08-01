@@ -1,13 +1,17 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
-import {isFn, isPlainObject} from '../src/utils.js';
+import { config } from '../src/config.js';
+import {deepAccess, isFn, isPlainObject} from '../src/utils.js';
+
+const GVLID = 706;
 
 export const spec = {
   code: 'vrtcal',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    if (bid.bidId == '' || bid.auctionId == '') { return false; } else { return true; }// No extras params required
+    return true;
   },
   buildRequests: function (bidRequests) {
     const requests = bidRequests.map(function (bid) {
@@ -21,10 +25,37 @@ export const spec = {
         }
       }
 
+      let gdprApplies = 0;
+      let gdprConsent = '';
+      let ccpa = '';
+      let coppa = 0;
+      let tmax = 0;
+      let eids = [];
+
+      if (bidRequests[0].userIdAsEids && bidRequests[0].userIdAsEids.length > 0) {
+        eids = bidRequests[0].userIdAsEids;
+      }
+
+      if (bid && bid.gdprConsent) {
+        gdprApplies = bid.gdprConsent.gdprApplies ? 1 : 0;
+        gdprConsent = bid.gdprConsent.consentString;
+      }
+
+      if (bid && bid.uspConsent) {
+        ccpa = bid.uspConsent;
+      }
+
+      if (config.getConfig('coppa') === true) {
+        coppa = 1;
+      }
+
+      tmax = bid.timeout;
+
       const params = {
         prebidJS: 1,
         prebidAdUnitCode: bid.adUnitCode,
         id: bid.bidId,
+        tmax: tmax,
         imp: [{
           id: '1',
           banner: {
@@ -34,13 +65,27 @@ export const spec = {
         site: {
           id: 'VRTCAL_FILLED',
           name: 'VRTCAL_FILLED',
-          cat: ['VRTCAL_FILLED'],
-          domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0]
-
+          cat: deepAccess(bid, 'ortb2.site.cat', []),
+          domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0],
+          page: bid.refererInfo.page
         },
         device: {
-          ua: 'VRTCAL_FILLED',
-          ip: 'VRTCAL_FILLED'
+          language: navigator.language,
+          ua: navigator.userAgent,
+          ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
+        },
+        regs: {
+          coppa: coppa,
+          ext: {
+            gdpr: gdprApplies,
+            us_privacy: ccpa
+          }
+        },
+        user: {
+          ext: {
+            consent: gdprConsent,
+            eids: eids
+          }
         }
       };
 
@@ -52,7 +97,12 @@ export const spec = {
         params.imp[0].banner.h = bid.sizes[0][1];
       }
 
-      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}}
+      if (bid.ortb2?.regs?.gpp) {
+        params.regs.ext.gpp = bid.ortb2.regs.gpp;
+        params.regs.ext.gpp_sid = bid.ortb2.regs.gpp_sid;
+      }
+
+      return {method: 'POST', url: 'https://rtb.vrtcal.com/bidder_prebid.vap?ssp=1804', data: JSON.stringify(params), options: {withCredentials: false, crossOrigin: true}};
     });
 
     return requests;

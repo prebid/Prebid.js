@@ -25,7 +25,7 @@ function buildBidRequests(validBidRequests) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
+      transactionId: validBidRequest.ortb2Imp?.ext?.tid,
       sizes: validBidRequest.sizes,
       placement: placementTypes[params.placement],
       placeId: params.placeId,
@@ -88,6 +88,7 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
+    // TODO: why does this need to iterate through every ad unit?
     let adUnit = find(auctionManager.getAdUnits(), function (unit) {
       return unit.transactionId === bidData.transactionId;
     });
@@ -204,7 +205,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       trafficType: TRAFFIC_TYPE_WEB,
       bidRequests: buildBidRequests(validBidRequests)
@@ -243,7 +245,6 @@ export const spec = {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;
-        bid.transactionId = rawBid.transactionId;
         bid.placeId = rawBid.placeId;
         return buildBid(bid);
       });
