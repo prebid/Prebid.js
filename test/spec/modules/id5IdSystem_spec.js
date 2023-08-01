@@ -407,6 +407,24 @@ describe('ID5 ID System', function () {
         })
     });
 
+    it('should call the ID5 server for config with partner id being a string', function () {
+      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let id5FetchConfig = getId5FetchConfig();
+      id5FetchConfig.params.partner = '173';
+      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+
+      return xhrServerMock.expectConfigRequest()
+        .then(configRequest => {
+          let requestBody = JSON.parse(configRequest.requestBody)
+          expect(requestBody.params.partner).is.eq(173)
+          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+        })
+        .then(fetchRequest => {
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse
+        })
+    });
+
     it('should call the ID5 server for config with overridden url', function () {
       let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
       let id5FetchConfig = getId5FetchConfig();

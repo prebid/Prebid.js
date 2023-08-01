@@ -1311,6 +1311,118 @@ let VALID_BID_REQUEST = [{
       }
     }],
     'tmax': 3000,
+  },
+  VALID_BIDDER_REQUEST_WITH_GPP_IN_ORTB2 = {
+    ortb2: {
+      regs: {
+        gpp: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+        gpp_sid: [5, 7]
+      }
+    },
+    'timeout': 3000,
+    refererInfo: {
+      referer: 'http://media.net/prebidtest',
+      stack: ['http://media.net/prebidtest'],
+      page: 'http://media.net/page',
+      domain: 'media.net',
+      topmostLocation: 'http://media.net/topmost',
+      reachedTop: true
+    }
+  },
+  VALID_PAYLOAD_FOR_GPP_ORTB2 = {
+    'site': {
+      'page': 'http://media.net/prebidtest',
+      'domain': 'media.net',
+      'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
+      'isTop': true
+    },
+    'ext': {
+      'customer_id': 'customer_id',
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'gdpr_applies': false,
+      'usp_applies': false,
+      'coppa_applies': false,
+      'screen': {
+        'w': 1000,
+        'h': 1000
+      }
+    },
+    'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'imp': [{
+      'id': '28f8f8130a583e',
+      'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+      ortb2Imp: VALID_BID_REQUEST[0].ortb2Imp,
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-0',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        },
+        'display_count': 1
+      },
+      'banner': [{
+        'w': 300,
+        'h': 250
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
+        }
+      }
+    }, {
+      'id': '3f97ca71b1e5c2',
+      'transactionId': 'c52a5c62-3c2b-4b90-9ff8-ec1487754822',
+      ortb2Imp: VALID_BID_REQUEST[1].ortb2Imp,
+      'ext': {
+        'dfp_id': 'div-gpt-ad-1460505748561-123',
+        'visibility': 1,
+        'viewability': 1,
+        'coordinates': {
+          'top_left': {
+            x: 50,
+            y: 50
+          },
+          'bottom_right': {
+            x: 100,
+            y: 100
+          }
+        },
+        'display_count': 1
+      },
+      'banner': [{
+        'w': 300,
+        'h': 251
+      }],
+      'all': {
+        'cid': 'customer_id',
+        'site': {
+          'page': 'http://media.net/prebidtest',
+          'domain': 'media.net',
+          'ref': 'http://media.net/prebidtest',
+          'isTop': true
+        }
+      }
+    }],
+    'ortb2': {
+      'regs': {
+        'gpp': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+        'gpp_sid': [5, 7],
+      }
+    },
+    'tmax': config.getConfig('bidderTimeout')
   };
 describe('Media.net bid adapter', function () {
   let sandbox;
@@ -1391,6 +1503,11 @@ describe('Media.net bid adapter', function () {
     it('should add gdpr to response ext', function () {
       let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GDPR);
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GDPR);
+    });
+
+    it('should have gpp params in ortb2', function () {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST, VALID_BIDDER_REQUEST_WITH_GPP_IN_ORTB2);
+      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_FOR_GPP_ORTB2);
     });
 
     it('should parse params for native request', function () {
