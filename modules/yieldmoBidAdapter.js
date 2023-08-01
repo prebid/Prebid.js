@@ -258,6 +258,7 @@ function addPlacement(request) {
     placementInfo.tid = transactionId;
   }
   if (request.auctionId) {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     placementInfo.auctionId = request.auctionId;
   }
   return JSON.stringify(placementInfo);

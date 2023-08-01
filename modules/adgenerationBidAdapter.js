@@ -28,7 +28,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.6.0';
+    const ADGENE_PREBID_VERSION = '1.6.1';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -48,7 +48,7 @@ export const spec = {
       data = tryAppendQueryString(data, 'sdktype', '0');
       data = tryAppendQueryString(data, 'hb', 'true');
       data = tryAppendQueryString(data, 't', 'json3');
-      data = tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = tryAppendQueryString(data, 'transactionid', validReq.ortb2Imp?.ext?.tid);
       data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
       data = tryAppendQueryString(data, 'currency', getCurrencyType());
       data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
@@ -59,9 +59,9 @@ export const spec = {
       data = tryAppendQueryString(data, 'adgext_id5_id_link_type', id5LinkType);
       data = tryAppendQueryString(data, 'adgext_imuid', imuid);
       data = tryAppendQueryString(data, 'adgext_uid2', validReq.userId ? validReq.userId.uid2 : null);
-      data = tryAppendQueryString(data, 'gpid', gpid ? encodeURIComponent(gpid) : null);
+      data = tryAppendQueryString(data, 'gpid', gpid || null);
       data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
-      data = tryAppendQueryString(data, 'schain', validReq.schain ? encodeURIComponent(JSON.stringify(validReq.schain)) : null);
+      data = tryAppendQueryString(data, 'schain', validReq.schain ? JSON.stringify(validReq.schain) : null);
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {

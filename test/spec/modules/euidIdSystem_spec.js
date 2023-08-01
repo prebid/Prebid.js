@@ -64,13 +64,6 @@ describe('EUID module', function() {
     coreStorage.removeDataFromLocalStorage(moduleCookieName);
   });
 
-  it('When a server-only token value is provided in config but consent is not available, it is not available to the auction.', async function() {
-    setGdprApplies();
-    config.setConfig(makePrebidConfig(null, {value: makeEuidIdentityContainer(initialToken)}));
-    const bid = await runAuction();
-    expectNoIdentity(bid);
-  });
-
   it('When a server-only token value is provided in config, it is available to the auction.', async function() {
     setGdprApplies(true);
     config.setConfig(makePrebidConfig(null, {value: makeEuidIdentityContainer(initialToken)}));

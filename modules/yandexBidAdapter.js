@@ -2,6 +2,7 @@ import { formatQS, deepAccess, triggerPixel, _each, _map } from '../src/utils.js
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js'
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://bs.yandex.ru/prebid';
@@ -76,9 +77,11 @@ export const spec = {
       timeout = bidderRequest.timeout;
     }
 
+    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { targetRef, withCredentials = true } = params;
+      const { targetRef, withCredentials = true, cur } = params;
 
       const { pageId, impId } = extractPlacementIds(params);
 
@@ -107,6 +110,11 @@ export const spec = {
         imp.bidfloorcur = bidfloor.currency;
       }
 
+      const currency = cur || adServerCurrency;
+      if (currency) {
+        queryParams['ssp-cur'] = currency;
+      }
+
       const queryParamsString = formatQS(queryParams);
       return {
         method: 'POST',
@@ -132,24 +140,13 @@ export const spec = {
   interpretResponse: interpretResponse,
 
   onBidWon: function (bid) {
-    let nurl = bid['nurl'];
+    const nurl = bid['nurl'];
 
     if (!nurl) {
       return;
     }
 
-    let cpm, currency;
-    if (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) {
-      cpm = bid.originalCpm;
-      currency = bid.originalCurrency;
-    } else {
-      cpm = bid.cpm;
-      currency = bid.currency;
-    }
-    cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || cpm;
-
-    const pixel = replaceAuctionPrice(nurl, cpm, currency);
-    triggerPixel(pixel);
+    triggerPixel(nurl);
   }
 }
 
@@ -316,7 +313,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
       width: bidReceived.w,
       height: bidReceived.h,
       creativeId: bidReceived.adid,
-      nurl: bidReceived.nurl,
+      nurl: replaceAuctionPrice(bidReceived.nurl, price, currency),
 
       netRevenue: true,
       ttl: DEFAULT_TTL,

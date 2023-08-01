@@ -6,6 +6,7 @@ import {
   deepAccess,
   deepSetValue,
   getAdUnitSizes,
+  getDefinedParams,
   getDNT,
   isArray,
   isArrayOfNums,
@@ -14,14 +15,13 @@ import {
   isPlainObject,
   isStr,
   mergeDeep,
-  parseGPTSingleSizeArrayToRtbSize,
-  getDefinedParams
+  parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -100,7 +100,8 @@ export const spec = {
     {code: 'bidbuddy'},
     {code: 'adliveconnect'},
     {code: 'didnadisplay'},
-    {code: 'qortex'}
+    {code: 'qortex'},
+    {code: 'adpluto'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -456,7 +457,9 @@ function makeUser(bidderRequest, fpd) {
   if (eids) {
     deepSetValue(user, 'ext.eids', eids);
   }
-  if (!isEmpty(user)) { return {user: user}; }
+  if (!isEmpty(user)) {
+    return {user: user};
+  }
 }
 
 /**
@@ -465,12 +468,16 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  let {gdprConsent, uspConsent} = bidderRequest;
+  let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
   let regs = {};
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
       deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
     }
+  }
+  if (gppConsent) {
+    deepSetValue(regs, 'regs.gpp', gppConsent.gppString);
+    deepSetValue(regs, 'regs.gpp_sid', gppConsent.applicableSections);
   }
   if (uspConsent) {
     deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
@@ -491,9 +498,9 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let {auctionId, timeout} = bidderRequest;
+  let {timeout} = bidderRequest;
   let request = {
-    'id': auctionId,
+    'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
     'tmax': parseInt(timeout)

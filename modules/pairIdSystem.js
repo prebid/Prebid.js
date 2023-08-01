@@ -78,6 +78,12 @@ export const pairIdSubmodule = {
       return undefined;
     }
     return {'id': ids};
+  },
+  eids: {
+    'pairId': {
+      source: 'google.com',
+      atype: 571187
+    },
   }
 };
 
