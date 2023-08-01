@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/mediasquareBidAdapter.js';
+import { server } from 'test/mocks/xhr.js';
 
 describe('MediaSquare bid adapter tests', function () {
   var DEFAULT_PARAMS = [{
@@ -208,6 +209,10 @@ describe('MediaSquare bid adapter tests', function () {
     const response = spec.interpretResponse(BID_RESPONSE, request);
     const won = spec.onBidWon(response[0]);
     expect(won).to.equal(true);
+    expect(server.requests.length).to.equal(1);
+    let message = JSON.parse(server.requests[0].requestBody);
+    expect(message).to.have.property('increment').exist;
+    expect(message).to.have.property('increment').and.to.equal('1');
   });
   it('Verifies user sync without cookie in bid response', function () {
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
