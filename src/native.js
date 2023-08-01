@@ -705,7 +705,7 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
       case 'privacyLink':
-        response.privacy = 1;
+        response.privacy = value;
         break;
     }
   });

@@ -1204,6 +1204,12 @@ describe('legacyPropertiesToOrtbNative', () => {
       expect(native.jstracker).to.eql('some-markupsome-other-markup');
     })
   });
+  describe('privacylink', () => {
+    it('should convert privacyLink to privacy', () => {
+      const native = legacyPropertiesToOrtbNative({privacyLink: 'https:/my-privacy-link.com'});
+      expect(native.privacy).to.eql('https:/my-privacy-link.com');
+    })
+  })
 });
 
 describe('fireImpressionTrackers', () => {
