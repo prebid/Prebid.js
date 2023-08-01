@@ -629,7 +629,7 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       }
     }
     if (openRTBRequest.privacy) {
-      oldNativeObject.privacyLink = { required: true };
+      oldNativeObject.privacyLink = { required: false };
     }
     // video was not supported by old prebid assets
   }
@@ -704,8 +704,11 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // in general, native trackers seem to be neglected and/or broken
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
+      case 'privacyLink':
+        response.privacy = 1;
+        break;
     }
-  })
+  });
   return response;
 }
 

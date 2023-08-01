@@ -1032,7 +1032,7 @@ describe('validate native', function () {
       len: 140
     });
     expect(oldNativeRequest.privacyLink).to.include({
-      required: true
+      required: false
     });
   });
 
