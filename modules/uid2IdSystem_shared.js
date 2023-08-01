@@ -165,6 +165,12 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
   });
 }
 
+function isExpired(timestamp) {
+  // Check if the value is in second and convert to milliseconds if necessary
+  let expiredAt = timestamp < 2000000000 ?  timestamp * 1000 : timestamp
+  return Date.now() > expiredAt
+}
+
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
   const preferLocalStorage = (config.storage !== 'cookie');
@@ -204,11 +210,11 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
   _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
-  if (!newestAvailableToken || Date.now() > newestAvailableToken.refresh_expires) {
+  if (!newestAvailableToken || isExpired(newestAvailableToken.refresh_expires)) {
     _logInfo('Newest available token is expired and not refreshable.');
     return { id: null };
   }
-  if (Date.now() > newestAvailableToken.identity_expires) {
+  if (isExpired(newestAvailableToken.identity_expires)) {
     const promise = refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
     _logInfo('Token is expired but can be refreshed, attempting refresh.');
     return { callback: (cb) => {
@@ -219,7 +225,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     } };
   }
   // If should refresh (but don't need to), refresh in the background.
-  if (Date.now() > newestAvailableToken.refresh_from) {
+  if (isExpired(newestAvailableToken.refresh_from)) {
     _logInfo(`Refreshing token in background with low priority.`);
     refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   }
