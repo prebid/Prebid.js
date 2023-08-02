@@ -1,6 +1,5 @@
 import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
-import * as utils from '../../../src/utils';
 import sinon from 'sinon';
 
 const config = {
@@ -22,10 +21,14 @@ describe('AdqueryIdSystem', function () {
 
   describe('getId', function () {
     let getDataFromLocalStorageStub;
-    let getUniqueIdentifierStrStub;
 
-    sinon.stub(storage, 'getDataFromLocalStorage');
-    sinon.stub(utils, 'getUniqueIdentifierStr').returns('6dd9eab7dfeab7df');
+    beforeEach(function() {
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+    });
+
+    afterEach(function () {
+      getDataFromLocalStorageStub.restore();
+    });
 
     it('gets a adqueryId', function () {
       const config = {
