@@ -252,6 +252,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   const BIDEXTRA = deepAccess(validBidRequests, 'params.ext');
   const bannerMediaType = deepAccess(validBidRequests, 'mediaTypes.banner');
   const videoMediaType = deepAccess(validBidRequests, 'mediaTypes.video');
+  const ORTB2 = deepAccess(validBidRequests, 'ortb2');
 
   // let requests = [];
   let payload = {};
@@ -410,6 +411,14 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   let geo = {};
   geo.country = deepAccess(validBidRequests, 'params.geo.country');
   // < Device object
+  let configGeo = {};
+  configGeo.country = ORTB2?.device?.geo;
+
+  if (typeof configGeo.country !== 'undefined') {
+    device.geo = configGeo;
+  } else if (typeof geo.country !== 'undefined') {
+    device.geo = geo;
+  };
 
   // > GDPR
   let user = {};
@@ -491,7 +500,7 @@ function getLanguage() {
 
 function getOs() {
   let ua = navigator.userAgent;
-  if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
+  if (ua.match(/Android/)) { return 'Android'; } else if (ua.match(/(iPhone|iPod|iPad)/)) { return 'iOS'; } else if (ua.indexOf('Mac OS X') != -1) { return 'macOS'; } else if (ua.indexOf('Windows') != -1) { return 'Windows'; } else if (ua.indexOf('Linux') != -1) { return 'Linux'; } else { return 'Unknown'; }
 }
 
 function getVendor() {

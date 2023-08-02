@@ -20,6 +20,8 @@ import 'src/prebid.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
+import {guardTids} from '../../../src/adapters/bidderFactory.js';
+import * as activities from '../../../src/activities/rules.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
@@ -1369,6 +1371,18 @@ describe('the price floors module', function () {
           floor: 2.5
         });
       });
+
+      it('works when TIDs are disabled', () => {
+        sandbox.stub(activities, 'isActivityAllowed').returns(false);
+        const req = utils.deepClone(bidRequest);
+        _floorDataForAuction[req.auctionId] = utils.deepClone(basicFloorConfig);
+
+        expect(guardTids('mock-bidder').bidRequest(req).getFloor({})).to.deep.equal({
+          currency: 'USD',
+          floor: 1.0
+        });
+      });
+
       it('picks the right rule with more complex rules', function () {
         _floorDataForAuction[bidRequest.auctionId] = {
           ...basicFloorConfig,
