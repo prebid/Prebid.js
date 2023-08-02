@@ -315,14 +315,14 @@ export const spec = {
     const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
     if (id) {
       deleteFromAllStorages(BUNDLE_COOKIE_NAME);
+      ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+        null,
+        JSON.stringify({ publisherUserId: id }),
+        {
+          contentType: 'application/json',
+          method: 'POST'
+        });
     }
-    ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
-      null,
-      JSON.stringify({ publisherUserId: id }),
-      {
-        contentType: 'application/json',
-        method: 'POST'
-      });
   }
 };
 
