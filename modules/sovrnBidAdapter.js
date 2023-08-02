@@ -151,11 +151,14 @@ export const spec = {
       site.page = bidderRequest.refererInfo.page
       site.domain = bidderRequest.refererInfo.domain
 
+      const tmax = deepAccess(bidderRequest, 'timeout');
+
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {

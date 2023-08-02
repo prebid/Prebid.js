@@ -43,7 +43,8 @@ export const spec = {
         rr: getRr(),
         s: i.params && i.params.s,
         bidid: i.bidId,
-        transactionid: i.transactionId,
+        transactionid: i.ortb2Imp?.ext?.tid,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionid: i.auctionId
       };
 

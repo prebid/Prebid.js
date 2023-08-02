@@ -557,7 +557,6 @@ describe('optidigitalAdapterTests', function () {
       let expectedResponse = [
         {
           'placementId': 'Billboard_Top',
-          'transactionId': 'cf5faec3-fcee-4f26-80ae-fc8b6cf23b7d',
           'requestId': '83fb53a5e67f49',
           'ttl': 150,
           'creativeId': 'mobile_pos_2',
@@ -572,7 +571,6 @@ describe('optidigitalAdapterTests', function () {
           }
         }, {
           'placementId': 'Billboard_Bottom',
-          'transactionId': 'df5faec3-fcee-4f26-80ae-fc8b6cf23b7d',
           'requestId': '93fb53a5e67f49',
           'ttl': 150,
           'creativeId': 'mobile_pos_2',
