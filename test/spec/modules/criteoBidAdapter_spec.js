@@ -217,14 +217,35 @@ describe('The Criteo bidding adapter', function () {
       }
       getCookieStub.callsFake(cookieName => cookieData[cookieName]);
       setCookieStub.callsFake((cookieName, value, expires) => cookieData[cookieName] = value);
+      getDataFromLocalStorageStub.callsFake(name => lsData[name]);
       removeDataFromLocalStorageStub.callsFake(name => lsData[name] = '');
       spec.onDataDeletionRequest([]);
       expect(getCookieStub.calledOnce).to.equal(true);
       expect(setCookieStub.calledOnce).to.equal(true);
+      expect(getDataFromLocalStorageStub.calledOnce).to.equal(true);
       expect(removeDataFromLocalStorageStub.calledOnce).to.equal(true);
       expect(cookieData.cto_bundle).to.equal('');
       expect(lsData.cto_bundle).to.equal('');
       expect(ajaxStub.calledOnce).to.equal(true);
+    });
+
+    it('should not call API when calling onDataDeletionRequest with no id', () => {
+      const cookieData = {
+        'cto_bundle': ''
+      };
+      const lsData = {
+        'cto_bundle': ''
+      }
+      getCookieStub.callsFake(cookieName => cookieData[cookieName]);
+      setCookieStub.callsFake((cookieName, value, expires) => cookieData[cookieName] = value);
+      getDataFromLocalStorageStub.callsFake(name => lsData[name]);
+      removeDataFromLocalStorageStub.callsFake(name => lsData[name] = '');
+      spec.onDataDeletionRequest([]);
+      expect(getCookieStub.calledOnce).to.be.true;
+      expect(setCookieStub.called).to.be.false;
+      expect(getDataFromLocalStorageStub.calledOnce).to.be.true
+      expect(removeDataFromLocalStorageStub.called).to.be.false;
+      expect(ajaxStub.called).to.be.false;
     });
   });
 
