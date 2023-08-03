@@ -12,12 +12,14 @@ describe('AxisBidAdapter', function () {
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          pos: 1
         }
       },
       params: {
         integration: '000000',
         token: '000000',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
       }
     },
     {
@@ -28,11 +30,13 @@ describe('AxisBidAdapter', function () {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
+          pos: 1
         }
       },
       params: {
         integration: '000000',
         token: '000000',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
       }
     },
     {
@@ -57,6 +61,7 @@ describe('AxisBidAdapter', function () {
       params: {
         integration: '000000',
         token: '000000',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
       }
     }
   ];
@@ -145,6 +150,7 @@ describe('AxisBidAdapter', function () {
         expect(placement.bidId).to.be.a('string');
         expect(placement.integration).to.be.a('string');
         expect(placement.token).to.be.a('string');
+        expect(placement.iabCat).to.be.an('array');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
 
@@ -154,11 +160,13 @@ describe('AxisBidAdapter', function () {
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.pos).to.be.within(0, 7);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.pos).to.be.within(0, 7);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -240,6 +248,8 @@ describe('AxisBidAdapter', function () {
           mediaType: 'video',
           cpm: 0.5,
           requestId: '23fhj33i987f',
+          width: 300,
+          height: 250,
           ttl: 120,
           creativeId: '2',
           netRevenue: true,
@@ -256,7 +266,7 @@ describe('AxisBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta', 'width', 'height');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');

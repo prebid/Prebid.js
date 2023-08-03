@@ -29,12 +29,13 @@ function isBidResponseValid(bid) {
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { integration, token } = params;
+  const { integration, token, iabCat } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
     integration,
     token,
+    iabCat,
     bidId,
     schain,
     bidfloor
@@ -42,9 +43,11 @@ function getPlacementReqData(bid) {
 
   if (mediaTypes && mediaTypes[BANNER]) {
     placement.adFormat = BANNER;
+    placement.pos = mediaTypes[BANNER].pos;
     placement.sizes = mediaTypes[BANNER].sizes;
   } else if (mediaTypes && mediaTypes[VIDEO]) {
     placement.adFormat = VIDEO;
+    placement.pos = mediaTypes[VIDEO].pos;
     placement.playerSize = mediaTypes[VIDEO].playerSize;
     placement.minduration = mediaTypes[VIDEO].minduration;
     placement.maxduration = mediaTypes[VIDEO].maxduration;
@@ -60,6 +63,7 @@ function getPlacementReqData(bid) {
     placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
     placement.api = mediaTypes[VIDEO].api;
     placement.linearity = mediaTypes[VIDEO].linearity;
+    placement.context = mediaTypes[VIDEO].context;
   } else if (mediaTypes && mediaTypes[NATIVE]) {
     placement.native = mediaTypes[NATIVE];
     placement.adFormat = NATIVE;

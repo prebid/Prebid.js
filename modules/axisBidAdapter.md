@@ -20,6 +20,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                     mediaTypes: {
                         banner: {
                             sizes: [ [300, 250], [320, 50] ],
+                            pos: 1
                         }
                     },
                     bids: [
@@ -28,6 +29,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             params: {
                                 integration: '000000',
                                 token: '000000',
+                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
                             }
                         }
                     ]
@@ -39,6 +41,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             playerSize: [ [640, 480] ],
                             minduration: 5,
                             maxduration: 60,
+                            pos: 1
                         }
                     },
                     bids: [
@@ -47,6 +50,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             params: {
                                 integration: '000000',
                                 token: '000000',
+                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
                             }
                         }
                     ]
@@ -73,6 +77,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             params: {
                                 integration: '000000',
                                 token: '000000',
+                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
                             }
                         }
                     ]
