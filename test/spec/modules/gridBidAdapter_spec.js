@@ -786,6 +786,74 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
+    it('should prioritize pbadslot over adslot', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            }
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            },
+            pbadslot: 'pbadslot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 2).map((bid, ind) => {
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: {...bid.ortb2Imp, ...ortb2Imp[ind]} } : {});
+      });
+      const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.data.adserver.adslot);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.data.pbadslot);
+    });
+
+    it('should prioritize gpid over pbadslot and adslot', function() {
+      const ortb2Imp = [{
+        ext: {
+          gpid: 'gpid',
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            },
+            pbadslot: 'pbadslot'
+          }
+        }
+      }, {
+        ext: {
+          gpid: 'gpid',
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            }
+          }
+        }
+      }, {
+        ext: {
+          gpid: 'gpid',
+          data: {
+            pbadslot: 'pbadslot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: {...bid.ortb2Imp, ...ortb2Imp[ind]} } : {});
+      });
+      const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.gpid);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.gpid);
+      expect(payload.imp[2].ext.gpid).to.equal(ortb2Imp[2].ext.gpid);
+    });
+
     it('should contain imp[].instl if available', function() {
       const ortb2Imp = [{
         instl: 1
