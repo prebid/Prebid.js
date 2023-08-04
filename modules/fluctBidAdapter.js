@@ -43,7 +43,7 @@ export const spec = {
       data.user = {
         data: bidderRequest.ortb2?.user?.data ?? [],
         eids: [
-          ...(request.userIdAsEids || []),
+          ...(request.userIdAsEids ?? []),
           ...(bidderRequest.ortb2?.user?.ext?.eids ?? []),
         ],
       };
