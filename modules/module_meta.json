@@ -567,6 +567,11 @@
     "name": "yieldmoSyntheticInventoryModule",
     "path": "/modules/yieldmoSyntheticInventoryModule.js",
     "module": "yieldmoSyntheticInventoryModule"
+  },
+  {
+    "name": "fledgeForGpt",
+    "path": "/modules/fledgeForGpt.js",
+    "module": "fledgeForGpt"
   }
 ],
 "Video": [
