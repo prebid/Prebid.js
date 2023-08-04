@@ -189,7 +189,7 @@ describe('fluctAdapter', function () {
     });
 
     it('includes user.data if any exists', function () {
-      const bidderRequest2 = Object.assign(bidderRequest, {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
         ortb2: {
           user: {
             data: [
@@ -227,7 +227,7 @@ describe('fluctAdapter', function () {
 
     it('includes data.params.kv if any exists', function () {
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           params: {
             kv: {
               imsids: ['imsid1', 'imsid2']
@@ -244,7 +244,7 @@ describe('fluctAdapter', function () {
     it('includes data.schain if any exists', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           schain: {
             ver: '1.0',
             complete: 1,
