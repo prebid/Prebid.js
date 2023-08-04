@@ -205,11 +205,21 @@ describe('fluctAdapter', function () {
                   segtax: 900,
                 },
                 segment: [
-                  {id: 'id-1'},
-                  {id: 'id-2'},
+                  { id: 'seg-1' },
+                  { id: 'seg-2' },
                 ],
               },
             ],
+            ext: {
+              eids: [
+                {
+                  source: 'a1mediagroup.com',
+                  uids: [
+                    { id: 'aud-1' }
+                  ],
+                },
+              ],
+            },
           },
         },
       });
@@ -222,12 +232,19 @@ describe('fluctAdapter', function () {
               segtax: 900,
             },
             segment: [
-              {id: 'id-1'},
-              {id: 'id-2'},
+              { id: 'seg-1' },
+              { id: 'seg-2' },
             ],
           },
         ],
-        eids: [],
+        eids: [
+          {
+            source: 'a1mediagroup.com',
+            uids: [
+              { id: 'aud-1' }
+            ],
+          },
+        ],
       });
     });
 

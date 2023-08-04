@@ -42,7 +42,10 @@ export const spec = {
       data.transactionId = request.ortb2Imp?.ext?.tid;
       data.user = {
         data: bidderRequest.ortb2?.user?.data ?? [],
-        eids: request.userIdAsEids || [],
+        eids: [
+          ...(request.userIdAsEids || []),
+          ...(bidderRequest.ortb2?.user?.ext?.eids ?? []),
+        ],
       };
 
       if (bidderRequest.gdprConsent) {
