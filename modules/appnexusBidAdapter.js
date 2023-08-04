@@ -33,7 +33,6 @@ import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {
   convertKeywordStringToANMap,
@@ -74,23 +73,40 @@ const VIDEO_MAPPING = {
     'in-banner': 5
   }
 };
-const NATIVE_MAPPING = {
-  body: 'description',
-  body2: 'desc2',
-  cta: 'ctatext',
-  image: {
-    serverName: 'main_image',
-    requiredParams: { required: true }
-  },
-  icon: {
-    serverName: 'icon',
-    requiredParams: { required: true }
-  },
-  sponsoredBy: 'sponsored_by',
-  privacyLink: 'privacy_link',
-  salePrice: 'saleprice',
-  displayUrl: 'displayurl'
+const ORTB_NATIVE_IMAGE_MAPPING = {
+  1: 'icon',
+  3: 'main_img'
 };
+const ORTB_NATIVE_DATA_REQUEST_MAPPING = {
+  1: 'sponsored_by',
+  2: 'description',
+  3: 'rating',
+  4: 'likes',
+  5: 'downloads',
+  6: 'price',
+  7: 'saleprice',
+  8: 'phone',
+  9: 'address',
+  10: 'desc2',
+  11: 'displayurl',
+  12: 'ctatext'
+};
+
+const ORTB_NATIVE_DATA_RESPONSE_MAPPING = {
+  1: 'sponsored',
+  2: 'desc',
+  3: 'rating',
+  4: 'likes',
+  5: 'downloads',
+  6: 'price',
+  7: 'saleprice',
+  8: 'phone',
+  9: 'address',
+  10: 'desc2',
+  11: 'displayurl',
+  12: 'ctatext'
+};
+
 const SOURCE = 'pbjs';
 const MAX_IMPS_PER_REQUEST = 15;
 const SCRIPT_TAG_START = '<script';
@@ -136,9 +152,6 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-
     const tags = bidRequests.map(bidToTag);
     const userObjBid = find(bidRequests, hasUserInfo);
     let userObj = {};
@@ -668,40 +681,9 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     }
 
     bid[NATIVE] = {
-      title: nativeAd.title,
-      body: nativeAd.desc,
-      body2: nativeAd.desc2,
-      cta: nativeAd.ctatext,
-      rating: nativeAd.rating,
-      sponsoredBy: nativeAd.sponsored,
-      privacyLink: nativeAd.privacy_link,
-      address: nativeAd.address,
-      downloads: nativeAd.downloads,
-      likes: nativeAd.likes,
-      phone: nativeAd.phone,
-      price: nativeAd.price,
-      salePrice: nativeAd.saleprice,
-      clickUrl: nativeAd.link.url,
-      displayUrl: nativeAd.displayurl,
-      clickTrackers: nativeAd.link.click_trackers,
-      impressionTrackers: nativeAd.impression_trackers,
-      video: nativeAd.video,
-      javascriptTrackers: jsTrackers
+      video: nativeAd.video,  // leave video as is, since native.video isn't supported by conversion functions at this time
+      ortb: createNativeOrtbResponse(nativeAd, jsTrackers, bidRequest.nativeOrtbRequest)
     };
-    if (nativeAd.main_img) {
-      bid['native'].image = {
-        url: nativeAd.main_img.url,
-        height: nativeAd.main_img.height,
-        width: nativeAd.main_img.width,
-      };
-    }
-    if (nativeAd.icon) {
-      bid['native'].icon = {
-        url: nativeAd.icon.url,
-        height: nativeAd.icon.height,
-        width: nativeAd.icon.width,
-      };
-    }
   } else {
     Object.assign(bid, {
       width: rtbBid.rtb.banner.width,
@@ -722,6 +704,60 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   }
 
   return bid;
+}
+
+// TODO missing video field support in core - have it in the original bidresponse.native.video object as stop-gap for now
+function createNativeOrtbResponse(nativeAd, jsTrackers, nativeOrtbRequest) {
+  const response = {
+    ver: '1.2',
+    assets: [],
+    imptrackers: nativeAd.impression_trackers,
+    jstracker: jsTrackers,
+    privacy: nativeAd.privacy_link,
+    eventtrackers: [],
+    link: {
+      url: nativeAd.link.url,
+      clicktrackers: nativeAd.link.click_trackers
+    }
+  };
+
+  if (Array.isArray(nativeOrtbRequest.assets) && nativeOrtbRequest.assets.length > 0) {
+    nativeOrtbRequest.assets.forEach(reqAsset => {
+      if (reqAsset.title && nativeAd.title) {
+        response.assets.push({
+          id: reqAsset.id,
+          title: {
+            text: nativeAd.title
+          }
+        });
+      }
+
+      if (reqAsset.data?.type && nativeAd[ORTB_NATIVE_DATA_RESPONSE_MAPPING[reqAsset.data.type]]) {
+        response.assets.push({
+          id: reqAsset.id,
+          data: {
+            type: reqAsset.data.type,
+            value: nativeAd[ORTB_NATIVE_DATA_RESPONSE_MAPPING[reqAsset.data.type]]
+          }
+        });
+      }
+
+      if (reqAsset.img?.type && nativeAd[ORTB_NATIVE_IMAGE_MAPPING[reqAsset.img.type]]) {
+        let imgObj = nativeAd[ORTB_NATIVE_IMAGE_MAPPING[reqAsset.img.type]];
+        response.assets.push({
+          id: reqAsset.id,
+          img: {
+            type: reqAsset.img.type,
+            url: imgObj.url,
+            w: imgObj.width,
+            h: imgObj.height
+          }
+        });
+      }
+    });
+  }
+
+  return response;
 }
 
 function bidToTag(bid) {
@@ -799,8 +835,9 @@ function bidToTag(bid) {
       tag.sizes = transformSizes([1, 1]);
     }
 
-    if (bid.nativeParams) {
-      const nativeRequest = buildNativeRequest(bid.nativeParams);
+    if (bid.nativeOrtbRequest) {
+      // temporarily pass nativeParams while legacy native is still supported in Prebid.js; remove later when only ortb native is supported in core
+      const nativeRequest = buildNativeRequestFromOrtb(bid.nativeOrtbRequest, bid.nativeParams);
       tag[NATIVE] = { layouts: [nativeRequest] };
     }
   }
@@ -1074,39 +1111,87 @@ function getRtbBid(tag) {
   return tag && tag.ads && tag.ads.length && find(tag.ads, ad => ad.rtb);
 }
 
-function buildNativeRequest(params) {
+// map standard prebid ortb native assets to /ut parameters
+function buildNativeRequestFromOrtb(ortbParams, legacyParams = {}) {
+  function checkRequiredVal(asset) {
+    return (asset.required === 1) ? true : (asset.required === 0) ? false : undefined;
+  }
   const request = {};
 
-  // map standard prebid native asset identifier to /ut parameters
-  // e.g., tag specifies `body` but /ut only knows `description`.
-  // mapping may be in form {tag: '<server name>'} or
-  // {tag: {serverName: '<server name>', requiredParams: {...}}}
-  Object.keys(params).forEach(key => {
-    // check if one of the <server name> forms is used, otherwise
-    // a mapping wasn't specified so pass the key straight through
-    const requestKey =
-      (NATIVE_MAPPING[key] && NATIVE_MAPPING[key].serverName) ||
-      NATIVE_MAPPING[key] ||
-      key;
+  if (ortbParams?.privacy === 1) {
+    request.privacy_supported = true;
+  }
 
-    // required params are always passed on request
-    const requiredParams = NATIVE_MAPPING[key] && NATIVE_MAPPING[key].requiredParams;
-    request[requestKey] = Object.assign({}, requiredParams, params[key]);
-
-    // convert the sizes of image/icon assets to proper format (if needed)
-    const isImageAsset = !!(requestKey === NATIVE_MAPPING.image.serverName || requestKey === NATIVE_MAPPING.icon.serverName);
-    if (isImageAsset && request[requestKey].sizes) {
-      let sizes = request[requestKey].sizes;
-      if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
-        request[requestKey].sizes = transformSizes(request[requestKey].sizes);
+  if (Array.isArray(ortbParams?.assets) && ortbParams?.assets.length > 0) {
+    ortbParams.assets.forEach(asset => {
+      if (asset.title) {
+        request.title = {
+          required: checkRequiredVal(asset),
+          max_length: asset.title.len
+        }
       }
-    }
 
-    if (requestKey === NATIVE_MAPPING.privacyLink) {
-      request.privacy_supported = true;
-    }
-  });
+      if (asset.img) {
+        // likely future work for custom images (type: 500+) here
+        const imgType = (asset.img.type === 1) ? 'icon' : (asset.img.type === 3) ? 'main_image' : undefined;
+        if (imgType) {
+          request[imgType] = {
+            required: checkRequiredVal(asset) || true,
+          }
 
+          // if type = 1 || 3, try to refer to nativeParams variant first for full size info;
+          // else refer to ortb asset object as backup (this latter will be future code when legacy goes away)
+          let oldName = (imgType === 'main_image') ? 'image' : (imgType === 'icon') ? 'icon' : undefined;
+          if (legacyParams[oldName]?.sizes) {
+            let sizes = legacyParams[oldName].sizes;
+            if (isArrayOfNums(sizes) || (isArray(sizes) && sizes.length > 0 && sizes.every(sz => isArrayOfNums(sz)))) {
+              request[imgType].sizes = transformSizes(sizes);
+            }
+          } else if (asset.img.w && asset.img.h) {
+            request[imgType].sizes = [{ width: asset.img.w, height: asset.img.h }];
+          }
+          
+          // due to the possibility of multiple aspect_ratio objects in a legacy native setup, we will
+          // fist read from the old nativeParams location for ease of convenience, as not all the aspect_ratio
+          // information will be carried over into the converted ortbNativeRequest img assets
+          // ie 2nd+ objects with min_width/min_height are dropped in the conversion
+          // ortb values are the back-up (and will be preferred going forward when legacy goes away)
+          if (legacyParams[oldName]?.aspect_ratios) {
+            let aRatios = legacyParams[oldName]?.aspect_ratios;
+            if (isArray(aRatios) && aRatios.length > 0) {
+              request[imgType].aspect_ratios = aRatios;
+            }
+          } else if (asset.img.wmin && asset.img.hmin) {
+            let aspectRatios = [];
+            let baseAR = { min_width: asset.img.wmin, min_height: asset.img.hmin };
+
+            // unsure if pubs will set aspectratios in their ortb img assets directly via the ext, so adding code in case
+            if (Array.isArray(asset.img.ext?.aspectratios) && asset.img.ext?.aspectratios.length > 0) {
+              asset.img.ext.aspectratios.forEach(arString => {
+                let arSplit = arString.split(':');
+                if (arSplit.length === 2) {
+                  let fullAR = deepClone(baseAR);
+                  fullAR.ratio_width = parseInt(arSplit[0], 10);
+                  fullAR.ratio_height = parseInt(arSplit[1], 10);
+                  aspectRatios.push(fullAR);
+                }
+              })
+            } else {
+              aspectRatios.push(baseAR);
+            }
+            request[imgType].aspect_ratios = aspectRatios;
+          }
+        }
+      }
+
+      if (asset.data && ORTB_NATIVE_DATA_REQUEST_MAPPING[asset.data.type]) {
+        request[ORTB_NATIVE_DATA_REQUEST_MAPPING[asset.data.type]] = {
+          required: checkRequiredVal(asset),
+          max_length: asset.data.len
+        }
+      }
+    });
+  }
   return request;
 }
 

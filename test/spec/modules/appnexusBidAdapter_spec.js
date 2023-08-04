@@ -853,24 +853,121 @@ describe('AppNexusAdapter', function () {
           bidRequests[0],
           {
             mediaType: 'native',
-            nativeParams: {
-              title: { required: true },
-              body: { required: true },
-              body2: { required: true },
-              image: { required: true, sizes: [100, 100] },
-              icon: { required: true },
-              cta: { required: false },
-              rating: { required: true },
-              sponsoredBy: { required: true },
-              privacyLink: { required: true },
-              displayUrl: { required: true },
-              address: { required: true },
-              downloads: { required: true },
-              likes: { required: true },
-              phone: { required: true },
-              price: { required: true },
-              salePrice: { required: true }
-            }
+            ortb: {
+              version: '1.2',
+              privacy: 1,
+              assets: [{
+                id: 0,
+                required: 1,
+                title: {
+                  len: 50
+                },
+              }, {
+                id: 1,
+                required: 1,
+                data: {
+                  type: 2
+                }
+              }, {
+                id: 2,
+                required: 1,
+                data: {
+                  type: 10
+                }
+              }, {
+                id: 3,
+                required: 1,
+                img: {
+                  type: 3,
+                  w: 100,
+                  h: 100
+                }
+              }, {
+                id: 4,
+                required: 1,
+                img: {
+                  type: 1
+                }
+              }, {
+                id: 5,
+                required: 1,
+                data: {
+                  type: 12
+                }
+              }, {
+                id: 6,
+                required: 1,
+                data: {
+                  type: 3
+                }
+              }, {
+                id: 7,
+                required: 1,
+                data: {
+                  type: 1
+                }
+              }, {
+                id: 8,
+                required: 1,
+                data: {
+                  type: 11
+                }
+              }, {
+                id: 9,
+                required: 1,
+                data: {
+                  type: 9
+                }
+              }, {
+                id: 10,
+                required: 1,
+                data: {
+                  type: 5
+                }
+              }, {
+                id: 11,
+                required: 1,
+                data: {
+                  type: 4
+                }
+              }, {
+                id: 12,
+                required: 1,
+                data: {
+                  type: 8
+                }
+              }, {
+                id: 13,
+                required: 1,
+                data: {
+                  type: 6
+                }
+              }, {
+                id: 14,
+                required: 1,
+                data: {
+                  type: 7
+                }
+              }]
+            },
+            // nativeParams: {
+            //   // title: { required: true },
+            //   // body: { required: true },
+            //   // body2: { required: true },
+            //   // image: { required: true, sizes: [100, 100] },
+            //   // icon: { required: true },
+            //   // cta: { required: false },
+            //   // rating: { required: true },
+            //   // sponsoredBy: { required: true },
+            //   // privacyLink: { required: true },
+            //   // displayUrl: { required: true },
+            //   // address: { required: true },
+            //   // downloads: { required: true },
+            //   // likes: { required: true },
+            //   // phone: { required: true },
+            //   // price: { required: true },
+            //   // salePrice: { required: true }
+            // }
           }
         );
 
@@ -878,7 +975,7 @@ describe('AppNexusAdapter', function () {
         const payload = JSON.parse(request.data);
 
         expect(payload.tags[0].native.layouts[0]).to.deep.equal({
-          title: { required: true },
+          title: { required: true, max_length: 50 },
           description: { required: true },
           desc2: { required: true },
           main_image: { required: true, sizes: [{ width: 100, height: 100 }] },
@@ -1824,7 +1921,7 @@ describe('AppNexusAdapter', function () {
           'phone': '1234567890',
           'address': '28 W 23rd St, New York, NY 10010',
           'privacy_link': 'https://appnexus.com/?url=privacy_url',
-          'javascriptTrackers': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>',
+          'javascript_trackers': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>',
           'video': {
             'content': '<?xml version=\"1.0\"></xml>'
           }
@@ -1832,15 +1929,216 @@ describe('AppNexusAdapter', function () {
         let bidderRequest = {
           bids: [{
             bidId: '3db3773286ee59',
-            adUnitCode: 'code'
+            adUnitCode: 'code',
+            nativeOrtbRequest: {
+              assets: [{
+                id: 0,
+                required: 1,
+                title: {
+                  len: 50
+                },
+              }, {
+                id: 1,
+                required: 1,
+                data: {
+                  type: 2
+                }
+              }, {
+                id: 2,
+                required: 1,
+                data: {
+                  type: 10
+                }
+              }, {
+                id: 3,
+                required: 1,
+                img: {
+                  type: 3,
+                  w: 100,
+                  h: 100
+                }
+              }, {
+                id: 4,
+                required: 1,
+                img: {
+                  type: 1
+                }
+              }, {
+                id: 5,
+                required: 1,
+                data: {
+                  type: 12
+                }
+              }, {
+                id: 6,
+                required: 1,
+                data: {
+                  type: 3
+                }
+              }, {
+                id: 7,
+                required: 1,
+                data: {
+                  type: 1
+                }
+              }, {
+                id: 8,
+                required: 1,
+                data: {
+                  type: 11
+                }
+              }, {
+                id: 9,
+                required: 1,
+                data: {
+                  type: 9
+                }
+              }, {
+                id: 10,
+                required: 1,
+                data: {
+                  type: 5
+                }
+              }, {
+                id: 11,
+                required: 1,
+                data: {
+                  type: 4
+                }
+              }, {
+                id: 12,
+                required: 1,
+                data: {
+                  type: 8
+                }
+              }, {
+                id: 13,
+                required: 1,
+                data: {
+                  type: 6
+                }
+              }, {
+                id: 14,
+                required: 1,
+                data: {
+                  type: 7
+                }
+              }]
+            }
           }]
         }
 
+        const testOrtbNativeResponse = {
+          ver: '1.2',
+          assets: [{
+            id: 0,
+            title: {
+              text: 'Native Creative'
+            }
+          }, {
+            id: 1,
+            data: {
+              type: 2,
+              value: 'Cool description great stuff'
+            }
+          }, {
+            id: 2,
+            data: {
+              type: 10,
+              value: 'Additional body text'
+            }
+          }, {
+            id: 3,
+            img: {
+              type: 3,
+              url: 'https://cdn.adnxs.com/icon.png',
+              w: 0,
+              h: 0
+            }
+          }, {
+            id: 4,
+            img: {
+              type: 1,
+              url: 'https://cdn.adnxs.com/img.png',
+              w: 2352,
+              h: 1516
+            }
+          }, {
+            id: 5,
+            data: {
+              type: 12,
+              value: 'Do it'
+            }
+          }, {
+            id: 6,
+            data: {
+              type: 3,
+              value: '5'
+            }
+          }, {
+            id: 7,
+            data: {
+              type: 1,
+              value: 'AppNexus'
+            }
+          }, {
+            id: 8,
+            data: {
+              type: 11,
+              value: 'https://AppNexus.com/?url=display_url'
+            }
+          }, {
+            id: 9,
+            data: {
+              type: 9,
+              value: '28 W 23rd St, New York, NY 10010'
+            }
+          }, {
+            id: 10,
+            data: {
+              type: 5,
+              value: '874983'
+            }
+          }, {
+            id: 11,
+            data: {
+              type: 4,
+              value: '38908320'
+            }
+          }, {
+            id: 12,
+            data: {
+              type: 8,
+              value: '1234567890'
+            }
+          }, {
+            id: 13,
+            data: {
+              type: 6,
+              value: '9.99'
+            }
+          }, {
+            id: 14,
+            data: {
+              type: 7,
+              value: 'FREE'
+            }
+          }],
+          imptrackers: ['https://example.com'],
+          jstracker: ['<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=;css_selector=.pb-click;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'],
+          privacy: 'https://appnexus.com/?url=privacy_url',
+          eventtrackers: [],
+          link: {
+            url: 'https://www.appnexus.com',
+            clicktrackers: ['https://nym1-ib.adnxs.com/click']
+          }
+        };
         let result = spec.interpretResponse({ body: response1 }, { bidderRequest });
-        expect(result[0].native.title).to.equal('Native Creative');
-        expect(result[0].native.body).to.equal('Cool description great stuff');
-        expect(result[0].native.cta).to.equal('Do it');
-        expect(result[0].native.image.url).to.equal('https://cdn.adnxs.com/img.png');
+        // expect(result[0].native.title).to.equal('Native Creative');
+        // expect(result[0].native.body).to.equal('Cool description great stuff');
+        // expect(result[0].native.cta).to.equal('Do it');
+        // expect(result[0].native.image.url).to.equal('https://cdn.adnxs.com/img.png');
+        expect(result[0].native.ortb).to.deep.equal(testOrtbNativeResponse);
         expect(result[0].native.video.content).to.equal('<?xml version=\"1.0\"></xml>');
       });
     }
