@@ -1,5 +1,4 @@
 import {
-  isArray,
   _each,
   createTrackPixelHtml,
   deepAccess,
@@ -16,7 +15,7 @@ import CONSTANTS from '../src/constants.json';
 
 const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
-const SYNC_ENDPOINT = 'https://prebid.setupad.io/cookie_sync?';
+const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
 const REPORT_ENDPOINT =
   'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
 const GVLID = 1060;
@@ -72,7 +71,6 @@ export const spec = {
         device,
         site,
         imp: [],
-        test: 1,
       };
 
       const imp = {
@@ -170,45 +168,30 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    if (!responses?.length) return [];
+
     const syncs = [];
-    if (isArray(responses)) {
-      responses.forEach((response) => {
-        if (syncOptions.pixelEnabled) {
-          deepAccess(response, 'body.ext.sync.image', []).forEach((imgUrl) => {
-            syncs.push({
-              type: 'image',
-              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent),
-            });
-          });
-        }
+    const bidders = getBidders(responses);
 
-        if (syncOptions.iframeEnabled) {
-          deepAccess(response, 'body.ext.sync.iframe', []).forEach(
-            (iframeUrl) => {
-              syncs.push({
-                type: 'iframe',
-                url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent),
-              });
-            }
-          );
-        }
+    if (syncOptions.iframeEnabled && bidders) {
+      const queryParams = [];
+
+      queryParams.push(`bidders=${bidders}`);
+      queryParams.push('gdpr=' + +gdprConsent.gdprApplies);
+      queryParams.push('gdpr_consent=' + gdprConsent.consentString);
+      queryParams.push('usp_consent=' + (uspConsent || ''));
+
+      const strQueryParams = queryParams.join('&');
+
+      syncs.push({
+        type: 'iframe',
+        url: SYNC_ENDPOINT + strQueryParams + '&type=iframe',
       });
+
+      return syncs;
     }
 
-    if (!syncs.length) {
-      let syncUrl = SYNC_ENDPOINT;
-      if (gdprConsent && gdprConsent.gdprApplies) {
-        syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString + '&';
-      }
-      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent + '&';
-      if (syncOptions.iframeEnabled) {
-        syncs.push({ type: 'iframe', url: syncUrl + 'type=iframe' });
-      }
-      if (syncOptions.pixelEnabled) {
-        syncs.push({ type: 'image', url: syncUrl + 'type=image' });
-      }
-    }
-    return syncs;
+    return [];
   },
 
   getPixelUrl: function (eventName, bid, timestamp) {
@@ -252,26 +235,14 @@ export const spec = {
   },
 };
 
-function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
-  const { consentString, gdprApplies } = gdprConsent || {};
+function getBidders(serverResponse) {
+  const bidders = serverResponse
+    .map((res) => Object.keys(res.body.ext.responsetimemillis || []))
+    .flat(1);
 
-  if (gdprApplies) {
-    const gdpr = Number(gdprApplies);
-    url = url.replace('{{.GDPR}}', gdpr);
-
-    if (gdpr == 1 && consentString && consentString.length > 0) {
-      url = url.replace('{{.GDPRConsent}}', consentString);
-    }
-  } else {
-    url = url.replace('{{.GDPR}}', 0);
-    url = url.replace('{{.GDPRConsent}}', '');
+  if (bidders.length) {
+    return encodeURIComponent(JSON.stringify([...new Set(bidders)]));
   }
-
-  if (uspConsent) {
-    url = url.replace('{{.USPrivacy}}', uspConsent);
-  }
-
-  return url;
 }
 
 function getAdEl(bid) {

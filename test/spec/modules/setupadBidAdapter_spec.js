@@ -143,64 +143,73 @@ describe('SetupadAdapter', function () {
     });
   });
 
-  describe('getUserSync', function () {
-    it('should return correct user sync url', function () {
-      const syncOptionsPixel = {
-        iframeEnabled: false,
+  describe('getUserSyncs', () => {
+    it('should return user sync', () => {
+      const syncOptions = {
+        iframeEnabled: true,
         pixelEnabled: true,
       };
-      const syncOptionsIframe = {
-        iframeEnabled: true,
-        pixelEnabled: false,
-      };
-      expect(spec.getUserSyncs(syncOptionsPixel)).to.deep.equal([
+      const responses = [
         {
-          type: 'image',
-          url: 'https://prebid.setupad.io/cookie_sync?type=image',
+          body: {
+            ext: {
+              responsetimemillis: {
+                'test seat 1': 2,
+                'test seat 2': 1,
+              },
+            },
+          },
         },
-      ]);
-      expect(spec.getUserSyncs(syncOptionsIframe)).to.deep.equal([
+      ];
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
+      };
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
+      const expectedUserSyncs = [
         {
           type: 'iframe',
-          url: 'https://prebid.setupad.io/cookie_sync?type=iframe',
+          url: 'https://cookie.stpd.cloud/sync?bidders=%5B%22test%20seat%201%22%2C%22test%20seat%202%22%5D&gdpr=1&gdpr_consent=dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig&usp_consent=mkjvbiniwot4827obfoy8sdg8203gb&type=iframe',
         },
-      ]);
+      ];
+
+      const userSyncs = spec.getUserSyncs(
+        syncOptions,
+        responses,
+        gdprConsent,
+        uspConsent
+      );
+
+      expect(userSyncs).to.deep.equal(expectedUserSyncs);
     });
 
-    it('should return valid url if GDPR and USP exist', function () {
+    it('should return empty user syncs when responsetimemillis is not defined', () => {
       const syncOptions = {
-        iframeEnabled: false,
+        iframeEnabled: true,
         pixelEnabled: true,
       };
-
-      let userSync = spec.getUserSyncs(
-        syncOptions,
-        [],
-        bidRequests[0].gdprConsent,
-        bidRequests[0].uspConsent
-      );
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.equal('image');
-      expect(userSync[0].url).to.equal(
-        'https://prebid.setupad.io/cookie_sync?gdpr=1&gdpr_consent=BOtmiBKOtmiBKABABAENAFAAAAACeAAA&us_privacy=usp-context-string&type=image'
-      );
-    });
-
-    it('Test getUserSyncs function if GDPR is undefined', function () {
-      const syncOptions = {
-        iframeEnabled: false,
-        pixelEnabled: true,
+      const responses = [
+        {
+          body: {
+            ext: {},
+          },
+        },
+      ];
+      const gdprConsent = {
+        gdprApplies: 1,
+        consentString: 'dkj49Sjmfjuj34as:12jaf90123hufabidfy9u23brfpoig',
       };
+      const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
+      const expectedUserSyncs = [];
 
-      let userSync = spec.getUserSyncs(
+      const userSyncs = spec.getUserSyncs(
         syncOptions,
-        [serverResponse],
-        undefined,
-        bidRequests[0].uspConsent
+        responses,
+        gdprConsent,
+        uspConsent
       );
-      expect(userSync).to.be.an('array').with.lengthOf(1);
-      expect(userSync[0].type).to.equal('image');
-      expect(userSync[0].url).to.equal('urlA?gdpr=0');
+
+      expect(userSyncs).to.deep.equal(expectedUserSyncs);
     });
   });
 
