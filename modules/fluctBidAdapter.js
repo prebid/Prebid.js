@@ -36,6 +36,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids.
+   * @param {bidderRequest} bidderRequest bidder request object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -50,7 +51,8 @@ export const spec = {
       data.bidId = request.bidId;
       data.transactionId = request.ortb2Imp?.ext?.tid;
       data.user = {
-        eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
+        data: bidderRequest.ortb2?.user?.data ?? [],
+        eids: (request.userIdAsEids ?? []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };
 
       if (bidderRequest.gdprConsent) {

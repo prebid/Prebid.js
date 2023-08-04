@@ -121,7 +121,7 @@ describe('fluctAdapter', function () {
 
     it('includes filtered user.eids if any exist', function () {
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           userIdAsEids: [
             {
               source: 'foobar.com',
@@ -157,32 +157,72 @@ describe('fluctAdapter', function () {
         })
       );
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
-      expect(request.data.user.eids).to.eql([
-        {
-          source: 'adserver.org',
-          uids: [
-            { id: 'tdid' }
-          ],
+      expect(request.data.user).to.eql({
+        data: [],
+        eids: [
+          {
+            source: 'adserver.org',
+            uids: [
+              { id: 'tdid' }
+            ],
+          },
+          {
+            source: 'criteo.com',
+            uids: [
+              { id: 'criteo-id' }
+            ],
+          },
+          {
+            source: 'intimatemerger.com',
+            uids: [
+              { id: 'imuid' }
+            ],
+          },
+          {
+            source: 'liveramp.com',
+            uids: [
+              { id: 'idl-env' }
+            ],
+          },
+        ],
+      });
+    });
+
+    it('includes user.data if any exists', function () {
+      const bidderRequest2 = Object.assign(bidderRequest, {
+        ortb2: {
+          user: {
+            data: [
+              {
+                name: 'a1mediagroup.com',
+                ext: {
+                  segtax: 900,
+                },
+                segment: [
+                  {id: 'id-1'},
+                  {id: 'id-2'},
+                ],
+              },
+            ],
+          },
         },
-        {
-          source: 'criteo.com',
-          uids: [
-            { id: 'criteo-id' }
-          ],
-        },
-        {
-          source: 'intimatemerger.com',
-          uids: [
-            { id: 'imuid' }
-          ],
-        },
-        {
-          source: 'liveramp.com',
-          uids: [
-            { id: 'idl-env' }
-          ],
-        },
-      ]);
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest2)[0];
+      expect(request.data.user).to.eql({
+        data: [
+          {
+            name: 'a1mediagroup.com',
+            ext: {
+              segtax: 900,
+            },
+            segment: [
+              {id: 'id-1'},
+              {id: 'id-2'},
+            ],
+          },
+        ],
+        eids: [],
+      });
     });
 
     it('includes data.params.kv if any exists', function () {
