@@ -466,4 +466,23 @@ describe('Tappx bid adapter', function () {
       assert.isString(_extractPageUrl(validBidRequests, bidderRequest));
     });
   })
+
+  describe('Empty params values from bid tests', function() {
+    let validBidRequest = JSON.parse(JSON.stringify(c_BIDREQUEST));
+
+    it('should return false when tappxkey is empty', function () {
+      validBidRequest.bids[0].params.tappxkey = '';
+      assert.isFalse(spec.isBidRequestValid(validBidRequest.bids[0]));
+    });
+
+    it('should return false when host is empty', function () {
+      validBidRequest.bids[0].params.host = '';
+      assert.isFalse(spec.isBidRequestValid(validBidRequest.bids[0]));
+    });
+
+    it('should return false when endpoint is empty', function () {
+      validBidRequest.bids[0].params.endpoint = '';
+      assert.isFalse(spec.isBidRequestValid(validBidRequest.bids[0]));
+    });
+  });
 });

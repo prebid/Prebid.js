@@ -7,14 +7,15 @@ import {
   isFn,
   logWarn,
   parseSizesInput,
-  parseUrl
+  parseUrl,
+  formatQS
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 
-const ADAPTER_VERSION = '1.19';
+const ADAPTER_VERSION = '1.20';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -22,6 +23,8 @@ const CURRENCY = 'USD';
 export const VIDEO_ENDPOINT = 'https://reachms.bfmio.com/bid.json?exchange_id=';
 export const BANNER_ENDPOINT = 'https://display.bfmio.com/prebid_display';
 export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/loader/outstream.js';
+export const SYNC_IFRAME_ENDPOINT = 'https://sync.bfmio.com/sync_iframe';
+export const SYNC_IMAGE_ENDPOINT = 'https://sync.bfmio.com/syncb';
 
 export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
@@ -103,7 +106,6 @@ export const spec = {
       let responseMeta = Object.assign({ mediaType: VIDEO, advertiserDomains: [] }, response.meta);
       let bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: spec.code,
         cpm: response.bidPrice,
         width: firstSize.w,
         height: firstSize.h,
@@ -153,10 +155,21 @@ export const spec = {
     }
   },
 
-  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') {
-    let syncs = [];
+  getUserSyncs(syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = {}) {
     let { gdprApplies, consentString = '' } = gdprConsent;
+    let { gppString = '', applicableSections = [] } = gppConsent;
     let bannerResponse = find(serverResponses, (res) => isArray(res.body));
+
+    let syncs = [];
+    let params = {
+      id: appId,
+      gdpr: gdprApplies ? 1 : 0,
+      gc: consentString,
+      gce: 1,
+      us_privacy: uspConsent,
+      gpp: gppString,
+      gpp_sid: Array.isArray(applicableSections) ? applicableSections.join(',') : ''
+    };
 
     if (bannerResponse) {
       if (syncOptions.iframeEnabled) {
@@ -172,12 +185,12 @@ export const spec = {
     } else if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `https://sync.bfmio.com/sync_iframe?ifg=1&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
+        url: `${SYNC_IFRAME_ENDPOINT}?ifg=1&${formatQS(params)}`
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
-        url: `https://sync.bfmio.com/syncb?pid=144&id=${appId}&gdpr=${gdprApplies ? 1 : 0}&gc=${consentString}&gce=1&us_privacy=${uspConsent}`
+        url: `${SYNC_IMAGE_ENDPOINT}?pid=144&${formatQS(params)}`
       });
     }
 
@@ -405,6 +418,12 @@ function createVideoRequestData(bid, bidderRequest) {
     deepSetValue(payload, 'user.ext.consent', consentString);
   }
 
+  if (bidderRequest && bidderRequest.gppConsent) {
+    let { gppString, applicableSections } = bidderRequest.gppConsent;
+    deepSetValue(payload, 'regs.gpp', gppString);
+    deepSetValue(payload, 'regs.gpp_sid', applicableSections);
+  }
+
   if (bid.schain) {
     deepSetValue(payload, 'source.ext.schain', bid.schain);
   }
@@ -458,6 +477,12 @@ function createBannerRequestData(bids, bidderRequest) {
     let { gdprApplies, consentString } = bidderRequest.gdprConsent;
     payload.gdpr = gdprApplies ? 1 : 0;
     payload.gdprConsent = consentString;
+  }
+
+  if (bidderRequest && bidderRequest.gppConsent) {
+    let { gppString, applicableSections } = bidderRequest.gppConsent;
+    payload.gpp = gppString;
+    payload.gppSid = applicableSections;
   }
 
   if (bids[0] && bids[0].schain) {

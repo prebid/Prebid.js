@@ -220,6 +220,7 @@ function buildRequestObject(bid) {
   let placementId = getValue(bid.params, 'placementId');
   let pageId = getValue(bid.params, 'pageId');
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const videoPlcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);
@@ -227,9 +228,9 @@ function buildRequestObject(bid) {
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }
+  if (videoPlcmt) { reqObj.videoPlcmt = videoPlcmt; }
   return reqObj;
 }
 
