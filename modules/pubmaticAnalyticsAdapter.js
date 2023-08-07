@@ -110,10 +110,6 @@ function setBidStatus(bid, args) {
       bid.status = SUCCESS;
       delete bid.error; // it's possible for this to be set by a previous timeout
       break;
-    case CONSTANTS.STATUS.NO_BID:
-      bid.status = NO_BID;
-      delete bid.error;
-      break;
     default:
       bid.status = ERROR;
       bid.error = {

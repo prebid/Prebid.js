@@ -34,6 +34,12 @@ export const netIdSubmodule = {
   getId(config) {
     /* currently not possible */
     return {};
+  },
+  eids: {
+    'netId': {
+      source: 'netid.de',
+      atype: 1
+    },
   }
 };
 

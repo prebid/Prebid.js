@@ -1,4 +1,5 @@
 // jshint esversion: 6, es3: false, node: true
+/* eslint-disable no-console */
 import { assert } from 'chai';
 import { spec } from 'modules/adfBidAdapter.js';
 import { config } from 'src/config.js';
@@ -171,7 +172,10 @@ describe('Adf adapter', function () {
         bidId: 'bidId',
         params: { siteId: 'siteId' },
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' }, auctionId: 'tid' }).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {
+        refererInfo: {page: 'page'},
+        ortb2: {source: {tid: 'tid'}}
+      }).data);
 
       assert.equal(request.source.tid, 'tid');
       assert.equal(request.source.fd, 1);
@@ -441,6 +445,52 @@ describe('Adf adapter', function () {
             assert.equal(imps[index].bidfloor, floor);
             assert.equal(imps[index].bidfloorcur, 'USD');
           });
+        });
+
+        it('should add correct params to getFloor', function () {
+          let result;
+          let mediaTypes = { video: {
+            playerSize: [ 100, 200 ]
+          } };
+          const expectedFloors = [ 1, 1.3, 0.5 ];
+          config.setConfig({ currency: { adServerCurrency: 'DKK' } });
+          let validBidRequests = expectedFloors.map(getBidWithFloorTest);
+          getRequestImps(validBidRequests);
+          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+
+          mediaTypes = { banner: {
+            sizes: [ [100, 200], [300, 400] ]
+          }};
+          validBidRequests = expectedFloors.map(getBidWithFloorTest);
+          getRequestImps(validBidRequests);
+
+          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+
+          mediaTypes = { native: {} };
+          validBidRequests = expectedFloors.map(getBidWithFloorTest);
+          getRequestImps(validBidRequests);
+
+          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+
+          mediaTypes = {};
+          validBidRequests = expectedFloors.map(getBidWithFloorTest);
+          getRequestImps(validBidRequests);
+
+          assert.deepEqual(result, { currency: 'DKK', size: '*', mediaType: '*' });
+
+          function getBidWithFloorTest(floor) {
+            return {
+              params: { mid: 1 },
+              mediaTypes: mediaTypes,
+              getFloor: (args) => {
+                result = args;
+                return {
+                  currency: 'DKK',
+                  floor
+                };
+              }
+            };
+          }
         });
 
         function getBidWithFloor(floor) {

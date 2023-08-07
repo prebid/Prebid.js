@@ -1,16 +1,16 @@
 import {expect} from 'chai';
 import {spec} from 'modules/mediasquareBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { requestBidsHook } from 'modules/consentManagement.js';
 
 describe('MediaSquare bid adapter tests', function () {
   var DEFAULT_PARAMS = [{
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
-    transactionId: 'cccc1234',
+    ortb2Imp: {
+      ext: {
+        tid: 'cccc1234',
+      }
+    },
     mediaTypes: {
       banner: {
         sizes: [
@@ -99,6 +99,7 @@ describe('MediaSquare bid adapter tests', function () {
       'bid_id': 'aaaa1234',
       'adomain': ['test.com'],
       'context': 'instream',
+      'increment': 1.0,
     }],
   }};
 
@@ -166,6 +167,8 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
     expect(bid.mediasquare.context).to.exist;
     expect(bid.mediasquare.context).to.equal('instream');
+    expect(bid.mediasquare.increment).to.exist;
+    expect(bid.mediasquare.increment).to.equal(1.0);
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
     expect(bid.meta).to.exist;
     expect(bid.meta.advertiserDomains).to.exist;

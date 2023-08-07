@@ -91,6 +91,12 @@ export const justIdSubmodule = {
         }
       }
     };
+  },
+  eids: {
+    'justId': {
+      source: 'justtag.com',
+      atype: 1
+    },
   }
 };
 

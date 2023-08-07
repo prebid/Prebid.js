@@ -18,6 +18,18 @@ describe('AppNexusAdapter', function () {
     });
   });
 
+  function expectKeywords(actual, expected) {
+    expect(actual.length).to.equal(expected.length);
+    actual.forEach(el => {
+      const match = expected.find(ob => ob.key === el.key);
+      if (el.value) {
+        expect(el.value).to.have.members(match.value);
+      } else {
+        expect(match.value).to.not.exist;
+      }
+    })
+  }
+
   describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'appnexus',
@@ -737,7 +749,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest], bidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.keywords).to.deep.equal([{
+      expectKeywords(payload.keywords, [{
         'key': 'gender',
         'value': ['m']
       }, {
@@ -770,6 +782,69 @@ describe('AppNexusAdapter', function () {
       }]);
 
       config.getConfig.restore();
+    });
+
+    it('adds ortb2 segments to auction request as keywords', function() {
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      const bidderRequest = {
+        ortb2: {
+          site: {
+            keywords: 'drill',
+            content: {
+              data: [{
+                name: 'siteseg1',
+                ext: {
+                  segtax: 540
+                },
+                segment: [{
+                  id: 's123',
+                }, {
+                  id: 's234'
+                }]
+              }, {
+                name: 'sitseg2',
+                ext: {
+                  segtax: 1
+                },
+                segment: [{
+                  id: 'unknown'
+                }]
+              }, {
+                name: 'siteseg3',
+                ext: {
+                  segtax: 526
+                },
+                segment: [{
+                  id: 'dog'
+                }]
+              }]
+            }
+          },
+          user: {
+            data: [{
+              name: 'userseg1',
+              ext: {
+                segtax: 526
+              },
+              segment: [{
+                id: 'cat'
+              }]
+            }]
+          }
+        }
+      };
+      const request = spec.buildRequests([bidRequest], bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expectKeywords(payload.keywords, [{
+        'key': 'drill'
+      }, {
+        'key': '1plusX',
+        'value': ['cat', 'dog']
+      }, {
+        'key': 'perid',
+        'value': ['s123', 's234']
+      }]);
     });
 
     if (FEATURES.NATIVE) {
@@ -872,26 +947,28 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
-        'key': 'single',
-        'value': ['val']
-      }, {
-        'key': 'singleArr',
-        'value': ['val']
-      }, {
-        'key': 'singleArrNum',
-        'value': ['5']
-      }, {
-        'key': 'multiValMixed',
-        'value': ['value1', '2', 'value3']
-      }, {
-        'key': 'singleValNum',
-        'value': ['123']
-      }, {
-        'key': 'emptyStr'
-      }, {
-        'key': 'emptyArr'
-      }]);
+      expectKeywords(payload.tags[0].keywords, [
+        {
+          'key': 'single',
+          'value': ['val']
+        }, {
+          'key': 'singleArr',
+          'value': ['val']
+        }, {
+          'key': 'singleArrNum',
+          'value': ['5']
+        }, {
+          'key': 'multiValMixed',
+          'value': ['value1', '2', 'value3']
+        }, {
+          'key': 'singleValNum',
+          'value': ['123']
+        }, {
+          'key': 'emptyStr'
+        }, {
+          'key': 'emptyArr'
+        }
+      ])
     });
 
     it('should convert adUnit ortb2 keywords (when there are no bid param keywords) to proper form and attaches to request', function () {
@@ -911,7 +988,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
+      expectKeywords(payload.tags[0].keywords, [{
         'key': 'ortb2',
         'value': ['yes']
       }, {
@@ -955,7 +1032,7 @@ describe('AppNexusAdapter', function () {
       const request = spec.buildRequests([bidRequest]);
       const payload = JSON.parse(request.data);
 
-      expect(payload.tags[0].keywords).to.deep.equal([{
+      expectKeywords(payload.tags[0].keywords, [{
         'key': 'single',
         'value': ['val']
       }, {
@@ -1016,7 +1093,18 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
-    it('should add gpid to the request', function () {
+    it('should add preferred gpid to the request', function () {
+      let testGpid = '/12345/my-gpt-tag-0';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { gpid: testGpid } };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+    });
+
+    it('should add backup gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
       bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };
@@ -1451,16 +1539,13 @@ describe('AppNexusAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
     let bidderSettingsStorage;
 
     before(function () {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
       bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function () {
-      bfStub.restore();
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
@@ -1707,7 +1792,6 @@ describe('AppNexusAdapter', function () {
             }
           }]
         };
-        bfStub.returns('1');
 
         let result = spec.interpretResponse({ body: response }, { bidderRequest });
         expect(result[0]).to.have.property('vastUrl');
