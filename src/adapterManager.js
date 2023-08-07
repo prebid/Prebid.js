@@ -672,11 +672,6 @@ adapterManager.callBidViewableBidder = function(bidder, bid) {
   tryCallBidderMethod(bidder, 'onBidViewable', bid);
 };
 
-adapterManager.callBidBillableBidder = function(bid) {
-  // eslint-disable-next-line no-console
-  console.log({ bid });
-};
-
 adapterManager.callBidderError = function(bidder, error, bidderRequest) {
   const param = { error, bidderRequest };
   tryCallBidderMethod(bidder, 'onBidderError', param);
