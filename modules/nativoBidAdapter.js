@@ -4,17 +4,17 @@ import { BANNER } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 
-const converter = ortbConverter({     
+const converter = ortbConverter({
   context: {
-      // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them 
-      netRevenue: true,    // or false if your adapter should set bidResponse.netRevenue = false
-      ttl: 30              // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)  
+    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
+    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
+    ttl: 30 // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
     imp.tagid = bidRequest.adUnitCode
     return imp;
-}
+  }
 });
 
 const BIDDER_CODE = 'nativo'
@@ -150,7 +150,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     // Get OpenRTB Data
-    const openRTBData = converter.toORTB({validBidRequests, bidderRequest})
+    const openRTBData = converter.toORTB({bidRequests: validBidRequests, bidderRequest})
     const openRTBDataString = JSON.stringify(openRTBData)
 
     const requestData = new RequestData()
