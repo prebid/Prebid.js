@@ -513,7 +513,6 @@ export class UserEIDs extends BidRequestDataSource {
   }
 
   processBidRequestData(bidRequest, bidderRequest) {
-    console.log(bidRequest)
     if (bidRequest.userIdAsEids === undefined || this.eids.length > 0) return
     this.eids = bidRequest.userIdAsEids
   }
