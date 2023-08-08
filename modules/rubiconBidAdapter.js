@@ -322,8 +322,7 @@ export const spec = {
         )
       );
     });
-    // if (rubiConf.singleRequest !== true) {
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
