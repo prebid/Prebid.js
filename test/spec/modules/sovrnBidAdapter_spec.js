@@ -851,7 +851,7 @@ describe('sovrnBidAdapter', function() {
         url: `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
       }
 
-      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '')
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '', null)
 
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
@@ -863,7 +863,22 @@ describe('sovrnBidAdapter', function() {
         url: `https://ap.lijit.com/beacon?us_privacy=${uspString}&informer=13487408`,
       }
 
-      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, uspString)
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, uspString, null)
+
+      expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
+    })
+
+    it('should include gpp consent string if present', function() {
+      const gppConsent = {
+        applicableSections: [1, 2],
+        gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
+      }
+      const expectedReturnStatement = {
+        type: 'iframe',
+        url: `https://ap.lijit.com/beacon?gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+      }
+
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, '', gppConsent)
 
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })
@@ -874,12 +889,17 @@ describe('sovrnBidAdapter', function() {
         consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A=='
       }
       const uspString = '1NYN'
-      const expectedReturnStatement = {
-        type: 'iframe',
-        url: `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&informer=13487408`,
+      const gppConsent = {
+        applicableSections: [1, 2],
+        gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
       }
 
-      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString)
+      const expectedReturnStatement = {
+        type: 'iframe',
+        url: `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+      }
+
+      const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString, gppConsent)
 
       expect(returnStatement[0]).to.deep.equal(expectedReturnStatement)
     })

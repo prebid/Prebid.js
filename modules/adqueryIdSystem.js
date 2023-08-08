@@ -98,6 +98,12 @@ export const adqueryIdSubmodule = {
       }
     };
     return {callback: resp};
+  },
+  eids: {
+    'qid': {
+      source: 'adquery.io',
+      atype: 1
+    },
   }
 };
 
