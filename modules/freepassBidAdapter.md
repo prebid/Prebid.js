@@ -23,7 +23,10 @@ This BidAdapter requires the FreePass IdSystem to be configured. Please contact 
                 }
             },
             bids: [{
-                bidder: 'freepass'
+                bidder: 'freepass',
+                params: {
+                    publisherId: '12345'
+                }
             }]
         }
     ];

@@ -23,7 +23,7 @@ Module that connects to Undertone's demand sources
            {
              bidder: "undertone",
              params: {
-               placementId: '10433394',
+               placementId: 1234,
                publisherId: 12345
                }
            }
