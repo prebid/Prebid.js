@@ -227,9 +227,13 @@ export const geoedgeSubmodule = {
   onBidResponseEvent: conditionallyWrap
 };
 
-export function beforeInit() {
+export function beforeInit(submod = submodule) {
   fetchWrapper(setWrapper);
-  submodule('realTimeData', geoedgeSubmodule);
+  submod('realTimeData', geoedgeSubmodule);
 }
 
 beforeInit();
+
+export function reset() {
+  wrapperReady = false;
+}

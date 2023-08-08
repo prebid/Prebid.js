@@ -1,11 +1,10 @@
-import pubmaticAnalyticsAdapter, { getMetadata } from 'modules/pubmaticAnalyticsAdapter.js';
+import pubmaticAnalyticsAdapter, {getMetadata} from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import CONSTANTS from 'src/constants.json';
-import { config } from 'src/config.js';
-import {
-  setConfig,
-  addBidResponseHook,
-} from 'modules/currency.js';
+import {config} from 'src/config.js';
+import {setConfig} from 'modules/currency.js';
+import {server} from '../../mocks/xhr.js';
+import 'src/prebid.js';
 
 let events = require('src/events');
 let ajax = require('src/ajax');
@@ -273,7 +272,6 @@ function getLoggerJsonFromRequest(requestBody) {
 
 describe('pubmatic analytics adapter', function () {
   let sandbox;
-  let xhr;
   let requests;
   let oldScreen;
   let clock;
@@ -282,9 +280,7 @@ describe('pubmatic analytics adapter', function () {
     setUADefault();
     sandbox = sinon.sandbox.create();
 
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
+    requests = server.requests;
 
     sandbox.stub(events, 'getEvents').returns([]);
 

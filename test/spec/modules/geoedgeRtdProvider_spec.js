@@ -1,6 +1,15 @@
 import * as utils from '../../../src/utils.js';
-import * as hook from '../../../src/hook.js'
-import { beforeInit, geoedgeSubmodule, setWrapper, wrapper, htmlPlaceholder, WRAPPER_URL, getClientUrl } from '../../../modules/geoedgeRtdProvider.js';
+
+import {
+  reset,
+  beforeInit,
+  geoedgeSubmodule,
+  setWrapper,
+  wrapper,
+  htmlPlaceholder,
+  WRAPPER_URL,
+  getClientUrl
+} from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
@@ -39,21 +48,15 @@ let mockWrapper = `<wrapper>${htmlPlaceholder}</wrapper>`;
 
 describe('Geoedge RTD module', function () {
   describe('beforeInit', function () {
-    let submoduleStub;
-
-    before(function () {
-      submoduleStub = sinon.stub(hook, 'submodule');
-    });
-    after(function () {
-      submoduleStub.restore();
-    });
     it('should fetch the wrapper', function () {
-      beforeInit();
+      reset();
+      beforeInit(() => null);
       let request = server.requests[0];
-      let isWrapperRequest = request && request.url && request.url && request.url === WRAPPER_URL;
-      expect(isWrapperRequest).to.equal(true);
+      expect(request.url).to.equal(WRAPPER_URL);
     });
     it('should register RTD submodule provider', function () {
+      const submoduleStub = sinon.stub();
+      beforeInit(submoduleStub);
       expect(submoduleStub.calledWith('realTimeData', geoedgeSubmodule)).to.equal(true);
     });
   });

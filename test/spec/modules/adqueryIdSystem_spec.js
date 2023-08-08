@@ -64,7 +64,7 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq('https://bidder.adquery.io');
+      expect(request.url).to.eq('https://bidder.adquery.io/');
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ qid: 'testqid' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({qid: 'testqid'});
     });
