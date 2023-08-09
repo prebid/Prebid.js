@@ -27,7 +27,7 @@ const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -322,7 +322,7 @@ export const spec = {
         )
       );
     });
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
