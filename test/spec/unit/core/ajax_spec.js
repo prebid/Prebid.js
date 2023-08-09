@@ -1,6 +1,7 @@
 import {dep, attachCallbacks, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
 import {config} from 'src/config.js';
 import {server} from '../../../mocks/xhr.js';
+import {sandbox} from 'sinon';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -189,9 +190,22 @@ describe('toFetchRequest', () => {
       'browsingTopics = false': [{browsingTopics: false}, false],
       'browsingTopics is undef': [{}, false]
     }).forEach(([t, [opts, shouldBeSet]]) => {
-      it(`should ${!shouldBeSet ? 'not ' : ''}be set on request when options has ${t}`, () => {
-        toFetchRequest(EXAMPLE_URL, null, opts);
-        sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: shouldBeSet ? true : undefined});
+      describe(`when options has ${t}`, () => {
+        const sandbox = sinon.createSandbox();
+        afterEach(() => {
+          sandbox.restore();
+        });
+
+        it(`should ${!shouldBeSet ? 'not ' : ''}be set when in a secure context`, () => {
+          sandbox.stub(window, 'isSecureContext').get(() => true);
+          toFetchRequest(EXAMPLE_URL, null, opts);
+          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: shouldBeSet ? true : undefined});
+        });
+        it(`should not be set when not in a secure context`, () => {
+          sandbox.stub(window, 'isSecureContext').get(() => false);
+          toFetchRequest(EXAMPLE_URL, null, opts);
+          sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: undefined});
+        });
       })
     })
   })
