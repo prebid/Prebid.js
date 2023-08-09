@@ -238,9 +238,9 @@ function wrapFunction(fn, context, params) {
           bid.currency = adServerCurrency;
         }
       } catch (e) {
-        logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        // TODO: in v8, this should not continue with a "NO_BID"
-        params[1] = params[2](CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        logWarn('getCurrencyConversion threw error: ', e);
+        params[2](CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        return;
       }
     }
     return fn.apply(context, params);

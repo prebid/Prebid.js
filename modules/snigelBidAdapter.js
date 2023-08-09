@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -13,6 +13,7 @@ const DEFAULT_CURRENCIES = ['USD'];
 const FLOOR_MATCH_ALL_SIZES = '*';
 
 const getConfig = config.getConfig;
+const refreshes = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -29,12 +30,15 @@ export const spec = {
       method: 'POST',
       url: getEndpoint(),
       data: JSON.stringify({
-        id: bidderRequest.bidderRequestId,
+        id: bidderRequest.auctionId,
+        accountId: deepAccess(bidRequests, '0.params.accountId'),
+        site: deepAccess(bidRequests, '0.params.site'),
         cur: getCurrencies(),
         test: getTestFlag(),
-        devw: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
-        devh: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
         version: getGlobal().version,
+        gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || deepAccess(bidderRequest, 'ortb2.regs.gpp'),
+        gpp_sid:
+          deepAccess(bidderRequest, 'gppConsent.applicableSections') || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid'),
         gdprApplies: gdprApplies,
         gdprConsentString: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.consentString') : undefined,
         gdprConsentProv: gdprApplies === true ? deepAccess(bidderRequest, 'gdprConsent.addtlConsent') : undefined,
@@ -43,12 +47,24 @@ export const spec = {
         eids: deepAccess(bidRequests, '0.userIdAsEids'),
         schain: deepAccess(bidRequests, '0.schain'),
         page: getPage(bidderRequest),
+        topframe: inIframe() === true ? 0 : 1,
+        device: {
+          w: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+          h: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight,
+          dnt: getDNT() ? 1 : 0,
+          language: getLanguage(),
+        },
         placements: bidRequests.map((r) => {
           return {
-            uuid: r.bidId,
+            id: r.adUnitCode,
+            tid: r.transactionId,
+            gpid: deepAccess(r, 'ortb2Imp.ext.gpid'),
+            pbadslot: deepAccess(r, 'ortb2Imp.ext.data.pbadslot') || deepAccess(r, 'ortb2Imp.ext.gpid'),
             name: r.params.placement,
             sizes: r.sizes,
             floor: getPriceFloor(r, BANNER, FLOOR_MATCH_ALL_SIZES),
+            refresh: getRefreshInformation(r.adUnitCode),
+            params: r.params.additionalParams,
           };
         }),
       }),
@@ -56,14 +72,14 @@ export const spec = {
     };
   },
 
-  interpretResponse: function (serverResponse) {
+  interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body || !serverResponse.body.bids) {
       return [];
     }
 
     return serverResponse.body.bids.map((bid) => {
       return {
-        requestId: bid.uuid,
+        requestId: mapIdToRequestId(bid.id, bidRequest),
         cpm: bid.price,
         creativeId: bid.crid,
         currency: serverResponse.body.cur,
@@ -77,9 +93,9 @@ export const spec = {
     });
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncUrl = getSyncUrl(responses || []);
-    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent)) {
+    if (syncUrl && syncOptions.iframeEnabled && hasSyncConsent(gdprConsent, uspConsent, gppConsent)) {
       return [{type: 'iframe', url: getSyncEndpoint(syncUrl, gdprConsent)}];
     }
   },
@@ -99,6 +115,14 @@ function getEndpoint() {
 
 function getTestFlag() {
   return getConfig(`${BIDDER_CODE}.test`) === true;
+}
+
+function getLanguage() {
+  return navigator && navigator.language
+    ? navigator.language.indexOf('-') != -1
+      ? navigator.language.split('-')[0]
+      : navigator.language
+    : undefined;
 }
 
 function getCurrencies() {
@@ -130,14 +154,43 @@ function getPriceFloor(bidRequest, mediaType, size) {
   }
 }
 
-function hasSyncConsent(gdprConsent, uspConsent) {
-  if (gdprConsent?.gdprApplies && !hasPurpose1Consent(gdprConsent)) {
-    return false;
-  } else if (uspConsent && uspConsent[1] === 'Y' && uspConsent[2] === 'Y') {
-    return false;
-  } else {
-    return true;
+function getRefreshInformation(adUnitCode) {
+  const refresh = refreshes[adUnitCode];
+  if (!refresh) {
+    refreshes[adUnitCode] = {
+      count: 0,
+      previousTime: new Date(),
+    };
+    return undefined;
   }
+
+  const currentTime = new Date();
+  const timeDifferenceSeconds = Math.floor((currentTime - refresh.previousTime) / 1000);
+  refresh.count += 1;
+  refresh.previousTime = currentTime;
+  return {
+    count: refresh.count,
+    time: timeDifferenceSeconds,
+  };
+}
+
+function mapIdToRequestId(id, bidRequest) {
+  return bidRequest.bidderRequest.bids.filter((bid) => bid.adUnitCode === id)[0].bidId;
+}
+
+function hasUspConsent(uspConsent) {
+  return typeof uspConsent !== 'string' || !(uspConsent[0] === '1' && uspConsent[2] === 'Y');
+}
+
+function hasGppConsent(gppConsent) {
+  return (
+    !(gppConsent && Array.isArray(gppConsent.applicableSections)) ||
+    gppConsent.applicableSections.every((section) => typeof section === 'number' && section <= 5)
+  );
+}
+
+function hasSyncConsent(gdprConsent, uspConsent, gppConsent) {
+  return hasPurpose1Consent(gdprConsent) && hasUspConsent(uspConsent) && hasGppConsent(gppConsent);
 }
 
 function getSyncUrl(responses) {

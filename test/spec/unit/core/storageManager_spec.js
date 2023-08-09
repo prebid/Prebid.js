@@ -1,14 +1,25 @@
 import {
-  getCoreStorageManager, getStorageManager,
+  deviceAccessRule,
+  getCoreStorageManager,
   newStorageManager,
   resetData,
+  STORAGE_TYPE_COOKIES,
+  STORAGE_TYPE_LOCALSTORAGE,
+  storageAllowedRule,
   storageCallbacks,
-  validateStorageEnforcement
 } from 'src/storageManager.js';
+import adapterManager from 'src/adapterManager.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {hook} from '../../../../src/hook.js';
-import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from '../../../../src/activities/modules.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../../../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT_NAME,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE
+} from '../../../../src/activities/params.js';
+import {activityParams} from '../../../../src/activities/activityParams.js';
 
 describe('storage manager', function() {
   before(() => {
@@ -56,41 +67,42 @@ describe('storage manager', function() {
     deviceAccessSpy.restore();
   });
 
-  describe(`enforcement`, () => {
-    let validateHook;
+  describe(`accessDevice activity check`, () => {
+    let isAllowed;
+
+    function mkManager(moduleType, moduleName) {
+      return newStorageManager({moduleType, moduleName}, {isAllowed});
+    }
 
     beforeEach(() => {
-      validateHook = sinon.stub().callsFake(function (next, ...args) {
-        next.apply(this, args);
-      });
-      validateStorageEnforcement.before(validateHook, 99);
+      isAllowed = sinon.stub();
     });
 
-    afterEach(() => {
-      validateStorageEnforcement.getHooks({hook: validateHook}).remove();
-      config.resetConfig();
+    it('should pass module type and name as activity params', () => {
+      mkManager(MODULE_TYPE_PREBID, 'mockMod').localStorageIsEnabled();
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_COMPONENT_TYPE]: MODULE_TYPE_PREBID,
+        [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockMod',
+        [ACTIVITY_PARAM_STORAGE_TYPE]: STORAGE_TYPE_LOCALSTORAGE
+      }));
+    });
+
+    it('should deny access if activity is denied', () => {
+      isAllowed.returns(false);
+      const mgr = mkManager(MODULE_TYPE_PREBID, 'mockMod');
+      mgr.setDataInLocalStorage('testKey', 'val');
+      expect(mgr.getDataFromLocalStorage('testKey')).to.not.exist;
+    });
+
+    it('should use bidder aliases when possible', () => {
+      adapterManager.registerBidAdapter({callBids: sinon.stub(), getSpec: () => ({})}, 'mockBidder');
+      adapterManager.aliasBidAdapter('mockBidder', 'mockAlias');
+      const mgr = mkManager(MODULE_TYPE_BIDDER, 'mockBidder');
+      config.runWithBidder('mockAlias', () => mgr.cookiesAreEnabled());
+      sinon.assert.calledWith(isAllowed, ACTIVITY_ACCESS_DEVICE, sinon.match({
+        [ACTIVITY_PARAM_COMPONENT_NAME]: 'mockAlias'
+      }))
     })
-
-    Object.entries({
-      'core': () => getCoreStorageManager('mock'),
-      'other': () => getStorageManager({moduleType: 'other', moduleName: 'mock'})
-    }).forEach(([moduleType, getMgr]) => {
-      describe(`for ${moduleType} modules`, () => {
-        let storage;
-        beforeEach(() => {
-          storage = getMgr();
-        });
-        it(`should pass '${moduleType}' module type to consent enforcement`, () => {
-          storage.localStorageIsEnabled();
-          expect(validateHook.args[0][1]).to.equal(moduleType);
-        });
-
-        it('should respect the deviceAccess flag', () => {
-          config.setConfig({deviceAccess: false});
-          expect(storage.localStorageIsEnabled()).to.be.false
-        });
-      });
-    });
   })
 
   describe('localstorage forbidden access in 3rd-party context', function() {
@@ -145,12 +157,25 @@ describe('storage manager', function() {
     });
   });
 
-  describe('when bidderSettings.allowStorage is defined', () => {
+  describe('deviceAccess control', () => {
+    afterEach(() => {
+      config.resetConfig()
+    });
+
+    it('should allow by default', () => {
+      config.resetConfig();
+      expect(deviceAccessRule()).to.not.exist;
+    });
+
+    it('should deny access when set', () => {
+      config.setConfig({deviceAccess: false});
+      sinon.assert.match(deviceAccessRule(), {allow: false});
+    })
+  });
+
+  describe('allowStorage access control rule', () => {
     const ALLOWED_BIDDER = 'allowed-bidder';
     const ALLOW_KEY = 'storageAllowed';
-
-    const COOKIE = 'test-cookie';
-    const LS_KEY = 'test-localstorage';
 
     function mockBidderSettings(val) {
       return {
@@ -213,39 +238,22 @@ describe('storage manager', function() {
         }).forEach(([t, {configValues, shouldWork: {cookie, html5}}]) => {
           describe(`when ${t} is allowed`, () => {
             configValues.forEach(configValue => describe(`storageAllowed = ${configValue}`, () => {
-              let mgr;
-
-              beforeEach(() => {
-                mgr = newStorageManager({moduleType: MODULE_TYPE_BIDDER, moduleName: bidderCode}, {bidderSettings: mockBidderSettings(configValue)});
-              })
-
-              afterEach(() => {
-                mgr.setCookie(COOKIE, 'delete', new Date().toUTCString());
-                mgr.removeDataFromLocalStorage(LS_KEY);
-              })
-
-              function scenario(type, desc, fn) {
+              Object.entries({
+                [STORAGE_TYPE_LOCALSTORAGE]: 'allow localStorage',
+                [STORAGE_TYPE_COOKIES]: 'allow cookies'
+              }).forEach(([type, desc]) => {
                 const shouldWork = isBidderAllowed && ({html5, cookie})[type];
-                it(`${shouldWork ? '' : 'NOT'} ${desc}`, () => fn(shouldWork));
-              }
-
-              scenario('cookie', 'allow cookies', (shouldWork) => {
-                mgr.setCookie(COOKIE, 'value');
-                expect(mgr.getCookie(COOKIE)).to.equal(shouldWork ? 'value' : null);
-              });
-
-              scenario('html5', 'allow localStorage', (shouldWork) => {
-                mgr.setDataInLocalStorage(LS_KEY, 'value');
-                expect(mgr.getDataFromLocalStorage(LS_KEY)).to.equal(shouldWork ? 'value' : null);
-              });
-
-              scenario('html5', 'report localStorage as available', (shouldWork) => {
-                expect(mgr.hasLocalStorage()).to.equal(shouldWork);
-              });
-
-              scenario('cookie', 'report cookies as available', (shouldWork) => {
-                expect(mgr.cookiesAreEnabled()).to.equal(shouldWork);
-              });
+                it(`${shouldWork ? '' : 'NOT'} ${desc}`, () => {
+                  const res = storageAllowedRule(activityParams(MODULE_TYPE_BIDDER, bidderCode, {
+                    [ACTIVITY_PARAM_STORAGE_TYPE]: type
+                  }), mockBidderSettings(configValue));
+                  if (shouldWork) {
+                    expect(res).to.not.exist;
+                  } else {
+                    sinon.assert.match(res, {allow: false});
+                  }
+                });
+              })
             }));
           });
         });

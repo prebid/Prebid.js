@@ -25,6 +25,7 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
+
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -3349,66 +3350,55 @@ describe('Unit: Prebid Module', function () {
 
   if (FEATURES.VIDEO) {
     describe('markWinningBidAsUsed', function () {
-      it('marks the bid object as used for the given adUnitCode/adId combination', function () {
-        // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      let winningBid;
+
+      beforeEach(() => {
         const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
         auction.getBidsReceived = function() { return bidsReceived.bids };
 
         // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
+        winningBid = targeting.getWinningBids(adUnitCode)[0];
+        auction.getAuctionId = function() { return winningBid.auctionId };
+      })
+
+      afterEach(() => {
+        resetAuction();
+      })
+
+      it('marks the bid object as used for the given adUnitCode/adId combination', function () {
+        // make sure the auction has "state" and does not reload the fixtures
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: winningBid.adId });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.not.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('marks the winning bid object as used for the given adUnitCode', function () {
         // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('marks a bid object as used for the given adId', function () {
         // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adId: winningBid.adId });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
     });
   }

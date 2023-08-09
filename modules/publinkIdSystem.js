@@ -140,6 +140,12 @@ export const publinkIdSubmodule = {
     if (!storedId) {
       return {callback: makeCallback(config, consentData)};
     }
-  }
+  },
+  eids: {
+    'publinkId': {
+      source: 'epsilon.com',
+      atype: 3
+    },
+  },
 };
 submodule('userId', publinkIdSubmodule);

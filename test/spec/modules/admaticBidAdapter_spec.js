@@ -28,6 +28,7 @@ describe('admaticBidAdapter', () => {
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
       'creativeId': 'er2ee',
+      'ortb2Imp': { 'ext': { 'instl': 1 } },
       'ortb2': { 'badv': ['admatic.com.tr'] }
     };
 
@@ -52,6 +53,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2Imp': { 'ext': { 'instl': 1 } },
         'ortb2': { 'badv': ['admatic.com.tr'] },
         'mediaTypes': {
           'banner': {
@@ -162,6 +164,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2Imp': { 'ext': { 'instl': 1 } },
         'ortb2': { 'badv': ['admatic.com.tr'] },
         'mediaTypes': {
           'banner': {
@@ -284,6 +287,7 @@ describe('admaticBidAdapter', () => {
               'sizes': [[300, 250], [728, 90]]
             }
           },
+          'ortb2Imp': { 'ext': { 'instl': 1 } },
           'ortb2': { 'badv': ['admatic.com.tr'] },
           getFloor: inputParams => {
             if (inputParams.mediaType === BANNER && inputParams.size[0] === 300 && inputParams.size[1] === 250) {
@@ -308,6 +312,7 @@ describe('admaticBidAdapter', () => {
           'networkId': 10433394,
           'host': 'layer.serve.admatic.com.tr'
         },
+        'ortb2Imp': { 'ext': { 'instl': 1 } },
         'ortb2': { 'badv': ['admatic.com.tr'] },
         'adUnitCode': 'adunit-code',
         'sizes': [[300, 250], [728, 90]],

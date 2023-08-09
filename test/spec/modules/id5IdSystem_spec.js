@@ -42,7 +42,9 @@ describe('ID5 ID System', function () {
   const ID5_STORED_OBJ = {
     'universal_uid': ID5_STORED_ID,
     'signature': ID5_STORED_SIGNATURE,
-    'link_type': ID5_STORED_LINK_TYPE
+    'ext': {
+      'linkType': ID5_STORED_LINK_TYPE
+    }
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -50,7 +52,10 @@ describe('ID5 ID System', function () {
   const ID5_JSON_RESPONSE = {
     'universal_uid': ID5_RESPONSE_ID,
     'signature': ID5_RESPONSE_SIGNATURE,
-    'link_type': ID5_RESPONSE_LINK_TYPE
+    'link_type': ID5_RESPONSE_LINK_TYPE,
+    'ext': {
+      'linkType': ID5_RESPONSE_LINK_TYPE
+    }
   };
   const ALLOWED_ID5_VENDOR_DATA = {
     purpose: {
@@ -394,6 +399,24 @@ describe('ID5 ID System', function () {
         .then(configRequest => {
           let requestBody = JSON.parse(configRequest.requestBody)
           expect(requestBody).is.deep.eq(id5FetchConfig)
+          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+        })
+        .then(fetchRequest => {
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse
+        })
+    });
+
+    it('should call the ID5 server for config with partner id being a string', function () {
+      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let id5FetchConfig = getId5FetchConfig();
+      id5FetchConfig.params.partner = '173';
+      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+
+      return xhrServerMock.expectConfigRequest()
+        .then(configRequest => {
+          let requestBody = JSON.parse(configRequest.requestBody)
+          expect(requestBody.params.partner).is.eq(173)
           return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
         })
         .then(fetchRequest => {
@@ -958,7 +981,9 @@ describe('ID5 ID System', function () {
         it('should not expose ID when everyone is in control group', function () {
           storedObject.ab_testing = {result: 'control'};
           storedObject.universal_uid = '';
-          storedObject.link_type = 0;
+          storedObject.ext = {
+            'linkType': 0
+          };
           let decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithoutIdAbOn);
         });

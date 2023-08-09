@@ -1,15 +1,18 @@
-import { deepAccess, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
+import { deepAccess, generateUUID, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { Renderer } from '../src/Renderer.js';
+import { OUTSTREAM } from '../src/video.js';
+import { ajax } from '../src/ajax.js';
+
 const GVLID = 91;
-export const ADAPTER_VERSION = 35;
+export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
@@ -25,10 +28,11 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 135;
+export const FAST_BID_VERSION_CURRENT = 139;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
+const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
 const FAST_BID_PUBKEY_E = 65537;
 const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
 
@@ -173,7 +177,14 @@ export const spec = {
 
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
-      const adapter = new Criteo.PubTag.Adapters.Prebid(PROFILE_ID_PUBLISHERTAG, ADAPTER_VERSION, bidRequests, bidderRequest, '$prebid.version$');
+      const adapter = new Criteo.PubTag.Adapters.Prebid(
+        PROFILE_ID_PUBLISHERTAG,
+        ADAPTER_VERSION,
+        bidRequests,
+        bidderRequest,
+        '$prebid.version$',
+        { createOutstreamVideoRenderer: createOutstreamVideoRenderer }
+      );
       url = adapter.buildCdbUrl();
       data = adapter.buildCdbRequest();
     } else {
@@ -207,49 +218,58 @@ export const spec = {
 
     if (body && body.slots && isArray(body.slots)) {
       body.slots.forEach(slot => {
-        const bidRequest = find(request.bidRequests, b => b.adUnitCode === slot.impid && (!b.params.zoneId || parseInt(b.params.zoneId) === slot.zoneid));
-        const bidId = bidRequest.bidId;
-        const bid = {
-          requestId: bidId,
-          cpm: slot.cpm,
-          currency: slot.currency,
-          netRevenue: true,
-          ttl: slot.ttl || 60,
-          creativeId: slot.creativecode,
-          width: slot.width,
-          height: slot.height,
-          dealId: slot.deal,
-        };
-        if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
-          const pafResponseMeta = {
-            content_id: slot.ext.paf.content_id,
-            transmission: response.ext.paf.transmission
+        const bidRequest = getAssociatedBidRequest(request.bidRequests, slot);
+        if (bidRequest) {
+          const bidId = bidRequest.bidId;
+          const bid = {
+            requestId: bidId,
+            cpm: slot.cpm,
+            currency: slot.currency,
+            netRevenue: true,
+            ttl: slot.ttl || 60,
+            creativeId: slot.creativecode,
+            width: slot.width,
+            height: slot.height,
+            dealId: slot.deal,
           };
-          bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
-        }
-        if (slot.adomain) {
-          bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
-        }
-        if (slot.native) {
-          if (bidRequest.params.nativeCallback) {
-            bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
-          } else {
-            bid.native = createPrebidNativeAd(slot.native);
-            bid.mediaType = NATIVE;
+          if (body.ext?.paf?.transmission && slot.ext?.paf?.content_id) {
+            const pafResponseMeta = {
+              content_id: slot.ext.paf.content_id,
+              transmission: response.ext.paf.transmission
+            };
+            bid.meta = Object.assign({}, bid.meta, { paf: pafResponseMeta });
           }
-        } else if (slot.video) {
-          bid.vastUrl = slot.displayurl;
-          bid.mediaType = VIDEO;
-        } else {
-          bid.ad = slot.creative;
+          if (slot.adomain) {
+            bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [slot.adomain].flat() });
+          }
+          if (slot.ext?.meta?.networkName) {
+            bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
+          }
+          if (slot.native) {
+            if (bidRequest.params.nativeCallback) {
+              bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
+            } else {
+              bid.native = createPrebidNativeAd(slot.native);
+              bid.mediaType = NATIVE;
+            }
+          } else if (slot.video) {
+            bid.vastUrl = slot.displayurl;
+            bid.mediaType = VIDEO;
+            const context = deepAccess(bidRequest, 'mediaTypes.video.context');
+            // if outstream video, add a default render for it.
+            if (context === OUTSTREAM) {
+              bid.renderer = createOutstreamVideoRenderer(slot);
+            }
+          } else {
+            bid.ad = slot.creative;
+          }
+          bids.push(bid);
         }
-        bids.push(bid);
       });
     }
 
     return bids;
   },
-
   /**
    * @param {TimedOutBid} timeoutData
    */
@@ -288,6 +308,23 @@ export const spec = {
       adapter.handleSetTargeting(bid);
     }
   },
+
+  /**
+   * @param {BidRequest[]} bidRequests
+   */
+  onDataDeletionRequest: (bidRequests) => {
+    const id = readFromAllStorages(BUNDLE_COOKIE_NAME);
+    if (id) {
+      deleteFromAllStorages(BUNDLE_COOKIE_NAME);
+      ajax('https://privacy.criteo.com/api/privacy/datadeletionrequest',
+        null,
+        JSON.stringify({ publisherUserId: id }),
+        {
+          contentType: 'application/json',
+          method: 'POST'
+        });
+    }
+  }
 };
 
 function readFromAllStorages(name) {
@@ -407,7 +444,9 @@ function checkNativeSendId(bidRequest) {
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
+  let userIdAsEids;
   const request = {
+    id: generateUUID(),
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
@@ -418,12 +457,15 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
     },
     slots: bidRequests.map(bidRequest => {
+      if (!userIdAsEids) {
+        userIdAsEids = bidRequest.userIdAsEids;
+      }
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
       const slot = {
+        slotid: bidRequest.bidId,
         impid: bidRequest.adUnitCode,
-        transactionid: bidRequest.transactionId,
-        auctionId: bidRequest.auctionId,
+        transactionid: bidRequest.ortb2Imp?.ext?.tid
       };
       if (bidRequest.params.zoneId) {
         slot.zoneid = bidRequest.params.zoneId;
@@ -431,11 +473,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (deepAccess(bidRequest, 'ortb2Imp.ext')) {
         slot.ext = bidRequest.ortb2Imp.ext;
       }
+
+      if (deepAccess(bidRequest, 'ortb2Imp.rwdd')) {
+        slot.rwdd = bidRequest.ortb2Imp.rwdd;
+      }
+
       if (bidRequest.params.ext) {
         slot.ext = Object.assign({}, slot.ext, bidRequest.params.ext);
       }
       if (bidRequest.nativeOrtbRequest?.assets) {
-        slot.ext = Object.assign({}, slot.ext, {assets: bidRequest.nativeOrtbRequest.assets});
+        slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
@@ -465,7 +512,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           placement: bidRequest.mediaTypes.video.placement,
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
-          startdelay: bidRequest.mediaTypes.video.startdelay
+          startdelay: bidRequest.mediaTypes.video.startdelay,
+          plcmt: bidRequest.mediaTypes.video.plcmt
         };
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
@@ -487,11 +535,14 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
+
+  request.source = {
+    tid: bidderRequest.ortb2?.source?.tid
+  };
+
   if (schain) {
-    request.source = {
-      ext: {
-        schain: schain
-      }
+    request.source.ext = {
+      schain: schain
     };
   };
   request.user = bidderRequest.ortb2?.user || {};
@@ -515,6 +566,19 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.device?.sua) {
     request.user.ext = request.user.ext || {};
     request.user.ext.sua = bidderRequest.ortb2?.device?.sua || {};
+  }
+  if (userIdAsEids) {
+    request.user.ext = request.user.ext || {};
+    request.user.ext.eids = [...userIdAsEids];
+  }
+  if (bidderRequest && bidderRequest.ortb2?.bcat) {
+    request.bcat = bidderRequest.ortb2.bcat;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.badv) {
+    request.badv = bidderRequest.ortb2.badv;
+  }
+  if (bidderRequest && bidderRequest.ortb2?.bapp) {
+    request.bapp = bidderRequest.ortb2.bapp;
   }
   return request;
 }
@@ -693,6 +757,56 @@ export function getFastBidUrl(fastBidVersion) {
   }
 
   return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
+}
+
+function createOutstreamVideoRenderer(slot) {
+  if (slot.ext.videoPlayerConfig === undefined || slot.ext.videoPlayerType === undefined) {
+    return undefined;
+  }
+
+  const config = {
+    documentResolver: (bid, sourceDocument, renderDocument) => {
+      return renderDocument ?? sourceDocument;
+    }
+  }
+
+  const render = (bid, renderDocument) => {
+    let payload = {
+      slotid: slot.impid,
+      vastUrl: slot.displayurl,
+      vastXml: slot.creative,
+      documentContext: renderDocument,
+    };
+
+    let outstreamConfig = slot.ext.videoPlayerConfig;
+
+    window.CriteoOutStream[slot.ext.videoPlayerType].play(payload, outstreamConfig)
+  };
+
+  const renderer = Renderer.install({ url: PUBLISHER_TAG_OUTSTREAM_SRC, config: config });
+  renderer.setRender(render);
+  return renderer;
+}
+
+function getAssociatedBidRequest(bidRequests, slot) {
+  for (const request of bidRequests) {
+    if (request.adUnitCode === slot.impid) {
+      if (request.params.zoneId && parseInt(request.params.zoneId) === slot.zoneid) {
+        return request;
+      } else if (slot.native) {
+        if (request.mediaTypes?.native || request.nativeParams) {
+          return request;
+        }
+      } else if (slot.video) {
+        if (request.mediaTypes?.video) {
+          return request;
+        }
+      } else if (request.mediaTypes?.banner || request.sizes) {
+        return request;
+      }
+    }
+  }
+  return undefined;
 }
 
 export function tryGetCriteoFastBid() {
