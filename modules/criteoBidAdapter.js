@@ -463,6 +463,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
       const slot = {
+        slotid: bidRequest.bidId,
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.ortb2Imp?.ext?.tid
       };
