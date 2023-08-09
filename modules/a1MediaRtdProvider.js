@@ -8,7 +8,7 @@ const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'a1Media';
 const SCRIPT_URL = 'https://linkback.contentsfeed.com/src';
 export const A1_SEG_KEY = '__a1tg';
-export const A1_AUD_KEY = 'a1gid';
+export const A1_AUD_KEY = 'a1_gid';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
 

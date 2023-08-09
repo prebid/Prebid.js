@@ -2,7 +2,7 @@ import {config} from './config.js';
 import {buildUrl, logError, parseUrl} from './utils.js';
 
 export const dep = {
-  fetch: window.fetch,
+  fetch: window.fetch.bind(window),
   makeRequest: (r, o) => new Request(r, o),
   timeout(timeout, resource) {
     const ctl = new AbortController();
