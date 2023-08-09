@@ -547,6 +547,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('operaId', function() {
+    const userId = {
+      operaId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 't.adx.opera.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
   it('33acrossId', function() {
     const userId = {
       '33acrossId': {
