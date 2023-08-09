@@ -36,7 +36,7 @@
     "node": ">=8.9.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.16.5",
+    "@babel/eslint-parser": "^7.22.10",
     "@wdio/browserstack-service": "~7.16.0",
     "@wdio/cli": "~7.5.2",
     "@wdio/concise-reporter": "~7.5.2",
@@ -46,7 +46,7 @@
     "@wdio/sync": "~7.5.2",
     "ajv": "6.12.3",
     "assert": "^2.0.0",
-    "babel-loader": "^8.0.5",
+    "babel-loader": "^9.1.3",
     "babel-plugin-istanbul": "^6.1.1",
     "babel-register": "^6.26.0",
     "body-parser": "^1.19.0",
