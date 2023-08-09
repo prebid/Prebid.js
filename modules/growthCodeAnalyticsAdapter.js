@@ -138,7 +138,7 @@ growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
 
 function logToServer() {
   if (pid === DEFAULT_PID) return;
-  if (eventQueue.length > 1) {
+  if (eventQueue.length >= 1) {
     // Get the correct GCID
     let gcid = localStorage.getItem('gcid')
 
