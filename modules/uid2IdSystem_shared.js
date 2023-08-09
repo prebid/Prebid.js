@@ -167,8 +167,8 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
 
 function isExpired(timestamp) {
   // Check if the value is in seconds and convert to milliseconds if necessary
-  let expiredAt = timestamp < 2000000000 ? timestamp * 1000 : timestamp
-  return Date.now() > expiredAt
+  let expiredAt = timestamp < 2000000000 ? timestamp * 1000 : timestamp;
+  return Date.now() > expiredAt;
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
