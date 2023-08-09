@@ -337,6 +337,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let floorData = auctionCache.floorData;
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
+  // will return true if floor data is present.
   let fetchStatus = getFloorFetchStatus(auctionCache.floorData);
 
   if (!auctionCache) {
