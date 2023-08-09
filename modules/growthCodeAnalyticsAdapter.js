@@ -167,7 +167,7 @@ function sendEvent(event) {
   eventQueue.push(event);
   logInfo(MODULE_NAME + 'Analytics Event: ' + event);
 
-  if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
+  if ((event.eventType === CONSTANTS.EVENTS.AUCTION_END) || (event.eventType === CONSTANTS.EVENTS.BID_WON)) {
     logToServer();
   }
 }
