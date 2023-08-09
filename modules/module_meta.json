@@ -13,6 +13,11 @@
   ],
   "RTD Module": [
     {
+      "name": "arcspanRtdProvider",
+      "path": "/modules/arcspanRtdProvider.js",
+      "module": "arcspanRtdProvider"
+    },
+    {
       "name": "browsiRtdProvider",
       "path": "/modules/browsiRtdProvider.js",
       "module": "browsiRtdProvider"
@@ -567,6 +572,16 @@
     "name": "yieldmoSyntheticInventoryModule",
     "path": "/modules/yieldmoSyntheticInventoryModule.js",
     "module": "yieldmoSyntheticInventoryModule"
+  },
+  {
+    "name": "sizeMappingV2",
+    "path": "/modules/sizeMappingV2.js",
+    "module": "sizeMappingV2"
+  },
+  {
+    "name": "fledgeForGpt",
+    "path": "/modules/fledgeForGpt.js",
+    "module": "fledgeForGpt"
   }
 ],
 "Video": [
