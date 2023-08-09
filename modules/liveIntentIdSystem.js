@@ -299,7 +299,7 @@ export const liveIntentIdSubmodule = {
       }
     },
     'index': {
-      source: 'indexexchange.com',
+      source: 'liveintent.indexexchange.com',
       atype: 3,
       getValue: function(data) {
         return data.id;
