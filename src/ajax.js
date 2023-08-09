@@ -37,17 +37,20 @@ export function toFetchRequest(url, data, options = {}) {
   }
   const headers = new Headers(options.customHeaders);
   headers.set(CTYPE, options.contentType || 'text/plain');
-  const opts = {
+  const rqOpts = {
     method,
     headers
   }
   if (method !== GET && data) {
-    opts.body = data;
+    rqOpts.body = data;
   }
   if (options.withCredentials) {
-    opts.credentials = 'include';
+    rqOpts.credentials = 'include';
   }
-  return dep.makeRequest(url, opts);
+  if (options.browsingTopics) {
+    rqOpts.browsingTopics = true;
+  }
+  return dep.makeRequest(url, rqOpts);
 }
 
 /**

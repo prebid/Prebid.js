@@ -1,4 +1,4 @@
-import {attachCallbacks, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
+import {dep, attachCallbacks, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
 import {config} from 'src/config.js';
 import {server} from '../../../mocks/xhr.js';
 
@@ -182,6 +182,19 @@ describe('toFetchRequest', () => {
       });
     });
   });
+
+  describe('browsingTopics', () => {
+    Object.entries({
+      'browsingTopics = true': [{browsingTopics: true}, true],
+      'browsingTopics = false': [{browsingTopics: false}, false],
+      'browsingTopics is undef': [{}, false]
+    }).forEach(([t, [opts, shouldBeSet]]) => {
+      it(`should ${!shouldBeSet ? 'not ' : ''}be set on request when options has ${t}`, () => {
+        toFetchRequest(EXAMPLE_URL, null, opts);
+        sinon.assert.calledWithMatch(dep.makeRequest, sinon.match.any, {browsingTopics: shouldBeSet ? true : undefined});
+      })
+    })
+  })
 });
 
 describe('attachCallbacks', () => {
