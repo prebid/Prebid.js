@@ -139,11 +139,14 @@ growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
 function logToServer() {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length > 1) {
+    // Get the correct GCID
+    let gcid = localStorage.getItem('gcid')
+
     let data = {
       session: sessionId,
       pid: pid,
+      gcid: gcid,
       timestamp: Date.now(),
-      timezoneoffset: new Date().getTimezoneOffset(),
       url: getRefererInfo().page,
       referer: document.referrer,
       events: eventQueue
