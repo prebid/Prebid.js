@@ -631,7 +631,8 @@ describe('native.js', function () {
     eventtrackers: [
       { event: 1, method: 1, url: 'https://sampleurl.com' },
       { event: 1, method: 2, url: 'https://sampleurljs.com' }
-    ]
+    ],
+    imptrackers: [ 'https://sample-imp.com' ]
   }
   describe('toLegacyResponse', () => {
     it('returns assets in legacy format for ortb responses', () => {
@@ -640,8 +641,9 @@ describe('native.js', function () {
       expect(actual.title).to.equal('vtitle');
       expect(actual.clickUrl).to.equal('url');
       expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
-      expect(actual.impressionTrackers.length).to.equal(1);
-      expect(actual.impressionTrackers[0]).to.equal('https://sampleurl.com');
+      expect(actual.impressionTrackers.length).to.equal(2);
+      expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
+      expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
   });
 });
