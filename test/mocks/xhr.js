@@ -52,10 +52,23 @@ function mockFetchServer() {
       statusText: '',
       requestHeaders: new Proxy(request.headers, {
         get(target, prop) {
-          return target[prop] != null ? target[prop] : target.get(prop);
+          return typeof prop === 'string' && target.has(prop) ? target.get(prop) : {}[prop];
         },
         has(target, prop) {
-          return target.has(prop);
+          return typeof prop === 'string' && target.has(prop);
+        },
+        ownKeys(target) {
+          return Array.from(target.keys());
+        },
+        getOwnPropertyDescriptor(target, prop) {
+          if (typeof prop === 'string' && target.has(prop)) {
+            return {
+              enumerable: true,
+              configurable: true,
+              writable: false,
+              value: target.get(prop)
+            }
+          }
         }
       }),
       withCredentials: request.credentials === 'include',
