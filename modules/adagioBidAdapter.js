@@ -984,7 +984,7 @@ export const spec = {
     const aucId = generateUUID()
 
     const adUnits = _map(validBidRequests, (rawBidRequest) => {
-      const bidRequest = {...rawBidRequest}
+      const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
       bidRequest.auctionId = aucId
@@ -1118,14 +1118,22 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId
-      delete adUnitCopy.userIdAsEids
+      delete adUnitCopy.userId;
+      delete adUnitCopy.userIdAsEids;
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
 
       return groupedAdUnits;
     }, {});
+
+    // Adding more params on the original bid object.
+    // Those params are not sent to the server.
+    // They are used for further operations on analytics adapter.
+    validBidRequests.forEach(rawBidRequest => {
+      rawBidRequest.params.adagioAuctionId = aucId
+      rawBidRequest.params.pageviewId = pageviewId
+    });
 
     // Build one request per organizationId
     const requests = _map(Object.keys(groupedAdUnits), organizationId => {
