@@ -204,6 +204,10 @@ export const liveIntentIdSubmodule = {
         result.magnite = { 'id': value.magnite }
       }
 
+      if (value.index) {
+        result.index = { 'id': value.index }
+      }
+
       return result
     }
 
