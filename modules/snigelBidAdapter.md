@@ -15,9 +15,13 @@ Please reach out to us [through our contact form](https://snigel.com/get-in-touc
 
 # Parameters
 
-| Name | Required | Description | Example |
-| :--- | :-------- | :---------- | :------ |
-| placement | Yes | Placement identifier | top_leaderboard |
+| Name      | Required | Description          |
+| :-------- | :------- | :------------------- |
+| accountId | Yes      | Account identifier   |
+| site      | Yes      | Site identifier      |
+| placement | Yes      | Placement identifier |
+
+Snigel will provide all of these parameters to you.
 
 # Test
 
@@ -37,6 +41,8 @@ var adUnits = [
       {
         bidder: "snigel",
         params: {
+          accountId: "1000",
+          site: "test.com",
           placement: "prebid_test_placement",
         },
       },

@@ -258,7 +258,7 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {},
-        tagid: globals['tagid'],
+        tagid: req.params && req.params.tagid
       };
     }
     itemMaps[id] = {

@@ -12,7 +12,7 @@ import {
   setSubmoduleRegistry,
   syncDelay,
 } from 'modules/userId/index.js';
-import {createEidsArray} from 'modules/userId/eids.js';
+import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getPrebidInternal} from 'src/utils.js';
@@ -86,7 +86,7 @@ describe('User ID', function () {
     }
   }
 
-  function createMockIdSubmodule(name, value, aliasName) {
+  function createMockIdSubmodule(name, value, aliasName, eids) {
     return {
       name,
       getId() {
@@ -95,7 +95,8 @@ describe('User ID', function () {
       decode(v) {
         return v;
       },
-      aliasName
+      aliasName,
+      eids
     }
   }
 
@@ -594,6 +595,50 @@ describe('User ID', function () {
       });
     });
 
+    describe('EID updateConfig', () => {
+      function mockSubmod(name, eids) {
+        return createMockIdSubmodule(name, null, null, eids);
+      }
+
+      it('does not choke if a submod does not provide an eids map', () => {
+        setSubmoduleRegistry([
+          mockSubmod('mock1'),
+          mockSubmod('mock2')
+        ]);
+        expect(EID_CONFIG.size).to.equal(0);
+      });
+
+      it('should merge together submodules\' eid configs', () => {
+        setSubmoduleRegistry([
+          mockSubmod('mock1', {mock1: {m: 1}}),
+          mockSubmod('mock2', {mock2: {m: 2}})
+        ]);
+        expect(EID_CONFIG.get('mock1')).to.eql({m: 1});
+        expect(EID_CONFIG.get('mock2')).to.eql({m: 2});
+      });
+
+      it('should respect idPriority', () => {
+        config.setConfig({
+          userSync: {
+            idPriority: {
+              m1: ['mod2', 'mod1'],
+              m2: ['mod1', 'mod2']
+            },
+            userIds: [
+              { name: 'mod1' },
+              { name: 'mod2' },
+            ]
+          }
+        });
+        setSubmoduleRegistry([
+          mockSubmod('mod1', {m1: {i: 1}, m2: {i: 2}}),
+          mockSubmod('mod2', {m1: {i: 3}, m2: {i: 4}})
+        ]);
+        expect(EID_CONFIG.get('m1')).to.eql({i: 3});
+        expect(EID_CONFIG.get('m2')).to.eql({i: 2});
+      });
+    })
+
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
@@ -626,7 +671,25 @@ describe('User ID', function () {
         // some of the ids are padded to have length >= 32 characters
         createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value_7ac66c0f148de9519b8bd264312c4d64'}}}),
         createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_from_mockId2Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
-        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}, pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'}, merkleId: {id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId3Module', {
+          id: {
+            uid2: {
+              id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64',
+            lipb: {
+              lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            merkleId: {
+              id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            }
+          }
+        }, null, {
+          uid2: {
+            source: 'uidapi.com',
+            getValue(data) { return data.id }
+          }
+        }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
       ]);
 
@@ -717,6 +780,11 @@ describe('User ID', function () {
         },
         decode(d) {
           return d
+        },
+        eids: {
+          pubcid: {
+            source: 'pubcid.org',
+          }
         }
       }]);
       config.setConfig({
@@ -808,7 +876,25 @@ describe('User ID', function () {
         // some of the ids are padded to have length >= 32 characters
         createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value_7ac66c0f148de9519b8bd264312c4d64'}}}),
         createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_from_mockId2Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
-        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}, pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'}, merkleId: {id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId3Module', {
+          id: {
+            uid2: {
+              id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64',
+            lipb: {
+              lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            merkleId: {
+              id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            }
+          }
+        }, null, {
+          uid2: {
+            source: 'uidapi.com',
+            getValue(data) { return data.id }
+          }
+        }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
       ]);
 
@@ -3259,8 +3345,31 @@ describe('User ID', function () {
         setSubmoduleRegistry([
           createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
           createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}),
-          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}),
-          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, {
+            uid2: {
+              source: 'uidapi.com',
+              getValue(data) {
+                return data.id
+              }
+            },
+            pubcid: {
+              source: 'pubcid.org',
+            },
+            lipb: {
+              source: 'liveintent.com',
+              getValue(data) {
+                return data.lipbid
+              }
+            }
+          }),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, {
+            merkleId: {
+              source: 'merkleinc.com',
+              getValue(data) {
+                return data.id
+              }
+            }
+          })
         ]);
         config.setConfig({
           userSync: {

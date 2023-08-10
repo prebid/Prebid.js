@@ -270,7 +270,81 @@ describe('the rubicon adapter', function () {
       }],
       criteoId: '1111',
     };
-    bid.userIdAsEids = createEidsArray(bid.userId);
+    bid.userIdAsEids = [
+      {
+        'source': 'liveintent.com',
+        'uids': [
+          {
+            'id': '0000-1111-2222-3333',
+            'atype': 3
+          }
+        ],
+        'ext': {
+          'segments': [
+            'segA',
+            'segB'
+          ]
+        }
+      },
+      {
+        'source': 'liveramp.com',
+        'uids': [
+          {
+            'id': '1111-2222-3333-4444',
+            'atype': 3
+          }
+        ]
+      },
+      {
+        'source': 'adserver.org',
+        'uids': [
+          {
+            'id': '3000',
+            'atype': 1,
+            'ext': {
+              'rtiPartner': 'TDID'
+            }
+          }
+        ]
+      },
+      {
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'id': '4000',
+            'atype': 1
+          }
+        ]
+      },
+      {
+        'source': 'example.com',
+        'uids': [
+          {
+            'id': '333333',
+            'ext': {
+              'stype': 'ppuid'
+            }
+          }
+        ]
+      },
+      {
+        'source': 'id-partner.com',
+        'uids': [
+          {
+            'id': '4444444'
+          }
+        ]
+      },
+      {
+        'source': 'criteo.com',
+        'uids': [
+          {
+            'id': '1111',
+            'atype': 1
+          }
+        ]
+      }
+    ];
     return bidderRequest;
   }
 
@@ -1155,6 +1229,30 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          it('should still use single request if other rubicon configs are set after', function () {
+            // set single request to true
+            config.setConfig({ rubicon: { singleRequest: true } });
+
+            // execute some other rubicon setConfig
+            config.setConfig({ rubicon: { netRevenue: true } });
+
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should have 1 request only
+            expect(serverRequests).that.is.an('array').of.length(1);
+
+            // get the built query
+            let data = parseQuery(serverRequests[0].data);
+
+            // num slots should be 4
+            expect(data.slots).to.equal('4');
+          });
+
           it('should not group bid requests if singleRequest does not equal true', function () {
             config.setConfig({rubicon: {singleRequest: false}});
 
@@ -1224,7 +1322,20 @@ describe('the rubicon adapter', function () {
             clonedBid.userId = {
               tdid: 'abcd-efgh-ijkl-mnop-1234'
             };
-            clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+            clonedBid.userIdAsEids = [
+              {
+                'source': 'adserver.org',
+                'uids': [
+                  {
+                    'id': 'abcd-efgh-ijkl-mnop-1234',
+                    'atype': 1,
+                    'ext': {
+                      'rtiPartner': 'TDID'
+                    }
+                  }
+                ]
+              }
+            ];
             let [request] = spec.buildRequests([clonedBid], bidderRequest);
             let data = parseQuery(request.data);
 
@@ -1241,7 +1352,23 @@ describe('the rubicon adapter', function () {
                   segments: ['segA', 'segB']
                 }
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'liveintent.com',
+                  'uids': [
+                    {
+                      'id': '0000-1111-2222-3333',
+                      'atype': 3
+                    }
+                  ],
+                  'ext': {
+                    'segments': [
+                      'segA',
+                      'segB'
+                    ]
+                  }
+                }
+              ];
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1258,7 +1385,23 @@ describe('the rubicon adapter', function () {
                   segments: ['segD', 'segE']
                 }
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'liveintent.com',
+                  'uids': [
+                    {
+                      'id': '1111-2222-3333-4444',
+                      'atype': 3
+                    }
+                  ],
+                  'ext': {
+                    'segments': [
+                      'segD',
+                      'segE'
+                    ]
+                  }
+                }
+              ]
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               const unescapedData = unescape(request.data);
 
@@ -1273,7 +1416,17 @@ describe('the rubicon adapter', function () {
               clonedBid.userId = {
                 idl_env: '1111-2222-3333-4444'
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'liveramp.com',
+                  'uids': [
+                    {
+                      'id': '1111-2222-3333-4444',
+                      'atype': 3
+                    }
+                  ]
+                }
+              ]
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1287,7 +1440,17 @@ describe('the rubicon adapter', function () {
               clonedBid.userId = {
                 pubcid: '1111'
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'pubcid.org',
+                  'uids': [
+                    {
+                      'id': '1111',
+                      'atype': 1
+                    }
+                  ]
+                }
+              ]
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1301,7 +1464,17 @@ describe('the rubicon adapter', function () {
               clonedBid.userId = {
                 criteoId: '1111'
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'criteo.com',
+                  'uids': [
+                    {
+                      'id': '1111',
+                      'atype': 1
+                    }
+                  ]
+                }
+              ]
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1328,7 +1501,27 @@ describe('the rubicon adapter', function () {
                   }]
                 }]
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'example.com',
+                  'uids': [
+                    {
+                      'id': '11111',
+                      'ext': {
+                        'stype': 'ppuid'
+                      }
+                    }
+                  ]
+                },
+                {
+                  'source': 'id-partner.com',
+                  'uids': [
+                    {
+                      'id': '222222'
+                    }
+                  ]
+                }
+              ];
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -1347,7 +1540,20 @@ describe('the rubicon adapter', function () {
                   }
                 }
               };
-              clonedBid.userIdAsEids = createEidsArray(clonedBid.userId);
+              clonedBid.userIdAsEids = [
+                {
+                  'source': 'id5-sync.com',
+                  'uids': [
+                    {
+                      'id': '11111',
+                      'atype': 1,
+                      'ext': {
+                        'linkType': '22222'
+                      }
+                    }
+                  ]
+                }
+              ];
               let [request] = spec.buildRequests([clonedBid], bidderRequest);
               let data = parseQuery(request.data);
 
@@ -2480,6 +2686,35 @@ describe('the rubicon adapter', function () {
               expect(pbsRequest.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
               expect(pbsRequest.data.imp).to.have.nested.property('[0].native');
               expect(fastlanteRequest.url).to.equal('https://fastlane.rubiconproject.com/a/api/fastlane.json');
+            });
+
+            it('should include multiformat data in the pbs request', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              bidReq.bids[0].params.bidonmultiformat = true;
+              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(pbsRequest.data.imp[0].ext.prebid.bidder.rubicon.formats).to.deep.equal(['native', 'banner']);
+            });
+
+            it('should include multiformat data in the fastlane request', () => {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              // add second mediaType
+              bidReq.bids[0].mediaTypes = {
+                ...bidReq.bids[0].mediaTypes,
+                banner: {
+                  sizes: [[300, 250]]
+                }
+              };
+              bidReq.bids[0].params.bidonmultiformat = true;
+              let [pbsRequest, fastlanteRequest] = spec.buildRequests(bidReq.bids, bidReq);
+              let formatsIncluded = fastlanteRequest.data.indexOf('formats=native%2Cbanner') !== -1;
+              expect(formatsIncluded).to.equal(true);
             });
           });
           describe('with bidonmultiformat === false', () => {

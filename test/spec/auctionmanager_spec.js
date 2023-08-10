@@ -185,9 +185,11 @@ describe('auctionmanager.js', function () {
       adId: '1adId',
       source: 'client',
       mediaType: 'banner',
+      creativeId: 'monkeys',
       meta: {
         advertiserDomains: ['adomain'],
-        primaryCatId: 'IAB-test'
+        primaryCatId: 'IAB-test',
+        networkId: '123987'
       }
     };
 
@@ -202,6 +204,8 @@ describe('auctionmanager.js', function () {
       expected[ CONSTANTS.TARGETING_KEYS.FORMAT ] = bid.mediaType;
       expected[ CONSTANTS.TARGETING_KEYS.ADOMAIN ] = bid.meta.advertiserDomains[0];
       expected[ CONSTANTS.TARGETING_KEYS.ACAT ] = bid.meta.primaryCatId;
+      expected[ CONSTANTS.TARGETING_KEYS.DSP ] = bid.meta.networkId;
+      expected[ CONSTANTS.TARGETING_KEYS.CRID ] = bid.creativeId;
       if (bid.mediaType === 'video') {
         expected[ CONSTANTS.TARGETING_KEYS.UUID ] = bid.videoCacheKey;
         expected[ CONSTANTS.TARGETING_KEYS.CACHE_ID ] = bid.videoCacheKey;
@@ -305,6 +309,18 @@ describe('auctionmanager.js', function () {
               }
             },
             {
+              key: CONSTANTS.TARGETING_KEYS.CRID,
+              val: function (bidResponse) {
+                return bidResponse.creativeId;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.DSP,
+              val: function (bidResponse) {
+                return bidResponse.meta.networkId;
+              }
+            },
+            {
               key: CONSTANTS.TARGETING_KEYS.ACAT,
               val: function (bidResponse) {
                 return bidResponse.meta.primaryCatId;
@@ -386,6 +402,18 @@ describe('auctionmanager.js', function () {
               key: CONSTANTS.TARGETING_KEYS.ADOMAIN,
               val: function (bidResponse) {
                 return bidResponse.meta.advertiserDomains[0];
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.CRID,
+              val: function (bidResponse) {
+                return bidResponse.creativeId;
+              }
+            },
+            {
+              key: CONSTANTS.TARGETING_KEYS.DSP,
+              val: function (bidResponse) {
+                return bidResponse.meta.networkId;
               }
             },
             {

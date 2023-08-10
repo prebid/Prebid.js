@@ -46,7 +46,8 @@
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
       "gravitoIdSystem",
-      "freepassIdSystem"
+      "freepassIdSystem",
+      "operaadsIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -54,6 +55,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
