@@ -119,7 +119,7 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
-    it('includes filtered user.eids if any exist', function () {
+    it('includes filtered user.eids if any exists', function () {
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign(bidReq, {
           userIdAsEids: [
