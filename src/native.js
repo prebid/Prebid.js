@@ -780,8 +780,8 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
   legacyResponse.impressionTrackers = [];
   let jsTrackers = [];
 
-  if (ortbRequest?.imptrackers) {
-    legacyResponse.impressionTrackers.push(...ortbRequest.imptrackers);
+  if (ortbResponse.imptrackers) {
+    legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
   }
   for (const eventTracker of ortbResponse?.eventtrackers || []) {
     if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {
