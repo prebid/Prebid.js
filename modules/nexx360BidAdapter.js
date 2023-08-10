@@ -192,7 +192,13 @@ function interpretResponse(serverResponse) {
       };
       if (allowAlternateBidderCodes) response.bidderCode = `n360-${bid.ext.ssp}`;
 
-      if (bid.ext.mediaType === BANNER) response.adUrl = bid.ext.adUrl;
+      if (bid.ext.mediaType === BANNER) {
+        if (bid.adm) {
+          response.ad = bid.adm;
+        } else {
+          response.adUrl = bid.ext.adUrl;
+        }
+      }
       if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType)) response.vastXml = bid.ext.vastXml;
 
       if (bid.ext.mediaType === OUTSTREAM) {
