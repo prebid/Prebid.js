@@ -3,6 +3,7 @@ import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -16,6 +17,9 @@ export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
+const FLEDGE_SELLER_DOMAIN = 'https://grid-mercury.criteo.com';
+const FLEDGE_SELLER_TIMEOUT = 500;
+const FLEDGE_DECISION_LOGIC_URL = 'https://grid-mercury.criteo.com/fledge/decision';
 export const PROFILE_ID_PUBLISHERTAG = 185;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
@@ -201,7 +205,7 @@ export const spec = {
   /**
    * @param {*} response
    * @param {ServerRequest} request
-   * @return {Bid[]}
+   * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
   interpretResponse: (response, request) => {
     const body = response.body || response;
@@ -215,6 +219,7 @@ export const spec = {
     }
 
     const bids = [];
+    const fledgeAuctionConfigs = [];
 
     if (body && body.slots && isArray(body.slots)) {
       body.slots.forEach(slot => {
@@ -266,6 +271,39 @@ export const spec = {
           bids.push(bid);
         }
       });
+
+      if (isArray(body.ext?.igbid)) {
+        const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
+        const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
+        const sellerSignals = body.ext.sellerSignals || {};
+        body.ext.igbid.forEach((igbid) => {
+          const perBuyerSignals = {};
+          igbid.igbuyer.forEach(buyerItem => {
+            perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
+          });
+          const bidRequest = find(request.bidRequests, b => b.bidId === igbid.impid);
+          const bidId = bidRequest.bidId;
+          fledgeAuctionConfigs.push({
+            bidId,
+            config: {
+              seller,
+              sellerSignals,
+              sellerTimeout,
+              perBuyerSignals,
+              auctionSignals: {},
+              decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
+              interestGroupBuyers: Object.keys(perBuyerSignals),
+            },
+          });
+        });
+      }
+    }
+
+    if (fledgeAuctionConfigs.length) {
+      return {
+        bids,
+        fledgeAuctionConfigs,
+      };
     }
 
     return bids;
@@ -528,6 +566,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
 
       enrichSlotWithFloors(slot, bidRequest);
+
+      if (!bidderRequest.fledgeEnabled && slot.ext?.ae) {
+        delete slot.ext.ae;
+      }
 
       return slot;
     }),
