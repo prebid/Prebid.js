@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
+import * as sinon from 'sinon';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
 import * as utils from 'src/utils';
@@ -73,7 +73,10 @@ describe('sharethrough adapter spec', function () {
           bidder: 'sharethrough',
           bidId: 'bidId1',
           transactionId: 'transactionId1',
-          sizes: [[300, 250], [300, 600]],
+          sizes: [
+            [300, 250],
+            [300, 600],
+          ],
           params: {
             pkey: 'aaaa1111',
             bcat: ['cat1', 'cat2'],
@@ -95,104 +98,104 @@ describe('sharethrough adapter spec', function () {
           },
           userIdAsEids: [
             {
-              'source': 'pubcid.org',
-              'uids': [
+              source: 'pubcid.org',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-pubcid'
+                  atype: 1,
+                  id: 'fake-pubcid',
                 },
-              ]
+              ],
             },
             {
-              'source': 'liveramp.com',
-              'uids': [
+              source: 'liveramp.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-identity-link'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-identity-link',
+                },
+              ],
             },
             {
-              'source': 'id5-sync.com',
-              'uids': [
+              source: 'id5-sync.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-id5id'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-id5id',
+                },
+              ],
             },
             {
-              'source': 'adserver.org',
-              'uids': [
+              source: 'adserver.org',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-tdid'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-tdid',
+                },
+              ],
             },
             {
-              'source': 'criteo.com',
-              'uids': [
+              source: 'criteo.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-criteo'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-criteo',
+                },
+              ],
             },
             {
-              'source': 'britepool.com',
-              'uids': [
+              source: 'britepool.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-britepool'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-britepool',
+                },
+              ],
             },
             {
-              'source': 'liveintent.com',
-              'uids': [
+              source: 'liveintent.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-lipbid'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-lipbid',
+                },
+              ],
             },
             {
-              'source': 'intentiq.com',
-              'uids': [
+              source: 'intentiq.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-intentiq'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-intentiq',
+                },
+              ],
             },
             {
-              'source': 'crwdcntrl.net',
-              'uids': [
+              source: 'crwdcntrl.net',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-lotame'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-lotame',
+                },
+              ],
             },
             {
-              'source': 'parrable.com',
-              'uids': [
+              source: 'parrable.com',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-parrable'
-                }
-              ]
+                  atype: 1,
+                  id: 'fake-parrable',
+                },
+              ],
             },
             {
-              'source': 'netid.de',
-              'uids': [
+              source: 'netid.de',
+              uids: [
                 {
-                  'atype': 1,
-                  'id': 'fake-netid'
-                }
-              ]
-            }
+                  atype: 1,
+                  id: 'fake-netid',
+                },
+              ],
+            },
           ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
@@ -250,10 +253,10 @@ describe('sharethrough adapter spec', function () {
         },
         ortb2: {
           source: {
-            tid: 'auction-id'
-          }
+            tid: 'auction-id',
+          },
         },
-        timeout: 242
+        timeout: 242,
       };
     });
 
@@ -395,6 +398,16 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.regs.coppa).to.equal(0);
           });
         });
+
+        // TODO: IG-178207212 -- add support for gpp
+        // this is just starter code
+        describe('gpp', () => {
+          it('should properly attach GPP information to the request when applicable', () => {
+            config.setConfig({ gpp: 'some value to figure out' });
+            const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+            expect(openRtbReq['gpp']).to.equal('some value to figure out');
+          });
+        });
       });
 
       describe('transaction id at the impression level', () => {
@@ -455,7 +468,10 @@ describe('sharethrough adapter spec', function () {
           const bannerImp = builtRequest.data.imp[0].banner;
           expect(bannerImp.pos).to.equal(1);
           expect(bannerImp.topframe).to.equal(1);
-          expect(bannerImp.format).to.deep.equal([{ w: 300, h: 250 }, { w: 300, h: 600 }]);
+          expect(bannerImp.format).to.deep.equal([
+            { w: 300, h: 250 },
+            { w: 300, h: 600 },
+          ]);
         });
 
         it('should default to pos 0 if not provided', () => {
@@ -588,7 +604,7 @@ describe('sharethrough adapter spec', function () {
         };
 
         it('should include first party data in open rtb request, site section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
 
           expect(openRtbReq.site.name).to.equal(firstPartyData.site.name);
           expect(openRtbReq.site.keywords).to.equal(firstPartyData.site.keywords);
@@ -624,26 +640,31 @@ describe('sharethrough adapter spec', function () {
           request = spec.buildRequests(bidRequests, bidderRequest)[0];
           response = {
             body: {
-              seatbid: [{
-                bid: [{
-                  id: '123',
-                  impid: 'bidId1',
-                  w: 300,
-                  h: 250,
-                  price: 42,
-                  crid: 'creative',
-                  dealid: 'deal',
-                  adomain: ['domain.com'],
-                  adm: 'markup',
-                }, {
-                  id: '456',
-                  impid: 'bidId2',
-                  w: 640,
-                  h: 480,
-                  price: 42,
-                  adm: 'vastTag',
-                }],
-              }],
+              seatbid: [
+                {
+                  bid: [
+                    {
+                      id: '123',
+                      impid: 'bidId1',
+                      w: 300,
+                      h: 250,
+                      price: 42,
+                      crid: 'creative',
+                      dealid: 'deal',
+                      adomain: ['domain.com'],
+                      adm: 'markup',
+                    },
+                    {
+                      id: '456',
+                      impid: 'bidId2',
+                      w: 640,
+                      h: 480,
+                      price: 42,
+                      adm: 'vastTag',
+                    },
+                  ],
+                },
+              ],
             },
           };
         });
@@ -673,16 +694,20 @@ describe('sharethrough adapter spec', function () {
           request = spec.buildRequests(bidRequests, bidderRequest)[1];
           response = {
             body: {
-              seatbid: [{
-                bid: [{
-                  id: '456',
-                  impid: 'bidId2',
-                  w: 640,
-                  h: 480,
-                  price: 42,
-                  adm: 'vastTag',
-                }],
-              }],
+              seatbid: [
+                {
+                  bid: [
+                    {
+                      id: '456',
+                      impid: 'bidId2',
+                      w: 640,
+                      h: 480,
+                      price: 42,
+                      adm: 'vastTag',
+                    },
+                  ],
+                },
+              ],
             },
           };
         });
@@ -712,24 +737,28 @@ describe('sharethrough adapter spec', function () {
           request = spec.buildRequests(bidRequests, bidderRequest)[0];
           response = {
             body: {
-              seatbid: [{
-                bid: [{
-                  id: '123',
-                  impid: 'bidId1',
-                  w: 300,
-                  h: 250,
-                  price: 42,
-                  crid: 'creative',
-                  dealid: 'deal',
-                  adomain: ['domain.com'],
-                  adm: 'markup',
-                }],
-              }],
+              seatbid: [
+                {
+                  bid: [
+                    {
+                      id: '123',
+                      impid: 'bidId1',
+                      w: 300,
+                      h: 250,
+                      price: 42,
+                      crid: 'creative',
+                      dealid: 'deal',
+                      adomain: ['domain.com'],
+                      adm: 'markup',
+                    },
+                  ],
+                },
+              ],
             },
           };
         });
 
-        it('should have null optional fields when the response\'s optional seatbid[].bid[].ext field is empty', () => {
+        it("should have null optional fields when the response's optional seatbid[].bid[].ext field is empty", () => {
           const bid = spec.interpretResponse(response, request)[0];
 
           expect(bid.meta.networkId).to.be.null;
@@ -747,7 +776,7 @@ describe('sharethrough adapter spec', function () {
           expect(bid.meta.mediaType).to.be.null;
         });
 
-        it('should have populated fields when the response\'s optional seatbid[].bid[].ext fields are filled', () => {
+        it("should have populated fields when the response's optional seatbid[].bid[].ext fields are filled", () => {
           response.body.seatbid[0].bid[0].ext = {
             networkId: 'my network id',
             networkName: 'my network name',
@@ -792,8 +821,8 @@ describe('sharethrough adapter spec', function () {
         expect(syncArray).to.deep.equal([
           { type: 'image', url: 'cookieUrl1' },
           { type: 'image', url: 'cookieUrl2' },
-          { type: 'image', url: 'cookieUrl3' }],
-        );
+          { type: 'image', url: 'cookieUrl3' },
+        ]);
       });
 
       it('returns an empty array if serverResponses is empty', function () {
