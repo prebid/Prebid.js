@@ -1150,10 +1150,7 @@ export const spec = {
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     // TODO: fix lat and long to only come from request object, not params
-    payload.user.geo.lat = _parseSlotParam('lat', 0);
-    payload.user.geo.lon = _parseSlotParam('lon', 0);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
