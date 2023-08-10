@@ -8,8 +8,8 @@ import {deepAccess, logWarn} from '../utils.js';
  */
 export function hasPurpose1Consent(gdprConsent) {
   logWarn(`Privacy - checking purpose1Consent - ${gdprConsent}`);
-  if(gdprConsent === null) {
-    //logWarn(`Privacy - gdprConsent is null, checking value of defaultGdprScope = ${owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope}`);
+  if (gdprConsent === null) {
+    // logWarn(`Privacy - gdprConsent is null, checking value of defaultGdprScope = ${owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope}`);
     return !(window.owpbjs?.getConfig().consentManagement?.gdpr?.defaultGdprScope === true)
   }
   if (gdprConsent?.gdprApplies) {

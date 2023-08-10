@@ -1820,7 +1820,7 @@ describe('the price floors module', function () {
   });
   describe('bidResponseHook tests', function () {
     const AUCTION_ID = '123456';
-    let returnedBidResponse, indexStub, reject;
+    let returnedBidResponse, indexStub, reject, s2sBid;
     let adUnit = {
       transactionId: 'au',
       code: 'test_div_1'
@@ -1958,6 +1958,21 @@ describe('the price floors module', function () {
       });
       expect(returnedBidResponse.cpm).to.equal(7.5);
     });
+    it('should update bid with floor data even for s2s partners', function() {
+      s2sBid = utils.deepClone(basicBidResponse);
+      s2sBid.source = 's2s'
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
+      runBidResponse(s2sBid);
+      expect(reject.calledOnce).to.be.true;
+      expect(returnedBidResponse.status).to.equal('rejected');
+	  });
+	  it('should add floor data to s2s bid response', function () {
+		  _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+		  _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 0.3 };
+		  runBidResponse(s2sBid);
+		  expect(returnedBidResponse).to.haveOwnProperty('floorData');
+	  });
   });
 
   describe('Post Auction Tests', function () {
