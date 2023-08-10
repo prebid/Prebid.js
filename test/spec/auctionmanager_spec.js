@@ -830,9 +830,9 @@ describe('auctionmanager.js', function () {
         config.resetConfig();
       });
 
-      it('are dropped after `preserveBidCache` seconds have passed since their last bid becomes stale', () => {
+      it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
         config.setConfig({
-          preserveBidCache: 10
+          minBidCacheTTL: 0
         });
         bids = [
           {
@@ -849,24 +849,46 @@ describe('auctionmanager.js', function () {
         return auction.end.then(() => {
           clock.tick(50 * 1000);
           expect(auctionManager.getBidsReceived().length).to.equal(2);
-          clock.tick(60 * 1000);
-          expect(auctionManager.getBidsReceived().length).to.equal(2);
-          clock.tick(5 * 1000);
+          clock.tick(56 * 1000);
           expect(auctionManager.getBidsReceived()).to.eql([]);
         });
       });
 
-      it('are dropped after `preserveBidCache` seconds if they had no bid', () => {
+      it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
         auction.callBids();
         config.setConfig({
-          preserveBidCache: 2
+          minBidCacheTTL: 2
         });
         return auction.end.then(() => {
           expect(auctionManager.getNoBids().length).to.eql(1);
           clock.tick(10 * 10000);
           expect(auctionManager.getNoBids().length).to.eql(0);
         })
-      })
+      });
+
+      Object.entries({
+        'bids': {
+          bd: [{
+            adUnitCode: ADUNIT_CODE,
+            transactionId: ADUNIT_CODE,
+            ttl: 10
+          }],
+          entries: () => auctionManager.getBidsReceived()
+        },
+        'no bids': {
+          bd: [],
+          entries: () => auctionManager.getNoBids()
+        }
+      }).forEach(([t, {bd, entries}]) => {
+        it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
+          bids = bd;
+          auction.callBids();
+          return auction.end.then(() => {
+            clock.tick(100 * 1000);
+            expect(entries().length > 0).to.be.true;
+          })
+        })
+      });
     })
   });
 

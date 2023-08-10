@@ -28,7 +28,7 @@ import {ttlCollection} from './utils/ttlCollection.js';
 import {getTTL, onTTLBufferChange} from './bidTTL.js';
 import {config} from './config.js';
 
-const HISTORY_SETTING = 'preserveBidCache';
+const CACHE_TTL_SETTING = 'minBidCacheTTL';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -37,25 +37,24 @@ const HISTORY_SETTING = 'preserveBidCache';
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  let staleTTL = null;
+  let minCacheTTL = null;
 
   const _auctions = ttlCollection({
     startTime: (au) => au.end.then(() => au.getAuctionEnd()),
-    ttl: (au) => staleTTL == null ? null : au.end.then(() => {
-      const bidTTLs = au.getBidsReceived().map(getTTL);
-      return (bidTTLs.length > 0 ? Math.max(...bidTTLs) : 0) * 1000 + staleTTL
+    ttl: (au) => minCacheTTL == null ? null : au.end.then(() => {
+      return Math.max(minCacheTTL, ...au.getBidsReceived().map(getTTL)) * 1000
     }),
   });
 
   onTTLBufferChange(() => {
-    if (staleTTL != null) _auctions.refresh();
+    if (minCacheTTL != null) _auctions.refresh();
   })
 
-  config.getConfig(HISTORY_SETTING, (cfg) => {
-    const prev = staleTTL;
-    staleTTL = cfg?.[HISTORY_SETTING];
-    staleTTL = typeof staleTTL === 'number' ? staleTTL * 1000 : null;
-    if (prev !== staleTTL) {
+  config.getConfig(CACHE_TTL_SETTING, (cfg) => {
+    const prev = minCacheTTL;
+    minCacheTTL = cfg?.[CACHE_TTL_SETTING];
+    minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : null;
+    if (prev !== minCacheTTL) {
       _auctions.refresh();
     }
   })
