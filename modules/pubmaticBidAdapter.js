@@ -1212,22 +1212,32 @@ export const spec = {
 
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
-    if (commonFpd.site) {
+    const { user, device, site, bcat } = commonFpd;
+    if (site) {
       const { page, domain, ref } = payload.site;
-      mergeDeep(payload, {site: commonFpd.site});
+      mergeDeep(payload, {site: site});
       payload.site.page = page;
       payload.site.domain = domain;
       payload.site.ref = ref;
     }
-    if (commonFpd.user) {
-      mergeDeep(payload, {user: commonFpd.user});
+    if (user) {
+      mergeDeep(payload, {user: user});
     }
-    if (commonFpd.bcat) {
-      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
+    if (bcat) {
+      blockedIabCategories = blockedIabCategories.concat(bcat);
     }
     // check if fpd ortb2 contains device property with sua object
-    if (commonFpd.device?.sua) {
-      payload.device.sua = commonFpd.device?.sua;
+    if (device?.sua) {
+      payload.device.sua = device?.sua;
+    }
+
+    if (user?.geo && device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...device.geo };
+      payload.user.geo = { ...payload.user.geo, ...user.geo };
+    } else {
+      if (user?.geo || device?.geo) {
+        payload.user.geo = payload.device.geo = (user?.geo ? { ...payload.user.geo, ...user.geo } : { ...payload.user.geo, ...device.geo });
+      }
     }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
