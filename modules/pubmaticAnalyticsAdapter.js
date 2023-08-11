@@ -283,7 +283,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocpm': bid.bidResponse ? (bid.bidResponse.originalCpm || 0) : 0,
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
-        'frv': (s2sBidders.indexOf(bid.bidder) > -1) ? undefined : (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
+        'frv': (bid.bidResponse ? (bid.bidResponse.floorData ? bid.bidResponse.floorData.floorRuleValue : undefined) : undefined),
         'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined
       });
     });
@@ -319,6 +319,17 @@ function getTgId() {
   return 0;
 }
 
+function getFloorFetchStatus(floorData) {
+  if (!floorData?.floorRequestData) {
+    return false;
+  }
+  const { location, fetchStatus } = floorData?.floorRequestData;
+  const isDataValid = location !== CONSTANTS.FLOOR_VALUES.NO_DATA;
+  const isFetchSuccessful = location === CONSTANTS.FLOOR_VALUES.FETCH && fetchStatus === CONSTANTS.FLOOR_VALUES.SUCCESS;
+  const isAdUnitOrSetConfig = location === CONSTANTS.FLOOR_VALUES.AD_UNIT || location === CONSTANTS.FLOOR_VALUES.SET_CONFIG;
+  return isDataValid && (isAdUnitOrSetConfig || isFetchSuccessful);
+}
+
 function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
@@ -326,6 +337,8 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let floorData = auctionCache.floorData;
   let outputObj = { s: [] };
   let pixelURL = END_POINT_BID_LOGGER;
+  // will return true if floor data is present.
+  let fetchStatus = getFloorFetchStatus(auctionCache.floorData);
 
   if (!auctionCache) {
     return;
@@ -347,7 +360,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
 
-  if (floorData) {
+  if (floorData && fetchStatus) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;
     outputObj['ft'] = floorData.floorResponseData ? (floorData.floorResponseData.enforcements.enforceJS == false ? 0 : 1) : undefined;
   }
@@ -362,7 +375,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
-      'fskp': floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
+      'fskp': (floorData && fetchStatus) ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
     };
     slotsArray.push(slotObject);
     return slotsArray;
