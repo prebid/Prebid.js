@@ -1,6 +1,6 @@
-import { setConsentConfig } from 'modules/consentManagement.js';
-import { server } from 'test/mocks/xhr.js';
-import {coreStorage, init, setSubmoduleRegistry, requestBidsHook} from 'modules/userId/index.js';
+import {setConsentConfig} from 'modules/consentManagement.js';
+import {server} from 'test/mocks/xhr.js';
+import {coreStorage, requestBidsHook} from 'modules/userId/index.js';
 
 const msIn12Hours = 60 * 60 * 12 * 1000;
 const expireCookieDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
@@ -34,8 +34,8 @@ export const apiHelpers = {
     refresh_expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==', // Fake data
   }),
-  respondAfterDelay: (delay) => new Promise((resolve) => setTimeout(() => {
-    server.respond();
+  respondAfterDelay: (delay, srv = server) => new Promise((resolve) => setTimeout(() => {
+    srv.respond();
     setTimeout(() => resolve());
   }, delay)),
 }
