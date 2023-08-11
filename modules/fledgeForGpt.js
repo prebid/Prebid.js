@@ -56,26 +56,18 @@ function isFledgeSupported() {
 
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
-    const globalFledgeConfig = config.getConfig('fledgeForGpt');
-    const bidders = globalFledgeConfig?.bidders ?? [];
     bidderRequests.forEach((req) => {
-      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length == 0 || bidders.includes(req.bidderCode));
-      Object.assign(req, config.runWithBidder(req.bidderCode, () => {
-        return {
-          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined),
-          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined)
-        }
-      }));
-    });
+      req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
+    })
   }
   next(bidderRequests);
 }
 getHook('makeBidRequests').after(markForFledge);
 
 export function setImpExtAe(imp, bidRequest, context) {
-  const impExt = imp.ext ?? {};
-  impExt.ae = context.bidderRequest.fledgeEnabled ? (impExt.ae ?? context.bidderRequest.defaultForSlots) : undefined;
-  imp.ext = impExt;
+  if (!context.bidderRequest.fledgeEnabled) {
+    delete imp.ext?.ae;
+  }
 }
 registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
 
