@@ -16,5 +16,6 @@
   "pubmaticBidAdapter",
   "smartadserverBidAdapter",
   "sonobiBidAdapter",
-  "tripleliftBidAdapter"
+  "tripleliftBidAdapter",
+  "kargoBidAdapter"
 ]
