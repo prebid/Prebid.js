@@ -248,26 +248,16 @@ function handlerBidWon(event) {
     return;
   }
 
-  let conversionRate = null;
-  let cmpAdjustmentRate = null;
+  let adsCurRateToUSD = (event.currency === 'USD') ? 1 : null;
+  let ogCurRateToUSD = (event.originalCurrency === 'USD') ? 1 : null;
   try {
     if (typeof getGlobal().convertCurrency === 'function') {
       // Currency module is loaded, we can calculate the conversion rate.
-      // Using new const variables instead of reusing the ones above to avoid confusion.
 
       // Get the conversion rate from the original currency to USD.
-      const curRateOriginalToUSD = getGlobal().convertCurrency(1, event.originalCurrency, 'USD');
-      conversionRate = curRateOriginalToUSD;
-
-      // Get the cpm from the original currency to the ad server currency, we do that because
-      // event.cpm is the cpm with the adjustment applied.
-      const cpmInAdServerCurrencyBeforeAdjs = getGlobal().convertCurrency(event.originalCpm, event.originalCurrency, event.currency);
-      const adjstRate = event.cpm / cpmInAdServerCurrencyBeforeAdjs;
-      cmpAdjustmentRate = adjstRate;
-    } else {
-      // Currency module is not loaded, we won't be able to calculate the conversion rate.
-      const adjstRate = event.cpm / event.originalCpm;
-      cmpAdjustmentRate = adjstRate;
+      ogCurRateToUSD = getGlobal().convertCurrency(1, event.originalCurrency, 'USD');
+      // Get the conversion rate from the ad server currency to USD.
+      adsCurRateToUSD = getGlobal().convertCurrency(1, event.currency, 'USD');
     }
   } catch (error) {
     logError('Error on Adagio Analytics Adapter - handlerBidWon', error);
@@ -277,10 +267,16 @@ function handlerBidWon(event) {
     win_bdr: getAdapterNameForAlias(event.bidder),
     win_mt: getMediaTypeAlias(event.mediaType),
     win_ban_sz: event.mediaType === BANNER ? `${event.width}x${event.height}` : null,
-    win_cpm: event.originalCpm,
-    cur: event.originalCurrency,
-    cur_rate: conversionRate,
-    cpm_adjst_rate: cmpAdjustmentRate,
+
+    // ad server currency
+    win_cpm: event.cpm,
+    cur: event.currency,
+    cur_rate: adsCurRateToUSD,
+
+    // original currency from bidder
+    og_cpm: event.originalCpm,
+    og_cur: event.originalCurrency,
+    og_cur_rate: ogCurRateToUSD,
   });
   sendNewBeacon(event.auctionId, event.adUnitCode);
 };

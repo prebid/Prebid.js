@@ -221,7 +221,7 @@ const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
   width: 728,
   height: 90,
   mediaType: 'banner',
-  cpm: 1.70,
+  cpm: 1.71,
   currency: 'EUR',
   originalCpm: 1.62,
   originalCurrency: 'GBP',
@@ -499,10 +499,12 @@ describe('adagio analytics adapter', () => {
         expect(search.win_bdr).to.equal('another');
         expect(search.win_mt).to.equal('ban');
         expect(search.win_ban_sz).to.equal('728x90');
-        expect(search.win_cpm).to.equal('1.62');
-        expect(search.cur).to.equal('GBP');
-        expect(search.cur_rate).to.equal('1.6');
-        expect(search.cpm_adjst_rate).to.equal('1.4991181657848325');
+        expect(search.win_cpm).to.equal('1.71');
+        expect(search.cur).to.equal('EUR');
+        expect(search.cur_rate).to.equal('1.2');
+        expect(search.og_cpm).to.equal('1.62');
+        expect(search.og_cur).to.equal('GBP');
+        expect(search.og_cur_rate).to.equal('1.6');
       }
 
       {
