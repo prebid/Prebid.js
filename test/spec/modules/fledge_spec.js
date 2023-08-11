@@ -61,131 +61,59 @@ describe('fledgeEnabled', function () {
     config.resetConfig();
   });
 
-  const adUnits = [{
-    'code': '/19968336/header-bid-tag1',
-    'mediaTypes': {
-      'banner': {
-        'sizes': [[728, 90]]
-      },
-    },
-    'bids': [
-      {
-        'bidder': 'appnexus',
-      },
-      {
-        'bidder': 'rubicon',
-      },
-    ]
-  }];
-
-  describe('with setBidderConfig()', () => {
-    it('should set fledgeEnabled correctly per bidder', function () {
-      config.setConfig({bidderSequence: 'fixed'})
-      config.setBidderConfig({
-        bidders: ['appnexus'],
-        config: {
-          fledgeEnabled: true,
-          defaultForSlots: 1,
-        }
-      });
-
-      const bidRequests = adapterManager.makeBidRequests(
-        adUnits,
-        Date.now(),
-        utils.getUniqueIdentifierStr(),
-        function callback() {},
-        []
-      );
-
-      expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-      expect(bidRequests[0].fledgeEnabled).to.be.true;
-      expect(bidRequests[0].defaultForSlots).to.equal(1);
-
-      expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-      expect(bidRequests[1].fledgeEnabled).to.be.undefined;
-      expect(bidRequests[1].defaultForSlots).to.be.undefined;
-    });
-  });
-
-  describe('with setConfig()', () => {
-    it('should set fledgeEnabled correctly per bidder', function () {
-      config.setConfig({
-        bidderSequence: 'fixed',
-        fledgeForGpt: {
-          enabled: true,
-          bidders: ['appnexus'],
-          defaultForSlots: 1,
-        }
-      });
-
-      const bidRequests = adapterManager.makeBidRequests(
-        adUnits,
-        Date.now(),
-        utils.getUniqueIdentifierStr(),
-        function callback() {},
-        []
-      );
-
-      expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-      expect(bidRequests[0].fledgeEnabled).to.be.true;
-      expect(bidRequests[0].defaultForSlots).to.equal(1);
-
-      expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-      expect(bidRequests[1].fledgeEnabled).to.be.undefined;
-      expect(bidRequests[1].defaultForSlots).to.be.undefined;
+  it('should set fledgeEnabled correctly per bidder', function () {
+    config.setConfig({bidderSequence: 'fixed'})
+    config.setBidderConfig({
+      bidders: ['appnexus'],
+      config: {
+        fledgeEnabled: true,
+      }
     });
 
-    it('should set fledgeEnabled correctly for all bidders', function () {
-      config.setConfig({
-        bidderSequence: 'fixed',
-        fledgeForGpt: {
-          enabled: true,
-          defaultForSlots: 1,
-        }
-      });
+    const adUnits = [{
+      'code': '/19968336/header-bid-tag1',
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[728, 90]]
+        },
+      },
+      'bids': [
+        {
+          'bidder': 'appnexus',
+        },
+        {
+          'bidder': 'rubicon',
+        },
+      ]
+    }];
 
-      const bidRequests = adapterManager.makeBidRequests(
-        adUnits,
-        Date.now(),
-        utils.getUniqueIdentifierStr(),
-        function callback() {},
-        []
-      );
+    const bidRequests = adapterManager.makeBidRequests(
+      adUnits,
+      Date.now(),
+      utils.getUniqueIdentifierStr(),
+      function callback() {},
+      []
+    );
 
-      expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-      expect(bidRequests[0].fledgeEnabled).to.be.true;
-      expect(bidRequests[0].defaultForSlots).to.equal(1);
+    expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+    expect(bidRequests[0].fledgeEnabled).to.be.true;
 
-      expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-      expect(bidRequests[0].fledgeEnabled).to.be.true;
-      expect(bidRequests[0].defaultForSlots).to.equal(1);
-    });
+    expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+    expect(bidRequests[1].fledgeEnabled).to.be.undefined;
   });
 });
 
 describe('ortb processors for fledge', () => {
-  describe('when defaultForSlots is set', () => {
-    it('imp.ext.ae should be set if fledge is enabled', () => {
-      const imp = {};
-      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
-      expect(imp.ext.ae).to.equal(1);
-    });
-    it('imp.ext.ae should be left intact if set on adunit and fledge is enabled', () => {
-      const imp = {ext: {ae: 2}};
-      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
-      expect(imp.ext.ae).to.equal(2);
-    });
-  });
-  describe('when defaultForSlots is not defined', () => {
-    it('imp.ext.ae should be removed if fledge is not enabled', () => {
+  describe('imp.ext.ae', () => {
+    it('should be removed if fledge is not enabled', () => {
       const imp = {ext: {ae: 1}};
       setImpExtAe(imp, {}, {bidderRequest: {}});
       expect(imp.ext.ae).to.not.exist;
     })
-    it('imp.ext.ae should be left intact if fledge is enabled', () => {
-      const imp = {ext: {ae: 2}};
+    it('should be left intact if fledge is enabled', () => {
+      const imp = {ext: {ae: false}};
       setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
-      expect(imp.ext.ae).to.equal(2);
+      expect(imp.ext.ae).to.equal(false);
     });
   });
   describe('parseExtPrebidFledge', () => {
