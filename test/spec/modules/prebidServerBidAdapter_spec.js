@@ -6,7 +6,7 @@ import {
   resetWurlMap,
   s2sDefaultConfig
 } from 'modules/prebidServerBidAdapter/index.js';
-import adapterManager from 'src/adapterManager.js';
+import adapterManager, {PBS_ADAPTER_NAME} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {deepAccess, deepClone, mergeDeep} from 'src/utils.js';
 import {ajax} from 'src/ajax.js';
@@ -27,6 +27,7 @@ import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import 'modules/fledgeForGpt.js';
 import * as redactor from 'src/activities/redactor.js';
+import * as activityRules from 'src/activities/rules.js';
 import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
@@ -35,6 +36,10 @@ import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
+import {sandbox} from 'sinon';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
+import {activityParams} from '../../../src/activities/activityParams.js';
+import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
 
 let CONFIG = {
   accountId: '1',
@@ -734,13 +739,39 @@ describe('S2S Adapter', function () {
       })
     })
 
+    describe('browsingTopics', () => {
+      const sandbox = sinon.createSandbox();
+      afterEach(() => {
+        sandbox.restore()
+      });
+      Object.entries({
+        'allowed': true,
+        'not allowed': false,
+      }).forEach(([t, allow]) => {
+        it(`should be set to ${allow} when transmitUfpd is ${t}`, () => {
+          sandbox.stub(activityRules, 'isActivityAllowed').callsFake((activity, params) => {
+            if (activity === ACTIVITY_TRANSMIT_UFPD && params.component === `${MODULE_TYPE_PREBID}.${PBS_ADAPTER_NAME}`) {
+              return allow;
+            }
+            return false;
+          });
+          config.setConfig({s2sConfig: CONFIG});
+          const ajax = sinon.stub();
+          adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+          sinon.assert.calledWith(ajax, sinon.match.any, sinon.match.any, sinon.match.any, sinon.match({
+            browsingTopics: allow
+          }));
+        });
+      });
+    })
+
     it('should set tmax to s2sConfig.timeout', () => {
       const cfg = {...CONFIG, timeout: 123};
       config.setConfig({s2sConfig: cfg});
       adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
       const req = JSON.parse(server.requests[0].requestBody);
       expect(req.tmax).to.eql(123);
-    })
+    });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);

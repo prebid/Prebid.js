@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import {default as conversantAnalytics, CNVR_CONSTANTS, cnvrHelper} from 'modules/conversantAnalyticsAdapter';
 import * as utils from 'src/utils.js';
 import * as prebidGlobal from 'src/prebidGlobal';
+import {server} from '../../mocks/xhr.js';
 
 import constants from 'src/constants.json'
 
@@ -10,14 +11,13 @@ let events = require('src/events');
 
 describe('Conversant analytics adapter tests', function() {
   let sandbox; // sinon sandbox to make restoring all stubbed objects easier
-  let xhr; // xhr stub from sinon for capturing data sent via ajax
   let clock; // clock stub from sinon to mock our cache cleanup interval
   let logInfoStub;
 
   const PREBID_VERSION = '1.2';
   const SITE_ID = 108060;
 
-  let requests = [];
+  let requests;
   const DATESTAMP = Date.now();
 
   const VALID_CONFIGURATION = {
@@ -36,10 +36,9 @@ describe('Conversant analytics adapter tests', function() {
   };
 
   beforeEach(function () {
+    requests = server.requests;
     sandbox = sinon.sandbox.create();
     sandbox.stub(events, 'getEvents').returns([]); // need to stub this otherwise unwanted events seem to get fired during testing
-    xhr = sandbox.useFakeXMLHttpRequest(); // allows us to capture ajax requests
-    xhr.onCreate = function (req) { requests.push(req); }; // save ajax requests in a private array for testing purposes
     let getGlobalStub = {
       version: PREBID_VERSION,
       getUserIds: function() { // userIdTargeting.js init() gets called on AUCTION_END so we need to mock this function.
@@ -60,7 +59,6 @@ describe('Conversant analytics adapter tests', function() {
 
   afterEach(function () {
     sandbox.restore();
-    requests = []; // clean up any requests in our ajax request capture array.
     conversantAnalytics.disableAnalytics();
   });
 
