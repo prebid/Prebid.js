@@ -14,6 +14,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
+const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
 const calls = {
@@ -92,21 +93,25 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
-    source: 'prebid',
     publisherId: publisherId,
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.partner) {
-    identityResolutionConfig.source = configParams.partner
-  }
   if (configParams.ajaxTimeout) {
     identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
   }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+
+  if (!liveConnectConfig.appId && configParams.distributorId) {
+    liveConnectConfig.distributorId = configParams.distributorId;
+    identityResolutionConfig.source = configParams.distributorId;
+  } else {
+    identityResolutionConfig.source = configParams.partner || 'prebid'
+  }
+
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
@@ -185,15 +190,23 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2 }
+        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.bidswitch) {
-        result.bidswitch = { 'id': value.bidswitch }
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.medianet) {
-        result.medianet = { 'id': value.medianet }
+        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       return result
@@ -233,6 +246,70 @@ export const liveIntentIdSubmodule = {
     }
 
     return { callback: result };
+  },
+  eids: {
+    'lipb': {
+      getValue: function(data) {
+        return data.lipbid;
+      },
+      source: 'liveintent.com',
+      atype: 3,
+      getEidExt: function(data) {
+        if (Array.isArray(data.segments) && data.segments.length) {
+          return {
+            segments: data.segments
+          };
+        }
+      }
+    },
+    'bidswitch': {
+      source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'medianet': {
+      source: 'media.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'magnite': {
+      source: 'rubiconproject.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 

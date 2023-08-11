@@ -1,7 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { logInfo, buildUrl, triggerPixel, parseSizesInput } from '../src/utils.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
@@ -11,7 +10,6 @@ const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUER
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
-const storage = getStorageManager({bidderCode: ADQUERY_BIDDER_CODE});
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -55,10 +53,6 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
-    logInfo(request);
-    logInfo(response);
-
-    let qid = null;
     const res = response && response.body && response.body.data;
     let bidResponses = [];
 
@@ -86,17 +80,6 @@ export const spec = {
     };
     bidResponses.push(bidResponse);
     logInfo('bidResponses', bidResponses);
-
-    if (res && res.qid) {
-      if (storage.getDataFromLocalStorage('qid')) {
-        qid = storage.getDataFromLocalStorage('qid');
-        if (qid && qid.includes('%7B%22')) {
-          storage.setDataInLocalStorage('qid', res.qid);
-        }
-      } else {
-        storage.setDataInLocalStorage('qid', res.qid);
-      }
-    }
 
     return bidResponses;
   },
@@ -189,21 +172,47 @@ export const spec = {
   }
 
 };
+
 function buildRequest(validBidRequests, bidderRequest) {
   let bid = validBidRequests;
+  logInfo('buildRequest: ', bid);
+
+  let userId = null;
+  if (window.qid) {
+    userId = window.qid;
+  }
+
+  if (bid.userId && bid.userId.qid) {
+    userId = bid.userId.qid
+  }
+
+  if (!userId) {
+    // onetime User ID
+    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    userId = randomValues.map(it => it.toString(36)).join().substring(20);
+
+    window.qid = userId;
+  }
+
+  let pageUrl = '';
+  if (bidderRequest && bidderRequest.refererInfo) {
+    pageUrl = bidderRequest.refererInfo.page || '';
+  }
+
   return {
+    v: '$prebid.version$',
     placementCode: bid.params.placementId,
-    auctionId: bid.auctionId,
+    auctionId: null,
     type: bid.params.type,
     adUnitCode: bid.adUnitCode,
-    bidQid: storage.getDataFromLocalStorage('qid') || null,
+    bidQid: userId,
     bidId: bid.bidId,
     bidder: bid.bidder,
+    bidPageUrl: pageUrl,
     bidderRequestId: bid.bidderRequestId,
     bidRequestsCount: bid.bidRequestsCount,
     bidderRequestsCount: bid.bidderRequestsCount,
     sizes: parseSizesInput(bid.mediaTypes.banner.sizes).toString(),
-
   };
 }
 

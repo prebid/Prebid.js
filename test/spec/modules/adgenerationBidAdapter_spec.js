@@ -117,7 +117,7 @@ describe('AdgenerationAdapter', function () {
           criteoId: 'criteo-id-test-1234567890'
         }
       },
-      { // bannerWithAdgextId5Id
+      { // bannerWithAdgextIds
         bidder: 'adg',
         params: {
           id: '58278', // banner
@@ -134,8 +134,48 @@ describe('AdgenerationAdapter', function () {
               linkType: 2
             },
             uid: 'id5-id-test-1234567890'
+          },
+          imuid: 'i.KrAH6ZAZTJOnH5S4N2sogA',
+          uid2: {id: 'AgAAAAVacu1uAxgAxH+HJ8+nWlS2H4uVqr6i+HBDCNREHD8WKsio/x7D8xXFuq1cJycUU86yXfTH9Xe/4C8KkH+7UCiU7uQxhyD7Qxnv251pEs6K8oK+BPLYR+8BLY/sJKesa/koKwx1FHgUzIBum582tSy2Oo+7C6wYUaaV4QcLr/4LPA='},
+        },
+        ortb2Imp: {ext: {gpid: '/1111/homepage#300x250'}},
+        ortb2: {
+          site: {
+            domain: 'localhost:9999',
+            publisher: {'domain': 'localhost:9999'},
+            page: 'http://localhost:9999/integrationExamples/gpt/hello_world.html',
+            ref: 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+          },
+          device: {
+            w: 570,
+            h: 969,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,like Gecko)Chrome / 112.0.0.0Safari / 537.36',
+            language: 'ja',
+            sua: {
+              source: 2,
+              platform: {
+                brand: 'macOS'
+              },
+              browsers: [
+                {
+                  brand: 'Chromium',
+                  version: ['112']
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: ['112']
+                },
+                {
+                  brand: 'Not:A-Brand',
+                  version: ['99']
+                }
+              ],
+              mobile: 0
+            }
           }
-        }
+        },
+        schain: {ver: '1.0', complete: 1, nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}]}
       }
     ];
     const bidderRequest = {
@@ -144,12 +184,12 @@ describe('AdgenerationAdapter', function () {
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&imark=1&tp=https%3A%2F%2Fexample.com`,
-      native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&tp=https%3A%2F%2Fexample.com`,
-      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
-      bannerWithAdgextCriteoId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&adgext_criteo_id=criteo-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerWithAdgextId5Id: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.4.0&adgext_id5_id=id5-id-test-1234567890&adgext_id5_id_link_type=2&imark=1&tp=https%3A%2F%2Fexample.com`,
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&imark=1&tp=https%3A%2F%2Fexample.com`,
+      native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&tp=https%3A%2F%2Fexample.com`,
+      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
+      bannerWithAdgextCriteoId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&adgext_criteo_id=criteo-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerWithAdgextIds: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.2&adgext_id5_id=id5-id-test-1234567890&adgext_id5_id_link_type=2&adgext_imuid=i.KrAH6ZAZTJOnH5S4N2sogA&adgext_uid2=AgAAAAVacu1uAxgAxH%2BHJ8%2BnWlS2H4uVqr6i%2BHBDCNREHD8WKsio%2Fx7D8xXFuq1cJycUU86yXfTH9Xe%2F4C8KkH%2B7UCiU7uQxhyD7Qxnv251pEs6K8oK%2BBPLYR%2B8BLY%2FsJKesa%2FkoKwx1FHgUzIBum582tSy2Oo%2B7C6wYUaaV4QcLr%2F4LPA%3D&gpid=%2F1111%2Fhomepage%23300x250&uach=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22macOS%22%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Not%3AA-Brand%22%2C%22version%22%3A%5B%2299%22%5D%7D%5D%2C%22mobile%22%3A0%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22indirectseller.com%22%2C%22sid%22%3A%2200001%22%2C%22hp%22%3A1%7D%5D%7D&imark=1&tp=https%3A%2F%2Fexample.com`,
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -176,12 +216,12 @@ describe('AdgenerationAdapter', function () {
 
     it('should attache params to the bannerWithHyperId request', function () {
       const defaultUA = window.navigator.userAgent;
-      window.navigator.__defineGetter__('userAgent', function() {
+      window.navigator.__defineGetter__('userAgent', function () {
         return 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
       });
       const request = spec.buildRequests(bidRequests, bidderRequest)[2];
 
-      window.navigator.__defineGetter__('userAgent', function() {
+      window.navigator.__defineGetter__('userAgent', function () {
         return defaultUA;
       });
       expect(request.data).to.equal(data.bannerWithHyperId);
@@ -192,9 +232,9 @@ describe('AdgenerationAdapter', function () {
       expect(request.data).to.equal(data.bannerWithAdgextCriteoId);
     });
 
-    it('should attache params to the bannerWithAdgextId5Id request', function () {
+    it('should attache params to the bannerWithAdgextIds request', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[4];
-      expect(request.data).to.equal(data.bannerWithAdgextId5Id);
+      expect(request.data).to.equal(data.bannerWithAdgextIds);
     });
 
     it('allows setConfig to set bidder currency for JPY', function () {

@@ -10,7 +10,7 @@ userIdAsEids = [
         }]
     },
     {
-        source: 'trustpid.com',
+        source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -110,7 +110,10 @@ userIdAsEids = [
         source: 'bidswitch.net',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
     
@@ -118,7 +121,21 @@ userIdAsEids = [
         source: 'media.net',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -251,6 +268,13 @@ userIdAsEids = [
     },
     {
         source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'euid.eu',
         uids: [{
             id: 'some-random-id-value',
             atype: 3

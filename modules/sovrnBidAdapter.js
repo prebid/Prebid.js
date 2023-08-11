@@ -151,11 +151,14 @@ export const spec = {
       site.page = bidderRequest.refererInfo.page
       site.domain = bidderRequest.refererInfo.domain
 
+      const tmax = deepAccess(bidderRequest, 'timeout');
+
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {
@@ -164,6 +167,11 @@ export const spec = {
             schain
           }
         };
+      }
+
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
       }
 
       if (bidderRequest.gdprConsent) {
@@ -240,7 +248,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -253,6 +261,10 @@ export const spec = {
           }
           if (uspConsent) {
             params.push(['us_privacy', uspConsent]);
+          }
+          if (gppConsent) {
+            params.push(['gpp', gppConsent.gppString]);
+            params.push(['gpp_sid', gppConsent.applicableSections])
           }
 
           if (iidArr[0]) {
