@@ -25,9 +25,8 @@ export function isBasicConsentDenied(cd) {
     cd.KnownChildSensitiveDataConsents[0] === 1 ||
     // minors under 13 cannot consent
     isApplicable(cd.KnownChildSensitiveDataConsents[1]) ||
-    //covered cannot be zero
-    cd.MspaCoveredTransaction === 0
-    ;
+    // covered cannot be zero
+    cd.MspaCoveredTransaction === 0;
 }
 
 export function sensitiveNoticeIs(cd, value) {
