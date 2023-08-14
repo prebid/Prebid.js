@@ -18,7 +18,7 @@ import {
   deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
@@ -29,6 +29,8 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
@@ -571,7 +573,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
         }
       },
       requestJson,
-      {contentType: 'text/plain', withCredentials: true}
+      {
+        contentType: 'text/plain',
+        withCredentials: true,
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+      }
     );
   } else {
     logError('PBS request not made.  Check endpoints.');

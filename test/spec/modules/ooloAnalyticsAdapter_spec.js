@@ -663,7 +663,7 @@ describe('oolo Prebid Analytic', () => {
 
       events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit });
 
-      expect(server.requests[3].url).to.equal('https://pbjs.com')
+      expect(server.requests[3].url).to.equal('https://pbjs.com/')
     })
 
     it('should send raw events based on server configuration', () => {

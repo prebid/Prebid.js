@@ -28,7 +28,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 136;
+export const FAST_BID_VERSION_CURRENT = 139;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -463,6 +463,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       networkId = bidRequest.params.networkId || networkId;
       schain = bidRequest.schain || schain;
       const slot = {
+        slotid: bidRequest.bidId,
         impid: bidRequest.adUnitCode,
         transactionid: bidRequest.ortb2Imp?.ext?.tid
       };

@@ -1,8 +1,19 @@
-import { fetchTargetingForMediaId, getVatFromCache, extractPublisherParams,
-  formatTargetingResponse, getVatFromPlayer, enrichAdUnits, addTargetingToBid,
-  fetchTargetingInformation, jwplayerSubmodule, getContentId, getContentSegments, getContentData, addOrtbSiteContent } from 'modules/jwplayerRtdProvider.js';
-import { server } from 'test/mocks/xhr.js';
-import { config as prebidConfig } from 'src/config.js';
+import {
+  addOrtbSiteContent,
+  addTargetingToBid,
+  enrichAdUnits,
+  extractPublisherParams,
+  fetchTargetingForMediaId,
+  fetchTargetingInformation,
+  formatTargetingResponse,
+  getContentData,
+  getContentId,
+  getContentSegments,
+  getVatFromCache,
+  getVatFromPlayer,
+  jwplayerSubmodule
+} from 'modules/jwplayerRtdProvider.js';
+import {server} from 'test/mocks/xhr.js';
 import {deepClone} from '../../../src/utils.js';
 
 describe('jwplayerRtdProvider', function() {
@@ -223,9 +234,6 @@ describe('jwplayerRtdProvider', function() {
       describe('Get Bid Request Data', function () {
         it('executes immediately while request is active if player has item', function () {
           const bidRequestSpy = sinon.spy();
-          const fakeServer = sinon.createFakeServer();
-          fakeServer.respondImmediately = false;
-          fakeServer.autoRespond = false;
 
           fetchTargetingForMediaId(mediaIdWithSegment);
 
@@ -255,7 +263,7 @@ describe('jwplayerRtdProvider', function() {
           jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
           expect(bidRequestSpy.calledOnce).to.be.true;
           expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
-          fakeServer.respond();
+          server.respond();
           expect(bidRequestSpy.calledOnce).to.be.true;
         });
       });
@@ -271,22 +279,17 @@ describe('jwplayerRtdProvider', function() {
       }
     };
     let bidRequestSpy;
-    let fakeServer;
     let clock;
 
     beforeEach(function () {
       bidRequestSpy = sinon.spy();
-
-      fakeServer = sinon.createFakeServer();
-      fakeServer.respondImmediately = false;
-      fakeServer.autoRespond = false;
 
       clock = sinon.useFakeTimers();
     });
 
     afterEach(function () {
       clock.restore();
-      fakeServer.respond();
+      server.respond();
     });
 
     it('adds targeting when pending request succeeds', function () {
@@ -318,7 +321,7 @@ describe('jwplayerRtdProvider', function() {
       expect(bid1).to.not.have.property('rtd');
       expect(bid2).to.not.have.property('rtd');
 
-      const request = fakeServer.requests[0];
+      const request = server.requests[0];
       request.respond(
         200,
         responseHeader,
@@ -358,7 +361,7 @@ describe('jwplayerRtdProvider', function() {
         },
         bids
       };
-      const request = fakeServer.requests[0];
+      const request = server.requests[0];
       request.respond(
         200,
         responseHeader,
@@ -443,7 +446,7 @@ describe('jwplayerRtdProvider', function() {
       expect(bid1).to.not.have.property('rtd');
       expect(bid2).to.not.have.property('rtd');
 
-      const request = fakeServer.requests[0];
+      const request = server.requests[0];
       request.respond(
         200,
         responseHeader,
@@ -518,7 +521,7 @@ describe('jwplayerRtdProvider', function() {
       const bid1 = bids[0];
       expect(bid1).to.not.have.property('rtd');
 
-      const request = fakeServer.requests[0];
+      const request = server.requests[0];
       request.respond(
         200,
         responseHeader,
@@ -931,7 +934,6 @@ describe('jwplayerRtdProvider', function() {
     describe('Get Bid Request Data', function () {
       const validMediaIDs = ['media_ID_1', 'media_ID_2', 'media_ID_3'];
       let bidRequestSpy;
-      let fakeServer;
       let clock;
       let bidReqConfig;
 
@@ -971,16 +973,12 @@ describe('jwplayerRtdProvider', function() {
 
         bidRequestSpy = sinon.spy();
 
-        fakeServer = sinon.createFakeServer();
-        fakeServer.respondImmediately = false;
-        fakeServer.autoRespond = false;
-
         clock = sinon.useFakeTimers();
       });
 
       afterEach(function () {
         clock.restore();
-        fakeServer.respond();
+        server.respond();
       });
 
       it('executes callback immediately when ad units are missing', function () {
@@ -1003,9 +1001,9 @@ describe('jwplayerRtdProvider', function() {
         jwplayerSubmodule.getBidRequestData(bidReqConfig, bidRequestSpy);
         expect(bidRequestSpy.notCalled).to.be.true;
 
-        const req1 = fakeServer.requests[0];
-        const req2 = fakeServer.requests[1];
-        const req3 = fakeServer.requests[2];
+        const req1 = server.requests[0];
+        const req2 = server.requests[1];
+        const req3 = server.requests[2];
 
         req1.respond();
         expect(bidRequestSpy.notCalled).to.be.true;

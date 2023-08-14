@@ -121,10 +121,8 @@ describe('IdentityLinkId tests', function () {
     request.respond(
       204,
       responseHeader,
-      ''
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(request.response).to.equal('');
     expect(logErrorStub.calledOnce).to.not.be.true;
   });
 

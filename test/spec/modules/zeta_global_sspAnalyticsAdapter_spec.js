@@ -1,7 +1,7 @@
 import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
 import CONSTANTS from 'src/constants.json';
-import {logError} from '../../../src/utils';
+import {server} from '../../mocks/xhr.js';
 
 let utils = require('src/utils');
 let events = require('src/events');
@@ -358,14 +358,11 @@ const MOCK = {
 
 describe('Zeta Global SSP Analytics Adapter', function() {
   let sandbox;
-  let xhr;
   let requests;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    requests = [];
-    xhr = sandbox.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
+    requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });
 
