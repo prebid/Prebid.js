@@ -119,14 +119,14 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
-    it('includes filtered user.eids if any exist', function () {
+    it('includes filtered user.eids if any exists', function () {
       const bidRequests2 = bidRequests.map(
         (bidReq) => Object.assign({}, bidReq, {
           userIdAsEids: [
             {
               source: 'foobar.com',
               uids: [
-                { id: 'foobar-id' }
+                { id: 'foobar-id' },
               ],
             },
             {
@@ -138,60 +138,57 @@ describe('fluctAdapter', function () {
             {
               source: 'criteo.com',
               uids: [
-                { id: 'criteo-id' }
+                { id: 'criteo-id' },
               ],
             },
             {
               source: 'intimatemerger.com',
               uids: [
-                { id: 'imuid' }
+                { id: 'imuid' },
               ],
             },
             {
               source: 'liveramp.com',
               uids: [
-                { id: 'idl-env' }
+                { id: 'idl-env' },
               ],
             },
           ],
         })
       );
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
-      expect(request.data.user).to.eql({
-        data: [],
-        eids: [
-          {
-            source: 'foobar.com',
-            uids: [
-              { id: 'foobar-id' }
-            ],
-          },
-          {
-            source: 'adserver.org',
-            uids: [
-              { id: 'tdid' }
-            ],
-          },
-          {
-            source: 'criteo.com',
-            uids: [
-              { id: 'criteo-id' }
-            ],
-          },
-          {
-            source: 'intimatemerger.com',
-            uids: [
-              { id: 'imuid' }
-            ],
-          },
-          {
-            source: 'liveramp.com',
-            uids: [
-              { id: 'idl-env' }
-            ],
-          },
-        ],
-      });
+      expect(request.data.user.eids).to.eql([
+        {
+          source: 'foobar.com',
+          uids: [
+            { id: 'foobar-id' },
+          ],
+        },
+        {
+          source: 'adserver.org',
+          uids: [
+            { id: 'tdid' },
+          ],
+        },
+        {
+          source: 'criteo.com',
+          uids: [
+            { id: 'criteo-id' },
+          ],
+        },
+        {
+          source: 'intimatemerger.com',
+          uids: [
+            { id: 'imuid' },
+          ],
+        },
+        {
+          source: 'liveramp.com',
+          uids: [
+            { id: 'idl-env' },
+          ],
+        },
+      ]);
     });
 
     it('includes user.data if any exists', function () {
