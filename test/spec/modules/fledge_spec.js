@@ -19,8 +19,6 @@ describe('fledgeForGpt module', function() {
     fledge.init({enabled: true})
   });
 
-
-
   const bidRequest = {
     adUnitCode: AD_UNIT_CODE,
     bids: [{
