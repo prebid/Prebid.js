@@ -21,13 +21,7 @@ pbjs.enableAnalytics({
     pid: '<Contact GrowthCode>',
     trackEvents: [
       'auctionEnd',
-      'bidAdjustment',
-      'bidTimeout',
-      'bidRequested',
-      'bidResponse',
-      'noBid',
-      'bidWon',
-      'bidderDone']
+      'bidWon']
   }
 });
 ```
