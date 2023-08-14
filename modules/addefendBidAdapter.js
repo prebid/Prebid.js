@@ -1,4 +1,5 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'addefend';
 
@@ -16,7 +17,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let bid = {
-      v: $$PREBID_GLOBAL$$.version,
+      v: getGlobal().version,
       auctionId: false,
       pageId: false,
       gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
@@ -29,6 +30,7 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       let vb = validBidRequests[i];
       let o = vb.params;
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       bid.auctionId = vb.auctionId;
       o.bidId = vb.bidId;
       o.transactionId = vb.transactionId;

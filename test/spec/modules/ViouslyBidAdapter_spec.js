@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 
 import { deepClone, mergeDeep } from 'src/utils';
+import { BANNER, VIDEO } from 'src/mediaTypes';
 import { createEidsArray } from 'modules/userId/eids.js';
 
 import {spec as adapter} from 'modules/viouslyBidAdapter';
@@ -12,6 +13,21 @@ const CURRENCY = 'EUR';
 const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bidder.viously.com/bid';
+
+const VALID_BID_BANNER = {
+  bidder: 'viously',
+  bidId: '5e6f7g8h',
+  adUnitCode: 'id-5678',
+  params: {
+    pid: '123e4567-e89b-12d3-a456-426614174002'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [300, 50],
+      pos: 1
+    }
+  }
+};
 
 const VALID_BID_VIDEO = {
   bidder: 'viously',
@@ -29,6 +45,24 @@ const VALID_BID_VIDEO = {
   }
 };
 
+const VALID_REQUEST_BANNER = {
+  method: HTTP_METHOD,
+  url: REQUEST_URL,
+  data: {
+    pid: '123e4567-e89b-12d3-a456-426614174002',
+    currency_code: CURRENCY,
+    placements: [
+      {
+        id: 'id-5678',
+        bid_id: '5e6f7g8h',
+        sizes: ['300x50'],
+        type: BANNER,
+        position: 1
+      }
+    ]
+  }
+};
+
 const VALID_REQUEST_VIDEO = {
   method: HTTP_METHOD,
   url: REQUEST_URL,
@@ -39,6 +73,7 @@ const VALID_REQUEST_VIDEO = {
       {
         id: 'id-5678',
         bid_id: '5e6f7g8h',
+        type: VIDEO,
         video_params: {
           context: 'instream',
           playbackmethod: [1, 2, 3, 4],
@@ -68,7 +103,28 @@ describe('ViouslyAdapter', function () {
   describe('isBidRequestValid', function () {
     describe('Check method return', function () {
       it('should return true', function () {
+        expect(adapter.isBidRequestValid(VALID_BID_BANNER)).to.equal(true);
         expect(adapter.isBidRequestValid(VALID_BID_VIDEO)).to.equal(true);
+      });
+
+      it('should return true for banner with no pos', function () {
+        let newBid = deepClone(VALID_BID_BANNER);
+        let newRequest = deepClone(VALID_REQUEST_BANNER);
+
+        delete newBid.mediaTypes.banner.pos;
+        newRequest.data.placements[0].position = 0;
+
+        expect(adapter.buildRequests([newBid])).to.deep.equal(newRequest);
+      });
+
+      it('should return false because the banner size is missing', function () {
+        let wrongBid = deepClone(VALID_BID_BANNER);
+
+        wrongBid.mediaTypes.banner.sizes = '123456';
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
+
+        delete wrongBid.mediaTypes.banner.sizes;
+        expect(adapter.isBidRequestValid(wrongBid)).to.equal(false);
       });
 
       it('should return false because the pid is missing', function () {
@@ -89,6 +145,10 @@ describe('ViouslyAdapter', function () {
 
   describe('buildRequests', function () {
     describe('Check method return', function () {
+      it('should return the right formatted banner requests', function() {
+        expect(adapter.buildRequests([VALID_BID_BANNER])).to.deep.equal(VALID_REQUEST_BANNER);
+      });
+
       it('should return the right formatted video requests', function() {
         expect(adapter.buildRequests([VALID_BID_VIDEO])).to.deep.equal(VALID_REQUEST_VIDEO);
       });
@@ -214,7 +274,7 @@ describe('ViouslyAdapter', function () {
         expect(adapter.buildRequests([bid])).to.deep.equal(requests);
       });
 
-      it('should return the right formatted request with endpint test', function() {
+      it('should return the right formatted request with endpoint test', function() {
         let endpoint = 'https://bid-test.viously.com/prebid';
 
         let bid = mergeDeep(deepClone(VALID_BID_VIDEO), {
@@ -261,6 +321,20 @@ describe('ViouslyAdapter', function () {
               },
               {
                 bid: true,
+                creative_id: '1357',
+                id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-2',
+                bid_id: '9101112',
+                cpm: 1.5,
+                ad: 'html content',
+                type: 'banner',
+                size: '300x50',
+                nurl: [
+                  'win.domain2.com',
+                  'win.domain3.com'
+                ]
+              },
+              {
+                bid: true,
                 creative_id: '1469',
                 id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-3',
                 bid_id: '2570',
@@ -282,6 +356,10 @@ describe('ViouslyAdapter', function () {
               {
                 id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-1',
                 bid_id: '5678'
+              },
+              {
+                id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-2',
+                bid_id: '9101112'
               },
               {
                 id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-3',
@@ -307,6 +385,24 @@ describe('ViouslyAdapter', function () {
             vastUrl: 'http://www.example.com/vast',
             nurl: [
               'win.domain.com'
+            ]
+          },
+          {
+            requestId: '9101112',
+            id: 'id-0157324f-bee4-5390-a14c-47a7da3eb73c-2',
+            cpm: 1.5,
+            width: '300',
+            height: '50',
+            creativeId: '1357',
+            currency: CURRENCY,
+            netRevenue: true,
+            ttl: TTL,
+            mediaType: 'banner',
+            meta: {},
+            ad: 'html content',
+            nurl: [
+              'win.domain2.com',
+              'win.domain3.com'
             ]
           },
           {

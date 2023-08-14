@@ -111,6 +111,14 @@ describe('gumgumAdapter', function () {
             sizes: sizesArray
           }
         },
+        userId: {
+          id5id: {
+            uid: 'uid-string',
+            ext: {
+              linkType: 2
+            }
+          }
+        },
         adUnitCode: 'adunit-code',
         sizes: sizesArray,
         bidId: '30b31c1838de1e',
@@ -157,6 +165,12 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+    });
+    it('should set id5Id and id5IdLinkType if the uid and  linkType are available', function () {
+      const request = { ...bidRequests[0] };
+      const bidRequest = spec.buildRequests([request])[0];
+      expect(bidRequest.data.id5Id).to.equal(bidRequests[0].userId.id5id.uid);
+      expect(bidRequest.data.id5IdLinkType).to.equal(bidRequests[0].userId.id5id.ext.linkType);
     });
 
     it('should set pubId param if found', function () {
@@ -491,7 +505,7 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppConsent).to.exist;
       expect(bidRequest.data.gppConsent.gppString).to.equal(gppConsent.gppString);
-      expect(bidRequest.data.gppConsent.applicableSections).to.equal(gppConsent.applicableSections);
+      expect(bidRequest.data.gppConsent.gpp_sid).to.equal(gppConsent.applicableSections);
       expect(bidRequest.data.gppConsent.gppString).to.eq('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
     });
     it('should handle ortb2 parameters', function () {
@@ -511,7 +525,7 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppConsent).to.exist;
       expect(bidRequest.data.gppConsent.gppString).to.equal(undefined);
-      expect(bidRequest.data.gppConsent.applicableSections).to.equal(undefined);
+      expect(bidRequest.data.gppConsent.gpp_sid).to.equal(undefined);
     });
     it('should handle ortb2  undefined parameters', function () {
       const ortb2 = {
@@ -523,7 +537,7 @@ describe('gumgumAdapter', function () {
       const fakeBidRequest = { gppConsent: ortb2 };
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppConsent.gppString).to.eq(undefined)
-      expect(bidRequest.data.gppConsent.applicableSections).to.eq(undefined)
+      expect(bidRequest.data.gppConsent.gpp_sid).to.eq(undefined)
     });
     it('should not set coppa parameter if coppa config is set to false', function () {
       config.setConfig({
