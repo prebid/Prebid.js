@@ -41,6 +41,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
+        browserLanguage: window.navigator.language,
         debug: debugTurnedOn(),
         uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
