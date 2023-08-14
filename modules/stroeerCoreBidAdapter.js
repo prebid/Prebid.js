@@ -1,4 +1,4 @@
-import {buildUrl, deepAccess, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
+import { buildUrl, deepAccess, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
@@ -50,8 +50,7 @@ export const spec = {
     const refererInfo = bidderRequest.refererInfo;
 
     const basePayload = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       ref: refererInfo.ref,
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),

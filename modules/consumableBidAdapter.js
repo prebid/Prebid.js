@@ -65,6 +65,11 @@ export const spec = {
       };
     }
 
+    if (bidderRequest && bidderRequest.gppConsent && bidderRequest.gppConsent.gppString) {
+      data.gpp = bidderRequest.gppConsent.gppString;
+      data.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    }
+
     if (bidderRequest && bidderRequest.uspConsent) {
       data.ccpa = bidderRequest.uspConsent;
     }
@@ -180,7 +185,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncUrl = 'https://sync.serverbid.com/ss/' + siteId + '.html';
 
     if (syncOptions.iframeEnabled) {
@@ -190,6 +195,9 @@ export const spec = {
         } else {
           syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
         }
+      }
+      if (gppConsent && gppConsent.gppString) {
+        syncUrl = appendUrlParam(syncUrl, `gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}`);
       }
 
       if (uspConsent && uspConsent.consentString) {

@@ -3,14 +3,14 @@
 ```
 Module Name:  Cadent Aperture MX Adapter
 Module Type:  Bidder Adapter
-Maintainer: git@emxdigital.com
+Maintainer: contactaperturemx@cadent.tv
 ```
 
 # Description
 
 The Cadent Aperture MX adapter provides publishers with access to the Cadent Aperture MX SSP. The adapter is GDPR compliant. Please note that the adapter supports Banner and Video (Instream & Outstream) media types.
 
-Note: The Cadent Aperture MX adapter requires approval and implementation guidelines from the Cadent team, including existing publishers that work with Cadent. Please reach out to your account manager or prebid@emxdigital.com for more information.
+Note: The Cadent Aperture MX adapter requires approval and implementation guidelines from the Cadent team, including existing publishers that work with Cadent. Please reach out to your account manager or contactaperturemx@cadent.tv for more information.
 
 The bidder code should be ```cadent_aperture_mx```
 The params used by the bidder are :
