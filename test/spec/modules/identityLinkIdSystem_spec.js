@@ -194,7 +194,6 @@ describe('IdentityLinkId tests', function () {
     request.respond(
       204,
       responseHeader,
-      ''
     );
     expect(envelopeValueFromStorage).to.be.a('undefined');
     expect(callBackSpy.calledOnce).to.be.true;
