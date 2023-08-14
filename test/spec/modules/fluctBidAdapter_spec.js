@@ -126,7 +126,7 @@ describe('fluctAdapter', function () {
             {
               source: 'foobar.com',
               uids: [
-                { id: 'foobar-id' }
+                { id: 'foobar-id' },
               ],
             },
             {
@@ -138,19 +138,19 @@ describe('fluctAdapter', function () {
             {
               source: 'criteo.com',
               uids: [
-                { id: 'criteo-id' }
+                { id: 'criteo-id' },
               ],
             },
             {
               source: 'intimatemerger.com',
               uids: [
-                { id: 'imuid' }
+                { id: 'imuid' },
               ],
             },
             {
               source: 'liveramp.com',
               uids: [
-                { id: 'idl-env' }
+                { id: 'idl-env' },
               ],
             },
           ],
@@ -161,31 +161,31 @@ describe('fluctAdapter', function () {
         {
           source: 'foobar.com',
           uids: [
-            { id: 'foobar-id' }
+            { id: 'foobar-id' },
           ],
         },
         {
           source: 'adserver.org',
           uids: [
-            { id: 'tdid' }
+            { id: 'tdid' },
           ],
         },
         {
           source: 'criteo.com',
           uids: [
-            { id: 'criteo-id' }
+            { id: 'criteo-id' },
           ],
         },
         {
           source: 'intimatemerger.com',
           uids: [
-            { id: 'imuid' }
+            { id: 'imuid' },
           ],
         },
         {
           source: 'liveramp.com',
           uids: [
-            { id: 'idl-env' }
+            { id: 'idl-env' },
           ],
         },
       ]);
