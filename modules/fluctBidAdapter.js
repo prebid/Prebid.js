@@ -49,6 +49,7 @@ export const spec = {
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
       data.transactionId = request.ortb2Imp?.ext?.tid;
+      data.gpid = request.ortb2Imp?.ext?.gpid;
       data.user = {
         eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };

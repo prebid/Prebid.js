@@ -99,6 +99,23 @@ describe('fluctAdapter', function () {
       expect(request.data.page).to.eql('http://example.com');
     });
 
+    it('sends no gpid by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.gpid).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.ext.gpid as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            gpid: 'gpid',
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('gpid');
+    });
+
     it('includes data.user.eids = [] by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([]);
