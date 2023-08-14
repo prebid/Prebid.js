@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/amxBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
 
 const sampleRequestId = '82c91e127a9b93e';
@@ -34,9 +35,19 @@ const sampleBidderRequest = {
     consentString: utils.getUniqueIdentifierStr(),
     vendorData: {},
   },
-  auctionId: utils.getUniqueIdentifierStr(),
+  gppConsent: {
+    gppString: 'example',
+    applicableSections: 'example'
+  },
+
+  auctionId: null,
+
   uspConsent: '1YYY',
   refererInfo: {
+    reachedTop: true,
+    numIframes: 10,
+    stack: ['https://www.prebid.org'],
+    canonicalUrl: 'https://prebid.org',
     location: 'https://www.prebid.org',
     site: 'prebid.org',
     topmostLocation: 'https://www.prebid.org',
@@ -81,7 +92,8 @@ const sampleBidRequestBase = {
   adUnitCode: 'div-gpt-ad-example',
   transactionId: utils.getUniqueIdentifierStr(),
   bidId: sampleRequestId,
-  auctionId: utils.getUniqueIdentifierStr(),
+
+  auctionId: null,
 };
 
 const schainConfig = {
@@ -195,9 +207,12 @@ describe('AmxBidAdapter', () => {
     });
   });
   describe('getUserSync', () => {
-    it('will only sync from valid server responses', () => {
+    it('Will perform an iframe sync even if there is no server response..', () => {
       const syncs = spec.getUserSyncs({ iframeEnabled: true });
-      expect(syncs).to.eql([]);
+      expect(syncs).to.eql([{
+        type: 'iframe',
+        url: 'https://prebid.a-mo.net/isyn?gdpr_consent=&gdpr=0&us_privacy=&gpp=&gpp_sid='
+      }]);
     });
 
     it('will return valid syncs from a server response', () => {
@@ -260,6 +275,15 @@ describe('AmxBidAdapter', () => {
       expect(data.tm).to.equal(true);
     });
 
+    it('will attach additional referrer info data', () => {
+      const { data } = spec.buildRequests([sampleBidRequestBase], sampleBidderRequest);
+      expect(data.ri.r).to.equal(sampleBidderRequest.refererInfo.topmostLocation);
+      expect(data.ri.t).to.equal(sampleBidderRequest.refererInfo.reachedTop);
+      expect(data.ri.l).to.equal(sampleBidderRequest.refererInfo.numIframes);
+      expect(data.ri.s).to.equal(sampleBidderRequest.refererInfo.stack);
+      expect(data.ri.c).to.equal(sampleBidderRequest.refererInfo.canonicalUrl);
+    });
+
     it('if prebid is in an iframe, will use the frame url as domain, if the topmost is not avialable', () => {
       const { data } = spec.buildRequests([sampleBidRequestBase], {
         ...sampleBidderRequest,
@@ -286,7 +310,7 @@ describe('AmxBidAdapter', () => {
       expect(data.re).to.equal('http://search-traffic-source.com');
     });
 
-    it('handles referer data and GDPR, USP Consent, COPPA', () => {
+    it('handles GDPR, USP Consent, COPPA, and GPP', () => {
       const { data } = spec.buildRequests(
         [sampleBidRequestBase],
         sampleBidderRequest
@@ -295,6 +319,7 @@ describe('AmxBidAdapter', () => {
       expect(data.gs).to.equal(sampleBidderRequest.gdprConsent.gdprApplies);
       expect(data.gc).to.equal(sampleBidderRequest.gdprConsent.consentString);
       expect(data.usp).to.equal(sampleBidderRequest.uspConsent);
+      expect(data.gpp).to.equal(sampleBidderRequest.gppConsent);
       expect(data.cpp).to.equal(0);
     });
 
@@ -316,6 +341,73 @@ describe('AmxBidAdapter', () => {
       expect(data.bwc).to.equal(bidderWinsCount);
       expect(data.trc).to.equal(0);
     });
+
+    it('will attach sync configuration', () => {
+      const request = () => spec.buildRequests(
+        [sampleBidRequestBase],
+        sampleBidderRequest
+      );
+
+      const setConfig = (filterSettings) =>
+        config.setConfig({
+          userSync: {
+            syncsPerBidder: 2,
+            syncDelay: 2300,
+            syncEnabled: true,
+            filterSettings,
+          }
+        });
+
+      const test = (filterSettings) => {
+        setConfig(filterSettings);
+        return request().data.sync;
+      }
+
+      const base = { d: 2300, l: 2, e: true };
+
+      const tests = [[
+        undefined,
+        { ...base, t: 0 }
+      ], [{
+        image: {
+          bidders: '*',
+          filter: 'include'
+        },
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }, { ...base, t: 3 }], [{
+        image: {
+          bidders: ['amx'],
+        },
+        iframe: {
+          bidders: '*',
+          filter: 'include'
+        }
+      }, { ...base, t: 3 }], [{
+        image: {
+          bidders: ['other'],
+        },
+        iframe: {
+          bidders: '*'
+        }
+      }, { ...base, t: 2 }], [{
+        image: {
+          bidders: ['amx']
+        },
+        iframe: {
+          bidders: ['amx'],
+          filter: 'exclude'
+        }
+      }, { ...base, t: 1 }]]
+
+      for (let i = 0, l = tests.length; i < l; i++) {
+        const [result, expected] = tests[i];
+        expect(test(result), `input: ${JSON.stringify(result)}`).to.deep.equal(expected);
+      }
+    });
+
     it('will forward first-party data', () => {
       const { data } = spec.buildRequests(
         [sampleBidRequestBase],
@@ -405,7 +497,7 @@ describe('AmxBidAdapter', () => {
 
     it('can build a video request', () => {
       const { data } = spec.buildRequests(
-        [{...sampleBidRequestVideo, params: { ...sampleBidRequestVideo.params, adUnitId: 'custom-auid' }}],
+        [{ ...sampleBidRequestVideo, params: { ...sampleBidRequestVideo.params, adUnitId: 'custom-auid' } }],
         sampleBidderRequest
       );
       expect(Object.keys(data.m).length).to.equal(1);
@@ -509,7 +601,14 @@ describe('AmxBidAdapter', () => {
     before(() => {
       _Image = window.Image;
       window.Image = class FakeImage {
+        _src = '';
+
+        get src() {
+          return this._src;
+        }
+
         set src(value) {
+          this._src = value;
           firedPixels.push(value);
         }
       };

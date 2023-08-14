@@ -117,6 +117,12 @@ export const fabrickIdSubmodule = {
     } catch (e) {
       logError(`fabrickIdSystem encountered an error`, e);
     }
+  },
+  eids: {
+    'fabrickId': {
+      source: 'neustar.biz',
+      atype: 1
+    },
   }
 };
 

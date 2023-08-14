@@ -66,6 +66,7 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const content = deepAccess(bidderRequest, 'ortb2.site.content', config.getAnyConfig('ortb2.site.content'));
 
     let winTop = window;
     let location;
@@ -95,47 +96,63 @@ export const spec = {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
       }
+      if (content) {
+        request.content = content;
+      }
     }
     const len = validBidRequests.length;
 
     for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+      const bid = validBidRequests[i];
+      const { params, bidId, mediaTypes } = bid;
+
       const placement = {
-        placementId: bid.params.placementId,
-        bidId: bid.bidId,
-        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff,
+        placementId: params.placementId,
+        bidId,
         eids: [],
         bidFloor: getBidFloor(bid)
       }
+
+      if (bid.transactionId) {
+        placement.ext = placement.ext || {};
+        placement.ext.tid = bid.transactionId;
+      }
+
       if (bid.schain) {
         placement.schain = bid.schain;
       }
+
       if (bid.userId) {
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
         getUserId(placement.eids, bid.userId.lotamePanoramaId, 'lotame.com');
         getUserId(placement.eids, bid.userId.idx, 'idx.lat');
       }
-      if (traff === VIDEO) {
-        placement.playerSize = bid.mediaTypes[VIDEO].playerSize;
-        placement.minduration = bid.mediaTypes[VIDEO].minduration;
-        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
-        placement.mimes = bid.mediaTypes[VIDEO].mimes;
-        placement.protocols = bid.mediaTypes[VIDEO].protocols;
-        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
-        placement.placement = bid.mediaTypes[VIDEO].placement;
-        placement.skip = bid.mediaTypes[VIDEO].skip;
-        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
-        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
-        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
-        placement.delivery = bid.mediaTypes[VIDEO].delivery;
-        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
-        placement.api = bid.mediaTypes[VIDEO].api;
-        placement.linearity = bid.mediaTypes[VIDEO].linearity;
+
+      if (mediaTypes?.[BANNER]) {
+        placement.traffic = BANNER;
+        placement.sizes = mediaTypes[BANNER].sizes;
+      } else if (mediaTypes?.[VIDEO]) {
+        placement.traffic = VIDEO;
+        placement.playerSize = mediaTypes[VIDEO].playerSize;
+        placement.minduration = mediaTypes[VIDEO].minduration;
+        placement.maxduration = mediaTypes[VIDEO].maxduration;
+        placement.mimes = mediaTypes[VIDEO].mimes;
+        placement.protocols = mediaTypes[VIDEO].protocols;
+        placement.startdelay = mediaTypes[VIDEO].startdelay;
+        placement.placement = mediaTypes[VIDEO].placement;
+        placement.skip = mediaTypes[VIDEO].skip;
+        placement.skipafter = mediaTypes[VIDEO].skipafter;
+        placement.minbitrate = mediaTypes[VIDEO].minbitrate;
+        placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
+        placement.delivery = mediaTypes[VIDEO].delivery;
+        placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
+        placement.api = mediaTypes[VIDEO].api;
+        placement.linearity = mediaTypes[VIDEO].linearity;
       }
+
       placements.push(placement);
     }
+
     return {
       method: 'POST',
       url: AD_URL,

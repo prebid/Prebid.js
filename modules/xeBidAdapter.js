@@ -44,8 +44,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     const request = {};
     request.bidId = req.bidId;
     request.banner = deepAccess(req, 'mediaTypes.banner');
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     request.auctionId = req.auctionId;
-    request.transactionId = req.transactionId;
+    request.transactionId = req.ortb2Imp?.ext?.tid;
     request.sizes = parseSizesInput(getAdUnitSizes(req));
     request.schain = req.schain;
     request.location = {
