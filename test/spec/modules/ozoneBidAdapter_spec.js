@@ -6,7 +6,6 @@ import {getGranularityKeyName, getGranularityObject} from '../../../modules/ozon
 import * as utils from '../../../src/utils.js';
 const OZONEURI = 'https://elb.the-ozone-project.com/openrtb2/auction';
 const BIDDER_CODE = 'ozone';
-
 var validBidRequests = [
   {
     adUnitCode: 'div-gpt-ad-1460505748561-0',
@@ -2049,6 +2048,27 @@ describe('ozone Adapter', function () {
       expect(data.imp[0].ext.ozone.customData).to.be.an('array');
       expect(data.imp[0].ext.ozone.customData[0].targeting.oztestmode).to.equal('mytestvalue_123');
     });
+    it('should pass gpid to auction if it is present (gptPreAuction adapter sets this)', function () {
+      var specMock = utils.deepClone(spec);
+      let br = JSON.parse(JSON.stringify(validBidRequests));
+      utils.deepSetValue(br[0], 'ortb2Imp.ext.gpid', '/22037345/projectozone');
+      const request = specMock.buildRequests(br, validBidderRequest);
+      const data = JSON.parse(request.data);
+      expect(data.imp[0].ext.gpid).to.equal('/22037345/projectozone');
+    });
+    it('should batch into 10s if config is set', function () {
+      config.setConfig({ozone: {'batchRequests': true}});
+      var specMock = utils.deepClone(spec);
+      let arrReq = [];
+      for (let i = 0; i < 25; i++) {
+        let b = validBidRequests[0];
+        b.adUnitCode += i;
+        arrReq.push(b);
+      }
+      const request = specMock.buildRequests(arrReq, validBidderRequest);
+      expect(request.length).to.equal(3);
+      config.resetConfig();
+    });
     it('should use GET values auction=dev & cookiesync=dev if set', function() {
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {
@@ -2428,6 +2448,12 @@ describe('ozone Adapter', function () {
       let validres = JSON.parse(JSON.stringify(validResponse2BidsSameAdunit));
       const result = spec.interpretResponse(validres, request);
       expect(utils.deepAccess(result[0].adserverTargeting, 'oz_ozappnexus_sid')).to.equal(result[0].cid);
+    });
+    it('should add oz_auc_id (response id value)', function () {
+      const request = spec.buildRequests(validBidRequestsMulti, validBidderRequest);
+      let validres = JSON.parse(JSON.stringify(validBidResponse1adWith2Bidders));
+      const result = spec.interpretResponse(validres, request);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'oz_auc_id')).to.equal(validBidResponse1adWith2Bidders.body.id);
     });
     it('should add unique adId values to each bid', function() {
       const request = spec.buildRequests(validBidRequests, validBidderRequest);

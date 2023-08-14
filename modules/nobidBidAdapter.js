@@ -7,7 +7,7 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
-const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 window.nobidVersion = '1.3.3';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};

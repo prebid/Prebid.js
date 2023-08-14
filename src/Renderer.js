@@ -22,6 +22,7 @@ export function Renderer(options) {
   this.config = config;
   this.handlers = {};
   this.id = id;
+  this.renderNow = renderNow;
 
   // a renderer may push to the command queue to delay rendering until the
   // render function is loaded by loadExternalScript, at which point the the command
@@ -110,7 +111,7 @@ Renderer.prototype.process = function() {
  * @returns {Boolean}
  */
 export function isRendererRequired(renderer) {
-  return !!(renderer && renderer.url);
+  return !!(renderer && (renderer.url || renderer.renderNow));
 }
 
 /**
