@@ -51,7 +51,10 @@ export const spec = {
       logMessage(e);
     };
     let placements = [];
+    let imp = [];
     let request = {
+      'id': '123456',
+      'imp': imp,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
@@ -85,6 +88,12 @@ export const spec = {
         traffic: traff,
         publisherId: bid.params.publisherId
       });
+      imp.push({
+        id: bid.bidId,
+        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
+        traffic: traff,
+        publisherId: bid.params.publisherId
+      })
       if (bid.schain) {
         placements.schain = bid.schain;
       }
