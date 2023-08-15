@@ -43,16 +43,20 @@ export const spec = {
     const page = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
+      const impExt = request.ortb2Imp?.ext;
       const data = Object();
 
       data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.ortb2Imp?.ext?.tid;
       data.user = {
         eids: (request.userIdAsEids || []).filter((eid) => SUPPORTED_USER_ID_SOURCES.indexOf(eid.source) !== -1)
       };
 
+      if (impExt) {
+        data.transactionId = impExt.tid;
+        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
+      }
       if (bidderRequest.gdprConsent) {
         deepSetValue(data, 'regs.gdpr', {
           consent: bidderRequest.gdprConsent.consentString,

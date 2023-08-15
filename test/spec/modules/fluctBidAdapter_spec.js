@@ -99,6 +99,79 @@ describe('fluctAdapter', function () {
       expect(request.data.page).to.eql('http://example.com');
     });
 
+    it('sends no transactionId by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.transactionId).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.ext.tid as transactionId', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            tid: 'tid',
+          }
+        },
+      })), bidderRequest)[0];
+      expect(request.data.transactionId).to.eql('tid');
+    });
+
+    it('sends no gpid by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.gpid).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.ext.gpid as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            gpid: 'gpid',
+            data: {
+              pbadslot: 'data-pbadslot',
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('gpid');
+    });
+
+    it('sends ortb2Imp.ext.data.pbadslot as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: 'data-pbadslot',
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('data-pbadslot');
+    });
+
+    it('sends ortb2Imp.ext.data.adserver.adslot as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            data: {
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('data-adserver-adslot');
+    });
+
     it('includes data.user.eids = [] by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([]);
