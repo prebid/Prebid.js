@@ -68,8 +68,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
         syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
         sync.url = syncUrl.toString();
       }
-      if (syncOptions.iframeEnabled && sync.type === 'iframe') { syncs.push(sync); }
-      if (syncOptions.pixelEnabled && sync.type === 'image') { syncs.push(sync); }
+      if (syncOptions.iframeEnabled && sync.type === 'iframe') {
+        syncs.push(sync);
+      } else if (syncOptions.pixelEnabled && sync.type === 'image') {
+        syncs.push(sync);
+      }
     }
   }
 
