@@ -1,6 +1,6 @@
 'use strict';
 
-import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
@@ -8,7 +8,8 @@ import {config} from '../src/config.js';
 
 const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
-const USER_SYNC_HOST = 'https://ad-cdn.technoratimedia.com';
+const USER_SYNC_IFRAME_URL = 'https://ad-cdn.technoratimedia.com/html/usersync.html';
+const USER_SYNC_PIXEL_URL = 'https://sync.technoratimedia.com/services';
 const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
   '1x1',
@@ -38,11 +39,11 @@ export const spec = {
       return;
     }
     const refererInfo = bidderRequest.refererInfo;
-    const openRtbBidRequest = {
+    // start with some defaults, overridden by anything set in ortb2, if provided.
+    const openRtbBidRequest = mergeDeep({
       id: bidderRequest.bidderRequestId,
       site: {
-        // TODO: does the fallback make sense here?
-        domain: refererInfo.domain || location.hostname,
+        domain: refererInfo.domain,
         page: refererInfo.page,
         ref: refererInfo.ref
       },
@@ -50,7 +51,7 @@ export const spec = {
         ua: navigator.userAgent
       },
       imp: []
-    };
+    }, bidderRequest.ortb2 || {});
 
     const tmax = bidderRequest.timeout;
     if (tmax) {
@@ -101,9 +102,17 @@ export const spec = {
       }
     });
 
-    // CCPA
-    if (bidderRequest.uspConsent) {
-      deepSetValue(openRtbBidRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    // Move us_privacy from regs.ext to regs if there isn't already a us_privacy in regs
+    if (openRtbBidRequest.regs?.ext?.us_privacy && !openRtbBidRequest.regs?.us_privacy) {
+      deepSetValue(openRtbBidRequest, 'regs.us_privacy', openRtbBidRequest.regs.ext.us_privacy);
+    }
+
+    // Remove regs.ext.us_privacy
+    if (openRtbBidRequest.regs?.ext?.us_privacy) {
+      delete openRtbBidRequest.regs.ext.us_privacy;
+      if (Object.keys(openRtbBidRequest.regs.ext).length < 1) {
+        delete openRtbBidRequest.regs.ext;
+      }
     }
 
     // User ID
@@ -117,7 +126,7 @@ export const spec = {
     if (openRtbBidRequest.imp.length && seatId) {
       return {
         method: 'POST',
-        url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=$$REPO_AND_VERSION$$`,
+        url: `${BID_SCHEME}${seatId}.${BID_DOMAIN}/openrtb/bids/${seatId}?src=pbjs%2F$prebid.version$`,
         data: openRtbBidRequest,
         options: {
           contentType: 'application/json',
@@ -294,16 +303,31 @@ export const spec = {
     }
     return bids;
   },
-  getUserSyncs: function (syncOptions, serverResponses) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
+    const queryParams = ['src=pbjs%2F$prebid.version$'];
+    if (gdprConsent) {
+      queryParams.push(`gdpr=${Number(gdprConsent.gdprApplies && 1)}&consent=${encodeURIComponent(gdprConsent.consentString || '')}`);
+    }
+    if (uspConsent) {
+      queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
+    }
+    if (gppConsent) {
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString || '') + '&gppsid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
+    }
+
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${USER_SYNC_HOST}/html/usersync.html?src=$$REPO_AND_VERSION$$`
+        url: `${USER_SYNC_IFRAME_URL}?${queryParams.join('&')}`
       });
-    } else {
-      logWarn('IMDS: Please enable iframe based user sync.');
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'pixel',
+        url: `${USER_SYNC_PIXEL_URL}?srv=cs&${queryParams.join('&')}`
+      });
     }
+
     return syncs;
   }
 };

@@ -1,5 +1,6 @@
 import {adqueryIdSubmodule, storage} from 'modules/adqueryIdSystem.js';
 import {server} from 'test/mocks/xhr.js';
+import sinon from 'sinon';
 
 const config = {
   storage: {
@@ -37,9 +38,9 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.contains(`https://bidder.adquery.io/prebid/qid?qid`);
-      request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: 'qid_value'}));
-      expect(callbackSpy.lastCall.lastArg).to.deep.equal('qid_value');
+      expect(request.url).to.contains(`https://bidder.adquery.io/prebid/qid?qid=`);
+      request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: '6dd9eab7dfeab7df6dd9ea'}));
+      expect(callbackSpy.lastCall.lastArg).to.deep.equal('6dd9eab7dfeab7df6dd9ea');
     });
 
     it('allows configurable id url', function () {

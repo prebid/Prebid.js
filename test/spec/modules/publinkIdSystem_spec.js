@@ -120,7 +120,7 @@ describe('PublinkIdSystem', () => {
         expect(parsed.search.mpn).to.equal('Prebid.js');
         expect(parsed.search.mpv).to.equal('$prebid.version$');
 
-        request.respond(204, {}, JSON.stringify(serverResponse));
+        request.respond(204);
         expect(callbackSpy.called).to.be.false;
       });
 

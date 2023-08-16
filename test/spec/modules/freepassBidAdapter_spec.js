@@ -19,6 +19,9 @@ describe('FreePass adapter', function () {
         }
       },
       adUnitCode: 'adunit-code',
+      params: {
+        publisherId: 'publisherIdValue'
+      }
     };
 
     it('should return true when required params found', function () {
@@ -28,6 +31,12 @@ describe('FreePass adapter', function () {
     it('should return false when adUnitCode is missing', function () {
       let localBid = Object.assign({}, bid);
       delete localBid.adUnitCode;
+      expect(spec.isBidRequestValid(localBid)).to.equal(false);
+    });
+
+    it('should return false when params.publisherId is missing', function () {
+      let localBid = Object.assign({}, bid);
+      delete localBid.params.publisherId;
       expect(spec.isBidRequestValid(localBid)).to.equal(false);
     });
   });
@@ -43,6 +52,10 @@ describe('FreePass adapter', function () {
             'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
             'commonId': 'commonIdValue'
           }
+        },
+        'adUnitCode': 'adunit-code',
+        'params': {
+          'publisherId': 'publisherIdValue'
         }
       }];
       bidderRequest = {};
@@ -108,6 +121,33 @@ describe('FreePass adapter', function () {
       expect(ortbData.device.ext).to.be.an('object');
       expect(ortbData.device.ext.is_accurate_ip).to.equal(0);
     });
+
+    it('it should add publisher related information w/o publisherUrl', function () {
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbData = bidRequest.data;
+      expect(ortbData.site).to.be.an('object');
+      expect(ortbData.site.publisher.id).to.equal('publisherIdValue');
+      // publisher.domain is optional
+      expect(ortbData.site.publisher.domain).to.be.undefined;
+    });
+
+    it('it should add publisher related information w/ publisherUrl', function () {
+      const PUBLISHER_URL = 'publisherUrlValue';
+      let localBidRequests = [Object.assign({}, bidRequests[0])];
+      localBidRequests[0].params.publisherUrl = PUBLISHER_URL;
+      const bidRequest = spec.buildRequests(localBidRequests, bidderRequest);
+      const ortbData = bidRequest.data;
+      expect(ortbData.site).to.be.an('object');
+      expect(ortbData.site.publisher.id).to.equal('publisherIdValue');
+      // publisher.domain is optional. set when given
+      expect(ortbData.site.publisher.domain).to.equal(PUBLISHER_URL);
+    });
+
+    it('it should imp.tagId from adUnitCode', function () {
+      const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbData = bidRequest.data;
+      expect(ortbData.imp[0].tagId).to.equal('adunit-code');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -122,6 +162,10 @@ describe('FreePass adapter', function () {
             'userId': '56c4c789-71ce-46f5-989e-9e543f3d5f96',
             'commonId': 'commonIdValue'
           }
+        },
+        'adUnitCode': 'adunit-code',
+        'params': {
+          'publisherId': 'publisherIdValue'
         }
       }];
       bidderRequest = {};

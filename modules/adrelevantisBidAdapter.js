@@ -597,6 +597,8 @@ function parseMediaType(rtbBid) {
   const adType = rtbBid.ad_type;
   if (adType === VIDEO) {
     return VIDEO;
+  } else if (adType === NATIVE) {
+    return NATIVE;
   } else {
     return BANNER;
   }

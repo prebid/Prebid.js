@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -2202,7 +2202,8 @@ describe('IndexexchangeAdapter', function () {
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
-        expect(payload.device).to.be.undefined
+        expect(payload.device.h).to.exist;
+        expect(payload.device.w).to.exist;
       });
 
       it('should not set first party data if it is not an object', function () {
@@ -4904,6 +4905,24 @@ describe('IndexexchangeAdapter', function () {
       };
 
       expect(removeSiteIDs(request)).to.deep.equal(expected);
+    });
+  });
+  describe('addDeviceInfo', () => {
+    it('should add device to request when device already exists', () => {
+      let r = {
+        device: {
+          ip: '127.0.0.1'
+        }
+      }
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
+    });
+    it('should add device to request when device doesnt exist', () => {
+      let r = {}
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
     });
   });
 });
