@@ -1,16 +1,14 @@
 import { mgidSubmodule, storage } from '../../../modules/mgidRtdProvider.js';
 import {expect} from 'chai';
 import * as refererDetection from '../../../src/refererDetection';
+import {server} from '../../mocks/xhr.js';
 
 describe('Mgid RTD submodule', () => {
-  let server;
   let clock;
   let getRefererInfoStub;
   let getDataFromLocalStorageStub;
 
   beforeEach(() => {
-    server = sinon.fakeServer.create();
-
     clock = sinon.useFakeTimers();
 
     getRefererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
@@ -22,7 +20,6 @@ describe('Mgid RTD submodule', () => {
   });
 
   afterEach(() => {
-    server.restore();
     clock.restore();
     getRefererInfoStub.restore();
     getDataFromLocalStorageStub.restore();
@@ -309,7 +306,6 @@ describe('Mgid RTD submodule', () => {
     server.requests[0].respond(
       204,
       {'Content-Type': 'application/json'},
-      '{}'
     );
 
     assert.deepEqual(reqBidsConfigObj.ortb2Fragments.global, {});

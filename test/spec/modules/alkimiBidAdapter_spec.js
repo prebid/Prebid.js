@@ -14,8 +14,7 @@ const REQUEST = {
   },
   'params': {
     bidFloor: 0.1,
-    token: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
-    pos: 7
+    token: 'e64782a4-8e68-4c38-965b-80ccf115d46f'
   },
   'userIdAsEids': [{
     'source': 'criteo.com',
@@ -97,10 +96,6 @@ describe('alkimiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false)
 
       bid = Object.assign({}, REQUEST)
-      delete bid.params.bidFloor
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-
-      bid = Object.assign({}, REQUEST)
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -109,7 +104,6 @@ describe('alkimiBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
     let requestData = {
-      auctionId: '123',
       refererInfo: {
         page: 'http://test.com/path.html'
       },
@@ -137,10 +131,10 @@ describe('alkimiBidAdapter', function () {
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
-      expect(bidderRequest.data.requestId).to.equal('123')
+      expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
       expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'alkimi-onboarding.com', sid: '00001', hp: 1 }] })
-      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, sizes: [{width: 300, height: 250}], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode' })
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined })
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
