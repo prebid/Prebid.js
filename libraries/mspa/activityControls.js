@@ -25,7 +25,9 @@ export function isBasicConsentDenied(cd) {
     // minors 13+ who have not given consent
     cd.KnownChildSensitiveDataConsents[0] === 1 ||
     // minors under 13 cannot consent
-    isApplicable(cd.KnownChildSensitiveDataConsents[1]);
+    isApplicable(cd.KnownChildSensitiveDataConsents[1]) ||
+    // covered cannot be zero
+    cd.MspaCoveredTransaction === 0;
 }
 
 export function sensitiveNoticeIs(cd, value) {
@@ -86,20 +88,27 @@ const CONSENT_RULES = {
   [ACTIVITY_ENRICH_EIDS]: isConsentDenied,
   [ACTIVITY_ENRICH_UFPD]: isTransmitUfpdConsentDenied,
   [ACTIVITY_TRANSMIT_PRECISE_GEO]: isTransmitGeoConsentDenied
-}
+};
 
 export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDataHandler.getConsentData()?.applicableSections) {
-  return function() {
+  return function () {
     if (applicableSids().some(sid => sids.includes(sid))) {
       const consent = getConsent();
       if (consent == null) {
         return {allow: false, reason: 'consent data not available'};
       }
       if (denies(consent)) {
-        return {allow: false}
+        return {allow: false};
       }
     }
-  }
+  };
+}
+
+function flatSection(subsections) {
+  if (subsections == null) return subsections;
+  return subsections.reduceRight((subsection, consent) => {
+    return Object.assign(consent, subsection);
+  }, {});
 }
 
 export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
@@ -107,7 +116,12 @@ export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSE
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`)
   Object.entries(rules).forEach(([activity, denies]) => {
-    unreg.push(registerRule(activity, ruleName, mspaRule(sids, () => normalizeConsent(getConsentData()?.sectionData?.[api]), denies, () => getConsentData()?.applicableSections || [])))
-  })
-  return () => unreg.forEach(ur => ur())
+    unreg.push(registerRule(activity, ruleName, mspaRule(
+      sids,
+      () => normalizeConsent(flatSection(getConsentData()?.parsedSections?.[api])),
+      denies,
+      () => getConsentData()?.applicableSections || []
+    )));
+  });
+  return () => unreg.forEach(ur => ur());
 }

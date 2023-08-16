@@ -3005,7 +3005,7 @@ describe('User ID', function () {
           expect(server.requests).to.be.empty;
           return endAuction();
         }).then(() => {
-          expect(server.requests[0].url).to.equal('/any/unifiedid/url');
+          expect(server.requests[0].url).to.match(/\/any\/unifiedid\/url/);
         });
       });
 

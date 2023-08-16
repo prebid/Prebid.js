@@ -205,6 +205,10 @@ export const liveIntentIdSubmodule = {
         result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 
@@ -294,7 +298,18 @@ export const liveIntentIdSubmodule = {
         }
       }
     },
-
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 
