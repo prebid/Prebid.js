@@ -33,7 +33,8 @@ pbjs.setConfig({
       waitForIt: true,
       params: {
         accountId: 123,
-        bidders: ['sovrn', 'pubmatic']
+        bidders: ['sovrn', 'pubmatic'],
+        ids: { maid: ['424', '2982'], hem: 'my-hem' }
       }
     }]
   }
@@ -41,10 +42,10 @@ pbjs.setConfig({
 ```
 
 ### Parameters
-| Name           | Type          | Description                                                      | Default            |
-|:---------------|:--------------|:-----------------------------------------------------------------|:-------------------|
-| name           | String        | Real time data module name                                       | Always 'tapad_rtd' |
-| waitForIt      | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`            |
-| accountId      | String        | Your account id issued by Tapad                                  |                    |
-| bidders        | Array<string> | List of bidders for which you would like data to be set          |                    |
-| params.timeout | Integer       | timeout (ms)                                                     | 1000ms             |
+| Name             | Type                                    | Description                                                      | Default            |
+|:-----------------|:----------------------------------------|:-----------------------------------------------------------------|:-------------------|
+| name             | String                                  | Real time data module name                                       | Always 'tapad_rtd' |
+| waitForIt        | Boolean                                 | Should be `true` if there's an `auctionDelay` defined (optional) | `false`            |
+| params.accountId | String                                  | Your account id issued by Tapad                                  |                    |
+| params.bidders   | Array<string>                           | List of bidders for which you would like data to be set          |                    |
+| params.ids       | Record<string, Array<string> or string> | Additional identifiers to send to Tapad RTID endpoint            |                    |

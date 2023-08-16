@@ -275,14 +275,23 @@ describe('Tapad realtime module', () => {
   describe('extractConsentQueryString', () => {
     describe('when userConsent is empty', () => {
       it('returns undefined', () => {
-        expect(tapadRtdObj.extractConsentQueryString()).to.be.undefined
+        expect(tapadRtdObj.extractConsentQueryString({})).to.be.undefined
       })
     })
 
     describe('when userConsent exists', () => {
-      expect(
-        tapadRtdObj.extractConsentQueryString({ gdpr: { gdprApplies: 1, consentString: 'this-is-something' }, uspConsent: '1YYY' })
-      ).to.equal('?gdpr=1&gdpr_consent=this-is-something&us_privacy=1YYY')
+      it('builds query string', () => {
+        expect(
+          tapadRtdObj.extractConsentQueryString({}, { gdpr: { gdprApplies: 1, consentString: 'this-is-something' }, uspConsent: '1YYY' })
+        ).to.equal('?gdpr=1&gdpr_consent=this-is-something&us_privacy=1YYY')
+      })
+    })
+
+    describe('when config.ids exists', () => {
+      it('builds query string', () => {
+        expect(tapadRtdObj.extractConsentQueryString({ ids: { maid: ['424', '2982'], hem: 'my-hem' } }, { gdpr: { gdprApplies: 1, consentString: 'this-is-something' }, uspConsent: '1YYY' }))
+          .to.equal('?gdpr=1&gdpr_consent=this-is-something&us_privacy=1YYY&id.maid=424&id.maid=2982&id.hem=my-hem')
+      })
     })
   })
 })

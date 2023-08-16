@@ -1,7 +1,7 @@
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
-import { mergeDeep, safeJSONParse, timestamp } from '../src/utils.js';
+import { isArray, isPlainObject, mergeDeep, safeJSONParse, timestamp } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
 export const SUBMODULE_NAME = 'tapad_rtd';
@@ -33,7 +33,6 @@ export const tapadRtdObj = {
     if (now > new Date(stale).getTime()) {
       // request data envelope and manipulate bids
       tapadRtdObj.requestDataEnvelope(config, userConsent);
-      done();
     }
     tapadRtdObj.alterBids(reqBidsConfigObj, config);
     done()
@@ -61,28 +60,37 @@ export const tapadRtdObj = {
         storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, responseJson.expiresAt, null);
       }
     }
-    const queryString = tapadRtdObj.extractConsentQueryString(userConsent)
+    const queryString = tapadRtdObj.extractConsentQueryString(config, userConsent)
     const fullUrl = queryString == null ? `${TAPAD_RTD_URL}/acc/${config.accountId}/ids` : `${TAPAD_RTD_URL}/acc/${config.accountId}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
-  extractConsentQueryString(userConsent) {
+  extractConsentQueryString(config, userConsent) {
     const queryObj = {};
-    if (userConsent == null) {
-      return undefined;
+
+    if (userConsent != null) {
+      if (userConsent.gdpr != null) {
+        const { gdprApplies, consentString } = userConsent.gdpr;
+        mergeDeep(queryObj, {gdpr: gdprApplies, gdpr_consent: consentString})
+      }
+      if (userConsent.uspConsent != null) {
+        mergeDeep(queryObj, {us_privacy: userConsent.uspConsent})
+      }
     }
-    if (userConsent.gdpr != null) {
-      const { gdprApplies, consentString } = userConsent.gdpr;
-      mergeDeep(queryObj, {gdpr: gdprApplies, gdpr_consent: consentString})
+    const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&');
+
+    let idsString = '';
+    if (config.ids != null && isPlainObject(config.ids)) {
+      idsString = Object.entries(config.ids).map(([idType, val]) => {
+        if (isArray(val)) {
+          return val.map((singleVal) => `id.${idType}=${singleVal}`).join('&')
+        } else {
+          return `id.${idType}=${val}`
+        }
+      }).join('&')
     }
-    if (userConsent.uspConsent != null) {
-      mergeDeep(queryObj, {us_privacy: userConsent.uspConsent})
-    }
-    if (Object.keys(queryObj).length > 0) {
-      return Object.entries(queryObj).reduce((queryString, [key, val], i) => {
-        return `${queryString}${i === 0 ? '' : '&'}${key}=${val}`
-      }, '?')
-    }
-    return undefined;
+
+    const combinedString = [consentQueryString, idsString].filter((string) => string !== '').join('&');
+    return combinedString !== '' ? `?${combinedString}` : undefined;
   },
   /**
    * @function
