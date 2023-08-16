@@ -703,6 +703,33 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.source.tid).to.equal('abc');
     });
 
+    it('should properly transmit bidId if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'abc'
+          }
+        }
+      };
+      const bidRequests = [
+        {
+          bidId: 'bidId',
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].slotid).to.equal('bidId');
+    });
+
     it('should properly build a request if refererInfo is not provided', function () {
       const bidderRequest = {};
       const bidRequests = [
@@ -1886,6 +1913,11 @@ describe('The Criteo bidding adapter', function () {
         bidRequests: [{
           adUnitCode: 'test-requestId',
           bidId: 'test-bidId',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
           params: {
             networkId: 456,
           }
@@ -1902,6 +1934,202 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].dealId).to.equal('myDealCode');
       expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
       expect(bids[0].meta.networkName).to.equal('Criteo');
+    });
+
+    it('should properly parse a bid response with a networkId with twin ad unit banner win', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            creativecode: 'test-crId',
+            width: 728,
+            height: 90,
+            deal: 'myDealCode',
+            adomain: ['criteo.com'],
+            ext: {
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              mimes: ['video/mpeg'],
+              playerSize: [640, 480],
+              protocols: [5, 6],
+              maxduration: 30,
+              api: [1, 2]
+            }
+          },
+          params: {
+            networkId: 456,
+          },
+        }, {
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId2',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId2');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].ad).to.equal('test-ad');
+      expect(bids[0].creativeId).to.equal('test-crId');
+      expect(bids[0].width).to.equal(728);
+      expect(bids[0].height).to.equal(90);
+      expect(bids[0].dealId).to.equal('myDealCode');
+      expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
+      expect(bids[0].meta.networkName).to.equal('Criteo');
+    });
+
+    it('should properly parse a bid response with a networkId with twin ad unit video win', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            bidId: 'abc123',
+            cpm: 1.23,
+            displayurl: 'http://test-ad',
+            width: 728,
+            height: 90,
+            zoneid: 123,
+            video: true,
+            ext: {
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              mimes: ['video/mpeg'],
+              playerSize: [728, 90],
+              protocols: [5, 6],
+              maxduration: 30,
+              api: [1, 2]
+            }
+          },
+          params: {
+            networkId: 456,
+          },
+        }, {
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId2',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].vastUrl).to.equal('http://test-ad');
+      expect(bids[0].mediaType).to.equal(VIDEO);
+    });
+
+    it('should properly parse a bid response with a networkId with twin ad unit native win', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            creativecode: 'test-crId',
+            width: 728,
+            height: 90,
+            deal: 'myDealCode',
+            adomain: ['criteo.com'],
+            native: {
+              'products': [{
+                'sendTargetingKeys': false,
+                'title': 'Product title',
+                'description': 'Product desc',
+                'price': '100',
+                'click_url': 'https://product.click',
+                'image': {
+                  'url': 'https://publisherdirect.criteo.com/publishertag/preprodtest/creative.png',
+                  'height': 300,
+                  'width': 300
+                },
+                'call_to_action': 'Try it now!'
+              }],
+              'advertiser': {
+                'description': 'sponsor',
+                'domain': 'criteo.com',
+                'logo': { 'url': 'https://www.criteo.com/images/criteo-logo.svg', 'height': 300, 'width': 300 }
+              },
+              'privacy': {
+                'optout_click_url': 'https://info.criteo.com/privacy/informations',
+                'optout_image_url': 'https://static.criteo.net/flash/icon/nai_small.png',
+              },
+              'impression_pixels': [{ 'url': 'https://my-impression-pixel/test/impression' }, { 'url': 'https://cas.com/lg.com' }]
+            },
+            ext: {
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          mediaTypes: {
+            native: {}
+          },
+          params: {
+            networkId: 456,
+          },
+        }, {
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId2',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].requestId).to.equal('test-bidId');
+      expect(bids[0].cpm).to.equal(1.23);
+      expect(bids[0].mediaType).to.equal(NATIVE);
     });
 
     it('should properly parse a bid response with a zoneId', function () {
