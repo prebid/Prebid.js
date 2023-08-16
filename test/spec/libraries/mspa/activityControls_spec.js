@@ -35,6 +35,12 @@ describe('Consent interpretation', () => {
       }));
       expect(result).to.equal(true);
     });
+    it('should be true (basic consent conditions do not pass) with covered set to zero (invalid state)', () => {
+      const result = isBasicConsentDenied(mkConsent({
+        MspaCoveredTransaction: 0
+      }));
+      expect(result).to.equal(true);
+    });
     it('should not deny when consent for under-13 is null', () => {
       expect(isBasicConsentDenied(mkConsent({
         KnownChildSensitiveDataConsents: [0, null]

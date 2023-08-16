@@ -15,7 +15,9 @@ const AD_UNIT_CODE = 'mock/placement';
 
 describe('fledgeForGpt module', function() {
   let nextFnSpy;
-  fledge.init({enabled: true})
+  before(() => {
+    fledge.init({enabled: true})
+  });
 
   const bidRequest = {
     adUnitCode: AD_UNIT_CODE,

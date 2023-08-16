@@ -20,12 +20,14 @@ export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     if (!isEnabled) {
       getHook('addComponentAuction').before(addComponentAuctionHook);
+      getHook('makeBidRequests').after(markForFledge);
       isEnabled = true;
     }
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
   } else {
     if (isEnabled) {
       getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
+      getHook('makeBidRequests').getHooks({hook: markForFledge}).remove()
       isEnabled = false;
     }
     logInfo(`${MODULE} disabled`, cfg);
@@ -70,12 +72,15 @@ export function markForFledge(next, bidderRequests) {
   }
   next(bidderRequests);
 }
-getHook('makeBidRequests').after(markForFledge);
 
 export function setImpExtAe(imp, bidRequest, context) {
-  const impExt = imp.ext ?? {};
-  impExt.ae = context.bidderRequest.fledgeEnabled ? (impExt.ae ?? context.bidderRequest.defaultForSlots) : undefined;
-  imp.ext = impExt;
+  if (context.bidderRequest.fledgeEnabled) {
+    imp.ext = Object.assign(imp.ext || {}, {
+      ae: imp.ext?.ae ?? context.bidderRequest.defaultForSlots
+    })
+  } else {
+    delete imp.ext?.ae;
+  }
 }
 registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
 
