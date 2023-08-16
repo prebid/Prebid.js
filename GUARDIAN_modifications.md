@@ -49,7 +49,7 @@ gulp build
 6. Resolve any conflicts
 7. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
     ```sh
-    delete package-lock.json
+    rm package-lock.json
     rm -rf ./node_modules
     npm install
     ```
