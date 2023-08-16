@@ -1352,6 +1352,23 @@ export const spec = {
             });
         });
       }
+      let fledgeAuctionConfigs = deepAccess(response.body, 'ext.fledge_auction_configs');
+      if (fledgeAuctionConfigs) {
+        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+          return {
+            bidId,
+            config: Object.assign({
+              auctionSignals: {},
+            }, cfg)
+          }
+        });
+        return {
+          bids: bidResponses,
+          fledgeAuctionConfigs,
+        }
+      } else {
+        return bidResponses
+      }
     } catch (error) {
       logError(error);
     }
