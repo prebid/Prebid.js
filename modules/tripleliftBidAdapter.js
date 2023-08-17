@@ -79,9 +79,27 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    return bids.map(function(bid) {
+    let paapi = serverResponse.body.paapi || [];
+
+    let returnedBids = bids.map(function (bid) {
       return _buildResponseObject(bidderRequest, bid);
     });
+
+    if (!isEmpty(paapi)) {
+      let fledgeAuctionConfigs = paapi.map((config) => {
+        return {
+          bidId: bidderRequest.bids[config.imp_id].bidId,
+          config: config.auctionConfig
+        };
+      });
+
+      return {
+        returnedBids,
+        fledgeAuctionConfigs
+      };
+    } else {
+      return returnedBids;
+    }
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
