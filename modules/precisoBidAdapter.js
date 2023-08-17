@@ -36,7 +36,7 @@ export const spec = {
     let placements = [];
     let imp = [];
     let request = {
-      'id': bidderRequest.bidderRequestId,
+      'id': '12345',
       'imp': imp,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,

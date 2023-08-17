@@ -6,6 +6,7 @@ const DEFAULT_PRICE = 1
 const DEFAULT_CURRENCY = 'USD'
 const DEFAULT_BANNER_WIDTH = 300
 const DEFAULT_BANNER_HEIGHT = 250
+const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
   let bid = {
