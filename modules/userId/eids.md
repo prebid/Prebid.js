@@ -272,6 +272,13 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 3
         }]
+    },
+    {
+        source: 'euid.eu',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
     }
 ]
 ```

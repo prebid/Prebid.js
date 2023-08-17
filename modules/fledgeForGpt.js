@@ -20,12 +20,14 @@ export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     if (!isEnabled) {
       getHook('addComponentAuction').before(addComponentAuctionHook);
+      getHook('makeBidRequests').after(markForFledge);
       isEnabled = true;
     }
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
   } else {
     if (isEnabled) {
       getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
+      getHook('makeBidRequests').getHooks({hook: markForFledge}).remove()
       isEnabled = false;
     }
     logInfo(`${MODULE} disabled`, cfg);
@@ -56,16 +58,27 @@ function isFledgeSupported() {
 
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
+    const globalFledgeConfig = config.getConfig('fledgeForGpt');
+    const bidders = globalFledgeConfig?.bidders ?? [];
     bidderRequests.forEach((req) => {
-      req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
-    })
+      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length == 0 || bidders.includes(req.bidderCode));
+      Object.assign(req, config.runWithBidder(req.bidderCode, () => {
+        return {
+          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined),
+          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined)
+        }
+      }));
+    });
   }
   next(bidderRequests);
 }
-getHook('makeBidRequests').after(markForFledge);
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (!context.bidderRequest.fledgeEnabled) {
+  if (context.bidderRequest.fledgeEnabled) {
+    imp.ext = Object.assign(imp.ext || {}, {
+      ae: imp.ext?.ae ?? context.bidderRequest.defaultForSlots
+    })
+  } else {
     delete imp.ext?.ae;
   }
 }
