@@ -10,23 +10,6 @@ const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=preciso_srl';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
 
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
-    return false;
-  }
-  switch (bid['mediaType']) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
-    case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
-    default:
-      return false;
-  }
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -53,7 +36,7 @@ export const spec = {
     let placements = [];
     let imp = [];
     let request = {
-      'id': '123456',
+      'id': bidderRequest.bidderRequestId,
       'imp': imp,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
@@ -105,16 +88,31 @@ export const spec = {
     };
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    serverResponse = serverResponse.body;
-    for (let i = 0; i < serverResponse.length; i++) {
-      let resItem = serverResponse[i];
-      if (isBidResponseValid(resItem)) {
-        response.push(resItem);
-      }
-    }
-    return response;
+  interpretResponse: function (serverResponse) {
+    const response = serverResponse.body
+
+    const bids = []
+
+    response.seatbid.forEach(seat => {
+      seat.bid.forEach(bid => {
+        bids.push({
+          requestId: bid.impid,
+          cpm: bid.price,
+          width: bid.w,
+          height: bid.h,
+          creativeId: bid.crid,
+          ad: bid.adm,
+          currency: 'USD',
+          netRevenue: true,
+          ttl: 300,
+          meta: {
+            advertiserDomains: bid.adomain || [],
+          },
+        })
+      })
+    })
+
+    return bids
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {

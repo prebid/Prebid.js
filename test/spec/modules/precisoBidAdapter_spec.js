@@ -2,6 +2,11 @@ import {expect} from 'chai';
 import {spec} from '../../../modules/precisoBidAdapter.js';
 import { config } from '../../../src/config.js';
 
+const DEFAULT_PRICE = 1
+const DEFAULT_CURRENCY = 'USD'
+const DEFAULT_BANNER_WIDTH = 300
+const DEFAULT_BANNER_HEIGHT = 250
+
 describe('PrecisoAdapter', function () {
   let bid = {
     bidId: '23fhj33i987f',
@@ -81,169 +86,48 @@ describe('PrecisoAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('Should interpret banner response', function () {
-      const banner = {
-        body: [{
-          mediaType: 'banner',
-          width: 300,
-          height: 250,
-          cpm: 0.4,
-          ad: 'Test',
-          requestId: '23fhj33i987f',
-          ttl: 120,
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-          dealId: '1',
-          meta: {advertiserDomains: ['example.com']}
-        }]
-      };
-      let bannerResponses = spec.interpretResponse(banner);
-      expect(bannerResponses).to.be.an('array').that.is.not.empty;
-      let dataItem = bannerResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.width).to.equal(300);
-      expect(dataItem.height).to.equal(250);
-      expect(dataItem.ad).to.equal('Test');
-      expect(dataItem.meta).to.have.property('advertiserDomains')
-      expect(dataItem.meta.advertiserDomains).to.deep.equal(['example.com']);
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-    });
-    it('Should interpret video response', function () {
-      const video = {
-        body: [{
-          vastUrl: 'test.com',
-          mediaType: 'video',
-          cpm: 0.5,
-          requestId: '23fhj33i987f',
-          ttl: 120,
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-          dealId: '1'
-        }]
-      };
-      let videoResponses = spec.interpretResponse(video);
-      expect(videoResponses).to.be.an('array').that.is.not.empty;
+    it('should get correct bid response', function () {
+      let response = {
+        id: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
+        seatbid: [
+          {
+            bid: [
+              {
+                id: '123',
+                impid: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
+                price: DEFAULT_PRICE,
+                adm: '<b>hi</b>',
+                cid: 'test_cid',
+                crid: 'test_banner_crid',
+                w: DEFAULT_BANNER_WIDTH,
+                h: DEFAULT_BANNER_HEIGHT,
+                adomain: [],
+              }
+            ],
+            seat: BIDDER_CODE
+          }
+        ],
+      }
 
-      let dataItem = videoResponses[0];
-      expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.5);
-      expect(dataItem.vastUrl).to.equal('test.com');
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-    });
-    it('Should interpret native response', function () {
-      const native = {
-        body: [{
-          mediaType: 'native',
-          native: {
-            clickUrl: 'test.com',
-            title: 'Test',
-            image: 'test.com',
-            impressionTrackers: ['test.com'],
-          },
-          ttl: 120,
-          cpm: 0.4,
-          requestId: '23fhj33i987f',
-          creativeId: '2',
+      let expectedResponse = [
+        {
+          requestId: 'b4f290d7-d4ab-4778-ab94-2baf06420b22',
+          cpm: DEFAULT_PRICE,
+          width: DEFAULT_BANNER_WIDTH,
+          height: DEFAULT_BANNER_HEIGHT,
+          creativeId: 'test_banner_crid',
+          ad: '<b>hi</b>',
+          currency: DEFAULT_CURRENCY,
           netRevenue: true,
-          currency: 'USD',
-        }]
-      };
-      let nativeResponses = spec.interpretResponse(native);
-      expect(nativeResponses).to.be.an('array').that.is.not.empty;
+          ttl: 300,
+          meta: { advertiserDomains: [] },
+        }
+      ]
+      let result = spec.interpretResponse({ body: response })
 
-      let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
-      expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
-      expect(dataItem.requestId).to.equal('23fhj33i987f');
-      expect(dataItem.cpm).to.equal(0.4);
-      expect(dataItem.native.clickUrl).to.equal('test.com');
-      expect(dataItem.native.title).to.equal('Test');
-      expect(dataItem.native.image).to.equal('test.com');
-      expect(dataItem.native.impressionTrackers).to.be.an('array').that.is.not.empty;
-      expect(dataItem.native.impressionTrackers[0]).to.equal('test.com');
-      expect(dataItem.ttl).to.equal(120);
-      expect(dataItem.creativeId).to.equal('2');
-      expect(dataItem.netRevenue).to.be.true;
-      expect(dataItem.currency).to.equal('USD');
-    });
-    it('Should return an empty array if invalid banner response is passed', function () {
-      const invBanner = {
-        body: [{
-          width: 300,
-          cpm: 0.4,
-          ad: 'Test',
-          requestId: '23fhj33i987f',
-          ttl: 120,
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-          dealId: '1'
-        }]
-      };
-
-      let serverResponses = spec.interpretResponse(invBanner);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-    it('Should return an empty array if invalid video response is passed', function () {
-      const invVideo = {
-        body: [{
-          mediaType: 'video',
-          cpm: 0.5,
-          requestId: '23fhj33i987f',
-          ttl: 120,
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-          dealId: '1'
-        }]
-      };
-      let serverResponses = spec.interpretResponse(invVideo);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-    it('Should return an empty array if invalid native response is passed', function () {
-      const invNative = {
-        body: [{
-          mediaType: 'native',
-          clickUrl: 'test.com',
-          title: 'Test',
-          impressionTrackers: ['test.com'],
-          ttl: 120,
-          requestId: '23fhj33i987f',
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-        }]
-      };
-      let serverResponses = spec.interpretResponse(invNative);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-    it('Should return an empty array if invalid response is passed', function () {
-      const invalid = {
-        body: [{
-          ttl: 120,
-          creativeId: '2',
-          netRevenue: true,
-          currency: 'USD',
-          dealId: '1'
-        }]
-      };
-      let serverResponses = spec.interpretResponse(invalid);
-      expect(serverResponses).to.be.an('array').that.is.empty;
-    });
-  });
+      expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]))
+    })
+  })
   describe('getUserSyncs', function () {
     const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=preciso_srl&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
