@@ -78,15 +78,13 @@ export const tripleliftAdapterSpec = {
   },
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
-    let bids = serverResponse.body.bids || [];
-    let paapi = serverResponse.body.paapi || [];
+    const bids = serverResponse.body.bids || [];
+    const paapi = serverResponse.body.paapi || [];
 
-    let returnedBids = bids.map(function (bid) {
-      return _buildResponseObject(bidderRequest, bid);
-    });
+    const returnedBids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
 
-    if (!isEmpty(paapi)) {
-      let fledgeAuctionConfigs = paapi.map((config) => {
+    if (paapi.length > 0) {
+      const fledgeAuctionConfigs = paapi.map(config => {
         return {
           bidId: bidderRequest.bids[config.imp_id].bidId,
           config: config.auctionConfig
