@@ -1366,9 +1366,7 @@ export const spec = {
           bids: bidResponses,
           fledgeAuctionConfigs,
         }
-      } else {
-        return bidResponses
-      }
+      } 
     } catch (error) {
       logError(error);
     }
