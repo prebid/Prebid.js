@@ -7,9 +7,9 @@
 import {deepSetValue, isFn, isNumber, isPlainObject, isStr, logError, logInfo, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {uspDataHandler} from '../src/adapterManager.js';
-import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {getHook} from '../src/hook.js';
+import {enrichFPD} from '../src/fpd/enrichment.js';
 
 const DEFAULT_CONSENT_API = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 50;
@@ -100,6 +100,14 @@ function lookupUspConsent({onSuccess, onError}) {
     return onError('USP CMP not found.');
   }
 
+  function registerDataDelHandler(invoker, arg2) {
+    try {
+      invoker('registerDeletion', arg2, adapterManager.callDataDeletionRequest);
+    } catch (e) {
+      logError('Error invoking CMP `registerDeletion`:', e);
+    }
+  }
+
   // to collect the consent information from the user, we perform a call to USPAPI
   // to collect the user's consent choices represented as a string (via getUSPData)
 
@@ -115,11 +123,7 @@ function lookupUspConsent({onSuccess, onError}) {
       USPAPI_VERSION,
       callbackHandler.consentDataCallback
     );
-    uspapiFunction(
-      'registerDeletion',
-      USPAPI_VERSION,
-      adapterManager.callDataDeletionRequest
-    )
+    registerDataDelHandler(uspapiFunction, USPAPI_VERSION);
   } else {
     logInfo(
       'Detected USP CMP is outside the current iframe where Prebid.js is located, calling it now...'
@@ -129,11 +133,7 @@ function lookupUspConsent({onSuccess, onError}) {
       uspapiFrame,
       callbackHandler.consentDataCallback
     );
-    callUspApiWhileInIframe(
-      'registerDeletion',
-      uspapiFrame,
-      adapterManager.callDataDeletionRequest
-    );
+    registerDataDelHandler(callUspApiWhileInIframe, uspapiFrame);
   }
 
   let listening = false;
@@ -323,10 +323,14 @@ config.getConfig('consentManagement', config => setConsentConfig(config.consentM
 
 getHook('requestBids').before(requestBidsHook, 50);
 
-export function setOrtbUsp(ortbRequest, bidderRequest) {
-  if (bidderRequest.uspConsent) {
-    deepSetValue(ortbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-  }
+export function enrichFPDHook(next, fpd) {
+  return next(fpd.then(ortb2 => {
+    const consent = uspDataHandler.getConsentData();
+    if (consent) {
+      deepSetValue(ortb2, 'regs.ext.us_privacy', consent)
+    }
+    return ortb2;
+  }))
 }
 
-registerOrtbProcessor({type: REQUEST, name: 'usp', fn: setOrtbUsp});
+enrichFPD.before(enrichFPDHook);

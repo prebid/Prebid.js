@@ -6,7 +6,7 @@ import {
   SUA_SOURCE_UNKNOWN,
   suaFromUAData,
   uaDataToSUA
-} from '../../../libraries/fpd/sua.js';
+} from '../../../src/fpd/sua.js';
 
 describe('uaDataToSUA', () => {
   Object.entries({

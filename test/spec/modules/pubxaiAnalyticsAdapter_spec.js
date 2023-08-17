@@ -567,7 +567,9 @@ describe('pubxai analytics adapter', function() {
         'host': location.host,
         'path': location.pathname,
         'search': location.search,
-        'adUnitCount': 1
+        'adUnits': [
+          '/19968336/header-bid-tag-1'
+        ]
       },
       'floorDetail': {
         'fetchStatus': 'success',

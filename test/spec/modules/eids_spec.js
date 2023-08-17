@@ -172,6 +172,36 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('bidswitch', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('medianet', function() {
+    const userId = {
+      medianet: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
@@ -183,6 +213,21 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.com',
       uids: [{id: 'some-random-id-value', atype: 3}]
+    });
+  });
+
+  it('magnite', function() {
+    const userId = {
+      magnite: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
     });
   });
 
@@ -318,6 +363,21 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('euid', function() {
+    const userId = {
+      euid: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'euid.eu',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
+      }]
+    });
+  });
+
   it('kpuid', function() {
     const userId = {
       kpuid: 'Sample_Token'
@@ -392,7 +452,7 @@ describe('eids array generation for known sub-modules', function() {
 
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
-      source: 'amxrtb.com',
+      source: 'amxdt.net',
       uids: [{
         atype: 1,
         id,
@@ -432,9 +492,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('cpexId', () => {
+  it('czechAdId', () => {
     const id = 'some-random-id-value'
-    const userId = { cpexId: id };
+    const userId = { czechAdId: id };
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
       source: 'czechadid.cz',

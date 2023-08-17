@@ -481,6 +481,17 @@ describe('Adf adapter', function () {
             nativeParams: {
               title: { required: true, len: 140 }
             },
+            nativeOrtbRequest: {
+              assets: [
+                {
+                  required: 1,
+                  id: 0,
+                  title: {
+                    len: 140
+                  }
+                }
+              ]
+            },
             mediaTypes: {
               banner: {
                 sizes: [[100, 100], [200, 300]]
@@ -547,6 +558,57 @@ describe('Adf adapter', function () {
 
       describe('native', function () {
         describe('assets', function () {
+          it('should use nativeOrtbRequest instead of nativeParams or mediaTypes', function () {
+            let validBidRequests = [{
+              bidId: 'bidId',
+              params: { mid: 1000 },
+              nativeParams: {
+                title: { required: true, len: 200 },
+                image: { required: true, sizes: [150, 150] },
+                icon: { required: false, sizes: [150, 150] },
+                body: { required: false, len: 1140 },
+                sponsoredBy: { required: true },
+                cta: { required: false },
+                clickUrl: { required: false },
+                ortb: {
+                  ver: '1.2',
+                  assets: []
+                }
+              },
+              mediaTypes: {
+                native: {
+                  title: { required: true, len: 140 },
+                  image: { required: true, sizes: [150, 50] },
+                  icon: { required: false, sizes: [50, 50] },
+                  body: { required: false, len: 140 },
+                  sponsoredBy: { required: true },
+                  cta: { required: false },
+                  clickUrl: { required: false }
+                }
+              },
+              nativeOrtbRequest: {
+                assets: [
+                  { required: 1, title: { len: 200 } },
+                  { required: 1, img: { type: 3, w: 170, h: 70 } },
+                  { required: 0, img: { type: 1, w: 70, h: 70 } },
+                  { required: 0, data: { type: 2, len: 150 } },
+                  { required: 1, data: { type: 1 } },
+                  { required: 0, data: { type: 12 } },
+                ]
+              }
+            }];
+
+            let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
+            assert.ok(assets[0].title);
+            assert.equal(assets[0].title.len, 200);
+            assert.deepEqual(assets[1].img, { type: 3, w: 170, h: 70 });
+            assert.deepEqual(assets[2].img, { type: 1, w: 70, h: 70 });
+            assert.deepEqual(assets[3].data, { type: 2, len: 150 });
+            assert.deepEqual(assets[4].data, { type: 1 });
+            assert.deepEqual(assets[5].data, { type: 12 });
+            assert.ok(!assets[6]);
+          });
+
           it('should set correct asset id', function () {
             let validBidRequests = [{
               bidId: 'bidId',
@@ -555,14 +617,46 @@ describe('Adf adapter', function () {
                 title: { required: true, len: 140 },
                 image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
                 body: { len: 140 }
+              },
+              nativeOrtbRequest: {
+                assets: [
+                  {
+                    id: 0,
+                    required: 1,
+                    title: {
+                      len: 140
+                    }
+                  },
+                  {
+                    id: 1,
+                    required: 0,
+                    img: {
+                      type: 3,
+                      wmin: 836,
+                      hmin: 627,
+                      w: 325,
+                      h: 300,
+                      mimes: [ 'image/jpg', 'image/gif' ]
+                    }
+                  },
+                  {
+                    id: 2,
+                    data: {
+                      type: 2,
+                      len: 140
+                    }
+                  }
+                ]
               }
             }];
+
             let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].id, 0);
-            assert.equal(assets[1].id, 3);
-            assert.equal(assets[2].id, 4);
+            assert.equal(assets[1].id, 1);
+            assert.equal(assets[2].id, 2);
           });
+
           it('should add required key if it is necessary', function () {
             let validBidRequests = [{
               bidId: 'bidId',
@@ -572,9 +666,16 @@ describe('Adf adapter', function () {
                 image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
                 body: { len: 140 },
                 sponsoredBy: { required: true, len: 140 }
+              },
+              nativeOrtbRequest: {
+                assets: [
+                  { required: 1, title: { len: 140 } },
+                  { required: 0, img: { type: 3, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] } },
+                  { data: { type: 2, len: 140 } },
+                  { required: 1, data: { type: 1, len: 140 } }
+                ]
               }
             }];
-
             let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
 
             assert.equal(assets[0].required, 1);
@@ -593,8 +694,17 @@ describe('Adf adapter', function () {
                 icon: { required: false, sizes: [50, 50] },
                 body: { required: false, len: 140 },
                 sponsoredBy: { required: true },
-                cta: { required: false },
-                clickUrl: { required: false }
+                cta: { required: false }
+              },
+              nativeOrtbRequest: {
+                assets: [
+                  { required: 1, title: { len: 140 } },
+                  { required: 1, img: { type: 3, w: 150, h: 50 } },
+                  { required: 0, img: { type: 1, w: 50, h: 50 } },
+                  { required: 0, data: { type: 2, len: 140 } },
+                  { required: 1, data: { type: 1 } },
+                  { required: 0, data: { type: 12 } },
+                ]
               }
             }];
 
@@ -607,25 +717,6 @@ describe('Adf adapter', function () {
             assert.deepEqual(assets[4].data, { type: 1 });
             assert.deepEqual(assets[5].data, { type: 12 });
             assert.ok(!assets[6]);
-          });
-
-          describe('icon/image sizing', function () {
-            it('should flatten sizes and utilise first pair', function () {
-              const validBidRequests = [{
-                bidId: 'bidId',
-                params: { mid: 1000 },
-                nativeParams: {
-                  image: {
-                    sizes: [[200, 300], [100, 200]]
-                  },
-                }
-              }];
-
-              let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
-              assert.ok(assets[0].img);
-              assert.equal(assets[0].img.w, 200);
-              assert.equal(assets[0].img.h, 300);
-            });
           });
 
           it('should utilise aspect_ratios', function () {
@@ -647,6 +738,12 @@ describe('Adf adapter', function () {
                     ratio_width: 2
                   }]
                 }
+              },
+              nativeOrtbRequest: {
+                assets: [
+                  { img: { type: 3, wmin: 100, ext: { aspectratios: ['1:3'] } } },
+                  { img: { type: 1, wmin: 10, ext: { aspectratios: ['2:5'] } } }
+                ]
               }
             }];
 
@@ -671,6 +768,14 @@ describe('Adf adapter', function () {
                 icon: {
                   aspect_ratios: []
                 }
+              },
+              nativeOrtbRequest: {
+                request: {
+                  assets: [
+                    { img: {} },
+                    { img: {} }
+                  ]
+                }
               }
             }];
 
@@ -689,13 +794,18 @@ describe('Adf adapter', function () {
                   ratio_width: 1
                 }]
               }
+            },
+            nativeOrtbRequest: {
+              assets: [
+                { img: { type: 3, ext: { aspectratios: ['3:1'] } } }
+              ]
             }
           }];
 
           let assets = JSON.parse(spec.buildRequests(validBidRequests, { refererInfo: { page: 'page' } }).data).imp[0].native.request.assets;
           assert.ok(assets[0].img);
-          assert.equal(assets[0].img.wmin, 0);
-          assert.equal(assets[0].img.hmin, 0);
+          assert.ok(!assets[0].img.wmin);
+          assert.ok(!assets[0].img.hmin);
           assert.ok(!assets[1]);
         });
       });
@@ -717,7 +827,7 @@ describe('Adf adapter', function () {
       let serverResponse = {
         body: {
           seatbid: [{
-            bid: [{impid: '1', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}}]
+            bid: [{impid: '1', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 0, title: {text: 'Asset title text'}}]}}]
           }, {
             bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link' }, assets: [{id: 1, data: {value: 'Asset title text'}}]}}]
           }]
@@ -729,19 +839,23 @@ describe('Adf adapter', function () {
           {
             bidId: 'bidId1',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           },
           {
             bidId: 'bidId2',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           }
         ]
@@ -756,11 +870,11 @@ describe('Adf adapter', function () {
         body: {
           seatbid: [{
             bid: [
-              {impid: '1', native: {ver: '1.1', link: { url: 'link1' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}},
+              {impid: '1', native: {ver: '1.1', link: { url: 'link1' }, assets: [{id: 0, title: {text: 'Asset title text'}}]}},
               {impid: '4', native: {ver: '1.1', link: { url: 'link4' }, assets: [{id: 1, title: {text: 'Asset title text'}}]}}
             ]
           }, {
-            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link2' }, assets: [{id: 1, data: {value: 'Asset title text'}}]}}]
+            bid: [{impid: '2', native: {ver: '1.1', link: { url: 'link2' }, assets: [{id: 0, data: {value: 'Asset title text'}}]}}]
           }]
         }
       };
@@ -770,45 +884,53 @@ describe('Adf adapter', function () {
           {
             bidId: 'bidId1',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           },
           {
             bidId: 'bidId2',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           },
           {
             bidId: 'bidId3',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           },
           {
             bidId: 'bidId4',
             params: { mid: 1000 },
-            nativeParams: {
-              title: { required: true, len: 140 },
-              image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
-              body: { len: 140 }
+            nativeOrtbRequest: {
+              assets: [
+                { id: 0, required: 1, title: { len: 140 } },
+                { id: 1, required: 0, img: { type: 3, wmin: 836, hmin: 627, ext: { aspectratios: ['6:5'] } } },
+                { id: 2, required: 0, data: { type: 2 } }
+              ]
             }
           }
         ]
       };
 
       bids = spec.interpretResponse(serverResponse, bidRequest).map(bid => {
-        const { requestId, native: { clickUrl } } = bid;
-        return [ requestId, clickUrl ];
+        const { requestId, native: { ortb: { link: { url } } } } = bid;
+        return [ requestId, url ];
       });
 
       assert.equal(bids.length, 3);
@@ -850,6 +972,34 @@ describe('Adf adapter', function () {
           {
             bidId: 'bidId1',
             params: { mid: 1000 },
+            nativeOrtbRequest: {
+              assets: [
+                {
+                  id: 0,
+                  required: 1,
+                  title: {
+                    len: 140
+                  }
+                }, {
+                  id: 1,
+                  required: 1,
+                  img: {
+                    type: 3,
+                    wmin: 836,
+                    hmin: 627,
+                    ext: {
+                      aspectratios: ['6:5']
+                    }
+                  }
+                }, {
+                  id: 2,
+                  required: 0,
+                  data: {
+                    type: 2
+                  }
+                }
+              ]
+            },
             nativeParams: {
               title: { required: true, len: 140 },
               image: { required: false, wmin: 836, hmin: 627, w: 325, h: 300, mimes: ['image/jpg', 'image/gif'] },
@@ -876,56 +1026,45 @@ describe('Adf adapter', function () {
       const bid = [
         {
           impid: '1',
-          price: 93.1231,
-          crid: '12312312',
           native: {
-            assets: [
-              {
-                data: null,
-                id: 0,
-                img: null,
-                required: 0,
-                title: {text: 'title', len: null},
-                video: null
-              }, {
-                data: null,
-                id: 2,
-                img: {type: null, url: 'test.url.com/Files/58345/308185.jpg?bv=1', w: 30, h: 10},
-                required: 0,
-                title: null,
-                video: null
-              }, {
-                data: null,
-                id: 3,
-                img: {type: null, url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 100, h: 100},
-                required: 0,
-                title: null,
-                video: null
-              }, {
-                data: {type: null, len: null, value: 'body'},
-                id: 4,
-                img: null,
-                required: 0,
-                title: null,
-                video: null
-              }, {
-                data: {type: null, len: null, value: 'cta'},
-                id: 1,
-                img: null,
-                required: 0,
-                title: null,
-                video: null
-              }, {
-                data: {type: null, len: null, value: 'sponsoredBy'},
-                id: 5,
-                img: null,
-                required: 0,
-                title: null,
-                video: null
+            ver: '1.1',
+            assets: [{
+              id: 1,
+              required: 0,
+              title: {
+                text: 'FLS Native'
               }
-            ],
-            link: { url: 'clickUrl', clicktrackers: ['clickTracker1', 'clickTracker2'] },
-            imptrackers: ['imptrackers url1', 'imptrackers url2'],
+            }, {
+              id: 3,
+              required: 0,
+              data: {
+                value: 'Adform'
+              }
+            }, {
+              id: 2,
+              required: 0,
+              data: {
+                value: 'Native banner. WOW.'
+              }
+            }, {
+              id: 4,
+              required: 0,
+              data: {
+                value: 'Oho'
+              }
+            }, {
+              id: 5,
+              required: 0,
+              img: { url: 'test.url.com/Files/58345/308185.jpg?bv=1', w: 30, h: 10 }
+            }, {
+              id: 0,
+              required: 0,
+              img: { url: 'test.url.com/Files/58345/308200.jpg?bv=1', w: 300, h: 300 }
+            }],
+            link: {
+              url: 'clickUrl', clicktrackers: [ 'clickTracker1', 'clickTracker2' ]
+            },
+            imptrackers: ['imptracker url1', 'imptracker url2'],
             jstracker: 'jstracker'
           }
         }
@@ -940,24 +1079,66 @@ describe('Adf adapter', function () {
       };
       let bidRequest = {
         data: {},
-        bids: [{ bidId: 'bidId1' }]
+        bids: [{
+          bidId: 'bidId1',
+          nativeOrtbRequest: {
+            ver: '1.2',
+            assets: [{
+              id: 0,
+              required: 1,
+              img: {
+                type: 3,
+                wmin: 200,
+                hmin: 166,
+                ext: {
+                  aspectratios: ['6:5']
+                }
+              }
+            }, {
+              id: 1,
+              required: 1,
+              title: {
+                len: 150
+              }
+            }, {
+              id: 2,
+              required: 0,
+              data: {
+                type: 2
+              }
+            }, {
+              id: 3,
+              required: 1,
+              data: {
+                type: 1
+              }
+            }, {
+              id: 4,
+              required: 1,
+              data: {
+                type: 12
+              }
+            }, {
+              id: 5,
+              required: 0,
+              img: {
+                type: 1,
+                wmin: 10,
+                hmin: 10,
+                ext: {
+                  aspectratios: ['1:1']
+                }
+              }
+            }]
+          },
+        }]
       };
 
       const result = spec.interpretResponse(serverResponse, bidRequest)[0].native;
       const native = bid[0].native;
       const assets = native.assets;
-      assert.deepEqual({
-        clickUrl: native.link.url,
-        clickTrackers: native.link.clicktrackers,
-        impressionTrackers: native.imptrackers,
-        javascriptTrackers: [ native.jstracker ],
-        title: assets[0].title.text,
-        icon: {url: assets[1].img.url, width: assets[1].img.w, height: assets[1].img.h},
-        image: {url: assets[2].img.url, width: assets[2].img.w, height: assets[2].img.h},
-        body: assets[3].data.value,
-        cta: assets[4].data.value,
-        sponsoredBy: assets[5].data.value
-      }, result);
+
+      assert.deepEqual(result, {ortb: native});
     });
     it('should return empty when there is no bids in response', function () {
       const serverResponse = {

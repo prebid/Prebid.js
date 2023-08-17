@@ -8,7 +8,7 @@ import CONSTANTS from '../src/constants.json';
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.7'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
@@ -63,11 +63,28 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  if (ortb2.regs?.gpp !== undefined) {
+    deepSetValue(requestTemplate, 'regs.ext.gpp', ortb2.regs.gpp);
+    deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
+  }
+
+  if (ortb2.device?.ifa !== undefined) {
+    deepSetValue(requestTemplate, 'device.ifa', ortb2.device.ifa);
+  }
+
+  if (ortb2.device?.geo !== undefined) {
+    deepSetValue(requestTemplate, 'device.geo', ortb2.device.geo);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa');
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+    if (!deepAccess(requestTemplate, 'device.geo')) {
+      const geo = deepAccess(bidRequest, 'params.app.geo');
+      deepSetValue(requestTemplate, 'device.geo', geo);
+    }
+    if (!deepAccess(requestTemplate, 'device.ifa')) {
+      const ifa = deepAccess(bidRequest, 'params.app.ifa');
+      deepSetValue(requestTemplate, 'device.ifa', ifa);
+    }
   }
 
   const eids = deepAccess(bidRequest, 'userIdAsEids');

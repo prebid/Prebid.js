@@ -16,6 +16,7 @@ const DEFAULT_BID_TTL = 20;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'video', 'battr', 'bcat', 'badv', 'bidfloor'];
+const DEFAULT_TMAX = 500;
 
 /**
  * PulsePoint Bid Adapter.
@@ -54,6 +55,7 @@ export const spec = {
       user: user(bidRequests[0], bidderRequest),
       regs: regs(bidderRequest),
       source: source(bidRequests[0].schain),
+      tmax: bidderRequest.timeout || DEFAULT_TMAX,
     };
     return {
       method: 'POST',

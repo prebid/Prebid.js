@@ -33,26 +33,39 @@ gulp build
 
 ## How to Upgrade
 
+1. Ensure you are running the version of node specified in `.nvmrc`
+    > node -v
+
 1. Make sure you have the latest commits to `guardian/Prebid.js`:
     > git pull
 
-2. Check your remotes to see if you have upstream:
+1. Check your remotes to see if you have upstream:
    > git remote -v
-3. If not add upstream to your remotes:
+1. If not add upstream to your remotes:
     > git remote add upstream git@github.com:prebid/Prebid.js.git
-4. Fetch all from upstream:
+1. Fetch all from upstream:
     > git fetch --all
-5. Checkout a new branch e.g.:
+1. Checkout a new branch e.g.:
     > git checkout -b upgrade-v6.26.0
-5. You should now have all the release tags and you can merge a tag e.g.:
+1. You should now have all the release tags and you can merge a tag e.g.:
     > git merge 6.26.0 
-6. Resolve any conflicts
-7. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
+1. Resolve any conflicts
+1. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
     ```sh
-    delete package-lock.json
+    rm package-lock.json
     rm -rf ./node_modules
     npm install
     ```
-8. Create new build
+1. Create new build
     > npm run build
-9. Check in the new `build/dist` output
+1. Check in the new `build/dist` output
+
+### Troubleshooting
+
+If you get the following error when trying to run `npm install`:
+
+> Node gyp ERR - invalid mode: 'rU' while trying to load binding.gyp
+
+it is due to a bug between node-gyp and Python >=v3.11. This stackoverflow answer is a quick fix around the issue:
+
+https://stackoverflow.com/a/75260066

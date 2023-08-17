@@ -2,7 +2,6 @@ import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { createEidsArray } from './userId/eids.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -22,7 +21,7 @@ export const sharethroughAdapterSpec = {
   isBidRequestValid: bid => !!bid.params.pkey && bid.bidder === BIDDER_CODE,
 
   buildRequests: (bidRequests, bidderRequest) => {
-    const timeout = config.getConfig('bidderTimeout');
+    const timeout = bidderRequest.timeout;
     const firstPartyData = bidderRequest.ortb2 || {};
 
     const nonHttp = sharethroughInternal.getProtocol().indexOf('http') < 0;
@@ -66,7 +65,7 @@ export const sharethroughAdapterSpec = {
 
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
-    req.user.ext.eids = createEidsArray(deepAccess(bidRequests[0], 'userId')) || [];
+    req.user.ext.eids = bidRequests[0].userIdAsEids || [];
 
     if (bidderRequest.gdprConsent) {
       const gdprApplies = bidderRequest.gdprConsent.gdprApplies === true;
@@ -94,8 +93,8 @@ export const sharethroughAdapterSpec = {
       if (videoRequest) {
         // default playerSize, only change this if we know width and height are properly defined in the request
         let [w, h] = [640, 360];
-        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[1]) {
-          [w, h] = videoRequest.playerSize;
+        if (videoRequest.playerSize && videoRequest.playerSize[0] && videoRequest.playerSize[0][0] && videoRequest.playerSize[0][1]) {
+          [w, h] = videoRequest.playerSize[0];
         }
 
         impression.video = {

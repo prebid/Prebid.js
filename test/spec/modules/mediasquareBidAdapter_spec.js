@@ -98,6 +98,8 @@ describe('MediaSquare bid adapter tests', function () {
       'code': 'test/publishername_atf_desktop_rg_pave',
       'bid_id': 'aaaa1234',
       'adomain': ['test.com'],
+      'context': 'instream',
+      'increment': 1.0,
     }],
   }};
 
@@ -161,7 +163,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.ttl).to.equal(300);
     expect(bid.requestId).to.equal('aaaa1234');
     expect(bid.mediasquare).to.exist;
+    expect(bid.mediasquare.bidder).to.exist;
     expect(bid.mediasquare.bidder).to.equal('msqClassic');
+    expect(bid.mediasquare.context).to.exist;
+    expect(bid.mediasquare.context).to.equal('instream');
+    expect(bid.mediasquare.increment).to.exist;
+    expect(bid.mediasquare.increment).to.equal(1.0);
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
     expect(bid.meta).to.exist;
     expect(bid.meta.advertiserDomains).to.exist;

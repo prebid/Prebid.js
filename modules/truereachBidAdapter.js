@@ -1,6 +1,5 @@
 import { deepAccess, getUniqueIdentifierStr } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const SUPPORTED_AD_TYPES = [BANNER];
@@ -140,7 +139,7 @@ function buildCommonQueryParamsFromBids(validBidRequests, bidderRequest) {
     device: {
       ua: window.navigator.userAgent
     },
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequest.timeout
   };
 
   return defaultParams;

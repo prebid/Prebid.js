@@ -17,6 +17,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const BIDDER_CODE = 'medianet';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
@@ -51,7 +52,7 @@ const aliases = [
   { code: 'aax', gvlid: 720 },
 ];
 
-$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
 
 function getTopWindowReferrer() {
   try {
@@ -177,7 +178,7 @@ function extParams(bidRequest, bidderRequests) {
   const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: $$PREBID_GLOBAL$$.version },
+    { prebid_version: getGlobal().version },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
@@ -185,7 +186,7 @@ function extParams(bidRequest, bidderRequests) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && {schain: sChain}
   );
 }
@@ -333,7 +334,7 @@ function generatePayload(bidRequests, bidderRequests) {
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
     ortb2: bidderRequests.ortb2,
-    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
+    tmax: bidderRequests.timeout
   }
 }
 
@@ -358,7 +359,7 @@ function getLoggingData(event, data) {
   params.evtid = 'projectevents';
   params.project = 'prebid';
   params.acid = deepAccess(data, '0.auctionId') || '';
-  params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
+  params.cid = getGlobal().medianetGlobals.cid || '';
   params.crid = data.map((adunit) => deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
   params.dn = mnData.urlData.domain || '';
@@ -442,7 +443,7 @@ export const spec = {
       return false;
     }
 
-    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
+    Object.assign(getGlobal().medianetGlobals, !getGlobal().medianetGlobals.cid && {cid: bid.params.cid});
 
     return true;
   },
