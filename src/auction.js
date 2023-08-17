@@ -554,12 +554,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   }
 }
 
-export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
-  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
-    auctionInstance.executeCallback(true);
-  }
-}
-
 // Add a bid to the auction.
 export function addBidToAuction(auctionInstance, bidResponse) {
   setupBidTargeting(bidResponse);
@@ -567,8 +561,6 @@ export function addBidToAuction(auctionInstance, bidResponse) {
   useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
   auctionInstance.addBidReceived(bidResponse);
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
-
-  doCallbacksIfTimedout(auctionInstance, bidResponse);
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -615,16 +607,11 @@ const _storeInCache = (batch) => {
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
       if (error) {
         logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-        doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
-
-          doCallbacksIfTimedout(auctionInstance, bidResponse);
         } else {
           bidResponse.videoCacheKey = cacheId.uuid;
-
           if (!bidResponse.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
