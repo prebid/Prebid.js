@@ -79,16 +79,13 @@ export const sharethroughAdapterSpec = {
       req.regs.ext.us_privacy = bidderRequest.uspConsent;
     }
 
-    // TODO: IG-178207212: this is probably where we could add our GPP
-    // logic
-    // // example from another adapter:
-    // if (bidderRequest?.gppConsent?.gppString) {
-    //   deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
-    //   deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
-    // } else if (bidderRequest?.ortb2?.regs?.gpp) {
-    //   deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
-    //   deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
-    // }
+    if (bidderRequest?.gppConsent?.gppString) {
+      req.regs.gpp = bidderRequest.gppConsent.gppString;
+      req.regs.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      req.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
     const imps = bidRequests
       .map((bidReq) => {
@@ -221,11 +218,19 @@ export const sharethroughAdapterSpec = {
 
   // TODO: IG-178207212: we could consider adding gdpr & gpp as params to this method
   // e.g. function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent)
-  getUserSyncs: (syncOptions, serverResponses) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
+    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => (
+      { type: 'image',
+        url: url +
+          '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
+          '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
+          '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
+          '&gpp=' + encodeURIComponent(gppConsent?.gppString) +
+          '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','))
+      })) : [];
   },
 
   // Empty implementation for prebid core to be able to find it

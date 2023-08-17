@@ -251,7 +251,15 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
+        gppConsent: {
+          gppString: 'abc12345234',
+          applicableSections: [7, 8]
+        },
         ortb2: {
+          regs: {
+            gpp: 'abc12345234',
+            gpp_sid: [7, 8]
+          },
           source: {
             tid: 'auction-id',
           },
@@ -314,6 +322,12 @@ describe('sharethrough adapter spec', function () {
               expect(eid.uids[0].id).to.equal(expectedEids[eid.source].id);
               expect(eid.uids[0].atype).to.be.ok;
             }
+
+            expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
+            expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections);
+
+            expect(openRtbReq.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
+            expect(openRtbReq.regs.ext.gpp_sid).to.equal(bidderRequest.ortb2.regs.gpp_sid);
 
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
