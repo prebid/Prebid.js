@@ -179,6 +179,9 @@ export const spec = {
       paramsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
+          if (typeof params[param] == 'number') {
+            params[param] = params[param].toString();
+          }
         }
       });
     };

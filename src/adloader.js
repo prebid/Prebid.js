@@ -24,7 +24,9 @@ const _approvedLoadExternalJSList = [
   'confiant',
   'arcspan',
   'airgrid',
-  'clean.io'
+  'clean.io',
+  'a1Media',
+  'geoedge',
 ]
 
 /**
