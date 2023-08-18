@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {config} from 'src/config.js';
 import {loadExternalScript} from '../../../src/adloader';
+import {isRendererRequired} from '../../../src/Renderer';
 import {spec, GOOGLE_CONSENT} from 'modules/spotxBidAdapter.js';
 
 describe('the spotx adapter', function () {
@@ -158,10 +159,22 @@ describe('the spotx adapter', function () {
         position: 1
       };
 
-      bid.userId = {
-        id5id: { uid: 'id5id_1' },
-        tdid: 'tdid_1'
-      };
+      bid.userIdAsEids = [{
+        source: 'adserver.org',
+        uids: [{id: 'tdid_1', atype: 1, ext: {rtiPartner: 'TDID'}}]
+      },
+      {
+        source: 'id5-sync.com',
+        uids: [{id: 'id5id_1', ext: {}}]
+      },
+      {
+        source: 'uidapi.com',
+        uids: [{
+          id: 'uid_1',
+          atype: 3
+        }]
+      }
+      ];
 
       bid.crumbs = {
         pubcid: 'pubcid_1'
@@ -205,6 +218,15 @@ describe('the spotx adapter', function () {
       expect(request.data.user.ext).to.deep.equal({
         consented_providers_settings: GOOGLE_CONSENT,
         eids: [{
+          source: 'adserver.org',
+          uids: [{
+            id: 'tdid_1',
+            atype: 1,
+            ext: {
+              rtiPartner: 'TDID'
+            }
+          }]
+        }, {
           source: 'id5-sync.com',
           uids: [{
             id: 'id5id_1',
@@ -212,16 +234,17 @@ describe('the spotx adapter', function () {
           }]
         },
         {
-          source: 'adserver.org',
+          source: 'uidapi.com',
           uids: [{
-            id: 'tdid_1',
+            id: 'uid_1',
+            atype: 3,
             ext: {
-              rtiPartner: 'TDID'
+              rtiPartner: 'UID2'
             }
           }]
         }],
         fpc: 'pubcid_1'
-      })
+      });
 
       expect(request.data.source).to.deep.equal({
         ext: {
@@ -545,6 +568,11 @@ describe('the spotx adapter', function () {
       }
       renderer.render();
       expect(hasRun).to.equal(true);
+    });
+
+    it('should include the url property on the renderer for Prebid Core checks', function () {
+      var renderer = spec.interpretResponse(serverResponse, bidderRequestObj)[0].renderer;
+      expect(isRendererRequired(renderer)).to.be.true;
     });
   });
 

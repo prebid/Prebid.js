@@ -109,6 +109,13 @@
  */
 
 /**
+ * @function?
+ * @summary on data deletion request
+ * @name RtdSubmodule#onDataDeletionRequest
+ * @param {SubmoduleConfig} config
+ */
+
+/**
  * @interface ModuleConfig
  */
 
@@ -156,8 +163,15 @@ import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
-import {gdprDataHandler, uspDataHandler} from '../../src/adapterManager.js';
+import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
+import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {MODULE_TYPE_RTD} from '../../src/activities/modules.js';
+import {guardOrtb2Fragments} from '../../libraries/objectGuard/ortbGuard.js';
+import {activityParamsBuilder} from '../../src/activities/params.js';
+
+const activityParams = activityParamsBuilder((al) => adapterManager.resolveAlias(al));
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -180,6 +194,7 @@ let _userConsent;
  */
 export function attachRealTimeDataProvider(submodule) {
   registeredSubModules.push(submodule);
+  GDPR_GVLIDS.register(MODULE_TYPE_RTD, submodule.name, submodule.gvlid)
   return function detach() {
     const idx = registeredSubModules.indexOf(submodule)
     if (idx >= 0) {
@@ -229,6 +244,7 @@ export function init(config) {
     _dataProviders = realTimeData.dataProviders;
     setEventsListeners();
     getHook('startAuction').before(setBidRequestsData, 20); // RTD should run before FPD
+    adapterManager.callDataDeletionRequest.before(onDataDeletionRequest);
     initSubModules();
   });
 }
@@ -237,6 +253,7 @@ function getConsentData() {
   return {
     gdpr: gdprDataHandler.getConsentData(),
     usp: uspDataHandler.getConsentData(),
+    gpp: gppDataHandler.getConsentData(),
     coppa: !!(config.getConfig('coppa'))
   }
 }
@@ -266,7 +283,7 @@ function initSubModules() {
  * @param {Object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export function setBidRequestsData(fn, reqBidsConfigObj) {
+export const setBidRequestsData = timedAuctionHook('rtd', function setBidRequestsData(fn, reqBidsConfigObj) {
   _userConsent = getConsentData();
 
   const relevantSubModules = [];
@@ -286,6 +303,7 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
   let callbacksExpected = prioritySubModules.length;
   let isDone = false;
   let waitTimeout;
+  const verifiers = [];
 
   if (!relevantSubModules.length) {
     return exitHook();
@@ -294,7 +312,12 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
   waitTimeout = setTimeout(exitHook, shouldDelayAuction ? _moduleConfig.auctionDelay : 0);
 
   relevantSubModules.forEach(sm => {
-    sm.getBidRequestData(reqBidsConfigObj, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
+    const fpdGuard = guardOrtb2Fragments(reqBidsConfigObj.ortb2Fragments || {}, activityParams(MODULE_TYPE_RTD, sm.name));
+    verifiers.push(fpdGuard.verify);
+    sm.getBidRequestData({
+      ...reqBidsConfigObj,
+      ortb2Fragments: fpdGuard.obj
+    }, onGetBidRequestDataCallback.bind(sm), sm.config, _userConsent)
   });
 
   function onGetBidRequestDataCallback() {
@@ -315,9 +338,10 @@ export function setBidRequestsData(fn, reqBidsConfigObj) {
     }
     isDone = true;
     clearTimeout(waitTimeout);
+    verifiers.forEach(fn => fn());
     fn.call(this, reqBidsConfigObj);
   }
-}
+});
 
 /**
  * loop through configured data providers If the data provider has registered getTargetingData,
@@ -383,6 +407,19 @@ export function deepMerge(arr) {
     }
     return merged;
   }, {});
+}
+
+export function onDataDeletionRequest(next, ...args) {
+  subModules.forEach((sm) => {
+    if (typeof sm.onDataDeletionRequest === 'function') {
+      try {
+        sm.onDataDeletionRequest(sm.config);
+      } catch (e) {
+        logError(`Error executing ${sm.name}.onDataDeletionRequest`, e)
+      }
+    }
+  });
+  next.apply(this, args);
 }
 
 module('realTimeData', attachRealTimeDataProvider);

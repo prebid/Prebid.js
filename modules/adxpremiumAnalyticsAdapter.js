@@ -263,7 +263,7 @@ adxpremiumAnalyticsAdapter.enableAnalytics = function (config) {
   }
 
   adxpremiumAnalyticsAdapter.originEnableAnalytics(config); // call the base class function
-}
+};
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adxpremiumAnalyticsAdapter,

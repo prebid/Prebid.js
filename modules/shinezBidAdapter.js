@@ -286,7 +286,7 @@ function generateBidParameters(bid, bidderRequest) {
     floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid || '',
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -364,7 +364,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -382,7 +382,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     ua: navigator.userAgent,
     session_id: getBidIdParameter('auctionId', generalObject),
     tmax: timeout
-  }
+  };
 
   const userIdsParam = getBidIdParameter('userId', generalObject);
   if (userIdsParam) {
@@ -431,5 +431,5 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.page_url = generalParams.page_url || config.getConfig('pageUrl') || deepAccess(window, 'location.href');
   }
 
-  return generalParams
+  return generalParams;
 }

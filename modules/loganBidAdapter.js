@@ -72,7 +72,7 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = bidderRequest.gdprConsent;
       }
     }
 
@@ -85,7 +85,7 @@ export const spec = {
         schain: bid.schain || {},
         bidfloor: getBidFloor(bid)
       };
-      const mediaType = bid.mediaTypes
+      const mediaType = bid.mediaTypes;
 
       if (mediaType && mediaType[BANNER] && mediaType[BANNER].sizes) {
         placement.sizes = mediaType[BANNER].sizes;

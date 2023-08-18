@@ -3,6 +3,9 @@ import {
   logError, logWarn, logMessage, deepAccess
 } from './utils.js';
 import {find} from './polyfill.js';
+import {getGlobal} from './prebidGlobal.js';
+
+const pbjsInstance = getGlobal();
 const moduleCode = 'outstream';
 
 /**
@@ -19,6 +22,7 @@ export function Renderer(options) {
   this.config = config;
   this.handlers = {};
   this.id = id;
+  this.renderNow = renderNow;
 
   // a renderer may push to the command queue to delay rendering until the
   // render function is loaded by loadExternalScript, at which point the the command
@@ -60,7 +64,7 @@ export function Renderer(options) {
       this.cmd.unshift(runRender) // should render run first ?
       loadExternalScript(url, moduleCode, this.callback, this.documentContext);
     }
-  }.bind(this) // bind the function to this object to avoid 'this' errors
+  }.bind(this); // bind the function to this object to avoid 'this' errors
 }
 
 Renderer.install = function({ url, config, id, callback, loaded, adUnitCode, renderNow }) {
@@ -107,7 +111,7 @@ Renderer.prototype.process = function() {
  * @returns {Boolean}
  */
 export function isRendererRequired(renderer) {
-  return !!(renderer && renderer.url);
+  return !!(renderer && (renderer.url || renderer.renderNow));
 }
 
 /**
@@ -129,7 +133,7 @@ export function executeRenderer(renderer, bid, doc) {
 }
 
 function isRendererPreferredFromAdUnit(adUnitCode) {
-  const adUnits = $$PREBID_GLOBAL$$.adUnits;
+  const adUnits = pbjsInstance.adUnits;
   const adUnit = find(adUnits, adUnit => {
     return adUnit.code === adUnitCode;
   });

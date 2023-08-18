@@ -67,7 +67,7 @@ export const spec = {
       if (mediaType === BANNER) {
         data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
-        ).join('|')
+        ).join('|');
       } else {
         data.width = data.height = 200;
 

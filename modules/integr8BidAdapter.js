@@ -78,7 +78,7 @@ export const spec = {
       placements: placements,
       contents: contents,
       data: data
-    }
+    };
 
     return [{
       method: 'POST',
@@ -117,7 +117,7 @@ export const spec = {
     }
     return bidResponses;
   }
-}
+};
 
 /**
 * Generate size param for bid request using sizes array

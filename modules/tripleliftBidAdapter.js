@@ -9,9 +9,9 @@ const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600;
-let gdprApplies = true;
+let gdprApplies = null;
 let consentString = null;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -40,8 +40,12 @@ export const tripleliftAdapterSpec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+      } else {
+        gdprApplies = true;
       }
+
+      tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
         consentString = bidderRequest.gdprConsent.consentString;
         tlCall = tryAppendQueryString(tlCall, 'cmp_cs', consentString);
@@ -50,6 +54,10 @@ export const tripleliftAdapterSpec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest && bidderRequest.fledgeEnabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
     }
 
     if (config.getConfig('coppa') === true) {
@@ -76,7 +84,7 @@ export const tripleliftAdapterSpec = {
     });
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -87,7 +95,7 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
-    if (consentString !== null) {
+    if (consentString !== null || gdprApplies) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
@@ -96,17 +104,33 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
+    if (gppConsent) {
+      if (gppConsent.gppString) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
+      }
+      if (gppConsent.applicableSections && gppConsent.applicableSections.length !== 0) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', _filterSid(gppConsent.applicableSections));
+      }
+    }
+
     return [{
       type: syncType,
       url: syncEndpoint
     }];
   }
-}
+};
 
 function _getSyncType(syncOptions) {
   if (!syncOptions) return;
   if (syncOptions.iframeEnabled) return 'iframe';
   if (syncOptions.pixelEnabled) return 'image';
+}
+
+function _filterSid(sid) {
+  return sid.filter(element => {
+    return Number.isInteger(element);
+  })
+    .join(',');
 }
 
 function _buildPostBody(bidRequests, bidderRequest) {
@@ -130,8 +154,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
+      // legacy method for extracting ortb2Imp.ext
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+
+      // preferred method for extracting ortb2Imp.ext
+      if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+        imp.ext = { ...bidRequest.ortb2Imp.ext };
+      }
     }
+
     return imp;
   });
 
@@ -139,7 +170,8 @@ function _buildPostBody(bidRequests, bidderRequest) {
     ...getUnifiedIdEids([bidRequests[0]]),
     ...getIdentityLinkEids([bidRequests[0]]),
     ...getCriteoEids([bidRequests[0]]),
-    ...getPubCommonEids([bidRequests[0]])
+    ...getPubCommonEids([bidRequests[0]]),
+    ...getUniversalEids(bidRequests[0])
   ];
 
   if (eids.length > 0) {
@@ -153,6 +185,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (!isEmpty(ext)) {
     data.ext = ext;
   }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
+  }
+
+  if (bidderRequest?.ortb2) {
+    data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
+  }
+
   return data;
 }
 
@@ -189,6 +230,9 @@ function _getORTBVideo(bidRequest) {
       logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
       video.placement = 3
     }
+  }
+  if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
+    video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
 
   // clean up oRTB object
@@ -312,6 +356,24 @@ function getPubCommonEids(bidRequest) {
   return getEids(bidRequest, 'pubcid', 'pubcid.org', 'pubcid');
 }
 
+function getUniversalEids(bidRequest) {
+  let common = ['adserver.org', 'liveramp.com', 'criteo.com', 'pubcid.org'];
+  let eids = [];
+  if (bidRequest.userIdAsEids) {
+    bidRequest.userIdAsEids.forEach(id => {
+      try {
+        if (common.indexOf(id.source) === -1) {
+          let uids = id.uids.map(uid => ({ id: uid.id, ext: { rtiPartner: id.source } }));
+          eids.push({ source: id.source, uids });
+        }
+      } catch (err) {
+        logWarn(`Triplelift: Error attempting to add ${id} to bid request`, err);
+      }
+    });
+  }
+  return eids;
+}
+
 function getEids(bidRequest, type, source, rtiPartner) {
   return bidRequest
     .map(getUserId(type)) // bids -> userIds of a certain type
@@ -412,6 +474,10 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
+    }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;

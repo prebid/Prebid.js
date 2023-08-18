@@ -78,7 +78,7 @@ export const c1xAdapter = {
       url: URL,
       data: payloadString,
       bids: bidIdTags
-    })
+    });
     return bidRequest;
   },
 

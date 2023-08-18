@@ -17,6 +17,9 @@ describe('Adkernel adapter', function () {
         banner: {
           sizes: [[300, 250], [300, 200]]
         }
+      },
+      ortb2Imp: {
+        battr: [6, 7, 9]
       }
     }, bid2_zone2 = {
       bidder: 'adkernel',
@@ -95,12 +98,12 @@ describe('Adkernel adapter', function () {
       params: {
         zoneId: 1,
         host: 'rtb.adkernel.com',
-        video: {api: [1, 2]}
       },
       mediaTypes: {
         video: {
           context: 'instream',
-          playerSize: [[640, 480]]
+          playerSize: [[640, 480]],
+          api: [1, 2]
         }
       },
       adUnitCode: 'ad-unit-1'
@@ -293,6 +296,7 @@ describe('Adkernel adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest, bidRequests, _;
+
     before(function () {
       [_, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
@@ -337,6 +341,11 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
 
+    it('should copy FPD to imp.banner', function() {
+      expect(bidRequest.imp[0].banner).to.have.property('battr');
+      expect(bidRequest.imp[0].banner.battr).to.be.eql([6, 7, 9]);
+    });
+
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.not.have.property('regs');
@@ -345,11 +354,16 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        buildBidderRequest('https://example.com/index.html',
-          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}, uspConsent: '1YNN'}));
+        buildBidderRequest('https://example.com/index.html', {
+          gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}},
+          uspConsent: '1YNN',
+          gppConsent: {gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [2]}}
+        ));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
+      expect(bidRequest.regs.gpp).to.be.eql('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(bidRequest.regs.gpp_sid).to.be.eql([2]);
       expect(bidRequest).to.have.property('user');
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
     });

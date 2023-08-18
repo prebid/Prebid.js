@@ -6,6 +6,7 @@ import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
 import {logError} from '../../src/utils.js';
 import {GreedyPromise} from '../../src/utils/promise.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
 
@@ -35,12 +36,12 @@ export function processFpd({global = {}, bidder = {}} = {}) {
   return result;
 }
 
-export function startAuctionHook(fn, req) {
+export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHook(fn, req) {
   processFpd(req.ortb2Fragments).then((ortb2Fragments) => {
     Object.assign(req.ortb2Fragments, ortb2Fragments);
     fn.call(this, req);
   })
-}
+});
 
 function setupHook() {
   getHook('startAuction').before(startAuctionHook, 10);

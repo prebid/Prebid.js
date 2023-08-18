@@ -255,7 +255,7 @@ sonobiAdapter.sendData = function (auction, data) {
       contentType: 'text/plain'
     }
   );
-}
+};
 
 function _logInfo(message, meta) {
   logInfo(buildLogMessage(message), meta);

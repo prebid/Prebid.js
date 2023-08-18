@@ -72,6 +72,7 @@ describe('sharethrough adapter spec', function () {
         {
           bidder: 'sharethrough',
           bidId: 'bidId1',
+          transactionId: 'transactionId1',
           sizes: [[300, 250], [300, 600]],
           params: {
             pkey: 'aaaa1111',
@@ -85,36 +86,114 @@ describe('sharethrough adapter spec', function () {
           },
           ortb2Imp: {
             ext: {
+              tid: 'transaction-id-1',
+              gpid: 'universal-id',
               data: {
-                pbadslot: 'universal-id',
+                pbadslot: 'pbadslot-id',
               },
             },
           },
-          userId: {
-            tdid: 'fake-tdid',
-            pubcid: 'fake-pubcid',
-            idl_env: 'fake-identity-link',
-            id5id: {
-              uid: 'fake-id5id',
-              ext: {
-                linkType: 2,
-              },
+          userIdAsEids: [
+            {
+              'source': 'pubcid.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-pubcid'
+                },
+              ]
             },
-            lipb: {
-              lipbid: 'fake-lipbid',
+            {
+              'source': 'liveramp.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-identity-link'
+                }
+              ]
             },
-            criteoId: 'fake-criteo',
-            britepoolid: 'fake-britepool',
-            intentIqId: 'fake-intentiq',
-            lotamePanoramaId: 'fake-lotame',
-            parrableId: {
-              eid: 'fake-parrable',
+            {
+              'source': 'id5-sync.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-id5id'
+                }
+              ]
             },
-            netId: 'fake-netid',
-            sharedid: {
-              id: 'fake-sharedid',
+            {
+              'source': 'adserver.org',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-tdid'
+                }
+              ]
             },
-          },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-criteo'
+                }
+              ]
+            },
+            {
+              'source': 'britepool.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-britepool'
+                }
+              ]
+            },
+            {
+              'source': 'liveintent.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lipbid'
+                }
+              ]
+            },
+            {
+              'source': 'intentiq.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-intentiq'
+                }
+              ]
+            },
+            {
+              'source': 'crwdcntrl.net',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-lotame'
+                }
+              ]
+            },
+            {
+              'source': 'parrable.com',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-parrable'
+                }
+              ]
+            },
+            {
+              'source': 'netid.de',
+              'uids': [
+                {
+                  'atype': 1,
+                  'id': 'fake-netid'
+                }
+              ]
+            }
+          ],
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
           },
@@ -136,6 +215,7 @@ describe('sharethrough adapter spec', function () {
           bidder: 'sharethrough',
           bidId: 'bidId2',
           sizes: [[600, 300]],
+          transactionId: 'transactionId2',
           params: {
             pkey: 'bbbb2222',
           },
@@ -150,7 +230,7 @@ describe('sharethrough adapter spec', function () {
               api: [3],
               mimes: ['video/3gpp'],
               protocols: [2, 3],
-              playerSize: [640, 480],
+              playerSize: [[640, 480]],
               startdelay: 42,
               skipmin: 10,
               skipafter: 20,
@@ -168,6 +248,12 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
+        ortb2: {
+          source: {
+            tid: 'auction-id'
+          }
+        },
+        timeout: 242
       };
     });
 
@@ -229,6 +315,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
 
+            expect(openRtbReq.source.tid).to.equal(bidderRequest.ortb2.source.tid);
             expect(openRtbReq.source.ext.version).not.to.be.undefined;
             expect(openRtbReq.source.ext.str).not.to.be.undefined;
             expect(openRtbReq.source.ext.schain).to.deep.equal(bidRequests[0].schain);
@@ -310,12 +397,28 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('transaction id at the impression level', () => {
+        it('should include transaction id when provided', () => {
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.tid).to.equal('transaction-id-1');
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+      });
+
       describe('universal id', () => {
         it('should include gpid when universal id is provided', () => {
           const requests = spec.buildRequests(bidRequests, bidderRequest);
 
           expect(requests[0].data.imp[0].ext.gpid).to.equal('universal-id');
-          expect(requests[1].data.imp[0].ext).to.be.undefined;
+          expect(requests[1].data.imp[0].ext).to.be.empty;
+        });
+
+        it('should include gpid when pbadslot is provided without universal id', () => {
+          delete bidRequests[0].ortb2Imp.ext.gpid;
+          const requests = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(requests[0].data.imp[0].ext.gpid).to.equal('pbadslot-id');
         });
       });
 
@@ -480,6 +583,8 @@ describe('sharethrough adapter spec', function () {
               },
             },
           },
+          bcat: ['IAB1', 'IAB2-1'],
+          badv: ['domain1.com', 'domain2.com'],
         };
 
         it('should include first party data in open rtb request, site section', () => {
@@ -493,12 +598,19 @@ describe('sharethrough adapter spec', function () {
         });
 
         it('should include first party data in open rtb request, user section', () => {
-          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
 
           expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
           expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
           expect(openRtbReq.user.ext.data).to.deep.equal(firstPartyData.user.ext.data);
           expect(openRtbReq.user.ext.eids).not.to.be.undefined;
+        });
+
+        it('should include first party data in open rtb request, ORTB blocked section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
+
+          expect(openRtbReq.bcat).to.deep.equal(firstPartyData.bcat);
+          expect(openRtbReq.badv).to.deep.equal(firstPartyData.badv);
         });
       });
     });
@@ -592,6 +704,81 @@ describe('sharethrough adapter spec', function () {
           expect(bannerBid.ad).to.equal('vastTag');
           expect(bannerBid.meta.advertiserDomains).to.deep.equal([]);
           expect(bannerBid.vastXml).to.equal('vastTag');
+        });
+      });
+
+      describe('meta object', () => {
+        beforeEach(() => {
+          request = spec.buildRequests(bidRequests, bidderRequest)[0];
+          response = {
+            body: {
+              seatbid: [{
+                bid: [{
+                  id: '123',
+                  impid: 'bidId1',
+                  w: 300,
+                  h: 250,
+                  price: 42,
+                  crid: 'creative',
+                  dealid: 'deal',
+                  adomain: ['domain.com'],
+                  adm: 'markup',
+                }],
+              }],
+            },
+          };
+        });
+
+        it('should have null optional fields when the response\'s optional seatbid[].bid[].ext field is empty', () => {
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.be.null;
+          expect(bid.meta.networkName).to.be.null;
+          expect(bid.meta.agencyId).to.be.null;
+          expect(bid.meta.agencyName).to.be.null;
+          expect(bid.meta.advertiserId).to.be.null;
+          expect(bid.meta.advertiserName).to.be.null;
+          expect(bid.meta.brandId).to.be.null;
+          expect(bid.meta.brandName).to.be.null;
+          expect(bid.meta.demandSource).to.be.null;
+          expect(bid.meta.dchain).to.be.null;
+          expect(bid.meta.primaryCatId).to.be.null;
+          expect(bid.meta.secondaryCatIds).to.be.null;
+          expect(bid.meta.mediaType).to.be.null;
+        });
+
+        it('should have populated fields when the response\'s optional seatbid[].bid[].ext fields are filled', () => {
+          response.body.seatbid[0].bid[0].ext = {
+            networkId: 'my network id',
+            networkName: 'my network name',
+            agencyId: 'my agency id',
+            agencyName: 'my agency name',
+            advertiserId: 'my advertiser id',
+            advertiserName: 'my advertiser name',
+            brandId: 'my brand id',
+            brandName: 'my brand name',
+            demandSource: 'my demand source',
+            dchain: { 'my key': 'my value' },
+            primaryCatId: 'my primary cat id',
+            secondaryCatIds: ['my', 'secondary', 'cat', 'ids'],
+            mediaType: 'my media type',
+          };
+
+          const bid = spec.interpretResponse(response, request)[0];
+
+          expect(bid.meta.networkId).to.equal('my network id');
+          expect(bid.meta.networkName).to.equal('my network name');
+          expect(bid.meta.agencyId).to.equal('my agency id');
+          expect(bid.meta.agencyName).to.equal('my agency name');
+          expect(bid.meta.advertiserId).to.equal('my advertiser id');
+          expect(bid.meta.advertiserName).to.equal('my advertiser name');
+          expect(bid.meta.brandId).to.equal('my brand id');
+          expect(bid.meta.brandName).to.equal('my brand name');
+          expect(bid.meta.demandSource).to.equal('my demand source');
+          expect(bid.meta.dchain).to.deep.equal({ 'my key': 'my value' });
+          expect(bid.meta.primaryCatId).to.equal('my primary cat id');
+          expect(bid.meta.secondaryCatIds).to.deep.equal(['my', 'secondary', 'cat', 'ids']);
+          expect(bid.meta.mediaType).to.equal('my media type');
         });
       });
     });

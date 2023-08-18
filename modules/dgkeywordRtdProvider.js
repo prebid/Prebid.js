@@ -20,11 +20,18 @@ import { getGlobal } from '../src/prebidGlobal.js';
  * @param {Object} userConsent
  */
 export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, userConsent) {
-  const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1?url=';
   const PROFILE_TIMEOUT_MS = 1000;
   const timeout = (moduleConfig && moduleConfig.params && moduleConfig.params.timeout && Number(moduleConfig.params.timeout) > 0) ? Number(moduleConfig.params.timeout) : PROFILE_TIMEOUT_MS;
-  const url = (moduleConfig && moduleConfig.params && moduleConfig.params.url) ? moduleConfig.params.url : URL + encodeURIComponent(window.location.href);
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+  callback = (function(cb) {
+    let done = false;
+    return function () {
+      if (!done) {
+        done = true;
+        return cb.apply(this, arguments);
+      }
+    }
+  })(callback);
   let isFinish = false;
   logMessage('[dgkeyword sub module]', adUnits, timeout);
   let setKeywordTargetBidders = getTargetBidderOfDgKeywords(adUnits);
@@ -34,7 +41,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   } else {
     logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
     logMessage('[dgkeyword sub module] get targets from profile api start.');
-    ajax(url, {
+    ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.enableReadFpid), {
       success: function(response) {
         const res = JSON.parse(response);
         if (!isFinish) {
@@ -48,7 +55,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
               keywords['opectx'] = res['t'];
             }
             if (Object.keys(keywords).length > 0) {
-              const targetBidKeys = {}
+              const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
                 // set keywords to params
                 bid.params.keywords = keywords;
@@ -86,6 +93,26 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
       }
       callback();
     }, timeout);
+  }
+}
+
+export function getProfileApiUrl(customeUrl, enableReadFpid) {
+  const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1';
+  const fpid = (enableReadFpid) ? readFpidFromLocalStrage() : '';
+  let url = customeUrl || URL;
+  url = url + '?url=' + encodeURIComponent(window.location.href) + ((fpid) ? `&fpid=${fpid}` : '');
+  return url;
+}
+
+export function readFpidFromLocalStrage() {
+  try {
+    const fpid = window.localStorage.getItem('ope_fpid');
+    if (fpid) {
+      return fpid;
+    }
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 

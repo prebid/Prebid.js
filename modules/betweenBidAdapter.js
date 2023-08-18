@@ -43,7 +43,8 @@ export const spec = {
         rr: getRr(),
         s: i.params && i.params.s,
         bidid: i.bidId,
-        transactionid: i.transactionId,
+        transactionid: i.ortb2Imp?.ext?.tid,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionid: i.auctionId
       };
 
@@ -59,9 +60,9 @@ export const spec = {
       if (i.params.itu !== undefined) {
         params.itu = i.params.itu;
       }
-      if (i.params.cur !== undefined) {
-        params.cur = i.params.cur;
-      }
+
+      params.cur = i.params.cur || 'USD';
+
       if (i.params.subid !== undefined) {
         params.subid = i.params.subid;
       }
@@ -90,7 +91,7 @@ export const spec = {
         }
       }
 
-      requests.push({data: params})
+      requests.push({data: params});
     })
     return {
       method: 'POST',
