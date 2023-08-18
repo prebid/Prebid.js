@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { spec } from 'modules/vrtcalBidAdapter'
 import { newBidder } from 'src/adapters/bidderFactory'
+import { config } from 'src/config.js';
 
 describe('vrtcalBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -49,6 +50,22 @@ describe('vrtcalBidAdapter', function () {
       floorInfo = {currency: 'USD', floor: 0.55};
       request = spec.buildRequests(bidRequests);
       expect(request[0].data).to.match(/"bidfloor":0.55/);
+    });
+
+    it('pass GDPR,CCPA, and COPPA indicators/consent strings with the request when present', function () {
+      bidRequests[0].gdprConsent = {consentString: 'gdpr-consent-string', gdprApplies: true};
+      bidRequests[0].uspConsent = 'ccpa-consent-string';
+      config.setConfig({ coppa: false });
+
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"user":{"ext":{"consent":"gdpr-consent-string"}}/);
+      expect(request[0].data).to.match(/"regs":{"coppa":0,"ext":{"gdpr":1,"us_privacy":"ccpa-consent-string"}}/);
+    });
+
+    it('pass bidder timeout/tmax with the request', function () {
+      config.setConfig({ bidderTimeout: 435 });
+      request = spec.buildRequests(bidRequests);
+      expect(request[0].data).to.match(/"tmax":435/);
     });
   });
 

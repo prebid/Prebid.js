@@ -115,7 +115,7 @@ describe('BeOp Bid Adapter tests', () => {
         },
         'refererInfo':
         {
-          'canonicalUrl': 'http://test.te'
+          'canonicalUrl': 'test.te'
         }
       };
 
@@ -124,7 +124,20 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.tc_string).to.exist;
       expect(payload.tc_string).to.equal('BOJ8RZsOJ8RZsABAB8AAAAAZ+A==');
       expect(payload.url).to.exist;
-      expect(payload.url).to.equal('http://localhost:9876/context.html');
+      // check that the protocol is added correctly
+      expect(payload.url).to.equal('http://test.te');
+    });
+
+    it('should not prepend the protocol in page url if already present', function () {
+      const bidderRequest = {
+        'refererInfo': {
+          'canonicalUrl': 'https://test.te'
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.url).to.exist;
+      expect(payload.url).to.equal('https://test.te');
     });
   });
 

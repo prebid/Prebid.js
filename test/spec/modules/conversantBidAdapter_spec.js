@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
+import { config } from '../../../src/config.js';
+import {deepAccess} from 'src/utils';
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
@@ -70,6 +72,7 @@ describe('Conversant adapter tests', function() {
         video: {
           context: 'instream',
           playerSize: [632, 499],
+          pos: 3
         }
       },
       placementCode: 'pcode003',
@@ -106,6 +109,26 @@ describe('Conversant adapter tests', function() {
     {
       bidder: 'conversant',
       params: {
+        site_id: siteId,
+        position: 2,
+      },
+      mediaTypes: {
+        video: {
+          context: 'instream',
+          mimes: ['video/mp4', 'video/x-flv'],
+          pos: 7,
+        }
+      },
+      placementCode: 'pcode005',
+      transactionId: 'tx005',
+      bidId: 'bid005',
+      bidderRequestId: '117d765b87bed38',
+      auctionId: 'req000'
+    },
+    // video with first party data
+    {
+      bidder: 'conversant',
+      params: {
         site_id: siteId
       },
       mediaTypes: {
@@ -114,12 +137,38 @@ describe('Conversant adapter tests', function() {
           mimes: ['video/mp4', 'video/x-flv']
         }
       },
-      placementCode: 'pcode005',
-      transactionId: 'tx005',
-      bidId: 'bid005',
+      ortb2Imp: {
+        instl: 1,
+        ext: {
+          data: {
+            pbadslot: 'homepage-top-rect'
+          }
+        }
+      },
+      placementCode: 'pcode006',
+      transactionId: 'tx006',
+      bidId: 'bid006',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
-    }];
+    },
+    {
+      bidder: 'conversant',
+      params: {
+        site_id: siteId
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [[728, 90], [468, 60]],
+          pos: 5
+        }
+      },
+      placementCode: 'pcode001',
+      transactionId: 'tx001',
+      bidId: 'bid007',
+      bidderRequestId: '117d765b87bed38',
+      auctionId: 'req000'
+    }
+  ];
 
   const bidResponses = {
     body: {
@@ -205,7 +254,7 @@ describe('Conversant adapter tests', function() {
     const page = 'http://test.com?a=b&c=123';
     const bidderRequest = {
       refererInfo: {
-        referer: page
+        page: page
       }
     };
     const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -216,7 +265,7 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.have.property('id', 'req000');
     expect(payload).to.have.property('at', 1);
     expect(payload).to.have.property('imp');
-    expect(payload.imp).to.be.an('array').with.lengthOf(6);
+    expect(payload.imp).to.be.an('array').with.lengthOf(8);
 
     expect(payload.imp[0]).to.have.property('id', 'bid000');
     expect(payload.imp[0]).to.have.property('secure', 1);
@@ -258,7 +307,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[3]).to.not.have.property('tagid');
     expect(payload.imp[3]).to.have.property('video');
-    expect(payload.imp[3].video).to.not.have.property('pos');
+    expect(payload.imp[3].video).to.have.property('pos', 3);
     expect(payload.imp[3].video).to.have.property('w', 632);
     expect(payload.imp[3].video).to.have.property('h', 499);
     expect(payload.imp[3].video).to.have.property('mimes');
@@ -296,7 +345,7 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(versionPattern);
     expect(payload.imp[5]).to.not.have.property('tagid');
     expect(payload.imp[5]).to.have.property('video');
-    expect(payload.imp[5].video).to.not.have.property('pos');
+    expect(payload.imp[5].video).to.have.property('pos', 2);
     expect(payload.imp[5].video).to.not.have.property('w');
     expect(payload.imp[5].video).to.not.have.property('h');
     expect(payload.imp[5].video).to.have.property('mimes');
@@ -305,6 +354,27 @@ describe('Conversant adapter tests', function() {
     expect(payload.imp[5].video).to.not.have.property('api');
     expect(payload.imp[5].video).to.not.have.property('maxduration');
     expect(payload.imp[5]).to.not.have.property('banner');
+
+    expect(payload.imp[6]).to.have.property('id', 'bid006');
+    expect(payload.imp[6]).to.have.property('video');
+    expect(payload.imp[6].video).to.have.property('mimes');
+    expect(payload.imp[6].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+    expect(payload.imp[6]).to.not.have.property('banner');
+    expect(payload.imp[6]).to.have.property('instl');
+    expect(payload.imp[6]).to.have.property('ext');
+    expect(payload.imp[6].ext).to.have.property('data');
+    expect(payload.imp[6].ext.data).to.have.property('pbadslot');
+
+    expect(payload.imp[7]).to.have.property('id', 'bid007');
+    expect(payload.imp[7]).to.have.property('secure', 1);
+    expect(payload.imp[7]).to.have.property('bidfloor', 0);
+    expect(payload.imp[7]).to.have.property('displaymanager', 'Prebid.js');
+    expect(payload.imp[7]).to.have.property('displaymanagerver').that.matches(versionPattern);
+    expect(payload.imp[7]).to.not.have.property('tagid');
+    expect(payload.imp[7]).to.have.property('banner');
+    expect(payload.imp[7].banner).to.have.property('pos', 5);
+    expect(payload.imp[7].banner).to.have.property('format');
+    expect(payload.imp[7].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
 
     expect(payload).to.have.property('site');
     expect(payload.site).to.have.property('id', siteId);
@@ -321,14 +391,42 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.property('user'); // there should be no user by default
   });
 
+  it('Verify first party data', () => {
+    const bidderRequest = {
+      refererInfo: {page: 'http://test.com?a=b&c=123'},
+      ortb2: {site: {content: {series: 'MySeries', season: 'MySeason', episode: 3, title: 'MyTitle'}}}
+    };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const payload = request.data;
+    expect(payload.site).to.have.property('content');
+    expect(payload.site.content).to.have.property('series');
+    expect(payload.site.content).to.have.property('season');
+    expect(payload.site.content).to.have.property('episode');
+    expect(payload.site.content).to.have.property('title');
+  });
+
+  it('Verify supply chain data', () => {
+    const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
+    const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};
+    const bidsWithSchain = bidRequests.map((bid) => {
+      return Object.assign({
+        schain: schain
+      }, bid);
+    });
+    const request = spec.buildRequests(bidsWithSchain, bidderRequest);
+    const payload = request.data;
+    expect(deepAccess(payload, 'source.ext.schain.nodes')).to.exist;
+    expect(payload.source.ext.schain.nodes[0].asi).equals(schain.nodes[0].asi);
+  });
+
   it('Verify override url', function() {
     const testUrl = 'https://someurl?name=value';
-    const request = spec.buildRequests([{params: {white_label_url: testUrl}}]);
+    const request = spec.buildRequests([{params: {white_label_url: testUrl}}], {});
     expect(request.url).to.equal(testUrl);
   });
 
   it('Verify interpretResponse', function() {
-    const request = spec.buildRequests(bidRequests);
+    const request = spec.buildRequests(bidRequests, {});
     const response = spec.interpretResponse(bidResponses, request);
     expect(response).to.be.an('array').with.lengthOf(4);
 
@@ -391,7 +489,7 @@ describe('Conversant adapter tests', function() {
       Object.assign(unit, {crumbs: {pubcid: 12345}});
     });
     //  construct http post payload
-    const payload = spec.buildRequests(requests).data;
+    const payload = spec.buildRequests(requests, {}).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 12345);
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
@@ -406,7 +504,7 @@ describe('Conversant adapter tests', function() {
       Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
     });
     //  construct http post payload
-    const payload = spec.buildRequests(requests).data;
+    const payload = spec.buildRequests(requests, {}).data;
     expect(payload).to.have.deep.nested.property('user.ext.fpc', 67890);
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
@@ -481,7 +579,7 @@ describe('Conversant adapter tests', function() {
         Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
       });
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
         {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
@@ -505,7 +603,15 @@ describe('Conversant adapter tests', function() {
       return (new Date(Date.now() + timeout * 60 * 60 * 24 * 1000)).toUTCString();
     }
 
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        conversant: {
+          storageAllowed: true
+        }
+      };
+    });
     afterEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {};
       cleanUp(ID_NAME);
       cleanUp(CUSTOM_ID_NAME);
     });
@@ -518,7 +624,7 @@ describe('Conversant adapter tests', function() {
       storage.setCookie(ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
     });
 
@@ -531,7 +637,7 @@ describe('Conversant adapter tests', function() {
       storage.setCookie(CUSTOM_ID_NAME, '12345', expStr(TIMEOUT));
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', '12345');
     });
 
@@ -544,7 +650,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'abcde');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'abcde');
     });
 
@@ -557,7 +663,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'fghijk');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
 
@@ -570,7 +676,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(ID_NAME, 'lmnopq');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.not.have.deep.nested.property('user.ext.fpc');
     });
 
@@ -584,7 +690,7 @@ describe('Conversant adapter tests', function() {
       storage.setDataInLocalStorage(CUSTOM_ID_NAME, 'fghijk');
 
       //  construct http post payload
-      const payload = spec.buildRequests(requests).data;
+      const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.fpc', 'fghijk');
     });
   });
@@ -604,7 +710,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 3.21);
     });
 
@@ -617,7 +723,7 @@ describe('Conversant adapter tests', function() {
       };
       bidRequest[0].params.bidfloor = 0.6;
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0.6);
     });
 
@@ -629,7 +735,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
@@ -641,7 +747,7 @@ describe('Conversant adapter tests', function() {
         };
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
@@ -650,14 +756,14 @@ describe('Conversant adapter tests', function() {
         return {};
       };
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
 
     it('undefined floor result', function() {
       bidRequest[0].getFloor = () => {};
 
-      const payload = spec.buildRequests(bidRequest).data;
+      const payload = spec.buildRequests(bidRequest, {}).data;
       expect(payload.imp[0]).to.have.property('bidfloor', 0);
     });
   });

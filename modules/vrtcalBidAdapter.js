@@ -2,6 +2,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {isFn, isPlainObject} from '../src/utils.js';
+import { config } from '../src/config.js';
 
 export const spec = {
   code: 'vrtcal',
@@ -21,10 +22,32 @@ export const spec = {
         }
       }
 
+      let gdprApplies = 0;
+      let gdprConsent = '';
+      let ccpa = '';
+      let coppa = 0;
+      let tmax = 0;
+
+      if (bid && bid.gdprConsent) {
+        gdprApplies = bid.gdprConsent.gdprApplies ? 1 : 0;
+        gdprConsent = bid.gdprConsent.consentString;
+      }
+
+      if (bid && bid.uspConsent) {
+        ccpa = bid.uspConsent;
+      }
+
+      if (config.getConfig('coppa') === true) {
+        coppa = 1;
+      }
+
+      tmax = config.getConfig('bidderTimeout');
+
       const params = {
         prebidJS: 1,
         prebidAdUnitCode: bid.adUnitCode,
         id: bid.bidId,
+        tmax: tmax,
         imp: [{
           id: '1',
           banner: {
@@ -41,6 +64,18 @@ export const spec = {
         device: {
           ua: 'VRTCAL_FILLED',
           ip: 'VRTCAL_FILLED'
+        },
+        regs: {
+          coppa: coppa,
+          ext: {
+            gdpr: gdprApplies,
+            us_privacy: ccpa
+          }
+        },
+        user: {
+          ext: {
+            consent: gdprConsent
+          }
         }
       };
 

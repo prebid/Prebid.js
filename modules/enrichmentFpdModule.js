@@ -5,7 +5,7 @@
  */
 import { timestamp, mergeDeep } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import { getCoreStorageManager } from '../src/storageManager.js';
 
 let ortb2 = {};
@@ -70,30 +70,21 @@ export function findRootDomain(fullDomain = window.location.hostname) {
  * Checks for referer and if exists merges into ortb2 global data
  */
 function setReferer() {
-  if (getRefererInfo().referer) mergeDeep(ortb2, { site: { ref: getRefererInfo().referer } });
+  if (getRefererInfo().ref) mergeDeep(ortb2, { site: { ref: getRefererInfo().ref } });
 }
 
 /**
  * Checks for canonical url and if exists merges into ortb2 global data
  */
 function setPage() {
-  if (getRefererInfo().canonicalUrl) mergeDeep(ortb2, { site: { page: getRefererInfo().canonicalUrl } });
+  if (getRefererInfo().page) mergeDeep(ortb2, { site: { page: getRefererInfo().page } });
 }
 
 /**
  * Checks for canonical url and if exists retrieves domain and merges into ortb2 global data
  */
 function setDomain() {
-  let parseDomain = function(url) {
-    if (!url || typeof url !== 'string' || url.length === 0) return;
-
-    var match = url.match(/^(?:https?:\/\/)?(?:www\.)?(.*?(?=(\?|\#|\/|$)))/i);
-
-    return match && match[1];
-  };
-
-  let domain = parseDomain(getRefererInfo().canonicalUrl)
-
+  const domain = parseDomain(getRefererInfo().page, {noLeadingWww: true});
   if (domain) {
     mergeDeep(ortb2, { site: { domain: domain } });
     mergeDeep(ortb2, { site: { publisher: { domain: findRootDomain(domain) } } });
@@ -151,17 +142,19 @@ function runEnrichments() {
 /**
  * Sets default values to ortb2 if exists and adds currency and ortb2 setConfig callbacks on init
  */
-export function initSubmodule(fpdConf, data) {
+export function processFpd(fpdConf, {global}) {
   resetOrtb2();
 
-  return (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), data) : data;
+  return {
+    global: (!fpdConf.skipEnrichments) ? mergeDeep(runEnrichments(), global) : global
+  };
 }
 
 /** @type {firstPartyDataSubmodule} */
 export const enrichmentsSubmodule = {
   name: 'enrichments',
   queue: 2,
-  init: initSubmodule
+  processFpd
 }
 
 submodule('firstPartyData', enrichmentsSubmodule)

@@ -102,7 +102,8 @@ describe('Prebid Manager Analytics Adapter', function () {
       events.emit(constants.EVENTS.AUCTION_END, {});
       events.emit(constants.EVENTS.BID_TIMEOUT, {});
 
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+      // 6 Prebid Manager events + 1 Clean.io event
+      sinon.assert.callCount(prebidmanagerAnalytics.track, 7);
     });
   });
 

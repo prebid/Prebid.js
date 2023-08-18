@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-vast-vpaid/2.0.2/videojs_5.vast.vpaid.min.js"></script>
 
     <!-- prebid.js -->
-    <script src="../../build/dist/prebid.js" async=true></script>
+    <script src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=dfpAdServerVideo" async=true></script>
 
 
     <script>
@@ -50,13 +50,14 @@
 
       pbjs.que.push(function(){
         pbjs.onEvent('auctionEnd', function() {
+            console.log(pbjs.getAdserverTargeting('video1'));
           let pEl = document.createElement('p');
           pEl.innerText = 'PREBID HAS FINISHED';
           pEl.id = 'statusText';
           let parDiv = document.getElementById('event-window');
           parDiv.appendChild(pEl);
         });
-        
+
         pbjs.addAdUnits(videoAdUnit);
         pbjs.setConfig({
                     debug: true,
@@ -65,6 +66,7 @@
                     }
                 });
         pbjs.requestBids({
+          timeout: 10000,
           bidsBackHandler : function(bids) {
             var videoUrl = pbjs.adServers.dfp.buildVideoUrl({
               adUnit: videoAdUnit,
@@ -97,8 +99,7 @@
     <video id="vid1" class="video-js vjs-default-skin vjs-big-play-centered" controls
            data-setup='{}'
            width='640'
-           height='480'
-    >
+           height='480'>
         <source src="http://vjs.zencdn.net/v/oceans.mp4" type='video/mp4'/>
         <source src="http://vjs.zencdn.net/v/oceans.webm" type='video/webm'/>
         <source src="http://vjs.zencdn.net/v/oceans.ogv" type='video/ogg'/>

@@ -1,7 +1,19 @@
-import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr, parseUrl, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {
+  _each,
+  createTrackPixelHtml,
+  getBidIdParameter,
+  getUniqueIdentifierStr,
+  getWindowSelf,
+  getWindowTop,
+  isArray,
+  isFn,
+  isPlainObject,
+  logError,
+  logWarn
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';
@@ -19,7 +31,7 @@ function buildRequests(bidReqs, bidderRequest) {
   try {
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      referrer = bidderRequest.refererInfo.page;
     }
     const onomagicImps = [];
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
@@ -56,7 +68,8 @@ function buildRequests(bidReqs, bidderRequest) {
       id: getUniqueIdentifierStr(),
       imp: onomagicImps,
       site: {
-        domain: parseUrl(referrer).host,
+        // TODO: does the fallback make sense here?
+        domain: bidderRequest?.refererInfo?.domain || window.location.host,
         page: referrer,
         publisher: {
           id: publisherId

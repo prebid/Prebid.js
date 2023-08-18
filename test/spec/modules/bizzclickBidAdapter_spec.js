@@ -48,6 +48,17 @@ const BANNER_BID_REQUEST = {
       sizes: [[300, 250], [300, 600]]
     }
   },
+  schain: {
+    ver: '1.0',
+    complete: 1,
+    nodes: [
+      {
+        asi: 'example.com',
+        sid: '164',
+        hp: 1
+      }
+    ]
+  },
   bidder: 'bizzclick',
   params: {
     placementId: 'hash',
@@ -250,6 +261,11 @@ describe('BizzclickAdapter', function() {
       expect(request.data[0].regs.ext.gdpr).to.equal(1);
       expect(request.data[0].user.ext.consent).to.equal(BANNER_BID_REQUEST.gdprConsent.consentString);
       expect(request.data[0].regs.ext.us_privacy).to.equal(BANNER_BID_REQUEST.uspConsent);
+    })
+
+    it('check schain is set properly', function() {
+      expect(request.data[0].source.ext.schain.complete).to.equal(1);
+      expect(request.data[0].source.ext.schain.ver).to.equal('1.0');
     })
 
     it('Returns valid URL', function () {

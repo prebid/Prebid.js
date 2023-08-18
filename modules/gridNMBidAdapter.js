@@ -1,4 +1,13 @@
-import { isStr, deepAccess, isArray, isNumber, logError, logWarn, parseGPTSingleSizeArrayToRtbSize } from '../src/utils.js';
+import {
+  isStr,
+  deepAccess,
+  isArray,
+  isNumber,
+  logError,
+  logWarn,
+  parseGPTSingleSizeArrayToRtbSize,
+  mergeDeep
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
 import { VIDEO } from '../src/mediaTypes.js';
@@ -67,7 +76,7 @@ export const spec = {
     const requests = [];
     let { bidderRequestId, auctionId, gdprConsent, uspConsent, timeout, refererInfo } = bidderRequest || {};
 
-    const referer = refererInfo ? encodeURIComponent(refererInfo.referer) : '';
+    const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
 
     bids.forEach(bid => {
       let user;
@@ -153,9 +162,7 @@ export const spec = {
         user = {
           data: [{
             name: 'iow_labs_pub_data',
-            segment: jwpseg.map((seg) => {
-              return {name: 'jwpseg', value: seg};
-            })
+            segment: segmentProcessing(jwpseg, 'jwpseg'),
           }]
         };
       }
@@ -174,8 +181,26 @@ export const spec = {
         user.ext = userExt;
       }
 
+      const ortb2UserData = deepAccess(bidderRequest, 'ortb2.user.data');
+      if (ortb2UserData && ortb2UserData.length) {
+        if (!user) {
+          user = { data: [] };
+        }
+        user = mergeDeep(user, {
+          data: [...ortb2UserData]
+        });
+      }
+
       if (user) {
         request.user = user;
+      }
+      const site = deepAccess(bidderRequest, 'ortb2.site');
+      if (site) {
+        const data = deepAccess(site, 'content.data');
+        if (data && data.length) {
+          const siteContent = request.site.content || {};
+          request.site.content = mergeDeep(siteContent, { data });
+        }
       }
 
       if (gdprConsent && gdprConsent.gdprApplies) {
@@ -406,6 +431,22 @@ export function resetUserSync() {
 
 export function getSyncUrl() {
   return SYNC_URL;
+}
+
+function segmentProcessing(segment, forceSegName) {
+  return segment
+    .map((seg) => {
+      const value = seg && (seg.value || seg.id || seg);
+      if (typeof value === 'string' || typeof value === 'number') {
+        return {
+          value: value.toString(),
+          ...(forceSegName && { name: forceSegName }),
+          ...(seg.name && { name: seg.name }),
+        };
+      }
+      return null;
+    })
+    .filter((seg) => !!seg);
 }
 
 registerBidder(spec);

@@ -75,6 +75,22 @@ IQZone bid adapter supports Banner, Video (instream and outstream) and Native.
                             }
                         }
                     ]
+                },
+                {
+                    code: 'adunit1',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [ [300, 250], [320, 50] ],
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'iqzone',
+                            params: {
+                                endpointId: 'testBanner',
+                            }
+                        }
+                    ]
                 }
             ];
 ```

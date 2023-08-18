@@ -147,9 +147,9 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalConsent': false
+            'isServiceSpecific': true
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -159,14 +159,14 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(12);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should add referer info to payload', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -245,9 +245,9 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalScope': true
+            'isServiceSpecific': false,
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -257,7 +257,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(11);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR TCF2 to endpoint with 12 status', function() {
@@ -294,7 +294,7 @@ describe('teadsBidAdapter', () => {
           'consentString': undefined,
           'gdprApplies': undefined,
           'vendorData': undefined,
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -304,7 +304,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(22);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 0 status', function() {
@@ -319,7 +319,7 @@ describe('teadsBidAdapter', () => {
           'vendorData': {
             'hasGlobalScope': false
           },
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -329,7 +329,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal(consentString);
       expect(payload.gdpr_iab.status).to.equal(0);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 0 status when gdprApplies = false (vendorData = undefined)', function() {
@@ -341,7 +341,7 @@ describe('teadsBidAdapter', () => {
           'consentString': undefined,
           'gdprApplies': false,
           'vendorData': undefined,
-          'apiVersion': 1
+          'apiVersion': 2
         }
       };
 
@@ -351,7 +351,7 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab).to.exist;
       expect(payload.gdpr_iab.consent).to.equal('');
       expect(payload.gdpr_iab.status).to.equal(0);
-      expect(payload.gdpr_iab.apiVersion).to.equal(1);
+      expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
     it('should send GDPR to endpoint with 12 status when apiVersion = 0', function() {
@@ -364,7 +364,7 @@ describe('teadsBidAdapter', () => {
           'consentString': consentString,
           'gdprApplies': true,
           'vendorData': {
-            'hasGlobalScope': false
+            'isServiceSpecific': true
           },
           'apiVersion': 0
         }
@@ -470,56 +470,6 @@ describe('teadsBidAdapter', () => {
         'deviceWidth': 1680
       };
 
-      describe('FLoC ID', function () {
-        it('should not add cohortId and cohortVersion params to payload if FLoC ID system is not enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {} // no "flocId" property -> assumption that the FLoC ID system is disabled
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload).not.to.have.property('cohortId');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId param to payload if FLoC ID system is enabled and ID available, but not version', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload).not.to.have.property('cohortVersion');
-        });
-
-        it('should add cohortId and cohortVersion params to payload if FLoC ID system is enabled', function () {
-          const bidRequest = {
-            ...baseBidRequest,
-            userId: {
-              flocId: {
-                id: 'my-floc-id',
-                version: 'chrome.1.1'
-              }
-            }
-          };
-
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
-          const payload = JSON.parse(request.data);
-
-          expect(payload.cohortId).to.equal('my-floc-id');
-          expect(payload.cohortVersion).to.equal('chrome.1.1');
-        });
-      });
-
       describe('Unified ID v2', function () {
         it('should not add unifiedId2 param to payload if uid2 system is not enabled', function () {
           const bidRequest = {
@@ -614,15 +564,13 @@ describe('teadsBidAdapter', () => {
         }
       ];
 
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (and ortb2Imp.ext.data.adserver.adslot is not present)', function () {
+      it('should add gpid if ortb2Imp.ext.gpid is present and is non empty', function () {
         const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
           return {
             ...bidRequest,
             ortb2Imp: {
               ext: {
-                data: {
-                  pbadslot: '1111/home-left-' + index
-                }
+                gpid: '1111/home-left-' + index
               }
             }
           };
@@ -635,41 +583,12 @@ describe('teadsBidAdapter', () => {
         expect(payload.data[1].gpid).to.equal('1111/home-left-1');
       });
 
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is present and is non empty (even if ortb2Imp.ext.data.adserver.adslot is present and is non empty too)', function () {
-        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
-          return {
-            ...bidRequest,
-            ortb2Imp: {
-              ext: {
-                data: {
-                  pbadslot: '1111/home-left-' + index,
-                  adserver: {
-                    adslot: '1111/home-left/div-' + index
-                  }
-                }
-              }
-            }
-          };
-        }
-        );
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
-        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
-      });
-
-      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are present but empty', function () {
+      it('should not add gpid if ortb2Imp.ext.gpid is present but empty', function () {
         const updatedBidRequests = bidRequests.map(bidRequest => ({
           ...bidRequest,
           ortb2Imp: {
             ext: {
-              data: {
-                pbadslot: '',
-                adserver: {
-                  adslot: ''
-                }
-              }
+              gpid: ''
             }
           }
         }));
@@ -682,35 +601,21 @@ describe('teadsBidAdapter', () => {
         });
       });
 
-      it('should not add gpid if both ortb2Imp.ext.data.pbadslot and ortb2Imp.ext.data.adserver.adslot are not present', function () {
-        const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      it('should not add gpid if ortb2Imp.ext.gpid is not present', function () {
+        const updatedBidRequests = bidRequests.map(bidRequest => ({
+          ...bidRequest,
+          ortb2Imp: {
+            ext: {
+            }
+          }
+        }));
+
+        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
         const payload = JSON.parse(request.data);
 
         return payload.data.forEach(bid => {
           expect(bid).not.to.have.property('gpid');
         });
-      });
-
-      it('should add gpid if ortb2Imp.ext.data.pbadslot is not present but ortb2Imp.ext.data.adserver.adslot is present and is non empty', function () {
-        const updatedBidRequests = bidRequests.map(function(bidRequest, index) {
-          return {
-            ...bidRequest,
-            ortb2Imp: {
-              ext: {
-                data: {
-                  adserver: {
-                    adslot: '1111/home-left-' + index
-                  }
-                }
-              }
-            }
-          };
-        });
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
-        const payload = JSON.parse(request.data);
-
-        expect(payload.data[0].gpid).to.equal('1111/home-left-0');
-        expect(payload.data[1].gpid).to.equal('1111/home-left-1');
       });
     });
 

@@ -50,7 +50,7 @@ describe('AjaAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://hoge.com'
+        page: 'https://hoge.com'
       }
     };
 
@@ -88,7 +88,7 @@ describe('AjaAdapter', function () {
 
     const bidderRequest = {
       refererInfo: {
-        referer: 'https://hoge.com'
+        page: 'https://hoge.com'
       }
     };
 

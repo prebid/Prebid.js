@@ -1,6 +1,6 @@
 import { config } from './config.js';
-import {logWarn, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {logWarn, logInfo, isPlainObject, deepAccess, deepClone, getWindowTop} from './utils.js';
+import {includes} from './polyfill.js';
 
 let sizeConfig = [];
 
@@ -153,4 +153,49 @@ function evaluateSizeConfig(configs) {
     sizesSupported: {},
     shouldFilter: false
   });
+}
+
+export function processAdUnitsForLabels(adUnits, activeLabels) {
+  return adUnits.reduce((adUnits, adUnit) => {
+    let {
+      active,
+      mediaTypes,
+      filterResults
+    } = resolveStatus(
+      getLabels(adUnit, activeLabels),
+      adUnit.mediaTypes,
+      adUnit.sizes
+    );
+
+    if (!active) {
+      logInfo(`Size mapping disabled adUnit "${adUnit.code}"`);
+    } else {
+      if (filterResults) {
+        logInfo(`Size mapping filtered adUnit "${adUnit.code}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+      }
+
+      adUnit.mediaTypes = mediaTypes;
+
+      adUnit.bids = adUnit.bids.reduce((bids, bid) => {
+        let {
+          active,
+          mediaTypes,
+          filterResults
+        } = resolveStatus(getLabels(bid, activeLabels), adUnit.mediaTypes);
+
+        if (!active) {
+          logInfo(`Size mapping deactivated adUnit "${adUnit.code}" bidder "${bid.bidder}"`);
+        } else {
+          if (filterResults) {
+            logInfo(`Size mapping filtered adUnit "${adUnit.code}" bidder "${bid.bidder}" banner sizes from `, filterResults.before, 'to ', filterResults.after);
+            bid.mediaTypes = mediaTypes;
+          }
+          bids.push(bid);
+        }
+        return bids;
+      }, []);
+      adUnits.push(adUnit);
+    }
+    return adUnits;
+  }, []);
 }

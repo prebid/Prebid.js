@@ -252,14 +252,14 @@ describe('ApacdexBidAdapter', function () {
 
     it('should return a properly formatted request', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.bidderRequests).to.eql(bidRequest);
     })
 
     it('should return a properly formatted request with GDPR applies set to true', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -268,7 +268,7 @@ describe('ApacdexBidAdapter', function () {
     it('should return a properly formatted request with GDPR applies set to false', function () {
       bidderRequests.gdprConsent.gdprApplies = false;
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr.consentString).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==')
@@ -288,7 +288,7 @@ describe('ApacdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(false)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -308,7 +308,7 @@ describe('ApacdexBidAdapter', function () {
         }
       };
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/apacdex')
+      expect(bidRequests.url).to.equal('https://useast.quantumdex.io/auction/pbjs')
       expect(bidRequests.method).to.equal('POST')
       expect(bidRequests.data.gdpr.gdprApplies).to.equal(true)
       expect(bidRequests.data.gdpr).to.not.include.keys('consentString')
@@ -384,7 +384,7 @@ describe('ApacdexBidAdapter', function () {
   describe('.interpretResponse', function () {
     const bidRequests = {
       'method': 'POST',
-      'url': 'https://useast.quantumdex.io/auction/apacdex',
+      'url': 'https://useast.quantumdex.io/auction/pbjs',
       'withCredentials': true,
       'data': {
         'device': {
@@ -728,24 +728,6 @@ describe('ApacdexBidAdapter', function () {
         lon: 23.6712341
       };
       expect(validateGeoObject(geoObject)).to.equal(false);
-    });
-  });
-
-  describe('getDomain', function () {
-    it('should return valid domain from publisherDomain config', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: pageUrl });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return valid domain from pageUrl argument', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return undefined if pageUrl and publisherDomain not config', () => {
-      let pageUrl;
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });
 });

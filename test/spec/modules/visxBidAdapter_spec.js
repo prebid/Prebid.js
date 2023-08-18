@@ -18,7 +18,7 @@ describe('VisxAdapter', function () {
     let bid = {
       'bidder': 'visx',
       'params': {
-        'uid': '903536'
+        'uid': 903536
       },
       'adUnitCode': 'adunit-code',
       'sizes': [[300, 250], [300, 600]],
@@ -36,6 +36,15 @@ describe('VisxAdapter', function () {
       delete bid.params;
       bid.params = {
         'uid': 0
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('should return false when uid can not be parsed as number', function () {
+      let bid = Object.assign({}, bid);
+      delete bid.params;
+      bid.params = {
+        'uid': 'sdvsdv'
       };
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
@@ -76,10 +85,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const schainObject = {
       ver: '1.0',
       nodes: [
@@ -102,7 +111,7 @@ describe('VisxAdapter', function () {
       {
         'bidder': 'visx',
         'params': {
-          'uid': 903535
+          'uid': '903535'
         },
         'adUnitCode': 'adunit-code-2',
         'sizes': [[728, 90], [300, 250]],
@@ -416,10 +425,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -480,10 +489,10 @@ describe('VisxAdapter', function () {
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
-    const referrer = bidderRequest.refererInfo.referer;
+    const referrer = bidderRequest.refererInfo.page;
     const bidRequests = [
       {
         'bidder': 'visx',
@@ -1263,9 +1272,10 @@ describe('VisxAdapter', function () {
     });
 
     it('onTimeout', function () {
-      const data = { timeout: 3000, bidId: '23423', params: { uid: 1 } };
+      const data = [{ timeout: 3000, adUnitCode: 'adunit-code-1', auctionId: '1cbd2feafe5e8b', bidder: 'visx', bidId: '23423', params: [{ uid: '1' }] }];
+      const expectedData = [{ ...data[0], params: [{ uid: 1 }] }];
       spec.onTimeout(data);
-      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(data))).to.equal(true);
+      expect(utils.triggerPixel.calledOnceWith('https://t.visx.net/track/bid_timeout//' + JSON.stringify(expectedData))).to.equal(true);
     });
   });
 

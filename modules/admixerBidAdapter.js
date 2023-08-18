@@ -2,6 +2,7 @@ import { logError } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'admixer';
 const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads'];
@@ -20,6 +21,9 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    */
   buildRequests: function (validRequest, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequest = convertOrtbRequestToProprietaryNative(validRequest);
+
     let w;
     let docRef;
     do {
@@ -32,15 +36,16 @@ export const spec = {
     } while (w !== window.top);
     const payload = {
       imps: [],
-      ortb2: config.getConfig('ortb2'),
+      ortb2: bidderRequest.ortb2,
       docReferrer: docRef,
     };
     let endpointUrl;
     if (bidderRequest) {
       const {bidderCode} = bidderRequest;
       endpointUrl = config.getConfig(`${bidderCode}.endpoint_url`);
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      if (bidderRequest.refererInfo?.page) {
+        payload.referrer = encodeURIComponent(bidderRequest.refererInfo.page);
       }
       if (bidderRequest.gdprConsent) {
         payload.gdprConsent = {

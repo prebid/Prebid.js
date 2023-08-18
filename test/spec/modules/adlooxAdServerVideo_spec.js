@@ -3,7 +3,7 @@ import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
 import { ajax } from 'src/ajax.js';
 import { buildVideoUrl } from 'modules/adlooxAdServerVideo.js';
 import { expect } from 'chai';
-import events from 'src/events.js';
+import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
 

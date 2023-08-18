@@ -1,5 +1,7 @@
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
+import * as events from '../../../src/events.js';
+import CONSTANTS from '../../../src/constants.json';
 
 import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
 
@@ -183,6 +185,27 @@ describe('clean.io RTD module', function () {
       const fakeBidResponse3 = makeFakeBidResponse();
       onBidResponseEvent(fakeBidResponse3, {}, {});
       ensurePrependToBidResponse(fakeBidResponse3);
+    });
+
+    it('should send billable event per bid won event', function () {
+      const { init } = getModule();
+      expect(init({ params: { cdnUrl: 'https://abc1234567890.cloudfront.net/script.js', protectionMode: 'full' } }, {})).to.equal(true);
+
+      const eventCounter = { registerCleanioBillingEvent: function() {} };
+      sinon.spy(eventCounter, 'registerCleanioBillingEvent');
+
+      events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (evt) => {
+        if (evt.vendor === 'clean.io') {
+          eventCounter.registerCleanioBillingEvent()
+        }
+      });
+
+      events.emit(CONSTANTS.EVENTS.BID_WON, {});
+      events.emit(CONSTANTS.EVENTS.BID_WON, {});
+      events.emit(CONSTANTS.EVENTS.BID_WON, {});
+      events.emit(CONSTANTS.EVENTS.BID_WON, {});
+
+      sinon.assert.callCount(eventCounter.registerCleanioBillingEvent, 4);
     });
   });
 });

@@ -46,7 +46,8 @@ export const spec = {
 
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
-      var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      // TODO: is 'page' the right value here?
+      var referer = encodeURIComponent(bidderRequest.refererInfo.page);
       var e = getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       var mediaType = spec.getMediaType(bidRequest);

@@ -52,7 +52,7 @@ describe('Adxcg adapter', function () {
           adzoneid: '19910113'
         }
       }];
-      let request = spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}});
+      let request = spec.buildRequests(validBidRequests, {refererInfo: {page: 'page', domain: 'localhost'}});
 
       assert.equal(request.method, 'POST');
       assert.equal(request.url, 'https://pbc.adxcg.net/rtb/ortb/pbc?adExchangeId=1');
@@ -180,7 +180,7 @@ describe('Adxcg adapter', function () {
         bidId: 'bidId',
         params: {adzoneid: '1000'}
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {page: 'page', domain: 'localhost'}}).data);
 
       assert.equal(request.device.ua, navigator.userAgent);
       assert.equal(request.device.w, 100);
@@ -190,13 +190,14 @@ describe('Adxcg adapter', function () {
     it('should send app info', function () {
       config.setConfig({
         app: {id: 'appid'},
-        ortb2: {app: {name: 'appname'}}
       });
+      const ortb2 = {app: {name: 'appname'}}
       let validBidRequests = [{
         bidId: 'bidId',
-        params: {adzoneid: '1000'}
+        params: {adzoneid: '1000'},
+        ortb2
       }];
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}}).data);
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo: {referer: 'page'}, ortb2}).data);
 
       assert.equal(request.app.id, 'appid');
       assert.equal(request.app.name, 'appname');
@@ -211,26 +212,28 @@ describe('Adxcg adapter', function () {
             domain: 'publisher.domain.com'
           }
         },
-        ortb2: {
-          site: {
-            publisher: {
-              id: 4441,
-              name: 'publisher\'s name'
-            }
+      });
+      const ortb2 = {
+        site: {
+          publisher: {
+            id: 4441,
+            name: 'publisher\'s name'
           }
         }
-      });
+      };
+
       let validBidRequests = [{
         bidId: 'bidId',
-        params: {adzoneid: '1000'}
+        params: {adzoneid: '1000'},
+        ortb2
       }];
-      let refererInfo = {referer: 'page'};
-      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo}).data);
+      let refererInfo = {page: 'page', domain: 'localhost'};
+      let request = JSON.parse(spec.buildRequests(validBidRequests, {refererInfo, ortb2}).data);
 
       assert.deepEqual(request.site, {
         domain: 'localhost',
         id: '123123',
-        page: refererInfo.referer,
+        page: refererInfo.page,
         publisher: {
           domain: 'publisher.domain.com',
           id: 4441,

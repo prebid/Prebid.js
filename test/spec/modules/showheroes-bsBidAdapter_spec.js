@@ -13,6 +13,7 @@ const adomain = ['showheroes.com'];
 
 const gdpr = {
   'gdprConsent': {
+    'apiVersion': 2,
     'consentString': 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
     'gdprApplies': true
   }
@@ -332,6 +333,7 @@ describe('shBidAdapter', function () {
         {
           'cpm': 5,
           'creativeId': 'c_38b373e1e31c18',
+          'adUnitCode': 'adunit-code-1',
           'currency': 'EUR',
           'width': 640,
           'height': 480,

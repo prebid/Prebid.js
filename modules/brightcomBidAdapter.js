@@ -1,4 +1,4 @@
-import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr, parseUrl, deepSetValue, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
+import { getBidIdParameter, _each, isArray, getWindowTop, getUniqueIdentifierStr, deepSetValue, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -19,7 +19,7 @@ function buildRequests(bidReqs, bidderRequest) {
   try {
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      referrer = bidderRequest.refererInfo.page;
     }
     const brightcomImps = [];
     const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
@@ -56,7 +56,7 @@ function buildRequests(bidReqs, bidderRequest) {
       id: getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: parseUrl(referrer).host,
+        domain: bidderRequest?.refererInfo?.domain || '',
         page: referrer,
         publisher: {
           id: publisherId

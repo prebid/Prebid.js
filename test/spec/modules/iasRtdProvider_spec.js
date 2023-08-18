@@ -29,12 +29,26 @@ describe('iasRtdProvider is a RTD provider that', function () {
       const value = iasSubModule.init(config);
       expect(value).to.equal(false);
     });
-    it('returns false missing pubId param', function () {
+    it('returns true with only the pubId param', function () {
       const config = {
         name: 'ias',
         waitForIt: true,
         params: {
           pubId: '123456'
+        }
+      };
+      const value = iasSubModule.init(config);
+      expect(value).to.equal(true);
+    });
+    it('returns true with the pubId and keyMappings params', function () {
+      const config = {
+        name: 'ias',
+        waitForIt: true,
+        params: {
+          pubId: '123456',
+          keyMappings: {
+            'id': 'ias_id'
+          }
         }
       };
       const value = iasSubModule.init(config);
@@ -75,34 +89,43 @@ describe('iasRtdProvider is a RTD provider that', function () {
     it('exists', function () {
       expect(iasSubModule.getTargetingData).to.be.a('function');
     });
-    it('invoke method', function () {
-      const targeting = iasSubModule.getTargetingData(adUnitsCode, config);
-      expect(adUnitsCode).to.length(2);
-      expect(targeting).to.be.not.null;
-      expect(targeting).to.be.not.empty;
-      expect(targeting['one-div-id']).to.be.not.null;
-      const targetingKeys = Object.keys(targeting['one-div-id']);
-      expect(targetingKeys.length).to.equal(10);
-      expect(targetingKeys['adt']).to.be.not.null;
-      expect(targetingKeys['alc']).to.be.not.null;
-      expect(targetingKeys['dlm']).to.be.not.null;
-      expect(targetingKeys['drg']).to.be.not.null;
-      expect(targetingKeys['hat']).to.be.not.null;
-      expect(targetingKeys['off']).to.be.not.null;
-      expect(targetingKeys['vio']).to.be.not.null;
-      expect(targetingKeys['fr']).to.be.not.null;
-      expect(targetingKeys['ias-kw']).to.be.not.null;
-      expect(targetingKeys['id']).to.be.not.null;
-      expect(targeting['one-div-id']['adt']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['alc']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['dlm']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['drg']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['hat']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['off']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['vio']).to.be.eq('veryLow');
-      expect(targeting['one-div-id']['fr']).to.be.eq('false');
-      expect(targeting['one-div-id']['id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
-    });
+    describe('invoke method', function () {
+      it('returns a targeting object with the right shape', function () {
+        const targeting = iasSubModule.getTargetingData(adUnitsCode, config);
+        expect(adUnitsCode).to.length(2);
+        expect(targeting).to.be.not.null;
+        expect(targeting).to.be.not.empty;
+        expect(targeting['one-div-id']).to.be.not.null;
+      });
+      it('returns the right keys', function () {
+        const targeting = iasSubModule.getTargetingData(adUnitsCode, config);
+        const targetingKeys = Object.keys(targeting['one-div-id']);
+        expect(targetingKeys.length).to.equal(10);
+        expect(targetingKeys).to.include('adt', 'adt key missing from the targeting object');
+        expect(targetingKeys).to.include('alc', 'alc key missing from the targeting object');
+        expect(targetingKeys).to.include('dlm', 'dlm key missing from the targeting object');
+        expect(targetingKeys).to.include('drg', 'drg key missing from the targeting object');
+        expect(targetingKeys).to.include('hat', 'hat key missing from the targeting object');
+        expect(targetingKeys).to.include('off', 'off key missing from the targeting object');
+        expect(targetingKeys).to.include('vio', 'vio key missing from the targeting object');
+        expect(targetingKeys).to.include('fr', 'fr key missing from the targeting object');
+        expect(targetingKeys).to.include('ias-kw', 'ias-kw key missing from the targeting object');
+        expect(targetingKeys).to.not.include('id', 'id key present in the targeting object, should have been renamed to ias_id');
+        expect(targetingKeys).to.include('ias_id', 'ias_id key missing from the targeting object');
+      });
+      it('returns the right values', function () {
+        const targeting = iasSubModule.getTargetingData(adUnitsCode, config);
+        expect(targeting['one-div-id']['adt']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['alc']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['dlm']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['drg']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['hat']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['off']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['vio']).to.be.eq('veryLow');
+        expect(targeting['one-div-id']['fr']).to.be.eq('false');
+        expect(targeting['one-div-id']['ias_id']).to.be.eq('4813f7a2-1f22-11ec-9bfd-0a1107f94461');
+      });
+    })
   });
 });
 
@@ -110,7 +133,10 @@ const config = {
   name: 'ias',
   waitForIt: true,
   params: {
-    pubId: 1234
+    pubId: 1234,
+    keyMappings: {
+      'id': 'ias_id'
+    }
   }
 };
 

@@ -51,11 +51,16 @@ Follow steps above for general review process. In addition, please verify the fo
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - All bidder parameter conventions must be followed:
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
-    - First party data must be read from [`fpd.context` and `fpd.user`](https://docs.prebid.org/dev-docs/publisher-api-reference.html#setConfig-fpd).
+    - First party data must be read from [getConfig('ortb2');](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd).
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
-    - The bidRequest page referrer must checked in addition to any bidder-specific parameter.
+    - The bidderRequest.refererInfo.referer must be checked in addition to any bidder-specific parameter.
     - If they're getting the COPPA flag, it must come from config.getConfig('coppa');
+    - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
+    - Global OpenRTB fields should come from [getConfig('ortb2');](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd):
+        - bcat, battr, badv
+    - Impression-specific OpenRTB fields should come from bidrequest.ortb2imp
+        - instl
 - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/BIDDER.md file):
     - If they support the GDPR consentManagement module and TCF1, add `gdpr_supported: true`
     - If they support the GDPR consentManagement module and TCF2, add `tcf2_supported: true`
@@ -122,6 +127,10 @@ Follow steps above for general review process. In addition:
   - doesn't force bid adapters to load additional code.
 - Consider whether the kind of data the module is obtaining could have privacy implications. If so, make sure they're utilizing the `consent` data passed to them.
 - Make sure there's a docs pull request
+
+### Reviewing changes to the `debugging` module
+
+The debugging module cannot import from core in the same way that other modules can. See this [warning](https://github.com/prebid/Prebid.js/blob/master/modules/debugging/WARNING.md) for more details.
 
 ## Ticket Coordinator
 

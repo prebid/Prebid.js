@@ -3,6 +3,7 @@ import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
+import {parseDomain} from '../../../src/refererDetection.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -253,7 +254,7 @@ describe('Adkernel adapter', function () {
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
+    return Object.assign({}, params, {refererInfo: {page: url, domain: parseDomain(url), reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 

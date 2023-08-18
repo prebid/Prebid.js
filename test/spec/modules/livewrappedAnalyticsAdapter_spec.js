@@ -38,6 +38,10 @@ const BID1 = {
   adId: '2ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
+  meta: {
+    data: 'value1'
+  },
+  dealId: 'dealid',
   getStatusCode() {
     return CONSTANTS.STATUS.GOOD;
   }
@@ -54,6 +58,10 @@ const BID2 = Object.assign({}, BID1, {
   bidId: '3ecff0db240757',
   requestId: '3ecff0db240757',
   adId: '3ecff0db240757',
+  meta: {
+    data: 'value2'
+  },
+  dealId: undefined
 });
 
 const BID3 = {
@@ -190,7 +198,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -205,7 +216,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -231,7 +245,11 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 120,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      },
+      dealId: 'dealid'
     },
     {
       timeStamp: 1519149562216,
@@ -244,7 +262,10 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 230,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     }
   ],
   rf: [
@@ -551,6 +572,28 @@ describe('Livewrapped analytics adapter', function () {
       expect(message.wins.length).to.equal(2);
       expect(message.wins[0].floor).to.equal(1.1);
       expect(message.wins[1].floor).to.equal(2.2);
+    });
+
+    it('should forward runner-up data as given by Livewrapped wrapper', function () {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BID_WON, Object.assign({},
+        MOCK.BID_WON[0],
+        {
+          'rUp': 'rUpObject'
+        }));
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      clock.tick(BID_WON_TIMEOUT + 1000);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      expect(message.wins.length).to.equal(1);
+      expect(message.wins[0].rUp).to.equal('rUpObject');
     });
   });
 

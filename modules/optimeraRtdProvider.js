@@ -101,7 +101,7 @@ export function scoreFileRequest() {
 export function returnTargetingData(adUnits, config) {
   const targeting = {};
   try {
-    adUnits.forEach(function(adUnit) {
+    adUnits.forEach((adUnit) => {
       if (optimeraTargeting[adUnit]) {
         targeting[adUnit] = {};
         targeting[adUnit][optimeraKeyName] = [optimeraTargeting[adUnit]];
@@ -141,12 +141,11 @@ export function init(moduleConfig) {
     setScoresURL();
     scoreFileRequest();
     return true;
-  } else {
-    if (!_moduleParams.clientID) {
-      logError('Optimera clientID is missing in the Optimera RTD configuration.');
-    }
-    return false;
   }
+  if (!_moduleParams.clientID) {
+    logError('Optimera clientID is missing in the Optimera RTD configuration.');
+  }
+  return false;
 }
 
 /**
@@ -163,7 +162,7 @@ export function init(moduleConfig) {
 export function setScoresURL() {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
-  let newScoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  const newScoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
   if (scoresURL !== newScoresURL) {
     scoresURL = newScoresURL;
     fetchScoreFile = true;
@@ -173,7 +172,9 @@ export function setScoresURL() {
 }
 
 /**
- * Set the scores for the divice if given.
+ * Set the scores for the device if given.
+ * Add data and insights to the winddow.optimera object.
+ *
  * @param {*} result
  * @returns {string} JSON string of Optimera Scores.
  */
@@ -183,6 +184,18 @@ export function setScores(result) {
     scores = JSON.parse(result);
     if (device !== 'default' && scores.device[device]) {
       scores = scores.device[device];
+    }
+    logInfo(scores);
+    window.optimera = window.optimera || {};
+    window.optimera.data = window.optimera.data || {};
+    window.optimera.insights = window.optimera.insights || {};
+    Object.keys(scores).map((key) => {
+      if (key !== 'insights') {
+        window.optimera.data[key] = scores[key];
+      }
+    });
+    if (scores.insights) {
+      window.optimera.insights = scores.insights;
     }
   } catch (e) {
     logError('Optimera score file could not be parsed.');

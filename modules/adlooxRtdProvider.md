@@ -81,7 +81,7 @@ To use this, you *must* also integrate the [Adloox Analytics Adapter](./adlooxAn
 
 You may optionally pass a subsection `params` in the `params` block to the Adloox RTD Provider, these will be passed through to the segment handler as is and as described by the integration guidelines.
 
-**N.B.** If you pass `params` to the Adloox Analytics Adapter, `id1` (`AdUnit.code`) and `id2` (`%%pbadslot%%`) *must* describe a stable identifier otherwise no usable segments will be served and so they *must not* be changed; if `id1` for your inventory could contain a non-stable random number please consult with us before continuing
+**N.B.** If you pass `params` to the Adloox Analytics Adapter, `id1` (`AdUnit.code`) and `id2` (`%%gpid%%`) *must* describe a stable identifier otherwise no usable segments will be served and so they *must not* be changed; if `id1` for your inventory could contain a non-stable random number please consult with us before continuing
 
 Though our segment technology is fast (less than 10ms) the time it takes for the users device to connect to our service and fetch the segments may not be. For this reason we recommend setting `auctionDelay` no lower than 100ms and if possible you should explore using user-agent sourced information such as [NetworkInformation.{rtt,downlink,...}](https://developer.mozilla.org/en-US/docs/Web/API/NetworkInformation) to dynamically tune this for each user.
 
@@ -94,7 +94,7 @@ You may use one of two ways to do achieve this:
  * for display inventory [using GPT](https://developers.google.com/publisher-tag/guides/get-started) you may configure Prebid.js to automatically use the [full ad unit path](https://developers.google.com/publisher-tag/reference#googletag.Slot_getAdUnitPath)
      1. include the [`gptPreAuction` module](https://docs.prebid.org/dev-docs/modules/gpt-pre-auction.html)
      1. wrap both `pbjs.setConfig({...})` and `pbjs.enableAnalytics({...})` with `googletag.cmd.push(function() { ... })`
- * set `pbadslot` in the [first party data](https://docs.prebid.org/dev-docs/adunit-reference.html#first-party-data) variable `AdUnit.ortb2Imp.ext.data.pbadslot` for all your ad units
+ * set `gpid` (or `pbadslot`) in the [first party data](https://docs.prebid.org/dev-docs/adunit-reference.html#first-party-data) variable `AdUnit.ortb2Imp.ext.gpid` (or `AdUnit.ortb2Imp.ext.data.pbadslot`) for all your ad units
 
 ## Timeouts
 

@@ -30,6 +30,7 @@ Here is a full list of settings available
 - `enableDistribution` (boolean) - enables additional events that track load time and cpm distribution
   by creating buckets for load time and cpm
 - `cpmDistribution` (cpm: number => string) - customize the cpm buckets for the cpm distribution
+- `sendFloors` (boolean) - if set, will include floor data in the eventCategory field and include ad unit code in eventAction field
 
 
 ## Additional resources

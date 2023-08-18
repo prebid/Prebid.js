@@ -1,5 +1,6 @@
 
-import { timestamp, deepAccess, getOrigin } from '../src/utils.js';
+import { timestamp, deepAccess } from '../src/utils.js';
+import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'resetdigital';
@@ -24,9 +25,11 @@ export const spec = {
       site: {
         domain: getOrigin(),
         iframe: !bidderRequest.refererInfo.reachedTop,
+        // TODO: the last element in refererInfo.stack is window.location.href, that's unlikely to have been the intent here
         url: stack && stack.length > 0 ? [stack.length - 1] : null,
         https: (window.location.protocol === 'https:'),
-        referrer: bidderRequest.refererInfo.referer
+        // TODO: is 'page' the right value here?
+        referrer: bidderRequest.refererInfo.page
       },
       imps: [],
       user_ids: validBidRequests[0].userId,

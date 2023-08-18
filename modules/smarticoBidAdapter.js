@@ -1,6 +1,6 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const SMARTICO_CONFIG = {
   bidRequestUrl: 'https://trmads.eu/preBidRequest',

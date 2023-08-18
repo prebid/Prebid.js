@@ -2,7 +2,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import events from '../../../src/events.js';
+import * as events from '../../../src/events.js';
 import constants from '../../../src/constants.json';
 import { generateUUID } from '../../../src/utils.js';
 

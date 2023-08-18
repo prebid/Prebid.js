@@ -193,6 +193,7 @@ const isBannerMediaTypeValid = (mediaTypeBannerData) => {
 export const adapter = {
   code: 'unruly',
   supportedMediaTypes: [VIDEO, BANNER],
+  gvlid: 36,
   isBidRequestValid: function (bid) {
     let siteId = deepAccess(bid, 'params.siteId');
     let isBidValid = siteId && isMediaTypesValid(bid);

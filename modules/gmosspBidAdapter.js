@@ -1,12 +1,20 @@
-import { getDNT, getBidIdParameter, tryAppendQueryString, isEmpty, createTrackPixelHtml, logError, deepSetValue } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue,
+  getBidIdParameter,
+  getDNT,
+  getWindowTop,
+  isEmpty,
+  logError,
+  tryAppendQueryString
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
-const storage = getStorageManager();
 
 export const spec = {
   code: BIDDER_CODE,
@@ -34,7 +42,6 @@ export const spec = {
     const urlInfo = getUrlInfo(bidderRequest.refererInfo);
     const cur = getCurrencyType();
     const dnt = getDNT() ? '1' : '0';
-    const imuid = storage.getCookie('_im_uid.1000283') || '';
 
     for (let i = 0; i < validBidRequests.length; i++) {
       let queryString = '';
@@ -42,6 +49,9 @@ export const spec = {
       const request = validBidRequests[i];
       const tid = request.transactionId;
       const bid = request.bidId;
+      const imuid = deepAccess(request, 'userId.imuid');
+      const sharedId = deepAccess(request, 'userId.pubcid');
+      const idlEnv = deepAccess(request, 'userId.idl_env');
       const ver = '$prebid.version$';
       const sid = getBidIdParameter('sid', request.params);
 
@@ -50,7 +60,10 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'ver', ver);
       queryString = tryAppendQueryString(queryString, 'sid', sid);
       queryString = tryAppendQueryString(queryString, 'im_uid', imuid);
+      queryString = tryAppendQueryString(queryString, 'shared_id', sharedId);
+      queryString = tryAppendQueryString(queryString, 'idl_env', idlEnv);
       queryString = tryAppendQueryString(queryString, 'url', urlInfo.url);
+      queryString = tryAppendQueryString(queryString, 'meta_url', urlInfo.canonicalLink);
       queryString = tryAppendQueryString(queryString, 'ref', urlInfo.ref);
       queryString = tryAppendQueryString(queryString, 'cur', cur);
       queryString = tryAppendQueryString(queryString, 'dnt', dnt);
@@ -112,7 +125,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (!serverResponses.length) {
       return syncs;
@@ -141,29 +154,30 @@ function getCurrencyType() {
 }
 
 function getUrlInfo(refererInfo) {
+  let canonicalLink = refererInfo.canonicalUrl;
+
+  if (!canonicalLink) {
+    let metaElements = getMetaElements();
+    for (let i = 0; i < metaElements.length && !canonicalLink; i++) {
+      if (metaElements[i].getAttribute('property') == 'og:url') {
+        canonicalLink = metaElements[i].content;
+      }
+    }
+  }
+
   return {
-    url: getUrl(refererInfo),
-    ref: getReferrer(),
+    canonicalLink: canonicalLink,
+    // TODO: are these the right refererInfo values?
+    url: refererInfo.topmostLocation,
+    ref: refererInfo.ref || window.document.referrer,
   };
 }
 
-function getUrl(refererInfo) {
-  if (refererInfo && refererInfo.referer) {
-    return refererInfo.referer;
-  }
-
+function getMetaElements() {
   try {
-    return window.top.location.href;
+    return getWindowTop.document.getElementsByTagName('meta');
   } catch (e) {
-    return window.location.href;
-  }
-}
-
-function getReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return document.referrer;
+    return document.getElementsByTagName('meta');
   }
 }
 

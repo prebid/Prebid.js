@@ -48,7 +48,8 @@ describe('ConcertAnalyticsAdapter', function() {
       sandbox.spy(concertAnalytics, 'track');
 
       fireBidEvents(events);
-      sandbox.assert.callCount(concertAnalytics.track, 5);
+      // 5 Concert events + 1 Clean.io event
+      sandbox.assert.callCount(concertAnalytics.track, 6);
     });
 
     it('should report data for BID_RESPONSE, BID_WON events', function() {

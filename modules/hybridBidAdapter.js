@@ -1,9 +1,9 @@
-import { _map, logWarn, deepAccess, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { auctionManager } from '../src/auctionManager.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
@@ -204,7 +204,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       trafficType: TRAFFIC_TYPE_WEB,
       bidRequests: buildBidRequests(validBidRequests)

@@ -305,6 +305,15 @@ let bid_request = {
 }
 
 describe('DatablocksAdapter', function() {
+  before(() => {
+    // stub out queue metric to avoid it polluting the global xhr mock during other tests
+    sinon.stub(spec, 'queue_metric').callsFake(() => null);
+  });
+
+  after(() => {
+    spec.queue_metric.restore();
+  });
+
   describe('All needed functions are available', function() {
     it(`isBidRequestValid is present and type function`, function () {
       expect(spec.isBidRequestValid).to.exist.and.to.be.a('function')
@@ -374,14 +383,6 @@ describe('DatablocksAdapter', function() {
     it('Should return true / array', function() {
       expect(spec.store_syncs([{id: 1, uid: 'test'}])).to.be.true;
       expect(spec.get_syncs()).to.be.a('object');
-    });
-  })
-
-  describe('queue / send metrics', function() {
-    it('Should return true', function() {
-      expect(spec.queue_metric({type: 'test'})).to.be.true;
-      expect(spec.queue_metric('string')).to.be.false;
-      expect(spec.send_metrics()).to.be.true;
     });
   })
 

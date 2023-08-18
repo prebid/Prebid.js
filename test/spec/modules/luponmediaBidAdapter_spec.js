@@ -135,7 +135,7 @@ describe('luponmediaBidAdapter', function () {
       'auctionStart': 1587413920820,
       'timeout': 2000,
       'refererInfo': {
-        'referer': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines',
+        'page': 'https://novi.ba/clanak/176067/fast-car-beginner-s-guide-to-tuning-turbo-engines',
         'reachedTop': true,
         'numIframes': 0,
         'stack': [

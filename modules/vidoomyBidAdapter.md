@@ -26,7 +26,8 @@ var adUnits = [
         bidder: 'vidoomy',
         params: {
           id: '123123',
-          pid: '123123'
+          pid: '123123',
+          bidfloor: 0.5 // This is optional
         }
       }
     ]
@@ -50,7 +51,8 @@ var adUnits = [
         bidder: 'vidoomy',
         params: {
           id: '123123',
-          pid: '123123'
+          pid: '123123',
+          bidfloor: 0.5 // This is optional
         }
       }
     ]

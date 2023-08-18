@@ -2,7 +2,7 @@ import * as utils from 'src/utils.js';
 import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
+import * as events from 'src/events';
 import constants from 'src/constants.json'
 
 const AD_UNIT_CODE = 'demo-adunit-1';
@@ -35,6 +35,7 @@ describe('Optimon Analytics Adapter', () => {
     events.emit(constants.EVENTS.BID_TIMEOUT, optmn_arguments)
     events.emit(constants.EVENTS.BID_WON, optmn_arguments)
 
-    expect(optmn_queue.length).to.eql(3);
+    // 3 Optimon events + 1 Clean.io event
+    expect(optmn_queue.length).to.eql(4);
   });
 });

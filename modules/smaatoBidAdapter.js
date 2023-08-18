@@ -16,12 +16,10 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
-      publisher: {
-        id: deepAccess(bidRequest, 'params.publisherId')
-      },
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer
+      // TODO: do the fallbacks make sense here?
+      domain: bidderRequest.refererInfo.domain || window.location.hostname,
+      page: bidderRequest.refererInfo.page || window.location.href,
+      ref: bidderRequest.refererInfo.ref
     },
     device: {
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
@@ -47,9 +45,11 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   };
 
-  let ortb2 = config.getConfig('ortb2') || {};
+  let ortb2 = bidderRequest.ortb2 || {};
   Object.assign(requestTemplate.user, ortb2.user);
   Object.assign(requestTemplate.site, ortb2.site);
+
+  deepSetValue(requestTemplate, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     deepSetValue(requestTemplate, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -110,6 +110,7 @@ const buildServerRequest = (validBidRequest, data) => {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
+  gvlid: 82,
 
   /**
    * Determines whether or not the given bid request is valid.

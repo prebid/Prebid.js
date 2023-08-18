@@ -13,7 +13,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
 
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager(null, MODULE_NAME);
+export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(

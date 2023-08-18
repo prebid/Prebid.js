@@ -184,9 +184,9 @@ describe('TheMediaGridNM Adapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       timeout: 3000,
-      refererInfo: { referer: 'https://example.com' }
+      refererInfo: { page: 'https://example.com' }
     };
-    const referrer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    const referrer = encodeURIComponent(bidderRequest.refererInfo.page);
     let bidRequests = [
       {
         'bidder': 'gridNM',
@@ -225,6 +225,38 @@ describe('TheMediaGridNM Adapter', function () {
         'auctionId': '1d1a030790a475',
       }
     ];
+
+    it('if content and segment is present in jwTargeting, payload must have right params', function () {
+      const jsContent = {id: 'test_jw_content_id'};
+      const jsSegments = ['test_seg_1', 'test_seg_2'];
+      const bidRequestsWithJwTargeting = bidRequests.map((bid) => {
+        return Object.assign({
+          rtd: {
+            jwplayer: {
+              targeting: {
+                segments: jsSegments,
+                content: jsContent
+              }
+            }
+          }
+        }, bid);
+      });
+      const requests = spec.buildRequests(bidRequestsWithJwTargeting, bidderRequest);
+      requests.forEach((req, i) => {
+        const payload = req.data;
+        expect(req).to.have.property('data');
+        expect(payload).to.have.property('user');
+        expect(payload.user.data).to.deep.equal([{
+          name: 'iow_labs_pub_data',
+          segment: [
+            {name: 'jwpseg', value: jsSegments[0]},
+            {name: 'jwpseg', value: jsSegments[1]}
+          ]
+        }]);
+        expect(payload).to.have.property('site');
+        expect(payload.site.content).to.deep.equal(jsContent);
+      });
+    });
 
     it('should attach valid params to the tag', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);

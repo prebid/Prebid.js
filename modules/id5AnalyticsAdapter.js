@@ -1,9 +1,9 @@
-import buildAdapter from '../src/AnalyticsAdapter.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
 
 const {
   EVENTS: {

@@ -42,7 +42,7 @@ export const spec = {
         }
       }
     }
-    return !!bid.params.uid;
+    return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
@@ -94,8 +94,9 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        payload.u = bidderRequest.refererInfo.referer;
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        payload.u = bidderRequest.refererInfo.page;
       }
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
@@ -203,6 +204,15 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     // Call '/track/bid_timeout' with timeout data
+    timeoutData.forEach(({ params }) => {
+      if (params) {
+        params.forEach((item) => {
+          if (item && item.uid) {
+            item.uid = parseInt(item.uid);
+          }
+        });
+      }
+    });
     triggerPixel(buildUrl(TRACK_TIMEOUT_PATH) + '//' + JSON.stringify(timeoutData));
   }
 };
@@ -249,7 +259,7 @@ function buildImpObject(bid) {
     ...(banner && { banner }),
     ...(video && { video }),
     ext: {
-      bidder: { uid: Number(uid) },
+      bidder: { uid: parseInt(uid) },
     }
   };
 
@@ -365,7 +375,7 @@ function _isAdSlotExists(adUnitCode) {
   }
 
   const gptAdSlot = getGptSlotInfoForAdUnitCode(adUnitCode);
-  if (gptAdSlot && gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
+  if (gptAdSlot.divId && document.getElementById(gptAdSlot.divId)) {
     return true;
   }
 

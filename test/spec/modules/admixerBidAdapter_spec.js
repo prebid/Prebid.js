@@ -61,7 +61,7 @@ describe('AdmixerAdapter', function () {
     let bidderRequest = {
       bidderCode: BIDDER_CODE,
       refererInfo: {
-        referer: 'https://example.com'
+        page: 'https://example.com'
       }
     };
 

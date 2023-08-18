@@ -1,4 +1,4 @@
-import find from 'core-js-pure/features/array/find.js';
+import {find} from './polyfill.js';
 import { isEmpty } from './utils.js';
 
 const _defaultPrecision = 2;

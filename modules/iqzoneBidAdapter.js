@@ -2,9 +2,11 @@ import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'iqzone';
 const AD_URL = 'https://smartssp-us-east.iqzone.com/pbjs';
+const SYNC_URL = 'https://cs.smartssp.iqzone.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -27,15 +29,22 @@ function isBidResponseValid(bid) {
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { placementId } = params;
+  const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
-    placementId,
     bidId,
     schain,
     bidfloor
   };
+
+  if (placementId) {
+    placement.placementId = placementId;
+    placement.type = 'publisher';
+  } else if (endpointId) {
+    placement.endpointId = endpointId;
+    placement.type = 'network';
+  }
 
   if (mediaTypes && mediaTypes[BANNER]) {
     placement.adFormat = BANNER;
@@ -88,7 +97,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.placementId);
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
@@ -103,6 +112,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
 
@@ -117,7 +129,7 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
@@ -170,6 +182,29 @@ export const spec = {
       }
     }
     return response;
+  },
+
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
+    let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    const coppa = config.getConfig('coppa') ? 1 : 0;
+    syncUrl += `&coppa=${coppa}`;
+
+    return [{
+      type: syncType,
+      url: syncUrl
+    }];
   }
 };
 

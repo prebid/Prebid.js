@@ -7,7 +7,7 @@ describe('adhashBidAdapter', function () {
       bidder: 'adhash',
       params: {
         publisherId: '0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb',
-        platformURL: 'https://adhash.org/p/struma/'
+        platformURL: 'https://adhash.com/p/struma/'
       },
       mediaTypes: {
         banner: {
@@ -73,11 +73,11 @@ describe('adhashBidAdapter', function () {
     it('should build the request correctly', function () {
       const result = spec.buildRequests(
         [ bidRequest ],
-        { gdprConsent: true, refererInfo: { referer: 'http://example.com/' } }
+        { gdprConsent: { gdprApplies: true, consentString: 'example' }, refererInfo: { referer: 'http://example.com/' } }
       );
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -90,10 +90,10 @@ describe('adhashBidAdapter', function () {
       expect(result[0].data).to.have.property('recentAds');
     });
     it('should build the request correctly without referer', function () {
-      const result = spec.buildRequests([ bidRequest ], { gdprConsent: true });
+      const result = spec.buildRequests([ bidRequest ], { gdprConsent: { gdprApplies: true, consentString: 'example' } });
       expect(result.length).to.equal(1);
       expect(result[0].method).to.equal('POST');
-      expect(result[0].url).to.equal('https://bidder.adhash.org/rtb?version=1.0&prebid=true');
+      expect(result[0].url).to.equal('https://bidder.adhash.com/rtb?version=1.0&prebid=true&publisher=0xc3b09b27e9c6ef73957901aa729b9e69e5bbfbfb');
       expect(result[0].bidRequest).to.equal(bidRequest);
       expect(result[0].data).to.have.property('timezone');
       expect(result[0].data).to.have.property('location');
@@ -115,18 +115,31 @@ describe('adhashBidAdapter', function () {
         adUnitCode: 'adunit-code',
         sizes: [[300, 250]],
         params: {
-          platformURL: 'https://adhash.org/p/struma/'
+          platformURL: 'https://adhash.com/p/struma/'
         }
       }
     };
 
+    let bodyStub;
+
+    const serverResponse = {
+      body: {
+        creatives: [{ costEUR: 1.234 }],
+        advertiserDomains: 'adhash.com',
+        badWords: [
+          ['onqjbeq1', 'full', 1],
+          ['onqjbeq2', 'partial', 1],
+          ['tbbqjbeq', 'full', -1],
+        ],
+        maxScore: 2
+      }
+    };
+
+    afterEach(function() {
+      bodyStub && bodyStub.restore();
+    });
+
     it('should interpret the response correctly', function () {
-      const serverResponse = {
-        body: {
-          creatives: [{ costEUR: 1.234 }],
-          advertiserDomains: 'adhash.org'
-        }
-      };
       const result = spec.interpretResponse(serverResponse, request);
       expect(result.length).to.equal(1);
       expect(result[0].requestId).to.equal('12345678901234');
@@ -137,7 +150,56 @@ describe('adhashBidAdapter', function () {
       expect(result[0].netRevenue).to.equal(true);
       expect(result[0].currency).to.equal('EUR');
       expect(result[0].ttl).to.equal(60);
-      expect(result[0].meta.advertiserDomains).to.eql(['adhash.org']);
+      expect(result[0].meta.advertiserDomains).to.eql(['adhash.com']);
+    });
+
+    it('should return empty array when there are bad words (full)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example badWord1 text' + ' word'.repeat(493);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return empty array when there are bad words (partial)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord2 badword2 example BadWord2text' + ' word'.repeat(494);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(0);
+    });
+
+    it('should return non-empty array when there are not enough bad words (full)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example text' + ' word'.repeat(494);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are not enough bad words (partial)', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord2 example' + ' word'.repeat(496);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are no-bad word matches', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text partialBadWord1 example text' + ' word'.repeat(495);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there are bad words and good words', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return 'example text badWord1 badWord1 example badWord1 goodWord goodWord ' + ' word'.repeat(492);
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
+    });
+
+    it('should return non-empty array when there is a problem with the brand-safety', function () {
+      bodyStub = sinon.stub(window.top.document.body, 'innerText').get(function() {
+        return null;
+      });
+      expect(spec.interpretResponse(serverResponse, request).length).to.equal(1);
     });
 
     it('should return empty array when there are no creatives returned', function () {

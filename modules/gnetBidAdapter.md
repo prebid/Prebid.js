@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: Gnet Bidder Adapter
+Module Name: Gnet RTB Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: roberto.wu@grumft.com
+Maintainer: bruno.bonanho@grumft.com
 ```
 
 # Description
 
-Connect to Gnet Project exchange for bids.
+Connect to Gnet RTB exchange for bids.
 
 # Test Parameters
 ```
@@ -24,7 +24,7 @@ Connect to Gnet Project exchange for bids.
                 {
                     bidder: 'gnet',
                     params: {
-                        websiteId: '4'
+                        websiteId: '1', adunitId: '1'
                     }
                 }
             ]

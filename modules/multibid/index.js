@@ -8,7 +8,7 @@ import {setupBeforeHookFnOnce, getHook} from '../../src/hook.js';
 import {
   logWarn, deepAccess, getUniqueIdentifierStr, deepSetValue, groupBy
 } from '../../src/utils.js';
-import events from '../../src/events.js';
+import * as events from '../../src/events.js';
 import CONSTANTS from '../../src/constants.json';
 import {addBidderRequests} from '../../src/auction.js';
 import {getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm} from '../../src/targeting.js';

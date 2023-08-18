@@ -18,7 +18,7 @@ Below, the list of Adagio params and where they can be set.
 | ---------- | ------------- | ------------- |
 | siteId | x |
 | organizationId (obsolete) | | x
-| site (obsolete) | | x
+| site (obsolete) | | x
 | pagetype | x | x
 | environment | x | x
 | category | x | x

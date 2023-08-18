@@ -1,4 +1,5 @@
 import { isFn, deepAccess, logMessage, logError } from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -28,15 +29,22 @@ function isBidResponseValid(bid) {
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { placementId } = params;
+  const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
-    placementId,
     bidId,
     schain,
     bidfloor
   };
+
+  if (placementId) {
+    placement.placementId = placementId;
+    placement.type = 'publisher';
+  } else if (endpointId) {
+    placement.endpointId = endpointId;
+    placement.type = 'network';
+  }
 
   if (mediaTypes && mediaTypes[BANNER]) {
     placement.adFormat = BANNER;
@@ -90,7 +98,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.placementId);
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
@@ -105,6 +113,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
 
@@ -119,14 +130,14 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
     } catch (e) {
       logMessage(e);
     }
-
+    // TODO: does the fallback make sense here?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;

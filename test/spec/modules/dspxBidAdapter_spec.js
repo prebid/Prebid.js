@@ -62,6 +62,7 @@ describe('dspxAdapter', function () {
       'bidId': '30b31c1838de1e1',
       'bidderRequestId': '22edbae2733bf61',
       'auctionId': '1d1a030790a475',
+      'adUnitCode': 'testDiv1',
       'userId': {
         'netId': '123',
         'uid2': '456'
@@ -98,7 +99,8 @@ describe('dspxAdapter', function () {
       ],
       'bidId': '30b31c1838de1e3',
       'bidderRequestId': '22edbae2733bf69',
-      'auctionId': '1d1a030790a477'
+      'auctionId': '1d1a030790a477',
+      'adUnitCode': 'testDiv2'
     },
     {
       'bidder': 'dspx',
@@ -120,13 +122,15 @@ describe('dspxAdapter', function () {
 
       'bidId': '30b31c1838de1e4',
       'bidderRequestId': '22edbae2733bf67',
-      'auctionId': '1d1a030790a478'
+      'auctionId': '1d1a030790a478',
+      'adUnitCode': 'testDiv3'
     },
     {
       'bidder': 'dspx',
       'params': {
         'placement': '101',
-        'devMode': true
+        'devMode': true,
+        'vastFormat': 'vast4'
       },
       'mediaTypes': {
         'video': {
@@ -136,7 +140,8 @@ describe('dspxAdapter', function () {
       },
       'bidId': '30b31c1838de1e41',
       'bidderRequestId': '22edbae2733bf67',
-      'auctionId': '1d1a030790a478'
+      'auctionId': '1d1a030790a478',
+      'adUnitCode': 'testDiv4'
     }
 
     ];
@@ -157,16 +162,16 @@ describe('dspxAdapter', function () {
     it('sends bid request to our endpoint via GET', function () {
       expect(request1.method).to.equal('GET');
       expect(request1.url).to.equal(ENDPOINT_URL);
-      let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&did_netid=123&did_uid2=456');
+      let data = request1.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e1&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&bcat=IAB2%2CIAB4&dvt=desktop&did_netid=123&did_uid2=456&auctionId=1d1a030790a475&pbcode=testDiv1&media_types%5Bbanner%5D=300x250');
     });
 
     var request2 = spec.buildRequests([bidRequests[1]], bidderRequest)[0];
     it('sends bid request to our DEV endpoint via GET', function () {
       expect(request2.method).to.equal('GET');
       expect(request2.url).to.equal(ENDPOINT_URL_DEV);
-      let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&prebidDevMode=1');
+      let data = request2.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e2&pbver=test&pfilter%5Bgdpr_consent%5D=BOJ%2FP2HOJ%2FP2HABABMAAAAAZ%2BA%3D%3D&pfilter%5Bgdpr%5D=true&prebidDevMode=1&auctionId=1d1a030790a476&media_types%5Bbanner%5D=300x250');
     });
 
     // Without gdprConsent
@@ -179,23 +184,23 @@ describe('dspxAdapter', function () {
     it('sends bid request without gdprConsent to our endpoint via GET', function () {
       expect(request3.method).to.equal('GET');
       expect(request3.url).to.equal(ENDPOINT_URL);
-      let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop');
+      let data = request3.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=6682&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e3&pbver=test&pfilter%5Bfloorprice%5D=1000000&pfilter%5Bprivate_auction%5D=0&pfilter%5Bgeo%5D%5Bcountry%5D=DE&bcat=IAB2%2CIAB4&dvt=desktop&auctionId=1d1a030790a477&pbcode=testDiv2&media_types%5Bbanner%5D=300x250');
     });
 
     var request4 = spec.buildRequests([bidRequests[3]], bidderRequestWithoutGdpr)[0];
     it('sends bid request without gdprConsent  to our DEV endpoint via GET', function () {
       expect(request4.method).to.equal('GET');
       expect(request4.url).to.equal(ENDPOINT_URL_DEV);
-      let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=html&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&prebidDevMode=1');
+      let data = request4.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=300&srh=250&idt=100&bid_id=30b31c1838de1e4&pbver=test&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv3&media_types%5Bvideo%5D=640x480&media_types%5Bbanner%5D=300x250');
     });
 
     var request5 = spec.buildRequests([bidRequests[4]], bidderRequestWithoutGdpr)[0];
-    it('sends bid video request to our rads endpoint via GET', function () {
+    it('sends bid video request to our endpoint via GET', function () {
       expect(request5.method).to.equal('GET');
-      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid');
-      expect(data).to.equal('_f=vast2&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&prebidDevMode=1');
+      let data = request5.data.replace(/rnd=\d+\&/g, '').replace(/ref=.*\&bid/g, 'bid').replace(/pbver=.*?&/g, 'pbver=test&');
+      expect(data).to.equal('_f=auto&alternative=prebid_js&inventory_item_id=101&srw=640&srh=480&idt=100&bid_id=30b31c1838de1e41&pbver=test&vf=vast4&prebidDevMode=1&auctionId=1d1a030790a478&pbcode=testDiv4&media_types%5Bvideo%5D=640x480');
     });
   });
 

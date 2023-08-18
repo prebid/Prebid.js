@@ -1,12 +1,12 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { createTrackPixelHtml } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const {
-  registerBidder
-} = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'engageya';
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 const ENDPOINT_METHOD = 'GET';
+const MAX_DEVIATION = 0.05;
 const SUPPORTED_SIZES = [
   [100, 75], [236, 202], [100, 100], [130, 130], [200, 200], [250, 250], [300, 272], [300, 250], [300, 230], [300, 214], [300, 187], [300, 166], [300, 150], [300, 133], [300, 120], [400, 200], [300, 200], [250, 377], [620, 410], [207, 311], [310, 166], [310, 333], [190, 106], [228, 132], [300, 174], [80, 60], [600, 500], [600, 600], [1080, 610], [1080, 610], [624, 350], [650, 1168], [1080, 1920], [300, 374], [336, 280]
 ];
@@ -15,9 +15,10 @@ function getPageUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    return bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    return bidderRequest.refererInfo.page;
   }
+  // TODO: does this fallback make sense?
   const pageUrl = (isInIframe() && document.referrer)
     ? document.referrer
     : window.location.href;
@@ -98,7 +99,18 @@ function isValidSize([width, height]) {
   if (!width || !height) {
     return false;
   }
-  return SUPPORTED_SIZES.some(([supportedWidth, supportedHeight]) => supportedWidth === width && supportedHeight === height);
+  return SUPPORTED_SIZES.some(([supportedWidth, supportedHeight]) => {
+    if (supportedWidth === width && supportedHeight === height) {
+      return true;
+    }
+    const supportedRatio = supportedWidth / supportedHeight;
+    const ratioDeviation = supportedRatio / width * height;
+    if (Math.abs(ratioDeviation - 1) > MAX_DEVIATION) {
+      return false;
+    }
+    return supportedWidth > width ||
+      (width - supportedWidth) / width <= MAX_DEVIATION;
+  });
 }
 
 export const spec = {
@@ -116,6 +128,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (!validBidRequests) {
       return [];
     }

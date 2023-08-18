@@ -2,12 +2,11 @@ import { getBidIdParameter, parseSizesInput, tryAppendQueryString } from '../src
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
-const storage = getStorageManager();
-
 const BID_REQUEST_BASE_URL = 'https://in-appadvertising.com/api/bidRequest';
 const USER_SYNC_URL = 'https://in-appadvertising.com/api/userSync.html';
 const BIDDER_CODE = 'trion';
 const BASE_KEY = '_trion_';
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,

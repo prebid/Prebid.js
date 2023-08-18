@@ -1,16 +1,18 @@
-import find from 'core-js-pure/features/array/find.js';
-import { getBidRequest } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
+import {find} from '../src/polyfill.js';
+import {getBidRequest} from '../src/utils.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 const SOURCE = 'pbjs';
 const BIDDER_CODE = 'targetVideo';
 const ENDPOINT_URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const MARGIN = 1.35;
+const GVLID = 786;
 
 export const spec = {
 
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
 
   /**
@@ -40,6 +42,24 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+
+      if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+        let ac = bidderRequest.gdprConsent.addtlConsent;
+        let acStr = ac.substring(ac.indexOf('~') + 1);
+        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      }
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     return formatRequest(payload, bidderRequest);
   },
 

@@ -14,14 +14,22 @@ export const spec = {
     const { placementId } = bid.params;
     return !!placementId
   },
+  isGdprConsentPresent: (bid) => {
+    const { gdpr, gdprConsent } = bid.params;
+    if (gdpr == '1') {
+      return !!gdprConsent
+    }
+    return true
+  },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('doceree.user')
+    // TODO: this should probably look at refererInfo
     const { page, domain, token } = config.getConfig('doceree.context')
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 
     validBidRequests.forEach(function(validBidRequest) {
-      const { publisherUrl, placementId } = validBidRequest.params;
+      const { publisherUrl, placementId, gdpr, gdprConsent } = validBidRequest.params;
       const url = publisherUrl || page
       let queryString = '';
       queryString = tryAppendQueryString(queryString, 'id', placementId);
@@ -32,6 +40,8 @@ export const spec = {
       queryString = tryAppendQueryString(queryString, 'prebidjs', true);
       queryString = tryAppendQueryString(queryString, 'token', token);
       queryString = tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'gdpr', gdpr);
+      queryString = tryAppendQueryString(queryString, 'gdpr_consent', gdprConsent);
 
       serverRequests.push({
         method: 'GET',

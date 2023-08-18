@@ -70,8 +70,9 @@ export const spec = {
           gdpr_cs: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
           usp: !!deepAccess(bidderRequest, 'uspConsent', false),
           usp_cs: deepAccess(bidderRequest, 'uspConsent', ''),
-          topLevelUrl: deepAccess(bidderRequest, 'refererInfo.referer', ''),
-          refererUrl: windowTop.document.referrer,
+          topLevelUrl: deepAccess(bidderRequest, 'refererInfo.page', ''),
+          // TODO: does the fallback make sense here?
+          refererUrl: deepAccess(bidderRequest, 'refererInfo.ref', window.document.referrer),
           isiframe,
           version: '$prebid.version$',
           ExtUserIDs: bidRequest.userId,

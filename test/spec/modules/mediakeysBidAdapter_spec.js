@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { spec } from 'modules/mediakeysBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
@@ -561,43 +561,42 @@ describe('mediakeysBidAdapter', function () {
       });
 
       it('should set properties at payload level from FPD', function() {
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            ortb2: {
-              site: {
-                domain: 'domain.example',
-                cat: ['IAB12'],
-                ext: {
-                  data: {
-                    category: 'sport',
-                  }
-                }
-              },
-              user: {
-                yob: 1985,
-                gender: 'm'
-              },
-              device: {
-                geo: {
-                  country: 'FR',
-                  city: 'Marseille'
-                }
+        const ortb2 = {
+          site: {
+            domain: 'domain.example',
+            cat: ['IAB12'],
+            ext: {
+              data: {
+                category: 'sport',
               }
             }
-          };
-          return utils.deepAccess(config, key);
-        });
+          },
+          user: {
+            yob: 1985,
+            gender: 'm',
+            geo: {
+              country: 'FR',
+              city: 'Marseille'
+            },
+            ext: {
+              data: {
+                registered: true
+              }
+            }
+          }
+        };
 
         const bidRequests = [utils.deepClone(bid)];
-        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
         const data = request.data;
         expect(data.site.domain).to.equal('domain.example');
         expect(data.site.cat[0]).to.equal('IAB12');
         expect(data.site.ext.data.category).to.equal('sport');
         expect(data.user.yob).to.equal(1985);
         expect(data.user.gender).to.equal('m');
-        expect(data.device.geo.country).to.equal('FR');
-        expect(data.device.geo.city).to.equal('Marseille');
+        expect(data.user.geo.country).to.equal('FR');
+        expect(data.user.geo.city).to.equal('Marseille');
+        expect(data.user.ext.data.registered).to.be.true;
       });
     });
 

@@ -1,4 +1,4 @@
-import { logWarn } from '../src/utils.js';
+import { logWarn, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'zeta_global';
@@ -84,7 +84,7 @@ export const spec = {
       allimps: params.allimps,
       cur: [DEFAULT_CUR],
       wlang: params.wlang,
-      bcat: params.bcat,
+      bcat: deepAccess(bidderRequest.ortb2Imp, 'bcat') || params.bcat,
       badv: params.badv,
       bapp: params.bapp,
       source: params.source ? params.source : {},
@@ -94,7 +94,7 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
-    payload.site.page = bidderRequest.refererInfo.referer;
+    payload.site.page = bidderRequest.refererInfo.page;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     payload.ext.definerId = params.definerId;
 

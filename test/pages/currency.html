@@ -9,7 +9,7 @@
 
 <html>
 <head>
-    <script async src="../../../build/dist/prebid.js"></script>
+    <script async src="http://localhost:4444/bundle?modules=appnexusBidAdapter&modules=currency"></script>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
@@ -80,7 +80,7 @@
                 "currency": {
                     "adServerCurrency": "GBP",
                     "granularityMultiplier": 1,
-                    "defaultRates": { "USD": { "GBP": 0.80 }}
+                    "rates": { "USD": { "GBP": 0.80 }}
                 }
             });
             pbjs.addAdUnits(adUnits);

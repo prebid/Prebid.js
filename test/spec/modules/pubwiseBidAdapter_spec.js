@@ -99,13 +99,15 @@ const sampleValidBannerBidRequest = {
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
+  ortb2Imp: {
+    ext: {
+      data: {
+        adserver: {
+          name: 'gam',
+          adslot: '/19968336/header-bid-tag-0'
+        },
+        pbadslot: '/19968336/header-bid-tag-0',
+      }
     }
   },
   'mediaTypes': {
@@ -175,13 +177,15 @@ const sampleValidBidRequests = [
         'required': false
       }
     },
-    'fpd': {
-      'context': {
-        'adServer': {
-          'name': 'gam',
-          'adSlot': '/19968336/header-bid-tag-0'
-        },
-        'pbAdSlot': '/19968336/header-bid-tag-0'
+    ortb2Imp: {
+      ext: {
+        data: {
+          adserver: {
+            name: 'gam',
+            adslot: '/19968336/header-bid-tag-0'
+          },
+          pbadslot: '/19968336/header-bid-tag-0',
+        }
       }
     },
     'mediaTypes': {
@@ -246,13 +250,15 @@ const sampleBidderBannerRequest = {
   'crumbs': {
     'pubcid': '9a62f261-3c0b-4cc8-8db3-a72ae86ec6ba'
   },
-  'fpd': {
-    'context': {
-      'adServer': {
-        'name': 'gam',
-        'adSlot': '/19968336/header-bid-tag-0'
-      },
-      'pbAdSlot': '/19968336/header-bid-tag-0'
+  ortb2Imp: {
+    ext: {
+      data: {
+        adserver: {
+          name: 'gam',
+          adslot: '/19968336/header-bid-tag-0'
+        },
+        pbadslot: '/19968336/header-bid-tag-0',
+      }
     }
   },
   'mediaTypes': {
@@ -327,13 +333,15 @@ const sampleBidderRequest = {
           'required': false
         }
       },
-      'fpd': {
-        'context': {
-          'adServer': {
-            'name': 'gam',
-            'adSlot': '/19968336/header-bid-tag-0'
-          },
-          'pbAdSlot': '/19968336/header-bid-tag-0'
+      ortb2Imp: {
+        ext: {
+          data: {
+            adserver: {
+              name: 'gam',
+              adslot: '/19968336/header-bid-tag-0'
+            },
+            pbadslot: '/19968336/header-bid-tag-0',
+          }
         }
       },
       'mediaTypes': {

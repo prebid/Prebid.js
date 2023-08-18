@@ -37,9 +37,13 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     source: {tid: bidderRequest.auctionId}
   };
 
+  // Get the url parameters
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const checkPrebid = urlParams.get('_checkPrebid');
   // Force impactify debugging parameter
-  if (window.localStorage.getItem('_im_db_bidder') != null) {
-    request.test = Number(window.localStorage.getItem('_im_db_bidder'));
+  if (checkPrebid != null) {
+    request.test = Number(checkPrebid);
   }
 
   // Set Schain in request
@@ -65,7 +69,7 @@ const createOpenRtbRequest = (validBidRequests, bidderRequest) => {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     language: ((navigator.language || navigator.userLanguage || '').split('-'))[0] || 'en',
   };
-  request.site = {page: bidderRequest.refererInfo.referer};
+  request.site = {page: bidderRequest.refererInfo.page};
 
   // Handle privacy settings for GDPR/CCPA/COPPA
   let gdprApplies = 0;

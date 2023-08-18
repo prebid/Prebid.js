@@ -1,10 +1,9 @@
-import { deepAccess, isArray, _each, logWarn, isEmpty } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { config } from '../src/config.js'
-import { getStorageManager } from '../src/storageManager.js';
+import {_each, deepAccess, isArray, isEmpty, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
 
-const storage = getStorageManager();
 const BIDDER_CODE = 'ccx'
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const BID_URL = 'https://delivery.clickonometrics.pl/ortb/prebid/bid'
 const SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6]
 const SUPPORTED_VIDEO_MIMES = ['video/mp4', 'video/x-flv']
@@ -20,7 +19,8 @@ function _getDeviceObj () {
 
 function _getSiteObj (bidderRequest) {
   let site = {}
-  let url = config.getConfig('pageUrl') || deepAccess(window, 'location.href');
+  // TODO: does the fallback to window.location make sense?
+  let url = bidderRequest?.refererInfo?.page || window.location.href
   if (url.length > 0) {
     url = url.split('?')[0]
   }

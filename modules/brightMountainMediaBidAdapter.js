@@ -149,6 +149,7 @@ export const spec = {
 registerBidder(spec);
 
 function buildSite(bidderRequest) {
+  // TODO: should name/domain be the domain?
   let site = {
     name: window.location.hostname,
     publisher: {
@@ -160,12 +161,12 @@ function buildSite(bidderRequest) {
     deepSetValue(
       site,
       'page',
-      bidderRequest.refererInfo.referer.href ? bidderRequest.refererInfo.referer.href : '',
+      bidderRequest.refererInfo.page
     );
     deepSetValue(
       site,
       'ref',
-      bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : '',
+      bidderRequest.refererInfo.ref
     );
   }
   return site;

@@ -9,14 +9,15 @@
  * @requires module:modules/realTimeData
  */
 
-import { submodule } from '../src/hook.js';
-import { config } from '../src/config.js';
-import { ajaxBuilder } from '../src/ajax.js';
-import { logError } from '../src/utils.js';
-import find from 'core-js-pure/features/array/find.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {submodule} from '../src/hook.js';
+import {config} from '../src/config.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {deepAccess, logError} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
+const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
@@ -69,7 +70,7 @@ export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
-  ajax(`https://cdn.jwplayer.com/v2/media/${mediaId}`, {
+  ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
       const segment = parseSegment(response);
       cacheSegments(segment, mediaId);
@@ -129,7 +130,7 @@ function onRequestCompleted(mediaID, success) {
 function enrichBidRequest(bidReqConfig, onDone) {
   activeRequestCount = 0;
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits;
-  enrichAdUnits(adUnits);
+  enrichAdUnits(adUnits, bidReqConfig.ortb2Fragments);
   if (activeRequestCount <= 0) {
     onDone();
   } else {
@@ -141,10 +142,10 @@ function enrichBidRequest(bidReqConfig, onDone) {
  * get targeting data and write to bids
  * @function
  * @param {adUnit[]} adUnits
- * @param {function} onDone
+ * @param ortb2Fragments
  */
-export function enrichAdUnits(adUnits) {
-  const fpdFallback = config.getConfig('ortb2.site.ext.data.jwTargeting');
+export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
+  const fpdFallback = deepAccess(ortb2Fragments.global, 'site.ext.data.jwTargeting');
   adUnits.forEach(adUnit => {
     const jwTargeting = extractPublisherParams(adUnit, fpdFallback);
     if (!jwTargeting || !Object.keys(jwTargeting).length) {
@@ -155,8 +156,13 @@ export function enrichAdUnits(adUnits) {
       if (!vat) {
         return;
       }
+      const mediaId = vat.mediaID;
+      const contentId = getContentId(mediaId);
+      const contentSegments = getContentSegments(vat.segments);
+      const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
-      addTargetingToBids(adUnit.bids, targeting);
+      enrichBids(adUnit.bids, targeting, contentId, contentData);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -235,6 +241,9 @@ export function getVatFromPlayer(playerID, mediaID) {
   };
 }
 
+/*
+  deprecated
+ */
 export function formatTargetingResponse(vat) {
   const { segments, mediaID } = vat;
   const targeting = {};
@@ -243,23 +252,106 @@ export function formatTargetingResponse(vat) {
   }
 
   if (mediaID) {
-    const id = 'jw_' + mediaID;
     targeting.content = {
-      id
+      id: getContentId(mediaID)
     }
   }
   return targeting;
 }
 
-function addTargetingToBids(bids, targeting) {
-  if (!bids || !targeting) {
+export function getContentId(mediaID) {
+  if (!mediaID) {
     return;
   }
 
-  bids.forEach(bid => addTargetingToBid(bid, targeting));
+  return 'jw_' + mediaID;
 }
 
+export function getContentSegments(segments) {
+  if (!segments || !segments.length) {
+    return;
+  }
+
+  const formattedSegments = segments.reduce((convertedSegments, rawSegment) => {
+    convertedSegments.push({
+      id: rawSegment,
+      value: rawSegment
+    });
+    return convertedSegments;
+  }, []);
+
+  return formattedSegments;
+}
+
+export function getContentData(mediaId, segments) {
+  if (!mediaId && !segments) {
+    return;
+  }
+
+  const contentData = {
+    name: JWPLAYER_DOMAIN,
+    ext: {}
+  };
+
+  if (mediaId) {
+    contentData.ext.cids = [mediaId];
+  }
+
+  if (segments) {
+    contentData.segment = segments;
+    contentData.ext.segtax = 502;
+  }
+
+  return contentData;
+}
+
+export function addOrtbSiteContent(ortb2, contentId, contentData) {
+  if (!contentId && !contentData) {
+    return;
+  }
+
+  if (ortb2 == null) {
+    ortb2 = {};
+  }
+
+  let site = ortb2.site = ortb2.site || {};
+  let content = site.content = site.content || {};
+
+  if (contentId) {
+    content.id = contentId;
+  }
+
+  const currentData = content.data = content.data || [];
+  // remove old jwplayer data
+  const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
+
+  if (contentData) {
+    data.push(contentData);
+  }
+
+  content.data = data;
+
+  return ortb2;
+}
+
+function enrichBids(bids, targeting, contentId, contentData) {
+  if (!bids) {
+    return;
+  }
+
+  bids.forEach(bid => {
+    addTargetingToBid(bid, targeting);
+  });
+}
+
+/*
+  deprecated
+ */
 export function addTargetingToBid(bid, targeting) {
+  if (!targeting) {
+    return;
+  }
+
   const rtd = bid.rtd || {};
   const jwRtd = {};
   jwRtd[SUBMODULE_NAME] = Object.assign({}, rtd[SUBMODULE_NAME], { targeting });
@@ -269,7 +361,7 @@ export function addTargetingToBid(bid, targeting) {
 function getPlayer(playerID) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
-    logError('jwplayer.js was not found on page');
+    logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 

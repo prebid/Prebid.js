@@ -1,8 +1,19 @@
-import { _each, deepAccess, logWarn, tryAppendQueryString, inIframe, getWindowTop, parseUrl, parseSizesInput, isFn, getDNT, deepSetValue } from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  inIframe,
+  isFn,
+  logWarn,
+  parseSizesInput,
+  tryAppendQueryString
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
+import {parseDomain} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
@@ -167,28 +178,13 @@ function createRenderer(bid, url) {
 }
 
 function getUrlsInfo(bidderRequest) {
-  let page = '';
-  let referrer = '';
-
-  const {refererInfo} = bidderRequest;
-
-  if (inIframe()) {
-    page = refererInfo.referer;
-  } else {
-    const w = getWindowTop();
-    page = w.location.href;
-    referrer = w.document.referrer || '';
-  }
-
-  page = config.getConfig('pageUrl') || page;
-  const url = parseUrl(page);
-  const domain = url.hostname;
-
+  const {page, domain, ref} = bidderRequest.refererInfo;
   return {
-    domain,
-    page,
-    referrer
-  };
+    // TODO: do the fallbacks make sense here?
+    page: page || bidderRequest.refererInfo?.topmostLocation,
+    referrer: ref || '',
+    domain: domain || parseDomain(bidderRequest?.refererInfo?.topmostLocation)
+  }
 }
 
 function getSize(paramSizes) {

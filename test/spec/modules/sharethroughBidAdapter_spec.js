@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { sharethroughAdapterSpec, sharethroughInternal } from 'modules/sharethroughBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config';
@@ -113,10 +114,6 @@ describe('sharethrough adapter spec', function () {
             sharedid: {
               id: 'fake-sharedid',
             },
-            flocId: {
-              id: 'fake-flocid',
-              version: '42',
-            },
           },
           crumbs: {
             pubcid: 'fake-pubcid-in-crumbs-obj',
@@ -157,7 +154,6 @@ describe('sharethrough adapter spec', function () {
               startdelay: 42,
               skipmin: 10,
               skipafter: 20,
-              placement: 1,
               delivery: 1,
               companiontype: 'companion type',
               companionad: 'companion ad',
@@ -170,7 +166,7 @@ describe('sharethrough adapter spec', function () {
 
       bidderRequest = {
         refererInfo: {
-          referer: 'https://referer.com',
+          ref: 'https://referer.com',
         },
       };
     });
@@ -205,6 +201,7 @@ describe('sharethrough adapter spec', function () {
             expect(openRtbReq.cur).to.deep.equal(['USD']);
             expect(openRtbReq.tmax).to.equal(242);
 
+            expect(Object.keys(openRtbReq.site)).to.have.length(3);
             expect(openRtbReq.site.domain).not.to.be.undefined;
             expect(openRtbReq.site.page).not.to.be.undefined;
             expect(openRtbReq.site.ref).to.equal('https://referer.com');
@@ -221,7 +218,6 @@ describe('sharethrough adapter spec', function () {
               'crwdcntrl.net': { id: 'fake-lotame' },
               'parrable.com': { id: 'fake-parrable' },
               'netid.de': { id: 'fake-netid' },
-              'chrome.com': { id: 'fake-flocid' },
             };
             expect(openRtbReq.user.ext.eids).to.be.an('array').that.have.length(Object.keys(expectedEids).length);
             for (const eid of openRtbReq.user.ext.eids) {
@@ -253,6 +249,17 @@ describe('sharethrough adapter spec', function () {
           const openRtbReq = spec.buildRequests([bidRequests[1]], bidderRequest)[0].data;
 
           expect(openRtbReq.user.ext.eids).to.deep.equal([]);
+        });
+      });
+
+      describe('no referer provided', () => {
+        beforeEach(() => {
+          bidderRequest = {};
+        });
+
+        it('should set referer to undefined', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+          expect(openRtbReq.site.ref).to.be.undefined;
         });
       });
 
@@ -419,17 +426,79 @@ describe('sharethrough adapter spec', function () {
           expect(videoImp.startdelay).to.equal(0);
           expect(videoImp.skipmin).to.equal(0);
           expect(videoImp.skipafter).to.equal(0);
-          expect(videoImp.placement).to.be.undefined;
+          expect(videoImp.placement).to.equal(1);
           expect(videoImp.delivery).to.be.undefined;
           expect(videoImp.companiontype).to.be.undefined;
           expect(videoImp.companionad).to.be.undefined;
         });
 
-        it('should not return a video impression if context is outstream', () => {
-          bidRequests[1].mediaTypes.video.context = 'outstream';
-          const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+        describe('outstream', () => {
+          it('should use placement value if provided', () => {
+            bidRequests[1].mediaTypes.video.context = 'outstream';
+            bidRequests[1].mediaTypes.video.placement = 3;
 
-          expect(builtRequest).to.be.undefined;
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            expect(videoImp.placement).to.equal(3);
+          });
+
+          it('should default placement to 4 if not provided', () => {
+            bidRequests[1].mediaTypes.video.context = 'outstream';
+
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            expect(videoImp.placement).to.equal(4);
+          });
+        });
+      });
+
+      describe('first party data', () => {
+        const firstPartyData = {
+          site: {
+            name: 'example',
+            keywords: 'power tools, drills',
+            search: 'drill',
+            content: {
+              userrating: '4',
+            },
+            ext: {
+              data: {
+                pageType: 'article',
+                category: 'repair',
+              },
+            },
+          },
+          user: {
+            yob: 1985,
+            gender: 'm',
+            ext: {
+              data: {
+                registered: true,
+                interests: ['cars'],
+              },
+            },
+          },
+        };
+
+        it('should include first party data in open rtb request, site section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+
+          expect(openRtbReq.site.name).to.equal(firstPartyData.site.name);
+          expect(openRtbReq.site.keywords).to.equal(firstPartyData.site.keywords);
+          expect(openRtbReq.site.search).to.equal(firstPartyData.site.search);
+          expect(openRtbReq.site.content).to.deep.equal(firstPartyData.site.content);
+          expect(openRtbReq.site.ext).to.deep.equal(firstPartyData.site.ext);
+        });
+
+        it('should include first party data in open rtb request, user section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, {...bidderRequest, ortb2: firstPartyData})[0].data;
+
+          expect(openRtbReq.user.yob).to.equal(firstPartyData.user.yob);
+          expect(openRtbReq.user.gender).to.equal(firstPartyData.user.gender);
+          expect(openRtbReq.user.ext.data).to.deep.equal(firstPartyData.user.ext.data);
+          expect(openRtbReq.user.ext.eids).not.to.be.undefined;
         });
       });
     });
@@ -532,11 +601,11 @@ describe('sharethrough adapter spec', function () {
       const serverResponses = [{ body: { cookieSyncUrls: cookieSyncs } }];
 
       it('returns an array of correctly formatted user syncs', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, null, 'fake-privacy-signal');
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses);
         expect(syncArray).to.deep.equal([
-          { type: 'image', url: 'cookieUrl1&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl2&us_privacy=fake-privacy-signal' },
-          { type: 'image', url: 'cookieUrl3&us_privacy=fake-privacy-signal' }],
+          { type: 'image', url: 'cookieUrl1' },
+          { type: 'image', url: 'cookieUrl2' },
+          { type: 'image', url: 'cookieUrl3' }],
         );
       });
 
