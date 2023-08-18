@@ -13,7 +13,8 @@ import { getGlobal } from '../src/prebidGlobal.js';
 const emptyUrl = '';
 const analyticsType = 'endpoint';
 const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
-const VERSION = '2.0.0';
+const ADAGIO_GVLID = 617;
+const VERSION = '3.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const ENDPOINT = 'https://c.4dex.io/pba.gif';
 const cache = {
@@ -347,7 +348,8 @@ adagioAdapter.enableAnalytics = config => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adagioAdapter,
-  code: 'adagio'
+  code: 'adagio',
+  gvlid: ADAGIO_GVLID,
 });
 
 export default adagioAdapter;
