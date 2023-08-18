@@ -1,4 +1,4 @@
-import {deepAccess, isPlainObject, getDNT, isArray, logWarn} from '../src/utils.js';
+import {deepAccess, getDNT, isArray, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -44,7 +44,7 @@ function fetchIds_() {
     client_id_ls: '',
     session_id_c: '',
     session_id_ls: '',
-    jxeids : {}
+    jxeids: {}
   };
   try {
     let tmp = storage.getCookie('_jxx');
@@ -56,13 +56,10 @@ function fetchIds_() {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
-    //we have a problem if we 
     ['_jxtoko', '_jxifo', '_jxtdid', '__uid2_advertising_token'].forEach(function(n) {
-        tmp = storage.getCookie(n);
-        if (tmp) ret.jxeids[n] = tmp;
+      tmp = storage.getCookie(n);
+      if (tmp) ret.jxeids[n] = tmp;
     });
-    tmp = storage.getCookie('_jxtoko');
-    if (tmp) ret.jxtoko_id = tmp;
   } catch (error) {}
   return ret;
 }
@@ -166,7 +163,7 @@ export const spec = {
     let bids = [];
     validBidRequests.forEach(function(one) {
       let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
-      let tmp =  {
+      let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
         mediaTypes: (one.mediaTypes === 'undefined' ? {} : one.mediaTypes),

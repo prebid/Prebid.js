@@ -74,8 +74,14 @@ describe('jixie Adapter', function () {
     const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
     const jxifoTest1_ = 'fffffbbbbbcccccaaaaae890606aaaaa';
     const jxtdidTest1_ = '222223d1-1111-2222-3333-b9f129299999';
-    const __uid2_advertising_token_Test1 = 'eyJJRCI6ImFiYyJ9';
+    const __uid2_advertising_token_Test1 = 'AAAAABBBBBCCCCCDDDDDEEEEEUkkZPQfifpkPnnlJhtsa4o+gf4nfqgN5qHiTVX73ymTSbLT9jz1nf+Q7QdxNh9nTad9UaN5pzfHMt/rs1woQw72c1ip+8heZXPfKGZtZP7ldJesYhlo3/0FVcL/wl9ZlAo1jYOEfHo7Y9zFzNXABbbbbb==';
 
+    const refJxEids_ = {
+        '_jxtoko': jxtokoTest1_,
+        '_jxifo': jxifoTest1_,
+        '_jxtdid': jxtdidTest1_,
+        '__uid2_advertising_token': __uid2_advertising_token_Test1
+    }; 
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -94,7 +100,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode0_,
         'bidId': bidId0_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -113,7 +124,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode1_,
         'bidId': bidId1_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -132,7 +148,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode2_,
         'bidId': bidId2_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
+          }
+        }
       }
     ];
 
@@ -145,7 +166,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
       },
       {
         'bidId': bidId1_,
@@ -161,7 +183,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
       },
       {
         'bidId': bidId2_,
@@ -177,7 +200,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
       }
     ];
 
@@ -201,8 +225,7 @@ describe('jixie Adapter', function () {
       // similar to above test case but here we force some clientid sessionid values
       // and domain, pageurl
       // get the interceptors ready:
-      //['_jxtoko', '_jxifo', '_jxtdid', '__uid2_advertising_token'].forEach(function(n) {
-    
+      
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
@@ -239,6 +262,7 @@ describe('jixie Adapter', function () {
       it('sends bid request to ENDPOINT via POST', function () {
         expect(request.method).to.equal('POST')
       })
+
       expect(request.data).to.be.an('string');
       const payload = JSON.parse(request.data);
       expect(payload).to.have.property('auctionid', auctionId_);
@@ -246,7 +270,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('client_id_ls', clientIdTest1_);
       expect(payload).to.have.property('session_id_c', sessionIdTest1_);
       expect(payload).to.have.property('session_id_ls', sessionIdTest1_);
-      expect(payload).to.have.property('jxtoko_id', jxtokoTest1_);
+      expect(payload).to.have.property('jxeids').that.deep.equals(refJxEids_);
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);
