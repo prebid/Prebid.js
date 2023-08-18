@@ -194,9 +194,9 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    userId = randomValues.map(it => it.toString(36)).join().substring(20);
-
+    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+    logInfo('generated onetime User ID: ', userId);
     window.qid = userId;
   }
 
