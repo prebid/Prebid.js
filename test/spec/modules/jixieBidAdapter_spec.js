@@ -72,6 +72,10 @@ describe('jixie Adapter', function () {
     const clientIdTest1_ = '1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const sessionIdTest1_ = '1594782644-1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
+    const jxifoTest1_ = 'fffffbbbbbcccccaaaaae890606aaaaa';
+    const jxtdidTest1_ = '222223d1-1111-2222-3333-b9f129299999';
+    const __uid2_advertising_token_Test1 = 'eyJJRCI6ImFiYyJ9';
+
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -197,11 +201,22 @@ describe('jixie Adapter', function () {
       // similar to above test case but here we force some clientid sessionid values
       // and domain, pageurl
       // get the interceptors ready:
+      //['_jxtoko', '_jxifo', '_jxtdid', '__uid2_advertising_token'].forEach(function(n) {
+    
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
         .withArgs('_jxtoko')
         .returns(jxtokoTest1_);
+      getCookieStub
+        .withArgs('_jxifo')
+        .returns(jxifoTest1_);
+      getCookieStub
+        .withArgs('_jxtdid')
+        .returns(jxtdidTest1_);
+      getCookieStub
+        .withArgs('__uid2_advertising_token')
+        .returns(__uid2_advertising_token_Test1);
       getCookieStub
         .withArgs('_jxx')
         .returns(clientIdTest1_);
