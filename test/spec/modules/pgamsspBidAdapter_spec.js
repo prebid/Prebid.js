@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/pgamBidAdapter.js';
+import { spec } from '../../../modules/pgamsspBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
