@@ -550,7 +550,7 @@ describe('magnite analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/event');
+      expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
       let message = JSON.parse(request.requestBody);
 
@@ -724,7 +724,7 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
 
-        expect(request.url).to.equal('//localhost:9999/event');
+        expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
         let message = JSON.parse(request.requestBody);
 

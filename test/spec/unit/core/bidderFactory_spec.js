@@ -13,9 +13,8 @@ import {stubAuctionIndex} from '../../../helpers/indexStub.js';
 import {bidderSettings} from '../../../../src/bidderSettings.js';
 import {decorateAdUnitsWithNativeParams} from '../../../../src/native.js';
 import * as activityRules from 'src/activities/rules.js';
-import {sandbox} from 'sinon';
 import {MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID} from '../../../../src/activities/activities.js';
+import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../../../../src/activities/activities.js';
 
 const CODE = 'sampleBidder';
 const MOCK_BIDS_REQUEST = {
@@ -141,6 +140,21 @@ describe('bidders created by newBidder', function () {
     });
 
     describe('transaction IDs', () => {
+      beforeEach(() => {
+        activityRules.isActivityAllowed.reset();
+        ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
+        spec.interpretResponse.callsFake(() => [
+          {
+            requestId: 'bid',
+            cpm: 123,
+            ttl: 300,
+            creativeId: 'crid',
+            netRevenue: true,
+            currency: 'USD'
+          }
+        ])
+      });
+
       Object.entries({
         'be hidden': false,
         'not be hidden': true,
@@ -166,20 +180,7 @@ describe('bidders created by newBidder', function () {
             bidReqs.forEach(checkBidRequest);
             return {method: 'POST'};
           });
-          spec.interpretResponse.callsFake(() => [
-            {
-              requestId: 'bid',
-              cpm: 123,
-              ttl: 300,
-              creativeId: 'crid',
-              netRevenue: true,
-              currency: 'USD'
-            }
-          ])
-          activityRules.isActivityAllowed.reset();
           activityRules.isActivityAllowed.callsFake(() => allowed);
-
-          ajaxStub.callsFake((_, callback) => callback.success(null, {getResponseHeader: sinon.stub()}));
 
           const bidder = newBidder(spec);
 
@@ -206,6 +207,33 @@ describe('bidders created by newBidder', function () {
           })
         });
       });
+
+      it('should not be hidden from request methods', (done) => {
+        const bidderRequest = {
+          bidderCode: 'mockBidder',
+          auctionId: 'aid',
+          getAID() { return this.auctionId },
+          bids: [
+            {
+              adUnitCode: 'mockAU',
+              bidId: 'bid',
+              transactionId: 'tid',
+              auctionId: 'aid',
+              getTIDs() {
+                return [this.auctionId, this.transactionId]
+              }
+            }
+          ]
+        };
+        activityRules.isActivityAllowed.callsFake(() => false);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.callsFake((reqs, bidderReq) => {
+          expect(bidderReq.getAID()).to.eql('aid');
+          expect(reqs[0].getTIDs()).to.eql(['aid', 'tid']);
+          done();
+        });
+        newBidder(spec).callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+      })
     });
 
     it('should handle bad bid requests gracefully', function () {
@@ -291,7 +319,7 @@ describe('bidders created by newBidder', function () {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(url);
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+      sinon.assert.match(ajaxStub.firstCall.args[3], {
         method: 'POST',
         contentType: 'text/plain',
         withCredentials: true
@@ -316,11 +344,11 @@ describe('bidders created by newBidder', function () {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(url);
       expect(ajaxStub.firstCall.args[2]).to.equal(JSON.stringify(data));
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+      sinon.assert.match(ajaxStub.firstCall.args[3], {
         method: 'POST',
         contentType: 'application/json',
         withCredentials: true
-      });
+      })
     });
 
     it('should make the appropriate GET request', function () {
@@ -339,10 +367,10 @@ describe('bidders created by newBidder', function () {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+      sinon.assert.match(ajaxStub.firstCall.args[3], {
         method: 'GET',
         withCredentials: true
-      });
+      })
     });
 
     it('should make the appropriate GET request when options are passed', function () {
@@ -363,10 +391,10 @@ describe('bidders created by newBidder', function () {
       expect(ajaxStub.calledOnce).to.equal(true);
       expect(ajaxStub.firstCall.args[0]).to.equal(`${url}?arg=2`);
       expect(ajaxStub.firstCall.args[2]).to.be.undefined;
-      expect(ajaxStub.firstCall.args[3]).to.deep.equal({
+      sinon.assert.match(ajaxStub.firstCall.args[3], {
         method: 'GET',
         withCredentials: false
-      });
+      })
     });
 
     it('should make multiple calls if the spec returns them', function () {
@@ -390,6 +418,78 @@ describe('bidders created by newBidder', function () {
       bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
       expect(ajaxStub.calledTwice).to.equal(true);
+    });
+
+    describe('browsingTopics ajax option', () => {
+      let transmitUfpdAllowed, bidder;
+      beforeEach(() => {
+        activityRules.isActivityAllowed.reset();
+        activityRules.isActivityAllowed.callsFake((activity) => activity === ACTIVITY_TRANSMIT_UFPD ? transmitUfpdAllowed : true);
+        bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+      });
+
+      it(`should be set to false when adapter sets browsingTopics = false`, () => {
+        transmitUfpdAllowed = true;
+        spec.buildRequests.returns([
+          {
+            method: 'GET',
+            url: 'url',
+            options: {
+              browsingTopics: false
+            }
+          }
+        ]);
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.calledWith(ajaxStub, 'url', sinon.match.any, sinon.match.any, sinon.match({
+          browsingTopics: false
+        }));
+      });
+
+      Object.entries({
+        'allowed': true,
+        'not allowed': false
+      }).forEach(([t, allow]) => {
+        it(`should be set to ${allow} when transmitUfpd is ${t}`, () => {
+          transmitUfpdAllowed = allow;
+          spec.buildRequests.returns([
+            {
+              method: 'GET',
+              url: '1',
+            },
+            {
+              method: 'POST',
+              url: '2',
+              data: {}
+            },
+            {
+              method: 'GET',
+              url: '3',
+              options: {
+                browsingTopics: true
+              }
+            },
+            {
+              method: 'POST',
+              url: '4',
+              data: {},
+              options: {
+                browsingTopics: true
+              }
+            }
+          ]);
+          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          ['1', '2', '3', '4'].forEach(url => {
+            sinon.assert.calledWith(
+              ajaxStub,
+              url,
+              sinon.match.any,
+              sinon.match.any,
+              sinon.match({browsingTopics: allow})
+            );
+          });
+        });
+      });
     });
 
     it('should not add bids for each placement code if no requests are given', function () {
@@ -1106,6 +1206,25 @@ describe('validate bid response: ', function () {
     expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
     expect(logErrorSpy.callCount).to.equal(0);
   });
+
+  it('should disregard auctionId/transactionId set by the adapter', () => {
+    let bidderRequest = {
+      bids: [{
+        bidder: CODE,
+        bidId: '1',
+        auctionId: 'aid',
+        transactionId: 'tid',
+        adUnitCode: 'au',
+      }]
+    };
+    const bidder = newBidder(spec);
+    spec.interpretResponse.returns(Object.assign({}, bids[0], {transactionId: 'ignored', auctionId: 'ignored'}));
+    bidder.callBids(bidderRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+    sinon.assert.calledWith(addBidResponseStub, sinon.match.any, sinon.match({
+      transactionId: 'tid',
+      auctionId: 'aid'
+    }));
+  })
 
   describe(' Check for alternateBiddersList ', function() {
     let bidRequest;
