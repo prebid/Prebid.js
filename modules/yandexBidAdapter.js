@@ -1,4 +1,4 @@
-import { formatQS, deepAccess, triggerPixel, _each, _map } from '../src/utils.js';
+import { formatQS, deepAccess, deepSetValue, triggerPixel, _each, _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js'
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -115,20 +115,27 @@ export const spec = {
         queryParams['ssp-cur'] = currency;
       }
 
+      const data = {
+        id: bidRequest.bidId,
+        imp: [imp],
+        site: {
+          ref: referrer,
+          page,
+          domain,
+        },
+        tmax: timeout,
+      };
+
+      const eids = deepAccess(bidRequest, 'userIdAsEids');
+      if (eids && eids.length) {
+        deepSetValue(data, 'user.ext.eids', eids);
+      }
+
       const queryParamsString = formatQS(queryParams);
       return {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
-        data: {
-          id: bidRequest.bidId,
-          imp: [imp],
-          site: {
-            ref: referrer,
-            page,
-            domain,
-          },
-          tmax: timeout,
-        },
+        data,
         options: {
           withCredentials,
         },
