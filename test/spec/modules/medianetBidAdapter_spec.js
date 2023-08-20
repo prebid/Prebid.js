@@ -915,24 +915,24 @@ let VALID_BID_REQUEST = [{
       cid: '8CUV090'
     }
   },
-  VALID_PARAMS_AAX = {
-    bidder: 'aax',
+  VALID_PARAMS_TS = {
+    bidder: 'trustedstack',
     params: {
-      cid: 'AAXG123'
+      cid: 'TS012345'
     }
   },
   PARAMS_MISSING = {
     bidder: 'medianet',
   },
-  PARAMS_MISSING_AAX = {
-    bidder: 'aax',
+  PARAMS_MISSING_TS = {
+    bidder: 'trustedstack',
   },
   PARAMS_WITHOUT_CID = {
     bidder: 'medianet',
     params: {}
   },
-  PARAMS_WITHOUT_CID_AAX = {
-    bidder: 'aax',
+  PARAMS_WITHOUT_CID_TS = {
+    bidder: 'trustedstack',
     params: {}
   },
   PARAMS_WITH_INTEGER_CID = {
@@ -941,8 +941,8 @@ let VALID_BID_REQUEST = [{
       cid: 8867587
     }
   },
-  PARAMS_WITH_INTEGER_CID_AAX = {
-    bidder: 'aax',
+  PARAMS_WITH_INTEGER_CID_TS = {
+    bidder: 'trustedstack',
     params: {
       cid: 8867587
     }
@@ -953,8 +953,8 @@ let VALID_BID_REQUEST = [{
       cid: ''
     }
   },
-  PARAMS_WITH_EMPTY_CID_AAX = {
-    bidder: 'aax',
+  PARAMS_WITH_EMPTY_CID_TS = {
+    bidder: 'trustedstack',
     params: {
       cid: ''
     }
@@ -1783,34 +1783,34 @@ describe('Media.net bid adapter', function () {
     });
   });
 
-  describe('isBidRequestValid aax', function () {
+  describe('isBidRequestValid trustedstack', function () {
     it('should accept valid bid params', function () {
-      let isValid = spec.isBidRequestValid(VALID_PARAMS_AAX);
+      let isValid = spec.isBidRequestValid(VALID_PARAMS_TS);
       expect(isValid).to.equal(true);
     });
 
     it('should reject bid if cid is not present', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID_AAX);
+      let isValid = spec.isBidRequestValid(PARAMS_WITHOUT_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is not a string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID_AAX);
+      let isValid = spec.isBidRequestValid(PARAMS_WITH_INTEGER_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should reject bid if cid is a empty string', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID_AAX);
+      let isValid = spec.isBidRequestValid(PARAMS_WITH_EMPTY_CID_TS);
       expect(isValid).to.equal(false);
     });
 
     it('should have missing params', function () {
-      let isValid = spec.isBidRequestValid(PARAMS_MISSING_AAX);
+      let isValid = spec.isBidRequestValid(PARAMS_MISSING_TS);
       expect(isValid).to.equal(false);
     });
   });
 
-  describe('interpretResponse aax', function () {
+  describe('interpretResponse trustedstack', function () {
     it('should not push response if no-bid', function () {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_NOBID, []);

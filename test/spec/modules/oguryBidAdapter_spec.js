@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -851,20 +852,11 @@ describe('OguryBidAdapter', function () {
   });
 
   describe('onBidWon', function() {
-    const nurl = 'https://fakewinurl.test';
-    let xhr;
+    const nurl = 'https://fakewinurl.test/';
     let requests;
 
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (xhr) => {
-        requests.push(xhr);
-      };
-    })
-
-    afterEach(function() {
-      xhr.restore()
+      requests = server.requests;
     })
 
     it('Should not create nurl request if bid is undefined', function() {
@@ -932,19 +924,13 @@ describe('OguryBidAdapter', function () {
   })
 
   describe('onTimeout', function () {
-    let xhr;
     let requests;
 
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (xhr) => {
+      requests = server.requests;
+      server.onCreate = (xhr) => {
         requests.push(xhr);
       };
-    })
-
-    afterEach(function() {
-      xhr.restore()
     })
 
     it('should send on bid timeout notification', function() {
