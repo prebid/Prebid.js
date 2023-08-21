@@ -40,7 +40,7 @@ function init() {
 
           var dabDateNow = new Date();
           var dabTimeNow = dabDateNow.getTime();
-          var dabElapsedSeconds = Math.floor((dabTimeNow-dabStartTime)/1000);
+          var dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
           let elapsedThreshold = 30;
           if (conf[MODULE_NAME]['threshold']) {
             elapsedThreshold = conf[MODULE_NAME]['threshold'];
