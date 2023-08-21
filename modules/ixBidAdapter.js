@@ -168,6 +168,7 @@ const MEDIA_TYPES = {
 function bidToBannerImp(bid) {
   const imp = bidToImp(bid, BANNER);
   imp.banner = {};
+  imp.adunitCode = bid.adUnitCode;
   const impSize = deepAccess(bid, 'params.size');
   if (impSize) {
     imp.banner.w = impSize[0];
@@ -344,7 +345,6 @@ function bidToImp(bid, mediaType) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-
   if (deepAccess(bid, `params.${mediaType}.siteId`) && !isNaN(Number(bid.params[mediaType].siteId))) {
     switch (mediaType) {
       case BANNER:
@@ -955,10 +955,10 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
 
   if (bannerImpressions.length > 0) {
     const bannerImpsKeyed = bannerImpressions.reduce((acc, bannerImp) => {
-      if (!acc[bannerImp.id]) {
-        acc[bannerImp.id] = []
+      if (!acc[bannerImp.adunitCode]) {
+        acc[bannerImp.adunitCode] = []
       }
-      acc[bannerImp.id].push(bannerImp);
+      acc[bannerImp.adunitCode].push(bannerImp);
       return acc;
     }, {});
     for (const impId in bannerImpsKeyed) {
