@@ -35,9 +35,15 @@ export const spec = {
     };
     let placements = [];
     let imp = [];
+    let site = {
+      'domain': location.domain || '',
+      'page': location || ''
+    }
+
     let request = {
-      'id': '12345',
+      'id': '123456',
       'imp': imp,
+      'site': site,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
@@ -59,6 +65,7 @@ export const spec = {
         request.gpp = bidderRequest.gppConsent;
       }
     }
+
     const len = validBidRequests.length;
 
     for (let i = 0; i < len; i++) {
