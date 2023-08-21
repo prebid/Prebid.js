@@ -438,7 +438,7 @@ describe('MinuteMediaPlus Bid Adapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'url': 'https://sync.minutemedia-prebid.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
         'type': 'image'
       }]);
     });
