@@ -1134,7 +1134,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].af).to.equal('banner');
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
-      expect(data.s[1].ps[0].frv).to.equal(undefined);
+      expect(data.s[1].ps[0].frv).to.equal(1.1);
     });
 
     it('Logger: best case + win tracker in case of Bidder Aliases', function() {
