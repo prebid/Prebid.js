@@ -252,20 +252,13 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
-  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
-
-  if (gppString && applicableSections?.length) {
-    params += '&gpp=' + encodeURIComponent(gppString);
-    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
-  }
-
+  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
