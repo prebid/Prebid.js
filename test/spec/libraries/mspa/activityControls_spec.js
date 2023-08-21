@@ -35,6 +35,12 @@ describe('Consent interpretation', () => {
       }));
       expect(result).to.equal(true);
     });
+    it('should be true (basic consent conditions do not pass) with covered set to zero (invalid state)', () => {
+      const result = isBasicConsentDenied(mkConsent({
+        MspaCoveredTransaction: 0
+      }));
+      expect(result).to.equal(true);
+    });
     it('should not deny when consent for under-13 is null', () => {
       expect(isBasicConsentDenied(mkConsent({
         KnownChildSensitiveDataConsents: [0, null]
@@ -203,10 +209,12 @@ describe('setupRules', () => {
     ([registerRule, isAllowed] = ruleRegistry());
     consent = {
       applicableSections: [1],
-      sectionData: {
-        mockApi: {
-          mock: 'consent'
-        }
+      parsedSections: {
+        mockApi: [
+          {
+            mock: 'consent'
+          }
+        ]
       }
     };
   });
@@ -215,7 +223,7 @@ describe('setupRules', () => {
     return setupRules(api, sids, normalize, rules, registerRule, () => consent)
   }
 
-  it('should use section data for the given api', () => {
+  it('should use flatten section data for the given api', () => {
     runSetup('mockApi', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(false);
     sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
@@ -232,7 +240,7 @@ describe('setupRules', () => {
     expect(isAllowed('mockActivity', {})).to.equal(true);
   });
 
-  it('should pass consent through normalizeConsent', () => {
+  it('should pass flattened consent through normalizeConsent', () => {
     const normalize = sinon.stub().returns({normalized: 'consent'})
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);

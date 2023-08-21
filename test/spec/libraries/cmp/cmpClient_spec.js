@@ -1,4 +1,4 @@
-import {cmpClient} from '../../../../libraries/cmp/cmpClient.js';
+import {cmpClient, MODE_CALLBACK, MODE_RETURN} from '../../../../libraries/cmp/cmpClient.js';
 
 describe('cmpClient', () => {
   function mockWindow(props = {}) {
@@ -6,6 +6,9 @@ describe('cmpClient', () => {
     const win = {
       addEventListener: sinon.stub().callsFake((evt, listener) => {
         evt === 'message' && listeners.push(listener)
+      }),
+      removeEventListener: sinon.stub().callsFake((evt, listener) => {
+        evt === 'message' && (listeners = listeners.filter((l) => l !== listener));
       }),
       postMessage: sinon.stub().callsFake((msg) => {
         listeners.forEach(ln => ln({data: msg}))
@@ -62,10 +65,15 @@ describe('cmpClient', () => {
               return 'val'
             })
           })
+
           Object.entries({
             callback: [sinon.stub(), 'undefined', undefined],
-            'no callback': [undefined, 'api return value', 'val']
-          }).forEach(([t, [callback, tResult, expectedResult]]) => {
+            'callback, mode = MODE_CALLBACK': [sinon.stub(), 'undefined', undefined, MODE_CALLBACK],
+            'callback, mode = MODE_RETURN': [sinon.stub(), 'api return value', 'val', MODE_RETURN],
+            'no callback': [undefined, 'api return value', 'val'],
+            'no callback, mode = MODE_CALLBACK': [undefined, 'callback arg', 'cbVal', MODE_CALLBACK],
+            'no callback, mode = MODE_RETURN': [undefined, 'api return value', 'val', MODE_RETURN],
+          }).forEach(([t, [callback, tResult, expectedResult, mode]]) => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': undefined,
@@ -73,22 +81,35 @@ describe('cmpClient', () => {
               }).forEach(([t, success]) => {
                 it(`resolves to ${tResult} (${t})`, (done) => {
                   cbResult = ['cbVal', success];
-                  mkClient()({callback}).then((val) => {
+                  mkClient({mode})({callback}).then((val) => {
                     expect(val).to.equal(expectedResult);
                     done();
                   })
+                });
+
+                it('should pass either a function or undefined as callback', () => {
+                  mkClient({mode})({callback});
+                  sinon.assert.calledWith(mockApiFn, sinon.match.any, sinon.match(arg => typeof arg === 'undefined' || typeof arg === 'function'))
                 })
               });
             })
           });
 
-          it('rejects to undefined when callback is provided and success = false', () => {
+          it('rejects to undefined when callback is provided and success = false', (done) => {
             cbResult = ['cbVal', false];
             mkClient()({callback: sinon.stub()}).catch(val => {
-              expect(val).to.equal('cbVal');
+              expect(val).to.not.exist;
               done();
             })
           });
+
+          it('rejects to callback arg when callback is NOT provided, success = false, mode = MODE_CALLBACK', (done) => {
+            cbResult = ['cbVal', false];
+            mkClient({mode: MODE_CALLBACK})().catch(val => {
+              expect(val).to.eql('cbVal');
+              done();
+            })
+          })
 
           it('rejects when CMP api throws', (done) => {
             mockApiFn.reset();
@@ -98,7 +119,7 @@ describe('cmpClient', () => {
               expect(val).to.equal(e);
               done();
             });
-          })
+          });
         })
 
         it('should use apiArgs to choose and order the arguments to pass to the API fn', () => {
@@ -109,6 +130,10 @@ describe('cmpClient', () => {
           });
           sinon.assert.calledWith(mockApiFn, 'mockParam', 'mockCmd');
         });
+
+        it('should not choke on .close()', () => {
+          mkClient({}).close();
+        })
       })
     })
   })
@@ -189,8 +214,12 @@ describe('cmpClient', () => {
           })
           Object.entries({
             'callback': [sinon.stub(), 'undefined', undefined],
+            'callback, mode = MODE_RETURN': [sinon.stub(), 'undefined', undefined, MODE_RETURN],
+            'callback, mode = MODE_CALLBACK': [sinon.stub(), 'undefined', undefined, MODE_CALLBACK],
             'no callback': [undefined, 'response returnValue', 'val'],
-          }).forEach(([t, [callback, tResult, expectedResult]]) => {
+            'no callback, mode = MODE_RETURN': [undefined, 'undefined', undefined, MODE_RETURN],
+            'no callback, mode = MODE_CALLBACK': [undefined, 'response returnValue', 'val', MODE_CALLBACK],
+          }).forEach(([t, [callback, tResult, expectedResult, mode]]) => {
             describe(`when ${t} is provided`, () => {
               Object.entries({
                 'no success flag': {},
@@ -198,35 +227,69 @@ describe('cmpClient', () => {
               }).forEach(([t, resp]) => {
                 it(`resolves to ${tResult} (${t})`, () => {
                   Object.assign(response, resp);
-                  mkClient()({callback}).then((val) => {
+                  mkClient({mode})({callback}).then((val) => {
                     expect(val).to.equal(expectedResult);
                   })
                 })
               });
 
-              it(`rejects to ${tResult} when success = false`, (done) => {
-                response.success = false;
-                mkClient()({callback}).catch((err) => {
-                  expect(err).to.equal(expectedResult);
-                  done();
+              if (mode !== MODE_RETURN) { // in return mode, the promise never rejects
+                it(`rejects to ${tResult} when success = false`, (done) => {
+                  response.success = false;
+                  mkClient()({mode, callback}).catch((err) => {
+                    expect(err).to.equal(expectedResult);
+                    done();
+                  });
                 });
-              });
+              }
             })
           });
         });
 
-        it('should re-use callback for messages with same callId', () => {
-          messenger.reset();
-          let callId;
-          messenger.callsFake((msg) => { if (msg.mockApiCall) callId = msg.mockApiCall.callId });
-          const callback = sinon.stub();
-          mkClient()({callback});
-          expect(callId).to.exist;
-          win.postMessage({mockApiReturn: {callId, returnValue: 'a'}});
-          win.postMessage({mockApiReturn: {callId, returnValue: 'b'}});
-          sinon.assert.calledWith(callback, 'a');
-          sinon.assert.calledWith(callback, 'b');
-        })
+        describe('messages with same callID', () => {
+          let callback, callId;
+
+          function runCallback(returnValue) {
+            win.postMessage({mockApiReturn: {callId, returnValue}});
+          }
+
+          beforeEach(() => {
+            callId = null;
+            messenger.reset();
+            messenger.callsFake((msg) => {
+              if (msg.mockApiCall) callId = msg.mockApiCall.callId;
+            });
+            callback = sinon.stub();
+          });
+
+          it('should re-use callback for messages with same callId', () => {
+            mkClient()({callback});
+            expect(callId).to.exist;
+            runCallback('a');
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledWith(callback, 'b');
+          });
+
+          it('should NOT re-use callback if once = true', () => {
+            mkClient()({callback}, true);
+            expect(callId).to.exist;
+            runCallback('a');
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledOnce(callback);
+          });
+
+          it('should NOT fire again after .close()', () => {
+            const client = mkClient();
+            client({callback});
+            runCallback('a');
+            client.close();
+            runCallback('b');
+            sinon.assert.calledWith(callback, 'a');
+            sinon.assert.calledOnce(callback);
+          })
+        });
       });
     });
   });
