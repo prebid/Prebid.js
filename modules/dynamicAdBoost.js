@@ -24,19 +24,16 @@ function loadLmScript(keyId) {
 }
 
 function init() {
-
   config.getConfig(MODULE_NAME, conf => {
     logWarn(conf);
-    if (conf[MODULE_NAME]["keyId"]) {
-      let keyId = conf[MODULE_NAME]["keyId"];
+    if (conf[MODULE_NAME]['keyId']) {
+      let keyId = conf[MODULE_NAME]['keyId'];
       if (keyId && !isEmptyStr(keyId)) {
-
-        let dabDivIdsToTrack = conf[MODULE_NAME]["adUnits"];
-        var dabInterval = setInterval(function(){
+        let dabDivIdsToTrack = conf[MODULE_NAME]['adUnits'];
+        var dabInterval = setInterval(function() {
           // Observe each div by its ID
           dabDivIdsToTrack.forEach(divId => {
             let div = document.getElementById(divId);
-
             if (div) {
               observer.observe(div);
             }
@@ -45,16 +42,14 @@ function init() {
           var dabDateNow = new Date();
           var dabTimeNow = dabDateNow.getTime();
           var dabElapsedSeconds = Math.floor ( (dabTimeNow - dabStartTime) / 1000 );
-
           let elapsedThreshold = 30;
 
-          if (conf[MODULE_NAME]["threshold"]){
-            elapsedThreshold = conf[MODULE_NAME]["threshold"];
+          if (conf[MODULE_NAME]['threshold']) {
+            elapsedThreshold = conf[MODULE_NAME]['threshold'];
           }
 
           if (dabElapsedSeconds >= elapsedThreshold) {
             clearInterval(dabInterval); // Stop
-
             let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
             let viewableAdUnitsCSV = viewableAdUnits.join(',');
             loadLmScript(keyId + "?viewableAdUnits=" + viewableAdUnitsCSV);
@@ -66,7 +61,6 @@ function init() {
       return false;
     }
   });
-
 }
 
 // Callback function when an observed element becomes visible
@@ -77,6 +71,5 @@ function dabHandleIntersection(entries) {
     }
   });
 }
-
 
 init();
