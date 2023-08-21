@@ -2,7 +2,6 @@ import { loadExternalScript } from '../src/adloader.js';
 import { logWarn, isEmptyStr } from '../src/utils.js';
 import { config } from '../src/config.js';
 
-
 const MODULE_NAME = 'dynamicAdBoost';
 const SCRIPT_URL = 'https://adxbid.info';
 // Options for the Intersection Observer
@@ -43,16 +42,14 @@ function init() {
           var dabTimeNow = dabDateNow.getTime();
           var dabElapsedSeconds = Math.floor ( (dabTimeNow - dabStartTime) / 1000 );
           let elapsedThreshold = 30;
-
           if (conf[MODULE_NAME]['threshold']) {
             elapsedThreshold = conf[MODULE_NAME]['threshold'];
           }
-
           if (dabElapsedSeconds >= elapsedThreshold) {
             clearInterval(dabInterval); // Stop
             let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
             let viewableAdUnitsCSV = viewableAdUnits.join(',');
-            loadLmScript(keyId + "?viewableAdUnits=" + viewableAdUnitsCSV);
+            loadLmScript(keyId + '?viewableAdUnits=' + viewableAdUnitsCSV);
           }
         }, 1000);
 
