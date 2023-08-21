@@ -62,7 +62,6 @@ import {
   adUnitsFilter,
   bind,
   deepAccess,
-  flatten,
   generateUUID,
   getValue,
   isEmpty,
@@ -142,7 +141,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _adUnitCodes = adUnitCodes;
   const _auctionId = auctionId || generateUUID();
   const _timeout = cbTimeout;
-  const _timelyBidders = new Set();
+  const _timelyRequests = new Set();
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];
@@ -151,7 +150,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _winningBids = [];
   let _auctionStart;
   let _auctionEnd;
-  let _timer;
+  let _timeoutTimer;
   let _auctionStatus;
   let _nonBids = [];
 
@@ -182,25 +181,21 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function startAuctionTimer() {
-    const timedOut = true;
-    const timeoutCallback = executeCallback.bind(null, timedOut);
-    let timer = setTimeout(timeoutCallback, _timeout);
-    _timer = timer;
+    _timeoutTimer = setTimeout(() => executeCallback(true), _timeout);
   }
 
-  function executeCallback(timedOut, cleartimer) {
-    // clear timer when done calls executeCallback
-    if (cleartimer) {
-      clearTimeout(_timer);
+  function executeCallback(timedOut) {
+    if (!timedOut) {
+      clearTimeout(_timeoutTimer);
     }
 
     if (_auctionEnd === undefined) {
-      let timedOutBidders = [];
+      let timedOutReqs = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutBidders = getTimedOutBids(_bidderRequests, _timelyBidders);
-        if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+        timedOutReqs = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids)
+        if (timedOutReqs.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutReqs);
         }
       }
 
@@ -225,8 +220,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           logError('Error executing bidsBackHandler', null, e);
         } finally {
           // Calling timed out bidders
-          if (timedOutBidders.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+          if (timedOutReqs.length) {
+            adapterManager.callTimedOutBidders(adUnits, timedOutReqs, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           let userSyncConfig = config.getConfig('userSync') || {};
@@ -244,11 +239,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     // when all bidders have called done callback atleast once it means auction is complete
     logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
-    executeCallback(false, true);
+    executeCallback(false);
   }
 
-  function onTimelyResponse(bidderCode) {
-    _timelyBidders.add(bidderCode);
+  function onTimelyResponse(bidderRequestId) {
+    _timelyRequests.add(bidderRequestId);
   }
 
   function callBids() {
@@ -386,7 +381,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     addBidReceived,
     addBidRejected,
     addNoBid,
-    executeCallback,
     callBids,
     addWinningBid,
     setBidTargeting,
@@ -1000,25 +994,4 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
-}
-
-/**
- * Returns a list of bids that we haven't received a response yet where the bidder did not call done
- * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
- * @param {Set} timelyBidders Set of bidders which responded in time
- *
- * @typedef {Object} TimedOutBid
- * @property {string} bidId The id representing the bid
- * @property {string} bidder The string name of the bidder
- * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
- * @property {string} auctionId The id representing the auction
- *
- * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
- */
-function getTimedOutBids(bidderRequests, timelyBidders) {
-  const timedOutBids = bidderRequests
-    .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
-    .reduce(flatten, []);
-
-  return timedOutBids;
 }

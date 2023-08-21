@@ -380,7 +380,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return;
   }
 
-  let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
+  let [clientBidderReqs, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
     return partitions;
   }, [[], []]);
@@ -420,7 +420,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
-            return doneCb.bind(bidRequest);
+            return function () {
+              onTimelyResponse(bidRequest.bidderRequestId);
+              doneCbs.apply(bidRequest, arguments);
+            }
           });
 
           const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
@@ -449,35 +452,35 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   });
 
   // handle client adapter requests
-  clientBidRequests.forEach(bidRequest => {
-    bidRequest.start = timestamp();
+  clientBidderReqs.forEach(bidderRequest => {
+    bidderRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
-    const adapter = _bidderRegistry[bidRequest.bidderCode];
-    config.runWithBidder(bidRequest.bidderCode, () => {
+    const adapter = _bidderRegistry[bidderRequest.bidderCode];
+    config.runWithBidder(bidderRequest.bidderCode, () => {
       logMessage(`CALLING BIDDER`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
     });
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
-      request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+      request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    const adapterDone = doneCb.bind(bidRequest);
+    const adapterDone = doneCb.bind(bidderRequest);
     try {
       config.runWithBidder(
-        bidRequest.bidderCode,
+        bidderRequest.bidderCode,
         bind.call(
           adapter.callBids,
           adapter,
-          bidRequest,
+          bidderRequest,
           addBidResponse,
           adapterDone,
           ajax,
-          onTimelyResponse,
-          config.callbackWithBidder(bidRequest.bidderCode)
+          () => onTimelyResponse(bidderRequest.bidderRequestId),
+          config.callbackWithBidder(bidderRequest.bidderCode)
         )
       );
     } catch (e) {
-      logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      logError(`${bidderRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest: bidderRequest});
       adapterDone();
     }
   });

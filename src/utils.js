@@ -925,8 +925,7 @@ export function isValidMediaTypes(mediaTypes) {
 export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
   return adUnits
     .filter(adUnit => adUnit.code === adUnitCode)
-    .map((adUnit) => adUnit.bids)
-    .reduce(flatten, [])
+    .flatMap((adUnit) => adUnit.bids)
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
 }
