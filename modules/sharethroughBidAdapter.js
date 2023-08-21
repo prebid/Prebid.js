@@ -218,18 +218,25 @@ export const sharethroughAdapterSpec = {
 
   // TODO: IG-178207212: we could consider adding gdpr & gpp as params to this method
   // e.g. function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent)
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent, uspConsent ) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
+    let syncurl = '';
+
+    // Attaching GDPR Consent Params in UserSync url
+    if (gdprConsent) {
+      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+    if (gppConsent) {
+      syncurl += '&gpp=' + encodeURIComponent(gppConsent?.gppString);
+      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
     return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => (
       { type: 'image',
-        url: url +
-          '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) +
-          '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) +
-          '&us_privacy=' + encodeURIComponent((uspConsent || '')) +
-          '&gpp=' + encodeURIComponent(gppConsent?.gppString) +
-          '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','))
+        url: url + syncurl
       })) : [];
   },
 

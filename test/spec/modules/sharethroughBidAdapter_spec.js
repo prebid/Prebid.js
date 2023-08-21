@@ -251,15 +251,7 @@ describe('sharethrough adapter spec', function () {
         refererInfo: {
           ref: 'https://referer.com',
         },
-        gppConsent: {
-          gppString: 'abc12345234',
-          applicableSections: [7, 8]
-        },
         ortb2: {
-          regs: {
-            gpp: 'abc12345234',
-            gpp_sid: [7, 8]
-          },
           source: {
             tid: 'auction-id',
           },
@@ -323,11 +315,11 @@ describe('sharethrough adapter spec', function () {
               expect(eid.uids[0].atype).to.be.ok;
             }
 
-            expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
-            expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections);
+            // expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
+            // expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections);
 
-            expect(openRtbReq.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
-            expect(openRtbReq.regs.ext.gpp_sid).to.equal(bidderRequest.ortb2.regs.gpp_sid);
+            // expect(openRtbReq.regs.ext.gpp).to.equal(bidderRequest.ortb2.regs.gpp);
+            // expect(openRtbReq.regs.ext.gpp_sid).to.equal(bidderRequest.ortb2.regs.gpp_sid);
 
             expect(openRtbReq.device.ua).to.equal(navigator.userAgent);
             expect(openRtbReq.regs.coppa).to.equal(1);
@@ -413,13 +405,22 @@ describe('sharethrough adapter spec', function () {
           });
         });
 
-        // TODO: IG-178207212 -- add support for gpp
-        // this is just starter code
         describe('gpp', () => {
           it('should properly attach GPP information to the request when applicable', () => {
-            config.setConfig({ gpp: 'some value to figure out' });
+            bidderRequest.gppConsent = {
+              gppString: 'some-gpp-string',
+              applicableSections: [3, 5]
+            };
+
             const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
-            expect(openRtbReq['gpp']).to.equal('some value to figure out');
+            expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString)
+            expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections)
+          });
+
+          it('should populate request accordingly when gpp explicitly does not apply', function () {
+            const openRtbReq = spec.buildRequests(bidRequests, {})[0].data;
+
+            expect(openRtbReq.regs.gpp).to.be.undefined;
           });
         });
       });
@@ -615,6 +616,10 @@ describe('sharethrough adapter spec', function () {
           },
           bcat: ['IAB1', 'IAB2-1'],
           badv: ['domain1.com', 'domain2.com'],
+          regs: {
+            gpp: 'gpp_string',
+              gpp_sid: [7]
+          },
         };
 
         it('should include first party data in open rtb request, site section', () => {
@@ -641,6 +646,13 @@ describe('sharethrough adapter spec', function () {
 
           expect(openRtbReq.bcat).to.deep.equal(firstPartyData.bcat);
           expect(openRtbReq.badv).to.deep.equal(firstPartyData.badv);
+        });
+
+        it('should include first party data in open rtb request, regulation section', () => {
+          const openRtbReq = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2: firstPartyData })[0].data;
+
+          expect(openRtbReq.regs.ext.gpp).to.equal(firstPartyData.regs.gpp);
+          expect(openRtbReq.regs.ext.gpp_sid).to.equal(firstPartyData.regs.gpp_sid);
         });
       });
     });
@@ -857,6 +869,25 @@ describe('sharethrough adapter spec', function () {
       it('returns an empty array if pixels are not enabled', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
         expect(syncArray).to.be.an('array').that.is.empty;
+      });
+
+      it('returns GDPR Consent Params in UserSync url', function () {
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true,
+          consentString: 'consent' });
+        expect(syncArray).to.deep.equal([
+          { type: 'image', url: 'cookieUrl1&gdpr=1&gdpr_consent=consent' },
+          { type: 'image', url: 'cookieUrl2&gdpr=1&gdpr_consent=consent' },
+          { type: 'image', url: 'cookieUrl3&gdpr=1&gdpr_consent=consent' },
+        ]);
+      });
+
+      it('returns GPP Consent Params in UserSync url', function () {
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {gppString: 'gpp-string', applicableSections: [1,2]});
+        expect(syncArray).to.deep.equal([
+          { type: 'image', url: 'cookieUrl1&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
+          { type: 'image', url: 'cookieUrl2&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
+          { type: 'image', url: 'cookieUrl3&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
+        ]);
       });
     });
   });
