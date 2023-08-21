@@ -862,6 +862,9 @@ describe('validate native', function () {
             }]
           },
           address: {},
+          privacyLink: {
+            required: true
+          }
         },
       },
     };
@@ -917,6 +920,7 @@ describe('validate native', function () {
         type: 9,
       }
     });
+    expect(ortb.privacy).to.equal(1);
   });
 
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
@@ -1024,11 +1028,14 @@ describe('validate native', function () {
     expect(oldNativeRequest.sponsoredBy).to.include({
       required: true,
       len: 25
-    })
+    });
     expect(oldNativeRequest.body).to.include({
       required: true,
       len: 140
-    })
+    });
+    expect(oldNativeRequest.privacyLink).to.include({
+      required: false
+    });
   });
 
   if (FEATURES.NATIVE) {
@@ -1199,6 +1206,12 @@ describe('legacyPropertiesToOrtbNative', () => {
       expect(native.jstracker).to.eql('some-markupsome-other-markup');
     })
   });
+  describe('privacylink', () => {
+    it('should convert privacyLink to privacy', () => {
+      const native = legacyPropertiesToOrtbNative({privacyLink: 'https:/my-privacy-link.com'});
+      expect(native.privacy).to.eql('https:/my-privacy-link.com');
+    })
+  })
 });
 
 describe('fireImpressionTrackers', () => {

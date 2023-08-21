@@ -1,13 +1,9 @@
-import {coreStorage, init, setSubmoduleRegistry, requestBidsHook} from 'modules/userId/index.js';
+import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
-import * as utils from 'src/utils.js';
-import { euidIdSubmodule } from 'modules/euidIdSystem.js';
+import {euidIdSubmodule} from 'modules/euidIdSystem.js';
 import 'modules/consentManagement.js';
 import 'src/prebid.js';
-import { getGlobal } from 'src/prebidGlobal.js';
-import { server } from 'test/mocks/xhr.js';
-import { configureTimerInterceptors } from 'test/mocks/timers.js';
-import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
+import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 
@@ -32,12 +28,15 @@ const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => (
 const apiUrl = 'https://prod.euid.eu/v2/token/refresh';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = () => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: refreshedToken } }));
-const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
 const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidIdentityContainer(token));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
 
 describe('EUID module', function() {
   let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let server;
+
+  const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+
   before(function() {
     uninstallGdprEnforcement();
     hook.ready();
@@ -54,10 +53,12 @@ describe('EUID module', function() {
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
   beforeEach(function() {
+    server = sinon.createFakeServer();
     init(config);
     setSubmoduleRegistry([euidIdSubmodule]);
   });
   afterEach(function() {
+    server.restore();
     $$PREBID_GLOBAL$$.requestBids.removeAll();
     config.resetConfig();
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
@@ -116,7 +117,7 @@ describe('EUID module', function() {
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
     configureEuidResponse(200, makeSuccessResponseBody());
     config.setConfig(makePrebidConfig({euidToken}));
-    apiHelpers.respondAfterDelay(1);
+    apiHelpers.respondAfterDelay(1, server);
     const bid = await runAuction();
     expectToken(bid, refreshedToken);
   });
