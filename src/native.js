@@ -480,6 +480,11 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
       continue;
     }
 
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
+      continue;
+    }
+
     const asset = legacyNativeAssets[key];
     let required = 0;
     if (asset.required && isBoolean(asset.required)) {
@@ -623,6 +628,9 @@ export function fromOrtbNativeRequest(openRTBRequest) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
     }
+    if (openRTBRequest.privacy) {
+      oldNativeObject.privacyLink = { required: false };
+    }
     // video was not supported by old prebid assets
   }
   return oldNativeObject;
@@ -696,8 +704,11 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // in general, native trackers seem to be neglected and/or broken
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
+      case 'privacyLink':
+        response.privacy = value;
+        break;
     }
-  })
+  });
   return response;
 }
 

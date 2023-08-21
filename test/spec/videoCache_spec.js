@@ -174,7 +174,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -224,7 +224,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -295,7 +295,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -356,7 +356,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
 
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{
