@@ -13,7 +13,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '2.0';
+const BIDDER_VERSION = '3.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
