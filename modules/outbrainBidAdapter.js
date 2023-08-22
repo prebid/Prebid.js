@@ -133,8 +133,8 @@ export const spec = {
       request.is_debug = !!test;
       request.test = 1;
     }
-    
-    obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
+
+    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
     if (obUserToken) {
       deepSetValue(request, 'user.ext.obusertoken', obUserToken)
     }
