@@ -1288,7 +1288,7 @@ describe('triplelift adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let response, bidderRequest;
+    let response, bidderRequest, paapiResponse;
     this.beforeEach(() => {
       response = {
         body: {
@@ -1336,6 +1336,52 @@ describe('triplelift adapter', function () {
               advertiser_name: 'zennioptical.com',
               adomain: ['zennioptical.com'],
               media_type: 'banner'
+            }
+          ]
+        }
+      };
+      paapiResponse = {
+        body: {
+          bids: [
+            {
+              imp_id: 0,
+              cpm: 1.062,
+              width: 300,
+              height: 250,
+              ad: 'ad-markup',
+              iurl: 'https://s.adroll.com/a/IYR/N36/IYRN366MFVDITBAGNNT5U6.jpg',
+              tl_source: 'tlx',
+              advertiser_name: 'fake advertiser name',
+              adomain: ['basspro.com', 'internetalerts.org'],
+              media_type: 'banner'
+            },
+            {
+              imp_id: 1,
+              crid: '5989_33264_352817187',
+              cpm: 20,
+              width: 970,
+              height: 250,
+              ad: 'ad-markup',
+              tl_source: 'hdx',
+              advertiser_name: 'zennioptical.com',
+              adomain: ['zennioptical.com'],
+              media_type: 'banner'
+            }
+          ],
+          paapi: [
+            {
+              imp_id: 0,
+              auctionConfig: {
+                seller: 'https://3lift.com',
+                decisionLogicUrl: 'https://3lift.com/ssp/decision-logic.js',
+                interestGroupBuyers: ['https://fledge-eu.creativecdn.com', 'https://fledge-asia.creativecdn.com', 'https://fledge-usa.creativecdn.com'],
+                auctionSignals: {
+                  id: '2404582173720513097122',
+                  tmax: 326,
+                  imp: [],
+                  site: {}
+                }
+              }
             }
           ]
         }
@@ -1547,6 +1593,32 @@ describe('triplelift adapter', function () {
       expect(result[1].meta.networkId).to.equal('10092');
       expect(result[2].meta.networkId).to.equal('5989');
       expect(result[3].meta.networkId).to.equal('5989');
+    });
+
+    it('should add fledgeAuctionConfigs if PAAPI response is received', function() {
+      let result = tripleliftAdapterSpec.interpretResponse(paapiResponse, {bidderRequest});
+
+      expect(result.fledgeAuctionConfigs[0].bidId).to.exist.and.equal('30b31c1838de1e');
+      expect(result.fledgeAuctionConfigs).to.equal([{
+        bidId: '30b31c1838de1e',
+        config: {
+          seller: 'https://3lift.com',
+          decisionLogicUrl: 'https://3lift.com/ssp/decision-logic.js',
+          interestGroupBuyers: ['https://fledge-eu.creativecdn.com', 'https://fledge-asia.creativecdn.com', 'https://fledge-usa.creativecdn.com'],
+          auctionSignals: {
+            id: '2404582173720513097122',
+            tmax: 326,
+            imp: [],
+            site: {}
+          }
+        }
+      }]);
+    })
+
+    it('should map corresponding imp_id to fledge responses and bid responses', function() {
+      let result = tripleliftAdapterSpec.interpretResponse(paapiResponse, {bidderRequest});
+      console.log(result);
+      expect(result.fledgeAuctionConfigs[0].bidId).equal(result.returnedBids[0].requestId);
     });
   });
 
