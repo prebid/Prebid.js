@@ -150,10 +150,10 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest.timeout,
     };
 
     const len = validBidRequests.length;
