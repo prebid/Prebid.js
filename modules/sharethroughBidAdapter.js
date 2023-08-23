@@ -216,9 +216,7 @@ export const sharethroughAdapterSpec = {
     });
   },
 
-  // TODO: IG-178207212: we could consider adding gdpr & gpp as params to this method
-  // e.g. function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent)
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent, uspConsent ) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent ) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
