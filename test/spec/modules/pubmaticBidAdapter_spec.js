@@ -1133,7 +1133,19 @@ describe('PubMatic adapter', function () {
           ortb2: {
             source: {
               tid: 'source-tid'
-            }
+            },
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
           }
         });
         let data = JSON.parse(request.data);
@@ -1144,10 +1156,10 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.source.tid).to.equal('source-tid'); // Prebid TransactionId
@@ -1387,7 +1399,21 @@ describe('PubMatic adapter', function () {
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
         let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         });
         let data = JSON.parse(request.data);
         expect(data.at).to.equal(1); // auction type
@@ -1397,10 +1423,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+        expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+        expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+        expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -1596,7 +1622,21 @@ describe('PubMatic adapter', function () {
 
       it('Pass auctiondId as wiid if wiid is not passed in params', function () {
         let bidRequest = {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         delete bidRequests[0].params.wiid;
         let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1608,10 +1648,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal('new-auction-id'); // OpenWrap: Wrapper Impression ID
@@ -1631,6 +1671,20 @@ describe('PubMatic adapter', function () {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
             gdprApplies: true
+          },
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
           }
         };
   		  let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1644,10 +1698,10 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -1664,7 +1718,21 @@ describe('PubMatic adapter', function () {
 
       it('Request params check with USP/CCPA Consent', function () {
         let bidRequest = {
-          uspConsent: '1NYN'
+          uspConsent: '1NYN',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         let request = spec.buildRequests(bidRequests, bidRequest);
         let data = JSON.parse(request.data);
@@ -1676,10 +1744,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2160,7 +2228,7 @@ describe('PubMatic adapter', function () {
         sandbox.restore();
       });
 
-      describe('AdsrvrOrgId from userId module', function() {
+      describe('userIdAsEids', function() {
         let sandbox;
         beforeEach(() => {
           sandbox = sinon.sandbox.create();
@@ -2170,13 +2238,10 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         });
 
-        it('Request should have AdsrvrOrgId config params', function() {
+        it('Request should have EIDs', function() {
           bidRequests[0].userId = {};
           bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
-          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
+          bidRequests[0].userIdAsEids = [{
             'source': 'adserver.org',
             'uids': [{
               'id': 'TTD_ID_FROM_USER_ID_MODULE',
@@ -2185,380 +2250,16 @@ describe('PubMatic adapter', function () {
                 'rtiPartner': 'TDID'
               }
             }]
-          }]);
-        });
-
-        it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': 'TTD_ID_FROM_CONFIG',
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              }
-            };
-            return config[key];
-          });
-          bidRequests[0].userId = {};
-          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
-          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
+          }];
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'adserver.org',
-            'uids': [{
-              'id': 'TTD_ID_FROM_USER_ID_MODULE',
-              'atype': 1,
-              'ext': {
-                'rtiPartner': 'TDID'
-              }
-            }]
-          }]);
+          expect(data.user.eids).to.deep.equal(bidRequests[0].userIdAsEids);
         });
 
-        it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+        it('Request should NOT have EIDs userIdAsEids is NOT object', function() {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
-        });
-
-        it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
-          bidRequests[0].userId = {
-            tdid: 1234
-          };
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
-      });
-
-      describe('UserIds from request', function() {
-        describe('pubcommon Id', function() {
-          it('send the pubcommon id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.pubcid = 'pub_common_user_id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'pubcid.org',
-              'uids': [{
-                'id': 'pub_common_user_id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.pubcid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('ID5 Id', function() {
-          it('send the id5 id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = { uid: 'id5-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'id5-sync.com',
-              'uids': [{
-                'id': 'id5-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = { uid: 1 };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: [] };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: null };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: {} };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Criteo Id', function() {
-          it('send the criteo id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.criteoId = 'criteo-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'criteo.com',
-              'uids': [{
-                'id': 'criteo-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.criteoId = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('IdentityLink Id', function() {
-          it('send the identity-link id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.idl_env = 'identity-link-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'liveramp.com',
-              'uids': [{
-                'id': 'identity-link-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.idl_env = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('LiveIntent Id', function() {
-          it('send the LiveIntent id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'liveintent.com',
-              'uids': [{
-                'id': 'live-intent-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.lipb = { lipbid: 1 };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Parrable Id', function() {
-          it('send the Parrable id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableId = { eid: 'parrable-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'parrable.com',
-              'uids': [{
-                'id': 'parrable-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not object with eid key', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Britepool Id', function() {
-          it('send the Britepool id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.britepoolid = 'britepool-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'britepool.com',
-              'uids': [{
-                'id': 'britepool-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.britepoolid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('NetId', function() {
-          it('send the NetId if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 'netid-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'netid.de',
-              'uids': [{
-                'id': 'netid-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
         });
       });
 
@@ -2692,7 +2393,21 @@ describe('PubMatic adapter', function () {
 
         it('Request params check for 1 banner and 1 video ad', function () {
           let request = spec.buildRequests(multipleMediaRequests, {
-            auctionId: 'new-auction-id'
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+				  geo: {
+                  lat: '36.5189',
+                  lon: '-76.4063'
+				  }
+              },
+              user: {
+				  geo: {
+                  lat: '26.8915',
+                  lon: '-56.6340'
+				  }
+              },
+			  }
           });
           let data = JSON.parse(request.data);
 
@@ -2706,10 +2421,10 @@ describe('PubMatic adapter', function () {
           expect(data.site.publisher.id).to.equal(multipleMediaRequests[0].params.publisherId); // publisher Id
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
-          expect(data.device.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.device.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-          expect(data.user.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.user.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID

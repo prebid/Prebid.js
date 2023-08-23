@@ -1667,6 +1667,12 @@ describe('newspassid Adapter', function () {
       expect(result[0]['price']).to.equal(0.9);
       expect(result[0]['adserverTargeting']['np_npappnexus_adId']).to.equal('2899ec066a91ff8-0-np-1');
     });
+    it('should add np_auc_id (response id value)', function () {
+      const request = spec.buildRequests(validBidRequests, validBidderRequest);
+      let validres = JSON.parse(JSON.stringify(validBidResponse1adWith2Bidders));
+      const result = spec.interpretResponse(validres, request);
+      expect(utils.deepAccess(result[0].adserverTargeting, 'np_auc_id')).to.equal(validBidResponse1adWith2Bidders.body.id);
+    });
     it('should correctly process an auction with 2 adunits & multiple bidders one of which bids for both adslots', function() {
       let validres = JSON.parse(JSON.stringify(multiResponse1));
       let request = spec.buildRequests(multiRequest1, multiBidderRequest1.bidderRequest);

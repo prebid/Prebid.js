@@ -167,6 +167,7 @@ function buildRequests(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
+    gppConsent,
     pageUrl,
     referer
   } = _buildRequestParams(bidRequests, bidderRequest);
@@ -181,6 +182,7 @@ function buildRequests(bidRequests, bidderRequest) {
         bidRequests: groupedRequests[key],
         gdprConsent,
         uspConsent,
+        gppConsent,
         pageUrl,
         referer,
         ttxSettings,
@@ -200,20 +202,15 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
-  const uspConsent = bidderRequest && bidderRequest.uspConsent;
-
-  const pageUrl = bidderRequest?.refererInfo?.page;
-
-  const referer = bidderRequest?.refererInfo?.ref;
-
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
   return {
     ttxSettings,
     gdprConsent,
-    uspConsent,
-    pageUrl,
-    referer
+    uspConsent: bidderRequest?.uspConsent,
+    gppConsent: bidderRequest?.gppConsent,
+    pageUrl: bidderRequest?.refererInfo?.page,
+    referer: bidderRequest?.refererInfo?.ref
   }
 }
 
@@ -247,10 +244,11 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, referer, ttxSettings, bidderRequest }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppConsent = {}, pageUrl, referer, ttxSettings, bidderRequest }) {
   const ttxRequest = {};
   const firstBidRequest = bidRequests[0];
   const { siteId, test } = firstBidRequest.params;
+  const coppaValue = config.getConfig('coppa');
 
   /*
    * Infer data for the request payload
@@ -294,6 +292,17 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     ttxRequest.regs = setExtensions(ttxRequest.regs, {
       'us_privacy': uspConsent
     });
+  }
+
+  if (gppConsent.gppString) {
+    Object.assign(ttxRequest.regs, {
+      'gpp': gppConsent.gppString,
+      'gpp_sid': gppConsent.applicableSections
+    });
+  }
+
+  if (coppaValue !== undefined) {
+    ttxRequest.regs.coppa = Number(!!coppaValue);
   }
 
   ttxRequest.ext = {
@@ -717,10 +726,10 @@ function _createBidResponse(bid, cur) {
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   const syncUrls = (
     (syncOptions.iframeEnabled)
-      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId }))
+      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, gppConsent, siteId }))
       : ([])
   );
 
@@ -731,15 +740,16 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
+function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
   const { consentString, gdprApplies } = gdprConsent;
+  const { gppString = '', applicableSections = [] } = gppConsent;
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
   };
 
   if (typeof gdprApplies === 'boolean') {
