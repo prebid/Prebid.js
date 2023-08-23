@@ -201,8 +201,15 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
       return;
     }
 
-    player.ima.changeAdTag(adTagUrl);
-    player.ima.requestAds();
+    // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
+    try {
+      player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
+    } catch (e) {
+      /*
+      Handling is not required; ad errors are emitted automatically by video.js
+       */
+    }
   }
 
   function onEvent(type, callback, payload) {

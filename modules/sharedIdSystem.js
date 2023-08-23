@@ -174,6 +174,12 @@ export const sharedIdSystemSubmodule = {
   },
 
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
+  eids: {
+    'pubcid': {
+      source: 'pubcid.org',
+      atype: 1
+    },
+  }
 };
 
 submodule('userId', sharedIdSystemSubmodule);

@@ -27,7 +27,7 @@ const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -200,6 +200,10 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
+    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
+    }
+
     setBidFloors(bidRequest, imp);
 
     return imp;
@@ -318,7 +322,7 @@ export const spec = {
         )
       );
     });
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -495,6 +499,11 @@ export const spec = {
         logError('Rubicon: getFloor threw an error: ', e);
       }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
+    // Send multiformat data if requested
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
     }
 
     // add p_pos only if specified and valid

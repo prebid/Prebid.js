@@ -1,11 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
-import {isFn, isPlainObject} from '../src/utils.js';
 import { config } from '../src/config.js';
+import {deepAccess, isFn, isPlainObject} from '../src/utils.js';
+
+const GVLID = 706;
 
 export const spec = {
   code: 'vrtcal',
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
     return true;
@@ -62,13 +65,14 @@ export const spec = {
         site: {
           id: 'VRTCAL_FILLED',
           name: 'VRTCAL_FILLED',
-          cat: ['VRTCAL_FILLED'],
-          domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0]
-
+          cat: deepAccess(bid, 'ortb2.site.cat', []),
+          domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0],
+          page: bid.refererInfo.page
         },
         device: {
-          ua: 'VRTCAL_FILLED',
-          ip: 'VRTCAL_FILLED'
+          language: navigator.language,
+          ua: navigator.userAgent,
+          ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
         },
         regs: {
           coppa: coppa,

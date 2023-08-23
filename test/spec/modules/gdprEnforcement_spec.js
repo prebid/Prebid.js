@@ -11,7 +11,7 @@ import {
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  syncUserRule, transmitUfpdRule,
+  syncUserRule, ufpdRule,
   validateRules
 } from 'modules/gdprEnforcement.js';
 import {config} from 'src/config.js';
@@ -352,7 +352,7 @@ describe('gdpr enforcement', function () {
       config.resetConfig();
     });
 
-    it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is established)', function () {
+    it('should block bidder which does not have consent and allow bidder which has consent (LI is established)', function () {
       setEnforcementConfig({
         gdpr: {
           rules: [{
@@ -363,12 +363,17 @@ describe('gdpr enforcement', function () {
           }]
         }
       });
-      setupConsentData()
+      const cd = setupConsentData()
       Object.assign(gvlids, {
         bidder_1: 4,
         bidder_2: 5,
       });
-      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
+      Object.assign(cd.vendorData.vendor.legitimateInterests, {
+        4: true,
+        5: true,
+      });
+
+      ['bidder_1', 'bidder_2'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
     });
 
     it('should block bidder which does not have consent and allow bidder which has consent (liTransparency is NOT established)', function() {
@@ -396,39 +401,6 @@ describe('gdpr enforcement', function () {
         expectAllow(allowed, fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder)));
       })
     });
-
-    it('should skip validation checks if GDPR version is not equal to "2"', function () {
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: true,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
-        }
-      });
-      const consent = setupConsentData();
-      consent.vendorData.purpose.consents['2'] = false;
-      consent.apiVersion = 1;
-      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
-    });
-
-    it('should skip validation if enforcePurpose is false', () => {
-      setEnforcementConfig({
-        gdpr: {
-          rules: [{
-            purpose: 'storage',
-            enforcePurpose: false,
-            enforceVendor: true,
-            vendorExceptions: []
-          }]
-        }
-      });
-      const consent = setupConsentData();
-      consent.vendorData.purpose.consents['2'] = false;
-      ['bidder_1', 'bidder_2', 'bidder_3'].forEach(bidder => expect(fetchBidsRule(activityParams(MODULE_TYPE_BIDDER, bidder))).to.not.exist);
-    })
   });
 
   describe('reportAnalyticsRule', () => {
@@ -479,7 +451,7 @@ describe('gdpr enforcement', function () {
       const consent = setupConsentData();
       consent.vendorData.purpose.consents[4] = true;
       consent.vendorData.vendor.consents[123] = true;
-      expectAllow(true, transmitUfpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
+      expectAllow(true, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')));
     });
 
     it('should return deny when purpose 4 consent is withheld', () => {
@@ -498,7 +470,7 @@ describe('gdpr enforcement', function () {
       const consent = setupConsentData();
       consent.vendorData.purpose.consents[4] = true;
       consent.vendorData.vendor.consents[123] = false;
-      expectAllow(false, transmitUfpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
+      expectAllow(false, ufpdRule(activityParams(MODULE_TYPE_BIDDER, 'mockBidder')))
     });
   });
 
@@ -517,110 +489,12 @@ describe('gdpr enforcement', function () {
       gdprApplies: true
     };
 
-    // Bidder - 'bidderA' has vendorConsent
-    const vendorAllowedModule = 'bidderA';
-    const vendorAllowedGvlId = 1;
-
     // Bidder = 'bidderB' doesn't have vendorConsent
     const vendorBlockedModule = 'bidderB';
     const vendorBlockedGvlId = 3;
 
     const consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
     consentDataWithPurposeConsentFalse.vendorData.purpose.consents['1'] = false;
-
-    it('should return true when enforcePurpose=true AND purposeConsent[p]==true AND enforceVendor[p,v]==true AND vendorConsent[v]==true', function () {
-      // 'enforcePurpose' and 'enforceVendor' both are 'true'
-      const gdprRule = createGdprRule('storage', true, true, []);
-
-      // case 1 - Both purpose consent and vendor consent is 'true'. validateRules must return 'true'
-      let isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 2 - Purpose consent is 'true' but vendor consent is 'false'. validateRules must return 'false'
-      isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(false);
-
-      // case 3 - Purpose consent is 'false' but vendor consent is 'true'. validateRules must return 'false'
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(false);
-
-      // case 4 - Both purpose consent and vendor consent is 'false'. validateRules must return 'false'
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(false);
-    });
-
-    it('should return true when enforcePurpose=true AND purposeConsent[p]==true AND enforceVendor[p,v]==false', function () {
-      // 'enforcePurpose' is 'true' and 'enforceVendor' is 'false'
-      const gdprRule = createGdprRule('storage', true, false, []);
-
-      // case 1 - Both purpose consent and vendor consent is 'true'. validateRules must return 'true'
-      let isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 2 - Purpose consent is 'true' but vendor consent is 'false'. validateRules must return 'true' because vendorConsent doens't matter
-      isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 3 - Purpose consent is 'false' but vendor consent is 'true'. validateRules must return 'false' because vendorConsent doesn't matter
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(false);
-
-      // case 4 - Both purpose consent and vendor consent is 'false'. validateRules must return 'false' and vendorConsent doesn't matter
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(false);
-    });
-
-    it('should return true when enforcePurpose=false AND enforceVendor[p,v]==true AND vendorConsent[v]==true', function () {
-      // 'enforcePurpose' is 'false' and 'enforceVendor' is 'true'
-      const gdprRule = createGdprRule('storage', false, true, []);
-
-      // case 1 - Both purpose consent and vendor consent is 'true'. validateRules must return 'true'
-      let isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 2 - Purpose consent is 'true' but vendor consent is 'false'. validateRules must return 'false' because purposeConsent doesn't matter
-      isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(false);
-
-      // case 3 - urpose consent is 'false' but vendor consent is 'true'. validateRules must return 'true' because purposeConsent doesn't matter
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 4 - Both purpose consent and vendor consent is 'false'. validateRules must return 'false' and purposeConsent doesn't matter
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(false);
-    });
-
-    it('should return true when enforcePurpose=false AND enforceVendor[p,v]==false', function () {
-      // 'enforcePurpose' is 'false' and 'enforceVendor' is 'false'
-      const gdprRule = createGdprRule('storage', false, false, []);
-
-      // case 1 - Both purpose consent and vendor consent is 'true'. validateRules must return 'true', both the consents do not matter.
-      let isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 2 - Purpose consent is 'true' but vendor consent is 'false'. validateRules must return 'true', both the consents do not matter.
-      isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 3 - urpose consent is 'false' but vendor consent is 'true'. validateRules must return 'true', both the consents do not matter.
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorAllowedModule, vendorAllowedGvlId);
-      expect(isAllowed).to.equal(true);
-
-      // case 4 - Both purpose consent and vendor consent is 'false'. validateRules must return 'true', both the consents do not matter.
-      isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(true);
-    });
-
-    it('should return true when "vendorExceptions" contains the name of the vendor under test', function () {
-      // 'vendorExceptions' contains 'bidderB' which doesn't have vendor consent.
-      const gdprRule = createGdprRule('storage', false, true, [vendorBlockedModule]);
-
-      /* 'bidderB' gets a free pass since it's included in the 'vendorExceptions' array. validateRules must disregard
-      user's choice for purpose and vendor consent and return 'true' for this bidder(s) */
-      const isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-      expect(isAllowed).to.equal(true);
-    });
 
     describe('when the vendor has a softVendorException', () => {
       const gdprRule = createGdprRule('storage', true, true, [], [vendorBlockedModule]);
@@ -661,71 +535,67 @@ describe('gdpr enforcement', function () {
       })
     })
 
-    describe('Purpose 2 special case', function () {
-      const consentDataWithLIFalse = utils.deepClone(consentData);
-      consentDataWithLIFalse.vendorData.purpose.legitimateInterests['2'] = false;
+    describe('validateRules', function () {
+      Object.entries({
+        '1 (which does not consider LI)': [1, 'storage', false],
+        '2 (which does consider LI)': [2, 'basicAds', true]
+      }).forEach(([t, [purposeNo, purpose, allowsLI]]) => {
+        describe(`for purpose ${t}`, () => {
+          Object.entries({
+            'enforcePurpose=true, enforceVendor=true': [true, true],
+            'enforcePurpose=true, enforceVendor=false': [true, false],
+            'enforcePurpose=false, enforceVendor=true': [false, true],
+            'enforcePurpose=false, enforceVendor=false': [false, false],
+          }).forEach(([t, [enforcePurpose, enforceVendor]]) => {
+            describe(`with ${t}`, () => {
+              let rule;
+              beforeEach(() => {
+                rule = createGdprRule(purpose, enforcePurpose, enforceVendor, []);
+              });
 
-      const consentDataWithPurposeConsentFalse = utils.deepClone(consentData);
-      consentDataWithPurposeConsentFalse.vendorData.purpose.consents['2'] = false;
-
-      const consentDataWithPurposeConsentFalseAndLIFalse = utils.deepClone(consentData);
-      consentDataWithPurposeConsentFalseAndLIFalse.vendorData.purpose.legitimateInterests['2'] = false;
-      consentDataWithPurposeConsentFalseAndLIFalse.vendorData.purpose.consents['2'] = false;
-
-      it('should return true when (enforcePurpose=true AND purposeConsent[p]===true AND enforceVendor[p.v]===true AND vendorConsent[v]===true) OR (purposesLITransparency[p]===true)', function () {
-        // both 'enforcePurpose' and 'enforceVendor' is 'true'
-        const gdprRule = createGdprRule('basicAds', true, true, []);
-
-        // case 1 - Both purpose consent and vendor consent is 'true', but legitimateInterests for purpose 2 is 'false'. validateRules must return 'true'.
-        let isAllowed = validateRules(gdprRule, consentDataWithLIFalse, vendorAllowedModule, vendorAllowedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 2 - Purpose consent is 'true' but vendor consent is 'false', but legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 3 - Purpose consent is 'true' and vendor consent is 'true', as well as legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 4 - Purpose consent is 'true' and vendor consent is 'false', and legitimateInterests for purpose 2 is 'false'. validateRules must return 'false'.
-        isAllowed = validateRules(gdprRule, consentDataWithLIFalse, vendorBlockedModule, vendorBlockedGvlId);
-        expect(isAllowed).to.equal(false);
-      });
-
-      it('should return true when (enforcePurpose=true AND purposeConsent[p]===true AND enforceVendor[p.v]===false) OR (purposesLITransparency[p]===true)', function () {
-        // 'enforcePurpose' is 'true' and 'enforceVendor' is 'false'
-        const gdprRule = createGdprRule('basicAds', true, false, []);
-
-        // case 1 - Purpose consent is 'true', vendor consent doesn't matter and legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        let isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 2 - Purpose consent is 'false', vendor consent doesn't matter and legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalse, vendorAllowedModule, vendorAllowedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 3 - Purpose consent is 'false', vendor consent doesn't matter and legitimateInterests for purpose 2 is 'false'. validateRules must return 'false'.
-        isAllowed = validateRules(gdprRule, consentDataWithPurposeConsentFalseAndLIFalse, vendorAllowedModule, vendorAllowedGvlId);
-        expect(isAllowed).to.equal(false);
-      });
-
-      it('should return true when (enforcePurpose=false AND enforceVendor[p,v]===true AND vendorConsent[v]===true) OR (purposesLITransparency[p]===true)', function () {
-        // 'enforcePurpose' is 'false' and 'enforceVendor' is 'true'
-        const gdprRule = createGdprRule('basicAds', false, true, []);
-
-        // case - 1 Vendor consent is 'true', purpose consent doesn't matter and legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        let isAllowed = validateRules(gdprRule, consentData, vendorAllowedModule, vendorAllowedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 2 - Vendor consent is 'false', purpose consent doesn't matter and legitimateInterests for purpose 2 is 'true'. validateRules must return 'true'.
-        isAllowed = validateRules(gdprRule, consentData, vendorBlockedModule, vendorBlockedGvlId);
-        expect(isAllowed).to.equal(true);
-
-        // case 3 - Vendor consent is 'false', purpose consent doesn't matter and legitimateInterests for purpose 2 is 'false'. validateRules must return 'false'.
-        isAllowed = validateRules(gdprRule, consentDataWithLIFalse, vendorBlockedModule, vendorBlockedGvlId);
-        expect(isAllowed).to.equal(false);
-      });
+              ['consents', 'legitimateInterests'].forEach(ctype => {
+                Object.entries({
+                  'purpose=true, vendor=true': [true, true, true],
+                  'purpose=true, vendor=false': [true, false, !enforceVendor],
+                  'purpose=false, vendor=true': [false, true, !enforcePurpose],
+                  'purpose=false, vendor=false': [false, false, !enforcePurpose && !enforceVendor]
+                }).forEach(([t, [purposeConsent, vendorConsent, expected]]) => {
+                  describe(`when ${ctype} for ${t}`, () => {
+                    let consentData;
+                    beforeEach(() => {
+                      consentData = {
+                        vendorData: {
+                          purpose: {
+                            [ctype]: {
+                              [purposeNo]: purposeConsent,
+                            }
+                          },
+                          vendor: {
+                            [ctype]: {
+                              123: vendorConsent,
+                            }
+                          }
+                        }
+                      }
+                    });
+                    if (allowsLI || ctype !== 'legitimateInterests') {
+                      it(`should return ${expected}`, () => {
+                        const allowed = validateRules(rule, consentData, 'mockVendor', 123);
+                        expect(allowed).to.eql(expected);
+                      })
+                    } else if (enforceVendor || enforcePurpose) {
+                      it(`should return false (LI is irrelevant)`, () => {
+                        const allowed = validateRules(rule, consentData, 'mockVendor', 123);
+                        expect(allowed).to.be.false;
+                      })
+                    }
+                  })
+                })
+              })
+            })
+          })
+        })
+      })
     });
   })
 

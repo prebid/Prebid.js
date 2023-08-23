@@ -110,6 +110,7 @@ function composeOrtb2Data(rtdData, prefix) {
   !isEmpty(categories.cat) && deepSetValue(addOrtb2, prefix + '.cat', categories.cat);
   !isEmpty(categories.pagecat) && deepSetValue(addOrtb2, prefix + '.pagecat', categories.pagecat);
   !isEmpty(categories.sectioncat) && deepSetValue(addOrtb2, prefix + '.sectioncat', categories.sectioncat);
+  !isEmpty(categories.sectioncat) && deepSetValue(addOrtb2, prefix + '.ext.data.relevad_rtd', categories.sectioncat);
   !isEmpty(categories.cattax) && deepSetValue(addOrtb2, prefix + '.cattax', categories.cattax);
 
   if (!isEmpty(content) && !isEmpty(content.segs) && content.segtax) {
@@ -134,7 +135,8 @@ function setBidderSiteAndContent(bidderOrtbFragment, bidder, rtdData) {
   try {
     let addOrtb2 = composeOrtb2Data(rtdData, 'site');
     !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.relevad_rtd', rtdData.segments);
-    !isEmpty(rtdData.categories?.sectioncat) && deepSetValue(addOrtb2, 'site.ext.data.relevad_rtd', rtdData.categories.sectioncat);
+    !isEmpty(rtdData.segments) && deepSetValue(addOrtb2, 'user.ext.data.segments', rtdData.segments);
+    !isEmpty(rtdData.categories) && deepSetValue(addOrtb2, 'user.ext.data.contextual_categories', rtdData.categories.pagecat);
     if (isEmpty(addOrtb2)) {
       return;
     }
@@ -180,7 +182,7 @@ function getFiltered(data, minscore) {
   const cats = filterByScore(data.cats, minscore);
   const pcats = filterByScore(data.pcats, minscore) || cats;
   const scats = filterByScore(data.scats, minscore) || pcats;
-  const cattax = data.cattax ? data.cattax : CATTAX_IAB;
+  const cattax = (data.cattax || data.cattax === undefined) ? data.cattax : CATTAX_IAB;
   relevadData.categories = {cat: cats, pagecat: pcats, sectioncat: scats, cattax: cattax};
 
   const contsegs = filterByScore(data.contsegs, minscore);
@@ -268,15 +270,12 @@ export function addRtdData(reqBids, data, moduleConfig) {
           }
           if (wb && !isEmpty(relevadList)) {
             setBidderSiteAndContent(reqBids.ortb2Fragments?.bidder, bid.bidder, relevadData);
+            setBidderSiteAndContent(bid, 'ortb2', relevadData);
             deepSetValue(bid, 'params.keywords.relevad_rtd', relevadList);
-            deepSetValue(bid, 'params.target', [].concat(bid.params?.target ? [bid.params.target] : []).concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; })).join(';'));
+            !(bid.params?.target || '').includes('relevad_rtd=') && deepSetValue(bid, 'params.target', [].concat(bid.params?.target ? [bid.params.target] : []).concat(relevadList.map(entry => { return 'relevad_rtd=' + entry; })).join(';'));
             let firstPartyData = {};
             firstPartyData[bid.bidder] = { firstPartyData: { relevad_rtd: relevadList } };
             config.setConfig(firstPartyData);
-            !isEmpty(relevadData.segments) && deepSetValue(bid, 'ortb2.user.ext.data.segments', relevadData.segments);
-            !isEmpty(relevadData.categories) && deepSetValue(bid, 'ortb2.user.ext.data.contextual_categories', relevadData.categories.pagecat);
-            !isEmpty(relevadData.categories) && deepSetValue(bid, 'ortb2.site.ext.data.relevad_rtd', relevadData.categories.pagecat);
-            !isEmpty(relevadData.segments) && deepSetValue(bid, 'ortb2.user.ext.data.relevad_rtd', relevadData.segments);
           }
         }
       } catch (e) {
