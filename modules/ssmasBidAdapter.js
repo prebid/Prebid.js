@@ -6,8 +6,8 @@ import {config} from '../src/config.js';
 
 export const SSMAS_CODE = 'ssmas';
 const SSMAS_SERVER = 'ads.ssmas.com';
-export const SSMAS_ENDPOINT = `http://${SSMAS_SERVER}/ortb`;
-const SYNC_URL = `http://sync.ssmas.com/user_sync`;
+export const SSMAS_ENDPOINT = `https://${SSMAS_SERVER}/ortb`;
+const SYNC_URL = `https://sync.ssmas.com/user_sync`;
 export const SSMAS_REQUEST_METHOD = 'POST';
 const GDPR_VENDOR_ID = 1183;
 

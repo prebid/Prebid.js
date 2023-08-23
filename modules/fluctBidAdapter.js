@@ -26,6 +26,7 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {validBidRequests[]} - an array of bids.
+   * @param {bidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -33,16 +34,24 @@ export const spec = {
     const page = bidderRequest.refererInfo.page;
 
     _each(validBidRequests, (request) => {
+      const impExt = request.ortb2Imp?.ext;
       const data = Object();
 
       data.page = page;
       data.adUnitCode = request.adUnitCode;
       data.bidId = request.bidId;
-      data.transactionId = request.ortb2Imp?.ext?.tid;
       data.user = {
-        eids: request.userIdAsEids || []
+        data: bidderRequest.ortb2?.user?.data ?? [],
+        eids: [
+          ...(request.userIdAsEids ?? []),
+          ...(bidderRequest.ortb2?.user?.ext?.eids ?? []),
+        ],
       };
 
+      if (impExt) {
+        data.transactionId = impExt.tid;
+        data.gpid = impExt.gpid ?? impExt.data?.pbadslot ?? impExt.data?.adserver?.adslot;
+      }
       if (bidderRequest.gdprConsent) {
         deepSetValue(data, 'regs.gdpr', {
           consent: bidderRequest.gdprConsent.consentString,

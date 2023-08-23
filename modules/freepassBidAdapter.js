@@ -48,7 +48,7 @@ export const spec = {
 
   isBidRequestValid(bid) {
     logMessage('Validating bid: ', bid);
-    return !!bid.adUnitCode;
+    return !(!bid.adUnitCode || !bid.params || !bid.params.publisherId);
   },
 
   buildRequests(validBidRequests, bidderRequest) {
@@ -71,6 +71,25 @@ export const spec = {
     let freepassId = (validBidRequests[0].userId && validBidRequests[0].userId.freepassId) || {};
     data.user = prepareUserInfo(data.user, freepassId);
     data.device = prepareDeviceInfo(data.device, freepassId);
+
+    // set site.page & site.publisher
+    data.site = data.site || {};
+    data.site.publisher = data.site.publisher || {};
+    // set site.publisher.id. from params.publisherId required
+    data.site.publisher.id = validBidRequests[0].params.publisherId;
+    // set site.publisher.domain from params.publisherUrl. optional
+    data.site.publisher.domain = validBidRequests[0].params?.publisherUrl;
+
+    // set source
+    data.source = data.source || {};
+    data.source.fd = 0;
+    data.source.tid = validBidRequests.ortb2?.source?.tid;
+    data.source.pchain = '';
+
+    // set imp.ext
+    validBidRequests.forEach((bidRequest, index) => {
+      data.imp[index].tagId = bidRequest.adUnitCode;
+    });
 
     data.test = validBidRequests[0].test || 0;
 
