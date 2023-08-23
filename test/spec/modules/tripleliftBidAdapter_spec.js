@@ -1288,7 +1288,7 @@ describe('triplelift adapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let response, bidderRequest, paapiResponse;
+    let response, bidderRequest;
     this.beforeEach(() => {
       response = {
         body: {
