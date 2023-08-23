@@ -258,7 +258,7 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should add pageTitle info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
       expect(payload.pageTitle).to.exist;
@@ -266,7 +266,7 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should add pageDescription info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
       expect(payload.pageDescription).to.exist;
