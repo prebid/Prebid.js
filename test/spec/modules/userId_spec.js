@@ -2,7 +2,7 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage, dep,
-  findRootDomain,
+  findRootDomain, getConsentHash,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
@@ -12,7 +12,7 @@ import {
   setSubmoduleRegistry,
   syncDelay,
 } from 'modules/userId/index.js';
-import {createEidsArray} from 'modules/userId/eids.js';
+import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getPrebidInternal} from 'src/utils.js';
@@ -21,7 +21,6 @@ import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData, } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
-import {find} from 'src/polyfill.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
@@ -56,7 +55,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
-import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
@@ -86,7 +85,7 @@ describe('User ID', function () {
     }
   }
 
-  function createMockIdSubmodule(name, value, aliasName) {
+  function createMockIdSubmodule(name, value, aliasName, eids) {
     return {
       name,
       getId() {
@@ -95,7 +94,8 @@ describe('User ID', function () {
       decode(v) {
         return v;
       },
-      aliasName
+      aliasName,
+      eids
     }
   }
 
@@ -379,8 +379,6 @@ describe('User ID', function () {
             expect(bid).to.not.have.deep.nested.property('userIdAsEids');
           });
         });
-        // setCookie is called once in order to store consentData
-        expect(coreStorage.setCookie.callCount).to.equal(1);
       });
     });
 
@@ -594,6 +592,50 @@ describe('User ID', function () {
       });
     });
 
+    describe('EID updateConfig', () => {
+      function mockSubmod(name, eids) {
+        return createMockIdSubmodule(name, null, null, eids);
+      }
+
+      it('does not choke if a submod does not provide an eids map', () => {
+        setSubmoduleRegistry([
+          mockSubmod('mock1'),
+          mockSubmod('mock2')
+        ]);
+        expect(EID_CONFIG.size).to.equal(0);
+      });
+
+      it('should merge together submodules\' eid configs', () => {
+        setSubmoduleRegistry([
+          mockSubmod('mock1', {mock1: {m: 1}}),
+          mockSubmod('mock2', {mock2: {m: 2}})
+        ]);
+        expect(EID_CONFIG.get('mock1')).to.eql({m: 1});
+        expect(EID_CONFIG.get('mock2')).to.eql({m: 2});
+      });
+
+      it('should respect idPriority', () => {
+        config.setConfig({
+          userSync: {
+            idPriority: {
+              m1: ['mod2', 'mod1'],
+              m2: ['mod1', 'mod2']
+            },
+            userIds: [
+              { name: 'mod1' },
+              { name: 'mod2' },
+            ]
+          }
+        });
+        setSubmoduleRegistry([
+          mockSubmod('mod1', {m1: {i: 1}, m2: {i: 2}}),
+          mockSubmod('mod2', {m1: {i: 3}, m2: {i: 4}})
+        ]);
+        expect(EID_CONFIG.get('m1')).to.eql({i: 3});
+        expect(EID_CONFIG.get('m2')).to.eql({i: 2});
+      });
+    })
+
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
@@ -626,7 +668,25 @@ describe('User ID', function () {
         // some of the ids are padded to have length >= 32 characters
         createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value_7ac66c0f148de9519b8bd264312c4d64'}}}),
         createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_from_mockId2Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
-        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}, pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'}, merkleId: {id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId3Module', {
+          id: {
+            uid2: {
+              id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64',
+            lipb: {
+              lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            merkleId: {
+              id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            }
+          }
+        }, null, {
+          uid2: {
+            source: 'uidapi.com',
+            getValue(data) { return data.id }
+          }
+        }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
       ]);
 
@@ -717,6 +777,11 @@ describe('User ID', function () {
         },
         decode(d) {
           return d
+        },
+        eids: {
+          pubcid: {
+            source: 'pubcid.org',
+          }
         }
       }]);
       config.setConfig({
@@ -808,7 +873,25 @@ describe('User ID', function () {
         // some of the ids are padded to have length >= 32 characters
         createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value_7ac66c0f148de9519b8bd264312c4d64'}}}),
         createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_from_mockId2Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
-        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}, pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64', lipb: {lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'}, merkleId: {id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'}}}),
+        createMockIdSubmodule('mockId3Module', {
+          id: {
+            uid2: {
+              id: 'uid2_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            pubcid: 'pubcid_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64',
+            lipb: {
+              lipbid: 'lipbid_value_7ac66c0f148de9519b8bd264312c4d64'
+            },
+            merkleId: {
+              id: 'merkleId_value_from_mockId3Module_7ac66c0f148de9519b8bd264312c4d64'
+            }
+          }
+        }, null, {
+          uid2: {
+            source: 'uidapi.com',
+            getValue(data) { return data.id }
+          }
+        }),
         createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value_7ac66c0f148de9519b8bd264312c4d64'}}})
       ]);
 
@@ -843,6 +926,7 @@ describe('User ID', function () {
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         let mockIdSystem = {
           name: 'mockId',
           decode: function(value) {
@@ -1069,7 +1153,7 @@ describe('User ID', function () {
 
     it('pbjs.refreshUserIds refreshes single', function() {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('REFRESH', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
@@ -2919,7 +3003,7 @@ describe('User ID', function () {
           expect(server.requests).to.be.empty;
           return endAuction();
         }).then(() => {
-          expect(server.requests[0].url).to.equal('/any/unifiedid/url');
+          expect(server.requests[0].url).to.match(/\/any\/unifiedid\/url/);
         });
       });
 
@@ -3033,17 +3117,12 @@ describe('User ID', function () {
           }
         };
 
-        consentData = {
-          gdprApplies: true,
-          consentString: 'mockString',
-          apiVersion: 1,
-          hasValidated: true // mock presence of GPDR enforcement module
-        }
         // clear cookies
         expStr = (new Date(Date.now() + 25000).toUTCString());
         coreStorage.setCookie(mockIdCookieName, '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie(`${mockIdCookieName}_last`, '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie(`${mockIdCookieName}_cst`, '', EXPIRED_COOKIE_DATE);
+        allConsent.reset();
 
         // init
         adUnits = [getAdUnitMock()];
@@ -3057,10 +3136,20 @@ describe('User ID', function () {
         config.resetConfig();
       });
 
-      it('calls getId if no stored consent data and refresh is not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+      function setStorage({
+        val = JSON.stringify({id: '1234'}),
+        lastDelta = 60 * 1000,
+        cst = null
+      } = {}) {
+        coreStorage.setCookie(mockIdCookieName, val, expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - lastDelta).toUTCString()), expStr);
+        if (cst != null) {
+          coreStorage.setCookie(`${mockIdCookieName}_cst`, cst, expStr);
+        }
+      }
 
+      it('calls getId if no stored consent data and refresh is not needed', function () {
+        setStorage({lastDelta: 1000});
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3074,9 +3163,7 @@ describe('User ID', function () {
       });
 
       it('calls getId if no stored consent data but refresh is needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
-
+        setStorage();
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3090,11 +3177,7 @@ describe('User ID', function () {
       });
 
       it('calls getId if empty stored consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData();
-
+        setStorage({cst: ''});
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3108,10 +3191,10 @@ describe('User ID', function () {
       });
 
       it('calls getId if stored consent does not match current consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData({...consentData, consentString: 'different'});
+        setStorage({cst: getConsentHash()});
+        gdprDataHandler.setConsentData({
+          consentString: 'different'
+        });
 
         config.setConfig(userIdConfig);
 
@@ -3126,10 +3209,7 @@ describe('User ID', function () {
       });
 
       it('does not call getId if stored consent matches current consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData({...consentData});
+        setStorage({lastDelta: 1000, cst: getConsentHash()});
 
         config.setConfig(userIdConfig);
 
@@ -3259,8 +3339,31 @@ describe('User ID', function () {
         setSubmoduleRegistry([
           createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
           createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}),
-          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}),
-          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, {
+            uid2: {
+              source: 'uidapi.com',
+              getValue(data) {
+                return data.id
+              }
+            },
+            pubcid: {
+              source: 'pubcid.org',
+            },
+            lipb: {
+              source: 'liveintent.com',
+              getValue(data) {
+                return data.lipbid
+              }
+            }
+          }),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, {
+            merkleId: {
+              source: 'merkleinc.com',
+              getValue(data) {
+                return data.id
+              }
+            }
+          })
         ]);
         config.setConfig({
           userSync: {

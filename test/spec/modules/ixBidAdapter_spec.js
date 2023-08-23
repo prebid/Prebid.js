@@ -2,8 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -763,8 +762,6 @@ describe('IndexexchangeAdapter', function () {
     '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
   };
 
-  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
-
   const DEFAULT_USERID_PAYLOAD = [
     {
       source: 'liveramp.com',
@@ -823,6 +820,8 @@ describe('IndexexchangeAdapter', function () {
       }]
     }
   ];
+
+  const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
@@ -1984,6 +1983,37 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    it('multi-configured size params should have the correct imp[].banner.format[].ext.siteID', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const bid2 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.params.siteId = 1234;
+      bid1.bidId = '27fc897708d826';
+      bid2.params.siteId = 4321;
+      bid2.bidId = '34df030c33dc68';
+      bid2.params.size = [300, 600];
+      request = spec.buildRequests([bid1, bid2], DEFAULT_OPTION)[0];
+
+      const payload = extractPayload(request);
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal('1234');
+      expect(payload.imp[0].banner.format[1].ext.siteID).to.equal('4321');
+    });
+
+    it('multi-configured size params should be added to the imp[].banner.format[] array', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const bid2 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.params.siteId = 1234;
+      bid1.bidId = '27fc897708d826';
+      bid2.params.siteId = 4321;
+      bid2.bidId = '34df030c33dc68';
+      bid2.params.size = [300, 600];
+      request = spec.buildRequests([bid1, bid2], DEFAULT_OPTION)[0];
+
+      const payload = extractPayload(request);
+      expect(payload.imp[0].banner.format.length).to.equal(2);
+      expect(`${payload.imp[0].banner.format[0].w}x${payload.imp[0].banner.format[0].h}`).to.equal('300x250');
+      expect(`${payload.imp[0].banner.format[1].w}x${payload.imp[0].banner.format[1].h}`).to.equal('300x600');
+    });
+
     describe('build requests with price floors', () => {
       const highFloor = 4.5;
       const lowFloor = 3.5;
@@ -2203,7 +2233,8 @@ describe('IndexexchangeAdapter', function () {
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
-        expect(payload.device).to.be.undefined
+        expect(payload.device.h).to.exist;
+        expect(payload.device.w).to.exist;
       });
 
       it('should not set first party data if it is not an object', function () {
@@ -4121,8 +4152,8 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.05;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.35;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -4131,7 +4162,7 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.35);
-        bids[1].transactionId = tid;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('should return valid banner and video requests, different adunit, creates multiimp request', function () {
@@ -4905,6 +4936,24 @@ describe('IndexexchangeAdapter', function () {
       };
 
       expect(removeSiteIDs(request)).to.deep.equal(expected);
+    });
+  });
+  describe('addDeviceInfo', () => {
+    it('should add device to request when device already exists', () => {
+      let r = {
+        device: {
+          ip: '127.0.0.1'
+        }
+      }
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
+    });
+    it('should add device to request when device doesnt exist', () => {
+      let r = {}
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
     });
   });
 });
