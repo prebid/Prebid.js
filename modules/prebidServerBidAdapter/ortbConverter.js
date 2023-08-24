@@ -17,13 +17,13 @@ import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
 import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
-import {beConvertCurrency} from '../../src/utils/currency.js';
 import {redactor} from '../../src/activities/redactor.js';
 import {s2sActivityParams} from '../../src/adapterManager.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
+import {currencyNormalizer} from '../../libraries/currencyUtils/currency.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -141,25 +141,24 @@ const PBS_CONVERTER = ortbConverter({
       bidfloor(orig, imp, proxyBidRequest, context) {
         // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
         // and aggregate all of them into a single, minimum floor to put in the request
-        let min;
+        const normalize = currencyNormalizer();
+        let minFloor, minVal;
         for (const req of context.actualBidRequests.values()) {
-          const floor = {};
+          let floor = {};
           orig(floor, req, context);
           // if any bid does not have a valid floor, do not attempt to send any to PBS
           if (floor.bidfloorcur == null || floor.bidfloor == null) {
-            min = null;
+            minFloor = null;
             break;
-          } else if (min == null) {
-            min = floor;
-          } else {
-            const value = beConvertCurrency(floor.bidfloor, floor.bidfloorcur, min.bidfloorcur);
-            if (value != null && value < min.bidfloor) {
-              min = floor;
-            }
+          }
+          const val = normalize(floor.bidfloor, floor.bidfloorcur);
+          if (minVal == null || val < minVal) {
+            minFloor = floor;
+            minVal = val;
           }
         }
-        if (min != null) {
-          Object.assign(imp, min);
+        if (minFloor != null) {
+          Object.assign(imp, minFloor);
         }
       }
     },
