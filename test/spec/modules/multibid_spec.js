@@ -1,12 +1,12 @@
 import {expect} from 'chai';
 import {
-    addBidResponseHook,
-    adjustBidderRequestsHook,
-    resetMultibidUnits,
-    resetMultiConfig,
-    sortByMultibid,
-    targetBidPoolHook,
-    validateMultibid
+  addBidResponseHook,
+  adjustBidderRequestsHook,
+  resetMultibidUnits,
+  resetMultiConfig,
+  sortByMultibid,
+  targetBidPoolHook,
+  validateMultibid
 } from 'modules/multibid/index.js';
 import {config} from 'src/config.js';
 import {getHighestCpm} from '../../../src/utils/reducers.js';

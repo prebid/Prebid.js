@@ -1,9 +1,9 @@
 import {expect} from 'chai';
 import {
-    filters,
-    getHighestCpmBidsFromBidPool,
-    sortByDealAndPriceBucketOrCpm,
-    targeting as targetingInstance
+  filters,
+  getHighestCpmBidsFromBidPool,
+  sortByDealAndPriceBucketOrCpm,
+  targeting as targetingInstance
 } from 'src/targeting.js';
 import {config} from 'src/config.js';
 import {createBidReceived} from 'test/fixtures/fixtures.js';

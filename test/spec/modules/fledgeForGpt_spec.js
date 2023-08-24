@@ -11,38 +11,39 @@ import 'modules/rubiconBidAdapter.js';
 import {parseExtPrebidFledge, setImpExtAe, setResponseFledgeConfigs} from 'modules/fledgeForGpt.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
+import {getGlobal} from '../../../src/prebidGlobal.js';
 
 describe('fledgeForGpt module', () => {
   let sandbox;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-  })
+  });
   afterEach(() => {
     sandbox.restore();
-  })
-  describe('addComponentAuction', function() {
+  });
+  describe('addComponentAuction', function () {
     before(() => {
-      fledge.init({enabled: true})
+      fledge.init({enabled: true});
     });
 
     const fledgeAuctionConfig = {
       seller: 'bidder',
       mock: 'config'
-    }
+    };
 
-    describe('addComponentAuctionHook', function() {
+    describe('addComponentAuctionHook', function () {
       let nextFnSpy, mockGptSlot;
-      beforeEach(function() {
+      beforeEach(function () {
         nextFnSpy = sinon.spy();
         mockGptSlot = {
           setConfig: sinon.stub(),
           getAdUnitPath: () => 'mock/gpt/au'
-        }
-        sandbox.stub(utils, 'getGptSlotForAdUnitCode').callsFake(() => mockGptSlot)
+        };
+        sandbox.stub(utils, 'getGptSlotForAdUnitCode').callsFake(() => mockGptSlot);
       });
 
-      it('should call next()', function() {
+      it('should call next()', function () {
         fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
         sinon.assert.calledWith(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
       });
@@ -52,8 +53,8 @@ describe('fledgeForGpt module', () => {
         const cf1 = {...fledgeAuctionConfig, id: 1, seller: 'b1'};
         const cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
         fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au1', cf1);
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au2', cf2)
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'})
+        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au2', cf2);
+        events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.calledWith(utils.getGptSlotForAdUnitCode, 'au1');
         sinon.assert.calledWith(utils.getGptSlotForAdUnitCode, 'au2');
         sinon.assert.calledWith(mockGptSlot.setConfig, {
@@ -67,8 +68,8 @@ describe('fledgeForGpt module', () => {
             configKey: 'b2',
             auctionConfig: cf2,
           }]
-        })
-      })
+        });
+      });
 
       it('should drop auction configs after end of auction', () => {
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
@@ -76,23 +77,130 @@ describe('fledgeForGpt module', () => {
         fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.notCalled(mockGptSlot.setConfig);
-      })
+      });
+
+      describe('floor signal', () => {
+        before(() => {
+          if (!getGlobal().convertCurrency) {
+            getGlobal().convertCurrency = () => null;
+            getGlobal().convertCurrency.mock = true;
+          }
+        });
+        after(() => {
+          if (getGlobal().convertCurrency.mock) {
+            delete getGlobal().convertCurrency;
+          }
+        });
+
+        beforeEach(() => {
+          sandbox.stub(getGlobal(), 'convertCurrency').callsFake((amount, from, to) => {
+            if (from === to) return amount;
+            if (from === 'USD' && to === 'JPY') return amount * 100;
+            if (from === 'JPY' && to === 'USD') return amount / 100;
+            throw new Error('unexpected currency conversion');
+          });
+        });
+
+        Object.entries({
+          'bids': (payload, values) => {
+            payload.bidsReceived = values
+              .map((val) => ({adUnitCode: 'au', cpm: val.amount, currency: val.cur}))
+              .concat([{adUnitCode: 'other', cpm: 10000, currency: 'EUR'}])
+          },
+          'no bids': (payload, values) => {
+            payload.bidderRequests = values
+              .map((val) => ({bids: [{adUnitCode: 'au', getFloor: () => ({floor: val.amount, currency: val.cur})}]}))
+              .concat([{bids: {adUnitCode: 'other', getFloor: () => ({floor: -10000, currency: 'EUR'})}}])
+          }
+        }).forEach(([tcase, setup]) => {
+          describe(`when auction has ${tcase}`, () => {
+            Object.entries({
+              'no currencies': {
+                values: [{amount: 1}, {amount: 100}, {amount: 10}, {amount: 100}],
+                'bids': {
+                  bidfloor: 100,
+                  bidfloorcur: undefined
+                },
+                'no bids': {
+                  bidfloor: 1,
+                  bidfloorcur: undefined,
+                }
+              },
+              'only zero values': {
+                values: [{amount: 0, cur: 'USD'}, {amount: 0, cur: 'JPY'}],
+                'bids': {
+                  bidfloor: undefined,
+                  bidfloorcur: undefined,
+                },
+                'no bids': {
+                  bidfloor: undefined,
+                  bidfloorcur: undefined,
+                }
+              },
+              'matching currencies': {
+                values: [{amount: 10, cur: 'JPY'}, {amount: 100, cur: 'JPY'}],
+                'bids': {
+                  bidfloor: 100,
+                  bidfloorcur: 'JPY',
+                },
+                'no bids': {
+                  bidfloor: 10,
+                  bidfloorcur: 'JPY',
+                }
+              },
+              'mixed currencies': {
+                values: [{amount: 10, cur: 'USD'}, {amount: 10, cur: 'JPY'}],
+                'bids': {
+                  bidfloor: 10,
+                  bidfloorcur: 'USD'
+                },
+                'no bids': {
+                  bidfloor: 10,
+                  bidfloorcur: 'JPY',
+                }
+              }
+            }).forEach(([t, testConfig]) => {
+              const values = testConfig.values;
+              const {bidfloor, bidfloorcur} = testConfig[tcase];
+
+              describe(`with ${t}`, () => {
+                let payload;
+                beforeEach(() => {
+                  payload = {auctionId: 'aid'};
+                  setup(payload, values);
+                });
+
+                it('should populate bidfloor/bidfloorcur', () => {
+                  events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
+                  fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
+                  events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
+                  sinon.assert.calledWith(mockGptSlot.setConfig, sinon.match(arg => {
+                    return arg.componentAuction.some(au => au.auctionConfig.auctionSignals?.prebid?.bidfloor === bidfloor && au.auctionConfig.auctionSignals?.prebid?.bidfloorcur === bidfloorcur)
+                  }))
+                })
+              });
+            });
+          })
+        })
+      });
     });
   });
 
   describe('fledgeEnabled', function () {
-    const navProps = Object.fromEntries(['runAdAuction', 'joinAdInterestGroup'].map(p => [p, navigator[p]]))
+    const navProps = Object.fromEntries(['runAdAuction', 'joinAdInterestGroup'].map(p => [p, navigator[p]]));
 
     before(function () {
       // navigator.runAdAuction & co may not exist, so we can't stub it normally with
       // sinon.stub(navigator, 'runAdAuction') or something
-      Object.keys(navProps).forEach(p => { navigator[p] = sinon.stub() });
+      Object.keys(navProps).forEach(p => {
+        navigator[p] = sinon.stub();
+      });
       hook.ready();
     });
 
-    after(function() {
+    after(function () {
       Object.entries(navProps).forEach(([p, orig]) => navigator[p] = orig);
-    })
+    });
 
     afterEach(function () {
       config.resetConfig();
@@ -117,7 +225,7 @@ describe('fledgeForGpt module', () => {
 
     describe('with setBidderConfig()', () => {
       it('should set fledgeEnabled correctly per bidder', function () {
-        config.setConfig({bidderSequence: 'fixed'})
+        config.setConfig({bidderSequence: 'fixed'});
         config.setBidderConfig({
           bidders: ['appnexus'],
           config: {
@@ -130,7 +238,8 @@ describe('fledgeForGpt module', () => {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback() {
+          },
           []
         );
 
@@ -159,7 +268,8 @@ describe('fledgeForGpt module', () => {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback() {
+          },
           []
         );
 
@@ -185,7 +295,8 @@ describe('fledgeForGpt module', () => {
           adUnits,
           Date.now(),
           utils.getUniqueIdentifierStr(),
-          function callback() {},
+          function callback() {
+          },
           []
         );
 
@@ -218,7 +329,7 @@ describe('fledgeForGpt module', () => {
         const imp = {ext: {ae: 1}};
         setImpExtAe(imp, {}, {bidderRequest: {}});
         expect(imp.ext.ae).to.not.exist;
-      })
+      });
       it('imp.ext.ae should be left intact if fledge is enabled', () => {
         const imp = {ext: {ae: 2}};
         setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
@@ -235,7 +346,7 @@ describe('fledgeForGpt module', () => {
               }
             }
           }
-        }
+        };
       }
 
       function generateImpCtx(fledgeFlags) {
@@ -315,4 +426,4 @@ describe('fledgeForGpt module', () => {
       });
     });
   });
-})
+});

@@ -145,7 +145,7 @@ const PBS_CONVERTER = ortbConverter({
         const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
         let min;
         for (const req of context.actualBidRequests.values()) {
-          let floor = {};
+          const floor = {};
           orig(floor, req, context);
           // if any bid does not have a valid floor, do not attempt to send any to PBS
           if (floor.bidfloorcur == null || floor.bidfloor == null) {
