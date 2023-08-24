@@ -1,5 +1,5 @@
 import { loadExternalScript } from '../src/adloader.js';
-import { logWarn, isEmptyStr } from '../src/utils.js';
+import { isEmptyStr } from '../src/utils.js';
 import { config } from '../src/config.js';
 
 const MODULE_NAME = 'dynamicAdBoost';
@@ -17,14 +17,8 @@ var dynamicAdBoostAdUnits = {};
 var dabStartDate = new Date();
 var dabStartTime = dabStartDate.getTime();
 
-function loadLmScript(keyId) {
-  const scriptUrl = `${SCRIPT_URL}/${keyId}.js`;
-  loadExternalScript(scriptUrl, MODULE_NAME);
-}
-
-function init() {
+export function init() {
   config.getConfig(MODULE_NAME, conf => {
-    logWarn(conf);
     if (conf[MODULE_NAME]['keyId']) {
       let keyId = conf[MODULE_NAME]['keyId'];
       if (keyId && !isEmptyStr(keyId)) {
@@ -57,7 +51,14 @@ function init() {
       }
       return false;
     }
+    return false;
   });
+  return false;
+}
+
+function loadLmScript(keyId) {
+  const scriptUrl = `${SCRIPT_URL}/${keyId}.js`;
+  loadExternalScript(scriptUrl, MODULE_NAME);
 }
 
 // Callback function when an observed element becomes visible
