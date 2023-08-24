@@ -6,8 +6,11 @@ import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
 import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
+import * as events from '../src/events.js'
+import CONSTANTS from '../src/constants.json';
 
 const MODULE = 'fledgeForGpt'
+const PENDING = {};
 
 export let isEnabled = false;
 
@@ -21,6 +24,8 @@ export function init(cfg) {
     if (!isEnabled) {
       getHook('addComponentAuction').before(addComponentAuctionHook);
       getHook('makeBidRequests').after(markForFledge);
+      events.on(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
+      events.on(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
       isEnabled = true;
     }
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
@@ -28,15 +33,16 @@ export function init(cfg) {
     if (isEnabled) {
       getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
       getHook('makeBidRequests').getHooks({hook: markForFledge}).remove()
+      events.off(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
+      events.off(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
       isEnabled = false;
     }
     logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
-export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig) {
+function setComponentAuction(adUnitCode, gptSlot, componentAuctionConfig) {
   const seller = componentAuctionConfig.seller;
-  const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (gptSlot && gptSlot.setConfig) {
     gptSlot.setConfig({
       componentAuction: [{
@@ -48,8 +54,31 @@ export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig
   } else {
     logWarn(MODULE, `unable to register component auction config for: ${adUnitCode} x ${seller}.`);
   }
+}
 
-  next(adUnitCode, componentAuctionConfig);
+function onAuctionInit({auctionId}) {
+  PENDING[auctionId] = {};
+}
+
+function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
+  try {
+    Object.entries(PENDING[auctionId]).forEach(([adUnitCode, auctionConfigs]) => {
+      const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
+      auctionConfigs.forEach(cfg => setComponentAuction(adUnitCode, gptSlot, cfg));
+    })
+  } finally {
+    delete PENDING[auctionId];
+  }
+}
+
+export function addComponentAuctionHook(next, auctionId, adUnitCode, componentAuctionConfig) {
+  if (PENDING.hasOwnProperty(auctionId)) {
+    !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
+    PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
+  } else {
+    logWarn(MODULE, `Received component auction config for auction that is already over (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
+  }
+  next(auctionId, adUnitCode, componentAuctionConfig);
 }
 
 function isFledgeSupported() {

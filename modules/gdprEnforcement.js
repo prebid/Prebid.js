@@ -224,6 +224,9 @@ export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBloc
 
 export const ufpdRule = gdprRule(4, () => purpose4Rule, ufpdBlocked);
 
+export const defaultEidRule = function (params) {
+
+}
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
  */

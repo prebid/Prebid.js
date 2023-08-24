@@ -3467,16 +3467,16 @@ describe('S2S Adapter', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
-        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
       });
 
       it('calls addComponentAuction when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
-        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
       })
     });
   });
