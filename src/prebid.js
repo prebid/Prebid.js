@@ -12,7 +12,6 @@ import {
   deepSetValue,
   flatten,
   generateUUID,
-  getHighestCpm,
   inIframe,
   insertElement,
   isArray,
@@ -52,6 +51,7 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
+import {getHighestCpm} from './utils/reducers.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;

@@ -23,7 +23,8 @@ import {activityParams} from '../../src/activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
-import {currencyNormalizer} from '../../libraries/currencyUtils/currency.js';
+import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
+import {minimum} from '../../src/utils/reducers.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -141,24 +142,20 @@ const PBS_CONVERTER = ortbConverter({
       bidfloor(orig, imp, proxyBidRequest, context) {
         // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
         // and aggregate all of them into a single, minimum floor to put in the request
-        const normalize = currencyNormalizer();
-        let minFloor, minVal;
+        const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
+        let min;
         for (const req of context.actualBidRequests.values()) {
           let floor = {};
           orig(floor, req, context);
           // if any bid does not have a valid floor, do not attempt to send any to PBS
           if (floor.bidfloorcur == null || floor.bidfloor == null) {
-            minFloor = null;
+            min = null;
             break;
           }
-          const val = normalize(floor.bidfloor, floor.bidfloorcur);
-          if (minVal == null || val < minVal) {
-            minFloor = floor;
-            minVal = val;
-          }
+          min = min == null ? floor : getMin(min, floor);
         }
-        if (minFloor != null) {
-          Object.assign(imp, minFloor);
+        if (min != null) {
+          Object.assign(imp, min);
         }
       }
     },

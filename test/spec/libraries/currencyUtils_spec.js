@@ -1,5 +1,5 @@
 import {getGlobal} from 'src/prebidGlobal.js';
-import {convertCurrency, currencyNormalizer} from 'libraries/currencyUtils/currency.js';
+import {convertCurrency, currencyCompare, currencyNormalizer} from 'libraries/currencyUtils/currency.js';
 
 describe('currency utils', () => {
   let sandbox;
@@ -63,7 +63,7 @@ describe('currency utils', () => {
     })
   });
 
-  describe('currencyNormalizer', () => {
+  describe('Currency normalization', () => {
     let mockConvert;
     beforeEach(() => {
       mockConvert = sinon.stub().callsFake((amt, from, to) => {
@@ -72,23 +72,42 @@ describe('currency utils', () => {
       })
     });
 
-    it('converts to toCurrency if set', () => {
-      const normalize = currencyNormalizer(10, true, mockConvert);
-      expect(normalize(1, 1)).to.eql(10);
-      expect(normalize(10, 100)).to.eql(1);
-    });
+    describe('currencyNormalizer', () => {
+      it('converts to toCurrency if set', () => {
+        const normalize = currencyNormalizer(10, true, mockConvert);
+        expect(normalize(1, 1)).to.eql(10);
+        expect(normalize(10, 100)).to.eql(1);
+      });
 
-    it('converts to first currency if toCurrency is not set', () => {
-      const normalize = currencyNormalizer(null, true, mockConvert);
-      expect(normalize(1, 1)).to.eql(1);
-      expect(normalize(1, 10)).to.eql(0.1);
-    });
+      it('converts to first currency if toCurrency is not set', () => {
+        const normalize = currencyNormalizer(null, true, mockConvert);
+        expect(normalize(1, 1)).to.eql(1);
+        expect(normalize(1, 10)).to.eql(0.1);
+      });
 
-    [true, false].forEach(bestEffort => {
-      it(`passes bestEffort = ${bestEffort} to convert`, () => {
-        currencyNormalizer(null, bestEffort, mockConvert)(1, 1);
-        sinon.assert.calledWith(mockConvert, 1, 1, 1, bestEffort);
+      [true, false].forEach(bestEffort => {
+        it(`passes bestEffort = ${bestEffort} to convert`, () => {
+          currencyNormalizer(null, bestEffort, mockConvert)(1, 1);
+          sinon.assert.calledWith(mockConvert, 1, 1, 1, bestEffort);
+        })
       })
+    });
+
+    describe('currencyCompare', () => {
+      let compare
+      beforeEach(() => {
+        compare = currencyCompare((val) => [val.amount, val.cur], currencyNormalizer(null, false, mockConvert))
+      });
+      [
+        [{amount: 1, cur: 1}, {amount: 1, cur: 10}, 1],
+        [{amount: 10, cur: 1}, {amount: 0.1, cur: 100}, 1],
+        [{amount: 1, cur: 1}, {amount: 10, cur: 10}, 0],
+      ].forEach(([a, b, expected]) => {
+        it(`should compare ${a.amount}/${a.cur} and ${b.amount}/${b.cur}`, () => {
+          expect(compare(a, b)).to.equal(expected);
+          expect(compare(b, a)).to.equal(-expected);
+        });
+      });
     })
   })
 })
