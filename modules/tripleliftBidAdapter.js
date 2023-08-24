@@ -56,6 +56,10 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
+    if (bidderRequest && bidderRequest.fledgeEnabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
+    }
+
     if (config.getConfig('coppa') === true) {
       tlCall = tryAppendQueryString(tlCall, 'coppa', true);
     }
@@ -75,12 +79,29 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    return bids.map(function(bid) {
-      return _buildResponseObject(bidderRequest, bid);
-    });
+    const paapi = serverResponse.body.paapi || [];
+
+    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
+
+    if (paapi.length > 0) {
+      const fledgeAuctionConfigs = paapi.map(config => {
+        return {
+          bidId: bidderRequest.bids[config.imp_id].bidId,
+          config: config.auctionConfig
+        };
+      });
+
+      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
+      return {
+        bids,
+        fledgeAuctionConfigs
+      };
+    } else {
+      return bids;
+    }
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -100,6 +121,15 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
     }
 
+    if (gppConsent) {
+      if (gppConsent.gppString) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
+      }
+      if (gppConsent.applicableSections && gppConsent.applicableSections.length !== 0) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', _filterSid(gppConsent.applicableSections));
+      }
+    }
+
     return [{
       type: syncType,
       url: syncEndpoint
@@ -111,6 +141,13 @@ function _getSyncType(syncOptions) {
   if (!syncOptions) return;
   if (syncOptions.iframeEnabled) return 'iframe';
   if (syncOptions.pixelEnabled) return 'image';
+}
+
+function _filterSid(sid) {
+  return sid.filter(element => {
+    return Number.isInteger(element);
+  })
+    .join(',');
 }
 
 function _buildPostBody(bidRequests, bidderRequest) {
@@ -169,6 +206,11 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (bidderRequest?.ortb2?.regs?.gpp) {
     data.regs = Object.assign({}, bidderRequest.ortb2.regs);
   }
+
+  if (bidderRequest?.ortb2) {
+    data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
+  }
+
   return data;
 }
 

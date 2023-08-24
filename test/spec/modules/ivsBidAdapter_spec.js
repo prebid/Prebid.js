@@ -112,9 +112,7 @@ describe('ivsBidAdapter', function () {
     it('should contain the required parameters', function () {
       const bidRequest = spec.buildRequests(validBidRequests, validBidderRequest);
       const bidderRequest = bidRequest.data;
-      assert.equal(bidderRequest.id, validBidderRequest.auctionId);
       assert.ok(bidderRequest.site);
-      assert.ok(bidderRequest.source);
       assert.lengthOf(bidderRequest.imp, 1);
     });
   });

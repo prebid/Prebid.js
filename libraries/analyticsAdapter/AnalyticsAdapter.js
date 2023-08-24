@@ -134,13 +134,7 @@ export default function AnalyticsAdapter({ url, analyticsType, global, handler }
       handlers = Object.fromEntries(
         Array.from(trackedEvents)
           .map((ev) => {
-            const handler = ev === CONSTANTS.EVENTS.AUCTION_INIT
-              ? (args) => {
-                // TODO: remove this special case in v8
-                args.config = typeof config === 'object' ? config.options || {} : {};
-                this.enqueue({eventType: ev, args});
-              }
-              : (args) => this.enqueue({eventType: ev, args});
+            const handler = (args) => this.enqueue({eventType: ev, args});
             events.on(ev, handler);
             return [ev, handler];
           })

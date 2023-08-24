@@ -258,6 +258,7 @@ function addPlacement(request) {
     placementInfo.tid = transactionId;
   }
   if (request.auctionId) {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     placementInfo.auctionId = request.auctionId;
   }
   return JSON.stringify(placementInfo);
@@ -606,8 +607,14 @@ function validateVideoParams(bid) {
     }
 
     validate('video.protocols', val => isDefined(val), paramRequired);
-    validate('video.protocols', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
-      paramInvalid, 'array of numbers, ex: [2,3]');
+    validate(
+      'video.protocols',
+      (val) =>
+        isArrayOfNums(val) &&
+        val.every((v) => v >= 1 && v <= 12 && v != 9 && v != 10), // 9 and 10 are for DAST which are not supported.
+      paramInvalid,
+      'array of numbers between 1 and 12 except for 9 or 10 , ex: [2,3, 7, 11]'
+    );
 
     validate('video.api', val => isDefined(val), paramRequired);
     validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),

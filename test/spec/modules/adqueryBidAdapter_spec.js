@@ -80,7 +80,11 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    let req;
+    beforeEach(() => {
+      req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    })
+
     let rdata
 
     it('should return request object', function () {

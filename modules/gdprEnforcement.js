@@ -6,7 +6,6 @@ import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import {find} from '../src/polyfill.js';
-import {getHook} from '../src/hook.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
@@ -25,18 +24,19 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
-  ACTIVITY_ENRICH_EIDS,
+  ACTIVITY_ENRICH_EIDS, ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
   ACTIVITY_REPORT_ANALYTICS,
-  ACTIVITY_SYNC_USER
+  ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
 const TCF2 = {
-  'purpose1': {id: 1, name: 'storage'},
-  'purpose2': {id: 2, name: 'basicAds'},
-  'purpose7': {id: 7, name: 'measurement'}
+  purpose1: {id: 1, name: 'storage'},
+  purpose2: {id: 2, name: 'basicAds'},
+  purpose4: {id: 4, name: 'personalizedAds'},
+  purpose7: {id: 7, name: 'measurement'},
 };
 
 /*
@@ -56,6 +56,7 @@ const DEFAULT_RULES = [{
 
 export let purpose1Rule;
 export let purpose2Rule;
+export let purpose4Rule;
 export let purpose7Rule;
 
 export let enforcementRules;
@@ -63,6 +64,7 @@ export let enforcementRules;
 const storageBlocked = new Set();
 const biddersBlocked = new Set();
 const analyticsBlocked = new Set();
+const ufpdBlocked = new Set();
 
 let hooksAdded = false;
 let strictStorageEnforcement = false;
@@ -157,27 +159,14 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
-  const vendorConsentRequred = !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
+  const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
 
-  // get data from the consent string
-  const purposeConsent = deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
-  const vendorConsent = vendorConsentRequred ? deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`) : true;
-  const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+  let purposeAllowed = !rule.enforcePurpose || !!deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
+  let vendorAllowed = !vendorConsentRequred || !!deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
 
-  /*
-    Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
-    or the user has consented. Similar with vendors.
-  */
-  const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
-  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
-
-  /*
-    Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming
-    LI for Basic Ads (Purpose 2). Prebid.js can't check to see who's declaring what legal basis, so if LI has been
-    established for Purpose 2, allow the auction to take place and let the server sort out the legal basis calculation.
-  */
   if (purposeId === 2) {
-    return (purposeAllowed && vendorAllowed) || (liTransparency === true);
+    purposeAllowed ||= !!deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+    vendorAllowed ||= !!deepAccess(consentData, `vendorData.vendor.legitimateInterests.${gvlId}`);
   }
 
   return purposeAllowed && vendorAllowed;
@@ -219,15 +208,6 @@ export const accessDeviceRule = ((rule) => {
 export const syncUserRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 export const enrichEidsRule = gdprRule(1, () => purpose1Rule, storageBlocked);
 
-export function userIdHook(fn, submodules, consentData) {
-  // TODO: remove this in v8 (https://github.com/prebid/Prebid.js/issues/9766)
-  if (shouldEnforce(consentData, 1, 'User ID')) {
-    fn.call(this, submodules, {...consentData, hasValidated: true});
-  } else {
-    fn.call(this, submodules, consentData);
-  }
-}
-
 export const fetchBidsRule = ((rule) => {
   return function (params) {
     if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) {
@@ -242,6 +222,8 @@ export const fetchBidsRule = ((rule) => {
 
 export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]));
 
+export const ufpdRule = gdprRule(4, () => purpose4Rule, ufpdBlocked);
+
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
  */
@@ -253,27 +235,20 @@ function emitTCF2FinalResults() {
   const tcf2FinalResults = {
     storageBlocked: formatSet(storageBlocked),
     biddersBlocked: formatSet(biddersBlocked),
-    analyticsBlocked: formatSet(analyticsBlocked)
+    analyticsBlocked: formatSet(analyticsBlocked),
+    ufpdBlocked: formatSet(ufpdBlocked),
   };
 
   events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
-  [storageBlocked, biddersBlocked, analyticsBlocked].forEach(el => el.clear());
+  [storageBlocked, biddersBlocked, analyticsBlocked, ufpdBlocked].forEach(el => el.clear());
 }
 
 events.on(CONSTANTS.EVENTS.AUCTION_END, emitTCF2FinalResults);
 
-/*
-  Set of callback functions used to detect presence of a TCF rule, passed as the second argument to find().
-*/
-const hasPurpose1 = (rule) => {
-  return rule.purpose === TCF2.purpose1.name;
-};
-const hasPurpose2 = (rule) => {
-  return rule.purpose === TCF2.purpose2.name;
-};
-const hasPurpose7 = (rule) => {
-  return rule.purpose === TCF2.purpose7.name;
-};
+function hasPurpose(purposeNo) {
+  const pname = TCF2[`purpose${purposeNo}`].name;
+  return (rule) => rule.purpose === pname;
+}
 
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
@@ -289,9 +264,10 @@ export function setEnforcementConfig(config) {
   }
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
 
-  purpose1Rule = find(enforcementRules, hasPurpose1);
-  purpose2Rule = find(enforcementRules, hasPurpose2);
-  purpose7Rule = find(enforcementRules, hasPurpose7);
+  purpose1Rule = find(enforcementRules, hasPurpose(1));
+  purpose2Rule = find(enforcementRules, hasPurpose(2));
+  purpose4Rule = find(enforcementRules, hasPurpose(4))
+  purpose7Rule = find(enforcementRules, hasPurpose(7));
 
   if (!purpose1Rule) {
     purpose1Rule = DEFAULT_RULES[0];
@@ -307,11 +283,15 @@ export function setEnforcementConfig(config) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ACCESS_DEVICE, RULE_NAME, accessDeviceRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_SYNC_USER, RULE_NAME, syncUserRule));
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_ENRICH_EIDS, RULE_NAME, enrichEidsRule));
-      // TODO: remove this hook in v8 (https://github.com/prebid/Prebid.js/issues/9766)
-      getHook('validateGdprEnforcement').before(userIdHook, 47);
     }
     if (purpose2Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
+    }
+    if (purpose4Rule) {
+      RULE_HANDLES.push(
+        registerActivityControl(ACTIVITY_TRANSMIT_UFPD, RULE_NAME, ufpdRule),
+        registerActivityControl(ACTIVITY_ENRICH_UFPD, RULE_NAME, ufpdRule)
+      );
     }
     if (purpose7Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule));
@@ -321,9 +301,6 @@ export function setEnforcementConfig(config) {
 
 export function uninstall() {
   while (RULE_HANDLES.length) RULE_HANDLES.pop()();
-  [
-    getHook('validateGdprEnforcement').getHooks({hook: userIdHook}),
-  ].forEach(hook => hook.remove());
   hooksAdded = false;
 }
 
