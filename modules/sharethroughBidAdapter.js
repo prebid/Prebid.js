@@ -216,7 +216,7 @@ export const sharethroughAdapterSpec = {
     });
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent ) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 

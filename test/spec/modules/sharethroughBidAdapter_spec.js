@@ -618,7 +618,7 @@ describe('sharethrough adapter spec', function () {
           badv: ['domain1.com', 'domain2.com'],
           regs: {
             gpp: 'gpp_string',
-              gpp_sid: [7]
+            gpp_sid: [7]
           },
         };
 
@@ -882,7 +882,7 @@ describe('sharethrough adapter spec', function () {
       });
 
       it('returns GPP Consent Params in UserSync url', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {gppString: 'gpp-string', applicableSections: [1,2]});
+        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {gppString: 'gpp-string', applicableSections: [1, 2]});
         expect(syncArray).to.deep.equal([
           { type: 'image', url: 'cookieUrl1&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
           { type: 'image', url: 'cookieUrl2&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
