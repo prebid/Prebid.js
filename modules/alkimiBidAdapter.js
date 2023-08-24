@@ -5,10 +5,12 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
+const GVLID = 1169;
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
