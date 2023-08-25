@@ -137,16 +137,9 @@ export const spec = {
         }
 
         if (ortb2Imp.ext) {
+          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.pbadslot?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
           if (ortb2Imp.ext.data) {
             impObj.ext.data = ortb2Imp.ext.data;
-            if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-              impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-            } else if (ortb2Imp.ext.data.pbadslot) {
-              impObj.ext.gpid = ortb2Imp.ext.data.pbadslot.toString();
-            }
-          }
-          if (ortb2Imp.ext.gpid) {
-            impObj.ext.gpid = ortb2Imp.ext.gpid.toString();
           }
         }
       }

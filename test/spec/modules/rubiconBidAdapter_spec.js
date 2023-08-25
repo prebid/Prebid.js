@@ -1229,6 +1229,30 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          it('should still use single request if other rubicon configs are set after', function () {
+            // set single request to true
+            config.setConfig({ rubicon: { singleRequest: true } });
+
+            // execute some other rubicon setConfig
+            config.setConfig({ rubicon: { netRevenue: true } });
+
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should have 1 request only
+            expect(serverRequests).that.is.an('array').of.length(1);
+
+            // get the built query
+            let data = parseQuery(serverRequests[0].data);
+
+            // num slots should be 4
+            expect(data.slots).to.equal('4');
+          });
+
           it('should not group bid requests if singleRequest does not equal true', function () {
             config.setConfig({rubicon: {singleRequest: false}});
 

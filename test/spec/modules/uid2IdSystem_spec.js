@@ -7,7 +7,6 @@ import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
 import 'modules/consentManagement.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import { server } from 'test/mocks/xhr.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
@@ -56,22 +55,6 @@ const expectModuleStorageToContain = (initialIdentity, latestIdentity) => {
 const apiUrl = 'https://prod.uidapi.com/v2/token/refresh';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = () => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: refreshedToken } }));
-const configureUid2Response = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
-const configureUid2ApiSuccessResponse = () => configureUid2Response(200, makeSuccessResponseBody());
-const configureUid2ApiFailResponse = () => configureUid2Response(500, 'Error');
-
-// Runs the provided test twice - once with a successful API mock, once with one which returns a server error
-const testApiSuccessAndFailure = (act, testDescription, failTestDescription, only = false) => {
-  const testFn = only ? it.only : it;
-  testFn(`API responds successfully: ${testDescription}`, async function() {
-    configureUid2ApiSuccessResponse();
-    await act(true);
-  });
-  testFn(`API responds with an error: ${failTestDescription ?? testDescription}`, async function() {
-    configureUid2ApiFailResponse();
-    await act(false);
-  });
-}
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
   const describeFn = only ? describe.only : describe;
@@ -93,7 +76,7 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let server, suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
@@ -116,13 +99,31 @@ describe(`UID2 module`, function () {
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
 
+  const configureUid2Response = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+  const configureUid2ApiSuccessResponse = () => configureUid2Response(200, makeSuccessResponseBody());
+  const configureUid2ApiFailResponse = () => configureUid2Response(500, 'Error');
+  // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
+  const testApiSuccessAndFailure = (act, testDescription, failTestDescription, only = false) => {
+    const testFn = only ? it.only : it;
+    testFn(`API responds successfully: ${testDescription}`, async function() {
+      configureUid2ApiSuccessResponse();
+      await act(true);
+    });
+    testFn(`API responds with an error: ${failTestDescription ?? testDescription}`, async function() {
+      configureUid2ApiFailResponse();
+      await act(false);
+    });
+  }
+
   const getFullTestTitle = (test) => `${test.parent.title ? getFullTestTitle(test.parent) + ' | ' : ''}${test.title}`;
+
   beforeEach(function () {
     debugOutput(`----------------- START TEST ------------------`);
     fullTestTitle = getFullTestTitle(this.test.ctx.currentTest);
     debugOutput(fullTestTitle);
     testSandbox = sinon.sandbox.create();
     testSandbox.stub(utils, 'logWarn');
+    server = sinon.createFakeServer();
 
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
@@ -143,7 +144,6 @@ describe(`UID2 module`, function () {
     }
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);
     coreStorage.removeDataFromLocalStorage(moduleCookieName);
-
     debugOutput('----------------- END TEST ------------------');
   });
 
@@ -247,7 +247,7 @@ describe(`UID2 module`, function () {
         describe('When the refresh is available in time', function() {
           testApiSuccessAndFailure(async function(apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
-            apiHelpers.respondAfterDelay(auctionDelayMs / 10);
+            apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
             const bid = await runAuction();
 
             if (apiSucceeds) expectToken(bid, refreshedToken);
@@ -256,7 +256,7 @@ describe(`UID2 module`, function () {
 
           testApiSuccessAndFailure(async function(apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
-            apiHelpers.respondAfterDelay(auctionDelayMs / 10);
+            apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
             await runAuction();
             if (apiSucceeds) {
@@ -275,7 +275,7 @@ describe(`UID2 module`, function () {
 
           testApiSuccessAndFailure(async function(apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
-            const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2);
+            const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
 
             const bid = await runAuction();
             expectNoIdentity(bid);
@@ -319,13 +319,13 @@ describe(`UID2 module`, function () {
           scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true), {auctionDelay: 0, syncDelay: 1});
         });
         testApiSuccessAndFailure(async function() {
-          apiHelpers.respondAfterDelay(10);
+          apiHelpers.respondAfterDelay(10, server);
           const bid = await runAuction();
           expectToken(bid, initialToken);
         }, 'it should not be refreshed before the auction runs');
 
         testApiSuccessAndFailure(async function(success) {
-          const promise = apiHelpers.respondAfterDelay(1);
+          const promise = apiHelpers.respondAfterDelay(1, server);
           await runAuction();
           await promise;
           if (success) {

@@ -631,7 +631,8 @@ describe('native.js', function () {
     eventtrackers: [
       { event: 1, method: 1, url: 'https://sampleurl.com' },
       { event: 1, method: 2, url: 'https://sampleurljs.com' }
-    ]
+    ],
+    imptrackers: [ 'https://sample-imp.com' ]
   }
   describe('toLegacyResponse', () => {
     it('returns assets in legacy format for ortb responses', () => {
@@ -640,8 +641,9 @@ describe('native.js', function () {
       expect(actual.title).to.equal('vtitle');
       expect(actual.clickUrl).to.equal('url');
       expect(actual.javascriptTrackers).to.equal('<script async src="https://sampleurljs.com"></script>');
-      expect(actual.impressionTrackers.length).to.equal(1);
-      expect(actual.impressionTrackers[0]).to.equal('https://sampleurl.com');
+      expect(actual.impressionTrackers.length).to.equal(2);
+      expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
+      expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
     });
   });
 });
@@ -860,6 +862,9 @@ describe('validate native', function () {
             }]
           },
           address: {},
+          privacyLink: {
+            required: true
+          }
         },
       },
     };
@@ -915,6 +920,7 @@ describe('validate native', function () {
         type: 9,
       }
     });
+    expect(ortb.privacy).to.equal(1);
   });
 
   ['bogusKey', 'clickUrl', 'privacyLink'].forEach(nativeKey => {
@@ -1022,11 +1028,14 @@ describe('validate native', function () {
     expect(oldNativeRequest.sponsoredBy).to.include({
       required: true,
       len: 25
-    })
+    });
     expect(oldNativeRequest.body).to.include({
       required: true,
       len: 140
-    })
+    });
+    expect(oldNativeRequest.privacyLink).to.include({
+      required: false
+    });
   });
 
   if (FEATURES.NATIVE) {
@@ -1197,6 +1206,12 @@ describe('legacyPropertiesToOrtbNative', () => {
       expect(native.jstracker).to.eql('some-markupsome-other-markup');
     })
   });
+  describe('privacylink', () => {
+    it('should convert privacyLink to privacy', () => {
+      const native = legacyPropertiesToOrtbNative({privacyLink: 'https:/my-privacy-link.com'});
+      expect(native.privacy).to.eql('https:/my-privacy-link.com');
+    })
+  })
 });
 
 describe('fireImpressionTrackers', () => {
