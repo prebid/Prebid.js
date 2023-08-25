@@ -108,17 +108,24 @@ describe('teadsBidAdapter', () => {
       }
     ];
 
-    let bidderResquestDefault = {
+    let bidderRequestDefault = {
       'auctionId': '1d1a030790a475',
       'bidderRequestId': '22edbae2733bf6',
       'timeout': 3000
     };
 
     it('should send bid request to ENDPOINT via POST', function() {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
 
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
+    });
+
+    it('should not send auctionId in bid request ', function() {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.data[0].auctionId).to.not.exist
     });
 
     it('should send US Privacy to endpoint', function() {
@@ -162,6 +169,55 @@ describe('teadsBidAdapter', () => {
       expect(payload.gdpr_iab.apiVersion).to.equal(2);
     });
 
+    it('should add videoPlcmt to payload', function () {
+      let bidRequestWithVideoPlcmt = Object.assign({}, bidRequests[0], {
+        mediaTypes: {
+          video: {
+            plcmt: 1
+          }
+        }
+      });
+
+      const request = spec.buildRequests([bidRequestWithVideoPlcmt], bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.data[0].videoPlcmt).to.exist;
+      expect(payload.data[0].videoPlcmt).to.equal(1);
+    });
+
+    it('should not add videoPlcmt to payload if empty', function () {
+      let bidRequestWithNullVideoPlcmt = Object.assign({}, bidRequests[0], {
+        mediaTypes: {
+          video: {
+            plcmt: null
+          }
+        }
+      });
+
+      let bidRequestWithEmptyVideoPlcmt = Object.assign({}, bidRequests[0], {
+        mediaTypes: {
+          video: {
+            plcmt: ''
+          }
+        }
+      });
+
+      const request1 = spec.buildRequests([bidRequestWithNullVideoPlcmt], bidderRequestDefault);
+      const request2 = spec.buildRequests([bidRequestWithEmptyVideoPlcmt], bidderRequestDefault);
+      const payload1 = JSON.parse(request1.data);
+      const payload2 = JSON.parse(request2.data);
+
+      expect(payload1.data[0].videoPlcmt).to.not.exist;
+      expect(payload2.data[0].videoPlcmt).to.not.exist;
+    });
+
+    it('should not add videoPlcmt to payload if it is not in bid request', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.data[0].videoPlcmt).to.not.exist;
+    });
+
     it('should add referer info to payload', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
@@ -179,7 +235,7 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should add networkBandwidth info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
       const bandwidth = window.navigator && window.navigator.connection && window.navigator.connection.downlink;
@@ -194,15 +250,31 @@ describe('teadsBidAdapter', () => {
     });
 
     it('should add pageReferrer info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
       expect(payload.pageReferrer).to.exist;
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
+    it('should add pageTitle info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageTitle).to.exist;
+      expect(payload.pageTitle).to.deep.equal(window.top.document.title || document.title);
+    });
+
+    it('should add pageDescription info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageDescription).to.exist;
+      expect(payload.pageDescription).to.deep.equal('');
+    });
+
     it('should add timeToFirstByte info to payload', function () {
-      const request = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
       const performance = window.performance || window.webkitPerformance || window.msPerformance || window.mozPerformance;
 
@@ -403,7 +475,7 @@ describe('teadsBidAdapter', () => {
         }
       });
 
-      const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const request = spec.buildRequests([bidRequest], bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
       expect(payload.schain).to.exist;
@@ -451,7 +523,7 @@ describe('teadsBidAdapter', () => {
         }
       });
 
-      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderResquestDefault);
+      const requestWithUserAgentClientHints = spec.buildRequests([bidRequest], bidderRequestDefault);
       const payload = JSON.parse(requestWithUserAgentClientHints.data);
 
       expect(payload.userAgentClientHints).to.exist;
@@ -482,7 +554,7 @@ describe('teadsBidAdapter', () => {
       }
       );
 
-      const defaultRequest = spec.buildRequests(bidRequests, bidderResquestDefault);
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
       expect(JSON.parse(defaultRequest.data).userAgentClientHints).to.not.exist;
     });
 
@@ -559,7 +631,7 @@ describe('teadsBidAdapter', () => {
             userId: {} // no property -> assumption that the system is disabled
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           for (const userId in userIdModules) {
@@ -568,7 +640,7 @@ describe('teadsBidAdapter', () => {
         });
 
         it(`should not add param to payload if user id field is absent`, function () {
-          const request = spec.buildRequests([baseBidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([baseBidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           for (const userId in userIdModules) {
@@ -585,7 +657,7 @@ describe('teadsBidAdapter', () => {
             }
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('liveRampId');
@@ -605,7 +677,7 @@ describe('teadsBidAdapter', () => {
             userId: userIdObject
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload['unifiedId2']).to.equal('unifiedId2-id');
@@ -634,7 +706,7 @@ describe('teadsBidAdapter', () => {
             }
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
@@ -652,7 +724,7 @@ describe('teadsBidAdapter', () => {
             }
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
           const payload = JSON.parse(request.data);
 
           expect(payload).not.to.have.property('firstPartyCookieTeadsId');
@@ -670,7 +742,7 @@ describe('teadsBidAdapter', () => {
             }
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
 
           const payload = JSON.parse(request.data);
 
@@ -690,7 +762,7 @@ describe('teadsBidAdapter', () => {
             }
           };
 
-          const request = spec.buildRequests([bidRequest], bidderResquestDefault);
+          const request = spec.buildRequests([bidRequest], bidderRequestDefault);
 
           const payload = JSON.parse(request.data);
 
@@ -743,7 +815,7 @@ describe('teadsBidAdapter', () => {
           };
         }
         );
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const request = spec.buildRequests(updatedBidRequests, bidderRequestDefault);
         const payload = JSON.parse(request.data);
 
         expect(payload.data[0].gpid).to.equal('1111/home-left-0');
@@ -760,7 +832,7 @@ describe('teadsBidAdapter', () => {
           }
         }));
 
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const request = spec.buildRequests(updatedBidRequests, bidderRequestDefault);
         const payload = JSON.parse(request.data);
 
         return payload.data.forEach(bid => {
@@ -777,7 +849,7 @@ describe('teadsBidAdapter', () => {
           }
         }));
 
-        const request = spec.buildRequests(updatedBidRequests, bidderResquestDefault);
+        const request = spec.buildRequests(updatedBidRequests, bidderRequestDefault);
         const payload = JSON.parse(request.data);
 
         return payload.data.forEach(bid => {
@@ -788,7 +860,7 @@ describe('teadsBidAdapter', () => {
 
     function checkMediaTypesSizes(mediaTypes, expectedSizes) {
       const bidRequestWithBannerSizes = Object.assign(bidRequests[0], mediaTypes);
-      const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderResquestDefault);
+      const requestWithBannerSizes = spec.buildRequests([bidRequestWithBannerSizes], bidderRequestDefault);
       const payloadWithBannerSizes = JSON.parse(requestWithBannerSizes.data);
 
       return payloadWithBannerSizes.data.forEach(bid => {

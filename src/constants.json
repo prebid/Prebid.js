@@ -11,8 +11,7 @@
   },
   "DEBUG_MODE": "pbjs_debug",
   "STATUS": {
-    "GOOD": 1,
-    "NO_BID": 2
+    "GOOD": 1
   },
   "CB": {
     "TYPE": {
@@ -78,7 +77,9 @@
     "CACHE_ID": "hb_cache_id",
     "CACHE_HOST": "hb_cache_host",
     "ADOMAIN": "hb_adomain",
-    "ACAT": "hb_acat"
+    "ACAT": "hb_acat",
+    "CRID": "hb_crid",
+    "DSP": "hb_dsp"
   },
   "DEFAULT_TARGETING_KEYS": {
     "BIDDER": "hb_bidder",
@@ -162,11 +163,18 @@
     "MAIN": 3
   },
   "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
-    "privacyLink",
+    "privacyIcon",
     "clickUrl",
     "sendTargetingKeys",
     "adTemplate",
     "rendererUrl",
     "type"
-  ]
+  ],
+  "FLOOR_VALUES": {
+	"NO_DATA": "noData",
+	"AD_UNIT": "adUnit",
+	"SET_CONFIG": "setConfig",
+	"FETCH": "fetch",
+	"SUCCESS": "success"
+  }
 }

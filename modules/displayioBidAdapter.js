@@ -3,6 +3,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {getWindowFromDocument, logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const ADAPTER_VERSION = '1.1.0';
 const BIDDER_CODE = 'displayio';
@@ -105,7 +106,7 @@ function getPayload (bid, bidderRequest) {
       renderURL,
       data: {
         pagecat: pageCategory ? pageCategory.split(',').map(k => k.trim()) : [],
-        keywords: keywords ? keywords.split(',').map(k => k.trim()) : [],
+        keywords: getAllOrtbKeywords(bidderRequest.ortb2, keywords),
         lang_content: document.documentElement.lang,
         lang: window.navigator.language,
         domain: refererInfo.domain,

@@ -135,18 +135,18 @@ var adUnits = [{
 
 ### User Ids
 
-Opera Ads Bid Adapter uses `sharedId`, `pubcid` or `tdid`, please config at least one.
+Opera Ads Bid Adapter uses `operaId`, please refer to [`Opera ID System`](./operaadsIdSystem.md).
 
 ```javascript
 pbjs.setConfig({
   ...,
   userSync: {
     userIds: [{
-      name: 'sharedId',
+      name: 'operaId',
       storage: {
-        name: '_sharedID', // name of the 1st party cookie
-        type: 'cookie',
-        expires: 30
+        name: 'operaId',
+        type: 'html5',
+        expires: 14
       }
     }]
   }

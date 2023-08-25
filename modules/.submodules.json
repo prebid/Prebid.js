@@ -38,13 +38,16 @@
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "trustpidSystem",
+      "utiqSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
-      "gravitoIdSystem"
+      "gravitoIdSystem",
+      "freepassIdSystem",
+      "operaadsIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -52,6 +55,7 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",

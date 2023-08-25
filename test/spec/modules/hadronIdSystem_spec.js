@@ -47,7 +47,7 @@ describe('HadronIdSystem', function () {
       const callback = hadronIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq('https://hadronid.publync.com?partner_id=0&_it=prebid');
+      expect(request.url).to.eq('https://hadronid.publync.com/?partner_id=0&_it=prebid');
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ hadronId: 'testHadronId1' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({ id: { hadronId: 'testHadronId1' } });
     });

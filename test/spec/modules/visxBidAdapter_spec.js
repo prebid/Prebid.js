@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/visxBidAdapter.js';
+import { spec, storage } from 'modules/visxBidAdapter.js';
 import { config } from 'src/config.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
@@ -82,6 +82,9 @@ describe('VisxAdapter', function () {
       });
       return res;
     }
+
+    let cookiesAreEnabledStub, localStorageIsEnabledStub;
+
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -179,6 +182,24 @@ describe('VisxAdapter', function () {
       },
       'ext': {'bidder': {'uid': 903537}}
     }];
+
+    before(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        visx: {
+          storageAllowed: false
+        }
+      };
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      localStorageIsEnabledStub.returns(false);
+      cookiesAreEnabledStub.returns(false);
+    });
+
+    after(() => {
+      localStorageIsEnabledStub.restore();
+      cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
 
     it('should attach valid params to the tag', function () {
       const firstBid = bidRequests[0];
@@ -422,6 +443,7 @@ describe('VisxAdapter', function () {
       });
       return res;
     }
+    let cookiesAreEnabledStub, localStorageIsEnabledStub;
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -448,6 +470,24 @@ describe('VisxAdapter', function () {
         'auctionId': '1d1a030790a476',
       }
     ];
+
+    before(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        visx: {
+          storageAllowed: false
+        }
+      };
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      localStorageIsEnabledStub.returns(false);
+      cookiesAreEnabledStub.returns(false);
+    });
+
+    after(() => {
+      localStorageIsEnabledStub.restore();
+      cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
 
     it('should send requst for banner bid', function () {
       const request = spec.buildRequests([bidRequests[0]], bidderRequest);
@@ -486,6 +526,7 @@ describe('VisxAdapter', function () {
       });
       return res;
     }
+    let cookiesAreEnabledStub, localStorageIsEnabledStub;
     const bidderRequest = {
       timeout: 3000,
       refererInfo: {
@@ -529,10 +570,23 @@ describe('VisxAdapter', function () {
       documentStub.withArgs('visx-adunit-element-2').returns({
         id: 'visx-adunit-element-2'
       });
+
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        visx: {
+          storageAllowed: false
+        }
+      };
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      localStorageIsEnabledStub.returns(false);
+      cookiesAreEnabledStub.returns(false);
     });
 
     after(function() {
       sandbox.restore();
+      localStorageIsEnabledStub.restore();
+      cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
     it('should find ad slot by ad unit code as element id', function () {
@@ -1321,6 +1375,102 @@ describe('VisxAdapter', function () {
       const { path, query } = parseUrl(syncs[0].url);
       expect(path).to.equal('push_sync');
       expect(query).to.deep.equal({});
+    });
+  });
+
+  describe('first party user id', function () {
+    const USER_ID_KEY = '__vads';
+    const USER_ID_DUMMY_VALUE_COOKIE = 'dummy_id_cookie';
+    const USER_ID_DUMMY_VALUE_LOCAL_STORAGE = 'dummy_id_local_storage';
+
+    let getDataFromLocalStorageStub, localStorageIsEnabledStub;
+    let getCookieStub, cookiesAreEnabledStub;
+
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': 903535
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+    const bidderRequest = {
+      timeout: 3000,
+      refererInfo: {
+        page: 'https://example.com'
+      }
+    };
+
+    beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        visx: {
+          storageAllowed: true
+        }
+      };
+      cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+    });
+
+    afterEach(() => {
+      cookiesAreEnabledStub.restore();
+      localStorageIsEnabledStub.restore();
+      getCookieStub && getCookieStub.restore();
+      getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
+    });
+
+    it('should not pass user id if both cookies and local storage are not available', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(false);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user).to.be.undefined;
+    });
+
+    it('should get user id from cookie if available', function () {
+      cookiesAreEnabledStub.returns(true);
+      localStorageIsEnabledStub.returns(false);
+      getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_COOKIE);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_COOKIE);
+    });
+
+    it('should get user id from local storage if available', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(true);
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorageStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
+    });
+
+    it('should create user id and store it in cookies (if user id does not exist)', function () {
+      cookiesAreEnabledStub.returns(true);
+      localStorageIsEnabledStub.returns(false);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(storage.getCookie(USER_ID_KEY)).to.be.a('string');
+      expect(request.data.user.ext.vads).to.be.a('string');
+    });
+
+    it('should create user id and store it in local storage (if user id does not exist)', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(true);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(storage.getDataFromLocalStorage(USER_ID_KEY)).to.be.a('string');
+      expect(request.data.user.ext.vads).to.be.a('string');
     });
   });
 });

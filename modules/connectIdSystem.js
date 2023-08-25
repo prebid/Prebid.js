@@ -11,11 +11,16 @@ import {includes} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {formatQS, isPlainObject, logError, parseUrl} from '../src/utils.js';
-import {uspDataHandler} from '../src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'connectId';
-const STORAGE_EXPIRY_DAYS = 14;
+const STORAGE_EXPIRY_DAYS = 365;
+const STORAGE_DURATION = 60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS;
+const ID_EXPIRY_DAYS = 14;
+const VALID_ID_DURATION = 60 * 60 * 24 * 1000 * ID_EXPIRY_DAYS;
+const PUID_EXPIRY_DAYS = 30;
+const PUID_EXPIRY = 60 * 60 * 24 * 1000 * PUID_EXPIRY_DAYS;
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';
 const UPS_ENDPOINT = `https://ups.analytics.yahoo.com/ups/${PLACEHOLDER}/fed`;
@@ -28,11 +33,11 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @param {Object} obj
  */
 function storeObject(obj) {
-  const expires = Date.now() + (60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS);
+  const expires = Date.now() + STORAGE_DURATION;
   if (storage.cookiesAreEnabled()) {
     setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(obj), new Date(expires), getSiteHostname());
-  } else if (storage.localStorageIsEnabled()) {
-    obj.__expires = expires;
+  }
+  if (storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(MODULE_NAME, JSON.stringify(obj));
   }
 }
@@ -75,7 +80,9 @@ function getIdFromLocalStorage() {
     if (storedIdData) {
       try {
         storedIdData = JSON.parse(storedIdData);
-      } catch {}
+      } catch (e) {
+        logError(`${MODULE_NAME} module: error while reading the local storage data.`);
+      }
       if (isPlainObject(storedIdData) && storedIdData.__expires &&
           storedIdData.__expires <= Date.now()) {
         storage.removeDataFromLocalStorage(MODULE_NAME);
@@ -85,6 +92,34 @@ function getIdFromLocalStorage() {
     }
   }
   return null;
+}
+
+function syncLocalStorageToCookie() {
+  if (!storage.cookiesAreEnabled()) {
+    return;
+  }
+  const value = getIdFromLocalStorage();
+  const newCookieExpireTime = Date.now() + STORAGE_DURATION;
+  setEtldPlusOneCookie(MODULE_NAME, JSON.stringify(value), new Date(newCookieExpireTime), getSiteHostname());
+}
+
+function isStale(storedIdData) {
+  if (isPlainObject(storedIdData) && storedIdData.lastSynced &&
+    (storedIdData.lastSynced + VALID_ID_DURATION) <= Date.now()) {
+    return true;
+  }
+  return false;
+}
+
+function getStoredId() {
+  let storedId = getIdFromCookie();
+  if (!storedId) {
+    storedId = getIdFromLocalStorage();
+    if (storedId && !isStale(storedId)) {
+      syncLocalStorageToCookie();
+    }
+  }
+  return storedId;
 }
 
 function getSiteHostname() {
@@ -127,16 +162,31 @@ export const connectIdSubmodule = {
       return;
     }
     const params = config.params || {};
-    if (!params || (typeof params.he !== 'string' && typeof params.puid !== 'string') ||
+    if (!params ||
         (typeof params.pixelId === 'undefined' && typeof params.endpoint === 'undefined')) {
-      logError(`${MODULE_NAME} module: configurataion requires the 'pixelId' and at ` +
-                `least one of the 'he' or 'puid' parameters to be defined.`);
+      logError(`${MODULE_NAME} module: configuration requires the 'pixelId'.`);
       return;
     }
 
-    const storedId = getIdFromCookie() || getIdFromLocalStorage();
+    const storedId = getStoredId();
+
+    let shouldResync = isStale(storedId);
+
     if (storedId) {
-      return {id: storedId};
+      if (isPlainObject(storedId) && storedId.puid && storedId.lastUsed && !params.puid &&
+        (storedId.lastUsed + PUID_EXPIRY) <= Date.now()) {
+        delete storedId.puid;
+        shouldResync = true;
+      }
+      if ((params.he && params.he !== storedId.he) ||
+        (params.puid && params.puid !== storedId.puid)) {
+        shouldResync = true;
+      }
+      if (!shouldResync) {
+        storedId.lastUsed = Date.now();
+        storeObject(storedId);
+        return {id: storedId};
+      }
     }
 
     const uspString = uspDataHandler.getConsentData() || '';
@@ -147,6 +197,14 @@ export const connectIdSubmodule = {
       gdpr_consent: connectIdSubmodule.isEUConsentRequired(consentData) ? consentData.consentString : '',
       us_privacy: uspString
     };
+
+    const gppConsent = gppDataHandler.getConsentData();
+    if (gppConsent) {
+      data.gpp = `${gppConsent.gppString ? gppConsent.gppString : ''}`;
+      if (Array.isArray(gppConsent.applicableSections)) {
+        data.gpp_sid = gppConsent.applicableSections.join(',');
+      }
+    }
 
     let topmostLocation = getRefererInfo().topmostLocation;
     if (typeof topmostLocation === 'string') {
@@ -159,6 +217,14 @@ export const connectIdSubmodule = {
       }
     });
 
+    const hashedEmail = params.he || storedId?.he;
+    if (hashedEmail) {
+      data.he = hashedEmail;
+    }
+    if (!data.puid && storedId?.puid) {
+      data.puid = storedId.puid;
+    }
+
     const resp = function (callback) {
       const callbacks = {
         success: response => {
@@ -166,7 +232,12 @@ export const connectIdSubmodule = {
           if (response) {
             try {
               responseObj = JSON.parse(response);
-              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0) {
+              if (isPlainObject(responseObj) && Object.keys(responseObj).length > 0 &&
+                 (!!responseObj.connectId || !!responseObj.connectid)) {
+                responseObj.he = params.he;
+                responseObj.puid = params.puid || responseObj.puid;
+                responseObj.lastSynced = Date.now();
+                responseObj.lastUsed = Date.now();
                 storeObject(responseObj);
               } else {
                 logError(`${MODULE_NAME} module: UPS response returned an invalid payload ${response}`);
@@ -186,7 +257,12 @@ export const connectIdSubmodule = {
       let url = `${params.endpoint || endpoint}?${formatQS(data)}`;
       connectIdSubmodule.getAjaxFn()(url, callbacks, null, {method: 'GET', withCredentials: true});
     };
-    return {callback: resp};
+    const result = {callback: resp};
+    if (shouldResync && storedId) {
+      result.id = storedId;
+    }
+
+    return result;
   },
 
   /**
@@ -218,6 +294,12 @@ export const connectIdSubmodule = {
    */
   getAjaxFn() {
     return ajax;
+  },
+  eids: {
+    'connectId': {
+      source: 'yahoo.com',
+      atype: 3
+    },
   }
 };
 

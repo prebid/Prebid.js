@@ -4,6 +4,9 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js'
+
+const { getConfig } = config;
 
 const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
@@ -11,12 +14,21 @@ const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVi
 const TTL = 60;
 
 function buildBidRequests(validBidRequests) {
-  return _map(validBidRequests, function(validBidRequest) {
-    const params = validBidRequest.params;
+  return _map(validBidRequests, function(bid) {
+    const currency = getConfig('currency.adServerCurrency');
+    const floorInfo = bid.getFloor ? bid.getFloor({
+      currency: currency || 'USD'
+    }) : {};
+
+    const params = bid.params;
     const bidRequest = {
-      bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
-      sizes: validBidRequest.sizes,
+      floorInfo,
+      schain: bid.schain,
+      userId: bid.userId,
+      bidId: bid.bidId,
+      // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+      transactionId: bid.transactionId,
+      sizes: bid.sizes,
       placement: params.placement,
       placeId: params.placementId,
       imageUrl: params.imageUrl
@@ -80,6 +92,7 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
+    // TODO: why does this need to iterate through every ad unit?
     let adUnit = find(auctionManager.getAdUnits(), function (unit) {
       return unit.transactionId === bidData.transactionId;
     });
