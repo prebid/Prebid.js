@@ -5,7 +5,6 @@ import {deepSetValue} from '../../../src/utils';
 import {server} from '../../mocks/xhr';
 import {config} from '../../../src/config';
 import {NATIVE} from '../../../src/mediaTypes.js';
-import {CONVERTER} from '../../../modules/improvedigitalBidAdapter';
 
 // Full banner + Full Video + Basic Banner + Basic Video
 const VALID_BIDS = [
@@ -419,20 +418,22 @@ describe('Aidem adapter', () => {
       )
     });
 
-    it('should have a well formatted video payload', () => {
-      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
-      expect(data).to.be.a('object').that.has.all.keys(
-        'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
-      )
-      expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
+    if (FEATURES.VIDEO) {
+      it('should have a well formatted video payload', () => {
+        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+        expect(data).to.be.a('object').that.has.all.keys(
+          'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
+        )
+        expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
-      expect(data.imp[0]).to.be.a('object').that.has.all.keys(
-        'video', 'id', 'tagId'
-      )
-      expect(data.imp[0].video).to.be.a('object').that.has.all.keys(
-        'mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h'
-      )
-    });
+        expect(data.imp[0]).to.be.a('object').that.has.all.keys(
+          'video', 'id', 'tagId'
+        )
+        expect(data.imp[0].video).to.be.a('object').that.has.all.keys(
+          'mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h'
+        )
+      });
+    }
 
     it('should hav wpar keys in environment object', function () {
       const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
@@ -454,16 +455,18 @@ describe('Aidem adapter', () => {
       })
     });
 
-    it('should return a valid bid array with a video bid', () => {
-      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
-      const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
-      expect(bids).to.be.a('array').that.has.lengthOf(1)
-      bids.forEach(value => {
-        expect(value).to.be.a('object').that.has.all.keys(
-          'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
-        )
-      })
-    });
+    if (FEATURES.VIDEO) {
+      it('should return a valid bid array with a video bid', () => {
+        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
+        const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
+        expect(bids).to.be.a('array').that.has.lengthOf(1)
+        bids.forEach(value => {
+          expect(value).to.be.a('object').that.has.all.keys(
+            'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
+          )
+        })
+      });
+    }
 
     it('should return a valid bid array with netRevenue', () => {
       const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
