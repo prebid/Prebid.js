@@ -379,7 +379,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].psz).to.equal('640x480');
       expect(data.s[0].ps[0].eg).to.equal(1.23);
       expect(data.s[0].ps[0].en).to.equal(1.23);
-      expect(data.s[0].ps[0].di).to.equal('');
+      expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
       expect(data.s[0].ps[0].l1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
@@ -701,7 +701,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].psz).to.equal('0x0');
       expect(data.s[1].ps[0].eg).to.equal(0);
       expect(data.s[1].ps[0].en).to.equal(0);
-      expect(data.s[1].ps[0].di).to.equal('');
+      expect(data.s[1].ps[0].di).to.equal('-1');
       expect(data.s[1].ps[0].dc).to.equal('');
       expect(data.s[1].ps[0].mi).to.equal(undefined);
       expect(data.s[1].ps[0].l1).to.equal(0);
@@ -739,7 +739,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].psz).to.equal('0x0');
       expect(data.s[1].ps[0].eg).to.equal(0);
       expect(data.s[1].ps[0].en).to.equal(0);
-      expect(data.s[1].ps[0].di).to.equal('');
+      expect(data.s[1].ps[0].di).to.equal('-1');
       expect(data.s[1].ps[0].dc).to.equal('');
       expect(data.s[1].ps[0].mi).to.equal(undefined);
       expect(data.s[1].ps[0].l1).to.equal(0);
@@ -1135,7 +1135,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].psz).to.equal('640x480');
       expect(data.s[0].ps[0].eg).to.equal(1.23);
       expect(data.s[0].ps[0].en).to.equal(1.23);
-      expect(data.s[0].ps[0].di).to.equal('');
+      expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
       expect(data.s[0].ps[0].l1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
@@ -1254,7 +1254,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].psz).to.equal('640x480');
       expect(data.s[0].ps[0].eg).to.equal(1.23);
       expect(data.s[0].ps[0].en).to.equal(1.23);
-      expect(data.s[0].ps[0].di).to.equal('');
+      expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
       expect(data.s[0].ps[0].l1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
